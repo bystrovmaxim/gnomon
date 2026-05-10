@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/shared/theme/maxitorTheme.ts
+// packages/aoa-maxitor/client/src/shared/theme/maxitor_theme.ts
 import { createTheme } from "@mui/material/styles";
 
 export const maxitorTheme = createTheme({

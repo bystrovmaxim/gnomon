@@ -1,3 +1,4 @@
+// packages/aoa-maxitor/client/src/vite_env.d.ts
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {

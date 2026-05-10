@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/features/diagram-viewer/interchange-graph/InterchangeGraphViewer.tsx
+// packages/aoa-maxitor/client/src/features/diagrams/interchange_graph/interchange_graph_viewer.tsx
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
@@ -6,7 +6,7 @@ import type { EdgeData, Graph as G6Graph, GraphData, NodeData } from "@antv/g6";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import interchangeChromeCss from "../erd/shell/interchange_chrome.css?raw";
 import { svgDataUriForGraphNodeGlyphOnly, svgDataUriForGraphNodeIcon } from "../../../shared/icons";
-import { fetchInterchangeGraphPayload } from "./fetchInterchangeGraphPayload";
+import { fetchInterchangeGraphPayload } from "./fetch_interchange_graph_payload";
 import type { InterchangeGraphG6Payload } from "./types";
 
 const NODE_BASE_RING_LINE_WIDTH = 0.75;

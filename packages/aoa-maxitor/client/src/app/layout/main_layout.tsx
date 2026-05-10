@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/app/layout/MainLayout.tsx
+// packages/aoa-maxitor/client/src/app/layout/main_layout.tsx
 import Drawer from "@mui/material/Drawer";
 import Box from "@mui/material/Box";
 import type { ReactNode } from "react";

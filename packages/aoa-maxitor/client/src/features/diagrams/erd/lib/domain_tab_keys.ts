@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/features/diagram-viewer/erd/lib/domainTabKeys.ts
+// packages/aoa-maxitor/client/src/features/diagrams/erd/lib/domain_tab_keys.ts
 /** Stable tab keys for ``ERD_DATA.domains`` (same collision rule as the server-side materializer). */
 export function allocateDomainTabKey(used: Set<string>, base: string): string {
   let key = base;

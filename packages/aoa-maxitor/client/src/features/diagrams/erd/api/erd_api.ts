@@ -1,6 +1,6 @@
-// packages/aoa-maxitor/client/src/features/diagram-viewer/erd/api/erdApi.ts
+// packages/aoa-maxitor/client/src/features/diagrams/erd/api/erd_api.ts
 import { apiUrl } from "../../../../shared/config/api";
-import type { DomainQualnamesPayload, ErdDomainPayload } from "../../model/types";
+import type { DomainQualnamesPayload, ErdDomainPayload } from "../../../model/types";
 
 export async function fetchErdDomainQualnames(): Promise<DomainQualnamesPayload> {
   const res = await fetch(apiUrl("/api/v1/erd/domain-qualnames"));

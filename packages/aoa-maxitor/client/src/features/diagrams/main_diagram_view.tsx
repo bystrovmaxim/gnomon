@@ -1,17 +1,17 @@
-// packages/aoa-maxitor/client/src/features/diagram-viewer/DiagramWorkspace.tsx
+// packages/aoa-maxitor/client/src/features/diagrams/main_diagram_view.tsx
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { ErdViewer } from "./erd";
-import { InterchangeGraphViewer } from "./interchange-graph";
-import type { DiagramSelection } from "./model/types";
+import { InterchangeGraphViewer } from "./interchange_graph";
+import type { DiagramSelection } from "../model/types";
 
-type DiagramWorkspaceProps = {
+type MainDiagramViewProps = {
   diagram: DiagramSelection | null;
 };
 
-/** Main diagram area: interchange graph (G6) or ERD viewer sub-feature. */
-export function DiagramWorkspace({ diagram }: DiagramWorkspaceProps) {
+/** Central pane: shows interchange graph, ERD, or empty state from sidebar selection. */
+export function MainDiagramView({ diagram }: MainDiagramViewProps) {
   return (
     <Box
       sx={{
@@ -32,7 +32,7 @@ export function DiagramWorkspace({ diagram }: DiagramWorkspaceProps) {
         <Box sx={{ flex: 1, display: "grid", placeItems: "center", p: 2 }}>
           <Paper variant="outlined" sx={{ maxWidth: 520, p: 3, borderRadius: 2 }}>
             <Typography variant="h5" component="h1" gutterBottom>
-              Diagram workspace
+              Select a diagram
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Open the interchange graph or an ERD. The graph loads JSON from{" "}

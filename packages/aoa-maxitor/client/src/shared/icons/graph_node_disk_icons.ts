@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/shared/icons/graphNodeDiskIcons.ts
+// packages/aoa-maxitor/client/src/shared/icons/graph_node_disk_icons.ts
 /**
  * App-wide Lucide-derived SVG ``data:`` URLs for Action Machine graph node types (colored
  * disk + glyph, or transparent glyph for stacked canvas layers such as G6).

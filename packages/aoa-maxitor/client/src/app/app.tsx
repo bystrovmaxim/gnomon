@@ -1,10 +1,13 @@
-// packages/aoa-maxitor/client/src/app/App.tsx
+// packages/aoa-maxitor/client/src/app/app.tsx
 import { useMemo, useState } from "react";
-import { DiagramWorkspace, type DiagramSelection } from "../features/diagram-viewer";
-import { SidebarNav } from "../features/sidebar/SidebarNav";
-import { buildSidebarGroupedMaps } from "../features/sidebar/model";
-import { useSidebarPayload } from "../features/sidebar/useSidebarPayload";
-import { MainLayout } from "./layout/MainLayout";
+import {
+  buildSidebarGroupedMaps,
+  MainDiagramView,
+  SidebarNav,
+  useSidebarPayload,
+  type DiagramSelection,
+} from "../features";
+import { MainLayout } from "./layout/main_layout";
 
 export function App() {
   const { sidebar, error } = useSidebarPayload();
@@ -18,7 +21,7 @@ export function App() {
         <SidebarNav sidebar={sidebar} group={group} error={error} diagram={diagram} onSelectDiagram={setDiagram} />
       }
     >
-      <DiagramWorkspace diagram={diagram} />
+      <MainDiagramView diagram={diagram} />
     </MainLayout>
   );
 }

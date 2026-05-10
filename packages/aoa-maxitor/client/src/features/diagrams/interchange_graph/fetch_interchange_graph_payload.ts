@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/features/diagram-viewer/interchange-graph/fetchInterchangeGraphPayload.ts
+// packages/aoa-maxitor/client/src/features/diagrams/interchange_graph/fetch_interchange_graph_payload.ts
 import { apiUrl } from "../../../shared/config/api";
 import type { InterchangeGraphG6Payload } from "./types";
 

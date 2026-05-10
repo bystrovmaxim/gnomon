@@ -1,8 +1,8 @@
-// packages/aoa-maxitor/client/src/features/diagram-viewer/erd/components/ErdViewer.tsx
+// packages/aoa-maxitor/client/src/features/diagrams/erd/components/erd_viewer.tsx
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Typography from "@mui/material/Typography";
-import { useErdViewerBlobUrl, type ErdViewerSelection } from "../hooks/useErdViewerBlobUrl";
+import { useErdViewerBlobUrl, type ErdViewerSelection } from "../hooks/use_erd_viewer_blob_url";
 
 type ErdViewerProps = {
   selection: ErdViewerSelection;

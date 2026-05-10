@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/features/sidebar/DiagramListIcon.tsx
+// packages/aoa-maxitor/client/src/features/sidebar/diagram_list_icon.tsx
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import SchemaOutlinedIcon from "@mui/icons-material/SchemaOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";

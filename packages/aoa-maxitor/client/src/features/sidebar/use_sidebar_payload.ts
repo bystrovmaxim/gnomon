@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/features/sidebar/useSidebarPayload.ts
+// packages/aoa-maxitor/client/src/features/sidebar/use_sidebar_payload.ts
 import { useEffect, useState } from "react";
 import { apiUrl } from "../../shared/config/api";
 import type { SidebarPayload } from "./types";

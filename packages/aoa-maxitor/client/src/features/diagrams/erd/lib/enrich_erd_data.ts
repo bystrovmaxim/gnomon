@@ -1,4 +1,4 @@
-// packages/aoa-maxitor/client/src/features/diagram-viewer/erd/lib/enrichErdData.ts
+// packages/aoa-maxitor/client/src/features/diagrams/erd/lib/enrich_erd_data.ts
 /**
  * Client-side ``ERD_DATA`` enrichment (accent swatches; legend icons left to the shell / future work).
  */

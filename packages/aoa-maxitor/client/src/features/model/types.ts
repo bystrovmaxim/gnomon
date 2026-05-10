@@ -1,5 +1,5 @@
-// packages/aoa-maxitor/client/src/features/diagram-viewer/model/types.ts
-/** How the main workspace renders the selected sidebar diagram target. */
+// packages/aoa-maxitor/client/src/features/model/types.ts
+/** Shared shell types: sidebar selection targets and diagram payloads. */
 export type DiagramSelection =
   | { kind: "interchange_graph" }
   | { kind: "erd"; qualifier: string | null };
