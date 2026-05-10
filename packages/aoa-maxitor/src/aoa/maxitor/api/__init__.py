@@ -1,15 +1,14 @@
-# packages/aoa-maxitor/src/aoa/maxitor/app/__init__.py
+# packages/aoa-maxitor/src/aoa/maxitor/api/__init__.py
 """
-Maxitor application shell — optional Flet desktop UI, diagrams, and UI components.
+Maxitor API — FastAPI backend for the React SPA.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
 ═══════════════════════════════════════════════════════════════════════════════
 
-Keep optional desktop presentation code separate from domain model,
-``aoa.maxitor.app.diagrams`` (HTML exporters), and sample graph definitions.
-Install with ``aoa-maxitor[flet]`` and run
-``python -m aoa.maxitor.app.main`` or the ``maxitor-flet`` console script.
+Expose the Maxitor sample graph, sidebar model, and standalone diagram HTML as
+standard ASGI endpoints. React is hosted separately and talks to this package
+over HTTP.
 """
 
 from __future__ import annotations
