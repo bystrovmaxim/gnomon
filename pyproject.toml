@@ -25,6 +25,7 @@ dev = [
     "taskipy>=1.12,<2.0",
     "httpx>=0.27,<1.0",
     "types-jsonschema>=4.19,<5",
+    "detect-secrets>=1.5,<2.0",
 ]
 
 [tool.uv]
@@ -53,7 +54,7 @@ show_error_codes = true
 namespace_packages = true
 explicit_package_bases = true
 exclude = "collect_python_files\\.py$"
-mypy_path = "packages/maxitor/maxitor-web:packages/maxitor/tools/repo-graph-port:packages/maxitor/tools/graph-builder:packages/maxitor/core/graph_compare:packages/maxitor/core/graph_map"
+mypy_path = "external/aoa/packages/aoa-action-machine/src:external/aoa/packages/aoa-fastapi-adapter/src:packages/maxitor/maxitor-web:packages/maxitor/tools/repo-graph-port:packages/maxitor/tools/graph-builder:packages/maxitor/core/graph_compare:packages/maxitor/core/graph_map"
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -74,6 +75,8 @@ disable = [
     "C0114",  # missing-module-docstring
     "C0115",  # missing-class-docstring
     "C0116",  # missing-function-docstring
+    "R0401",  # cyclic-import
+    "R0901",  # too-many-ancestors — an action inherits its gate hosts by design
     "R0903",  # too-few-public-methods
     "R0801",  # duplicate-code
     "R0913",  # too-many-arguments
@@ -129,3 +132,5 @@ lint = "ruff check packages/ tests/ scripts/"
 typecheck = "mypy packages/maxitor/maxitor-web/maxitor packages/maxitor/tools/repo-graph-port/maxitor packages/maxitor/tools/graph-builder/maxitor packages/maxitor/core/graph_compare/maxitor packages/maxitor/core/graph_map/maxitor"
 pylint = "pylint packages/maxitor"
 dead = "vulture"
+cc = "python scripts/check_radon.py cc"
+mi = "python scripts/check_radon.py mi"
