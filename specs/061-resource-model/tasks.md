@@ -192,7 +192,7 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 ## Phase 8: Changelog
 
-- [ ] T033 `packages/maxitor/CHANGELOG.md` `## 3.17.0 — <YYYY-MM-DD HH:MM>` (the constitution's heading): one article about the work, covering:
+- [X] T033 `packages/maxitor/CHANGELOG.md` `## 3.17.0 — <YYYY-MM-DD HH:MM>` (the constitution's heading): one article about the work, covering:
   - what the reader sees: the Resources filter, the paint, the Boundary contours;
   - one colour for everyone;
   - the card;
