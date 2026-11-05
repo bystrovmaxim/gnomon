@@ -12,28 +12,28 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 **Independent test**: the phase's test set (T007).
 
-- [ ] T001 [US5] Move `external/aoa` to `537c61d4` with `./update-aoa.sh 537c61d4`; the commit holds `external/aoa` and `uv.lock` only (`AGENTS.md`)
-- [ ] T002 [US5] In `maxitor/web/model/core/entities/node_entity.py`: `@entity(description=..., resource=DuckDBGraphResource)` in place of `domain=DiagramsDomain`; import `DuckDBGraphResource` from `maxitor.web.model.diagrams.resources.duckdb_graph_resource`; drop the `DiagramsDomain` import if nothing else uses it. The entity's domain stays `DiagramsDomain`, which AOA reads from the resource's `@meta` (research R1)
-- [ ] T003 [US5] Fixture `tests/fixtures/resource_model.py`: a 1.6 graph builder.
+- [X] T001 [US5] Move `external/aoa` to `537c61d4` with `./update-aoa.sh 537c61d4`; the commit holds `external/aoa` and `uv.lock` only (`AGENTS.md`)
+- [X] T002 [US5] In `maxitor/web/model/core/entities/node_entity.py`: `@entity(description=..., resource=DuckDBGraphResource)` in place of `domain=DiagramsDomain`; import `DuckDBGraphResource` from `maxitor.web.model.diagrams.resources.duckdb_graph_resource`; drop the `DiagramsDomain` import if nothing else uses it. The entity's domain stays `DiagramsDomain`, which AOA reads from the resource's `@meta` (research R1)
+- [X] T003 [US5] Fixture `tests/fixtures/resource_model.py`: a 1.6 graph builder.
   - Domain `shop.ShopDomain`.
   - Resources `shop.StorefrontDatabase` with entities `shop.Order` and `shop.OrderLine` (a relation between them) and `shop.BillingDatabase` with entity `shop.Invoice`.
   - Resource `shop.SocketChannel` with no entity.
   - Each entity has one `entity_resource` edge `<entity>|entity_resource|<resource>`, `Aggregation`, `is_dag` true, `properties` `{}`, and keeps its `domain` edge.
   - A second function returns the same graph as 1.5: no `entity_resource` edges, `schema_version` `"1.5"`.
-- [ ] T004 [US5] In `maxitor/web/model/diagrams/resources/duckdb_graph_resource.py`:
+- [X] T004 [US5] In `maxitor/web/model/diagrams/resources/duckdb_graph_resource.py`:
   - `CREATE TABLE entity_resource_edges` with the four base columns of `domain_edges`;
   - `"entity_resource": "entity_resource_edges"` in `_fill_simple_edge_tables`;
   - the name in `_EDGE_TABLE_NAMES` and in `_graph_union_view_ddls`;
   - `"entity_resource"` in `known_edges` of `_assert_no_unknown_graph_types`;
   - the module docstring names the table.
-- [ ] T005 [US5] Test `tests/test_duckdb_entity_resource_edges.py`:
+- [X] T005 [US5] Test `tests/test_duckdb_entity_resource_edges.py`:
   - the 1.6 fixture loads, and `entity_resource_edges` holds 3 rows `(entity, resource)`;
   - the 1.5 fixture loads with the table empty;
   - the edge appears in the union view with type `entity_resource_edges`.
 
   Break: drop the map entry → the 1.6 load test fails with `KeyError`, no other test does; restore.
-- [ ] T006 [US5] In `tests/test_own_graph_json.py`: the graph built from the loaded code has `schema_version` `"1.6"`, and `NodeCoreEntity` has exactly one `entity_resource` edge, whose target is `DuckDBGraphResource`. Break: point the edge test at `DiagramsDomain` → only this test fails; restore
-- [ ] T007 [US5] The phase's test set, and nothing beyond it: `uv run pytest packages/maxitor/maxitor-web/tests/test_own_graph_json.py packages/maxitor/maxitor-web/tests/test_duckdb_entity_resource_edges.py packages/maxitor/maxitor-web/tests/test_left_sidebar_action.py packages/maxitor/maxitor-web/tests/test_list_entities_specialization_contract.py packages/maxitor/maxitor-web/tests/test_list_entities_generalization_relations.py packages/maxitor/maxitor-web/tests/test_duckdb_specialization_type_registration.py packages/maxitor/maxitor-web/tests/test_domain_use_case_diagram_action.py packages/maxitor/maxitor-web/tests/test_api_diagram_routes.py` — the tests that build Maxitor's model or load it into DuckDB. What AOA at `537c61d4` refuses there is fixed in this phase. The move also brings bystrovmaxim/aoa#466, #468, #471 and #473 and `aoa-action-machine` 1.1.0b1 (research R1); the closing check run of Phase 6 covers the rest. The commits: T001 alone; T002–T007 as the second; both in one push.
+- [X] T006 [US5] In `tests/test_own_graph_json.py`: the graph built from the loaded code has `schema_version` `"1.6"`, and `NodeCoreEntity` has exactly one `entity_resource` edge, whose target is `DuckDBGraphResource`. Break: point the edge test at `DiagramsDomain` → only this test fails; restore
+- [X] T007 [US5] The phase's test set, and nothing beyond it: `uv run pytest packages/maxitor/maxitor-web/tests/test_own_graph_json.py packages/maxitor/maxitor-web/tests/test_duckdb_entity_resource_edges.py packages/maxitor/maxitor-web/tests/test_left_sidebar_action.py packages/maxitor/maxitor-web/tests/test_list_entities_specialization_contract.py packages/maxitor/maxitor-web/tests/test_list_entities_generalization_relations.py packages/maxitor/maxitor-web/tests/test_duckdb_specialization_type_registration.py packages/maxitor/maxitor-web/tests/test_domain_use_case_diagram_action.py packages/maxitor/maxitor-web/tests/test_api_diagram_routes.py` — the tests that build Maxitor's model or load it into DuckDB. What AOA at `537c61d4` refuses there is fixed in this phase. The move also brings bystrovmaxim/aoa#466, #468, #471 and #473 and `aoa-action-machine` 1.1.0b1 (research R1); the closing check run of Phase 6 covers the rest. The commits: T001 alone; T002–T007 as the second; both in one push.
 
 ## Phase 2: The listing names resources and their colours (Foundational for US1–US4)
 
