@@ -118,14 +118,19 @@ export const ERD_DIFF_TINT_ALPHA = "24";
 /** A status that marks something, or ``null`` for unchanged and for one version. */
 // how Diff paints the ERD — the chosen variant "2 + 3": the body is neutral (grey frame,
 // grey zebra), the filter's gear shift chooses what paints the headers, and a halo lies under every table that changed.
-export type ErdPaintSource = "domain" | "kind" | "change";
+export type ErdPaintSource = "domain" | "kind" | "resource" | "change";
 let paintSource: ErdPaintSource = "change";
-let kindColours: Readonly<Record<string, string>> = {};
-/** what paints the headers now, and each kind's colour when kinds do; the canvas sets it before it draws. */
+let paintColours: Readonly<Record<string, string>> = {};
+/**
+ * what paints the headers now, and the colours when kinds or resources do — by kind word, or by resource id; the
+ * canvas sets it before it draws.
+ */
 export function setErdPaint(source: ErdPaintSource, colours: Readonly<Record<string, string>>): void {
   paintSource = source;
-  kindColours = colours;
+  paintColours = colours;
 }
+/** The grey of a table that the painting section says nothing of: a kind it does not know, a table with no resource. */
+const UNPAINTED = "#64748b";
 const paintByChange = () => paintSource === "change";
 /** kinds' colours when they paint — mid tones of the whole wheel, like the domains' own. */
 export const ERD_KIND_PAINT_PALETTE = ["#3b82f6", "#f97316", "#10b981", "#a855f7", "#ec4899", "#14b8a6", "#eab308", "#6366f1"];
@@ -200,6 +205,13 @@ export type ErdGraphPayload = {
   groups?: ErdGroup[];
   /** Each table's rows a collapse hides and whether it is collapsed (spec 043); absent, every table is whole with no control. */
   folds?: ReadonlyMap<string, ErdFold>;
+  /**
+   * Boundary (spec 061): the tables of each resource inside one rounded contour headed by the resource's name, the
+   * specialization containers of those tables nested in it. Absent or off, no contour, and the text is today's.
+   */
+  boundary?: boolean;
+  /** Resource id → its name, for the contour's header. */
+  resource_labels?: Readonly<Record<string, string>>;
 };
 
 /**
@@ -474,7 +486,12 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     const glance = inDiff ? erdGlance(nd) : "unchanged";
     const quietHead = inDiff && paintByChange() && glance === "unchanged";
     const changeHead = inDiff && paintByChange() && glance !== "unchanged" ? ERD_DIFF_COLOUR[glance] : null;
-    const base = paintSource === "kind" ? (kindColours[nd.entity_kind?.trim() || "unknown"] ?? "#64748b") : domainColour;
+    const base =
+      paintSource === "kind"
+        ? (paintColours[nd.entity_kind?.trim() || "unknown"] ?? UNPAINTED)
+        : paintSource === "resource"
+          ? (paintColours[nd.resource_id ?? ""] ?? UNPAINTED)
+          : domainColour;
     // the header's fill, the frame and the zebra, as the painting asks. Where the filter chooses what
     // paints, the header takes that section's colour alone — a changed table's header too, when domains or kinds
     // paint; its change is then told by its frame, its sign, its rows and its halo.
@@ -573,12 +590,12 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   };
 
   const inDiffDrawing = (entities ?? []).some((entity) => entity.diff !== undefined);
-  for (const group of groups) {
+  const groupSource = (group: ErdGroup): string[] => {
     const members = group.members
       .map((id) => entityById.get(id))
       .filter((nd): nd is ErdEntity => nd !== undefined);
-    if (members.length < 2) continue;
-    lines.push(
+    if (members.length < 2) return [];
+    return [
       `  subgraph "cluster_${group.group_id}" {`,
       `    label="${escHtml(group.label)}";`,
       // See-through but half a tone darker than the canvas, with an outline one point wider than before.
@@ -589,11 +606,42 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
       '    margin=12;',
       ...members.map((nd) => nodeSource(nd)),
       "  }",
+    ];
+  };
+
+  // Boundary (spec 061): one contour per resource, by resource id. A specialization container goes inside its
+  // resource's contour when all its tables are stored there — always so in a graph from AOA, which keeps every link
+  // inside one resource; a table is declared once, in its innermost cluster.
+  const resourceOf = (id: string) => entityById.get(id)?.resource_id ?? null;
+  const resourceIds = data.boundary ? [...new Set((entities ?? []).flatMap((nd) => (nd.resource_id ? [nd.resource_id] : [])))].sort() : [];
+  const groupHome = (group: ErdGroup): string | null => {
+    const homes = new Set(group.members.filter((id) => entityById.has(id)).map(resourceOf));
+    return homes.size === 1 ? [...homes][0]! : null;
+  };
+  resourceIds.forEach((resource, index) => {
+    const colour = paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : "#94a3b8";
+    lines.push(
+      `  subgraph "cluster_resource_${index}" {`,
+      `    label=<<B>${escHtml(data.resource_labels?.[resource] ?? resource)}</B>>;`,
+      '    style="rounded";',
+      `    color="${colour}";`,
+      `    fontcolor="${paintSource === "resource" ? colour : "#475569"}";`,
+      "    penwidth=2;",
+      "    fontsize=12;",
+      "    margin=20;",
+      ...groups.filter((group) => groupHome(group) === resource).flatMap(groupSource),
+      ...(entities ?? []).filter((nd) => nd.resource_id === resource && !grouped.has(nd.id)).map((nd) => nodeSource(nd)),
+      "  }",
     );
+  });
+  const inContour = new Set(resourceIds);
+  for (const group of groups) {
+    if (inContour.has(groupHome(group) ?? "")) continue;
+    lines.push(...groupSource(group));
   }
 
   for (const nd of entities ?? []) {
-    if (grouped.has(nd.id)) continue;
+    if (grouped.has(nd.id) || inContour.has(nd.resource_id ?? "")) continue;
     lines.push(nodeSource(nd));
   }
 

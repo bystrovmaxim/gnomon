@@ -142,6 +142,34 @@ describe("ErdFilterPanel", () => {
     expect(onToggleChange).toHaveBeenCalledWith("added");
   });
 
+  describe("the Resources section (spec 061)", () => {
+    const resources = [row("shop.BillingDatabase", "BillingDatabase")];
+    const renderWith = (resourceRows: ErdFilterRow[], onToggleResource = vi.fn(), onPaint = vi.fn()) => {
+      render(<ErdFilterPanel domainRows={domains} kindRows={kinds} onToggleDomain={() => undefined} onToggleKind={() => undefined} resourceRows={resourceRows} onToggleResource={onToggleResource} paint={{ source: "domains", onPaint }} />);
+      return { onToggleResource, onPaint };
+    };
+
+    it("stands with one resource and toggles it through its callback", () => {
+      const { onToggleResource } = renderWith(resources);
+      fireEvent.click(header("Resources"));
+      fireEvent.click(screen.getByRole("button", { name: "BillingDatabase" }));
+      expect(onToggleResource).toHaveBeenCalledWith("shop.BillingDatabase");
+    });
+
+    it("is absent for a graph older than 1.6", () => {
+      renderWith([]);
+      expect(screen.queryByRole("button", { name: "Resources" })).toBeNull();
+    });
+
+    it("takes its own point on the gear shift, after Kinds", () => {
+      const { onPaint } = renderWith(resources);
+      const points = screen.getAllByRole("radio");
+      expect(points.map((point) => point.getAttribute("aria-label"))).toEqual(["Paint by Domains", "Paint by Kinds", "Paint by Resources"]);
+      fireEvent.click(points[2]!);
+      expect(onPaint).toHaveBeenCalledWith("resources");
+    });
+  });
+
   it("puts the gear shift at its foot, one point per section in their order, below the panel's one divider", () => {
     const onPaint = vi.fn();
     render(

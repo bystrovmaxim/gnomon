@@ -76,7 +76,11 @@ export function mergeErdSlices(older: ErdSlice | undefined, newer: ErdSlice | un
   const entities = [
     ...(newer?.entities ?? []).map((entity) => {
       const was = before.get(entity.id);
-      return was ? { ...entity, ...place.get(was), fields: mergedFields(was.fields ?? [], entity.fields ?? []) } : entity;
+      if (!was) return entity;
+      const merged = { ...entity, ...place.get(was), fields: mergedFields(was.fields ?? [], entity.fields ?? []) };
+      // Stored elsewhere in A (spec 061): only when both versions name a resource — a resource that appears where A had
+      // none, as in every 1.5 → 1.6 pair, is not a move.
+      return was.resource_id && entity.resource_id && was.resource_id !== entity.resource_id ? { ...merged, previous_resource_id: was.resource_id } : merged;
     }),
     ...(older?.entities ?? []).filter((entity) => !now.has(entity.id)).map((entity) => ({ ...entity, ...place.get(entity), fields: mergedFields(entity.fields ?? [], []) })),
   ];
@@ -139,7 +143,8 @@ export function markErd(slice: ErdSlice, compared: CompareResult): ErdSlice {
       ...entity,
       // A table that stands in another domain changed, though its own properties did not (spec 043). A table changed only
       // through its rows — a lifecycle among them — keeps "unchanged": its rows carry the change, and it is drawn marked.
-      diff: compared.nodes[entity.id] ?? (moved.has(entity.id) ? "changed" : "unchanged"),
+      // A table stored by another resource than in A changed too, by the same rule (spec 061, FR-014).
+      diff: compared.nodes[entity.id] ?? (moved.has(entity.id) || entity.previous_resource_id ? "changed" : "unchanged"),
       movedDomain: !compared.nodes[entity.id] && moved.has(entity.id),
       fields,
     };
@@ -242,7 +247,7 @@ export function erdPortable(drawn: () => ErdDrawing): Portable {
 export function unmarked<T extends { entities: ErdEntity[]; relations: ErdRelation[] }>(data: T): T {
   return {
     ...data,
-    entities: data.entities.map(({ diff: _diff, ...entity }) => ({ ...entity, fields: (entity.fields ?? []).map(({ diff: _field, previous_type: _type, lifecycle_parts: _parts, ...field }) => field) })),
+    entities: data.entities.map(({ diff: _diff, previous_resource_id: _resource, ...entity }) => ({ ...entity, fields: (entity.fields ?? []).map(({ diff: _field, previous_type: _type, lifecycle_parts: _parts, ...field }) => field) })),
     relations: data.relations.map(({ diff: _diff, previous_target: _target, ...relation }) => relation),
   };
 }

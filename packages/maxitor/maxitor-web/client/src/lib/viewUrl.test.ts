@@ -23,6 +23,14 @@ describe("the view in the address (spec 038)", () => {
     expect(paramsToView(new URLSearchParams("")).settings).toEqual({});
   });
 
+  it("carries the resources switched off, Boundary and the paint by resource (spec 061)", () => {
+    const settings = { disabled_resources: ["shop.BillingDatabase"], boundary: false, paint: "resources" };
+    const params = viewToParams(settings);
+    expect(params).toEqual({ off_resources: "shop.BillingDatabase", boundary: "0", paint: "resources" });
+    expect(paramsToView(new URLSearchParams(params))).toEqual({ settings });
+    expect(paramsToView(new URLSearchParams("paint=domains")).settings).not.toHaveProperty("disabled_resources");
+  });
+
   it("carries the map's filters", () => {
     const settings = { disabled_node_types: ["Action", "Field"], disabled_domains: ["a.Orders"] };
     const params = viewToParams(settings);

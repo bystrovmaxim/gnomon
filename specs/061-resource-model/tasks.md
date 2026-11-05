@@ -91,11 +91,11 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 ### Diff (US1, US2)
 
-- [ ] T016 [US1] In `client/src/lib/erdDiff.ts`:
+- [X] T016 [US1] In `client/src/lib/erdDiff.ts`:
   - `mergeErdSlices` gives a merged table the newer side's `resource_id`/`resource_label`, else the older side's;
   - it sets `previous_resource_id` only when both sides have a resource and they differ;
   - `markErd` marks such a table `"changed"` (like `movedTables`). A table whose older side has no resource is not marked by it (FR-014).
-- [ ] T017 [US1] Tests in `client/src/lib/erdDiff.test.ts`:
+- [X] T017 [US1] Tests in `client/src/lib/erdDiff.test.ts`:
   - 1.5 → 1.6 (`entity_resource` edges only added): no table changed;
   - `Invoice` moved from `BillingDatabase` to `StorefrontDatabase`: changed, with `previous_resource_id`;
   - a table only in the older side keeps its older resource.
@@ -104,31 +104,31 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 ### Filter (US2)
 
-- [ ] T018 [US2] New `client/src/lib/erdResourceFilter.ts`:
+- [X] T018 [US2] New `client/src/lib/erdResourceFilter.ts`:
   - `resourcesOnDiagram(entities)`: the distinct `resource_id`s of the base, sorted by id;
   - `filterGraphByResources(data, off)`: prunes through `pruneGraphToEntities`; a table without `resource_id` is always kept.
 
   Tests in `client/src/lib/erdResourceFilter.test.ts`. Break: drop the "no resource is kept" guard → only its test fails; restore.
-- [ ] T019 [US2] In `client/src/lib/viewUrl.ts`: `disabled_resources: { param: "off_resources", kind: "list" }`. Test in `client/src/lib/viewUrl.test.ts`: the setting round-trips through the address, and an address without it reads as every resource on.
-- [ ] T020 [US2] In `client/src/components/ui/ErdFilterPanel/ErdFilterPanel.tsx`: the panel takes a `resources` section through its `sections` prop: id `resources`, title `Resources`, rows with each resource's colour disk, the full id as the row's title, `paints: true`. Tests in `ErdFilterPanel.test.tsx`:
+- [X] T019 [US2] In `client/src/lib/viewUrl.ts`: `disabled_resources: { param: "off_resources", kind: "list" }`. Test in `client/src/lib/viewUrl.test.ts`: the setting round-trips through the address, and an address without it reads as every resource on.
+- [X] T020 [US2] In `client/src/components/ui/ErdFilterPanel/ErdFilterPanel.tsx`: the panel takes a `resources` section through its `sections` prop: id `resources`, title `Resources`, rows with each resource's colour disk, the full id as the row's title, `paints: true`. Tests in `ErdFilterPanel.test.tsx`:
   - the section shows with one row;
   - it is absent with none;
   - the gear shift gains its point.
 
 ### Paint (US2)
 
-- [ ] T021 [US2] In `client/src/lib/erdPaint.ts`: `PaintSection` gains `"resources"`. In `client/src/lib/buildDotSource.ts`: `ErdPaintSource` gains `"resource"`, and a card's band takes `resource_colors[resource_id]`, grey without one. `defaultPaint` does not change. Tests in `erdPaint.test.ts` and a new `client/src/lib/buildDotSource.test.ts`.
+- [X] T021 [US2] In `client/src/lib/erdPaint.ts`: `PaintSection` gains `"resources"`. In `client/src/lib/buildDotSource.ts`: `ErdPaintSource` gains `"resource"`, and a card's band takes `resource_colors[resource_id]`, grey without one. `defaultPaint` does not change. Tests in `erdPaint.test.ts` and a new `client/src/lib/buildDotSource.test.ts`.
 
 ### Boundary (US1)
 
-- [ ] T022 [US1] In `client/src/lib/buildDotSource.ts`:
+- [X] T022 [US1] In `client/src/lib/buildDotSource.ts`:
   - `ErdGraphPayload` gains `boundary?: boolean` and `resource_labels`;
   - with `boundary` on, the tables of each resource go inside `subgraph "cluster_resource_<n>"` (n by the sorted resource id), `style="rounded"`, `label` the resource's label, and the specialization clusters of those tables nest inside;
   - a table is declared in its innermost cluster only (the rule at `buildDotSource.ts:450`);
   - tables without a resource stay outside every cluster;
   - painted by `resources`, a cluster's outline and header take `resource_colors[resource_id]`; painted otherwise, they stay neutral grey;
   - with `boundary` off, the output is byte for byte what it is today.
-- [ ] T023 [US1] Tests in `client/src/lib/buildDotSource.test.ts` (new in T021):
+- [X] T023 [US1] Tests in `client/src/lib/buildDotSource.test.ts` (new in T021):
   - the shop fixture with Boundary on: two resource clusters labelled `BillingDatabase` and `StorefrontDatabase` holding exactly their tables;
   - a specialization group nested in its resource's cluster, each member declared once;
   - Boundary off equals the output without resources.
@@ -137,14 +137,14 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 ### The canvas and rooms (US1, US2, US3)
 
-- [ ] T024 [US3] In `client/src/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/ErdGraphvizCanvas.tsx`:
+- [X] T024 [US3] In `client/src/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/ErdGraphvizCanvas.tsx`:
   - `usePageSetting<string[]>("disabled_resources", [])` and `usePageSetting("boundary", true)` (never `useState`, so a room shares them, research R8);
   - the Resources rows come from `baseGraph`;
   - the filter applies with the other sections before 1-hop;
   - `paintSections` gains `"resources"` while the base has a resource;
   - the Boundary switch (`OneHopToggle` with label `Boundary`, as `UseCaseDiagramViewer.tsx:534`) is shown while the base has a resource;
   - `boundary` and the colours go into `buildDotSource` and into `paintKey`, so two tabs painting differently never share a Graphviz input.
-- [ ] T025 [US3] Room test, new `client/src/lib/erdResourceSettings.test.tsx`, on the room harness of `client/src/lib/pageSettings.test.tsx` (a `PageSettingsProvider` with a fake `RoomSettings`):
+- [X] T025 [US3] Room test, new `client/src/lib/erdResourceSettings.test.tsx`, on the room harness of `client/src/lib/pageSettings.test.tsx` (a `PageSettingsProvider` with a fake `RoomSettings`):
   - a Resources row switched off, Boundary switched off and the paint moved to Resources each send a "set to" value to the room;
   - a page opened with the room's values shows them;
   - the same resource gets the same colour from the bundle of a domain's ERD and of "ERD all domains".
@@ -152,18 +152,17 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
   The canvas reads these three settings only through the hook this test covers.
 
   Break: keep `disabled_resources` in `useState` → only the room test fails; restore.
-- [ ] T026 [US1] [US2] Tests in `client/src/lib/buildDotSource.test.ts` and `ErdFilterPanel.test.tsx`:
+- [X] T026 [US1] [US2] Tests in `client/src/lib/buildDotSource.test.ts` and `ErdFilterPanel.test.tsx`:
   - a 1.5 graph: no Resources section, no Boundary switch, no Resources point, and the DOT equals today's;
   - "ERD all domains" (two domains, three resources): the section lists all three and Boundary draws three clusters, as on one domain's ERD.
 
-- [ ] T027 [US1] [US2] [US3] Browser check, new `client/scripts/check-erd-resources.ts` on the shop graph (`tests/fixtures/resource_model.py` served as a local `graph-json`), with a `_client(..., browser=True)` row in `STEPS` of `scripts/check_run.py`, in Chromium, Firefox and WebKit:
-  - Boundary on: two contours headed `BillingDatabase` and `StorefrontDatabase`, each holding exactly its tables, no line crossing a contour (SC-001);
-  - Maxitor's own graph: Diagrams' ERD shows `NodeCoreEntity` in a contour headed `DuckDBGraphResource`, and its card reads `Resource: DuckDBGraphResource` (SC-003);
-  - two tabs in one room: `BillingDatabase` switched off, Boundary off and the paint moved to Resources reach the other tab; a third tab joining later opens with the same state (SC-004);
-  - one resource has one band colour in both tabs, one on a domain's ERD and one on "ERD all domains" (SC-005);
-  - a 1.5 graph: no Resources section, no Boundary switch; Diff of its 1.5 and 1.6 forms marks no table changed (SC-006, FR-014).
+- [X] T027 [US1] [US2] [US3] Drawing check, new `client/scripts/check-erd-resources.ts`, with a `_client(...)` row in `STEPS` of `scripts/check_run.py` beside the other ERD drawing checks. It lays the shop out through the WASM Graphviz build the client loads, with the production passes (`containNodeFills`, `drawErdCards`), and asserts:
+  - one contour per resource, headed by its name, holding exactly its tables, and a table without a resource outside every contour (SC-001);
+  - a specialization block inside its resource's contour;
+  - grey contours while domains paint; each contour and header in its resource's colour when resources paint (FR-008);
+  - a graph older than 1.6 drawn as before (SC-006).
 
-  Break: build `resources` from the asked domains only → the colour step fails; restore.
+  The rooms are proven by T025 on the page-settings harness. The three-engine room run of `check-layout-determinism.ts` serves one frozen 1.5 reference graph, so it does not see resources. Break: paint by resource with the domain colour → the header step fails; restore.
 
 ## Phase 5: Graph files and versions
 

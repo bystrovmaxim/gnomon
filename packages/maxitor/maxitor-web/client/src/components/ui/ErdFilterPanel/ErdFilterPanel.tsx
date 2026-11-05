@@ -22,6 +22,8 @@ export type ErdFilterRow = {
   absent?: boolean;
   /** What keeps a dimmed row off the screen, and the way to switch that on (spec 040, FR-028c). */
   hidden?: RowHidden;
+  /** What the row's name says on hover when the name alone may not tell it — a resource's full id (spec 061). */
+  hint?: string;
 };
 
 export type ErdFilterPanelProps = {
@@ -38,6 +40,9 @@ export type ErdFilterPanelProps = {
   /** (spec 038) in Diff, the kinds of change — Added, Removed, Changed, Unchanged. */
   changeRows?: ErdFilterRow[];
   onToggleChange?: (key: string) => void;
+  /** (spec 061) the resources that store a table of the diagram; the section stands even for one, and paints. */
+  resourceRows?: ErdFilterRow[];
+  onToggleResource?: (key: string) => void;
   /** which section paints the diagram, chosen by the gear shift at the panel's foot; absent, none. */
   paint?: { source: string; onPaint(source: string): void } | null;
   /**
@@ -124,11 +129,11 @@ const ROOM_BELOW_DESKTOP = 12 + 10 + 34 + 12;
 const ROOM_BELOW_TOUCH = 12 + 10 + 48 + 12;
 
 /** A label that is cut with an ellipsis and shows its full text in a tooltip only when it was cut. */
-function RowLabel({ text, absent = false }: { text: string; absent?: boolean }) {
+function RowLabel({ text, absent = false, hint }: { text: string; absent?: boolean; hint?: string }) {
   const ref = useRef<HTMLSpanElement | null>(null);
   const [cut, setCut] = useState(false);
   return (
-    <Tooltip title={cut ? text : ""} placement="right" disableInteractive>
+    <Tooltip title={hint ?? (cut ? text : "")} placement="right" disableInteractive>
       <Typography
         ref={ref}
         component="span"
@@ -174,7 +179,7 @@ function FilterRow({ row, onToggle, why, onWhy }: { row: ErdFilterRow; onToggle:
       }}
     >
       <Box component="img" src={row.iconSrc} width={20} height={20} alt="" sx={legendDiskImgSx} />
-      <RowLabel text={row.label} absent={row.absent} />
+      <RowLabel text={row.label} absent={row.absent} hint={row.hint} />
     </Box>
   );
   if (!row.hidden) return toggle;
@@ -247,7 +252,7 @@ function SectionHeader({
  * panel stops above the zoom toolbar and scrolls inside itself. On a narrow screen it starts as a
  * "Filter" pill; opened, it shows the sections straight away, without the word "Filter".
  */
-export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleKind, kindsTitle = "Kinds", kindsPaint = true, withDomains = true, changeRows = [], onToggleChange, paint = null, sections, onToggleRow }: ErdFilterPanelProps) {
+export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleKind, kindsTitle = "Kinds", kindsPaint = true, withDomains = true, changeRows = [], onToggleChange, resourceRows = [], onToggleResource, paint = null, sections, onToggleRow }: ErdFilterPanelProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   // The section that paints is the one open first; without a gear shift, Domains (spec 040, FR-032).
@@ -334,11 +339,13 @@ export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleK
       <CloseIcon sx={{ fontSize: 14 }} />
     </IconButton>
   ) : null;
-  // The sections in order: those the page names, or Domains, Kinds (when there is more than one) and Changes (in Diff).
-  const toggles: Record<string, (key: string) => void> = { domains: onToggleDomain, kinds: onToggleKind, changes: (key) => onToggleChange?.(key) };
+  // The sections in order: those the page names, or Domains, Kinds (when there is more than one), Resources (when there
+  // is one or more) and Changes (in Diff).
+  const toggles: Record<string, (key: string) => void> = { domains: onToggleDomain, kinds: onToggleKind, resources: (key) => onToggleResource?.(key), changes: (key) => onToggleChange?.(key) };
   const list: readonly FilterSection[] = sections ?? [
     ...(withDomains ? [{ id: "domains", title: "Domains", rows: domainRows, paints: true }] : []),
     ...(kindRows.length > 1 ? [{ id: "kinds", title: kindsTitle, rows: kindRows, paints: kindsPaint }] : []),
+    ...(resourceRows.length > 0 && onToggleResource ? [{ id: "resources", title: "Resources", rows: resourceRows, paints: true }] : []),
     ...(changeRows.length > 0 && onToggleChange ? [{ id: "changes", title: "Changes", rows: changeRows, paints: true }] : []),
   ];
   const toggleOf = (id: string) => (key: string) => (sections ? onToggleRow?.(id, key) : toggles[id]?.(key));

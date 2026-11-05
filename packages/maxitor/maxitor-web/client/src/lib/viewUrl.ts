@@ -18,6 +18,7 @@ const SETTINGS: Readonly<Record<string, { param: string; kind: Kind }>> = {
   domains: { param: "domains", kind: "list" },
   disabled_entities: { param: "off_entities", kind: "list" },
   disabled_kinds: { param: "off_kinds", kind: "list" },
+  disabled_resources: { param: "off_resources", kind: "list" },
   disabled_changes: { param: "off_changes", kind: "list" },
   disabled_node_types: { param: "off_types", kind: "list" },
   disabled_domains: { param: "off_domains", kind: "list" },

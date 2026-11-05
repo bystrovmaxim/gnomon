@@ -98,3 +98,14 @@ describe("the choice of what paints", () => {
     expect(paintSource(["domains"], "changes")).toBe("domains");
   });
 });
+
+describe("the paint by resource (spec 061)", () => {
+  it("is offered when the diagram has a resource, and kept when chosen", () => {
+    expect(paintSource(["domains", "resources"], "resources")).toBe("resources");
+    expect(paintSource(["domains"], "resources")).toBe("domains");
+  });
+
+  it("does not change what a page starts with", () => {
+    expect([defaultPaint(false), defaultPaint(true)]).toEqual(["domains", "changes"]);
+  });
+});
