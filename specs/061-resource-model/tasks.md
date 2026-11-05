@@ -70,13 +70,13 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 **Independent test**: `cd packages/maxitor/maxitor-web/client && npx vitest run src/lib/erdCard`.
 
-- [ ] T014 [US4] In `client/src/lib/erdCard.ts` `erdSubject`, a table's `detail`:
+- [X] T014 [US4] In `client/src/lib/erdCard.ts` `erdSubject`, a table's `detail`:
   - `Resource: <resource_label>` when `resource_id` is set;
   - `Resource: <previous label> → <resource_label>` when `previous_resource_id` is also set;
   - `""` without a resource.
 
   The previous label comes from the bundle's `resource_labels`, passed in by the canvas.
-- [ ] T015 [US4] Tests in `client/src/lib/erdCard.test.ts`:
+- [X] T015 [US4] Tests in `client/src/lib/erdCard.test.ts`:
   - `Invoice` reads `Resource: BillingDatabase`;
   - a table without a resource has an empty detail;
   - a moved table reads both names.

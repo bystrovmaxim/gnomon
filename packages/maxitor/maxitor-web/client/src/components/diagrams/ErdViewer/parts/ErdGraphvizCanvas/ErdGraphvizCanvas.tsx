@@ -337,7 +337,7 @@ export function ErdGraphvizCanvas({
       const stage = viewportRef.current?.getBoundingClientRect();
       const { entities, relations } = drawnTables();
       const named = fromAfar(ref, elements.at(-1), entities, touch);
-      const facts = panner ? erdSubject(named, entities, panner, relations) : null;
+      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels) : null;
       const [outer, inner] = [elements[0], named === ref ? elements.at(-1) : elements[0]];
       if (!facts || !stage || !outer || !inner) return null;
       // A line's box can span the screen: the card stands by its middle.
@@ -354,7 +354,7 @@ export function ErdGraphvizCanvas({
       ];
       return { ...facts, at: cardBeside(stage, beside, level), around: { beside, level, avoid }, project: projection };
     },
-    [drawnTables, pannerRef, projection, viewportRef],
+    [bundle.resource_labels, drawnTables, pannerRef, projection, viewportRef],
   );
   const hoverCards = useMemo<HoverCards>(
     () => ({

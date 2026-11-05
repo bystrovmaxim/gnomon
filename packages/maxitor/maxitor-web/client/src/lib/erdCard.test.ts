@@ -127,3 +127,21 @@ describe("litBy", () => {
     expect(litBy({ kind: "edge", id: "re0" }, tables, lines)).toEqual({ tables: ["a", "b"], lines: [0] });
   });
 });
+
+describe("a table's card names its resource (spec 061)", () => {
+  const invoice: ErdEntity = { id: "shop.Invoice", label: "Invoice", fields: [], resource_id: "shop.BillingDatabase", resource_label: "BillingDatabase" };
+  const labels = { "shop.BillingDatabase": "BillingDatabase", "shop.StorefrontDatabase": "StorefrontDatabase" };
+
+  it("reads the resource under the table's name", () => {
+    expect(erdSubject({ kind: "table", id: "shop.Invoice" }, [invoice], root, [], labels)?.detail).toBe("Resource: BillingDatabase");
+  });
+
+  it("has no resource line for a table of a graph older than 1.6", () => {
+    expect(erdSubject({ kind: "table", id: "a.Lot" }, entities, root, [], labels)?.detail).toBe("");
+  });
+
+  it("in Diff names where a moved table was stored before", () => {
+    const moved: ErdEntity = { ...invoice, resource_id: "shop.StorefrontDatabase", resource_label: "StorefrontDatabase", previous_resource_id: "shop.BillingDatabase" };
+    expect(erdSubject({ kind: "table", id: "shop.Invoice" }, [moved], root, [], labels)?.detail).toBe("Resource: BillingDatabase → StorefrontDatabase");
+  });
+});
