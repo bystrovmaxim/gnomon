@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "maxitor",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "--extra", "dev", "uvicorn", "maxitor.web.api.app:app", "--host", "127.0.0.1", "--port", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "maxitor-client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "packages/maxitor/maxitor-web/client"],
+      "port": 5173
+    }
+  ]
+}
