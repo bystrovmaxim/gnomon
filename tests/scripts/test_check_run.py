@@ -159,11 +159,12 @@ def test_only_browser_includes_the_client_build_it_needs() -> None:
     assert "Maxitor client: the same layout in three engines" in names
 
 
-def test_only_group_packaging_keeps_the_build() -> None:
-    """The packaging selector keeps the one build, Maxitor's."""
+def test_only_group_packaging_keeps_the_build_and_its_smoke() -> None:
+    """The packaging selector keeps Maxitor's build and the install smoke that reads it."""
     runner = _runner()
-    names = _names(runner._select(runner.STEPS, "ci", False, "packaging", None))
-    assert names == {"Build wheel/sdist (packages/maxitor)"}
+    rows = {step.name: step for step in runner._select(runner.STEPS, "ci", False, "packaging", None)}
+    assert set(rows) == {"Build wheel/sdist (packages/maxitor)", "Packaging wheel install smoke"}
+    assert rows["Packaging wheel install smoke"].after == ("Build wheel/sdist (packages/maxitor)",)
 
 
 def _graph_rows(runner, graph_file: Path) -> tuple:
