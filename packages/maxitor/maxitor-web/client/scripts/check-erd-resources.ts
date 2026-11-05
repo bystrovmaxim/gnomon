@@ -104,6 +104,14 @@ check("each contour is headed by its resource's name", billing?.label === "Billi
 check("each contour holds exactly its resource's tables", ["shop.Invoice", "shop.CardPayment", "shop.BankPayment"].every((id) => inside(nodeBox(svg, id), billing!.box)) && ["shop.Order", "shop.OrderLine"].every((id) => inside(nodeBox(svg, id), storefront!.box)));
 const gap = (one: Box, other: Box) => Math.max(other.left - one.right, one.left - other.right, other.top - one.bottom, one.top - other.bottom);
 check("the contours stand apart, not edge to edge", billing !== undefined && storefront !== undefined && gap(billing.box, storefront.box) >= 36, `gap ${billing && storefront ? gap(billing.box, storefront.box).toFixed(1) : "?"} pt`);
+const titleOf = (markup: string, name: string) => {
+  const start = markup.indexOf(`<title>${name}</title>`);
+  const body = markup.slice(start, markup.indexOf("</g>", start));
+  const text = /<text[^>]* y="([-\d.]+)"[^>]* font-size="([\d.]+)"/.exec(body);
+  return { y: Number(text?.[1]), size: Number(text?.[2]) };
+};
+const billingTitle = titleOf(svg, "cluster_resource_0");
+check("a contour's name is larger than a table's and clear of its top border", billingTitle.size >= 18 && billing !== undefined && billingTitle.y - billing.box.top >= 24, `size ${billingTitle.size}, ${billing ? (billingTitle.y - billing.box.top).toFixed(1) : "?"} pt below the border`);
 check("a table of no resource stands outside every contour", ![billing, storefront].some((cluster) => cluster && inside(nodeBox(svg, "shop.Legacy"), cluster.box)));
 const block = clusters.get("cluster_shop.Invoice:payment");
 check("a specialization block stands inside its resource's contour", block !== undefined && inside(block.box, billing!.box));

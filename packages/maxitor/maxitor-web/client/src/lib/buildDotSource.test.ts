@@ -41,8 +41,8 @@ describe("Boundary: one contour per resource (spec 061)", () => {
   it("draws one rounded contour per resource, headed by its name and holding exactly its tables", () => {
     const dot = buildDotSource(shop(true), "gv-dot-lr");
     expect(clusters(dot)).toEqual({ cluster_resource_0: ["shop.Invoice"], cluster_resource_1: ["shop.Order", "shop.OrderLine"] });
-    expect(dot).toContain("label=<<B>BillingDatabase</B>>;");
-    expect(dot).toContain("label=<<B>StorefrontDatabase</B>>;");
+    expect(dot).toContain('label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>BillingDatabase</B></TD></TR></TABLE>>;');
+    expect(dot).toContain('label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>StorefrontDatabase</B></TD></TR></TABLE>>;');
   });
 
   it("keeps each contour apart from the next inside an invisible cluster", () => {
