@@ -230,6 +230,13 @@ STEPS: tuple[Step, ...] = (
     ),
     _after_fix("No secrets in tracked files", "uv run --extra dev python scripts/check_no_secrets.py", "static"),
     *(_build(package) for package in PACKAGES),
+    Step(
+        "Packaging wheel install smoke",
+        "uv run --extra dev pytest tests/packaging -v",
+        "packaging",
+        after=tuple(f"Build wheel/sdist ({package})" for package in PACKAGES),
+        home=CI,
+    ),
     _after_fix("Vulture dead code", "uv run --extra dev task dead", "static"),
     *(
         Step(
