@@ -9,7 +9,16 @@ A graph of 1.6 gives every entity one edge to the resource that stores it; DuckD
 from __future__ import annotations
 
 from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
-from tests.fixtures.resource_model import BILLING, INVOICE, ORDER, ORDER_LINE, STOREFRONT, resource_model_graph, resource_model_graph_1_5
+
+from tests.fixtures.resource_model import (
+    BILLING,
+    INVOICE,
+    ORDER,
+    ORDER_LINE,
+    STOREFRONT,
+    resource_model_graph,
+    resource_model_graph_1_5,
+)
 
 
 def test_a_graph_of_1_6_keeps_each_entity_and_its_resource() -> None:

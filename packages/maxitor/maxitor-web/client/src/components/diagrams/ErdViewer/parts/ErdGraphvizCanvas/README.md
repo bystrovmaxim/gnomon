@@ -24,7 +24,7 @@ From protocol 1.6 every table carries `resource_id`, and the bundle carries each
 - paints by resource when the gear shift says so (`setErdPaint("resource", resource_colors)`);
 - with **Boundary** on, hands `buildDotSource` the `boundary` flag: each resource's tables go into one `cluster_resource_<n>` (n by sorted resource id), rounded, headed by the resource's name at 15 pt — a little larger than a table's name — with 10 pt of room round it, grey unless resources paint, inside an invisible `_room` cluster with a 36 pt margin that keeps it apart from the next contour. A specialization block whose tables are all stored by one resource nests inside that contour, and a table is declared once, in its innermost cluster. Off, the DOT is today's text.
 
-The resources switched off and Boundary come from `useErdResourceSettings` (`@/lib/erdResourceSettings`), page settings a room shares. A fit takes the contours into account, so a header is never cut at the screen's edge. `scripts/check-erd-resources.ts` checks the drawing on the real WASM build.
+The resources switched off and Boundary come from `useErdResourceSettings` (`@/lib/erdResourceSettings`), page settings a room shares. A fit still measures only the tables and lines, which every engine draws alike — a contour's name is text, measured a little differently by each — and with Boundary on it keeps a fixed 48 px margin, so a contour and its name are never cut at the screen's edge. `scripts/check-erd-resources.ts` checks the drawing on the real WASM build.
 
 ## A card's fills follow its contour
 

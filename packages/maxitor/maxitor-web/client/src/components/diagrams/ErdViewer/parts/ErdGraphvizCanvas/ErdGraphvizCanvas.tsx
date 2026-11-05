@@ -173,6 +173,9 @@ const LAYOUT_TOOLS: {
 ];
 
 
+/** The room a fit keeps round the tables for the contours of resources and their names, in screen pixels. */
+const RESOURCE_CONTOUR_FIT_MARGIN_PX = 48;
+
 export function ErdGraphvizCanvas({
   bundle,
   bundleVersion,
@@ -228,8 +231,10 @@ export function ErdGraphvizCanvas({
   const disabledKinds = useMemo(() => new Set(disabledKindList), [disabledKindList]);
 
   const side = useHalf()?.side ?? null;
-  // The contours of resources and of specialization blocks are part of the picture a fit must show (spec 061).
-  const panZoom = useSvgPanZoom({ fitBoundsSelector: "g.graph g.node, g.graph g.edge, g.graph g.cluster" });
+  // A fit measures the tables and lines, whose boxes every engine draws alike; the contours of resources stand outside
+  // them, so with Boundary on the fit keeps a fixed margin for them instead of measuring their text (spec 061).
+  const contoured = boundary && Object.keys(bundle.resource_colors).length > 0;
+  const panZoom = useSvgPanZoom(contoured ? { fitMarginPx: RESOURCE_CONTOUR_FIT_MARGIN_PX } : undefined);
   const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform } = panZoom;
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);

@@ -19,9 +19,17 @@ from maxitor.web.model.diagrams.actions.list_entities_action_schema import (
     ListEntitiesResourcesJson,
 )
 from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DUCKDB_GRAPH_CONNECTION_KEY, DuckDBGraphResource
-from tests.fixtures.resource_model import BILLING, DOMAIN, INVOICE, ORDER, STOREFRONT, resource_model_graph, resource_model_graph_1_5
 
 from aoa.action_machine.model import BaseState
+from tests.fixtures.resource_model import (
+    BILLING,
+    DOMAIN,
+    INVOICE,
+    ORDER,
+    STOREFRONT,
+    resource_model_graph,
+    resource_model_graph_1_5,
+)
 
 
 async def _answer(graph: dict[str, Any], domains: list[str]) -> ListEntitiesAction.Result:
