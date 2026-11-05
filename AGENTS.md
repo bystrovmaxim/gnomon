@@ -9,7 +9,7 @@
 
 ## Where the governing text lives
 
-`.specify/memory/constitution.md` is the binding text. It is the maintainer's: an agent writes in it only when the maintainer asks in the current turn. Until it is written, the house rules below apply.
+`.specify/memory/constitution.md` is the binding text. It is the maintainer's: an agent writes in it only when the maintainer asks in the current turn. The house rules below apply alongside it.
 
 ## House rules
 
