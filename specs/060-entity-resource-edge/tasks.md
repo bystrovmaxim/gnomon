@@ -27,7 +27,7 @@ Each phase is one commit, the phases of issue #45. After a phase only its own te
 
 ## Phase 5: Documentation
 
-- [ ] T010 `packages/open-gnomon-protocol/README.md`: badge and example `1.6`; the Version row links `graph/1.6.json`; "Vocabulary of version 1.6": edge types 41, `entity_resource` under Data; a paragraph — the edge goes from an entity to the resource that stores it, `Aggregation`, `is_dag` `true`, no properties; every `Entity` has exactly one, which a schema cannot check, so the exporter keeps it; the entity keeps its `domain` edge; the before-and-after example of the entity's edges; a row `1.6` in the versions table
+- [x] T010 `packages/open-gnomon-protocol/README.md`: badge and example `1.6`; the Version row links `graph/1.6.json`; "Vocabulary of version 1.6": edge types 41, `entity_resource` under Data; a paragraph — the edge goes from an entity to the resource that stores it, `Aggregation`, `is_dag` `true`, no properties; every `Entity` has exactly one, which a schema cannot check, so the exporter keeps it; the entity keeps its `domain` edge; the before-and-after example of the entity's edges; a row `1.6` in the versions table
 
 ## Phase 6: Changelog
 
