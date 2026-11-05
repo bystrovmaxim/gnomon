@@ -1,0 +1,49 @@
+name: Publish to PyPI
+
+# A tag maxitor-v<version> publishes that version of maxitor. PyPI trusts this workflow of this repository
+# (a trusted publisher), so no token is kept here: the job proves who it is with GitHub's OIDC token.
+on:
+  push:
+    tags:
+      - "maxitor-v*"
+  workflow_dispatch:
+
+jobs:
+  publish-maxitor:
+    name: Publish maxitor
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: astral-sh/setup-uv@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # The wheel carries the built client, so the client is built first, into the folder the wheel packs.
+      - name: Build the client
+        working-directory: packages/maxitor/maxitor-web/client
+        run: |
+          npm ci
+          npx vite build --base=/ --outDir ../maxitor/web/static --emptyOutDir
+
+      - name: The tag names the version being built
+        if: startsWith(github.ref, 'refs/tags/maxitor-v')
+        run: |
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('packages/maxitor/pyproject.toml', 'rb'))['project']['version'])")
+          if [ "refs/tags/maxitor-v$version" != "$GITHUB_REF" ]; then
+            echo "The tag $GITHUB_REF does not name packages/maxitor at $version"
+            exit 1
+          fi
+
+      - name: Build
+        run: uv build --package maxitor --out-dir packages/maxitor/dist
+
+      - name: Publish
+        run: uv publish --trusted-publishing always packages/maxitor/dist/*
