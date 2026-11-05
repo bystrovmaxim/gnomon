@@ -1,5 +1,12 @@
 <!-- Sync Impact Report
-  Version change: template (no version) → 1.0.0
+  Version change: 1.0.0 → 1.1.0 (MINOR: a new section with two new rules).
+  Added section: Pull requests — rule 69 (the maintainer is the assignee of
+    every pull request) and rule 70 (automatic CI fixing is always on), both
+    dictated by the maintainer.
+  Templates: none need an update; plan-template's Constitution Check reads the
+    constitution at run time.
+
+  Version 1.0.0: template (no version) → 1.0.0
   Source: the constitution of bystrovmaxim/gameoffer, version 9.2.0, taken whole
     at the maintainer's instruction and written in English.
   Differences from the source, all at the maintainer's instruction:
@@ -782,6 +789,22 @@ an ordinary table.
     Check: `gh pr checks <number>` shows all checks green,
     `gh pr view <number> --json mergeStateStatus` shows `CLEAN`.
 
+## Pull requests
+
+69. **A pull request is assigned to the maintainer.** Every pull request MUST be
+    opened with the maintainer (`bystrovmaxim`) as its assignee, in the same
+    command that opens it (`gh pr create --assignee bystrovmaxim`). A pull
+    request without an assignee drops out of the maintainer's list of work.
+    Check: `gh pr view <number> --json assignees` names the maintainer.
+
+70. **Automatic CI fixing is always on.** Right after a pull request is opened,
+    the executor that opened it MUST turn on automatic CI fixing (Auto-fix) for
+    it, so that a failed check, a merge conflict or a review comment wakes the
+    executor and is fixed without waiting to be noticed. It is not asked about
+    and not left off: the maintainer turned it on once for every pull request.
+    Automatic fixing never merges: rule 68 still decides the merge.
+    Check: the pull request's CI monitor shows Auto-fix on.
+
 ## Governance
 
 - The constitution stands above all other practices. In a conflict between a
@@ -815,4 +838,4 @@ an ordinary table.
 - The sources of truth about the data structure are the constitution, `specs/`
   and `schema/`. There are no others.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-05
+**Version**: 1.1.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-05
