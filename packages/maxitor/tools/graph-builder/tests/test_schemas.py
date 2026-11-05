@@ -288,3 +288,51 @@ def test_the_words_of_1_5_pass_and_1_4_does_not_know_them() -> None:
     document = _entity_key_document()
     assert list(Draft202012Validator(json.loads(PROTOCOL_1_5.read_text(encoding="utf-8"))).iter_errors(document)) == []
     assert _cache_errors({**document, "schema_version": "1.4"})
+
+
+PROTOCOL_1_6 = Path(__file__).parents[4] / "open-gnomon-protocol" / "graph" / "1.6.json"
+
+
+def _resource_edge(**changes: Any) -> dict[str, Any]:
+    """An ``entity_resource`` edge of the 1.6 sample, with ``changes`` applied."""
+    edge = next(edge for edge in _sample("1.6")["edges"] if edge["type"] == "entity_resource")
+    return {**edge, **changes}
+
+
+def _errors_of_edge(version: str, edge: dict[str, Any]) -> list[Any]:
+    """The errors of ``edge`` alone, put in place of the 1.6 sample's first resource edge and checked against the protocol's file of ``version``."""
+    document = _sample("1.6")
+    document["schema_version"] = version
+    first = next(index for index, row in enumerate(document["edges"]) if row["type"] == "entity_resource")
+    document["edges"][first] = edge
+    schema = json.loads((PROTOCOL_1_6.parent / f"{version}.json").read_text(encoding="utf-8"))
+    return [error for error in Draft202012Validator(schema).iter_errors(document) if list(error.path)[:2] == ["edges", first]]
+
+
+def test_the_fixture_of_1_6_is_1_5_with_a_resource_for_every_entity() -> None:
+    """Every entity of the 1.6 sample has one ``entity_resource`` edge to a resource; without them it is the 1.5 sample."""
+    document = _sample("1.6")
+    check_graph(document)
+    kinds = {node["id"]: node["type"] for node in document["nodes"]}
+    resources = [edge for edge in document["edges"] if edge["type"] == "entity_resource"]
+    assert sorted(edge["source_id"] for edge in resources) == sorted(node_id for node_id, kind in kinds.items() if kind == "Entity")
+    assert {kinds[edge["target_id"]] for edge in resources} == {"Resource"}
+    older = _sample("1.5")
+    assert [edge for edge in document["edges"] if edge["type"] != "entity_resource"] == older["edges"]
+    assert document["nodes"] == older["nodes"]
+
+
+def test_the_resource_edge_passes_1_6_and_1_5_does_not_know_it() -> None:
+    """``entity_resource`` is a 1.6 word: valid in 1.6, refused by 1.5."""
+    assert _errors_of_edge("1.6", _resource_edge()) == []
+    assert _errors_of_edge("1.5", _resource_edge())
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [{"properties": {"note": "x"}}, {"relationship": "Composition"}, {"is_dag": False}],
+    ids=["a property", "another relationship", "not a DAG edge"],
+)
+def test_a_resource_edge_of_another_shape_is_refused(changes: dict[str, Any]) -> None:
+    """The edge has no properties, the relationship ``Aggregation`` and ``is_dag`` true; anything else is refused."""
+    assert _errors_of_edge("1.6", _resource_edge(**changes))

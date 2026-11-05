@@ -1,6 +1,6 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/bystrovmaxim/aoa/main/docs/assets/aoa-logo.png" alt="AOA" width="540"><br><br>
-  <img src="https://img.shields.io/badge/version-1.5-informational" alt="Version 1.5">
+  <img src="https://img.shields.io/badge/version-1.6-informational" alt="Version 1.6">
   <img src="https://img.shields.io/badge/status-stable-brightgreen" alt="Stable">
   <a href="https://json-schema.org/draft/2020-12"><img src="https://img.shields.io/badge/JSON_Schema-2020--12-blue" alt="JSON Schema 2020-12"></a>
   <a href="https://github.com/bystrovmaxim/gnomon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
@@ -27,7 +27,7 @@ The Open Gnomon Protocol makes the model a first-class artifact:
 
 ```json
 {
-  "schema_version": "1.5",
+  "schema_version": "1.6",
   "nodes": [
     {"id": "shop.PlaceOrder", "type": "Action", "label": "Place order",
      "properties": {"description": "Place a customer order."}},
@@ -54,7 +54,7 @@ edges[id=aoa.demo.model.telemetry_pipeline.telemetry_pipeline_domain.TelemetryPi
 
 | | |
 |---|---|
-| **Version** | `1.5` — [graph/1.5.json](graph/1.5.json) |
+| **Version** | `1.6` — [graph/1.6.json](graph/1.6.json) |
 | **Status** | Stable. A published version never changes. |
 | **Normative schema** | JSON Schema 2020-12, one file per version in [graph/](graph/) |
 
@@ -81,15 +81,22 @@ One JSON object with exactly three members:
 
 A document is a graph of version *V* if and only if it declares `"schema_version": "V"` and is valid against [graph/*V*.json](graph/).
 
-### 2. Vocabulary of version 1.5
+### 2. Vocabulary of version 1.6
 
 | | Kinds |
 |---|---|
 | **Node types** (25) | Structure: `Application` `Domain` `Resource` `Role` · Behaviour: `Action` `Params` `Result` `Event` `Field` `PropertyField` `RegularAspect` `SummaryAspect` `Compensator` `AccessDecide` `Cache` `ErrorHandler` `Checker` `RequiredContext` · Data: `Entity` `EntityField` `Sensitive` · Lifecycle: `Lifecycle` `StateInitial` `StateIntermediate` `StateFinal` |
-| **Edge types** (40) | Containment: `application` `domain` `domain_event` `field` `property` `entity_field` `entity_schema` `generic:params` `generic:result` `state` `sensitive` · Behaviour: `@regular_aspect` `@summary_aspect` `@compensate` `@access_decide` `@cache_key` `@cache_read` `@cache_write` `@cache_invalidate` `@cache_entity_key` `@on_error` `@result_checker` `@check_roles` `@required_context` `@emits` · Dependencies: `@depends` `@connection` · Data: `entity_relation` `entity_reference` `entity_specialization` `entity_view` `caches` `invalidates` · Generalization: `parent_action` `parent_role` `parent_domain` `parent_entity` · Lifecycle: `lifecycle` `lifecycle_contains_state` `lifecycle_transition` |
+| **Edge types** (41) | Containment: `application` `domain` `domain_event` `field` `property` `entity_field` `entity_schema` `generic:params` `generic:result` `state` `sensitive` · Behaviour: `@regular_aspect` `@summary_aspect` `@compensate` `@access_decide` `@cache_key` `@cache_read` `@cache_write` `@cache_invalidate` `@cache_entity_key` `@on_error` `@result_checker` `@check_roles` `@required_context` `@emits` · Dependencies: `@depends` `@connection` · Data: `entity_resource` `entity_relation` `entity_reference` `entity_specialization` `entity_view` `caches` `invalidates` · Generalization: `parent_action` `parent_role` `parent_domain` `parent_entity` · Lifecycle: `lifecycle` `lifecycle_contains_state` `lifecycle_transition` |
 | **Relationships** (11) | `Access` `Aggregation` `Assignment` `Association` `Composition` `Flow` `Generalization` `Realization` `Serving` `Specialization` `Triggering` |
 
 A `Cache` node is one cache declaration of an action, with its `kind` — `key`, `read`, `write`, `invalidate` or `entity_key` — and its `description`; the action reaches it by the edge named after it (`@cache_key`, …). `caches` goes from an action to every entity type its cache write tags an entry with, `invalidates` to every entity type its cache invalidation drops.
+
+An `Entity` is stored by one resource. `entity_resource` goes from the entity to that `Resource`, as an `Aggregation` with `is_dag` `true` and no properties. Every `Entity` node MUST have exactly one `entity_resource` edge, and it MUST end at a `Resource` node. A schema checks each row on its own and cannot count rows or follow an `id` to its node, so the producer keeps this rule; a consumer may rely on it. The entity keeps its `domain` edge, written from its resource's domain, so a reader of an earlier version still finds every entity in its domain. Before `1.6` an entity's only link was its domain; from `1.6` it has one more:
+
+```json
+{"id": "shop.SalesOrderCoreEntity|domain|shop.StoreDomain", "source_id": "shop.SalesOrderCoreEntity", "target_id": "shop.StoreDomain", "type": "domain", "relationship": "Aggregation", "is_dag": true, "properties": {}}
+{"id": "shop.SalesOrderCoreEntity|entity_resource|shop.StorefrontDatabase", "source_id": "shop.SalesOrderCoreEntity", "target_id": "shop.StorefrontDatabase", "type": "entity_resource", "relationship": "Aggregation", "is_dag": true, "properties": {}}
+```
 
 An `Event` is a fact a service can publish; its fields are `Field` nodes, as for `Params` and `Result`. `@emits` goes from a method to an event it may publish. `domain_event` goes from a domain to an event of its vocabulary. A `Domain` says in `typed_events` whether it has a vocabulary at all, so a reader tells "no vocabulary" from "an empty vocabulary".
 
@@ -105,10 +112,11 @@ The 1.x vocabulary comes from [AOA](https://github.com/bystrovmaxim/aoa)'s model
 | [`1.3`](graph/1.3.json) | Events: the node type `Event`, the edge types `@emits` and `domain_event`, and `typed_events` on `Domain`. |
 | [`1.4`](graph/1.4.json) | The cache: the node type `Cache`, the edge types `@cache_key`, `@cache_read`, `@cache_write`, `@cache_invalidate`, `caches` and `invalidates`. |
 | [`1.5`](graph/1.5.json) | A cache that stores entity by entity: the `Cache` kind `entity_key` and the edge type `@cache_entity_key`. |
+| [`1.6`](graph/1.6.json) | Where an entity is stored: the edge type `entity_resource` from an `Entity` to its `Resource`, exactly one per entity. |
 
 A release of the protocol is the git tag `open-gnomon-protocol-v<version>`; its history is [CHANGELOG.md](CHANGELOG.md).
 
-- A published version MUST NOT change. A new shape is a new version and a new schema file; each schema's `$id` is its address in this folder. That address returns the schema itself, so any JSON Schema 2020-12 validator, in any language, checks a graph by fetching the schema its `$id` names — no code of the protocol's own is needed, and the protocol has none.
+- A published version MUST NOT change. A new shape is a new version and a new schema file; each schema's `$id` is the address it was published at — `1.0` to `1.5` in [AOA's repository](https://github.com/bystrovmaxim/aoa/tree/main/packages/open-gnomon-protocol/graph), from `1.6` on this folder. That address returns the schema itself, so any JSON Schema 2020-12 validator, in any language, checks a graph by fetching the schema its `$id` names — no code of the protocol's own is needed, and the protocol has none.
 - A consumer MUST check a document against the version it declares and MUST refuse a version it does not know, rather than guess. It SHOULD read every published version.
 
 ### 4. Identity

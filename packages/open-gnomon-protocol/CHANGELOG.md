@@ -2,6 +2,10 @@
 
 A version of the protocol is a schema file in [graph/](graph/) that never changes once published. A release is the git tag `open-gnomon-protocol-v<version>`.
 
+## 1.6 — 2026-11-05 22:33
+
+A document can say where each entity is stored: the edge `entity_resource` goes from an `Entity` to the `Resource` that stores it, as an `Aggregation` with `is_dag` `true` and no properties, and every entity has exactly one. A schema cannot count edges, so the producer keeps that rule. The entity keeps its `domain` edge, so a 1.5 reader still finds every entity in its domain. Nothing earlier changes, so a 1.5 document becomes a 1.6 one by changing its `schema_version` and adding the edges. The schema's `$id` is its address in this repository. Schema: [graph/1.6.json](graph/1.6.json).
+
 ## 1.5
 
 A document can say that an action caches its Result entity by entity: a `Cache` node may have the kind `entity_key` — the declaration that builds the key of one entity — and the edge `@cache_entity_key` goes from the action to it. Nothing earlier changes, so a 1.4 document becomes a 1.5 one by changing its `schema_version`. Schema: [graph/1.5.json](graph/1.5.json).
