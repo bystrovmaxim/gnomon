@@ -19,7 +19,7 @@ Each phase is one commit, the phases of issue #45. After a phase only its own te
 
 ## Phase 3: Versions
 
-- [ ] T008 `packages/open-gnomon-protocol/version.toml` 1.6.0; `packages/maxitor/tools/graph-builder/version.toml` 1.4.0; `packages/maxitor/pyproject.toml` 3.16.0 (and `uv.lock` if it records it)
+- [x] T008 `packages/open-gnomon-protocol/version.toml` 1.6.0; `packages/maxitor/tools/graph-builder/version.toml` 1.4.0; `packages/maxitor/pyproject.toml` 3.16.0 (and `uv.lock` if it records it)
 
 ## Phase 4: The closing check run
 
