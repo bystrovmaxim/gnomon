@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Maxitor has a repository of its own**, [bystrovmaxim/gnomon](https://github.com/bystrovmaxim/gnomon), with the Open Gnomon Protocol beside it. The package, its commands and its extras are unchanged; the GitHub Action of `graph-builder` is now `bystrovmaxim/gnomon/packages/maxitor/tools/graph-builder@maxitor-v<version>`, and the setup skill installs from this repository.
+
 ### Added
 
 - **A cache stored entity by entity**: Maxitor reads graphs of protocol 1.5 — the `Cache` kind `entity_key` and the edge `@cache_entity_key`. The graph builder and the comparison read 1.5 as well.
