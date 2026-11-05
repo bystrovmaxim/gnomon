@@ -166,12 +166,12 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 ## Phase 5: Graph files and versions
 
-- [ ] T028 Rebuild with `graph-builder write`, as `README.md` §"Its own graph" says:
+- [X] T028 Rebuild with `graph-builder write`, as `README.md` §"Its own graph" says:
   - `graph.json`: 1.6, with the `NodeCoreEntity` → `DuckDBGraphResource` edge;
   - `packages/maxitor/tools/repo-graph-port/graph.json`: 1.6, no entities.
 
   `specs/059-maxitor-concept/model/graph.json` stays as it is.
-- [ ] T029 Raise the versions:
+- [X] T029 Raise the versions:
   - `version.toml` 1.10.7 → 1.11.0;
   - `packages/maxitor/pyproject.toml` 3.16.0 → 3.17.0, and `uv.lock` if it records it;
   - `packages/maxitor/tools/repo-graph-port/version.toml` 1.4.3 → 1.4.4 if its graph file changed;
