@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from maxitor.web.model.diagrams.actions.list_domains_action import _LIST_DOMAINS_DISTINCT_COLORS
+from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
 from maxitor.web.model.diagrams.actions.list_node_types_action import (
     DEFAULT_NODE_TYPE_COLOR,
     fill_color_for_node_type,
@@ -266,6 +266,6 @@ class FullGraphAction(BaseAction[ParamsStub, "FullGraphAction.Result"]):
 
         payload = _build_payload_from_duckdb(
             duck,
-            _LIST_DOMAINS_DISTINCT_COLORS,
+            DOMAIN_PALETTE,
         )
         return FullGraphAction.Result(payload=payload)

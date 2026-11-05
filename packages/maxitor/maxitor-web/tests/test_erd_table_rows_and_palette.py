@@ -17,7 +17,7 @@ import gzip
 import json
 from pathlib import Path
 
-from maxitor.web.model.diagrams.actions.list_domains_action import _LIST_DOMAINS_DISTINCT_COLORS
+from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
 from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
 
@@ -47,5 +47,5 @@ def _is_grey(hex_color: str) -> bool:
 
 def test_no_domain_colour_is_grey() -> None:
     """Grey is the kinds' colour: the domain palette holds none, and slate's place is orange."""
-    assert [c for c in _LIST_DOMAINS_DISTINCT_COLORS if _is_grey(c)] == []
-    assert _LIST_DOMAINS_DISTINCT_COLORS[7] == "#f97316"
+    assert [c for c in DOMAIN_PALETTE if _is_grey(c)] == []
+    assert DOMAIN_PALETTE[7] == "#f97316"

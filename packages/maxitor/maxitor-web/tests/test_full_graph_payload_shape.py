@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Any
 
 from maxitor.web.model.diagrams.actions.full_graph_action import _build_payload_from_duckdb
-from maxitor.web.model.diagrams.actions.list_domains_action import _LIST_DOMAINS_DISTINCT_COLORS
+from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
 
 # PR-1/PR-2 slim contract — keys that must not appear in ``nodes[i].data`` / ``edges[i].data``.
 _FORBIDDEN_NODE_DATA = frozenset(
@@ -93,7 +93,7 @@ def test_build_full_graph_payload_pr1_slim_shape() -> None:
             "payload": None,
         },
     ]
-    payload = _build_payload_from_duckdb(_RowsDuck(rows), _LIST_DOMAINS_DISTINCT_COLORS)
+    payload = _build_payload_from_duckdb(_RowsDuck(rows), DOMAIN_PALETTE)
 
     assert payload["title"] == "Full graph view"
     for key in ("nodes", "edges", "legend_items", "node_type_map", "domain_color_map", "constants", "bubble_plugins"):
@@ -168,7 +168,7 @@ def test_full_graph_legend_includes_entity_field_when_duck_slug_present() -> Non
             "payload": None,
         },
     ]
-    payload = _build_payload_from_duckdb(_RowsDuck(rows), _LIST_DOMAINS_DISTINCT_COLORS)
+    payload = _build_payload_from_duckdb(_RowsDuck(rows), DOMAIN_PALETTE)
     types = {it["type"] for it in payload["legend_items"]}
     assert "Entity" in types
     assert "EntityField" in types

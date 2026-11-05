@@ -41,14 +41,14 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 **Independent test**: `uv run pytest packages/maxitor/maxitor-web/tests -k "list_entities"`.
 
-- [ ] T008 In `maxitor/web/model/diagrams/actions/list_domains_action.py`: give the palette a public name used by both actions (`DOMAIN_PALETTE`, the tuple now `_LIST_DOMAINS_DISTINCT_COLORS`), without changing its values or the domain colours.
-- [ ] T009 In `maxitor/web/model/diagrams/actions/list_entities_action.py`:
+- [X] T008 In `maxitor/web/model/diagrams/actions/list_domains_action.py`: give the palette a public name used by both actions (`DOMAIN_PALETTE`, the tuple now `_LIST_DOMAINS_DISTINCT_COLORS`), without changing its values or the domain colours.
+- [X] T009 In `maxitor/web/model/diagrams/actions/list_entities_action.py`:
   - every entity row of `_slice_payload` gains `resource_id` and `resource_label` (from `entity_resource_edges` joined to the resource node; `null` "without one", data-model.md);
-  - a new `@regular_aspect` (`build_resources_aspect`) reads the resources into `state["resources"]` and the summary aspect puts them in the Result (constitution, rule 43): the Result gains `resources`: "every resource of the graph that stores at least one entity, sorted by `id`", each `{id, label, color}`, with `color = DOMAIN_PALETTE[i % len(DOMAIN_PALETTE)]` by the row's place in that list. Not restricted to the domains asked for (research R4).
-- [ ] T010 In `maxitor/web/model/diagrams/actions/list_entities_action_schema.py`:
+  - the summary aspect reads the resources in its own body, not in a helper method (constitution, rule 43; a regular aspect would need a `result_instance` checker on its state, whose untyped decorator mypy refuses without a `type: ignore`): the Result gains `resources`: "every resource of the graph that stores at least one entity, sorted by `id`", each `{id, label, color}`, with `color = DOMAIN_PALETTE[i % len(DOMAIN_PALETTE)]` by the row's place in that list. Not restricted to the domains asked for (research R4).
+- [X] T010 In `maxitor/web/model/diagrams/actions/list_entities_action_schema.py`:
   - the entity row gains `resource_id` and `resource_label`, each `{"type": ["string", "null"]}`;
   - the result gains `resources`, an array of objects with required `id`, `label`, `color` (strings, `minLength` 1) and `additionalProperties: False` (contracts/list-entities-resources.md).
-- [ ] T011 Test `tests/test_list_entities_resources.py`:
+- [X] T011 Test `tests/test_list_entities_resources.py`:
   - on the 1.6 fixture, `Invoice` → `shop.BillingDatabase` / `BillingDatabase`;
   - `resources` is `[BillingDatabase, StorefrontDatabase]` in that order, and `SocketChannel` is not in it;
   - the colours are `DOMAIN_PALETTE[0]` and `[1]`;
@@ -57,8 +57,8 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
   - the answer passes the schema.
 
   Break: sort by label → the order test fails; build the list from the asked domains only → the "same colours" test fails; restore.
-- [ ] T012 In `client/src/api/erd.ts`, types: the entity row gains `resource_id?: string | null` and `resource_label?: string | null`; the listing gains `resources: { id: string; label: string; color: string }[]`. In `client/src/lib/buildDotSource.ts`: `ErdEntity` gains `resource_id?`, `resource_label?` and `previous_resource_id?: string | null`.
-- [ ] T013 In `client/src/lib/loadErdDomainsBundle.ts`: `ErdDomainsBundle` gains `resource_colors: Record<string, string>` and `resource_labels: Record<string, string>`.
+- [X] T012 In `client/src/api/erd.ts`, types: the entity row gains `resource_id?: string | null` and `resource_label?: string | null`; the listing gains `resources: { id: string; label: string; color: string }[]`. In `client/src/lib/buildDotSource.ts`: `ErdEntity` gains `resource_id?`, `resource_label?` and `previous_resource_id?: string | null`.
+- [X] T013 In `client/src/lib/loadErdDomainsBundle.ts`: `ErdDomainsBundle` gains `resource_colors: Record<string, string>` and `resource_labels: Record<string, string>`.
   - One: from the listing's `resources`.
   - Diff (`readErdDiffBundle`): the newer listing's rows, then the older's rows the newer lacks, as `domain_qualifier_colors` does.
 

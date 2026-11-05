@@ -24,7 +24,7 @@
 
 ## R3. What the entity listing returns
 
-**Decision**: a new regular aspect of `ListEntitiesAction` reads the resources into `state` (constitution, rule 43); every entity row gains `resource_id` and `resource_label` (both `null` when the entity has no edge); the listing gains `resources`: one row per resource that stores an entity of the graph — `id`, `label`, `color` — sorted by id.
+**Decision**: the summary aspect of `ListEntitiesAction` reads the resources in its own body (constitution, rule 43); every entity row gains `resource_id` and `resource_label` (both `null` when the entity has no edge); the listing gains `resources`: one row per resource that stores an entity of the graph — `id`, `label`, `color` — sorted by id.
 
 **Rationale**: The ERD bundle already reads the listing; the client needs, per table, its resource (filter, contour, card), and per resource its name and colour.
 

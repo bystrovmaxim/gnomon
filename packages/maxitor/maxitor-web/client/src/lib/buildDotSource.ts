@@ -54,6 +54,11 @@ export type ErdEntity = {
   values?: ErdValue[];
   /** Interchange domain qualname (for legend / filter when 1-hop adds neighbors). */
   domain_qualname?: string;
+  /** The resource that stores the table (protocol 1.6); ``null`` or absent in an older graph. */
+  resource_id?: string | null;
+  resource_label?: string | null;
+  /** In Diff: the resource A gave it, set only when A and B both give one and they differ. */
+  previous_resource_id?: string | null;
   fields?: ErdField[];
   /** In Diff: it stands in another domain than it did in A. */
   movedDomain?: boolean;

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from maxitor.web.model.diagrams.actions.full_graph_action import _build_payload_from_duckdb
-from maxitor.web.model.diagrams.actions.list_domains_action import _LIST_DOMAINS_DISTINCT_COLORS
+from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
 from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
 
 from aoa.action_machine.graph.core.edge_relationship import GENERALIZATION
@@ -77,7 +77,7 @@ def test_duckdb_parent_edge_tables_and_edges_view() -> None:
 
 def test_full_graph_payload_omits_generalization_edges() -> None:
     duck = DuckDBGraphResource.build_from_json(_sample_with_parent_edges())
-    payload = _build_payload_from_duckdb(duck, _LIST_DOMAINS_DISTINCT_COLORS)
+    payload = _build_payload_from_duckdb(duck, DOMAIN_PALETTE)
 
     assert len(payload["edges"]) == 1
     e0 = payload["edges"][0]
@@ -165,7 +165,7 @@ def test_full_graph_keeps_the_axis_and_omits_the_generalization() -> None:
     would silently empty this diagram of it, and this test is what would say so.
     """
     duck = DuckDBGraphResource.build_from_json(_sample_with_specialization_edges())
-    payload = _build_payload_from_duckdb(duck, _LIST_DOMAINS_DISTINCT_COLORS)
+    payload = _build_payload_from_duckdb(duck, DOMAIN_PALETTE)
 
     kinds = [edge["data"]["edge_type"] for edge in payload["edges"]]  # type: ignore[index]
     assert "entity_specialization_edges" in kinds, "the axis reaches the system view"

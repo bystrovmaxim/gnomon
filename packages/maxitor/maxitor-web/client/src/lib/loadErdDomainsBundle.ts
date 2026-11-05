@@ -4,7 +4,7 @@ import { compareVersions } from "@/api/compare";
 import { listDomains, listEntities, listEntityKinds } from "@/api/erd";
 import { markErd, mergeErdSlices, mergeRelations, type ErdSlice } from "@/lib/erdDiff";
 import type { ErdRelation } from "@/lib/buildDotSource";
-import type { EntityKindRow } from "@/model/erd";
+import type { EntityKindRow, ErdResourceRow } from "@/model/erd";
 import type { DiagramSelection } from "@/model/diagramSelection";
 import { allocateDomainTabKey } from "@/lib/domainTabKeys";
 
@@ -26,6 +26,10 @@ export type ErdDomainsBundle = {
   entity_kinds?: EntityKindRow[];
   /** In Diff (spec 038): the slices are A's and B's together, every table, row and line marked. */
   diff?: boolean;
+  /** Resource id → its colour, as the server gives it: one resource has one colour for everyone (spec 061). */
+  resource_colors: Record<string, string>;
+  /** Resource id → its name. */
+  resource_labels: Record<string, string>;
 };
 
 export type ErdDomainSliceRequest = {
@@ -61,7 +65,7 @@ export async function loadErdDomainsBundle(
   const domain_qualifiers: Record<string, string> = {};
   const domain_tab_labels: Record<string, string> = {};
 
-  const [{ domain_slices: payloads, relations }, kinds] = await Promise.all([
+  const [{ domain_slices: payloads, relations, resources }, kinds] = await Promise.all([
     listEntities(quals, includeOneHopNeighbors),
     listEntityKinds(),
   ]);
@@ -83,7 +87,20 @@ export async function loadErdDomainsBundle(
     first_domain_label,
     relations,
     entity_kinds: kinds.list_entity_kinds,
+    ...resourceMaps(resources ?? []),
   };
+}
+
+/** The colours and names of the resources, newer rows first: a resource only the older version has keeps its own. */
+export function resourceMaps(...listings: readonly (readonly ErdResourceRow[])[]): Pick<ErdDomainsBundle, "resource_colors" | "resource_labels"> {
+  const resource_colors: Record<string, string> = {};
+  const resource_labels: Record<string, string> = {};
+  for (const row of listings.flat()) {
+    if (row.id in resource_colors) continue;
+    resource_colors[row.id] = row.color;
+    resource_labels[row.id] = row.label;
+  }
+  return { resource_colors, resource_labels };
 }
 
 export async function loadErdDomainSlicesBundle(
@@ -139,7 +156,7 @@ async function readErdDiffBundle(selection: ErdViewerSelection, includeOneHopNei
   if (!quals.length) throw new Error("No domain qualnames");
   const newerQuals = quals.filter((qual) => inNewer.has(qual));
   const olderQuals = quals.filter((qual) => inOlder.has(qual));
-  const empty = { domain_slices: [], relations: [] as unknown[] };
+  const empty = { domain_slices: [], relations: [] as unknown[], resources: [] as ErdResourceRow[] };
   const [newer, older] = await Promise.all([
     newerQuals.length ? listEntities(newerQuals, includeOneHopNeighbors) : empty,
     olderQuals.length ? listEntities(olderQuals, includeOneHopNeighbors, base) : empty,
@@ -174,5 +191,6 @@ async function readErdDiffBundle(selection: ErdViewerSelection, includeOneHopNei
     relations,
     entity_kinds: kinds.list_entity_kinds,
     diff: true,
+    ...resourceMaps(newer.resources ?? [], older.resources ?? []),
   };
 }

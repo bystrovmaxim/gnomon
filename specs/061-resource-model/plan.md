@@ -51,7 +51,7 @@ All three settings are page settings, so a room shares them. In Diff a table is 
 | Workflow: specify → clarify → plan → tasks → analyze → implement | Pass | this plan; `speckit-analyze` before code |
 | Workflow: PR closes its issue | Pass | `Closes #46` |
 | Workflow: every package has a changelog | Pass | Maxitor `CHANGELOG.md`, one article under the raised version |
-| 41–46. Actions | Pass | `ListEntitiesAction` gains a regular aspect for the resources (rule 43) and fields in its summary; no hand-written route; a separate resources action is not extracted until a second page needs it (R3) |
+| 41–46. Actions | Pass | `ListEntitiesAction`'s summary aspect reads the resources in its own body (rule 43) and adds the fields; no hand-written route; a separate resources action is not extracted until a second page needs it (R3) |
 | 60. The graph is built from what is loaded | Pass | the graph is rebuilt by the existing build; no list of modules added |
 | House rule: one phase = one commit | Pass | the 8 phases of issue #46 (below) |
 | House rule: a PR into `main` raises every changed level | Pass | `maxitor-web` 1.10.7 → 1.11.0; `maxitor` 3.16.0 → 3.17.0; `repo-graph-port` 1.4.3 → 1.4.4 if its graph file changes |
