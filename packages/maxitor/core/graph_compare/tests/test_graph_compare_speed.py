@@ -14,7 +14,8 @@ from maxitor.graph_compare import Counts, Status, changed_inside, compare
 
 pytestmark = pytest.mark.benchmark
 
-DEMO_GRAPH = Path(__file__).resolve().parents[5] / "packages" / "aoa-demo" / "graph.json"
+# The demo graph AOA writes, read from the AOA commit this repository builds with (external/aoa).
+DEMO_GRAPH = Path(__file__).resolve().parents[5] / "external" / "aoa" / "packages" / "aoa-demo" / "graph.json"
 
 BOUND_SECONDS = 1.0
 """Measured at about 20 ms with parsing (research R6): far above it, so a slow machine passes, yet a quadratic comparison fails."""

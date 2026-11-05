@@ -54,14 +54,13 @@ _SCHEMA: dict[str, Any] = ListEntitiesDomainSlicesJson._json_schema
 
 def _load_example() -> Any:
     """
-    Return the repository's worked example module, with its model built.
+    Return the model with a specialization axis, with its model built.
 
-    The model is taken from `examples/` rather than declared here: an entity class living in a test
-    module joins the graph every other test assembles, and this suite's own schema test would then
-    fail on a model it never asked for. The example is the model this contract is written against.
+    The model is loaded from `fixtures/` by path rather than declared or imported here: an entity class
+    living in a test module joins the graph every other test assembles, and this suite's own schema test
+    would then fail on a model it never asked for.
     """
-    root = Path(__file__).resolve().parents[4]
-    path = root / "examples" / "step_24_relations" / "02_specialization.py"
+    path = Path(__file__).resolve().parent / "fixtures" / "specialization_model.py"
     spec = importlib.util.spec_from_file_location("specialization_example", path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

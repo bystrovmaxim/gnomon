@@ -1,0 +1,251 @@
+#!/usr/bin/env python3
+# scripts/check_package_boundaries.py
+"""
+Enforce import boundaries for production packages.
+
+Production: ``packages/*/src/aoa/`` trees and ``[packages.*]`` in ``scripts/package_boundaries.toml``.
+Standalone: the roots of ``[standalone.*]`` import nothing from ``aoa``, nor any module their ``forbid`` lists.
+"""
+
+from __future__ import annotations
+
+import argparse
+import ast
+import sys
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+CONFIG_PATH = REPO_ROOT / "scripts" / "package_boundaries.toml"
+
+CANONICAL = ("action_machine", "maxitor", "repo_graph_port")
+
+
+@dataclass(frozen=True)
+class Violation:
+    path: Path
+    lineno: int
+    owner: str
+    target: str
+    module: str
+
+    def format(self) -> str:
+        rel = self.path.relative_to(REPO_ROOT)
+        return (
+            f"{rel.as_posix()}:{self.lineno}: context {self.owner!r} must not import "
+            f"package {self.target!r} via {self.module!r}"
+        )
+
+
+def _load_config() -> dict:
+    if not CONFIG_PATH.is_file():
+        raise SystemExit(f"Missing config: {CONFIG_PATH}")
+    return tomllib.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def _packages_table(cfg: dict) -> dict:
+    try:
+        return cfg["packages"]
+    except KeyError as exc:
+        raise SystemExit("Config section [packages] is required") from exc
+
+
+def _package_roots(cfg: dict) -> dict[str, list[str]]:
+    packages = _packages_table(cfg)
+    out: dict[str, list[str]] = {}
+    for name in CANONICAL:
+        if name not in packages:
+            raise SystemExit(f"Config section [packages.{name}] is required")
+        roots = packages[name].get("current_roots") or []
+        if not roots:
+            raise SystemExit(f"[packages.{name}].current_roots must be non-empty")
+        out[name] = [str(r).rstrip("/") for r in roots]
+    return out
+
+
+def _may_import(cfg: dict, pkg: str) -> frozenset[str]:
+    packages = _packages_table(cfg)
+    allowed = packages[pkg].get("may_import") or []
+    return frozenset(str(x) for x in allowed)
+
+
+def _owner_for_file(rel_posix: str, roots: dict[str, list[str]]) -> str | None:
+    best: str | None = None
+    best_len = -1
+    for pkg, rlist in roots.items():
+        for root in rlist:
+            if rel_posix == root or rel_posix.startswith(root + "/"):
+                ln = len(root)
+                if ln > best_len:
+                    best_len = ln
+                    best = pkg
+    return best
+
+
+def _import_prefixes(cfg: dict) -> dict[str, str]:
+    """Every ``import_prefixes`` entry of the canonical and standalone packages, mapped to its package."""
+    packages = _packages_table(cfg)
+    prefixes = {str(prefix): name for name in CANONICAL for prefix in packages[name].get("import_prefixes") or []}
+    for name, table in (cfg.get("standalone") or {}).items():
+        prefixes.update({str(prefix): name for prefix in table.get("import_prefixes") or []})
+    return prefixes
+
+
+def _target_from_module(module: str, prefixes: dict[str, str]) -> str | None:
+    """The package an import belongs to: the one whose prefix is the longest match, so ``maxitor.web`` never swallows a sibling."""
+    matches = [prefix for prefix in prefixes if module == prefix or module.startswith(prefix + ".")]
+    return prefixes[max(matches, key=len)] if matches else None
+
+
+def _load_allows(cfg: dict) -> list[tuple[str, frozenset[str]]]:
+    rows = cfg.get("allow", [])
+    if not isinstance(rows, list):
+        raise SystemExit("'allow' must be a list of tables")
+    out: list[tuple[str, frozenset[str]]] = []
+    for row in rows:
+        path = str(row["path"]).replace("\\", "/")
+        imports_raw = row.get("imports") or []
+        if not row.get("reason"):
+            raise SystemExit(f"allow entry for {path!r} missing 'reason'")
+        if not row.get("expires"):
+            raise SystemExit(f"allow entry for {path!r} missing 'expires'")
+        ims = frozenset(str(x) for x in imports_raw)
+        out.append((path, ims))
+    return out
+
+
+def _allowed_by_allowlist(
+    rel_posix: str, target: str, allows: list[tuple[str, frozenset[str]]]
+) -> bool:
+    for apath, ims in allows:
+        if rel_posix != apath.replace("\\", "/"):
+            continue
+        if target in ims:
+            return True
+    return False
+
+
+def _iter_import_violations(path: Path, owner: str, may: frozenset[str], prefixes: dict[str, str]) -> list[Violation]:
+    text = path.read_text(encoding="utf-8")
+    try:
+        tree = ast.parse(text, filename=str(path))
+    except SyntaxError as exc:
+        raise SystemExit(f"{path}: syntax error: {exc}") from exc
+
+    bad: list[Violation] = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                mod = alias.name
+                tgt = _target_from_module(mod, prefixes)
+                if tgt is None or tgt == owner:
+                    continue
+                if tgt in may:
+                    continue
+                bad.append(Violation(path, node.lineno, owner, tgt, mod))
+        elif isinstance(node, ast.ImportFrom):
+            if node.module is None:
+                continue
+            mod = node.module
+            tgt = _target_from_module(mod, prefixes)
+            if tgt is None or tgt == owner:
+                continue
+            if tgt in may:
+                continue
+            bad.append(Violation(path, node.lineno, owner, tgt, mod))
+    return bad
+
+
+def _collect_py_files_from_roots(flat_roots: list[str]) -> list[Path]:
+    seen: set[Path] = set()
+    files: list[Path] = []
+    for root in flat_roots:
+        root = root.rstrip("/")
+        base = REPO_ROOT / root
+        if not base.is_dir():
+            raise SystemExit(f"Root is not a directory: {base}")
+        for p in sorted(base.rglob("*.py")):
+            rp = p.resolve()
+            if rp not in seen:
+                seen.add(rp)
+                files.append(p)
+    return files
+
+
+def _collect_py_files(roots: dict[str, list[str]]) -> list[Path]:
+    flat: list[str] = []
+    for rlist in roots.values():
+        flat.extend(rlist)
+    return _collect_py_files_from_roots(flat)
+
+
+def check_production(cfg: dict) -> list[Violation]:
+    roots = _package_roots(cfg)
+    may_by_pkg = {p: _may_import(cfg, p) for p in CANONICAL}
+    prefixes = _import_prefixes(cfg)
+    allows = _load_allows(cfg)
+    violations: list[Violation] = []
+    for path in _collect_py_files(roots):
+        rel = path.relative_to(REPO_ROOT).as_posix()
+        owner = _owner_for_file(rel, roots)
+        if owner is None:
+            continue
+        for v in _iter_import_violations(path, owner, may_by_pkg[owner], prefixes):
+            if _allowed_by_allowlist(rel, v.target, allows):
+                continue
+            violations.append(v)
+    return violations
+
+
+def _imported_modules(path: Path) -> list[tuple[int, str]]:
+    """Every absolute module a file imports, with the line it is imported on."""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    except SyntaxError as exc:
+        raise SystemExit(f"{path}: syntax error: {exc}") from exc
+    found: list[tuple[int, str]] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            found.extend((node.lineno, alias.name) for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module is not None and node.level == 0:
+            found.append((node.lineno, node.module))
+    return found
+
+
+def check_standalone(cfg: dict) -> list[Violation]:
+    """Imports of ``aoa``, or of a module listed in ``forbid``, from a package that must stand without them."""
+    standalone = cfg.get("standalone", {})
+    if not isinstance(standalone, dict):
+        raise SystemExit("'standalone' must be a table of tables")
+    violations: list[Violation] = []
+    for owner, table in standalone.items():
+        roots = [str(r).rstrip("/") for r in table.get("roots") or []]
+        if not roots:
+            raise SystemExit(f"[standalone.{owner}].roots must be non-empty")
+        banned = ["aoa", *(str(prefix) for prefix in table.get("forbid") or [])]
+        for path in _collect_py_files_from_roots(roots):
+            for lineno, module in _imported_modules(path):
+                hit = next((ban for ban in banned if module == ban or module.startswith(ban + ".")), None)
+                if hit is not None:
+                    violations.append(Violation(path, lineno, owner, hit, module))
+    return violations
+
+
+def main() -> int:
+    argparse.ArgumentParser(description=__doc__).parse_args()
+    cfg = _load_config()
+
+    violations = check_production(cfg) + check_standalone(cfg)
+
+    if violations:
+        for v in sorted(violations, key=lambda x: (str(x.path), x.lineno)):
+            print(v.format(), file=sys.stderr)
+        print(f"\n{len(violations)} package boundary violation(s).", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -10,7 +10,8 @@ from maxitor.graph_compare.edge_ids import edge_id as compared_edge_id
 
 from aoa.action_machine.graph.edge_identity import edge_id as aoa_edge_id
 
-DEMO_GRAPH = Path(__file__).resolve().parents[3] / "aoa-demo" / "graph.json"
+# The demo graph AOA writes, read from the AOA commit this repository builds with (external/aoa).
+DEMO_GRAPH = Path(__file__).resolve().parents[4] / "external" / "aoa" / "packages" / "aoa-demo" / "graph.json"
 
 
 def test_the_copied_rule_equals_aoas_on_every_demo_edge() -> None:
