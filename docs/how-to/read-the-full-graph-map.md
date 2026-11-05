@@ -25,7 +25,7 @@ On a phone, drag and pinch; a tap reads a node.
 
 What belongs to no domain stands in its own area, *Outside domains*.
 
-Events stand with the other close-up details: an event of a domain's vocabulary in that domain, and an event named only by `@emits` in *Outside domains*. See [Object events](../tutorials/step-11-object-events.md#events-in-the-graph).
+Events stand with the other close-up details: an event of a domain's vocabulary in that domain, and an event named only by `@emits` in *Outside domains*. See [Object events](https://github.com/bystrovmaxim/aoa/blob/main/docs/tutorials/step-11-object-events.md#events-in-the-graph).
 
 ## Filter
 

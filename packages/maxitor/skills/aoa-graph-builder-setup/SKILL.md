@@ -40,9 +40,9 @@ Prepare and prove changes in a temporary directory outside the project. Before R
 
 Download the chosen binary and `checksums.txt` from the same GitHub Release into the temporary directory. Select the actual published asset for the system: v0.1.1 uses `version-gate-{linux,darwin,windows}-{amd64,arm64}`, with `.exe` on Windows. Require a matching SHA-256 entry for that exact filename and verify the downloaded bytes before execution. Use the verified binary for `version-gate check --base <base-ref>`. No Go installation is needed. If the release, checksum, binary or base ref cannot be verified, name the missing prerequisite; do not claim a successful check.
 
-**Graph tool, only for the graphs part.** Keep a working project pin if appropriate. For a new setup, verify the commit of `main` at `https://github.com/bystrovmaxim/aoa`. With uv, run the base Maxitor package at that full commit:
+**Graph tool, only for the graphs part.** Keep a working project pin if appropriate. For a new setup, verify the commit of `main` at `https://github.com/bystrovmaxim/gnomon`. With uv, run the base Maxitor package at that full commit:
 ```sh
-uvx --from "git+https://github.com/bystrovmaxim/aoa@<full-commit>#subdirectory=packages/maxitor" graph-builder --version
+uvx --from "git+https://github.com/bystrovmaxim/gnomon@<full-commit>#subdirectory=packages/maxitor" graph-builder --version
 ```
 Replace the placeholder before running or proposing the command. Use a release tag or an exact PyPI version only after verifying it exists for this tool and works. Below, `graph-builder` means the verified invocation. The tool needs the project's own environment only when executing its graph builds. It does not require the project to use AOA or Python.
 

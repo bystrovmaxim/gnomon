@@ -9,6 +9,8 @@ A gnomon is the part of a sundial that casts the shadow: it shows what is alread
 
 [AOA](https://github.com/bystrovmaxim/aoa), a Python framework, is one producer of the protocol's graph. Maxitor and its tools are built on AOA; this repository takes it as the git submodule `external/aoa`, fixed to one commit.
 
+How-to guides are in [docs/](docs/README.md).
+
 ## Get started
 
 ```bash

@@ -114,7 +114,7 @@ A graph of thousands of elements is checked in a fraction of a second.
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4          # the project's own environment, in which its builds run
 - run: npm ci
-- uses: bystrovmaxim/aoa/packages/maxitor/tools/graph-builder@maxitor-v3.0.0
+- uses: bystrovmaxim/gnomon/packages/maxitor/tools/graph-builder@maxitor-v3.15.0
 ```
 
 [`action.yml`](action.yml) installs uv — which fetches its own Python, so the project needs none — and runs `graph-builder check` from the `maxitor` release of its tag: every build again, every graph checked against the protocol's schema of the version it declares, every file compared with what its build prints. It does not prepare the project's environment; the steps before it do, in whatever language the project is. Inputs:

@@ -103,6 +103,6 @@ The App's private key, the webhook's secret and every token stay in memory: git 
 
 ## Docker
 
-[`Dockerfile`](Dockerfile) builds the service from this repository with `git`; the container listens on `0.0.0.0:8102` and keeps its cache in `/var/cache/repo-graph-port`. The demonstrator stand runs it at `https://repo-graph-port.aoa.run` ([`deploy/stand`](../../../../deploy/stand/README.md)).
+[`Dockerfile`](Dockerfile) builds the service from this repository with `git`; the container listens on `0.0.0.0:8102` and keeps its cache in `/var/cache/repo-graph-port`. The demonstrator stand runs it at `https://repo-graph-port.aoa.run` ([`deploy/stand`](https://github.com/bystrovmaxim/aoa/blob/main/deploy/stand/README.md)).
 
 Its own graph, as every AOA service keeps one, is [`graph.json`](graph.json) beside this file.

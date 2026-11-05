@@ -1,8 +1,8 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/bystrovmaxim/aoa/main/docs/assets/aoa-logo.png" alt="AOA" width="660"><br><br>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white" alt="Python 3.12+"></a>
-  <a href="https://github.com/bystrovmaxim/aoa"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
-  <a href="https://github.com/bystrovmaxim/aoa/actions/workflows/ci.yml"><img src="https://github.com/bystrovmaxim/aoa/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/bystrovmaxim/gnomon"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
+  <a href="https://github.com/bystrovmaxim/gnomon/actions/workflows/ci.yml"><img src="https://github.com/bystrovmaxim/gnomon/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/tests-193-brightgreen" alt="193 tests">
   <a href="client/README.md"><img src="https://img.shields.io/badge/SPA-React%2019%20·%20Vite-61dafb?logo=react&logoColor=white" alt="Maxitor client"></a>
   <img src="https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white" alt="Node 22">
@@ -82,11 +82,11 @@ On the diagram you see:
 - How entities are linked (`AssociationOne/Many`, `AggregateOne/Many`, `CompositeOne/Many`): one line per association, every line whose two tables are on screen, each end with its cardinality — exactly one, zero or one (a relation that may hold nothing), zero or many — and its role, the field on that side, shown while the line is hovered; a specialization's extensions keep a dashed line to their head, ending the same way, with no arrows
 - Header color — domain membership; the white icon beside the name — the entity's kind
 
-One filter panel, with **Domains** and **Kinds** folding like an accordion, hides or shows tables by domain and by kind; Kinds lists the kinds of the tables on this diagram and is shown when there are at least two. Hovering a table dims the others; hovering a line or a key field marks the fields it joins and keeps bright only the tables it joins; clicking a table or field name copies it. The whole walk-through is [Step 29 — Read and filter the ERD](../../../docs/tutorials/step-29-maxitor.md#read-and-filter-the-erd).
+One filter panel, with **Domains** and **Kinds** folding like an accordion, hides or shows tables by domain and by kind; Kinds lists the kinds of the tables on this diagram and is shown when there are at least two. Hovering a table dims the others; hovering a line or a key field marks the fields it joins and keeps bright only the tables it joins; clicking a table or field name copies it. The whole walk-through is [Step 29 — Read and filter the ERD](https://github.com/bystrovmaxim/aoa/blob/main/docs/tutorials/step-29-maxitor.md#read-and-filter-the-erd).
 
 The ERD is built from classes inheriting an entity kind base and their relation fields. Each exported Entity node carries `properties.entity_kind` and the kind's name, `properties.entity_kind_label`; Maxitor preserves both in the `entity` table and keeps no list of kinds of its own, so a graph from another producer shows its own kinds. A row with no kind loads as `unknown`; a kind word without a name is named by the word capitalised. This distinguishes independent objects, technical associations, owned parts, specializations and reference values. State types are excluded from ordinary Entity nodes and belong to lifecycle diagrams instead.
 
-Kind metadata does not yet hide technical associations on its own. Rebuild graph exports created before the required property was introduced. The [graph-to-store example](../../../examples/step_22_entity/11_graph_kind.py) ([notebook](../../../examples/step_22_entity/11_graph_kind.ipynb)) demonstrates the value arriving unchanged in Maxitor.
+Kind metadata does not yet hide technical associations on its own. Rebuild graph exports created before the required property was introduced. The [graph-to-store example](https://github.com/bystrovmaxim/aoa/blob/main/examples/step_22_entity/11_graph_kind.py) ([notebook](https://github.com/bystrovmaxim/aoa/blob/main/examples/step_22_entity/11_graph_kind.ipynb)) demonstrates the value arriving unchanged in Maxitor.
 
 ### A closed dictionary, and a field that references one
 
@@ -104,10 +104,10 @@ A saved graph that already includes those properties needs no rebuild for this d
 The server also supplies each specialization group's complete `label`, such as
 `pressing (by VinylRecordKindEnumEntity)`. The client displays it once. `dictionary_label`
 is no longer a member of the ERD group response; it remains model metadata on the graph
-edge. The [group-label example](../../../examples/step_24_relations/51_group_label.py) and
-[notebook](../../../examples/step_24_relations/51_group_label.ipynb) print the actual response.
+edge. The [group-label example](https://github.com/bystrovmaxim/aoa/blob/main/examples/step_24_relations/51_group_label.py) and
+[notebook](https://github.com/bystrovmaxim/aoa/blob/main/examples/step_24_relations/51_group_label.ipynb) print the actual response.
 
-See the [dictionary example](../../../examples/step_23_dictionaries/09_erd.py) and [Maxitor tutorial](../../../docs/tutorials/step-29-maxitor.md#dictionaries-in-the-entity-diagram) for the actual output.
+See the [dictionary example](https://github.com/bystrovmaxim/aoa/blob/main/examples/step_23_dictionaries/09_erd.py) and [Maxitor tutorial](https://github.com/bystrovmaxim/aoa/blob/main/docs/tutorials/step-29-maxitor.md#dictionaries-in-the-entity-diagram) for the actual output.
 
 ---
 

@@ -2,8 +2,8 @@
   <img src="https://raw.githubusercontent.com/bystrovmaxim/aoa/main/docs/assets/aoa-logo.png" alt="AOA" width="540"><br><br>
   <a href="https://pypi.org/project/maxitor/"><img src="https://img.shields.io/pypi/v/maxitor?label=PyPI" alt="PyPI"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white" alt="Python 3.12+"></a>
-  <a href="https://github.com/bystrovmaxim/aoa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
-  <a href="https://github.com/bystrovmaxim/aoa/blob/maxitor-v3.0.0/packages/open-gnomon-protocol/README.md"><img src="https://img.shields.io/badge/Open_Gnomon_Protocol-1.1-informational" alt="Open Gnomon Protocol 1.1"></a>
+  <a href="https://github.com/bystrovmaxim/gnomon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
+  <a href="https://github.com/bystrovmaxim/gnomon/blob/main/packages/open-gnomon-protocol/README.md"><img src="https://img.shields.io/badge/Open_Gnomon_Protocol-1.1-informational" alt="Open Gnomon Protocol 1.1"></a>
 </p>
 
 # maxitor
@@ -14,7 +14,7 @@ Maxitor is one package with parts you choose at install time:
 
 | Part | What it does | Install |
 |---|---|---|
-| **`graph-builder`** | Keeps each service's model graph in one file beside its code, by the [Open Gnomon Protocol](https://github.com/bystrovmaxim/aoa/blob/maxitor-v3.0.0/packages/open-gnomon-protocol/README.md), and fails CI when a file is stale — every pull request shows what it did to the model | `pip install maxitor` |
+| **`graph-builder`** | Keeps each service's model graph in one file beside its code, by the [Open Gnomon Protocol](https://github.com/bystrovmaxim/gnomon/blob/main/packages/open-gnomon-protocol/README.md), and fails CI when a file is stale — every pull request shows what it did to the model | `pip install maxitor` |
 | **the web part** | Maxitor's web part: the full graph, entity diagrams, use cases and lifecycles of an AOA service, live in the browser | `pip install "maxitor[web]"` |
 | **`repo-graph-port`** | A service that reads each graph's history from its repository — every merged pull request that changed the graph file is a version, with its description and tags — and serves any version's graph; the only part that talks to GitHub | `pip install "maxitor[repo-graph-port]"` |
 | **skills** | `aoa-graph-builder-setup`, the skill a coding agent follows to connect a project | comes with every install |
@@ -27,7 +27,7 @@ Maxitor is one package with parts you choose at install time:
 
 ```text
 Install and run this skill for the current project:
-https://raw.githubusercontent.com/bystrovmaxim/aoa/main/packages/maxitor/skills/aoa-graph-builder-setup/SKILL.md
+https://raw.githubusercontent.com/bystrovmaxim/gnomon/main/packages/maxitor/skills/aoa-graph-builder-setup/SKILL.md
 
 Walk me through the wizard in my language. Ask one question at a time and wait for my answer. For each decision, explain in plain words: what you found, what you propose to change, why you recommend this option, and what happens if I choose another. Explain each technical term the first time you use it.
 
@@ -87,7 +87,7 @@ Before applying, you see the before/after table, affected files, prepared change
 
 ### By hand, in four steps
 
-**1. Export each service's model** — a command, in any language, that prints the service's graph by the [protocol's schema](https://github.com/bystrovmaxim/aoa/blob/maxitor-v3.0.0/packages/open-gnomon-protocol/README.md) and nothing else. Only the project knows its model, so the project writes this command; `graph-builder` runs it, checks what it prints, and keeps the file.
+**1. Export each service's model** — a command, in any language, that prints the service's graph by the [protocol's schema](https://github.com/bystrovmaxim/gnomon/blob/main/packages/open-gnomon-protocol/README.md) and nothing else. Only the project knows its model, so the project writes this command; `graph-builder` runs it, checks what it prints, and keeps the file.
 
 An AOA service (Python) — the framework builds the graph:
 
@@ -138,7 +138,7 @@ file  = "my_service/graph.json"
 - uses: actions/checkout@v4
 - uses: actions/setup-node@v4          # or setup-java, or setup-uv + uv sync — whatever the builds need
 - run: npm ci
-- uses: bystrovmaxim/aoa/packages/maxitor/tools/graph-builder@maxitor-v3.0.0
+- uses: bystrovmaxim/gnomon/packages/maxitor/tools/graph-builder@maxitor-v3.15.0
 ```
 
 The step runs `graph-builder check`: every build again, every graph checked against the protocol's schema, every file compared with what its build prints.
@@ -156,13 +156,13 @@ Open `http://127.0.0.1:8000` and point it at an AOA service's graph.
 
 ## Learn more
 
-- **[The `graph-builder` command](https://github.com/bystrovmaxim/aoa/blob/maxitor-v3.0.0/packages/maxitor/tools/graph-builder/README.md)** — commands, configuration, how graphs are kept in a repository, the CI check, use from Python
-- **[The web part](https://github.com/bystrovmaxim/aoa/blob/main/packages/maxitor/maxitor-web/README.md)** — the diagrams, the API, running it, its architecture
-- **[`repo-graph-port`](https://github.com/bystrovmaxim/aoa/blob/main/packages/maxitor/tools/repo-graph-port/README.md)** — a graph's history from its repository: versions, keys, public links, webhooks
-- **[aoa-graph-builder-setup](https://github.com/bystrovmaxim/aoa/blob/main/packages/maxitor/skills/aoa-graph-builder-setup/SKILL.md)** — the skill an agent follows
-- **[Open Gnomon Protocol](https://github.com/bystrovmaxim/aoa/blob/maxitor-v3.0.0/packages/open-gnomon-protocol/README.md)** — the graph's language, which any language can follow
-- [Changelog](https://github.com/bystrovmaxim/aoa/blob/maxitor-v3.0.0/packages/maxitor/CHANGELOG.md) · [Source](https://github.com/bystrovmaxim/aoa/tree/maxitor-v3.0.0/packages/maxitor) · [Issues](https://github.com/bystrovmaxim/aoa/issues)
+- **[The `graph-builder` command](https://github.com/bystrovmaxim/gnomon/blob/main/packages/maxitor/tools/graph-builder/README.md)** — commands, configuration, how graphs are kept in a repository, the CI check, use from Python
+- **[The web part](https://github.com/bystrovmaxim/gnomon/blob/main/packages/maxitor/maxitor-web/README.md)** — the diagrams, the API, running it, its architecture
+- **[`repo-graph-port`](https://github.com/bystrovmaxim/gnomon/blob/main/packages/maxitor/tools/repo-graph-port/README.md)** — a graph's history from its repository: versions, keys, public links, webhooks
+- **[aoa-graph-builder-setup](https://github.com/bystrovmaxim/gnomon/blob/main/packages/maxitor/skills/aoa-graph-builder-setup/SKILL.md)** — the skill an agent follows
+- **[Open Gnomon Protocol](https://github.com/bystrovmaxim/gnomon/blob/main/packages/open-gnomon-protocol/README.md)** — the graph's language, which any language can follow
+- [Changelog](https://github.com/bystrovmaxim/gnomon/blob/main/packages/maxitor/CHANGELOG.md) · [Source](https://github.com/bystrovmaxim/gnomon/tree/main/packages/maxitor) · [Issues](https://github.com/bystrovmaxim/gnomon/issues)
 
-`maxitor` 3.0.0 replaces two earlier packages, the app's and the command's; [the changelog](https://github.com/bystrovmaxim/aoa/blob/maxitor-v3.0.0/packages/maxitor/CHANGELOG.md) says what to change in an install or an import.
+`maxitor` 3.0.0 replaces two earlier packages, the app's and the command's; [the changelog](https://github.com/bystrovmaxim/gnomon/blob/main/packages/maxitor/CHANGELOG.md) says what to change in an install or an import.
 
 Apache License 2.0.

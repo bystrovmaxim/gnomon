@@ -1,7 +1,7 @@
 # packages/maxitor/tools/repo-graph-port/Dockerfile — the repo-graph-port service, built from this repository.
 #
-# The runtime installs the uv workspace from the repository — no ``aoa-*`` package
-# comes from PyPI — with the ``repo-graph-port`` extra only. ``git`` reads the
+# The runtime installs the uv workspace from the repository, AOA from the submodule
+# ``external/aoa`` — no ``aoa-*`` package comes from PyPI — with the ``repo-graph-port`` extra only. ``git`` reads the
 # repositories; the histories config, the cache and the App's secrets come from
 # the environment the container is started with, never from the image.
 
@@ -13,6 +13,7 @@ WORKDIR /repo
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
+COPY external/aoa/packages ./external/aoa/packages
 RUN uv sync --frozen --no-dev --package maxitor --extra repo-graph-port
 ENV REPO_GRAPH_PORT_HOST=0.0.0.0
 ENV REPO_GRAPH_PORT_PORT=8102
