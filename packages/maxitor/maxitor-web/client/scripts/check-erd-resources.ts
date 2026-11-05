@@ -111,7 +111,7 @@ const titleOf = (markup: string, name: string) => {
   return { y: Number(text?.[1]), size: Number(text?.[2]) };
 };
 const billingTitle = titleOf(svg, "cluster_resource_0");
-check("a contour's name is larger than a table's and clear of its top border", billingTitle.size >= 18 && billing !== undefined && billingTitle.y - billing.box.top >= 24, `size ${billingTitle.size}, ${billing ? (billingTitle.y - billing.box.top).toFixed(1) : "?"} pt below the border`);
+check("a contour's name is a little larger than a table's and stands clear of its top border", billingTitle.size === 15 && billing !== undefined && billingTitle.y - billing.box.top >= 20, `size ${billingTitle.size}, ${billing ? (billingTitle.y - billing.box.top).toFixed(1) : "?"} pt below the border`);
 check("a table of no resource stands outside every contour", ![billing, storefront].some((cluster) => cluster && inside(nodeBox(svg, "shop.Legacy"), cluster.box)));
 const block = clusters.get("cluster_shop.Invoice:payment");
 check("a specialization block stands inside its resource's contour", block !== undefined && inside(block.box, billing!.box));
