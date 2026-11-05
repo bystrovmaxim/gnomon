@@ -1,5 +1,9 @@
 <!-- Sync Impact Report
-  Version change: 1.0.0 → 1.1.0 (MINOR: a new section with two new rules).
+  Version change: 1.1.0 → 1.2.0 (MINOR: a new rule).
+  Added rule 71 in Pull requests: the browser checks start right after every
+    push, in parallel with CI, dictated by the maintainer.
+
+  Version 1.1.0: 1.0.0 → 1.1.0 (MINOR: a new section with two new rules).
   Added section: Pull requests — rule 69 (the maintainer is the assignee of
     every pull request) and rule 70 (automatic CI fixing is always on), both
     dictated by the maintainer.
@@ -805,6 +809,18 @@ an ordinary table.
     Automatic fixing never merges: rule 68 still decides the merge.
     Check: the pull request's CI monitor shows Auto-fix on.
 
+71. **Browser checks run alongside CI.** The browser checks that CI cannot run
+    (`scripts/check_before_pr.sh`) MUST start right after every push to a
+    pull request branch, on the pushed commit, while CI runs on the same
+    commit: the executor MUST NOT wait for CI to finish, for the pull request
+    to open or for a request to run them. The two runs overlap, so the pull
+    request is ready when the longer of them ends, not after both in a row.
+    The commit status they leave belongs to one commit: every new commit
+    pushed to the branch MUST get a new run, started the same way.
+    Check: the last commit of the pull request carries the status
+    `Local check run`, set no later than CI's checks on it ended plus the
+    length of one browser run.
+
 ## Governance
 
 - The constitution stands above all other practices. In a conflict between a
@@ -838,4 +854,4 @@ an ordinary table.
 - The sources of truth about the data structure are the constitution, `specs/`
   and `schema/`. There are no others.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-05
+**Version**: 1.2.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-05
