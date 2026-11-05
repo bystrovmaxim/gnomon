@@ -183,12 +183,12 @@ Paths below are relative to `packages/maxitor/maxitor-web/` unless they start at
 
 ## Phase 7: Documentation
 
-- [ ] T031 [P] `README.md` §2 "ERD: Data Model From Code":
+- [X] T031 [P] `README.md` §2 "ERD: Data Model From Code":
   - the Resources section, painting by resource, Boundary with the resource's name in its header;
   - one colour per resource for everyone;
   - the card's `Resource:` line;
   - Diff: a table changes by its resource only when both versions name one.
-- [ ] T032 [P] `client/src/components/diagrams/ErdViewer/README.md`, `client/src/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/README.md` (the resource clusters and their nesting) and `client/src/components/ui/ErdFilterPanel/README.md` (the Resources section and its gear point).
+- [X] T032 [P] `client/src/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/README.md` (the resource clusters and their nesting) and `client/src/components/ui/ErdFilterPanel/README.md` (the Resources section and its gear point); `ErdViewer/README.md` only composes the canvas and says nothing of filters, so it stays as it is.
 
 ## Phase 8: Changelog
 

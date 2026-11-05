@@ -82,11 +82,21 @@ On the diagram you see:
 - How entities are linked (`AssociationOne/Many`, `AggregateOne/Many`, `CompositeOne/Many`): one line per association, every line whose two tables are on screen, each end with its cardinality — exactly one, zero or one (a relation that may hold nothing), zero or many — and its role, the field on that side, shown while the line is hovered; a specialization's extensions keep a dashed line to their head, ending the same way, with no arrows
 - Header color — domain membership; the white icon beside the name — the entity's kind
 
-One filter panel, with **Domains** and **Kinds** folding like an accordion, hides or shows tables by domain and by kind; Kinds lists the kinds of the tables on this diagram and is shown when there are at least two. Hovering a table dims the others; hovering a line or a key field marks the fields it joins and keeps bright only the tables it joins; clicking a table or field name copies it. The whole walk-through is [Step 29 — Read and filter the ERD](https://github.com/bystrovmaxim/aoa/blob/main/docs/tutorials/step-29-maxitor.md#read-and-filter-the-erd).
+One filter panel, with **Domains**, **Kinds** and **Resources** folding like an accordion, hides or shows tables by domain, by kind and by the resource that stores them; Kinds lists the kinds of the tables on this diagram and is shown when there are at least two. Hovering a table dims the others; hovering a line or a key field marks the fields it joins and keeps bright only the tables it joins; clicking a table or field name copies it. The whole walk-through is [Step 29 — Read and filter the ERD](https://github.com/bystrovmaxim/aoa/blob/main/docs/tutorials/step-29-maxitor.md#read-and-filter-the-erd).
 
 The ERD is built from classes inheriting an entity kind base and their relation fields. Each exported Entity node carries `properties.entity_kind` and the kind's name, `properties.entity_kind_label`; Maxitor preserves both in the `entity` table and keeps no list of kinds of its own, so a graph from another producer shows its own kinds. A row with no kind loads as `unknown`; a kind word without a name is named by the word capitalised. This distinguishes independent objects, technical associations, owned parts, specializations and reference values. State types are excluded from ordinary Entity nodes and belong to lifecycle diagrams instead.
 
 Kind metadata does not yet hide technical associations on its own. Rebuild graph exports created before the required property was introduced. The [graph-to-store example](https://github.com/bystrovmaxim/aoa/blob/main/examples/step_22_entity/11_graph_kind.py) ([notebook](https://github.com/bystrovmaxim/aoa/blob/main/examples/step_22_entity/11_graph_kind.ipynb)) demonstrates the value arriving unchanged in Maxitor.
+
+### Where each entity is stored
+
+From protocol 1.6 every entity has one `entity_resource` edge to the resource that stores it — a database, for one — and AOA keeps every relation inside one resource. The ERD shows it three ways:
+
+- **Resources** in the filter panel lists the resources of the diagram, even when there is one; switching one off hides its tables, by the same rules as the other sections. Hovering a row shows the resource's full id.
+- **Boundary**, beside 1-hop, draws the tables of each resource inside one rounded contour with the resource's name in its header — the whole data model of that store, with no line leaving it. It starts on.
+- The gear shift has a point for **Resources**: every table and contour then takes its resource's colour. The server gives that colour from the graph alone — by the resource's place among all resources of the graph, as for domains — so one resource has one colour on every diagram and for everyone in a room.
+
+A table's card reads `Resource: <name>`. The resources switched off, Boundary and the paint are page settings: the address carries them (`off_resources`, `boundary`, `paint`) and a room shares them. In Diff a table counts as changed by its resource only when both versions name one and they differ — the card then reads `Resource: <before> → <now>`; a resource that appears where the older version had none, as in every comparison of a 1.5 graph with a 1.6 one, changes nothing. A graph older than 1.6 has no resources: no section, no Boundary, no line on the card.
 
 ### A closed dictionary, and a field that references one
 
