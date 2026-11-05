@@ -3,7 +3,7 @@
   <img src="https://img.shields.io/badge/version-1.5-informational" alt="Version 1.5">
   <img src="https://img.shields.io/badge/status-stable-brightgreen" alt="Stable">
   <a href="https://json-schema.org/draft/2020-12"><img src="https://img.shields.io/badge/JSON_Schema-2020--12-blue" alt="JSON Schema 2020-12"></a>
-  <a href="https://github.com/bystrovmaxim/aoa/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
+  <a href="https://github.com/bystrovmaxim/gnomon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
 </p>
 
 # Open Gnomon Protocol

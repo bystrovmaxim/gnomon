@@ -19,11 +19,10 @@ _EXAMPLE_NAME = "specialization_example"
 
 
 def _load_example() -> Any:
-    """Return the repository's worked specialization example, loaded once per session."""
+    """Return the model with a specialization axis from `fixtures/`, loaded once per session."""
     if _EXAMPLE_NAME in sys.modules:
         return sys.modules[_EXAMPLE_NAME]
-    root = Path(__file__).resolve().parents[4]
-    path = root / "examples" / "step_24_relations" / "02_specialization.py"
+    path = Path(__file__).resolve().parent / "fixtures" / "specialization_model.py"
     spec = importlib.util.spec_from_file_location(_EXAMPLE_NAME, path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)

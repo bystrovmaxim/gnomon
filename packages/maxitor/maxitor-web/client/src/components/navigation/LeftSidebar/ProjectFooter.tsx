@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { getAppInfo } from "@/api/appInfo";
 
 /** Where the project lives: the package's folder in the AOA repository. */
-export const PROJECT_URL = "https://github.com/bystrovmaxim/aoa/tree/main/packages/maxitor";
+export const PROJECT_URL = "https://github.com/bystrovmaxim/gnomon/tree/main/packages/maxitor";
 
 export type ProjectFooterProps = {
   /** The panel is the narrow rail: only the mark, with its tooltip. */

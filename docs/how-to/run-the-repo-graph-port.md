@@ -76,7 +76,7 @@ docker run -d --name repo-graph-port -p 127.0.0.1:8103:8102 --env-file secrets.e
 
 A host whose network MTU is below 1500 (a cloud VM often has 1450) needs the same MTU on the container's network: with Docker's default 1500, connections to GitHub stall in the TLS handshake and a clone times out. Give the port a network of its own, e.g. `docker network create --opt com.docker.network.driver.mtu=1450 egress`, and run it with `--network egress`; `ip link` shows the host's MTU.
 
-The demonstrator stand of this repository runs it this way at `https://repo-graph-port.aoa.run`; [its README](../../deploy/stand/README.md) says what lives where on that host.
+The demonstrator stand of this repository runs it this way at `https://repo-graph-port.aoa.run`; [its README](https://github.com/bystrovmaxim/aoa/blob/main/deploy/stand/README.md) says what lives where on that host.
 
 ## 5. Check, then issue keys
 
@@ -99,7 +99,7 @@ Then one key per reader of each history:
 docker exec repo-graph-port repo-graph-port history key new --history orders --name anna --expires 2027-06-01
 ```
 
-The key is printed once; only its hash is written. Send it straight into a file that never enters git — this repository keeps such files in [`certificates/`](../../certificates/README.md) — and hand it to its holder only:
+The key is printed once; only its hash is written. Send it straight into a file that never enters git — the stand keeps such files in a `certificates/` folder that `.gitignore` keeps out of git — and hand it to its holder only:
 
 ```bash
 docker exec repo-graph-port repo-graph-port history key new --history orders --name anna > certificates/repo-graph-port/orders.key

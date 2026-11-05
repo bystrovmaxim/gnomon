@@ -1,4 +1,4 @@
-# packages/maxitor/tools/graph-builder/action.yml — the graph check as one CI step: `uses: bystrovmaxim/aoa/packages/maxitor/tools/graph-builder@<ref>`.
+# packages/maxitor/tools/graph-builder/action.yml — the graph check as one CI step: `uses: bystrovmaxim/gnomon/packages/maxitor/tools/graph-builder@<ref>`.
 # Language-neutral: the project prepares its own environment in the steps before this one (setup-java,
 # setup-node, uv sync, …); this step only runs `graph-builder check`, whose builds run in that environment.
 name: Model graph files are current (graph-builder)

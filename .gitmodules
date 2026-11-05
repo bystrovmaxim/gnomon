@@ -1,0 +1,3 @@
+[submodule "external/aoa"]
+	path = external/aoa
+	url = https://github.com/bystrovmaxim/aoa.git

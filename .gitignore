@@ -1,0 +1,44 @@
+# Environments and secrets
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# The Maxitor client
+packages/maxitor/maxitor-web/client/node_modules/
+packages/maxitor/maxitor-web/client/.vite/
+packages/maxitor/maxitor-web/maxitor/web/static/
+
+# Editors and the system
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Logs of the check run, and local notes
+*.log
+archive/
+*.tmp
+
+# Russian drafts live beside their English pages and never enter a commit
+*_draft.md
+*_draft.py
+*_draft.html
+
+!.python-version
+!uv.lock

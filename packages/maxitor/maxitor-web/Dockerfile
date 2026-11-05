@@ -1,8 +1,8 @@
 # packages/maxitor/maxitor-web/Dockerfile — Maxitor built from this repository, client included.
 #
 # The client is built in its own stage from the sources here, and the runtime
-# installs the uv workspace from the repository — no ``aoa-*`` package ever
-# comes from PyPI.
+# installs the uv workspace from the repository, AOA from the submodule
+# ``external/aoa`` — no ``aoa-*`` package ever comes from PyPI.
 
 FROM node:22-alpine AS client-build
 WORKDIR /client
@@ -18,6 +18,7 @@ WORKDIR /repo
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
+COPY external/aoa/packages ./external/aoa/packages
 RUN uv sync --frozen --no-dev --package maxitor --extra web
 COPY --from=client-build /client/dist ./packages/maxitor/maxitor-web/maxitor/web/static
 ENV MAXITOR_API_HOST=0.0.0.0

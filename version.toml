@@ -1,0 +1,13 @@
+# version.toml — what version-gate tracks in this repository, and what does not count as a change.
+kind = "repository"
+driver = "python"
+require_bump = false
+untracked = ["packages/maxitor/maxitor-web/client"]
+
+[changes]
+ignore = [
+  "**/CHANGELOG.md",
+  "packages/maxitor/**/README.md",
+  "packages/open-gnomon-protocol/README.md",
+  "**/tests/**",
+]
