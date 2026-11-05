@@ -19,7 +19,7 @@ class DiagramsDomain(BaseDomain):
     """
     AI-CORE-BEGIN
     ROLE: Declarative domain for diagram-oriented Maxitor orchestration (G6, ERD, sidebar).
-    CONTRACT: ``name`` is ``diagrams``; use with ``@meta(domain=DiagramsDomain)`` / ``@entity(domain=DiagramsDomain)``.
+    CONTRACT: ``name`` is ``diagrams``; use with ``@meta(domain=DiagramsDomain)``; an entity takes it from its resource.
     INVARIANTS: Marker only — no I/O on the class.
     AI-CORE-END
     """

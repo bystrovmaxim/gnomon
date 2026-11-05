@@ -74,6 +74,14 @@ ListEntitiesDomainSlicesJson = JsonSchemaValue.define(
                                             "(for accent coloring)."
                                         ),
                                     },
+                                    "resource_id": {
+                                        "type": ["string", "null"],
+                                        "description": "The resource that stores the entity (protocol 1.6), or null.",
+                                    },
+                                    "resource_label": {
+                                        "type": ["string", "null"],
+                                        "description": "That resource's name, or null.",
+                                    },
                                     "entity_kind": {
                                         "type": "string",
                                         "minLength": 1,
@@ -227,4 +235,22 @@ ListEntitiesDomainSlicesJson = JsonSchemaValue.define(
 ListEntitiesRelationsJson = JsonSchemaValue.define(
     name="ListEntitiesRelationsJson",
     schema={"type": "array", "items": _RELATION_ROW},
+)
+
+# The resources of the graph that store an entity, each with the colour every reader of the graph sees.
+ListEntitiesResourcesJson = JsonSchemaValue.define(
+    name="ListEntitiesResourcesJson",
+    schema={
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "label": {"type": "string", "minLength": 1},
+                "color": {"type": "string", "minLength": 1},
+            },
+            "required": ["id", "label", "color"],
+            "additionalProperties": False,
+        },
+    },
 )

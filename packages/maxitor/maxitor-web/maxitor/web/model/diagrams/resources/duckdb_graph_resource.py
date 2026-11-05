@@ -23,6 +23,8 @@ primary key: the diagram queries read through neither (``specs/025-graph-index-m
 VARCHAR and mirrors it in the ``edges`` view JSON ``payload``.
 ``parent_action_edges`` / ``parent_role_edges`` / ``parent_domain_edges`` mirror wire ``parent_*`` edges
 (same four columns as ``domain_edges``; relationship is GENERALIZATION in JSON).
+``entity_resource_edges`` (protocol 1.6) holds each entity's resource — entity → resource, the same
+four columns as ``domain_edges``; a graph of 1.0–1.5 leaves it empty.
 ``parent_entity_edges`` is the same relationship **with properties** — the four the wire edge carries —
 and ``entity_specialization_edges`` mirrors the head→alternative edges, one row per alternative, with
 the whole ordered alternative list on each row so a consumer holding one row has the set.
@@ -263,6 +265,12 @@ class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection]):
       is_dag BOOLEAN NOT NULL
     );""",
             """CREATE TABLE domain_edges (
+      source_id VARCHAR NOT NULL,
+      target_id VARCHAR NOT NULL,
+      relationship VARCHAR NOT NULL,
+      is_dag BOOLEAN NOT NULL
+    );""",
+            """CREATE TABLE entity_resource_edges (
       source_id VARCHAR NOT NULL,
       target_id VARCHAR NOT NULL,
       relationship VARCHAR NOT NULL,
@@ -625,6 +633,7 @@ _NODE_TABLE_NAMES: tuple[str, ...] = (
 _EDGE_TABLE_NAMES: tuple[str, ...] = (
     "application_edges",
     "domain_edges",
+    "entity_resource_edges",
     "parent_action_edges",
     "parent_domain_edges",
     "parent_role_edges",
@@ -710,6 +719,7 @@ def _graph_union_view_ddls() -> list[str]:
     edge_parts: list[str] = [
         f"SELECT source_id, target_id, relationship, is_dag, CAST('application_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM application_edges",
         f"SELECT source_id, target_id, relationship, is_dag, CAST('domain_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM domain_edges",
+        f"SELECT source_id, target_id, relationship, is_dag, CAST('entity_resource_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM entity_resource_edges",
         f"SELECT source_id, target_id, relationship, is_dag, CAST('parent_action_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM parent_action_edges",
         f"SELECT source_id, target_id, relationship, is_dag, CAST('parent_domain_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM parent_domain_edges",
         f"SELECT source_id, target_id, relationship, is_dag, CAST('parent_role_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM parent_role_edges",
@@ -1017,6 +1027,7 @@ def _fill_simple_edge_tables(con: duckdb.DuckDBPyConnection, edges_by_type: dict
     simple_edge_types = {
         "application": "application_edges",
         "domain": "domain_edges",
+        "entity_resource": "entity_resource_edges",
         "parent_action": "parent_action_edges",
         "parent_domain": "parent_domain_edges",
         "parent_role": "parent_role_edges",
@@ -1302,6 +1313,7 @@ def _assert_no_unknown_graph_types(
     known_edges = {
         "application",
         "domain",
+        "entity_resource",
         "parent_action",
         "parent_domain",
         "parent_role",

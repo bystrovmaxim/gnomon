@@ -58,3 +58,13 @@ def test_the_answer_is_a_graph_maxitor_can_build(client: TestClient) -> None:
     graph = DuckDBGraphResource.build_from_json(payload)
     domains = {row["label"] for row in graph.execute_fetch_dicts("SELECT label FROM domain")}
     assert {"RoomsDomain", "CoreDomain"} <= domains
+
+
+def test_maxitor_s_own_entity_is_stored_by_the_duckdb_graph(client: TestClient) -> None:
+    """Protocol 1.6: ``NodeCoreEntity`` has one ``entity_resource`` edge, to ``DuckDBGraphResource`` (spec 061, FR-015)."""
+    payload = json.loads(client.get("/examples/model/graph-json").json()["coordinator_json"])
+    entity = next(node["id"] for node in payload["nodes"] if node["type"] == "Entity" and node["label"] == "NodeCoreEntity")
+    targets = [edge["target_id"] for edge in payload["edges"] if edge["type"] == "entity_resource" and edge["source_id"] == entity]
+    labels = {node["id"]: node["label"] for node in payload["nodes"]}
+    assert payload["schema_version"] == "1.6"
+    assert [labels[target] for target in targets] == ["DuckDBGraphResource"]

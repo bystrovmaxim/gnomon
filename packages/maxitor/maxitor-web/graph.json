@@ -1774,6 +1774,15 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor.web.model.core.entities.node_entity.NodeCoreEntity|entity_resource|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.web.model.core.entities.node_entity.NodeCoreEntity",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "type": "entity_resource"
+    },
+    {
       "id": "maxitor.web.model.core.resources.graph_source_gateway.GraphSourceGateway|domain|maxitor.web.model.core.core_domain.CoreDomain",
       "is_dag": true,
       "properties": {},
@@ -2845,6 +2854,15 @@
       "relationship": "Composition",
       "source_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result",
       "target_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:relations",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result|field|maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:resources",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result",
+      "target_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:resources",
       "type": "field"
     },
     {
@@ -7509,6 +7527,20 @@
                         "label": {
                           "type": "string"
                         },
+                        "resource_id": {
+                          "description": "The resource that stores the entity (protocol 1.6), or null.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "resource_label": {
+                          "description": "That resource's name, or null.",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "values": {
                           "description": "The values a closed dictionary declares, each one its reference object; empty for every other kind.",
                           "items": {
@@ -7778,10 +7810,48 @@
       "type": "Field"
     },
     {
+      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:resources",
+      "label": "resources",
+      "properties": {
+        "description": "Every resource of the graph that stores an entity, sorted by id, with its colour; the same for every request on one graph, whatever domains it asks for.",
+        "entity_schema": false,
+        "json_schema": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "color": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "label": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "color"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "json_schema_name": "ListEntitiesResourcesJson",
+        "json_schema_value": true,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction:build_domain_payload_summary",
       "label": "build_domain_payload_summary",
       "properties": {
-        "description": "Serialize ERD slices for requested domains (DuckDB)"
+        "description": "Serialize ERD slices for requested domains, and the resources of the graph (DuckDB)"
       },
       "type": "SummaryAspect"
     },
@@ -8851,5 +8921,5 @@
       "type": "Domain"
     }
   ],
-  "schema_version": "1.5"
+  "schema_version": "1.6"
 }

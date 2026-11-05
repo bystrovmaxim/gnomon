@@ -20,7 +20,7 @@ class CoreDomain(BaseDomain):
     """
     AI-CORE-BEGIN
     ROLE: Marker domain for core platform capabilities in Maxitor (identity, authz).
-    CONTRACT: ``name`` is ``core``; use with ``@meta(domain=CoreDomain)`` / ``@entity(domain=CoreDomain)``.
+    CONTRACT: ``name`` is ``core``; use with ``@meta(domain=CoreDomain)``; an entity takes it from its resource.
     INVARIANTS: Marker only — no I/O on the class.
     AI-CORE-END
     """

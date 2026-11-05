@@ -232,3 +232,24 @@ describe("a lifecycle is part of its table (spec 044)", () => {
     expect(mark({ "b.Bin:lifecycle:statusx:s": "added" }).diff).toBe("unchanged");
   });
 });
+
+describe("a table's resource in Diff (spec 061, FR-014)", () => {
+  const nothing = { counts: { nodes: { added: 0, removed: 0, changed: 0 }, edges: { added: 0, removed: 0, changed: 0 } }, nodes: {}, edges: {} } as unknown as CompareResult;
+  const table = (resource_id?: string): ErdEntity => ({ id: "shop.Invoice", label: "Invoice", fields: [], ...(resource_id ? { resource_id, resource_label: resource_id.split(".")[1] } : {}) });
+
+  it("marks nothing when the older version had no resource, as every 1.5 → 1.6 pair", () => {
+    const withEdges = { ...nothing, edges: { "shop.Invoice|entity_resource|shop.BillingDatabase": "added" } } as unknown as CompareResult;
+    const [invoice] = markErd(mergeErdSlices({ entities: [table()] }, { entities: [table("shop.BillingDatabase")] }), withEdges).entities!;
+    expect([invoice!.diff, invoice!.previous_resource_id]).toEqual(["unchanged", undefined]);
+  });
+
+  it("marks a table stored by another resource than before, and keeps where it was", () => {
+    const [invoice] = markErd(mergeErdSlices({ entities: [table("shop.BillingDatabase")] }, { entities: [table("shop.StorefrontDatabase")] }), nothing).entities!;
+    expect([invoice!.diff, invoice!.resource_id, invoice!.previous_resource_id]).toEqual(["changed", "shop.StorefrontDatabase", "shop.BillingDatabase"]);
+  });
+
+  it("keeps the older resource of a table only the older version has", () => {
+    const [invoice] = mergeErdSlices({ entities: [table("shop.BillingDatabase")] }, { entities: [] }).entities!;
+    expect(invoice!.resource_id).toBe("shop.BillingDatabase");
+  });
+});

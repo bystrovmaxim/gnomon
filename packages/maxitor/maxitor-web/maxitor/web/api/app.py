@@ -108,7 +108,7 @@ from maxitor.web.model.diagrams.actions.get_element_card_action import ElementNo
 from maxitor.web.model.diagrams.actions.get_lifecycle_finite_automaton_action import (
     GetLifecycleFiniteAutomatonAction,
 )
-from maxitor.web.model.diagrams.actions.list_domains_action import _LIST_DOMAINS_DISTINCT_COLORS, ListDomainsAction
+from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE, ListDomainsAction
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
 from maxitor.web.model.diagrams.actions.list_entity_kinds_action import ListEntityKindsAction
 from maxitor.web.model.diagrams.actions.list_node_types_action import ListNodeTypesAction, fill_color_for_node_type
@@ -185,7 +185,7 @@ def _map_store(fastapi_app: FastAPI) -> MapStore:
         Path(os.environ.get("MAXITOR_MAP_CACHE") or Path.home() / ".cache" / "maxitor" / "map"),
         graph=current_mapped,
         scope=_map_scope,
-        colours=_LIST_DOMAINS_DISTINCT_COLORS,
+        colours=DOMAIN_PALETTE,
         immutable=lambda source: parse_version_source(source) is not None,
         pair=current_pair,
         type_colour=fill_color_for_node_type,

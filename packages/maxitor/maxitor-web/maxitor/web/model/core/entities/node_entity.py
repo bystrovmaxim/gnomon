@@ -7,12 +7,14 @@ PURPOSE
 ═══════════════════════════════════════════════════════════════════════════════
 
 Carry a stable id, optional parent link, display label, and a coarse category string
-for hierarchical UI lists. Declared as an ActionMachine entity under ``DiagramsDomain``.
+for hierarchical UI lists. Declared as an ActionMachine entity stored by
+``DuckDBGraphResource``, which builds its rows; its domain, ``DiagramsDomain``, is that
+resource's.
 """
 
 from __future__ import annotations
 
-from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
+from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
 from pydantic import Field
 
 from aoa.action_machine.domain import BaseCoreEntity
@@ -21,7 +23,7 @@ from aoa.action_machine.intents.entity import entity
 
 @entity(
     description="Hierarchical UI node row (id, optional parent, label, coarse type)",
-    domain=DiagramsDomain,
+    resource=DuckDBGraphResource,
 )
 class NodeCoreEntity(BaseCoreEntity):
     """

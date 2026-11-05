@@ -93,8 +93,25 @@ export function litBy(ref: ElementRef, entities: readonly ErdEntity[], relations
   return { tables: [...tables], lines };
 }
 
+/**
+ * The line under a table's name: the resource that stores it (spec 061), and in Diff where it was stored before when
+ * that differs; nothing for a table of a graph older than protocol 1.6.
+ */
+export function resourceLine(entity: ErdEntity, resourceLabels: Readonly<Record<string, string>> = {}): string {
+  if (!entity.resource_id) return "";
+  const now = entity.resource_label || resourceLabels[entity.resource_id] || entity.resource_id;
+  const before = entity.previous_resource_id ? resourceLabels[entity.previous_resource_id] || entity.previous_resource_id : null;
+  return before ? `Resource: ${before} → ${now}` : `Resource: ${now}`;
+}
+
 /** The subject of ``ref``, less its place; ``null`` when it is not a table, a row or a line of the drawing. */
-export function erdSubject(ref: ElementRef, entities: readonly ErdEntity[], root: ParentNode, relations: readonly ErdRelation[] = []): Omit<CardSubject, "at"> | null {
+export function erdSubject(
+  ref: ElementRef,
+  entities: readonly ErdEntity[],
+  root: ParentNode,
+  relations: readonly ErdRelation[] = [],
+  resourceLabels: Readonly<Record<string, string>> = {},
+): Omit<CardSubject, "at"> | null {
   if (ref.kind === "edge") return lineSubject(ref, entities, relations);
   if (ref.kind === "table") {
     const entity = entities.find((each) => each.id === ref.id);
@@ -104,7 +121,7 @@ export function erdSubject(ref: ElementRef, entities: readonly ErdEntity[], root
       key: `table:${entity.id}`,
       ref,
       title,
-      detail: "",
+      detail: resourceLine(entity, resourceLabels),
       nodeId: entity.id,
       change: tableChange(entity, title),
       // In Diff what changed comes first: from afar this list is all a person reads (spec 043, FR-006a).

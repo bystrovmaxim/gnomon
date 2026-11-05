@@ -9,7 +9,7 @@ PURPOSE
 Return ordered domain rows (interchange qualname + accent colour) from
 ``connections["DuckDBGraph"]`` so the React shell can fetch per-domain payloads separately.
 Rows are read from the DuckDB ``domain`` table (same coordinator graph load as
-``ListEntitiesAction``). Accent colours use ``_LIST_DOMAINS_DISTINCT_COLORS`` by row index
+``ListEntitiesAction``). Accent colours use ``DOMAIN_PALETTE`` by row index
 after SQL sort. The wire ``list_domains`` field uses ``ListDomainsJson`` from
 :mod:`~maxitor.web.model.diagrams.actions.list_domains_action_schema`.
 
@@ -96,7 +96,8 @@ def _unique_color_tuple(*segments: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(out)
 
 
-_LIST_DOMAINS_DISTINCT_COLORS: tuple[str, ...] = _unique_color_tuple(_EXTRA_LIST_DOMAIN_COLORS)
+#: The accent colours of the ERD, in order: domains and resources take them by their place in their list.
+DOMAIN_PALETTE: tuple[str, ...] = _unique_color_tuple(_EXTRA_LIST_DOMAIN_COLORS)
 
 
 @meta(
@@ -140,7 +141,7 @@ class ListDomainsAction(BaseAction[ParamsStub, "ListDomainsAction.Result"]):
         ORDER BY lower(label), lower(COALESCE(NULLIF(name, ''), label, id)), id
         """
         raw = duck.execute_fetch_dicts(sql)
-        palette = _LIST_DOMAINS_DISTINCT_COLORS
+        palette = DOMAIN_PALETTE
         return [
             {
                 "qualname": str(row["qualname"]),

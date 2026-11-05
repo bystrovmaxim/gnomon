@@ -36,4 +36,9 @@ export type ErdDomainsBatchPayload = {
   domain_slices: ErdDomainPayload[];
   /** Every line between two tables of the whole request (absent from older servers). */
   relations?: Array<Record<string, unknown>>;
+  /** The resources of the graph that store an entity, by id, each with its colour (protocol 1.6; absent from older servers). */
+  resources?: ErdResourceRow[];
 };
+
+/** One resource of the graph: the colour is the server's, the same for every reader of the graph. */
+export type ErdResourceRow = { id: string; label: string; color: string };

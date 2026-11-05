@@ -13,6 +13,11 @@ edges); relation slots appear as FK rows whose type is the target table's label.
 ``ListEntitiesDomainSlicesJson`` from
 :mod:`~maxitor.web.model.diagrams.actions.list_entities_action_schema` (a
 :class:`~aoa.action_machine.model.json_schema_value.JsonSchemaValue` alias).
+
+Each entity row names the resource that stores it (protocol 1.6, ``entity_resource_edges``), and the
+result lists the resources of the whole graph that store an entity, sorted by id, each with its colour
+from ``DOMAIN_PALETTE`` by its place in that list: the colour depends on the graph alone, never on the
+domains asked for, so every reader of one graph sees one resource in one colour (spec 061).
 """
 
 from __future__ import annotations
@@ -20,9 +25,11 @@ from __future__ import annotations
 import json
 from typing import Annotated, Any, cast
 
+from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
 from maxitor.web.model.diagrams.actions.list_entities_action_schema import (
     ListEntitiesDomainSlicesJson,
     ListEntitiesRelationsJson,
+    ListEntitiesResourcesJson,
 )
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
 from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
@@ -151,6 +158,13 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         # ]
         domain_slices: ListEntitiesDomainSlicesJson = Field(
             description="One entry per requested domain: domain_label, domain_qualname, list_entities.",
+        )
+        resources: ListEntitiesResourcesJson = Field(
+            default_factory=list,
+            description=(
+                "Every resource of the graph that stores an entity, sorted by id, with its colour; "
+                "the same for every request on one graph, whatever domains it asks for."
+            ),
         )
         relations: ListEntitiesRelationsJson = Field(
             default_factory=list,
@@ -321,6 +335,12 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         ), selected_entity AS (
           SELECT id FROM domain_entity
           {neighbor_clause}
+        ), stored_by AS (
+          -- Protocol 1.6: the resource that stores each entity; a graph of 1.0–1.5 has none.
+          SELECT rre.source_id AS entity_id, arg_min(r.id, r.id) AS resource_id, arg_min(r.label, r.id) AS resource_label
+          FROM entity_resource_edges rre
+          JOIN resource r ON r.id = rre.target_id
+          GROUP BY rre.source_id
         ), fk AS (
           -- A table lists every relation field it declares, whether its target is on screen or not.
           SELECT er.source_id AS entity_id, er.field_name AS name, target.label AS type, TRUE AS foreign_key, NULLIF(er.description, '') AS description
@@ -404,6 +424,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         )
         SELECT e.id, e.label, COALESCE(MIN(de.target_id), '') AS domain_qualname,
                e.entity_kind AS entity_kind, e.values_json AS values_json, e.declares_values AS declares_values,
+               sb.resource_id AS resource_id, sb.resource_label AS resource_label,
                COALESCE(
                  list(struct_pack(
                    field_id := fr.field_node_id,
@@ -431,8 +452,9 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         FROM selected_entity se
         JOIN entity e ON e.id = se.id
         LEFT JOIN domain_edges de ON de.source_id = e.id
+        LEFT JOIN stored_by sb ON sb.entity_id = e.id
         LEFT JOIN ordered_field_rows fr ON fr.entity_id = e.id
-        GROUP BY e.id, e.label, e.entity_kind, e.values_json, e.declares_values
+        GROUP BY e.id, e.label, e.entity_kind, e.values_json, e.declares_values, sb.resource_id, sb.resource_label
         ORDER BY e.id
     """
         group_sql = f"""
@@ -499,7 +521,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
             "groups": groups,
         }
 
-    @summary_aspect("Serialize ERD slices for requested domains (DuckDB)")
+    @summary_aspect("Serialize ERD slices for requested domains, and the resources of the graph (DuckDB)")
     async def build_domain_payload_summary(
         self,
         params: ListEntitiesAction.Params,
@@ -508,8 +530,22 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         connections: Connections,
     ) -> ListEntitiesAction.Result:
         duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        # The resources of the whole graph, never only of the domains asked for: a colour then depends on
+        # the graph alone, and one resource looks the same on every diagram and to every reader.
+        stored = duck.execute_fetch_dicts(
+            """
+            SELECT r.id AS id, r.label AS label
+            FROM resource r
+            WHERE EXISTS (SELECT 1 FROM entity_resource_edges rre JOIN entity e ON e.id = rre.source_id WHERE rre.target_id = r.id)
+            ORDER BY r.id
+            """
+        )
+        resources = [
+            {"id": str(row["id"]), "label": str(row["label"]), "color": DOMAIN_PALETTE[i % len(DOMAIN_PALETTE)]}
+            for i, row in enumerate(stored)
+        ]
         if not params.domain_qualnames:
-            return ListEntitiesAction.Result(domain_slices=[])
+            return ListEntitiesAction.Result(domain_slices=[], resources=resources)
 
         slices = [
             {
@@ -520,4 +556,4 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
             for qual in params.domain_qualnames
         ]
         relations = self.request_relations(duck, list(dict.fromkeys(params.domain_qualnames)), params.include_one_hop_neighbors)
-        return ListEntitiesAction.Result(domain_slices=slices, relations=relations)
+        return ListEntitiesAction.Result(domain_slices=slices, resources=resources, relations=relations)

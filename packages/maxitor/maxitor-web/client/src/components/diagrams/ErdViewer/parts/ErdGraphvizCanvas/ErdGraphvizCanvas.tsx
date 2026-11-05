@@ -37,6 +37,8 @@ import {
 import { containNodeFills } from "@/lib/containNodeFills";
 import { enrichErdDataForViewer } from "@/lib/enrichErdData";
 import { filterGraphByKinds, kindsOnDiagram, pruneGraphToEntities } from "@/lib/erdKindFilter";
+import { filterGraphByResources, resourcesOnDiagram } from "@/lib/erdResourceFilter";
+import { useErdResourceSettings } from "@/lib/erdResourceSettings";
 import { changeDiskUri, changesOnDiagram, domainsOn, filterGraphByChanges, onScreen, tablesToDraw } from "@/lib/erdFilterPresence";
 import { mergeRelationsOnScreen } from "@/lib/mergeErdRelations";
 import { diagramCounts, erdHolds, erdOfSide, erdPortable, nothingChanged, unmarked } from "@/lib/erdDiff";
@@ -171,6 +173,9 @@ const LAYOUT_TOOLS: {
 ];
 
 
+/** The room a fit keeps round the tables for the contours of resources and their names, in screen pixels. */
+const RESOURCE_CONTOUR_FIT_MARGIN_PX = 48;
+
 export function ErdGraphvizCanvas({
   bundle,
   bundleVersion,
@@ -215,6 +220,8 @@ export function ErdGraphvizCanvas({
   const [disabledEntityList, setDisabledEntityList] = usePageSetting<string[]>("disabled_entities", []);
   /** Entity kinds switched off; a kind the graph gains later starts on. */
   const [disabledKindList, setDisabledKindList] = usePageSetting<string[]>("disabled_kinds", []);
+  /** Resources switched off and Boundary (spec 061): page settings, shared in a room. */
+  const { disabledResources, toggleResource, boundary, setBoundary } = useErdResourceSettings();
 
   // A domain the model no longer has stops applying (spec 028, FR-076).
   const enabledDomains = useMemo(
@@ -224,7 +231,10 @@ export function ErdGraphvizCanvas({
   const disabledKinds = useMemo(() => new Set(disabledKindList), [disabledKindList]);
 
   const side = useHalf()?.side ?? null;
-  const panZoom = useSvgPanZoom();
+  // A fit measures the tables and lines, whose boxes every engine draws alike; the contours of resources stand outside
+  // them, so with Boundary on the fit keeps a fixed margin for them instead of measuring their text (spec 061).
+  const contoured = boundary && Object.keys(bundle.resource_colors).length > 0;
+  const panZoom = useSvgPanZoom(contoured ? { fitMarginPx: RESOURCE_CONTOUR_FIT_MARGIN_PX } : undefined);
   const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform } = panZoom;
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);
@@ -270,9 +280,12 @@ export function ErdGraphvizCanvas({
   // those left — the neighbours from other domains, and any table a filter hid.
   const qualsOn = useMemo(() => domainsOn(bundle.domain_qualifiers, tabsOn), [bundle.domain_qualifiers, tabsOn]);
   const mergedData = useMemo(() => {
-    const filtered = filterGraphByChanges(filterGraphByKinds(beforeKinds, disabledKinds), offChanges);
+    const filtered = filterGraphByChanges(filterGraphByResources(filterGraphByKinds(beforeKinds, disabledKinds), disabledResources), offChanges);
     return tablesToDraw(filtered, baseGraph, qualsOn, (entity) => readEntityQual(entity) ?? fallbackQual, includeOneHop);
-  }, [beforeKinds, disabledKinds, offChanges, includeOneHop, baseGraph, qualsOn, fallbackQual]);
+  }, [beforeKinds, disabledKinds, disabledResources, offChanges, includeOneHop, baseGraph, qualsOn, fallbackQual]);
+  // The resources of the diagram's base: the Resources section's rows, the Boundary switch and the paint point exist
+  // while it has one (spec 061, FR-003, FR-005).
+  const baseResources = useMemo(() => resourcesOnDiagram(baseEntities), [baseEntities]);
 
   const erdEmptyOverlay =
     mergedData.entities.length === 0 ? (
@@ -337,7 +350,7 @@ export function ErdGraphvizCanvas({
       const stage = viewportRef.current?.getBoundingClientRect();
       const { entities, relations } = drawnTables();
       const named = fromAfar(ref, elements.at(-1), entities, touch);
-      const facts = panner ? erdSubject(named, entities, panner, relations) : null;
+      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels) : null;
       const [outer, inner] = [elements[0], named === ref ? elements.at(-1) : elements[0]];
       if (!facts || !stage || !outer || !inner) return null;
       // A line's box can span the screen: the card stands by its middle.
@@ -354,7 +367,7 @@ export function ErdGraphvizCanvas({
       ];
       return { ...facts, at: cardBeside(stage, beside, level), around: { beside, level, avoid }, project: projection };
     },
-    [drawnTables, pannerRef, projection, viewportRef],
+    [bundle.resource_labels, drawnTables, pannerRef, projection, viewportRef],
   );
   const hoverCards = useMemo<HoverCards>(
     () => ({
@@ -387,7 +400,10 @@ export function ErdGraphvizCanvas({
   const selectedRow = useSelectedElement();
   const keptRow = selectedRow?.kind === "row" ? selectedRow.id : null;
   const folds = useMemo(() => erdFolds(drawnData.entities, drawnData.relations ?? [], fieldsCollapsed, new Set(fieldsExcept), keptRow), [drawnData, fieldsCollapsed, fieldsExcept, keptRow]);
-  const foldedData = useMemo(() => ({ ...drawnData, folds }), [drawnData, folds]);
+  const foldedData = useMemo(
+    () => ({ ...drawnData, folds, boundary: boundary && baseResources.length > 0, resource_labels: bundle.resource_labels }),
+    [drawnData, folds, boundary, baseResources, bundle.resource_labels],
+  );
   const allCollapsed = fieldsCollapsed && fieldsExcept.length === 0;
   const canCollapse = useMemo(() => [...folds.values()].some((fold) => fold.hidden.size > 0), [folds]);
   /** Where the header of the table just toggled stood, so the new drawing keeps it there (FR-029). */
@@ -416,10 +432,19 @@ export function ErdGraphvizCanvas({
   const paintSections: PaintSection[] = [
     "domains",
     ...(Object.keys(kindPaint).length > 1 ? (["kinds"] as const) : []),
+    ...(baseResources.length > 0 ? (["resources"] as const) : []),
     ...(diffDrawing && changesOnDiagram(baseEntities).length > 0 ? (["changes"] as const) : []),
   ];
   const paintSection = paintSource(paintSections, chosenPaint);
-  const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}`;
+  const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}`;
+  // What the Graphviz text is painted by: a section's name, and the colours of its rows when kinds or resources paint.
+  const applyPaint = useCallback(
+    () =>
+      paintSection === "resources"
+        ? setErdPaint("resource", bundle.resource_colors)
+        : setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint),
+    [paintSection, kindPaint, bundle.resource_colors],
+  );
   const diffNames = useDiffNames();
   const ownBase = useMemo(() => (half ? erdOfSide({ ...baseGraph, entities: baseGraph.entities ?? [] }, half.side) : null), [half, baseGraph]);
   const halfNote = useHalfPicking({
@@ -437,9 +462,9 @@ export function ErdGraphvizCanvas({
 
   // The text Graphviz is given carries the colours too: two tabs painting differently must not claim one input.
   const dot = useMemo(() => {
-    setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint);
+    applyPaint();
     return buildDotSource(foldedData, layout);
-  }, [foldedData, layout, paintSection, kindPaint]);
+  }, [foldedData, layout, applyPaint]);
   // The picture's hash and the text Graphviz was given, hashed with it as one pair: the settings digest a room
   // compares layouts under (FR-093).
   const layoutPair = useSvgLayoutPair(rawSvg, `${erdGraphvizEngine(layout)}\n${dot}`);
@@ -467,7 +492,7 @@ export function ErdGraphvizCanvas({
         if (cancelled) return null;
         // Every table of a specialization block as wide as its widest table (spec 029): measured first, on the shared
         // instance. FDP depends on what ran before it in an instance, so the drawing itself is that instance's first layout.
-        setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint);
+        applyPaint();
         const source = buildErdDot(foldedData, layout, (measureDot) => measurer.layout(measureDot, "svg", "dot"));
         return loadGraphvizWasmFor(engine).then((gv) => ({ gv, source }));
       })
@@ -693,6 +718,17 @@ export function ErdGraphvizCanvas({
   }));
 
 
+  // One row per resource of the base, in the server's colour, the same for everyone (spec 061, FR-009).
+  const shownResources = new Set(mergedData.entities.flatMap((entity) => (entity.resource_id ? [entity.resource_id] : [])));
+  const resourceRows: ErdFilterRow[] = baseResources.map((resource) => ({
+    key: resource,
+    label: bundle.resource_labels[resource] ?? resource,
+    hint: resource,
+    iconSrc: svgDataUriForInterchangeDomainLegend(paintSection === "resources" ? (bundle.resource_colors[resource] ?? IDLE_DISK) : IDLE_DISK),
+    on: !disabledResources.has(resource),
+    absent: !shownResources.has(resource),
+  }));
+
   const toggleEntityQual = (qual: string) => {
     const next = new Set(disabledEntityList);
     if (next.has(qual)) next.delete(qual);
@@ -725,6 +761,8 @@ export function ErdGraphvizCanvas({
             onToggleKind={toggleKind}
             changeRows={changeRows}
             onToggleChange={toggleChange}
+            resourceRows={resourceRows}
+            onToggleResource={toggleResource}
             paint={choosing ? { source: paintSection, onPaint: setChosenPaint } : null}
           />
         )}
@@ -876,6 +914,7 @@ export function ErdGraphvizCanvas({
             sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
           />
           <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />
+          {baseResources.length > 0 && <OneHopToggle checked={boundary} onChange={setBoundary} label="Boundary" />}
           {canCollapse && (
             <CollapseAllButton
               collapsed={allCollapsed}
