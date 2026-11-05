@@ -14,7 +14,10 @@ const shop = (boundary: boolean): ErdGraphPayload => ({
   resource_labels: labels,
 });
 
-/** The tables each cluster of the text holds directly, by its name: a nested cluster's tables are its own. */
+/**
+ * The tables each cluster of the text holds directly, by its name: a nested cluster's tables are its own. The invisible
+ * ``_room`` cluster that keeps a contour apart from the next is not a contour, and is left out.
+ */
 function clusters(dot: string): Record<string, string[]> {
   const found: Record<string, string[]> = {};
   const stack: string[] = [];
@@ -29,7 +32,7 @@ function clusters(dot: string): Record<string, string[]> {
       if (node && stack.length) found[stack.at(-1)!]!.push(node[1]!);
     }
   }
-  return found;
+  return Object.fromEntries(Object.entries(found).filter(([name]) => !name.endsWith("_room")));
 }
 
 afterEach(() => setErdPaint("domain", {}));
@@ -40,6 +43,11 @@ describe("Boundary: one contour per resource (spec 061)", () => {
     expect(clusters(dot)).toEqual({ cluster_resource_0: ["shop.Invoice"], cluster_resource_1: ["shop.Order", "shop.OrderLine"] });
     expect(dot).toContain("label=<<B>BillingDatabase</B>>;");
     expect(dot).toContain("label=<<B>StorefrontDatabase</B>>;");
+  });
+
+  it("keeps each contour apart from the next inside an invisible cluster", () => {
+    const dot = buildDotSource(shop(true), "gv-dot-lr");
+    expect(dot).toContain('subgraph "cluster_resource_0_room" {\n    style=invis;\n    margin=36;\n  subgraph "cluster_resource_0" {');
   });
 
   it("off, draws today's text: no contour", () => {

@@ -71,6 +71,8 @@ function boxOfPoints(points: string): Box {
 function clustersOf(svg: string): Map<string, { box: Box; stroke: string; label: string }> {
   const found = new Map<string, { box: Box; stroke: string; label: string }>();
   for (const match of svg.matchAll(/<g id="[^"]+" class="cluster">\s*<title>([^<]+)<\/title>([\s\S]*?)<\/g>/g)) {
+    // The invisible ``_room`` cluster only keeps a contour apart from the next: it is not a contour.
+    if (match[1]!.endsWith("_room")) continue;
     const body = match[2]!;
     const path = /<(?:polygon|path)[^>]*stroke="([^"]+)"[^>]*(?:points="([^"]+)"|d="([^"]+)")/.exec(body);
     const coords = path?.[2] ?? (path?.[3] ?? "").replace(/[MCLZ]/g, " ").trim().replace(/\s+/g, " ");
@@ -100,6 +102,8 @@ const storefront = clusters.get("cluster_resource_1");
 check("one contour per resource", billing !== undefined && storefront !== undefined && clusters.size === 3, `clusters: ${[...clusters.keys()].join(", ")}`);
 check("each contour is headed by its resource's name", billing?.label === "BillingDatabase" && storefront?.label === "StorefrontDatabase", `${billing?.label} / ${storefront?.label}`);
 check("each contour holds exactly its resource's tables", ["shop.Invoice", "shop.CardPayment", "shop.BankPayment"].every((id) => inside(nodeBox(svg, id), billing!.box)) && ["shop.Order", "shop.OrderLine"].every((id) => inside(nodeBox(svg, id), storefront!.box)));
+const gap = (one: Box, other: Box) => Math.max(other.left - one.right, one.left - other.right, other.top - one.bottom, one.top - other.bottom);
+check("the contours stand apart, not edge to edge", billing !== undefined && storefront !== undefined && gap(billing.box, storefront.box) >= 36, `gap ${billing && storefront ? gap(billing.box, storefront.box).toFixed(1) : "?"} pt`);
 check("a table of no resource stands outside every contour", ![billing, storefront].some((cluster) => cluster && inside(nodeBox(svg, "shop.Legacy"), cluster.box)));
 const block = clusters.get("cluster_shop.Invoice:payment");
 check("a specialization block stands inside its resource's contour", block !== undefined && inside(block.box, billing!.box));

@@ -620,7 +620,11 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   };
   resourceIds.forEach((resource, index) => {
     const colour = paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : "#94a3b8";
+    // An invisible cluster round each contour keeps the contours apart: Graphviz spaces clusters only by nodesep.
     lines.push(
+      `  subgraph "cluster_resource_${index}_room" {`,
+      "    style=invis;",
+      "    margin=36;",
       `  subgraph "cluster_resource_${index}" {`,
       `    label=<<B>${escHtml(data.resource_labels?.[resource] ?? resource)}</B>>;`,
       '    style="rounded";',
@@ -631,6 +635,7 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
       "    margin=20;",
       ...groups.filter((group) => groupHome(group) === resource).flatMap(groupSource),
       ...(entities ?? []).filter((nd) => nd.resource_id === resource && !grouped.has(nd.id)).map((nd) => nodeSource(nd)),
+      "  }",
       "  }",
     );
   });

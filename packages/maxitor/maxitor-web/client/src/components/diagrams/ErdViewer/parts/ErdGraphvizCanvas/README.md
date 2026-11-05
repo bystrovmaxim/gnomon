@@ -22,7 +22,7 @@ From protocol 1.6 every table carries `resource_id`, and the bundle carries each
 
 - filters by the Resources section (`filterGraphByResources`, `@/lib/erdResourceFilter`) with the other sections, before 1-hop;
 - paints by resource when the gear shift says so (`setErdPaint("resource", resource_colors)`);
-- with **Boundary** on, hands `buildDotSource` the `boundary` flag: each resource's tables go into one `cluster_resource_<n>` (n by sorted resource id), rounded, headed by the resource's name, grey unless resources paint. A specialization block whose tables are all stored by one resource nests inside that contour, and a table is declared once, in its innermost cluster. Off, the DOT is today's text.
+- with **Boundary** on, hands `buildDotSource` the `boundary` flag: each resource's tables go into one `cluster_resource_<n>` (n by sorted resource id), rounded, headed by the resource's name, grey unless resources paint, inside an invisible `_room` cluster with a 36 pt margin that keeps it apart from the next contour. A specialization block whose tables are all stored by one resource nests inside that contour, and a table is declared once, in its innermost cluster. Off, the DOT is today's text.
 
 The resources switched off and Boundary come from `useErdResourceSettings` (`@/lib/erdResourceSettings`), page settings a room shares. A fit takes the contours into account, so a header is never cut at the screen's edge. `scripts/check-erd-resources.ts` checks the drawing on the real WASM build.
 
