@@ -31,7 +31,7 @@ Each phase is one commit, the phases of issue #45. After a phase only its own te
 
 ## Phase 6: Changelog
 
-- [ ] T011 `packages/open-gnomon-protocol/CHANGELOG.md` `## 1.6 — <YYYY-MM-DD HH:MM>` (the constitution's heading; earlier entries stay as they are): one article in the form of 1.5's; `packages/maxitor/CHANGELOG.md` under Unreleased / Added: "The graph builder and the comparison read protocol 1.6 — the edge `entity_resource` from an entity to its resource"
+- [x] T011 `packages/open-gnomon-protocol/CHANGELOG.md` `## 1.6 — <YYYY-MM-DD HH:MM>` (the constitution's heading; earlier entries stay as they are): one article in the form of 1.5's; `packages/maxitor/CHANGELOG.md` under Unreleased / Added: "The graph builder and the comparison read protocol 1.6 — the edge `entity_resource` from an entity to its resource"
 
 ## Dependencies
 

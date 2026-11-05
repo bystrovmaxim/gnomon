@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Where an entity is stored**: the graph builder and the comparison read graphs of protocol 1.6, which adds the edge `entity_resource` from an entity to its resource, so a graph written at 1.6 is checked and opens in Maxitor. Drawing the edge comes later.
 - **A cache stored entity by entity**: Maxitor reads graphs of protocol 1.5 — the `Cache` kind `entity_key` and the edge `@cache_entity_key`. The graph builder and the comparison read 1.5 as well.
 - **The cache in the graph**: Maxitor reads graphs of protocol 1.4 — the `Cache` node of each cache declaration, drawn with a glyph and colour of its own, and the edges `@cache_key`, `@cache_read`, `@cache_write`, `@cache_invalidate`, `caches` and `invalidates`. The graph builder and the comparison read 1.4 as well.
 
