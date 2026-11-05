@@ -39,7 +39,7 @@ A `1.0` graph's edges carry no `id`. Each gets the id a `1.1` graph would write 
 
 ## Refusals
 
-`GraphNotComparableError`, naming the side (`Graph A` / `Graph B`) and the cause, for: a `schema_version` other than `1.0` and `1.1`; a missing `nodes` or `edges` list; an element that is not an object or has no string `id`; two nodes, or two edges, with one id; a `1.0` edge whose id cannot be computed (the message names the edge type and the field).
+`GraphNotComparableError`, naming the side (`Graph A` / `Graph B`) and the cause, for: a `schema_version` outside `KNOWN_VERSIONS` (`1.0` to `1.6`); a missing `nodes` or `edges` list; an element that is not an object or has no string `id`; two nodes, or two edges, with one id; a `1.0` edge whose id cannot be computed (the message names the edge type and the field).
 
 ## Who uses it
 

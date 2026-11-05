@@ -167,3 +167,12 @@ def test_the_older_side_is_named_when_it_is_the_one_refused() -> None:
     """A refusal of A says A."""
     with pytest.raises(GraphNotComparableError, match=r"^Graph A has schema_version None"):
         compare({"nodes": [], "edges": []}, _graph([], []))
+
+
+def test_two_1_6_graphs_compare_and_a_new_resource_edge_is_added() -> None:
+    """A 1.6 graph is read like any known version: an ``entity_resource`` edge that appears is added."""
+    store = {"id": "a.Store", "type": "Resource", "label": "a.Store", "properties": {}}
+    stored = {"id": "a.Core|entity_resource|a.Store", "source_id": "a.Core", "target_id": "a.Store", "type": "entity_resource", "relationship": "Aggregation", "is_dag": True, "properties": {}}
+    result = compare(_graph([CORE, store], [], "1.6"), _graph([CORE, store], [stored], "1.6"))
+    assert result.edges["a.Core|entity_resource|a.Store"].status is Status.ADDED
+    assert result.edge_counts == Counts(added=1)
