@@ -2,6 +2,10 @@
 
 A version of the protocol is a schema file in [graph/](graph/) that never changes once published. A release is the git tag `open-gnomon-protocol-v<version>`.
 
+## 2.0 — 2026-11-06 23:43
+
+A resource is a database, and it says which entities it keeps. The edge `resource_entity` goes from a `Resource` to each `Entity` kept there, as an `Aggregation` with `is_dag` `true` and no properties; an entity may lie in several resources or in none. An entity names only its domain, and a resource has no domain. The data source leaves the protocol: there is no `DataSource` node and no `resource_data_source` edge, and `entity_resource`, which went from an entity to its one resource, is gone too. How a resource connects — a pool, a connection of its own — is chosen by the application and is not in the graph. The change is breaking, hence 2.0; every 1.x version stays published and readable. The README now states in one table what the schema checks — the shape of each node and edge — and what the producer holds: everything else. Schema: [graph/2.0.json](graph/2.0.json).
+
 ## 1.8 — 2026-11-06 18:23
 
 The data model is logical. A relation between entities says that they are related and promises no foreign key, no join and no shared transaction, so from 1.8 a relation, a reference, a specialization, a parent entity and a lifecycle's state type may join entities of any resources and data sources. In exchange every stored entity has a physical place: a resource that stores an entity names exactly one data source, and a domain reaches a data source through one resource, while a data source serves resources of several domains, one each. A data source is any store — a database, an external service, an in-memory store. The vocabulary is that of 1.7, and so is the schema under its new version: every new rule joins several rows, and the README now states the division of checks as a rule of the protocol — the schema checks everything one row shows, the producer keeps every rule across rows and checks it when it builds the model and the graph. Schema: [graph/1.8.json](graph/1.8.json).
