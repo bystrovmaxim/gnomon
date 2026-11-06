@@ -1,7 +1,7 @@
 // src/lib/erdCard.ts
 /** What a card says of a table or a row of the ERD, from what the diagram holds (spec 043, FR-004 – FR-006). */
 import type { CardField, CardSubject } from "@/components/diagrams/ElementCard";
-import type { ErdEntity, ErdField, ErdRelation } from "@/lib/buildDotSource";
+import { isContourId, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
 import { FIELDS_CHANGED, rowCard, tableInside, type CardTarget } from "@/lib/erdDiffCard";
 import { tooltipOf } from "@/rooms/graphvizFocus";
 import type { ElementRef } from "@/rooms/focusStore";
@@ -68,6 +68,38 @@ function lineSubject(ref: ElementRef, entities: readonly ErdEntity[], relations:
   };
 }
 
+/**
+ * The card of a bundle (spec 065): its two ends, how many relations it stands for, and each of them in a row — named
+ * as a line's card names one, with its kind and its counts.
+ */
+function bundleSubject(
+  ref: ElementRef,
+  bundle: ErdBundle,
+  entities: readonly ErdEntity[],
+  relations: readonly ErdRelation[],
+  resourceLabels: Readonly<Record<string, string>>,
+  dataSourceLabels: Readonly<Record<string, string>>,
+): Omit<CardSubject, "at"> {
+  const table = (id: string) => entities.find((entity) => entity.id === id)?.label || id.split(".").pop() || id;
+  const end = (id: string) => (isContourId(id) ? (id.startsWith("rc:") ? resourceLabels[id.slice(3)] : dataSourceLabels[id.slice(3)]) || id.slice(3) : table(id));
+  const lines = bundle.relations.flatMap((k) => (relations[k] ? [relations[k]] : []));
+  const title = `${end(bundle.source)} ↔ ${end(bundle.target)}`;
+  return {
+    key: `bundle:${bundle.source}|${bundle.target}`,
+    ref,
+    title,
+    detail: "Relations between them",
+    nodeId: null,
+    change: null,
+    fieldNoun: "relation",
+    fields: lines.map((line) => {
+      const side = (id: string, field?: string | null) => (field ? `${table(id)}.${field}` : table(id));
+      const counts = line.source_cardinality && line.target_cardinality ? ` · ${ENDS[line.source_cardinality] ?? line.source_cardinality} → ${ENDS[line.target_cardinality] ?? line.target_cardinality}` : "";
+      return { name: `${side(line.source, line.source_field)} → ${side(line.target, line.target_field)}`, type: `${line.relationship_kind ?? "association"}${counts}`, description: line.description };
+    }),
+  };
+}
+
 /** What a hover on ``ref`` lights: the tables it joins to and its lines, which its card should leave in sight. */
 export function litBy(ref: ElementRef, entities: readonly ErdEntity[], relations: readonly ErdRelation[]): { tables: string[]; lines: number[] } {
   if (ref.kind === "edge") {
@@ -122,7 +154,10 @@ export function erdSubject(
   resourceLabels: Readonly<Record<string, string>> = {},
   resourceDataSources: Readonly<Record<string, string>> = {},
   dataSourceLabels: Readonly<Record<string, string>> = {},
+  bundles: readonly ErdBundle[] = [],
 ): Omit<CardSubject, "at"> | null {
+  const bundle = ref.kind === "edge" ? bundles.find((each) => each.id === ref.id) : undefined;
+  if (bundle) return bundleSubject(ref, bundle, entities, relations, resourceLabels, dataSourceLabels);
   if (ref.kind === "edge") return lineSubject(ref, entities, relations);
   if (ref.kind === "table") {
     const entity = entities.find((each) => each.id === ref.id);

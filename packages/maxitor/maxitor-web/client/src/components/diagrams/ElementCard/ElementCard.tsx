@@ -48,6 +48,8 @@ export type CardSubject = {
   /** The lifecycles it is or holds, each drawn small. */
   lifecycleIds?: readonly string[];
   fields?: readonly CardField[];
+  /** What one of ``fields`` is called: ``field`` for a table, ``relation`` for a bundle (spec 065). */
+  fieldNoun?: string;
   /** Rows that lead on to another page, under their group's title, in order. */
   links?: readonly CardLink[];
   /** A name to copy; a phone has no click on it. */
@@ -103,7 +105,7 @@ const CARD_EDGE_PX = 8;
  * A table's fields by name, what a table is made of; the type and description of the one under the pointer or finger stand
  * at the card's foot, a changed type with what it was, so the list stays quiet and nothing above it moves (spec 043, FR-006).
  */
-function FieldList({ fields, open, pointed, onOpen, onPoint }: { fields: readonly CardField[]; open: boolean; pointed: number | null; onOpen: () => void; onPoint: (row: number | null) => void }) {
+function FieldList({ fields, open, pointed, onOpen, onPoint, noun = "field" }: { fields: readonly CardField[]; open: boolean; pointed: number | null; onOpen: () => void; onPoint: (row: number | null) => void; noun?: string }) {
   const rows = open ? fields.map((field, row) => ({ field, row })) : [];
   // Hidden, the list still says what changed in it: that is what a card from afar is for. Where every row changed, as in a
   // table that came or went whole, the card itself has said so.
@@ -123,7 +125,7 @@ function FieldList({ fields, open, pointed, onOpen, onPoint }: { fields: readonl
         <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden style={{ transform: open ? "rotate(180deg)" : "none" }}>
           <path d="M2 3.5 L5 6.5 L8 3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        {fields.length} field{fields.length === 1 ? "" : "s"}
+        {fields.length} {noun}{fields.length === 1 ? "" : "s"}
         {counts.map(({ status, count }) => (
           <span key={status} data-testid="card-fields-count" style={{ color: MARK_LOOK[status].colour }}>
             {MARK_LOOK[status].sign}
@@ -157,7 +159,7 @@ function FieldList({ fields, open, pointed, onOpen, onPoint }: { fields: readonl
               <Box>{shown.description}</Box>
             </>
           ) : (
-            <Box sx={{ color: UNCHANGED_COLOUR }}>{onTouchScreen() ? "Tap a field" : "Hover a field"}</Box>
+            <Box sx={{ color: UNCHANGED_COLOUR }}>{onTouchScreen() ? `Tap a ${noun}` : `Hover a ${noun}`}</Box>
           )}
         </Box>
       )}
@@ -339,6 +341,7 @@ export function ElementCard({ subject, newer, onEnter, onLeave, onClose }: Eleme
       ))}
       {fields && (
         <FieldList
+          noun={subject.fieldNoun}
           fields={fields}
           open={inside.fields}
           pointed={inside.field}

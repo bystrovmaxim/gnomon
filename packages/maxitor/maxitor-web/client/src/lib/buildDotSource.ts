@@ -228,7 +228,101 @@ export type ErdGraphPayload = {
   resource_data_sources?: Readonly<Record<string, string>>;
   /** Data source id → its name, for the outer contour's header. */
   data_source_labels?: Readonly<Record<string, string>>;
+  /**
+   * The contours drawn folded (spec 065), by their ids: ``rc:<resource>`` and ``dc:<data source>``. Each is one box
+   * standing for its tables; its relations to the rest are bundled. Used only with Boundary on.
+   */
+  folded_contours?: ReadonlySet<string>;
 };
+
+/**
+ * A line with a folded box at an end (spec 065). Between two folded boxes it stands for every relation between them;
+ * from a table still drawn it stands for that one relation, so each of the table's links keeps a line of its own.
+ */
+export type ErdBundle = {
+  /** The id Graphviz writes on its edge group: ``rb<j>``. */
+  id: string;
+  /** The ends as drawn: a table's id, or a folded contour's id. */
+  source: string;
+  target: string;
+  /** The indices of the relations it stands for, in ``relations``. */
+  relations: number[];
+};
+
+/** What a folded contour stands for: its tables, the relations between them, and, for a data source, its resources. */
+export type ErdFoldCount = { tables: number; inside: number; resources: number; changed: number };
+
+/** How the folded contours of ``data`` are drawn: where each table goes, the bundles, and each box's counts. */
+export type ErdFoldPlan = {
+  /** Table id → the folded contour it is drawn in; a table drawn as itself is absent. */
+  holder: ReadonlyMap<string, string>;
+  bundles: readonly ErdBundle[];
+  counts: ReadonlyMap<string, ErdFoldCount>;
+};
+
+/** Whether ``id`` names a contour: a resource's (``rc:``) or a data source's (``dc:``). */
+export function isContourId(id: string): boolean {
+  return id.startsWith(CONTOUR_ID_PREFIX) || id.startsWith(DATA_SOURCE_CONTOUR_ID_PREFIX);
+}
+
+/**
+ * The fold plan of ``data`` (spec 065). A table is drawn in the outermost folded contour that holds it — its data
+ * source's when that is folded, else its resource's. A relation between two folded boxes joins the bundle of those two
+ * boxes, whichever way it points; a relation from a table still drawn to a box is a line of its own; one with both ends
+ * in one box is counted inside it. A specialization is never drawn.
+ */
+export function foldPlan(data: ErdGraphPayload): ErdFoldPlan {
+  const folded = data.boundary ? (data.folded_contours ?? new Set<string>()) : new Set<string>();
+  const holder = new Map<string, string>();
+  const counts = new Map<string, ErdFoldCount>();
+  const count = (id: string) => {
+    if (!counts.has(id)) counts.set(id, { tables: 0, inside: 0, resources: 0, changed: 0 });
+    return counts.get(id)!;
+  };
+  const resourcesOf = new Map<string, Set<string>>();
+  for (const entity of data.entities ?? []) {
+    const resource = entity.resource_id;
+    if (!resource) continue;
+    const source = data.resource_data_sources?.[resource];
+    const id = source && folded.has(`${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}`) ? `${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}` : folded.has(`${CONTOUR_ID_PREFIX}${resource}`) ? `${CONTOUR_ID_PREFIX}${resource}` : null;
+    if (!id) continue;
+    holder.set(entity.id, id);
+    const box = count(id);
+    box.tables += 1;
+    if (entity.diff !== undefined && erdGlance(entity) !== "unchanged") box.changed += 1;
+    if (!resourcesOf.has(id)) resourcesOf.set(id, new Set());
+    resourcesOf.get(id)!.add(resource);
+  }
+  for (const [id, resources] of resourcesOf) count(id).resources = resources.size;
+  const bundles: ErdBundle[] = [];
+  const byEnds = new Map<string, ErdBundle>();
+  (data.relations ?? []).forEach((relation, k) => {
+    if (relation.relationship_kind === "specialization") return;
+    const source = holder.get(relation.source) ?? relation.source;
+    const target = holder.get(relation.target) ?? relation.target;
+    if (source === relation.source && target === relation.target) return;
+    if (source === target) {
+      count(source).inside += 1;
+      return;
+    }
+    // Only two folded boxes share a line: a table that is drawn keeps each of its links apart.
+    const key = isContourId(source) && isContourId(target) ? [source, target].sort().join("\u0000") : `relation:${k}`;
+    let bundle = byEnds.get(key);
+    if (!bundle) {
+      bundle = { id: `rb${bundles.length}`, source, target, relations: [] };
+      byEnds.set(key, bundle);
+      bundles.push(bundle);
+    }
+    bundle.relations.push(k);
+  });
+  return { holder, bundles, counts };
+}
+
+/** The width of a bundle's line: one relation is an ordinary line, the widest bundle of the drawing 4.4 (spec 065). */
+export function bundleWidth(size: number, widest: number): number {
+  if (size <= 1 || widest <= 1) return 1;
+  return Number((1 + (3.4 * (size - 1)) / (widest - 1)).toFixed(2));
+}
 
 /**
  * Minimum width of a table's header cell, in points: a short table is as wide as the mockup's card
@@ -641,8 +735,25 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     const homes = new Set(group.members.filter((id) => entityById.has(id)).map(resourceOf));
     return homes.size === 1 ? [...homes][0]! : null;
   };
+  const plan = foldPlan(data);
+  const isFolded = (id: string) => plan.counts.has(id);
+  /** A folded contour (spec 065): one box in the contour's style, its name, what it stands for, and in Diff what changed. */
+  const foldNode = (id: string, name: string, colour: string, nameInk: string): string[] => {
+    const box = plan.counts.get(id) ?? { tables: 0, inside: 0, resources: 0, changed: 0 };
+    const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+    const what = id.startsWith(DATA_SOURCE_CONTOUR_ID_PREFIX)
+      ? `${plural(box.resources, "resource")} · ${plural(box.tables, "table")}`
+      : `${plural(box.tables, "table")} · ${plural(box.inside, "relation")} inside`;
+    const changed = box.changed > 0 ? `<TR><TD ALIGN="LEFT" COLSPAN="2"><FONT POINT-SIZE="10" COLOR="${ERD_DIFF_COLOUR.changed}"><B>${ERD_DIFF_SIGN.changed} ${box.changed} changed</B></FONT></TD></TR>` : "";
+    return [
+      `  "${escDot(id)}" [shape=box style="rounded,filled" fillcolor="white" color="${colour}" penwidth=2 margin="0.28,0.14" tooltip="${escDot(id.slice(3))}" ` +
+        `label=<<TABLE BORDER="0" CELLPADDING="2" CELLSPACING="0"><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="15" COLOR="${nameInk}"><B>${escHtml(name)}</B></FONT></TD><TD WIDTH="20"></TD></TR>` +
+        `<TR><TD ALIGN="LEFT" COLSPAN="2"><FONT POINT-SIZE="10" COLOR="#64748b">${escHtml(what)}</FONT></TD></TR>${changed}</TABLE>>]`,
+    ];
+  };
   const resourceContour = (resource: string, index: number): string[] => {
     const colour = paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : "#94a3b8";
+    if (isFolded(`${CONTOUR_ID_PREFIX}${resource}`)) return foldNode(`${CONTOUR_ID_PREFIX}${resource}`, data.resource_labels?.[resource] ?? resource, colour, paintSource === "resource" ? colour : "#475569");
     // An invisible cluster round each contour keeps the contours apart: Graphviz spaces clusters only by nodesep.
     return [
       `  subgraph "cluster_resource_${index}_room" {`,
@@ -679,6 +790,10 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   const dataSourceIds = [...new Set(resourceIds.flatMap((resource) => (dataSourceOf(resource) ? [dataSourceOf(resource)!] : [])))].sort();
   dataSourceIds.forEach((source, sourceIndex) => {
     const colour = paintSource === "data_source" ? (paintColours[source] ?? UNPAINTED) : "#64748b";
+    if (isFolded(`${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}`)) {
+      lines.push(...foldNode(`${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}`, data.data_source_labels?.[source] ?? source, colour, paintSource === "data_source" ? colour : "#334155"));
+      return;
+    }
     lines.push(
       `  subgraph "cluster_data_source_${sourceIndex}_room" {`,
       "    style=invis;",
@@ -719,6 +834,8 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     // The axis relation is already carried by the head's field row ("details (by variant_code)")
     // and by the container that holds the alternatives — no edge is drawn for it.
     if (ed.relationship_kind === "specialization") return;
+    // A relation with an end in a folded contour is drawn as part of its bundle, below (spec 065).
+    if (plan.holder.has(ed.source) || plan.holder.has(ed.target)) return;
     // In Diff a line takes its status's colour — removed also dashed —, an unchanged one is faded (FR-022, FR-024).
     const lineMark = markOf(ed.diff);
     const look = lineMark
@@ -754,6 +871,14 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
         `arrowhead=${erdEnd(ed.target_cardinality)} headlabel="${escHtml(ed.source_field)}"${tail} labelfontsize=9]`,
     );
   });
+  // Spec 065: one line per pair of drawn ends with a folded box among them, wider with the relations it stands for,
+  // its count on a plate in the middle; no cardinality, since its relations differ.
+  const widest = Math.max(1, ...plan.bundles.map((bundle) => bundle.relations.length));
+  for (const bundle of plan.bundles) {
+    const size = bundle.relations.length;
+    const plate = size > 1 ? ` label="×${size}" fontsize=10 fontcolor="#334155"` : "";
+    lines.push(`  "${escDot(bundle.source)}" -> "${escDot(bundle.target)}" [id="${bundle.id}" arrowhead=none penwidth=${bundleWidth(size, widest)}${plate}]`);
+  }
   lines.push("}");
   return lines.join("\n");
 }

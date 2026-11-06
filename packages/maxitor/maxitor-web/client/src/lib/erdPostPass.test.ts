@@ -1,7 +1,7 @@
 // src/lib/erdPostPass.test.ts
 import { afterEach, describe, expect, it } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, erdBundleSx, erdFoldSx, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
 
 // Markup shaped like Graphviz's: Player (0) has id, gender and an FK row named showcase twice
 // (own row and FK row); Showcase (1) has id and players; Gender (2) has id.
@@ -434,5 +434,77 @@ ${contour("Orders")}${contour("Support")}${contour("Billing")}
 
   it("widens a hovered border in the colour it was drawn with", () => {
     expect(erdContourHoverSx["& g.cluster.is-hovered path:not(.erd-hit)"]).toEqual({ strokeWidth: 3.5 });
+  });
+});
+
+describe("folded contours and their bundles (spec 065)", () => {
+  // Orders is folded into a box; Ticket (Support) has two relations to tables inside it, bundled as rb0; Billing's
+  // contour is unfolded. A data source contour around them.
+  const FOLD_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g class="graph">
+<g id="dc:Shop" class="cluster"><title>cluster_data_source_0</title><g id="a_dc:Shop"><a><path fill="none" stroke="#64748b" d="M0,0L200,0L200,100L0,100Z"/><text>Shop</text></a></g></g>
+<g id="rc:Billing" class="cluster"><title>cluster_resource_0</title><g id="a_rc:Billing"><a><path fill="none" stroke="#94a3b8" d="M10,10L60,10L60,60L10,60Z"/><text>Billing</text></a></g></g>
+<g id="node1" class="node"><title>rc:Orders</title><path fill="white" stroke="#94a3b8" d="M100,20L180,20L180,50L100,50Z"/><text>Orders</text></g>
+<g id="node2" class="node"><title>Ticket</title>${cell("fn0_0", "id")}${cell("ft0_0", "str")}${cell("fn0_1", "order")}${cell("ft0_1", "OrderEntity")}${cell("fn0_2", "line")}${cell("ft0_2", "LineEntity")}</g>
+<g id="node3" class="node"><title>Invoice</title>${cell("fn1_0", "id")}${cell("ft1_0", "str")}</g>
+<g id="rb0" class="edge"><title>Ticket&#45;&gt;rc:Orders</title><path fill="none" stroke="#94a3b8" d="M0,0C1,1 2,2 3,3"/><text>×2</text></g>
+</g></svg>`;
+  const foldEntities: ErdEntity[] = [
+    { id: "Ticket", resource_id: "Support", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }, { name: "line", foreign_key: true }] },
+    { id: "Invoice", resource_id: "Billing", fields: [{ name: "id", primary_key: true }] },
+  ];
+  const foldRelations: ErdLineInfo[] = [
+    { source: "Ticket", target: "Order", relationship_kind: "association", source_field: "order", target_field: null },
+    { source: "Ticket", target: "Line", relationship_kind: "association", source_field: "line", target_field: null },
+  ];
+  const bundles = [{ id: "rb0", source: "Ticket", target: "rc:Orders", relations: [0, 1] }];
+  const mountFold = () => {
+    document.body.innerHTML = `<div id="root">${FOLD_SVG}</div>`;
+    const root = document.getElementById("root")!;
+    addFoldControls(root);
+    bindLineHover(root, foldRelations, foldEntities, new AbortController().signal, bundles);
+    return root;
+  };
+  const bright = (root: ParentNode) =>
+    [...root.querySelectorAll<SVGElement>("g.node")].filter((n) => n.style.opacity === "1").map((n) => n.querySelector("title")!.textContent).sort();
+
+  it("puts a minus in the top right corner of each contour and a plus on each folded box, once", () => {
+    const root = mountFold();
+    addFoldControls(root);
+    const controls = [...root.querySelectorAll(".erd-fold-control")].map((c) => [c.getAttribute("data-fold"), c.getAttribute("data-folded"), c.querySelector("rect")!.getAttribute("x"), c.querySelector("rect")!.getAttribute("y")]);
+    expect(controls).toEqual([
+      ["dc:Shop", "0", "180", "8"],
+      ["rc:Billing", "0", "40", "18"],
+      ["rc:Orders", "1", "160", "28"],
+    ]);
+    expect(root.querySelector('[data-fold="rc:Orders"] path')!.getAttribute("d")).toContain("V");
+    expect(root.querySelector('[data-fold="rc:Billing"] path')!.getAttribute("d")).not.toContain("V");
+  });
+
+  it("lights a hovered bundle, marks the rows of every relation it stands for, and keeps its ends bright", () => {
+    const root = mountFold();
+    const edge = root.querySelector('g[id="rb0"]')!;
+    hover(edge, true);
+    expect(edge.classList.contains("is-hovered")).toBe(true);
+    expect(bright(root)).toEqual(["Ticket", "rc:Orders"]);
+    expect([text(root, "fn0_1").getAttribute("font-weight"), text(root, "fn0_2").getAttribute("font-weight")]).toEqual(["bold", "bold"]);
+    hover(edge, false);
+    expect(edge.classList.contains("is-hovered")).toBe(false);
+    expect([...root.querySelectorAll<SVGElement>("g.node")].every((n) => n.style.opacity === "")).toBe(true);
+  });
+
+  it("lights a folded box's bundles and the tables at their other ends", () => {
+    const root = mountFold();
+    const box = root.querySelector("#node1")!;
+    hover(box, true);
+    expect(root.querySelector('g[id="rb0"]')!.classList.contains("is-hovered")).toBe(true);
+    expect(bright(root)).toEqual(["Ticket", "rc:Orders"]);
+    hover(box, false);
+    expect(root.querySelectorAll(".is-hovered")).toHaveLength(0);
+  });
+
+  it("keeps a bundle's count on view at all times", () => {
+    expect(erdBundleSx["& g.edge[id^='rb'] text, & g.edge[id^='rb'] rect.erd-end-label"]).toEqual({ visibility: "visible" });
+    expect(erdFoldSx["& .erd-fold-control"]).toMatchObject({ opacity: 0.35 });
   });
 });

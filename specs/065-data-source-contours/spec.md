@@ -20,7 +20,7 @@ With Boundary on, the ERD draws a data source as an outer contour around its res
 - Q: What does a click on a contour's name copy? → A: The name as shown, like a table's name: `MessagingDataSource`, `OutboxPrimaryDatabase`.
 - Q: What does the Data sources node hold? → A: One node per data source, sorted by name, then **No data source**. A data source node holds the ERD of the whole data source, then one ERD per resource of it; **No data source** holds one ERD per resource that names none. The node stands only when the graph has a data source.
 - Q: What does an ERD of a data source or of a resource show? → A: Exactly the tables stored in that data source or that resource, whatever their domains, Boundary drawn as on a domain's ERD; tables stored elsewhere are not on it, so 1-hop has nothing to add.
-- Q: How does a folded contour look and link? → A: One rounded box in the contour's style and colour, its name in the header, under it `12 tables · 9 relations inside` (a resource) or `3 resources · 20 tables` (a data source), and a plus in its corner. Every relation with an end inside it is drawn to the box. All relations between the same two ends become one line, wider with its count relative to the widest such line of the diagram, with a `×N` plate when N > 1 and no cardinality at its ends.
+- Q: How does a folded contour look and link? → A: One rounded box in the contour's style and colour, its name in the header, under it `12 tables · 9 relations inside` (a resource) or `3 resources · 20 tables` (a data source), and a plus in its corner. Every relation with an end inside it is drawn to the box. From a table still drawn, each relation keeps a line of its own to the box. Only between two folded boxes do the relations become one line, wider with its count relative to the widest such line of the diagram, with a `×N` plate when N > 1. A line to a box has no cardinality at its ends.
 - Q: Hovering and clicking a bundled line? → A: Hovering lights it and its two ends, dims the rest, and opens a card listing its relations, one per row. A click unfolds the folded contours at its ends.
 - Q: Folding a data source when some of its resources are folded? → A: The data source folds whole; each resource keeps its own state, so unfolding the data source shows them as they were.
 - Q: Where does the fold state live? → A: A page setting, `folded_contours`, carried by the address as `folded` and shared by a room, as the tables switched off are. The room server accepts the ERD's resource settings — `disabled_resources`, `disabled_data_sources`, `boundary`, `folded_contours` and the paints `resources` and `data_sources` — on every ERD page.
@@ -65,13 +65,13 @@ A reader wants the whole data model of one database, whatever domains its tables
 
 A reader folds the large `OutboxPrimaryDatabase` to see how the rest links to it.
 
-**Independent Test**: fold one resource of a data source with lines to another; the folded box is drawn with one bundled line to each end it links to, the plate saying how many relations it stands for.
+**Independent Test**: fold two resources of a data source with several relations between them; one line joins the two boxes, its plate saying how many relations it stands for; a table still drawn keeps a line of its own per relation to a box.
 
 **Acceptance Scenarios**:
 
 1. **Given** Boundary on, **Then** every resource contour and every data source contour shows a small minus in its top right corner, low in contrast until the pointer is on the contour.
 2. **When** the reader clicks it, **Then** the contour is drawn as one box with its name, its counts and a plus; its tables and the lines between them are not drawn.
-3. **Given** relations from tables inside the folded contour to tables outside, **Then** each is drawn to the box, and the relations between the same two ends are one line, its width grown with their number, a `×N` plate when N > 1.
+3. **Given** relations from tables inside the folded contour to tables outside, **Then** each is drawn from its table to the box, a line of its own; **given** two folded contours, **then** the relations between them are one line, its width grown with their number, a `×N` plate when N > 1.
 4. **When** the reader hovers that line, **Then** it and its ends are lit, the rest dims, and a card lists its relations.
 5. **When** the reader clicks that line, **Then** the folded contours at its ends unfold.
 6. **When** the reader hovers the folded box, **Then** its lines and the tables or boxes at their other ends are lit, the rest dims.
@@ -96,7 +96,7 @@ A reader folds the large `OutboxPrimaryDatabase` to see how the rest links to it
 - **FR-003**: The sidebar listing has a first-level node `data_sources_root` "Data sources" after Domains when the graph has a data source; under it one node per data source and `no_data_source` "No data source" when some resource names none; under each, the ERD rows described in User Story 3.
 - **FR-004**: An ERD may be scoped to a data source or to a resource (`data_source=` / `resource=` in the address); it draws the tables stored there, as an ERD of all domains narrowed to them; a room names it as a page of its own.
 - **FR-005**: Every resource contour and data source contour has a fold control in its top right corner; a folded contour is one box with its name, its counts and an unfold control.
-- **FR-006**: Relations with an end inside a folded contour are drawn to its box; relations between the same two ends are one line whose width grows with their count relative to the diagram's widest bundle, with a `×N` plate when N > 1 and no cardinality ends.
+- **FR-006**: Relations with an end inside a folded contour are drawn to its box: from a table still drawn, one line per relation; between two folded boxes, one line for all their relations, its width grown with their count relative to the diagram's widest bundle, with a `×N` plate when N > 1. A line to a box has no cardinality ends.
 - **FR-007**: Hovering a bundled line lights it and its ends and shows a card listing its relations; clicking it unfolds the folded contours at its ends; hovering a folded box lights its lines and their other ends.
 - **FR-008**: The folded contours are the page setting `folded_contours` (address `folded`), shared by a room; the room server accepts the ERD's resource settings on ERD pages.
 - **FR-009**: In Diff a folded box with changed tables shows an amber mark with their number.
@@ -106,7 +106,7 @@ A reader folds the large `OutboxPrimaryDatabase` to see how the rest links to it
 ### Key Entities
 
 - **Folded contour**: a resource or data source drawn as one box, named by its id.
-- **Bundled line**: one line standing for every relation between the same two drawn ends, at least one of them a folded box.
+- **Bundled line**: one line standing for every relation between two folded boxes.
 - **Scoped ERD**: an ERD narrowed to the tables of one data source or one resource.
 
 ## Success Criteria
@@ -114,7 +114,7 @@ A reader folds the large `OutboxPrimaryDatabase` to see how the rest links to it
 ### Measurable Outcomes
 
 - **SC-001**: On the Messaging ERD of the AOA demo, `MessagingDataSource` appears once.
-- **SC-002**: Folding `OutboxPrimaryDatabase` on the Messaging ERD leaves one box and one bundled line to the dead-letter store, its card listing the relation between them.
+- **SC-002**: Folding `OutboxPrimaryDatabase` on the Messaging ERD leaves one box and a line from the dead-letter store's table to it, its card listing the relation.
 - **SC-003**: Data sources → MessagingDataSource → its ERD opens with only the tables stored in that data source.
 - **SC-004**: The unit tests, the drawing checks of the fold and of the single name, and the browser checks pass.
 
