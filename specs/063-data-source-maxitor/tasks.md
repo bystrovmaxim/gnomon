@@ -5,7 +5,7 @@ One phase = one commit, referencing (#52).
 - [x] T001 Phase 1: constitution rules 24, 26, 53; version 1.3.0
 - [x] T002 Phase 2: `external/aoa` to the merge commit of bystrovmaxim/aoa#476 with `uv.lock`, own commit; then DuckDB loads `DataSource` and `resource_data_source`
 - [x] T003 Phase 3: the entity listing returns data sources and colours
-- [ ] T004 Phase 4: the element card shows the data source
+- [x] T004 Phase 4: the element card shows the data source
 - [ ] T005 Phase 5: the ERD — data source contours, Data sources section with No data source, data source in Resources rows, paint, room and address
 - [ ] T006 Phase 6: graph history — the comparison reports data source rows (covered by #51's reader; a test on the demo pair)
 - [ ] T007 Phase 7: rebuild graph files, raise versions
