@@ -32,7 +32,7 @@ Each phase is one commit, the phases of issue #51. After a phase only its own te
 
 ## Phase 6: Changelog
 
-- [ ] T012 `packages/open-gnomon-protocol/CHANGELOG.md` `## 1.7 — <YYYY-MM-DD HH:MM>`: one article; `packages/maxitor/CHANGELOG.md` under Unreleased / Added: one line — the graph builder and the comparison read protocol 1.7
+- [x] T012 `packages/open-gnomon-protocol/CHANGELOG.md` `## 1.7 — <YYYY-MM-DD HH:MM>`: one article; `packages/maxitor/CHANGELOG.md` under Unreleased / Added: one line — the graph builder and the comparison read protocol 1.7
 
 ## Dependencies
 
