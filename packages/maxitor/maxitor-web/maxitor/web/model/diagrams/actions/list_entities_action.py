@@ -17,7 +17,9 @@ edges); relation slots appear as FK rows whose type is the target table's label.
 Each entity row names the resource that stores it (protocol 1.6, ``entity_resource_edges``), and the
 result lists the resources of the whole graph that store an entity, sorted by id, each with its colour
 from ``DOMAIN_PALETTE`` by its place in that list: the colour depends on the graph alone, never on the
-domains asked for, so every reader of one graph sees one resource in one colour (spec 061).
+domains asked for, so every reader of one graph sees one resource in one colour (spec 061). Each resource
+also names the data source it shares with other resources (protocol 1.7, ``resource_data_source_edges``),
+or none, and the result lists those data sources, sorted by id, coloured the same way (spec 063).
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ from typing import Annotated, Any, cast
 
 from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
 from maxitor.web.model.diagrams.actions.list_entities_action_schema import (
+    ListEntitiesDataSourcesJson,
     ListEntitiesDomainSlicesJson,
     ListEntitiesRelationsJson,
     ListEntitiesResourcesJson,
@@ -162,8 +165,15 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         resources: ListEntitiesResourcesJson = Field(
             default_factory=list,
             description=(
-                "Every resource of the graph that stores an entity, sorted by id, with its colour; "
+                "Every resource of the graph that stores an entity, sorted by id, with its colour and its data source; "
                 "the same for every request on one graph, whatever domains it asks for."
+            ),
+        )
+        data_sources: ListEntitiesDataSourcesJson = Field(
+            default_factory=list,
+            description=(
+                "Every data source a listed resource names, sorted by id, with its colour; "
+                "empty for a graph of 1.0–1.6 or one where no resource names a data source."
             ),
         )
         relations: ListEntitiesRelationsJson = Field(
@@ -534,18 +544,31 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         # the graph alone, and one resource looks the same on every diagram and to every reader.
         stored = duck.execute_fetch_dicts(
             """
-            SELECT r.id AS id, r.label AS label
+            SELECT r.id AS id, r.label AS label, min(rds.target_id) AS data_source_id
             FROM resource r
+            LEFT JOIN resource_data_source_edges rds ON rds.source_id = r.id
             WHERE EXISTS (SELECT 1 FROM entity_resource_edges rre JOIN entity e ON e.id = rre.source_id WHERE rre.target_id = r.id)
+            GROUP BY r.id, r.label
             ORDER BY r.id
             """
         )
         resources = [
-            {"id": str(row["id"]), "label": str(row["label"]), "color": DOMAIN_PALETTE[i % len(DOMAIN_PALETTE)]}
+            {
+                "id": str(row["id"]),
+                "label": str(row["label"]),
+                "color": DOMAIN_PALETTE[i % len(DOMAIN_PALETTE)],
+                "data_source_id": None if row["data_source_id"] is None else str(row["data_source_id"]),
+            }
             for i, row in enumerate(stored)
         ]
+        named = {row["data_source_id"] for row in resources if row["data_source_id"] is not None}
+        shared = duck.execute_fetch_dicts("SELECT id, label FROM data_source ORDER BY id")
+        data_sources = [
+            {"id": str(row["id"]), "label": str(row["label"]), "color": DOMAIN_PALETTE[i % len(DOMAIN_PALETTE)]}
+            for i, row in enumerate(r for r in shared if str(r["id"]) in named)
+        ]
         if not params.domain_qualnames:
-            return ListEntitiesAction.Result(domain_slices=[], resources=resources)
+            return ListEntitiesAction.Result(domain_slices=[], resources=resources, data_sources=data_sources)
 
         slices = [
             {
@@ -556,4 +579,4 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
             for qual in params.domain_qualnames
         ]
         relations = self.request_relations(duck, list(dict.fromkeys(params.domain_qualnames)), params.include_one_hop_neighbors)
-        return ListEntitiesAction.Result(domain_slices=slices, resources=resources, relations=relations)
+        return ListEntitiesAction.Result(domain_slices=slices, resources=resources, data_sources=data_sources, relations=relations)

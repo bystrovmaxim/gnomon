@@ -237,9 +237,29 @@ ListEntitiesRelationsJson = JsonSchemaValue.define(
     schema={"type": "array", "items": _RELATION_ROW},
 )
 
-# The resources of the graph that store an entity, each with the colour every reader of the graph sees.
+# The resources of the graph that store an entity, each with the colour every reader of the graph sees
+# and the data source it shares with other resources (protocol 1.7), or null.
 ListEntitiesResourcesJson = JsonSchemaValue.define(
     name="ListEntitiesResourcesJson",
+    schema={
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "label": {"type": "string", "minLength": 1},
+                "color": {"type": "string", "minLength": 1},
+                "data_source_id": {"type": ["string", "null"]},
+            },
+            "required": ["id", "label", "color", "data_source_id"],
+            "additionalProperties": False,
+        },
+    },
+)
+
+# The data sources of the graph that a listed resource names, each with the colour every reader sees.
+ListEntitiesDataSourcesJson = JsonSchemaValue.define(
+    name="ListEntitiesDataSourcesJson",
     schema={
         "type": "array",
         "items": {
