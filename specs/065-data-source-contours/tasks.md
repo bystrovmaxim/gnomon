@@ -9,4 +9,4 @@ One phase = one commit, referencing (#56).
 - [x] T005 Phase 5: rebuild the graph files if they changed; raise the versions of `maxitor-web` and `maxitor`
 - [ ] T006 Phase 6: the closing check run, browser checks included
 - [x] T007 Phase 7: documentation — the ERD and navigation sections of the `maxitor-web` README
-- [ ] T008 Phase 8: changelog
+- [x] T008 Phase 8: changelog
