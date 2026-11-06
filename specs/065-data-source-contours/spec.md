@@ -19,7 +19,7 @@ With Boundary on, the ERD draws a data source as an outer contour around its res
 - Q: Why does a data source's name repeat? → A: Each resource contour sits in an invisible spacing frame inside the data source's contour; Graphviz passes a frame's label down to the frames inside it, so the spacing frame draws the data source's name again. Every spacing frame gets an empty label.
 - Q: What does a click on a contour's name copy? → A: The name as shown, like a table's name: `MessagingDataSource`, `OutboxPrimaryDatabase`.
 - Q: What does the Data sources node hold? → A: One node per data source, sorted by name, then **No data source**. A data source node holds the ERD of the whole data source, then one ERD per resource of it; **No data source** holds one ERD per resource that names none. The node stands only when the graph has a data source.
-- Q: What does an ERD of a data source or of a resource show? → A: The tables of every domain stored in that data source or that resource, Boundary drawn as on a domain's ERD; 1-hop adds the tables one line away, wherever they are stored.
+- Q: What does an ERD of a data source or of a resource show? → A: Exactly the tables stored in that data source or that resource, whatever their domains, Boundary drawn as on a domain's ERD; tables stored elsewhere are not on it, so 1-hop has nothing to add.
 - Q: How does a folded contour look and link? → A: One rounded box in the contour's style and colour, its name in the header, under it `12 tables · 9 relations inside` (a resource) or `3 resources · 20 tables` (a data source), and a plus in its corner. Every relation with an end inside it is drawn to the box. All relations between the same two ends become one line, wider with its count relative to the widest such line of the diagram, with a `×N` plate when N > 1 and no cardinality at its ends.
 - Q: Hovering and clicking a bundled line? → A: Hovering lights it and its two ends, dims the rest, and opens a card listing its relations, one per row. A click unfolds the folded contours at its ends.
 - Q: Folding a data source when some of its resources are folded? → A: The data source folds whole; each resource keeps its own state, so unfolding the data source shows them as they were.
@@ -121,4 +121,4 @@ A reader folds the large `OutboxPrimaryDatabase` to see how the rest links to it
 ## Assumptions
 
 - A data source contour and a resource contour are drawn only with Boundary on (spec 061, 063).
-- The scoped ERD needs no new server read: it narrows the listing of all domains on the client, as the filters do.
+- The scoped ERD needs no new server read: it narrows the listing of all domains on the client to the tables of its scope.

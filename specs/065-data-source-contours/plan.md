@@ -35,7 +35,7 @@ Every `cluster_*_room` spacing frame writes `label="";`, so it never inherits th
 - Level 2 nodes: one per data source (`parent_id = data_sources_root`, id = the data source id, type `DataSource`), sorted by label; `no_data_source` "No data source" last when some resource stored an entity and names none.
 - Level 3 rows: `erd_data_source:<ds>` (type `erd_data_source`, ordinal 0, label `ERD — <ds label> view`) and one `erd_resource:<res>` per resource with entities (type `erd_resource`, ordinal 1, label `ERD — <res label> view`), under its data source or `no_data_source`.
 - `DiagramSelection` ERD gains `data_source?` / `resource?`; the address carries `data_source=` / `resource=`; `pageKeyOf`, `selectionOfPageKey`, `selectionKey` and the server's `_KEY_ORDER` / `page_keys` name the page.
-- `loadErdDomainsBundle` for a scoped selection loads all domains, as "ERD all domains", and keeps the entities stored in the scope; with 1-hop on, also those one relation away.
+- `loadErdDomainsBundle` for a scoped selection loads all domains, as "ERD all domains", and `scopeErdBundle` keeps the entities stored in the scope, the relations between them, and the domains left with a table.
 - The panel opens the branch of the diagram on screen.
 
 ### 4. Folding (`buildDotSource.ts`, `erdPostPass.ts`, canvas, settings)

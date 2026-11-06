@@ -51,6 +51,11 @@ export async function loadErdDomainsBundle(
   selection: ErdViewerSelection,
   includeOneHopNeighbors: boolean,
 ): Promise<ErdDomainsBundle> {
+  // The ERD of a data source or of a resource is the ERD of all domains, narrowed to the tables stored there (spec 065).
+  if (selection.data_source || selection.resource) {
+    const all = await loadErdDomainsBundle({ kind: "erd", qualifier: null }, includeOneHopNeighbors);
+    return scopeErdBundle(all, selection);
+  }
   if (getActiveBase()) return loadErdDiffBundle(selection, includeOneHopNeighbors);
   const listing = await listDomains();
   const domain_qualifier_colors = Object.fromEntries(
@@ -96,6 +101,35 @@ export async function loadErdDomainsBundle(
     ...resourceMaps(resources ?? []),
     ...dataSourceMaps(data_sources ?? []),
   };
+}
+
+type ScopedRow = { id?: unknown; resource_id?: unknown; source?: unknown; target?: unknown };
+
+/**
+ * ``bundle`` narrowed to ``scope`` (spec 065): the tables stored in its data source or its resource, the lines between
+ * them, and the domains left with a table. A table no resource stores is in no scope.
+ */
+export function scopeErdBundle(bundle: ErdDomainsBundle, scope: Pick<ErdViewerSelection, "data_source" | "resource">): ErdDomainsBundle {
+  const inScope = (resource: unknown) =>
+    typeof resource === "string" && (scope.resource ? resource === scope.resource : bundle.resource_data_sources[resource] === scope.data_source);
+  const kept = new Set<string>();
+  for (const slice of Object.values(bundle.domains)) {
+    for (const entity of slice.entities as ScopedRow[]) if (inScope(entity.resource_id)) kept.add(String(entity.id));
+  }
+  const between = (line: ScopedRow) => kept.has(String(line.source)) && kept.has(String(line.target));
+  const domains: ErdDomainsBundle["domains"] = {};
+  const domain_qualifiers: Record<string, string> = {};
+  const domain_tab_labels: Record<string, string> = {};
+  let first_domain_label: string | undefined;
+  for (const [key, slice] of Object.entries(bundle.domains)) {
+    const entities = (slice.entities as ScopedRow[]).filter((entity) => kept.has(String(entity.id)));
+    if (!entities.length) continue;
+    domains[key] = { ...slice, entities, relations: (slice.relations as ScopedRow[]).filter(between) };
+    domain_qualifiers[key] = bundle.domain_qualifiers[key]!;
+    domain_tab_labels[key] = bundle.domain_tab_labels?.[key] ?? key;
+    first_domain_label ??= domain_tab_labels[key];
+  }
+  return { ...bundle, domains, domain_qualifiers, domain_tab_labels, first_domain_label, relations: ((bundle.relations ?? []) as ScopedRow[]).filter(between) };
 }
 
 /** The colours and names of the resources, newer rows first: a resource only the older version has keeps its own. */

@@ -13,6 +13,14 @@ from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
 )
 
 from aoa.action_machine.model import BaseState
+from tests.fixtures.data_source_model import (
+    BILLING,
+    SHOP_DB,
+    STOREFRONT,
+    SUPPORT,
+    data_source_model_graph,
+    data_source_model_graph_1_6,
+)
 
 _ACTION = GetLeftMenuSidebarDataAction()
 
@@ -258,3 +266,45 @@ async def test_full_pipeline_level3_types() -> None:
     types = {n.type for n in result.level3_diagrams}
     assert "entity_class_diagram" not in types
     assert "lifecycle_state_diagram" not in types  # its entity stands in no domain here
+
+
+# ─── Data sources (spec 065) ──────────────────────────────────────────────────
+
+
+async def _sidebar(coordinator: dict) -> GetLeftMenuSidebarDataAction.Result:
+    conn = _duck(coordinator)
+    r1 = await _ACTION.build_level1_aspect(None, BaseState(), None, {})  # type: ignore[arg-type]
+    r2 = await _ACTION.build_level2_diagrams_aspect(None, BaseState(**r1), None, {})  # type: ignore[arg-type]
+    r3 = await _ACTION.build_level2_nodes_aspect(None, BaseState(**r2), None, conn)  # type: ignore[arg-type]
+    r4 = await _ACTION.build_level3_diagrams_aspect(None, BaseState(**r3), None, conn)  # type: ignore[arg-type]
+    return await _ACTION.build_result_summary(None, BaseState(**r4), None, conn)  # type: ignore[arg-type]
+
+
+async def test_a_graph_with_a_data_source_has_a_data_sources_root_after_domains() -> None:
+    result = await _sidebar(data_source_model_graph())
+    assert [n.id for n in result.level1_nodes] == ["applications_root", "domains_root", "data_sources_root"]
+    assert result.level1_nodes[-1].label == "Data sources"
+
+
+async def test_under_it_each_data_source_then_no_data_source() -> None:
+    result = await _sidebar(data_source_model_graph())
+    under = [(n.id, n.label, n.ordinal) for n in result.level2_nodes if n.parent_id == "data_sources_root"]
+    assert under == [(SHOP_DB, "ShopDataSource", 0), ("no_data_source", "No data source", 1)]
+
+
+async def test_a_data_source_holds_its_erd_then_one_erd_per_resource() -> None:
+    result = await _sidebar(data_source_model_graph())
+    rows = [(n.parent_id, n.id, n.type, n.label) for n in result.level3_diagrams if n.type in ("erd_data_source", "erd_resource")]
+    assert rows == [
+        ("no_data_source", f"erd_resource:{BILLING}", "erd_resource", "ERD — BillingDatabase view"),
+        (SHOP_DB, f"erd_data_source:{SHOP_DB}", "erd_data_source", "ERD — ShopDataSource view"),
+        (SHOP_DB, f"erd_resource:{STOREFRONT}", "erd_resource", "ERD — StorefrontDatabase view"),
+        (SHOP_DB, f"erd_resource:{SUPPORT}", "erd_resource", "ERD — SupportDatabase view"),
+    ]
+
+
+async def test_a_graph_with_no_data_source_has_no_data_sources_root() -> None:
+    result = await _sidebar(data_source_model_graph_1_6())
+    assert [n.id for n in result.level1_nodes] == ["applications_root", "domains_root"]
+    assert not [n for n in result.level2_nodes if n.parent_id == "data_sources_root"]
+    assert not [n for n in result.level3_diagrams if n.type in ("erd_data_source", "erd_resource")]

@@ -30,7 +30,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode
 
 #: The order of the address parameters in a page key (``client/src/lib/urlState.ts``).
-_KEY_ORDER = ("view", "domain", "node", "host")
+_KEY_ORDER = ("view", "domain", "data_source", "resource", "node", "host")
 
 
 def page_key(view: str, **params: str) -> str:
@@ -57,6 +57,10 @@ def page_keys(sidebar: Any) -> set[str]:
             keys.add(page_key("domain-erd"))
         elif kind == "erd_domain" and parent:
             keys.add(page_key("domain-erd", domain=str(parent)))
+        elif kind == "erd_data_source":
+            keys.add(page_key("domain-erd", data_source=str(getattr(row, "id", "")).removeprefix("erd_data_source:")))
+        elif kind == "erd_resource":
+            keys.add(page_key("domain-erd", resource=str(getattr(row, "id", "")).removeprefix("erd_resource:")))
         elif kind == "use_case_domain" and parent:
             keys.add(page_key("use-case", domain=str(parent)))
         elif kind == "use_case_all":

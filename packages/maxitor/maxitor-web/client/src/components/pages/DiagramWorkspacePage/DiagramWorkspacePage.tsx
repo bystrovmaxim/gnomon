@@ -32,7 +32,7 @@ type DiagramWorkspacePageProps = {
 /** The viewer of ``diagram``, or the empty surface. */
 function DiagramOf({ diagram, onOpenErd, onOpenDiagram }: Pick<DiagramWorkspacePageProps, "diagram" | "onOpenErd" | "onOpenDiagram">) {
   if (diagram?.kind === "interchange_graph") return <MapViewer key="full-graph" onOpenErd={onOpenErd} />;
-  if (diagram?.kind === "erd") return <ErdViewer key={diagram.qualifier ?? "all"} selection={diagram} />;
+  if (diagram?.kind === "erd") return <ErdViewer key={diagram.data_source ? `data_source:${diagram.data_source}` : diagram.resource ? `resource:${diagram.resource}` : (diagram.qualifier ?? "all")} selection={diagram} />;
   if (diagram?.kind === "lifecycle_fsm") return <LifecycleFsmViewer key={diagram.lifecycle_graph_node_id} lifecycleGraphNodeId={diagram.lifecycle_graph_node_id} />;
   if (diagram?.kind === "use_case") return <UseCaseDiagramViewer key={diagram.domain_qualifier} domainId={diagram.domain_qualifier} />;
   if (diagram?.kind === "use_case_all") return <UseCaseDiagramViewer key="all" domainId={null} />;
