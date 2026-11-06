@@ -107,6 +107,9 @@ export const erdEdgeId = (k: number) => `re${k}`;
  */
 export const CONTOUR_ID_PREFIX = "rc:";
 
+/** Prefix of the id Graphviz writes on a data source contour's group: ``dc:<data source id>`` (spec 065). */
+export const DATA_SOURCE_CONTOUR_ID_PREFIX = "dc:";
+
 /** Id of the thin dashed line to where the ``k``-th relation pointed in A (spec 038, FR-024). */
 export const erdPreviousEdgeId = (k: number) => `rp${k}`;
 
@@ -644,6 +647,9 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     return [
       `  subgraph "cluster_resource_${index}_room" {`,
       "    style=invis;",
+      // Graphviz passes a frame's label down to the frames inside it: without its own, this frame would draw the data
+      // source's name again above the resource (spec 065).
+      '    label="";',
       "    margin=36;",
       `  subgraph "cluster_resource_${index}" {`,
       // Spec 064: the contour's group is named by its resource, so a hover on its border knows whose links to light;
@@ -674,8 +680,12 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     lines.push(
       `  subgraph "cluster_data_source_${sourceIndex}_room" {`,
       "    style=invis;",
+      '    label="";',
       "    margin=40;",
       `  subgraph "cluster_data_source_${sourceIndex}" {`,
+      // Named by its data source, as a resource contour by its resource: the name copies and the contour folds (spec 065).
+      `    id="${escDot(`${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}`)}";`,
+      `    tooltip="${escDot(source)}";`,
       `    label=<<TABLE BORDER="0" CELLPADDING="12"><TR><TD><B>${escHtml(data.data_source_labels?.[source] ?? source)}</B></TD></TR></TABLE>>;`,
       '    style="rounded,dashed";',
       `    color="${colour}";`,

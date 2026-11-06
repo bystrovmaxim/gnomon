@@ -47,7 +47,7 @@ describe("Boundary: one contour per resource (spec 061)", () => {
 
   it("keeps each contour apart from the next inside an invisible cluster", () => {
     const dot = buildDotSource(shop(true), "gv-dot-lr");
-    expect(dot).toContain('subgraph "cluster_resource_0_room" {\n    style=invis;\n    margin=36;\n  subgraph "cluster_resource_0" {');
+    expect(dot).toContain('subgraph "cluster_resource_0_room" {\n    style=invis;\n    label="";\n    margin=36;\n  subgraph "cluster_resource_0" {');
   });
 
   it("off, draws today's text: no contour", () => {
@@ -191,12 +191,21 @@ describe("a resource contour is named by its resource (spec 064)", () => {
     expect(found.cluster_resource_0_room).toEqual([]);
   });
 
-  it("gives a data source contour no id, so it never takes the hover", () => {
+  it("names a data source contour dc:<data source>, never rc:, so it never takes a resource's hover (spec 065)", () => {
     const SHOP_DB = "shop.ShopDataSource";
     const data = { ...shop(true), resource_data_sources: { [STOREFRONT]: SHOP_DB, [BILLING]: SHOP_DB }, data_source_labels: { [SHOP_DB]: "ShopDataSource" } };
     const found = named(buildDotSource(data, "gv-dot-lr"));
-    expect(found.cluster_data_source_0).toEqual([]);
+    expect(found.cluster_data_source_0).toEqual([`id="dc:${SHOP_DB}";`, `tooltip="${SHOP_DB}";`]);
     expect(found.cluster_resource_0).toContain(`id="rc:${BILLING}";`);
+  });
+
+  it("gives every invisible spacing frame an empty label, so no name is drawn twice (spec 065)", () => {
+    const SHOP_DB = "shop.ShopDataSource";
+    const data = { ...shop(true), resource_data_sources: { [STOREFRONT]: SHOP_DB, [BILLING]: SHOP_DB }, data_source_labels: { [SHOP_DB]: "ShopDataSource" } };
+    const dot = buildDotSource(data, "gv-dot-lr");
+    const frames = [...dot.matchAll(/subgraph "(cluster_[^"]+_room)" \{\n    style=invis;\n    (label="";)?/g)];
+    expect(frames.map((frame) => frame[1]).sort()).toEqual(["cluster_data_source_0_room", "cluster_resource_0_room", "cluster_resource_1_room"]);
+    expect(frames.every((frame) => frame[2] === 'label="";')).toBe(true);
   });
 
   it("escapes a quote in a resource id inside the DOT string", () => {
