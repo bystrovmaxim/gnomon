@@ -1,5 +1,14 @@
 <!-- Sync Impact Report
-  Version change: 1.2.0 → 1.3.0 (MINOR: amended rules).
+  Version change: 1.3.0 → 1.4.0 (MINOR: amended rules).
+  Amended rules 24, 25 and 26 in Data model and resources: the data model is
+    logical — a relation is allowed between any two entities and promises no
+    foreign key, join or transaction; a domain reaches a data source through
+    one resource; a resource that stores an entity names its data source,
+    connection parameters and the pool live only in a data source, and the
+    connection policy is the data source's; written for issue #60 at the
+    maintainer's instruction.
+
+  Version 1.3.0: 1.2.0 → 1.3.0 (MINOR: amended rules).
   Amended rules 24, 26 and 53 in Data model and resources: resources of one
     database share one data source, a pool lives only in a data source, the
     resource keeps the transaction, relations stay inside one data source (or
@@ -362,14 +371,18 @@ and the database on the server is brought to the snapshot by direct commands.
 24. **One resource per entity.** Each model entity MUST have exactly one
     resource. While it is unknown what to read, the resource is created as an
     empty stub — without read methods; a method appears when it is known what
-    exactly has to be fetched. A relation of an entity stays inside the data
-    source of its resource (rule 26), or inside its resource when the resource
-    names none: between entities of different resources of one database a
-    relation is ordinary, across databases it is refused.
+    exactly has to be fetched. A relation is a fact of the logical model: it is
+    allowed between any two entities, whatever their resources and data
+    sources, and promises no foreign key, no join and no shared transaction.
+    Where an entity lives is the physical model — its resource and that
+    resource's data source (rule 26).
 25. **A resource belongs to a domain.** A resource MUST declare its domain, MUST
     lie in the folder of that domain, and the declared domain MUST match the
     domain of the folder: a mismatch between declaration and place is visible,
-    not guessed.
+    not guessed. A domain reaches a data source through one resource: two
+    resources of one domain MUST NOT name the same data source; a data source
+    MAY serve resources of several domains, one each.
+    Check: no two resources of one domain name one data source.
 26. **A resource is a manager; a nested call gets a wrapper.** A resource owns
     the connection and the transport. A resource MUST take its base from the
     framework and inherit it **directly**, without its own mixins and
@@ -387,21 +400,23 @@ and the database on the server is brought to the snapshot by direct commands.
     `get_wrapper_class()` returns itself, so that the guarantee holds at any
     depth of nesting. There MUST NOT be a shared mixin for the wrapper: it is
     declared in the resource itself, not moved into a shared class.
-    **Resources of one database share one data source.** When several
-    resources of the service work with one database, that database MUST have
-    exactly one data source class, named `<Name>DataSource`, derived from the
-    framework's data source of its kind (`PostgresDataSource` for PostgreSQL),
-    and each of those resources MUST name it as the type argument of its
-    framework base (`PostgresResource[ShopDataSource]`) — still directly, as
-    above. A data source declares only its description and no domain. A pool
-    lives only in a data source: a resource that needs a pool MUST work through
-    one and MUST NOT take a pool or connection parameters; a resource with no
-    data source opens its own connection from its connection parameters. The
-    resource keeps the transaction — it opens, begins, commits and rolls back —;
-    the data source only hands connections out and takes them back. The
+    **Every stored entity has a data source.** A resource that stores an
+    entity MUST name its data source as the type argument of its framework
+    base (`PostgresResource[ShopDataSource]`) — still directly, as above; a
+    resource that stores nothing MAY name none. A data source class is named
+    `<Name>DataSource`, derives from the framework's data source of its kind
+    (`PostgresDataSource`, `ExternalServiceDataSource`, `InMemoryDataSource`)
+    and declares only its description and no domain. Connection parameters
+    and the pool live only in a data source: a resource MUST NOT take a pool
+    or connection parameters. The resource keeps the transaction — it opens,
+    begins, commits and rolls back —; the data source only hands connections
+    out and takes them back, so the connection policy — one shared client, a
+    pool, a shared client with one rate limit for all its resources — is the
+    data source's alone, and changing it changes the data source only. The
     application creates the data source in its lifespan and passes it to every
     resource that names it (`data_source=`).
-    Check: no resource takes `pool=`; resources of one database name one data source.
+    Check: every resource that stores an entity names a data source; no
+    resource takes `pool=` or connection parameters.
 27. **A resource holds no rules.** A resource MUST NOT contain domain
     conditions — "if premium", "if the term has expired" — and MUST NOT compute
     or derive values: it returns what it fetched. Conditions about the fetching
@@ -881,4 +896,4 @@ an ordinary table.
 - The sources of truth about the data structure are the constitution, `specs/`
   and `schema/`. There are no others.
 
-**Version**: 1.3.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-06
+**Version**: 1.4.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-06

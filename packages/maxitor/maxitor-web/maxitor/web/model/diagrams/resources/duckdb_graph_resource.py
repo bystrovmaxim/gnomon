@@ -43,9 +43,11 @@ from typing import Any, cast
 
 import duckdb
 import httpx
+from maxitor.web.model.diagrams.data_sources.graph_data_source import GraphDataSource
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
 
 from aoa.action_machine.intents.meta import meta
+from aoa.action_machine.resources import BaseController, BaseResource
 from aoa.action_machine.resources.external_service.external_service_resource import ExternalServiceResource
 
 DEFAULT_EXAMPLE_GRAPH_JSON_URL = "http://127.0.0.1:8001/examples/model/graph-json"
@@ -58,7 +60,7 @@ DUCKDB_GRAPH_CONNECTION_KEY = "DuckDBGraph"
     description="DuckDB in-memory store for coordinator graph JSON (HTTP + entity/domain helpers)",
     domain=DiagramsDomain,
 )
-class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection]):
+class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection], BaseController[GraphDataSource]):
     """
     AI-CORE-BEGIN
     ROLE: Load coordinator graph JSON into DuckDB; :attr:`.service` is the DuckDB connection.
@@ -67,6 +69,10 @@ class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection]):
     INVARIANTS: A node id is unique within its node table; the build refuses a duplicate.
     AI-CORE-END
     """
+
+    def get_wrapper_class(self) -> type[BaseResource] | None:
+        """The external service's wrapper, as ``ExternalServiceResource`` gives it; the data source base adds none."""
+        return ExternalServiceResource.get_wrapper_class(self)
 
     @classmethod
     def graph_json_url(cls) -> str:

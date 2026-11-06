@@ -61,10 +61,12 @@ def test_the_answer_is_a_graph_maxitor_can_build(client: TestClient) -> None:
 
 
 def test_maxitor_s_own_entity_is_stored_by_the_duckdb_graph(client: TestClient) -> None:
-    """From protocol 1.6 (the graph is 1.7 now): ``NodeCoreEntity`` has one ``entity_resource`` edge, to ``DuckDBGraphResource`` (spec 061, FR-015)."""
+    """Protocol 1.8: ``NodeCoreEntity`` has one ``entity_resource`` edge, to ``DuckDBGraphResource``, which names ``GraphDataSource`` (spec 061, FR-015; spec 067)."""
     payload = json.loads(client.get("/examples/model/graph-json").json()["coordinator_json"])
     entity = next(node["id"] for node in payload["nodes"] if node["type"] == "Entity" and node["label"] == "NodeCoreEntity")
     targets = [edge["target_id"] for edge in payload["edges"] if edge["type"] == "entity_resource" and edge["source_id"] == entity]
     labels = {node["id"]: node["label"] for node in payload["nodes"]}
-    assert payload["schema_version"] == "1.7"
+    assert payload["schema_version"] == "1.8"
     assert [labels[target] for target in targets] == ["DuckDBGraphResource"]
+    sources = [edge["target_id"] for edge in payload["edges"] if edge["type"] == "resource_data_source" and edge["source_id"] == targets[0]]
+    assert [labels[source] for source in sources] == ["GraphDataSource"]

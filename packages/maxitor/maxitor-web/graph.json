@@ -3361,6 +3361,15 @@
       "type": "field"
     },
     {
+      "id": "maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
+    },
+    {
       "id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain|application|aoa.action_machine.application.application.Application",
       "is_dag": true,
       "properties": {},
@@ -3386,6 +3395,15 @@
       "source_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
       "target_id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
       "type": "domain"
+    },
+    {
+      "id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource|resource_data_source|maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource",
+      "type": "resource_data_source"
     },
     {
       "id": "maxitor.web.model.diagrams.resources.map_store.MapStore|domain|maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
@@ -8246,6 +8264,14 @@
       "type": "Field"
     },
     {
+      "id": "maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource",
+      "label": "GraphDataSource",
+      "properties": {
+        "description": "The in-process DuckDB store the graphs are loaded into"
+      },
+      "type": "DataSource"
+    },
+    {
       "id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
       "label": "DiagramsDomain",
       "properties": {
@@ -8975,5 +9001,5 @@
       "type": "Domain"
     }
   ],
-  "schema_version": "1.7"
+  "schema_version": "1.8"
 }
