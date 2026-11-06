@@ -60,7 +60,7 @@ import { DiffCard } from "@/components/history/DiffCard";
 import { COPY_CLICK_SLOP_PX } from "@/lib/erdCopy";
 import type { ErdDomainsBundle } from "@/lib/loadErdDomainsBundle";
 import { bindNameCopy } from "@/lib/erdCopy";
-import { addEdgeHitAreas, addEndLabelBadges, bindLineHover, clearTableFocus, drawErdCards, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, clearTableFocus, drawErdCards, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons } from "@/lib/erdPostPass";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { kindGlyphSvg, kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
@@ -561,6 +561,7 @@ export function ErdGraphvizCanvas({
 
       postProcessGraphvizSvgDom(svg);
       addEdgeHitAreas(svg);
+      addContourHitAreas(svg);
       addEndLabelBadges(svg);
       bindLineHover(svg, drawnData.relations, drawnData.entities, ac.signal);
     }
@@ -846,6 +847,8 @@ export function ErdGraphvizCanvas({
               display: "block",
               // A hovered line (or every line of a hovered row): thicker, a grey one darker, ends and roles following.
               ...erdLineHoverSx,
+              // A hovered resource contour: a wider border (spec 064).
+              ...erdContourHoverSx,
               // A line's end labels show only on hover, on a white plate (spec 029, FR-042).
               ...erdEndLabelSx,
               "@media (prefers-reduced-motion: reduce)": { "& g.edge path": { transition: "none" } },

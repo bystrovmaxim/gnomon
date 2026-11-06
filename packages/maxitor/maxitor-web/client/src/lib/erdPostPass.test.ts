@@ -1,7 +1,7 @@
 // src/lib/erdPostPass.test.ts
 import { afterEach, describe, expect, it } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { addEdgeHitAreas, addEndLabelBadges, bindLineHover, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
 
 // Markup shaped like Graphviz's: Player (0) has id, gender and an FK row named showcase twice
 // (own row and FK row); Showcase (1) has id and players; Gender (2) has id.
@@ -334,5 +334,105 @@ describe("a specialization head and its variants (FR-046)", () => {
     expect(bright(root)).toEqual(["Record", "FirstPress"]);
     expect(text(root, "fn1_1").getAttribute("font-weight")).toBe("bold");
     expect(text(root, "fn0_1").getAttribute("font-weight")).toBe("bold");
+  });
+});
+
+describe("a resource contour lights its links to other resources (spec 064)", () => {
+  // Orders holds Order (0) and Line (1); Support holds Ticket (2); Billing holds Invoice (3). Order–Line stays inside
+  // Orders, Ticket→Order leaves Support for Orders; Billing has no line out. A data source contour has no id.
+  const contour = (resource: string) =>
+    `<g id="rc:${resource}" class="cluster"><title>cluster_${resource}</title><g id="a_rc:${resource}"><a xlink:title="${resource}">` +
+    `<path fill="none" stroke="#94a3b8" stroke-width="2" d="M0,0L10,0L10,10L0,10Z"/><text>${resource}</text></a></g></g>`;
+  const CONTOUR_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g class="graph">
+<g id="clust1" class="cluster"><title>cluster_data_source_0</title><path fill="none" stroke="#64748b" d="M0,0L20,0L20,20L0,20Z"/></g>
+${contour("Orders")}${contour("Support")}${contour("Billing")}
+<g id="node1" class="node"><title>Order</title>${cell("fn0_0", "id")}${cell("ft0_0", "str")}</g>
+<g id="node2" class="node"><title>Line</title>${cell("fn1_0", "id")}${cell("ft1_0", "str")}${cell("fn1_1", "order")}${cell("ft1_1", "OrderEntity")}</g>
+<g id="node3" class="node"><title>Ticket</title>${cell("fn2_0", "id")}${cell("ft2_0", "str")}${cell("fn2_1", "order")}${cell("ft2_1", "OrderEntity")}</g>
+<g id="node4" class="node"><title>Invoice</title>${cell("fn3_0", "id")}${cell("ft3_0", "str")}</g>
+<g id="re0" class="edge"><title>Line&#45;&gt;Order</title><path fill="none" stroke="#94a3b8" d="M0,0C1,1 2,2 3,3"/></g>
+<g id="re1" class="edge"><title>Ticket&#45;&gt;Order</title><path fill="none" stroke="#94a3b8" d="M0,0C4,4 5,5 6,6"/></g>
+</g></svg>`;
+  const shopEntities: ErdEntity[] = [
+    { id: "Order", resource_id: "Orders", fields: [{ name: "id", primary_key: true }] },
+    { id: "Line", resource_id: "Orders", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }] },
+    { id: "Ticket", resource_id: "Support", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }] },
+    { id: "Invoice", resource_id: "Billing", fields: [{ name: "id", primary_key: true }] },
+  ];
+  const shopRelations: ErdLineInfo[] = [
+    { source: "Line", target: "Order", relationship_kind: "composition", source_field: "order", target_field: null },
+    { source: "Ticket", target: "Order", relationship_kind: "association", source_field: "order", target_field: null },
+  ];
+  const mountShop = () => {
+    document.body.innerHTML = `<div id="root">${CONTOUR_SVG}</div>`;
+    const root = document.getElementById("root")!;
+    addContourHitAreas(root);
+    bindLineHover(root, shopRelations, shopEntities, new AbortController().signal);
+    return root;
+  };
+  const cluster = (root: ParentNode, resource: string) => root.querySelector(`g[id="rc:${resource}"]`)!;
+  const bright = (root: ParentNode) =>
+    [...root.querySelectorAll<SVGElement>("g.node")].filter((n) => n.style.opacity === "1").map((n) => n.querySelector("title")!.textContent).sort();
+  const lit = (root: ParentNode) => [...root.querySelectorAll("g.edge.is-hovered")].map((e) => e.id);
+
+  it("finds the lines that leave a resource, and none inside it", () => {
+    expect(crossLines("Orders", shopRelations, shopEntities)).toEqual([1]);
+    expect(crossLines("Support", shopRelations, shopEntities)).toEqual([1]);
+    expect(crossLines("Billing", shopRelations, shopEntities)).toEqual([]);
+  });
+
+  it("gives a resource contour, and only one, a 10 px hit stroke along its border", () => {
+    const root = mountShop();
+    addContourHitAreas(root);
+    const hits = [...root.querySelectorAll("g.cluster path.erd-hit")];
+    expect(hits.map((hit) => hit.closest("g.cluster")!.id)).toEqual(["rc:Orders", "rc:Support", "rc:Billing"]);
+    expect(hits[0]!.getAttribute("stroke-width")).toBe("10");
+    expect(hits[0]!.getAttribute("pointer-events")).toBe("stroke");
+    expect(contourResource(root.querySelector("#clust1")!)).toBeNull();
+  });
+
+  it("on hover lights its lines to other resources, keeps their tables bright and dims the rest", () => {
+    const root = mountShop();
+    hover(cluster(root, "Orders"), true);
+    expect(lit(root)).toEqual(["re1"]);
+    expect(bright(root)).toEqual(["Order", "Ticket"]);
+    expect(root.querySelector<SVGElement>('g[id="re0"]')!.style.opacity).toBe("0.2");
+    expect(cluster(root, "Orders").classList.contains("is-hovered")).toBe(true);
+    expect(text(root, "fn2_1").getAttribute("font-weight")).toBe("bold");
+  });
+
+  it("with no line out dims every table and line, and widens only its own border", () => {
+    const root = mountShop();
+    hover(cluster(root, "Billing"), true);
+    expect(lit(root)).toEqual([]);
+    expect(bright(root)).toEqual([]);
+    expect([...root.querySelectorAll<SVGElement>("g.edge")].map((e) => e.style.opacity)).toEqual(["0.2", "0.2"]);
+    expect([...root.querySelectorAll("g.cluster.is-hovered")].map((c) => c.id)).toEqual(["rc:Billing"]);
+  });
+
+  it("on leave gives the drawing back exactly", () => {
+    const root = mountShop();
+    const before = root.innerHTML;
+    hover(cluster(root, "Orders"), true);
+    hover(cluster(root, "Orders"), false);
+    expect([...root.querySelectorAll<SVGElement>("g.node, g.edge")].every((e) => e.style.opacity === "")).toBe(true);
+    expect(lit(root)).toEqual([]);
+    expect(root.querySelectorAll(".is-hovered")).toHaveLength(0);
+    expect(text(root, "fn2_1").hasAttribute("font-weight")).toBe(false);
+    // The lit line was raised above the others; that order is all a hover leaves behind.
+    expect(root.innerHTML.replace(/ style=""/g, "").length).toBe(before.length);
+  });
+
+  it("a data source contour takes no hover", () => {
+    const root = mountShop();
+    hover(root.querySelector("#clust1")!, true);
+    expect(lit(root)).toEqual([]);
+    expect(bright(root)).toEqual([]);
+    expect([...root.querySelectorAll<SVGElement>("g.node")].every((n) => n.style.opacity === "")).toBe(true);
+  });
+
+  it("widens a hovered border in the colour it was drawn with", () => {
+    expect(erdContourHoverSx["& g.cluster.is-hovered path:not(.erd-hit)"]).toEqual({ strokeWidth: 3.5 });
   });
 });
