@@ -7,5 +7,5 @@ One phase = one commit, referencing (#60).
 - [x] T003 Phase 3: the browser check on the demo graph — a line across a data source contour, lit by the contour hover
 - [x] T004 Phase 4: rebuild the graph files, raise the versions
 - [ ] T005 Phase 5: the closing check run, browser checks included
-- [ ] T006 Phase 6: documentation — the ERD sections on data sources and contours
+- [x] T006 Phase 6: documentation — the ERD sections on data sources and contours
 - [ ] T007 Phase 7: changelog
