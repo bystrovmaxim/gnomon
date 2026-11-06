@@ -52,6 +52,8 @@ export type CardSubject = {
   fieldNoun?: string;
   /** Rows that lead on to another page, under their group's title, in order. */
   links?: readonly CardLink[];
+  /** The icon of its kind, as the full graph draws it, beside the title (a ``data:`` URL). */
+  icon?: string;
   /** A name to copy; a phone has no click on it. */
   copy?: string;
   at: { x: number; y: number };
@@ -305,7 +307,10 @@ export function ElementCard({ subject, newer, onEnter, onLeave, onClose }: Eleme
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, fontWeight: 600, color: "#0f172a" }}>
-        <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{title}</span>
+        <Box component="span" sx={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+          {subject.icon && <img data-testid="card-icon" src={subject.icon} alt="" width={18} height={18} style={{ flexShrink: 0 }} />}
+          <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{title}</span>
+        </Box>
         {change && <StatusIcon status={change.status} />}
         {unchanged && <StatusIcon status="unchanged" />}
       </Box>

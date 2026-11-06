@@ -22,7 +22,8 @@
 - **FR-001**: The fold control's face is 16 px and its hit area 28 px on screen at every zoom; visible at rest; a hand cursor and the hint "Fold" or "Unfold".
 - **FR-002**: Inside a contour the control grows inward from its top right corner; on a folded box it stands outside, to the right.
 - **FR-003**: A room shares folding, the contour hover, a folded box's hover, a bundle's hover and card, a bundle's click, a Data sources diagram, and, in Side by side, a contour hover and a bundle by identity.
-- **FR-004**: Every changed level raises its version; documentation and changelog.
+- **FR-004**: A resource contour, a folded resource box and a folded data source box have a card, as a table does: the icon the full graph draws for a resource or a data source, the name, what it is and where it lives, the counts of resources and tables, the description, and the tables it holds, folded at first; a room shares it.
+- **FR-005**: Every changed level raises its version; documentation and changelog.
 
 ## Success Criteria
 

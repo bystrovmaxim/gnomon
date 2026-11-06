@@ -181,3 +181,48 @@ describe("a bundle's card (spec 065)", () => {
     expect(erdSubject({ kind: "edge", id: "re0" }, shopEntities, document.body, shopRelations, {}, {}, {}, bundles)!.title).toBe("Ticket.order → Order");
   });
 });
+
+describe("the card of a contour and of a folded box (spec 068)", () => {
+  const ORDERS = "shop.OrdersResource";
+  const SUPPORT = "shop.SupportResource";
+  const SHOP = "shop.ShopDataSource";
+  const table = (id: string, resource_id: string, entity_kind = "core"): ErdEntity => ({ id, label: id.split(".")[1], resource_id, entity_kind, fields: [] });
+  const entities = [table("shop.Order", ORDERS), table("shop.Line", ORDERS, "detail"), table("shop.Ticket", SUPPORT)];
+  const labels = { [ORDERS]: "OrdersResource", [SUPPORT]: "SupportResource" };
+  const sources = { [ORDERS]: SHOP, [SUPPORT]: SHOP };
+  const sourceLabels = { [SHOP]: "ShopDataSource" };
+  const card = (ref: { kind: "contour" | "table"; id: string }) => erdSubject(ref, entities, document.createElement("div"), [], labels, sources, sourceLabels);
+
+  it("gives a resource contour its icon, name, data source, count and tables, and the full id to copy", () => {
+    const subject = card({ kind: "contour", id: ORDERS })!;
+    expect([subject.title, subject.detail, subject.nodeId, subject.copy, subject.fieldNoun]).toEqual([
+      "OrdersResource",
+      "Resource · Data source: ShopDataSource\n2 tables",
+      ORDERS,
+      ORDERS,
+      "table",
+    ]);
+    expect(subject.fields).toEqual([{ name: "Line", type: "detail" }, { name: "Order", type: "core" }]);
+    expect(subject.icon).toMatch(/^data:image\/svg\+xml,/);
+    expect(decodeURIComponent(subject.icon!)).toContain("#7570B3");
+  });
+
+  it("gives a folded resource box the same card as its contour", () => {
+    expect(card({ kind: "table", id: `rc:${ORDERS}` })!.fields).toEqual(card({ kind: "contour", id: ORDERS })!.fields);
+  });
+
+  it("gives a folded data source box its own icon, its resources and tables, each table with its resource", () => {
+    const subject = card({ kind: "table", id: `dc:${SHOP}` })!;
+    expect([subject.title, subject.detail, subject.nodeId]).toEqual(["ShopDataSource", "Data source\n2 resources · 3 tables", SHOP]);
+    expect(subject.fields).toEqual([
+      { name: "Line", type: "OrdersResource" },
+      { name: "Order", type: "OrdersResource" },
+      { name: "Ticket", type: "SupportResource" },
+    ]);
+    expect(decodeURIComponent(subject.icon!)).toContain("#0F766E");
+  });
+
+  it("has no card for a contour of nothing on the diagram", () => {
+    expect(card({ kind: "contour", id: "shop.Gone" })).toBeNull();
+  });
+});

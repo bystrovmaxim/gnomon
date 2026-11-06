@@ -3,6 +3,7 @@
 import type { CardField, CardSubject } from "@/components/diagrams/ElementCard";
 import { isContourId, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
 import { FIELDS_CHANGED, rowCard, tableInside, type CardTarget } from "@/lib/erdDiffCard";
+import { svgDataUriForGraphNodeIcon } from "@/lib/icons";
 import { tooltipOf } from "@/rooms/graphvizFocus";
 import type { ElementRef } from "@/rooms/focusStore";
 
@@ -100,6 +101,67 @@ function bundleSubject(
   };
 }
 
+/** The full graph's fill for a resource and a data source, so a card's icon is the one the full graph draws. */
+const RESOURCE_FILL = "#7570B3";
+const DATA_SOURCE_FILL = "#0F766E";
+
+/** ``n`` and its noun, plural when it is not one. */
+const counted = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
+/**
+ * The card of a resource contour, or of a folded box of a resource or of a data source (spec 068): its kind's icon and
+ * name, what it is and where it lives, how much it holds, its description (read from the server) and the tables it
+ * holds — for a data source, each with its resource — folded as a table's fields are.
+ */
+function contourSubject(
+  ref: ElementRef,
+  id: string,
+  entities: readonly ErdEntity[],
+  resourceLabels: Readonly<Record<string, string>>,
+  resourceDataSources: Readonly<Record<string, string>>,
+  dataSourceLabels: Readonly<Record<string, string>>,
+): Omit<CardSubject, "at"> | null {
+  const short = (full: string) => full.split(".").pop() || full;
+  const tableName = (entity: ErdEntity) => entity.label || short(entity.id);
+  const byName = (one: ErdEntity, other: ErdEntity) => tableName(one).localeCompare(tableName(other));
+  if (id.startsWith("rc:")) {
+    const resource = id.slice(3);
+    const tables = entities.filter((entity) => entity.resource_id === resource).sort(byName);
+    if (!tables.length) return null;
+    const source = resourceDataSources[resource];
+    return {
+      key: `contour:${id}`,
+      ref,
+      title: resourceLabels[resource] || short(resource),
+      icon: svgDataUriForGraphNodeIcon(RESOURCE_FILL, "Resource"),
+      detail: `Resource${source ? ` · Data source: ${dataSourceLabels[source] || short(source)}` : ""}\n${counted(tables.length, "table")}`,
+      nodeId: resource,
+      change: null,
+      fieldNoun: "table",
+      fields: tables.map((entity) => ({ name: tableName(entity), type: entity.entity_kind ?? undefined })),
+      copy: resource,
+    };
+  }
+  const source = id.slice(3);
+  const tables = entities.filter((entity) => entity.resource_id != null && resourceDataSources[entity.resource_id] === source);
+  if (!tables.length) return null;
+  const resources = new Set(tables.map((entity) => entity.resource_id as string));
+  const resourceName = (entity: ErdEntity) => resourceLabels[entity.resource_id as string] || short(entity.resource_id as string);
+  tables.sort((one, other) => resourceName(one).localeCompare(resourceName(other)) || byName(one, other));
+  return {
+    key: `contour:${id}`,
+    ref,
+    title: dataSourceLabels[source] || short(source),
+    icon: svgDataUriForGraphNodeIcon(DATA_SOURCE_FILL, "DataSource"),
+    detail: `Data source\n${counted(resources.size, "resource")} · ${counted(tables.length, "table")}`,
+    nodeId: source,
+    change: null,
+    fieldNoun: "table",
+    fields: tables.map((entity) => ({ name: tableName(entity), type: resourceName(entity) })),
+    copy: source,
+  };
+}
+
 /** What a hover on ``ref`` lights: the tables it joins to and its lines, which its card should leave in sight. */
 export function litBy(ref: ElementRef, entities: readonly ErdEntity[], relations: readonly ErdRelation[]): { tables: string[]; lines: number[] } {
   if (ref.kind === "edge") {
@@ -156,6 +218,9 @@ export function erdSubject(
   dataSourceLabels: Readonly<Record<string, string>> = {},
   bundles: readonly ErdBundle[] = [],
 ): Omit<CardSubject, "at"> | null {
+  // A resource contour, and a folded box of a resource or a data source, have a card of their own (spec 068).
+  if (ref.kind === "contour") return contourSubject(ref, `rc:${ref.id}`, entities, resourceLabels, resourceDataSources, dataSourceLabels);
+  if (ref.kind === "table" && isContourId(ref.id)) return contourSubject(ref, ref.id, entities, resourceLabels, resourceDataSources, dataSourceLabels);
   const bundle = ref.kind === "edge" ? bundles.find((each) => each.id === ref.id) : undefined;
   if (bundle) return bundleSubject(ref, bundle, entities, relations, resourceLabels, dataSourceLabels);
   if (ref.kind === "edge") return lineSubject(ref, entities, relations);

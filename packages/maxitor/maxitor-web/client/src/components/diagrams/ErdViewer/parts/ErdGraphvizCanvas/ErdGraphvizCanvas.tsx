@@ -378,7 +378,9 @@ export function ErdGraphvizCanvas({
   );
   const hoverCards = useMemo<HoverCards>(
     () => ({
-      has: (ref) => pannerRef.current !== null && erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, {}, {}, {}, bundlesRef.current) !== null,
+      has: (ref) =>
+        pannerRef.current !== null &&
+        erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, bundlesRef.current) !== null,
       show: (ref, elements) => wantCard(ref ? subjectOf(ref, elements) : null),
       open: (ref, elements) => {
         const subject = subjectOf(ref, elements);
@@ -386,7 +388,7 @@ export function ErdGraphvizCanvas({
       },
       close: closeCard,
     }),
-    [closeCard, drawnTables, pannerRef, subjectOf, wantCard, wantCardNow],
+    [bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, closeCard, drawnTables, pannerRef, subjectOf, wantCard, wantCardNow],
   );
   // Hover and tooltip shared with followers, and the followed person's shown here (spec 029).
   useGraphvizFocus(pannerRef.current, svgMarkup, useCurrentPage(), "table", hoverCards, portable);
