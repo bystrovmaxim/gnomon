@@ -1,12 +1,12 @@
 // src/lib/erdPaint.ts
 /**
- * Which filter section paints the ERD's headers — Domains, Kinds, Resources (spec 061) or, in Diff, Changes (spec 038). The choice is a page
+ * Which filter section paints the ERD's headers — Domains, Kinds, Resources (spec 061), Data sources (spec 063) or, in Diff, Changes (spec 038). The choice is a page
  * setting like a filter — ``paint`` in One, ``paint_diff`` in Diff, each kept apart —, so a room shares it and the
  * address carries it; the gear shift at the foot of the filter panel sets it.
  */
 
 /** A filter section that can paint the diagram. */
-export type PaintSection = "domains" | "kinds" | "resources" | "changes";
+export type PaintSection = "domains" | "kinds" | "resources" | "data_sources" | "changes";
 
 /** The page setting that holds the choice: One's and Diff's are kept apart. */
 export function paintSettingName(diff: boolean): "paint" | "paint_diff" {

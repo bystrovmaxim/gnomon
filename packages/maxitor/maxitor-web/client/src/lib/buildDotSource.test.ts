@@ -116,3 +116,54 @@ describe("Boundary on older graphs and on all domains (spec 061, FR-010, FR-013)
     expect(Object.keys(clusters(buildDotSource(all, "gv-dot-lr")))).toEqual(["cluster_resource_0", "cluster_resource_1", "cluster_resource_2"]);
   });
 });
+
+describe("Boundary around data sources (spec 063)", () => {
+  const SUPPORT = "shop.SupportDatabase";
+  const SHOP_DB = "shop.ShopDataSource";
+  const shared = (): ErdGraphPayload => ({
+    entities: [table("shop.Order", STOREFRONT), table("shop.Ticket", SUPPORT), table("shop.Invoice", BILLING)],
+    relations: [{ source: "shop.Ticket", target: "shop.Order", source_field: "order", relationship_kind: "association" }],
+    boundary: true,
+    resource_labels: { ...labels, [SUPPORT]: "SupportDatabase" },
+    resource_data_sources: { [STOREFRONT]: SHOP_DB, [SUPPORT]: SHOP_DB },
+    data_source_labels: { [SHOP_DB]: "ShopDataSource" },
+  });
+
+  /** The cluster each cluster sits in directly, by name; the invisible ``_room`` clusters are looked through. */
+  function parents(dot: string): Record<string, string | null> {
+    const found: Record<string, string | null> = {};
+    const stack: string[] = [];
+    for (const line of dot.split("\n")) {
+      const open = /subgraph "([^"]+)"/.exec(line);
+      if (open) {
+        const real = stack.filter((name) => !name.endsWith("_room"));
+        if (!open[1]!.endsWith("_room")) found[open[1]!] = real.at(-1) ?? null;
+        stack.push(open[1]!);
+      } else if (line.trim() === "}" && stack.length) stack.pop();
+    }
+    return found;
+  }
+
+  it("draws the resources of one data source inside one outer contour headed by its name", () => {
+    const dot = buildDotSource(shared(), "gv-dot-lr");
+    expect(parents(dot)).toEqual({
+      cluster_data_source_0: null,
+      cluster_resource_1: "cluster_data_source_0",
+      cluster_resource_2: "cluster_data_source_0",
+      cluster_resource_0: null,
+    });
+    expect(clusters(dot)).toMatchObject({ cluster_resource_0: ["shop.Invoice"], cluster_resource_1: ["shop.Order"], cluster_resource_2: ["shop.Ticket"] });
+    expect(dot).toContain("<B>ShopDataSource</B>");
+  });
+
+  it("without a data source draws the resource contours as before", () => {
+    const { resource_data_sources: _map, data_source_labels: _labels, ...plain } = shared();
+    expect(buildDotSource(plain, "gv-dot-lr")).not.toContain("cluster_data_source");
+  });
+
+  it("paints a table and its data source's contour in the data source's colour", () => {
+    setErdPaint("data_source", { [SHOP_DB]: "#123456" });
+    const dot = buildDotSource(shared(), "gv-dot-lr");
+    expect(dot).toContain('color="#123456"');
+  });
+});
