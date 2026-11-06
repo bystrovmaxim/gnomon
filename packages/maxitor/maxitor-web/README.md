@@ -98,6 +98,16 @@ From protocol 1.6 every entity has one `entity_resource` edge to the resource th
 
 A table's card reads `Resource: <name>`. The resources switched off, Boundary and the paint are page settings: the address carries them (`off_resources`, `boundary`, `paint`) and a room shares them. In Diff a table counts as changed by its resource only when both versions name one and they differ — the card then reads `Resource: <before> → <now>`; a resource that appears where the older version had none, as in every comparison of a 1.5 graph with a 1.6 one, changes nothing. A graph older than 1.6 has no resources: no section, no Boundary, no line on the card.
 
+### Resources that share a database
+
+From protocol 1.7 a resource may name the data source it shares with other resources — one database several resources work with — and AOA keeps every relation inside one data source, or inside one resource when the resource names none. The ERD shows it the same three ways:
+
+- **Data sources** in the filter panel, beside Resources, lists the data sources of the diagram and one **No data source** row for the resources that name none; switching a row off hides the tables of its resources. The section stands only when the diagram has a data source. A Resources row names its data source beside it, `Orders · ShopDataSource`.
+- With **Boundary** on, the resources of one data source are drawn inside one outer dashed contour headed by the data source's name, each resource in its own contour inside it. A relation line may cross a resource contour and never crosses a data source contour. A resource with no data source keeps its single contour.
+- The gear shift has a point for **Data sources**: every table and outer contour takes its data source's colour, given by the server from the graph alone; tables of resources without one take the neutral grey.
+
+A table's card reads `Resource: <name> · Data source: <name>`, or `· No data source`. The data sources switched off are a page setting (`off_data_sources` in the address) a room shares. A graph of 1.0–1.6, or one with no data source, has no section and draws as before.
+
 ### A closed dictionary, and a field that references one
 
 A dictionary is an Entity node whose `entity_kind` is `enum`; it carries `properties.values`, the values it declares, each one its reference object `{code, display_name, properties}`. The ERD card does not draw them: it is an ordinary card of the dictionary's own fields, with no value rows, no codes and nothing standing in their place. The values stay in the graph and in the ERD response for every consumer that reads them, so a catalogue with ninety-three entries no longer sets the height of the diagram.

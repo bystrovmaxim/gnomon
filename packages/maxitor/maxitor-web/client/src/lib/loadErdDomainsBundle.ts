@@ -4,7 +4,7 @@ import { compareVersions } from "@/api/compare";
 import { listDomains, listEntities, listEntityKinds } from "@/api/erd";
 import { markErd, mergeErdSlices, mergeRelations, type ErdSlice } from "@/lib/erdDiff";
 import type { ErdRelation } from "@/lib/buildDotSource";
-import type { EntityKindRow, ErdResourceRow } from "@/model/erd";
+import type { EntityKindRow, ErdDataSourceRow, ErdResourceRow } from "@/model/erd";
 import type { DiagramSelection } from "@/model/diagramSelection";
 import { allocateDomainTabKey } from "@/lib/domainTabKeys";
 
@@ -30,6 +30,12 @@ export type ErdDomainsBundle = {
   resource_colors: Record<string, string>;
   /** Resource id → its name. */
   resource_labels: Record<string, string>;
+  /** Resource id → the data source it shares (spec 063); a resource that names none is absent. */
+  resource_data_sources: Record<string, string>;
+  /** Data source id → its colour, as the server gives it. */
+  data_source_colors: Record<string, string>;
+  /** Data source id → its name. */
+  data_source_labels: Record<string, string>;
 };
 
 export type ErdDomainSliceRequest = {
@@ -65,7 +71,7 @@ export async function loadErdDomainsBundle(
   const domain_qualifiers: Record<string, string> = {};
   const domain_tab_labels: Record<string, string> = {};
 
-  const [{ domain_slices: payloads, relations, resources }, kinds] = await Promise.all([
+  const [{ domain_slices: payloads, relations, resources, data_sources }, kinds] = await Promise.all([
     listEntities(quals, includeOneHopNeighbors),
     listEntityKinds(),
   ]);
@@ -88,19 +94,36 @@ export async function loadErdDomainsBundle(
     relations,
     entity_kinds: kinds.list_entity_kinds,
     ...resourceMaps(resources ?? []),
+    ...dataSourceMaps(data_sources ?? []),
   };
 }
 
 /** The colours and names of the resources, newer rows first: a resource only the older version has keeps its own. */
-export function resourceMaps(...listings: readonly (readonly ErdResourceRow[])[]): Pick<ErdDomainsBundle, "resource_colors" | "resource_labels"> {
+export function resourceMaps(
+  ...listings: readonly (readonly ErdResourceRow[])[]
+): Pick<ErdDomainsBundle, "resource_colors" | "resource_labels" | "resource_data_sources"> {
   const resource_colors: Record<string, string> = {};
   const resource_labels: Record<string, string> = {};
+  const resource_data_sources: Record<string, string> = {};
   for (const row of listings.flat()) {
     if (row.id in resource_colors) continue;
     resource_colors[row.id] = row.color;
     resource_labels[row.id] = row.label;
+    if (row.data_source_id) resource_data_sources[row.id] = row.data_source_id;
   }
-  return { resource_colors, resource_labels };
+  return { resource_colors, resource_labels, resource_data_sources };
+}
+
+/** The colours and names of the data sources (spec 063), newer rows first, as for resources. */
+export function dataSourceMaps(...listings: readonly (readonly ErdDataSourceRow[])[]): Pick<ErdDomainsBundle, "data_source_colors" | "data_source_labels"> {
+  const data_source_colors: Record<string, string> = {};
+  const data_source_labels: Record<string, string> = {};
+  for (const row of listings.flat()) {
+    if (row.id in data_source_colors) continue;
+    data_source_colors[row.id] = row.color;
+    data_source_labels[row.id] = row.label;
+  }
+  return { data_source_colors, data_source_labels };
 }
 
 export async function loadErdDomainSlicesBundle(
@@ -156,7 +179,7 @@ async function readErdDiffBundle(selection: ErdViewerSelection, includeOneHopNei
   if (!quals.length) throw new Error("No domain qualnames");
   const newerQuals = quals.filter((qual) => inNewer.has(qual));
   const olderQuals = quals.filter((qual) => inOlder.has(qual));
-  const empty = { domain_slices: [], relations: [] as unknown[], resources: [] as ErdResourceRow[] };
+  const empty = { domain_slices: [], relations: [] as unknown[], resources: [] as ErdResourceRow[], data_sources: [] as ErdDataSourceRow[] };
   const [newer, older] = await Promise.all([
     newerQuals.length ? listEntities(newerQuals, includeOneHopNeighbors) : empty,
     olderQuals.length ? listEntities(olderQuals, includeOneHopNeighbors, base) : empty,
@@ -192,5 +215,6 @@ async function readErdDiffBundle(selection: ErdViewerSelection, includeOneHopNei
     entity_kinds: kinds.list_entity_kinds,
     diff: true,
     ...resourceMaps(newer.resources ?? [], older.resources ?? []),
+    ...dataSourceMaps(newer.data_sources ?? [], older.data_sources ?? []),
   };
 }

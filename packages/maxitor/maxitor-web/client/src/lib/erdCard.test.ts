@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ErdEntity, ErdRelation } from "@/lib/buildDotSource";
 import type { CompareResult } from "@/api/compare";
-import { erdSubject, fromAfar, litBy } from "@/lib/erdCard";
+import { erdSubject, fromAfar, litBy, resourceLine } from "@/lib/erdCard";
 import { markErd } from "@/lib/erdDiff";
 
 const entities: ErdEntity[] = [
@@ -143,5 +143,16 @@ describe("a table's card names its resource (spec 061)", () => {
   it("in Diff names where a moved table was stored before", () => {
     const moved: ErdEntity = { ...invoice, resource_id: "shop.StorefrontDatabase", resource_label: "StorefrontDatabase", previous_resource_id: "shop.BillingDatabase" };
     expect(erdSubject({ kind: "table", id: "shop.Invoice" }, [moved], root, [], labels)?.detail).toBe("Resource: BillingDatabase → StorefrontDatabase");
+  });
+});
+
+describe("the data source on a table's card (spec 063)", () => {
+  it("names the data source of the table's resource, or that it names none", () => {
+    const entity = { id: "shop.Order", label: "Order", resource_id: "shop.Storefront", fields: [] } as never;
+    const labels = { "shop.Storefront": "Storefront", "shop.Billing": "Billing" };
+    const sources = { "shop.ShopDataSource": "ShopDataSource" };
+    expect(resourceLine(entity, labels, { "shop.Storefront": "shop.ShopDataSource" }, sources)).toBe("Resource: Storefront · Data source: ShopDataSource");
+    expect(resourceLine({ ...(entity as object), resource_id: "shop.Billing" } as never, labels, {}, sources)).toBe("Resource: Billing · No data source");
+    expect(resourceLine(entity, labels)).toBe("Resource: Storefront");
   });
 });

@@ -38,6 +38,7 @@ import { containNodeFills } from "@/lib/containNodeFills";
 import { enrichErdDataForViewer } from "@/lib/enrichErdData";
 import { filterGraphByKinds, kindsOnDiagram, pruneGraphToEntities } from "@/lib/erdKindFilter";
 import { filterGraphByResources, resourcesOnDiagram } from "@/lib/erdResourceFilter";
+import { dataSourceOfEntity, dataSourcesOnDiagram, filterGraphByDataSources, NO_DATA_SOURCE } from "@/lib/erdDataSourceFilter";
 import { useErdResourceSettings } from "@/lib/erdResourceSettings";
 import { changeDiskUri, changesOnDiagram, domainsOn, filterGraphByChanges, onScreen, tablesToDraw } from "@/lib/erdFilterPresence";
 import { mergeRelationsOnScreen } from "@/lib/mergeErdRelations";
@@ -221,7 +222,7 @@ export function ErdGraphvizCanvas({
   /** Entity kinds switched off; a kind the graph gains later starts on. */
   const [disabledKindList, setDisabledKindList] = usePageSetting<string[]>("disabled_kinds", []);
   /** Resources switched off and Boundary (spec 061): page settings, shared in a room. */
-  const { disabledResources, toggleResource, boundary, setBoundary } = useErdResourceSettings();
+  const { disabledResources, toggleResource, boundary, setBoundary, disabledDataSources, toggleDataSource } = useErdResourceSettings();
 
   // A domain the model no longer has stops applying (spec 028, FR-076).
   const enabledDomains = useMemo(
@@ -280,12 +281,15 @@ export function ErdGraphvizCanvas({
   // those left — the neighbours from other domains, and any table a filter hid.
   const qualsOn = useMemo(() => domainsOn(bundle.domain_qualifiers, tabsOn), [bundle.domain_qualifiers, tabsOn]);
   const mergedData = useMemo(() => {
-    const filtered = filterGraphByChanges(filterGraphByResources(filterGraphByKinds(beforeKinds, disabledKinds), disabledResources), offChanges);
+    const byResources = filterGraphByResources(filterGraphByKinds(beforeKinds, disabledKinds), disabledResources);
+    const filtered = filterGraphByChanges(filterGraphByDataSources(byResources, disabledDataSources, bundle.resource_data_sources ?? {}), offChanges);
     return tablesToDraw(filtered, baseGraph, qualsOn, (entity) => readEntityQual(entity) ?? fallbackQual, includeOneHop);
-  }, [beforeKinds, disabledKinds, disabledResources, offChanges, includeOneHop, baseGraph, qualsOn, fallbackQual]);
+  }, [beforeKinds, disabledKinds, disabledResources, disabledDataSources, bundle.resource_data_sources, offChanges, includeOneHop, baseGraph, qualsOn, fallbackQual]);
   // The resources of the diagram's base: the Resources section's rows, the Boundary switch and the paint point exist
   // while it has one (spec 061, FR-003, FR-005).
   const baseResources = useMemo(() => resourcesOnDiagram(baseEntities), [baseEntities]);
+  // The data sources of the diagram's base (spec 063): the Data sources section and its paint point exist while it has one.
+  const baseDataSources = useMemo(() => dataSourcesOnDiagram(baseEntities, bundle.resource_data_sources ?? {}), [baseEntities, bundle.resource_data_sources]);
 
   const erdEmptyOverlay =
     mergedData.entities.length === 0 ? (
@@ -350,7 +354,7 @@ export function ErdGraphvizCanvas({
       const stage = viewportRef.current?.getBoundingClientRect();
       const { entities, relations } = drawnTables();
       const named = fromAfar(ref, elements.at(-1), entities, touch);
-      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels) : null;
+      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels) : null;
       const [outer, inner] = [elements[0], named === ref ? elements.at(-1) : elements[0]];
       if (!facts || !stage || !outer || !inner) return null;
       // A line's box can span the screen: the card stands by its middle.
@@ -367,7 +371,7 @@ export function ErdGraphvizCanvas({
       ];
       return { ...facts, at: cardBeside(stage, beside, level), around: { beside, level, avoid }, project: projection };
     },
-    [bundle.resource_labels, drawnTables, pannerRef, projection, viewportRef],
+    [bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, drawnTables, pannerRef, projection, viewportRef],
   );
   const hoverCards = useMemo<HoverCards>(
     () => ({
@@ -401,8 +405,15 @@ export function ErdGraphvizCanvas({
   const keptRow = selectedRow?.kind === "row" ? selectedRow.id : null;
   const folds = useMemo(() => erdFolds(drawnData.entities, drawnData.relations ?? [], fieldsCollapsed, new Set(fieldsExcept), keptRow), [drawnData, fieldsCollapsed, fieldsExcept, keptRow]);
   const foldedData = useMemo(
-    () => ({ ...drawnData, folds, boundary: boundary && baseResources.length > 0, resource_labels: bundle.resource_labels }),
-    [drawnData, folds, boundary, baseResources, bundle.resource_labels],
+    () => ({
+      ...drawnData,
+      folds,
+      boundary: boundary && baseResources.length > 0,
+      resource_labels: bundle.resource_labels,
+      resource_data_sources: bundle.resource_data_sources,
+      data_source_labels: bundle.data_source_labels,
+    }),
+    [drawnData, folds, boundary, baseResources, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels],
   );
   const allCollapsed = fieldsCollapsed && fieldsExcept.length === 0;
   const canCollapse = useMemo(() => [...folds.values()].some((fold) => fold.hidden.size > 0), [folds]);
@@ -433,17 +444,20 @@ export function ErdGraphvizCanvas({
     "domains",
     ...(Object.keys(kindPaint).length > 1 ? (["kinds"] as const) : []),
     ...(baseResources.length > 0 ? (["resources"] as const) : []),
+    ...(baseDataSources.length > 0 ? (["data_sources"] as const) : []),
     ...(diffDrawing && changesOnDiagram(baseEntities).length > 0 ? (["changes"] as const) : []),
   ];
   const paintSection = paintSource(paintSections, chosenPaint);
-  const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}`;
+  const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}|${JSON.stringify(bundle.data_source_colors)}`;
   // What the Graphviz text is painted by: a section's name, and the colours of its rows when kinds or resources paint.
   const applyPaint = useCallback(
     () =>
       paintSection === "resources"
         ? setErdPaint("resource", bundle.resource_colors)
-        : setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint),
-    [paintSection, kindPaint, bundle.resource_colors],
+        : paintSection === "data_sources"
+          ? setErdPaint("data_source", bundle.data_source_colors ?? {})
+          : setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint),
+    [paintSection, kindPaint, bundle.resource_colors, bundle.data_source_colors],
   );
   const diffNames = useDiffNames();
   const ownBase = useMemo(() => (half ? erdOfSide({ ...baseGraph, entities: baseGraph.entities ?? [] }, half.side) : null), [half, baseGraph]);
@@ -722,11 +736,26 @@ export function ErdGraphvizCanvas({
   const shownResources = new Set(mergedData.entities.flatMap((entity) => (entity.resource_id ? [entity.resource_id] : [])));
   const resourceRows: ErdFilterRow[] = baseResources.map((resource) => ({
     key: resource,
-    label: bundle.resource_labels[resource] ?? resource,
+    // A resource that shares a data source names it beside its own name (spec 063).
+    label: [bundle.resource_labels[resource] ?? resource, ...(bundle.resource_data_sources?.[resource] ? [bundle.data_source_labels?.[bundle.resource_data_sources[resource]!] ?? bundle.resource_data_sources[resource]!] : [])].join(" · "),
     hint: resource,
     iconSrc: svgDataUriForInterchangeDomainLegend(paintSection === "resources" ? (bundle.resource_colors[resource] ?? IDLE_DISK) : IDLE_DISK),
     on: !disabledResources.has(resource),
     absent: !shownResources.has(resource),
+  }));
+
+  // One row per data source of the base, in the server's colour, and one for the resources that name none (spec 063).
+  const shownDataSources = new Set(mergedData.entities.flatMap((entity) => {
+    const key = dataSourceOfEntity(entity, bundle.resource_data_sources ?? {});
+    return key === null ? [] : [key];
+  }));
+  const dataSourceRows: ErdFilterRow[] = baseDataSources.map((source) => ({
+    key: source,
+    label: source === NO_DATA_SOURCE ? "No data source" : (bundle.data_source_labels?.[source] ?? source),
+    hint: source === NO_DATA_SOURCE ? "The resources that name no data source" : source,
+    iconSrc: svgDataUriForInterchangeDomainLegend(paintSection === "data_sources" && source !== NO_DATA_SOURCE ? (bundle.data_source_colors?.[source] ?? IDLE_DISK) : IDLE_DISK),
+    on: !disabledDataSources.has(source),
+    absent: !shownDataSources.has(source),
   }));
 
   const toggleEntityQual = (qual: string) => {
@@ -763,6 +792,8 @@ export function ErdGraphvizCanvas({
             onToggleChange={toggleChange}
             resourceRows={resourceRows}
             onToggleResource={toggleResource}
+            dataSourceRows={dataSourceRows}
+            onToggleDataSource={toggleDataSource}
             paint={choosing ? { source: paintSection, onPaint: setChosenPaint } : null}
           />
         )}

@@ -52,8 +52,8 @@ async def test_each_entity_names_the_resource_that_stores_it() -> None:
 async def test_the_resources_of_the_graph_are_sorted_by_id_and_coloured_by_their_place() -> None:
     answer = await _answer(resource_model_graph(), [DOMAIN])
     assert answer.resources == [
-        {"id": BILLING, "label": "BillingDatabase", "color": DOMAIN_PALETTE[0]},
-        {"id": STOREFRONT, "label": "StorefrontDatabase", "color": DOMAIN_PALETTE[1]},
+        {"id": BILLING, "label": "BillingDatabase", "color": DOMAIN_PALETTE[0], "data_source_id": None},
+        {"id": STOREFRONT, "label": "StorefrontDatabase", "color": DOMAIN_PALETTE[1], "data_source_id": None},
     ]
 
 

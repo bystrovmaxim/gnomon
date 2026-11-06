@@ -2839,6 +2839,15 @@
       "type": "field"
     },
     {
+      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result|field|maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:data_sources",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result",
+      "target_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:data_sources",
+      "type": "field"
+    },
+    {
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result|field|maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:domain_slices",
       "is_dag": false,
       "properties": {},
@@ -7426,6 +7435,44 @@
       "type": "Result"
     },
     {
+      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:data_sources",
+      "label": "data_sources",
+      "properties": {
+        "description": "Every data source a listed resource names, sorted by id, with its colour; empty for a graph of 1.0–1.6 or one where no resource names a data source.",
+        "entity_schema": false,
+        "json_schema": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "color": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "label": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "color"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "json_schema_name": "ListEntitiesDataSourcesJson",
+        "json_schema_value": true,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:domain_slices",
       "label": "domain_slices",
       "properties": {
@@ -7813,7 +7860,7 @@
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:resources",
       "label": "resources",
       "properties": {
-        "description": "Every resource of the graph that stores an entity, sorted by id, with its colour; the same for every request on one graph, whatever domains it asks for.",
+        "description": "Every resource of the graph that stores an entity, sorted by id, with its colour and its data source; the same for every request on one graph, whatever domains it asks for.",
         "entity_schema": false,
         "json_schema": {
           "items": {
@@ -7822,6 +7869,12 @@
               "color": {
                 "minLength": 1,
                 "type": "string"
+              },
+              "data_source_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "id": {
                 "minLength": 1,
@@ -7835,7 +7888,8 @@
             "required": [
               "id",
               "label",
-              "color"
+              "color",
+              "data_source_id"
             ],
             "type": "object"
           },
@@ -8921,5 +8975,5 @@
       "type": "Domain"
     }
   ],
-  "schema_version": "1.6"
+  "schema_version": "1.7"
 }

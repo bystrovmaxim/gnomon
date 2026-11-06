@@ -95,13 +95,22 @@ export function litBy(ref: ElementRef, entities: readonly ErdEntity[], relations
 
 /**
  * The line under a table's name: the resource that stores it (spec 061), and in Diff where it was stored before when
- * that differs; nothing for a table of a graph older than protocol 1.6.
+ * that differs; then the data source its resource shares (spec 063), or that it names none when the graph has data
+ * sources; nothing for a table of a graph older than protocol 1.6.
  */
-export function resourceLine(entity: ErdEntity, resourceLabels: Readonly<Record<string, string>> = {}): string {
+export function resourceLine(
+  entity: ErdEntity,
+  resourceLabels: Readonly<Record<string, string>> = {},
+  resourceDataSources: Readonly<Record<string, string>> = {},
+  dataSourceLabels: Readonly<Record<string, string>> = {},
+): string {
   if (!entity.resource_id) return "";
   const now = entity.resource_label || resourceLabels[entity.resource_id] || entity.resource_id;
   const before = entity.previous_resource_id ? resourceLabels[entity.previous_resource_id] || entity.previous_resource_id : null;
-  return before ? `Resource: ${before} → ${now}` : `Resource: ${now}`;
+  const resource = before ? `Resource: ${before} → ${now}` : `Resource: ${now}`;
+  if (Object.keys(dataSourceLabels).length === 0) return resource;
+  const source = resourceDataSources[entity.resource_id];
+  return `${resource} · ${source ? `Data source: ${dataSourceLabels[source] ?? source}` : "No data source"}`;
 }
 
 /** The subject of ``ref``, less its place; ``null`` when it is not a table, a row or a line of the drawing. */
@@ -111,6 +120,8 @@ export function erdSubject(
   root: ParentNode,
   relations: readonly ErdRelation[] = [],
   resourceLabels: Readonly<Record<string, string>> = {},
+  resourceDataSources: Readonly<Record<string, string>> = {},
+  dataSourceLabels: Readonly<Record<string, string>> = {},
 ): Omit<CardSubject, "at"> | null {
   if (ref.kind === "edge") return lineSubject(ref, entities, relations);
   if (ref.kind === "table") {
@@ -121,7 +132,7 @@ export function erdSubject(
       key: `table:${entity.id}`,
       ref,
       title,
-      detail: resourceLine(entity, resourceLabels),
+      detail: resourceLine(entity, resourceLabels, resourceDataSources, dataSourceLabels),
       nodeId: entity.id,
       change: tableChange(entity, title),
       // In Diff what changed comes first: from afar this list is all a person reads (spec 043, FR-006a).

@@ -15,6 +15,7 @@
 - **A page's own sections:** given `sections` (`{ id, title, rows, paints }`) and `onToggleRow(section, row)`, the panel shows those instead of Domains, Kinds and Changes, in their order, and the gear shift has a point for each one that paints. The events explorer uses this: its sections come and go with what is on its screen (spec 055).
 - **Kinds:** the section is rendered only when the graph has more than one kind. Rows come from `GET /api/v1/list-entity-kinds`, labelled with the kind's display name.
 - **Resources** (spec 061): one row per resource that stores a table of the diagram, rendered even for one and absent on a graph older than protocol 1.6. It paints, so the gear shift has a point for it, after Kinds. A row's `hint` — the resource's full id — is its tooltip, whether or not the name was cut.
+- **Data sources** (spec 063): one row per data source the diagram's resources share, then one **No data source** row for the resources that name none; rendered only when the diagram has a data source. It paints, after Resources.
 - **Narrow screens:** the panel starts as a "Filter" pill; opened, it shows the sections straight away — the word "Filter" does not appear inside — with the close button at the end of the Domains header.
 
 ## Props

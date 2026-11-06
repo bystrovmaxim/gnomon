@@ -186,3 +186,20 @@ def test_two_1_7_graphs_compare_and_a_new_data_source_edge_is_added() -> None:
     result = compare(_graph([store, shared], [], "1.7"), _graph([store, shared], [on_it], "1.7"))
     assert result.edges["a.Store|resource_data_source|a.ShopDataSource"].status is Status.ADDED
     assert result.edge_counts == Counts(added=1)
+
+
+def test_a_data_source_appearing_and_a_resource_moving_to_it_are_reported() -> None:
+    """History of 1.7 graphs: a data source that appears is added; a resource moving from one data source to another removes one edge and adds another."""
+    store = {"id": "a.Store", "type": "Resource", "label": "a.Store", "properties": {}}
+    shop = {"id": "a.ShopDataSource", "type": "DataSource", "label": "a.ShopDataSource", "properties": {"description": "Shop database"}}
+    archive = {"id": "a.ArchiveDataSource", "type": "DataSource", "label": "a.ArchiveDataSource", "properties": {"description": "Archive database"}}
+
+    def on(source: str) -> dict[str, Any]:
+        return {"id": f"a.Store|resource_data_source|{source}", "source_id": "a.Store", "target_id": source, "type": "resource_data_source", "relationship": "Aggregation", "is_dag": True, "properties": {}}
+
+    older = _graph([store, shop], [on("a.ShopDataSource")], "1.7")
+    newer = _graph([store, shop, archive], [on("a.ArchiveDataSource")], "1.7")
+    result = compare(older, newer)
+    assert result.nodes["a.ArchiveDataSource"].status is Status.ADDED
+    assert result.edges["a.Store|resource_data_source|a.ShopDataSource"].status is Status.REMOVED
+    assert result.edges["a.Store|resource_data_source|a.ArchiveDataSource"].status is Status.ADDED

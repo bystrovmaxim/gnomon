@@ -45,12 +45,13 @@ wheels = [
 
 [[package]]
 name = "aoa-action-machine"
-version = "1.1.0b1"
+version = "1.2.0b1"
 source = { editable = "external/aoa/packages/aoa-action-machine" }
 dependencies = [
     { name = "jsonschema" },
     { name = "pydantic" },
     { name = "simpleeval" },
+    { name = "typing-extensions" },
 ]
 
 [package.metadata]
@@ -60,6 +61,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0,<3.0" },
     { name = "pyjwt", extras = ["crypto"], marker = "extra == 'jwt'", specifier = ">=2.8,<3" },
     { name = "simpleeval", specifier = ">=1.0,<2.0" },
+    { name = "typing-extensions", specifier = ">=4.12" },
 ]
 provides-extras = ["postgres", "jwt"]
 
@@ -893,7 +895,7 @@ wheels = [
 
 [[package]]
 name = "maxitor"
-version = "3.18.0"
+version = "3.19.0"
 source = { editable = "packages/maxitor" }
 dependencies = [
     { name = "jsonschema" },

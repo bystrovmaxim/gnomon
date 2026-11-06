@@ -118,18 +118,18 @@ export const ERD_DIFF_TINT_ALPHA = "24";
 /** A status that marks something, or ``null`` for unchanged and for one version. */
 // how Diff paints the ERD — the chosen variant "2 + 3": the body is neutral (grey frame,
 // grey zebra), the filter's gear shift chooses what paints the headers, and a halo lies under every table that changed.
-export type ErdPaintSource = "domain" | "kind" | "resource" | "change";
+export type ErdPaintSource = "domain" | "kind" | "resource" | "data_source" | "change";
 let paintSource: ErdPaintSource = "change";
 let paintColours: Readonly<Record<string, string>> = {};
 /**
- * what paints the headers now, and the colours when kinds or resources do — by kind word, or by resource id; the
- * canvas sets it before it draws.
+ * what paints the headers now, and the colours when kinds, resources or data sources do — by kind word, by resource
+ * id, or by data source id; the canvas sets it before it draws.
  */
 export function setErdPaint(source: ErdPaintSource, colours: Readonly<Record<string, string>>): void {
   paintSource = source;
   paintColours = colours;
 }
-/** The grey of a table that the painting section says nothing of: a kind it does not know, a table with no resource. */
+/** The grey of a table that the painting section says nothing of: a kind it does not know, a table with no resource or no data source. */
 const UNPAINTED = "#64748b";
 const paintByChange = () => paintSource === "change";
 /** kinds' colours when they paint — mid tones of the whole wheel, like the domains' own. */
@@ -212,6 +212,13 @@ export type ErdGraphPayload = {
   boundary?: boolean;
   /** Resource id → its name, for the contour's header. */
   resource_labels?: Readonly<Record<string, string>>;
+  /**
+   * Resource id → the data source it shares (protocol 1.7, spec 063). With Boundary on, the resources of one data source
+   * are drawn inside one outer contour headed by the data source's name; a resource absent here has no outer contour.
+   */
+  resource_data_sources?: Readonly<Record<string, string>>;
+  /** Data source id → its name, for the outer contour's header. */
+  data_source_labels?: Readonly<Record<string, string>>;
 };
 
 /**
@@ -491,7 +498,9 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
         ? (paintColours[nd.entity_kind?.trim() || "unknown"] ?? UNPAINTED)
         : paintSource === "resource"
           ? (paintColours[nd.resource_id ?? ""] ?? UNPAINTED)
-          : domainColour;
+          : paintSource === "data_source"
+            ? (paintColours[data.resource_data_sources?.[nd.resource_id ?? ""] ?? ""] ?? UNPAINTED)
+            : domainColour;
     // the header's fill, the frame and the zebra, as the painting asks. Where the filter chooses what
     // paints, the header takes that section's colour alone — a changed table's header too, when domains or kinds
     // paint; its change is then told by its frame, its sign, its rows and its halo.
@@ -618,10 +627,10 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     const homes = new Set(group.members.filter((id) => entityById.has(id)).map(resourceOf));
     return homes.size === 1 ? [...homes][0]! : null;
   };
-  resourceIds.forEach((resource, index) => {
+  const resourceContour = (resource: string, index: number): string[] => {
     const colour = paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : "#94a3b8";
     // An invisible cluster round each contour keeps the contours apart: Graphviz spaces clusters only by nodesep.
-    lines.push(
+    return [
       `  subgraph "cluster_resource_${index}_room" {`,
       "    style=invis;",
       "    margin=36;",
@@ -638,7 +647,34 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
       ...(entities ?? []).filter((nd) => nd.resource_id === resource && !grouped.has(nd.id)).map((nd) => nodeSource(nd)),
       "  }",
       "  }",
+    ];
+  };
+  // Spec 063: the resources of one data source sit inside one outer contour, headed by the data source's name. A
+  // relation may cross a resource contour inside it, never a data source contour: AOA keeps every relation inside
+  // one data source, or inside one resource when it names none.
+  const dataSourceOf = (resource: string): string | null => data.resource_data_sources?.[resource] ?? null;
+  const dataSourceIds = [...new Set(resourceIds.flatMap((resource) => (dataSourceOf(resource) ? [dataSourceOf(resource)!] : [])))].sort();
+  dataSourceIds.forEach((source, sourceIndex) => {
+    const colour = paintSource === "data_source" ? (paintColours[source] ?? UNPAINTED) : "#64748b";
+    lines.push(
+      `  subgraph "cluster_data_source_${sourceIndex}_room" {`,
+      "    style=invis;",
+      "    margin=40;",
+      `  subgraph "cluster_data_source_${sourceIndex}" {`,
+      `    label=<<TABLE BORDER="0" CELLPADDING="12"><TR><TD><B>${escHtml(data.data_source_labels?.[source] ?? source)}</B></TD></TR></TABLE>>;`,
+      '    style="rounded,dashed";',
+      `    color="${colour}";`,
+      `    fontcolor="${paintSource === "data_source" ? colour : "#334155"}";`,
+      "    penwidth=2.5;",
+      "    fontsize=17;",
+      "    margin=24;",
+      ...resourceIds.flatMap((resource, index) => (dataSourceOf(resource) === source ? resourceContour(resource, index) : [])),
+      "  }",
+      "  }",
     );
+  });
+  resourceIds.forEach((resource, index) => {
+    if (dataSourceOf(resource) === null) lines.push(...resourceContour(resource, index));
   });
   const inContour = new Set(resourceIds);
   for (const group of groups) {
