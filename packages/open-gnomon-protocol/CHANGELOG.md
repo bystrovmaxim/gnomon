@@ -2,6 +2,10 @@
 
 A version of the protocol is a schema file in [graph/](graph/) that never changes once published. A release is the git tag `open-gnomon-protocol-v<version>`.
 
+## 1.7 — 2026-11-06 14:03
+
+A document can say which resources share a store: the node type `DataSource` is one database or other store, with its `description`, and the edge `resource_data_source` goes from a `Resource` to it, as an `Aggregation` with `is_dag` `true` and no properties. A data source belongs to the application, by the `application` edge a domain and a role have, and to no domain. It is optional: a resource has at most one, and a resource with none works on its own, as before. The schema checks the shape of each new row; the rest — at most one data source per resource, the ends of the edge, one `application` edge per data source, relations kept inside one data source — the producer keeps, and the README lists each rule. Nothing earlier changes, so a 1.6 document becomes a 1.7 one by changing its `schema_version`. Schema: [graph/1.7.json](graph/1.7.json).
+
 ## 1.6 — 2026-11-05 22:33
 
 A document can say where each entity is stored: the edge `entity_resource` goes from an `Entity` to the `Resource` that stores it, as an `Aggregation` with `is_dag` `true` and no properties, and every entity has exactly one. A schema cannot count edges, so the producer keeps that rule. The entity keeps its `domain` edge, so a 1.5 reader still finds every entity in its domain. Nothing earlier changes, so a 1.5 document becomes a 1.6 one by changing its `schema_version` and adding the edges. The schema's `$id` is its address in this repository. Schema: [graph/1.6.json](graph/1.6.json).

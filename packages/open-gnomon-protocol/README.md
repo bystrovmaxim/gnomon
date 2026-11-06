@@ -1,6 +1,6 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/bystrovmaxim/aoa/main/docs/assets/aoa-logo.png" alt="AOA" width="540"><br><br>
-  <img src="https://img.shields.io/badge/version-1.6-informational" alt="Version 1.6">
+  <img src="https://img.shields.io/badge/version-1.7-informational" alt="Version 1.7">
   <img src="https://img.shields.io/badge/status-stable-brightgreen" alt="Stable">
   <a href="https://json-schema.org/draft/2020-12"><img src="https://img.shields.io/badge/JSON_Schema-2020--12-blue" alt="JSON Schema 2020-12"></a>
   <a href="https://github.com/bystrovmaxim/gnomon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
@@ -27,7 +27,7 @@ The Open Gnomon Protocol makes the model a first-class artifact:
 
 ```json
 {
-  "schema_version": "1.6",
+  "schema_version": "1.7",
   "nodes": [
     {"id": "shop.PlaceOrder", "type": "Action", "label": "Place order",
      "properties": {"description": "Place a customer order."}},
@@ -54,7 +54,7 @@ edges[id=aoa.demo.model.telemetry_pipeline.telemetry_pipeline_domain.TelemetryPi
 
 | | |
 |---|---|
-| **Version** | `1.6` — [graph/1.6.json](graph/1.6.json) |
+| **Version** | `1.7` — [graph/1.7.json](graph/1.7.json) |
 | **Status** | Stable. A published version never changes. |
 | **Normative schema** | JSON Schema 2020-12, one file per version in [graph/](graph/) |
 
@@ -81,12 +81,12 @@ One JSON object with exactly three members:
 
 A document is a graph of version *V* if and only if it declares `"schema_version": "V"` and is valid against [graph/*V*.json](graph/).
 
-### 2. Vocabulary of version 1.6
+### 2. Vocabulary of version 1.7
 
 | | Kinds |
 |---|---|
-| **Node types** (25) | Structure: `Application` `Domain` `Resource` `Role` · Behaviour: `Action` `Params` `Result` `Event` `Field` `PropertyField` `RegularAspect` `SummaryAspect` `Compensator` `AccessDecide` `Cache` `ErrorHandler` `Checker` `RequiredContext` · Data: `Entity` `EntityField` `Sensitive` · Lifecycle: `Lifecycle` `StateInitial` `StateIntermediate` `StateFinal` |
-| **Edge types** (41) | Containment: `application` `domain` `domain_event` `field` `property` `entity_field` `entity_schema` `generic:params` `generic:result` `state` `sensitive` · Behaviour: `@regular_aspect` `@summary_aspect` `@compensate` `@access_decide` `@cache_key` `@cache_read` `@cache_write` `@cache_invalidate` `@cache_entity_key` `@on_error` `@result_checker` `@check_roles` `@required_context` `@emits` · Dependencies: `@depends` `@connection` · Data: `entity_resource` `entity_relation` `entity_reference` `entity_specialization` `entity_view` `caches` `invalidates` · Generalization: `parent_action` `parent_role` `parent_domain` `parent_entity` · Lifecycle: `lifecycle` `lifecycle_contains_state` `lifecycle_transition` |
+| **Node types** (26) | Structure: `Application` `Domain` `Resource` `DataSource` `Role` · Behaviour: `Action` `Params` `Result` `Event` `Field` `PropertyField` `RegularAspect` `SummaryAspect` `Compensator` `AccessDecide` `Cache` `ErrorHandler` `Checker` `RequiredContext` · Data: `Entity` `EntityField` `Sensitive` · Lifecycle: `Lifecycle` `StateInitial` `StateIntermediate` `StateFinal` |
+| **Edge types** (42) | Containment: `application` `domain` `domain_event` `field` `property` `entity_field` `entity_schema` `generic:params` `generic:result` `state` `sensitive` · Behaviour: `@regular_aspect` `@summary_aspect` `@compensate` `@access_decide` `@cache_key` `@cache_read` `@cache_write` `@cache_invalidate` `@cache_entity_key` `@on_error` `@result_checker` `@check_roles` `@required_context` `@emits` · Dependencies: `@depends` `@connection` · Data: `entity_resource` `resource_data_source` `entity_relation` `entity_reference` `entity_specialization` `entity_view` `caches` `invalidates` · Generalization: `parent_action` `parent_role` `parent_domain` `parent_entity` · Lifecycle: `lifecycle` `lifecycle_contains_state` `lifecycle_transition` |
 | **Relationships** (11) | `Access` `Aggregation` `Assignment` `Association` `Composition` `Flow` `Generalization` `Realization` `Serving` `Specialization` `Triggering` |
 
 A `Cache` node is one cache declaration of an action, with its `kind` — `key`, `read`, `write`, `invalidate` or `entity_key` — and its `description`; the action reaches it by the edge named after it (`@cache_key`, …). `caches` goes from an action to every entity type its cache write tags an entry with, `invalidates` to every entity type its cache invalidation drops.
@@ -97,6 +97,25 @@ An `Entity` is stored by one resource. `entity_resource` goes from the entity to
 {"id": "shop.SalesOrderCoreEntity|domain|shop.StoreDomain", "source_id": "shop.SalesOrderCoreEntity", "target_id": "shop.StoreDomain", "type": "domain", "relationship": "Aggregation", "is_dag": true, "properties": {}}
 {"id": "shop.SalesOrderCoreEntity|entity_resource|shop.StorefrontDatabase", "source_id": "shop.SalesOrderCoreEntity", "target_id": "shop.StorefrontDatabase", "type": "entity_resource", "relationship": "Aggregation", "is_dag": true, "properties": {}}
 ```
+
+A `DataSource` is one database or other store that several resources share — a resource is often a part of a database, not the whole of it. Its `properties` carry its `description`. A data source belongs to no domain: it is physical, and resources of several domains may share it. It belongs to the application instead, as a `Domain` and a `Role` do: a `DataSource` node MUST have exactly one `application` edge, to the `Application` node. `resource_data_source` goes from a `Resource` to its `DataSource`, as an `Aggregation` with `is_dag` `true` and no properties. A data source is optional: a `Resource` of any kind MUST have at most one `resource_data_source` edge, and a resource with none works on its own, as before `1.7`. A `DataSource` node MUST have at least one resource. From `1.7` a model whose resources share a store says so:
+
+```json
+{"id": "shop.ShopDataSource", "type": "DataSource", "label": "ShopDataSource", "properties": {"description": "Main shop database"}}
+{"id": "shop.ShopDataSource|application|shop.Application", "source_id": "shop.ShopDataSource", "target_id": "shop.Application", "type": "application", "relationship": "Aggregation", "is_dag": true, "properties": {}}
+{"id": "shop.OrdersResource|resource_data_source|shop.ShopDataSource", "source_id": "shop.OrdersResource", "target_id": "shop.ShopDataSource", "type": "resource_data_source", "relationship": "Aggregation", "is_dag": true, "properties": {}}
+```
+
+A schema checks each row on its own: it cannot count rows, follow an `id` to its node or compare two rows. So the schema of `1.7` checks only the shape of the new rows, and the producer keeps every other rule; a consumer may rely on all of them:
+
+| Rule | Checked by |
+|---|---|
+| A `DataSource` node has a `label` and a string `description`, and no other property | the schema, and the producer |
+| A `resource_data_source` edge is an `Aggregation`, `is_dag` `true`, with no properties | the schema, and the producer |
+| The edge goes from a `Resource` to a `DataSource` | the producer |
+| A `Resource` has at most one `resource_data_source` edge | the producer |
+| A `DataSource` has exactly one `application` edge, to the `Application` node, and at least one resource | the producer |
+| A relation between entities stays inside one data source, or inside one resource when it has none | the producer |
 
 An `Event` is a fact a service can publish; its fields are `Field` nodes, as for `Params` and `Result`. `@emits` goes from a method to an event it may publish. `domain_event` goes from a domain to an event of its vocabulary. A `Domain` says in `typed_events` whether it has a vocabulary at all, so a reader tells "no vocabulary" from "an empty vocabulary".
 
@@ -113,6 +132,7 @@ The 1.x vocabulary comes from [AOA](https://github.com/bystrovmaxim/aoa)'s model
 | [`1.4`](graph/1.4.json) | The cache: the node type `Cache`, the edge types `@cache_key`, `@cache_read`, `@cache_write`, `@cache_invalidate`, `caches` and `invalidates`. |
 | [`1.5`](graph/1.5.json) | A cache that stores entity by entity: the `Cache` kind `entity_key` and the edge type `@cache_entity_key`. |
 | [`1.6`](graph/1.6.json) | Where an entity is stored: the edge type `entity_resource` from an `Entity` to its `Resource`, exactly one per entity. |
+| [`1.7`](graph/1.7.json) | Resources that share a store: the node type `DataSource`, on the application, and the edge type `resource_data_source` from a `Resource` to it, at most one per resource. |
 
 A release of the protocol is the git tag `open-gnomon-protocol-v<version>`; its history is [CHANGELOG.md](CHANGELOG.md).
 

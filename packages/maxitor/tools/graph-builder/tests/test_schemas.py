@@ -336,3 +336,4 @@ def test_the_resource_edge_passes_1_6_and_1_5_does_not_know_it() -> None:
 def test_a_resource_edge_of_another_shape_is_refused(changes: dict[str, Any]) -> None:
     """The edge has no properties, the relationship ``Aggregation`` and ``is_dag`` true; anything else is refused."""
     assert _errors_of_edge("1.6", _resource_edge(**changes))
+

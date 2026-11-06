@@ -176,3 +176,13 @@ def test_two_1_6_graphs_compare_and_a_new_resource_edge_is_added() -> None:
     result = compare(_graph([CORE, store], [], "1.6"), _graph([CORE, store], [stored], "1.6"))
     assert result.edges["a.Core|entity_resource|a.Store"].status is Status.ADDED
     assert result.edge_counts == Counts(added=1)
+
+
+def test_two_1_7_graphs_compare_and_a_new_data_source_edge_is_added() -> None:
+    """A 1.7 graph is read like any known version: a ``resource_data_source`` edge that appears is added."""
+    store = {"id": "a.Store", "type": "Resource", "label": "a.Store", "properties": {}}
+    shared = {"id": "a.ShopDataSource", "type": "DataSource", "label": "a.ShopDataSource", "properties": {"description": "Shop database"}}
+    on_it = {"id": "a.Store|resource_data_source|a.ShopDataSource", "source_id": "a.Store", "target_id": "a.ShopDataSource", "type": "resource_data_source", "relationship": "Aggregation", "is_dag": True, "properties": {}}
+    result = compare(_graph([store, shared], [], "1.7"), _graph([store, shared], [on_it], "1.7"))
+    assert result.edges["a.Store|resource_data_source|a.ShopDataSource"].status is Status.ADDED
+    assert result.edge_counts == Counts(added=1)

@@ -25,6 +25,7 @@ COPIES = {
     "packages/maxitor/tools/graph-builder/maxitor/graph_builder/schemas/1.4.json": "graph/1.4.json",
     "packages/maxitor/tools/graph-builder/maxitor/graph_builder/schemas/1.5.json": "graph/1.5.json",
     "packages/maxitor/tools/graph-builder/maxitor/graph_builder/schemas/1.6.json": "graph/1.6.json",
+    "packages/maxitor/tools/graph-builder/maxitor/graph_builder/schemas/1.7.json": "graph/1.7.json",
 }
 
 # SHA-256 of each published schema without its ``$id``, as ``json.dumps(..., sort_keys=True)``.
@@ -37,6 +38,7 @@ PUBLISHED = {
     "1.4": "6d8932035c3e77e8c8b16235dc8edf1926371a305fbb17e0249bfa6dc2de25ef",
     "1.5": "7154487120722a23482244f31112f4ddb999ed9a4df67d40b49533b2dd27d1f3",
     "1.6": "27aee187b33ea884d08b5f5b101c69c26b7524014a56a53cf33d74ee5591bb38",
+    "1.7": "cc07ed10773c8f4174113c4962165d721e184caf891dc960d3b3c3a587c59069",
 }
 
 
@@ -51,7 +53,7 @@ def test_a_copy_is_its_source_byte_for_byte(copy: str, source: str) -> None:
 def test_the_protocol_holds_no_code() -> None:
     """The protocol is its specification, its changelog, its version and its schemas — nothing any language would have to run."""
     held = sorted(str(p.relative_to(PROTOCOL)) for p in PROTOCOL.rglob("*") if p.is_file())
-    assert held == ["CHANGELOG.md", "README.md", "graph/1.0.json", "graph/1.1.json", "graph/1.2.json", "graph/1.3.json", "graph/1.4.json", "graph/1.5.json", "graph/1.6.json", "version.toml"]
+    assert held == ["CHANGELOG.md", "README.md", "graph/1.0.json", "graph/1.1.json", "graph/1.2.json", "graph/1.3.json", "graph/1.4.json", "graph/1.5.json", "graph/1.6.json", "graph/1.7.json", "version.toml"]
 
 
 @pytest.mark.parametrize("version", sorted(PUBLISHED))
@@ -79,6 +81,49 @@ def test_1_6_is_1_5_with_the_entity_resource_edge() -> None:
             {
                 "properties": {
                     "type": {"const": "entity_resource"},
+                    "relationship": {"const": "Aggregation"},
+                    "is_dag": {"const": True},
+                    "properties": {"type": "object", "additionalProperties": False, "maxProperties": 0},
+                }
+            },
+        ]
+    }
+
+
+def test_1_7_is_1_6_with_the_data_source() -> None:
+    """1.7 keeps every rule of 1.6 and adds one node type and one edge type: nothing else differs."""
+    old = json.loads((PROTOCOL / "graph" / "1.6.json").read_text(encoding="utf-8"))
+    new = json.loads((PROTOCOL / "graph" / "1.7.json").read_text(encoding="utf-8"))
+    for schema in (old, new):
+        del schema["$id"]
+        del schema["properties"]["schema_version"]
+    node = new["$defs"].pop("data_source")
+    edge = new["$defs"].pop("resource_data_source")
+    assert new["$defs"]["vertex"]["oneOf"].pop() == {"$ref": "#/$defs/data_source"}
+    assert new["$defs"]["link"]["oneOf"].pop() == {"$ref": "#/$defs/resource_data_source"}
+    assert new == old
+    assert node == {
+        "allOf": [
+            {"$ref": "#/$defs/row"},
+            {
+                "properties": {
+                    "type": {"const": "DataSource"},
+                    "properties": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["description"],
+                        "properties": {"description": {"type": "string"}},
+                    },
+                }
+            },
+        ]
+    }
+    assert edge == {
+        "allOf": [
+            {"$ref": "#/$defs/link_row"},
+            {
+                "properties": {
+                    "type": {"const": "resource_data_source"},
                     "relationship": {"const": "Aggregation"},
                     "is_dag": {"const": True},
                     "properties": {"type": "object", "additionalProperties": False, "maxProperties": 0},
