@@ -7456,7 +7456,7 @@
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:data_sources",
       "label": "data_sources",
       "properties": {
-        "description": "Every data source a listed resource names, sorted by id, with its colour; empty for a graph of 1.0–1.6 or one where no resource names a data source.",
+        "description": "Empty: the store knows no data source, so no listed resource names one.",
         "entity_schema": false,
         "json_schema": {
           "items": {
@@ -7878,7 +7878,7 @@
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:resources",
       "label": "resources",
       "properties": {
-        "description": "Every resource of the graph that stores an entity, sorted by id, with its colour and its data source; the same for every request on one graph, whatever domains it asks for.",
+        "description": "Every resource of the graph that keeps an entity, sorted by id, with its colour and no data source; the same for every request on one graph, whatever domains it asks for.",
         "entity_schema": false,
         "json_schema": {
           "items": {
