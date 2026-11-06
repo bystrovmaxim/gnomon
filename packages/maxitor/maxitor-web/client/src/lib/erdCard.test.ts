@@ -193,11 +193,11 @@ describe("the card of a contour and of a folded box (spec 068)", () => {
   const sourceLabels = { [SHOP]: "ShopDataSource" };
   const card = (ref: { kind: "contour" | "table"; id: string }) => erdSubject(ref, entities, document.createElement("div"), [], labels, sources, sourceLabels);
 
-  it("gives a resource contour its icon, name, data source, count and tables, and the full id to copy", () => {
+  it("gives a resource contour its icon, name, data source and tables — their count only on the fold — and the full id to copy", () => {
     const subject = card({ kind: "contour", id: ORDERS })!;
     expect([subject.title, subject.detail, subject.nodeId, subject.copy, subject.fieldNoun]).toEqual([
       "OrdersResource",
-      "Resource · Data source: ShopDataSource\n2 tables",
+      "Resource · Data source: ShopDataSource",
       ORDERS,
       ORDERS,
       "table",
@@ -213,7 +213,7 @@ describe("the card of a contour and of a folded box (spec 068)", () => {
 
   it("gives a folded data source box its own icon, its resources and tables, each table with its resource", () => {
     const subject = card({ kind: "table", id: `dc:${SHOP}` })!;
-    expect([subject.title, subject.detail, subject.nodeId]).toEqual(["ShopDataSource", "Data source\n2 resources · 3 tables", SHOP]);
+    expect([subject.title, subject.detail, subject.nodeId]).toEqual(["ShopDataSource", "Data source · 2 resources", SHOP]);
     expect(subject.fields).toEqual([
       { name: "Line", type: "OrdersResource" },
       { name: "Order", type: "OrdersResource" },

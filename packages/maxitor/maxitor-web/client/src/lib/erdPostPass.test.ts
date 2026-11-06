@@ -1,7 +1,7 @@
 // src/lib/erdPostPass.test.ts
 import { afterEach, describe, expect, it } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, erdBundleSx, erdFoldSx, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
+import { scaleFoldControls, addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, erdBundleSx, erdFoldSx, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
 
 // Markup shaped like Graphviz's: Player (0) has id, gender and an FK row named showcase twice
 // (own row and FK row); Showcase (1) has id and players; Gender (2) has id.
@@ -492,7 +492,9 @@ describe("folded contours and their bundles (spec 065)", () => {
     expect(control.querySelector("title")!.textContent).toBe("Fold");
     const folded = root.querySelector('[data-fold="rc:Orders"]')!;
     expect(["x", "width"].map((name) => Number(folded.querySelector(".erd-fold-hit")!.getAttribute(name)))).toEqual([0, 28]);
-    expect(erdFoldSx["& .erd-fold-scale"]).toMatchObject({ transform: "scale(var(--erd-fold-scale, 1))", transformOrigin: "0 0", opacity: 0.75 });
+    expect(erdFoldSx["& .erd-fold-scale"]).toMatchObject({ transformOrigin: "0 0", opacity: 0.75 });
+    scaleFoldControls(root, 0.25);
+    expect([...root.querySelectorAll<SVGGElement>(".erd-fold-scale")].map((part) => part.style.transform)).toEqual(Array(3).fill("scale(4.0000)"));
   });
 
   it("lights a hovered bundle, marks the rows of every relation it stands for, and keeps its ends bright", () => {

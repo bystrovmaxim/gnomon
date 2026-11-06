@@ -327,9 +327,6 @@ export const erdBundleSx = {
 export const FOLD_CONTROL_CLASS = "erd-fold-control";
 export const FOLD_ATTRIBUTE = "data-fold";
 
-/** The CSS variable the canvas keeps at one over its zoom, so a fold control keeps its size on screen (spec 068). */
-export const FOLD_SCALE_VARIABLE = "--erd-fold-scale";
-
 /** The class of the part of a fold control that is drawn at screen size. */
 const FOLD_SCALE_CLASS = "erd-fold-scale";
 
@@ -340,7 +337,6 @@ const FOLD_SCALE_CLASS = "erd-fold-scale";
 export const erdFoldSx = {
   [`& .${FOLD_CONTROL_CLASS}`]: { cursor: "pointer" },
   [`& .${FOLD_SCALE_CLASS}`]: {
-    transform: `scale(var(${FOLD_SCALE_VARIABLE}, 1))`,
     transformBox: "view-box",
     transformOrigin: "0 0",
     opacity: 0.75,
@@ -364,7 +360,7 @@ const FOLD_GAP = 6;
 /**
  * Put a fold control in the top right corner of every resource and data source contour — a minus — and of every
  * folded box — a plus (spec 065). It sits inside the contour's group, so pointing at it is pointing at the contour.
- * It is drawn at screen size: the canvas sets ``--erd-fold-scale`` to one over its zoom (spec 068).
+ * It is drawn at screen size: the canvas scales it by one over its zoom through ``scaleFoldControls`` (spec 068).
  */
 export function addFoldControls(root: ParentNode): void {
   const groups: Array<{ group: Element; id: string; folded: boolean }> = [];
@@ -405,6 +401,18 @@ export function addFoldControls(root: ParentNode): void {
       `</g>`;
     group.appendChild(control);
   }
+}
+
+/**
+ * Draw every fold control in ``root`` at screen size for ``zoom`` (spec 068). Only the controls change: a style the whole
+ * drawing inherits would make the browser restyle every table on every frame of a pan, and the fields would lag behind
+ * their tables. The canvas calls it when the zoom changes and on each new drawing, never on a pan alone.
+ */
+export function scaleFoldControls(root: ParentNode, zoom: number): void {
+  const transform = `scale(${(1 / Math.max(zoom, 0.01)).toFixed(4)})`;
+  root.querySelectorAll<SVGGElement>(`.${FOLD_SCALE_CLASS}`).forEach((part) => {
+    if (part.style.transform !== transform) part.style.transform = transform;
+  });
 }
 
 /** The canvas's style for line labels: hidden, and shown on their plates while the line is hovered. */

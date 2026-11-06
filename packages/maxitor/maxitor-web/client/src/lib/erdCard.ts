@@ -110,8 +110,9 @@ const counted = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`
 
 /**
  * The card of a resource contour, or of a folded box of a resource or of a data source (spec 068): its kind's icon and
- * name, what it is and where it lives, how much it holds, its description (read from the server) and the tables it
- * holds — for a data source, each with its resource — folded as a table's fields are.
+ * name, what it is and where it lives — a data source with how many resources share it —, its description (read from
+ * the server) and the tables it holds — for a data source, each with its resource — folded as a table's fields are,
+ * their count on the fold.
  */
 function contourSubject(
   ref: ElementRef,
@@ -134,7 +135,7 @@ function contourSubject(
       ref,
       title: resourceLabels[resource] || short(resource),
       icon: svgDataUriForGraphNodeIcon(RESOURCE_FILL, "Resource"),
-      detail: `Resource${source ? ` · Data source: ${dataSourceLabels[source] || short(source)}` : ""}\n${counted(tables.length, "table")}`,
+      detail: `Resource${source ? ` · Data source: ${dataSourceLabels[source] || short(source)}` : ""}`,
       nodeId: resource,
       change: null,
       fieldNoun: "table",
@@ -153,7 +154,7 @@ function contourSubject(
     ref,
     title: dataSourceLabels[source] || short(source),
     icon: svgDataUriForGraphNodeIcon(DATA_SOURCE_FILL, "DataSource"),
-    detail: `Data source\n${counted(resources.size, "resource")} · ${counted(tables.length, "table")}`,
+    detail: `Data source · ${counted(resources.size, "resource")}`,
     nodeId: source,
     change: null,
     fieldNoun: "table",
