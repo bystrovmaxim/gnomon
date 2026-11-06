@@ -68,7 +68,6 @@ _DUCK_SLUG_TO_INTERCHANGE: dict[str, str] = {
     "lifecycle": "Lifecycle",
     "sensitive": "Sensitive",
     "role": "Role",
-    "data_source": "DataSource",
 }
 
 # Fixed fill per interchange graph-node ``node_type`` (matches G6 client icon keys).
@@ -77,7 +76,6 @@ NODE_TYPE_FILL_COLORS: dict[str, str] = {
     "Action": "#4F46E5",
     "Domain": "#377EB8",
     "Resource": "#7570B3",
-    "DataSource": "#0F766E",
     "RequiredContext": "#4DAF4A",
     "RegularAspect": "#FF7F00",
     "SummaryAspect": "#FF7F00",

@@ -25,7 +25,7 @@ def _targets(document: dict[str, Any], edge_type: str) -> dict[str, str]:
 
 def test_1_8_is_a_known_version() -> None:
     """``graph-builder`` reads 1.8 after every earlier version."""
-    assert SCHEMA_VERSIONS[-2:] == ("1.7", "1.8")
+    assert SCHEMA_VERSIONS.index("1.8") == SCHEMA_VERSIONS.index("1.7") + 1
 
 
 def test_the_sample_of_1_8_passes() -> None:

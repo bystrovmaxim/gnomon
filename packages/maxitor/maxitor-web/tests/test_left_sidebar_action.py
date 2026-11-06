@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import pytest
 from maxitor.web.model.core.actions.left_sidebar_action import (
     _ROOT_SECTIONS,
     GetLeftMenuSidebarDataAction,
@@ -13,14 +14,8 @@ from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
 )
 
 from aoa.action_machine.model import BaseState
-from tests.fixtures.data_source_model import (
-    BILLING,
-    SHOP_DB,
-    STOREFRONT,
-    SUPPORT,
-    data_source_model_graph,
-    data_source_model_graph_1_6,
-)
+from tests.fixtures.data_source_model import data_source_model_graph, data_source_model_graph_1_6
+from tests.fixtures.protocol_2_0 import as_2_0
 
 _ACTION = GetLeftMenuSidebarDataAction()
 
@@ -268,7 +263,7 @@ async def test_full_pipeline_level3_types() -> None:
     assert "lifecycle_state_diagram" not in types  # its entity stands in no domain here
 
 
-# ─── Data sources (spec 065) ──────────────────────────────────────────────────
+# ─── No data sources (spec 069) ──────────────────────────────────────────────
 
 
 async def _sidebar(coordinator: dict) -> GetLeftMenuSidebarDataAction.Result:
@@ -280,31 +275,10 @@ async def _sidebar(coordinator: dict) -> GetLeftMenuSidebarDataAction.Result:
     return await _ACTION.build_result_summary(None, BaseState(**r4), None, conn)  # type: ignore[arg-type]
 
 
-async def test_a_graph_with_a_data_source_has_a_data_sources_root_after_domains() -> None:
-    result = await _sidebar(data_source_model_graph())
-    assert [n.id for n in result.level1_nodes] == ["applications_root", "domains_root", "data_sources_root"]
-    assert result.level1_nodes[-1].label == "Data sources"
-
-
-async def test_under_it_each_data_source_then_no_data_source() -> None:
-    result = await _sidebar(data_source_model_graph())
-    under = [(n.id, n.label, n.ordinal) for n in result.level2_nodes if n.parent_id == "data_sources_root"]
-    assert under == [(SHOP_DB, "ShopDataSource", 0), ("no_data_source", "No data source", 1)]
-
-
-async def test_a_data_source_holds_its_erd_then_one_erd_per_resource() -> None:
-    result = await _sidebar(data_source_model_graph())
-    rows = [(n.parent_id, n.id, n.type, n.label) for n in result.level3_diagrams if n.type in ("erd_data_source", "erd_resource")]
-    assert rows == [
-        ("no_data_source", f"erd_resource:{BILLING}", "erd_resource", "ERD — BillingDatabase view"),
-        (SHOP_DB, f"erd_data_source:{SHOP_DB}", "erd_data_source", "ERD — ShopDataSource view"),
-        (SHOP_DB, f"erd_resource:{STOREFRONT}", "erd_resource", "ERD — StorefrontDatabase view"),
-        (SHOP_DB, f"erd_resource:{SUPPORT}", "erd_resource", "ERD — SupportDatabase view"),
-    ]
-
-
-async def test_a_graph_with_no_data_source_has_no_data_sources_root() -> None:
-    result = await _sidebar(data_source_model_graph_1_6())
+@pytest.mark.parametrize("graph", [data_source_model_graph(), as_2_0(data_source_model_graph()), data_source_model_graph_1_6()], ids=["1.7", "2.0", "1.6"])
+async def test_no_graph_has_a_data_sources_root(graph: dict) -> None:
+    """The store knows no data source, so a graph of 1.7 lists what one of 1.6 or 2.0 does."""
+    result = await _sidebar(graph)
     assert [n.id for n in result.level1_nodes] == ["applications_root", "domains_root"]
     assert not [n for n in result.level2_nodes if n.parent_id == "data_sources_root"]
     assert not [n for n in result.level3_diagrams if n.type in ("erd_data_source", "erd_resource")]

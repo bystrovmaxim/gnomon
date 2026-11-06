@@ -1,10 +1,9 @@
 # packages/maxitor/maxitor-web/tests/test_list_entities_data_sources.py
 """
-The entity listing names the data source each resource shares (spec 063).
+The entity listing names no data source (spec 069).
 
-Each listed resource carries its data source, or null; the answer lists the data sources the listed
-resources name, sorted by id and coloured by their place, whatever domains are asked for. A graph of
-1.0–1.6 has none, and its resources name none.
+The store knows no data source, so for a graph of any version every listed resource carries a null data
+source and the answer lists none; the fields keep their contract until the views of data sources go.
 """
 
 from __future__ import annotations
@@ -12,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 import jsonschema
-from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
+import pytest
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
 from maxitor.web.model.diagrams.actions.list_entities_action_schema import (
     ListEntitiesDataSourcesJson,
@@ -24,12 +23,12 @@ from aoa.action_machine.model import BaseState
 from tests.fixtures.data_source_model import (
     BILLING,
     DOMAIN,
-    SHOP_DB,
     STOREFRONT,
     SUPPORT,
     data_source_model_graph,
     data_source_model_graph_1_6,
 )
+from tests.fixtures.protocol_2_0 import as_2_0
 
 
 async def _answer(graph: dict[str, Any], domains: list[str]) -> ListEntitiesAction.Result:
@@ -38,21 +37,17 @@ async def _answer(graph: dict[str, Any], domains: list[str]) -> ListEntitiesActi
     return await ListEntitiesAction().build_domain_payload_summary(params, BaseState(), None, connections)  # type: ignore[arg-type]
 
 
-async def test_each_resource_names_its_data_source_or_none() -> None:
-    answer = await _answer(data_source_model_graph(), [DOMAIN])
-    assert {row["id"]: row["data_source_id"] for row in answer.resources} == {BILLING: None, STOREFRONT: SHOP_DB, SUPPORT: SHOP_DB}
-
-
-async def test_the_data_sources_are_listed_with_their_colour() -> None:
-    answer = await _answer(data_source_model_graph(), [DOMAIN])
-    assert answer.data_sources == [{"id": SHOP_DB, "label": "ShopDataSource", "color": DOMAIN_PALETTE[0]}]
-    assert (await _answer(data_source_model_graph(), [])).data_sources == answer.data_sources
-
-
-async def test_a_graph_of_1_6_has_no_data_source() -> None:
-    answer = await _answer(data_source_model_graph_1_6(), [DOMAIN])
+@pytest.mark.parametrize("graph", [data_source_model_graph(), as_2_0(data_source_model_graph()), data_source_model_graph_1_6()], ids=["1.7", "2.0", "1.6"])
+async def test_no_resource_names_a_data_source(graph: dict[str, Any]) -> None:
+    answer = await _answer(graph, [DOMAIN])
+    assert {row["id"]: row["data_source_id"] for row in answer.resources} == {BILLING: None, STOREFRONT: None, SUPPORT: None}
     assert answer.data_sources == []
-    assert {row["data_source_id"] for row in answer.resources} == {None}
+
+
+async def test_each_entity_names_its_resource_at_2_0() -> None:
+    answer = await _answer(as_2_0(data_source_model_graph()), [DOMAIN])
+    entities = answer.domain_slices[0]["list_entities"]["entities"]
+    assert {entity["label"]: entity["resource_label"] for entity in entities} == {"Order": "StorefrontDatabase", "Ticket": "SupportDatabase", "Invoice": "BillingDatabase"}
 
 
 async def test_the_answer_keeps_its_contract() -> None:
