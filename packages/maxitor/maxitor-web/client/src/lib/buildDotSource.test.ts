@@ -167,3 +167,41 @@ describe("Boundary around data sources (spec 063)", () => {
     expect(dot).toContain('color="#123456"');
   });
 });
+
+describe("a resource contour is named by its resource (spec 064)", () => {
+  /** The ``id`` and ``tooltip`` lines each cluster declares directly, by name. */
+  function named(dot: string): Record<string, string[]> {
+    const found: Record<string, string[]> = {};
+    const stack: string[] = [];
+    for (const line of dot.split("\n")) {
+      const open = /subgraph "([^"]+)"/.exec(line);
+      if (open) {
+        stack.push(open[1]!);
+        found[open[1]!] = [];
+      } else if (line.trim() === "}" && stack.length) stack.pop();
+      else if (/^\s*(id|tooltip)=/.test(line) && stack.length) found[stack.at(-1)!]!.push(line.trim());
+    }
+    return found;
+  }
+
+  it("gives each resource contour the id rc:<resource> and the resource's full id as its tooltip", () => {
+    const found = named(buildDotSource(shop(true), "gv-dot-lr"));
+    expect(found.cluster_resource_0).toEqual([`id="rc:${BILLING}";`, `tooltip="${BILLING}";`]);
+    expect(found.cluster_resource_1).toEqual([`id="rc:${STOREFRONT}";`, `tooltip="${STOREFRONT}";`]);
+    expect(found.cluster_resource_0_room).toEqual([]);
+  });
+
+  it("gives a data source contour no id, so it never takes the hover", () => {
+    const SHOP_DB = "shop.ShopDataSource";
+    const data = { ...shop(true), resource_data_sources: { [STOREFRONT]: SHOP_DB, [BILLING]: SHOP_DB }, data_source_labels: { [SHOP_DB]: "ShopDataSource" } };
+    const found = named(buildDotSource(data, "gv-dot-lr"));
+    expect(found.cluster_data_source_0).toEqual([]);
+    expect(found.cluster_resource_0).toContain(`id="rc:${BILLING}";`);
+  });
+
+  it("escapes a quote in a resource id inside the DOT string", () => {
+    const odd = 'shop."Odd"';
+    const data: ErdGraphPayload = { entities: [table("shop.Order", odd)], relations: [], boundary: true, resource_labels: {} };
+    expect(buildDotSource(data, "gv-dot-lr")).toContain('id="rc:shop.\\"Odd\\"";');
+  });
+});

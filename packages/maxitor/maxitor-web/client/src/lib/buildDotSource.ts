@@ -101,6 +101,12 @@ export type ErdRelation = {
 /** Id Graphviz writes on the ``k``-th relation's edge group, so the post-pass finds its fields. */
 export const erdEdgeId = (k: number) => `re${k}`;
 
+/**
+ * Prefix of the id Graphviz writes on a resource contour's group: ``rc:<resource id>`` (spec 064). Only a resource
+ * contour has one, so the post-pass and the room tell it from a data source contour and from the invisible spacing.
+ */
+export const CONTOUR_ID_PREFIX = "rc:";
+
 /** Id of the thin dashed line to where the ``k``-th relation pointed in A (spec 038, FR-024). */
 export const erdPreviousEdgeId = (k: number) => `rp${k}`;
 
@@ -264,6 +270,11 @@ export const erdCellId = {
 
 /** Layout presets matching the old ``activeLayout`` Graphviz branch. */
 export type ErdGraphvizLayout = "gv-dot-lr" | "gv-dot-tb" | "gv-neato" | "gv-fdp" | "gv-circo";
+
+/** A value inside a double-quoted DOT string. */
+function escDot(s: string): string {
+  return String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
 
 function escHtml(s: string): string {
   return String(s)
@@ -635,6 +646,10 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
       "    style=invis;",
       "    margin=36;",
       `  subgraph "cluster_resource_${index}" {`,
+      // Spec 064: the contour's group is named by its resource, so a hover on its border knows whose links to light;
+      // the hover label is the resource's full id.
+      `    id="${escDot(`${CONTOUR_ID_PREFIX}${resource}`)}";`,
+      `    tooltip="${escDot(resource)}";`,
       // The name stands clear of the top border, in a cell with room round it, a little larger than a table's name.
       `    label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>${escHtml(data.resource_labels?.[resource] ?? resource)}</B></TD></TR></TABLE>>;`,
       '    style="rounded";',

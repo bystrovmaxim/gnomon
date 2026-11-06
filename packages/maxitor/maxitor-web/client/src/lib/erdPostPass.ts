@@ -15,7 +15,7 @@
  */
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
-import { ERD_DIFF_COLOUR, erdHeadInk, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
 export type KindGlyphDrawer = (word: string, ink: string, strokeWidth: number) => string;
@@ -169,6 +169,42 @@ export function addEdgeHitAreas(root: ParentNode): void {
   });
 }
 
+/** The resource a cluster group names — a resource contour (spec 064) — or ``null`` for any other group. */
+export function contourResource(group: Element): string | null {
+  return group.classList.contains("cluster") && group.id.startsWith(CONTOUR_ID_PREFIX) ? group.id.slice(CONTOUR_ID_PREFIX.length) : null;
+}
+
+/**
+ * Give every resource contour an invisible stroke about 10 px wide along its border, so the pointer catches a 2 px
+ * border; only the stroke takes the pointer, so the empty inside of a contour is not the contour's (spec 064, FR-005).
+ */
+export function addContourHitAreas(root: ParentNode): void {
+  root.querySelectorAll("g.cluster").forEach((cluster) => {
+    if (contourResource(cluster) === null || cluster.querySelector("path.erd-hit")) return;
+    const path = cluster.querySelector("path");
+    if (!path) return;
+    const hit = path.cloneNode(false) as Element;
+    hit.setAttribute("class", "erd-hit");
+    hit.setAttribute("fill", "none");
+    hit.setAttribute("stroke", "transparent");
+    hit.setAttribute("stroke-width", "10");
+    hit.setAttribute("pointer-events", "stroke");
+    path.parentNode!.insertBefore(hit, path);
+  });
+}
+
+/**
+ * The relations that leave ``resource``: one end on a table of it, the other on a table of another resource
+ * (spec 064, FR-001). A table with no resource is in none, so a line to it is not one.
+ */
+export function crossLines(resource: string, relations: readonly ErdLineInfo[], entities: readonly ErdEntity[]): number[] {
+  const home = new Map(entities.map((entity) => [entity.id, entity.resource_id ?? null]));
+  return relations.flatMap((line, k) => {
+    const [from, to] = [home.get(line.source) ?? null, home.get(line.target) ?? null];
+    return from !== null && to !== null && from !== to && (from === resource || to === resource) ? [k] : [];
+  });
+}
+
 /** The class of the plate under a line's end label. */
 export const END_LABEL_CLASS = "erd-end-label";
 
@@ -274,6 +310,12 @@ export const erdLineHoverSx = {
   ),
 } as const;
 
+/** The canvas's style for a hovered resource contour: a wider border, in the colour it was drawn with (spec 064). */
+export const erdContourHoverSx = {
+  "& g.cluster path": { transition: "stroke-width 100ms ease" },
+  [`& g.cluster.${EDGE_HOVER_CLASS} path:not(.erd-hit)`]: { strokeWidth: 3.5 },
+} as const;
+
 /** The canvas's style for line labels: hidden, and shown on their plates while the line is hovered. */
 export const erdEndLabelSx = {
   [`& g.edge text, & g.edge rect.${END_LABEL_CLASS}`]: { visibility: "hidden" },
@@ -338,7 +380,8 @@ export function markRows(root: ParentNode, cells: readonly string[], on: boolean
  * Line hover in both directions. Hovering a line gives it the hovered look, raises it above the lines it
  * crosses and marks the rows of its fields in both tables; hovering a row whose field has lines does the
  * same for every one of them. Either way the tables they join stay bright and the rest dim; on a row, the
- * hovered table's other lines stay as they are (spec 029, FR-041). ``relations[k]`` is the line Graphviz wrote as ``<g id="re<k>">``.
+ * hovered table's other lines stay as they are (spec 029, FR-041). Hovering a resource contour does the same for every
+ * line that leaves that resource (spec 064). ``relations[k]`` is the line Graphviz wrote as ``<g id="re<k>">``.
  */
 /** A table's id: the text of its node's ``<title>``. */
 function tableOf(node: Element): string {
@@ -428,6 +471,25 @@ export function bindLineHover(
     cell.addEventListener("mouseleave", () => {
       show(edgesById(lines), false);
       focusTables(root, new Set([own]));
+    }, { signal });
+  });
+
+  // A resource contour (spec 064): its lines to other resources are lit as a hovered line is, the tables at their
+  // ends stay bright, its border widens, and everything else dims — everything, when it has no such line.
+  root.querySelectorAll("g.cluster").forEach((cluster) => {
+    const resource = contourResource(cluster);
+    if (resource === null) return;
+    const lines = crossLines(resource, relations, entities);
+    cluster.addEventListener("mouseenter", () => {
+      const edges = edgesById(lines);
+      cluster.classList.add(EDGE_HOVER_CLASS);
+      show(edges, true);
+      focusTables(root, joined(edges), new Set(edges));
+    }, { signal });
+    cluster.addEventListener("mouseleave", () => {
+      cluster.classList.remove(EDGE_HOVER_CLASS);
+      show(edgesById(lines), false);
+      clearTableFocus(root);
     }, { signal });
   });
 }
