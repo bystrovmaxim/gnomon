@@ -93,7 +93,7 @@ A tool written for 1.6 reads the 1.6 part of a 1.7 graph: every entity keeps its
 - **FR-005**: The protocol's README MUST state each rule of 1.7 that a schema cannot check — a resource has at most one `resource_data_source` edge, from a `Resource` to a `DataSource`; a `DataSource` has exactly one `application` edge, to the `Application` node, and at least one resource — as the producer's duty, and MUST say that the schema checks each row on its own and the producer (AOA) checks every rule.
 - **FR-006**: `graph-builder` MUST check graphs of version 1.7 against schema 1.7, as it checks each earlier version against its own schema, and keep accepting every earlier version. It gains no rule of its own.
 - **FR-007**: The graph comparison Maxitor's map and comparison use MUST read graphs of version 1.7, as it reads 1.0–1.6.
-- **FR-008**: `graph-builder`'s tests MUST include a fixture `graph-1.7.json` with a data source, its `application` edge, two resources pointing at it and one resource without one, and the fixture MUST pass; each shape rule of FR-002 and FR-003 MUST have a test with a row the schema refuses.
+- **FR-008**: `graph-builder`'s tests MUST include a fixture `graph-1.7.json` with a data source, its `application` edge, a resource pointing at it and a resource without one, and the fixture MUST pass; each shape rule of FR-002 and FR-003 MUST have a test with a row the schema refuses.
 - **FR-009**: The protocol's README MUST describe version 1.7, the node and the edge, with an example of the rows.
 - **FR-010**: Every level this change touches MUST raise its version, and each level's changelog MUST get one article about the work.
 
