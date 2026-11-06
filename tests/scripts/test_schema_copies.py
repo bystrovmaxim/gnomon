@@ -39,6 +39,7 @@ PUBLISHED = {
     "1.5": "7154487120722a23482244f31112f4ddb999ed9a4df67d40b49533b2dd27d1f3",
     "1.6": "27aee187b33ea884d08b5f5b101c69c26b7524014a56a53cf33d74ee5591bb38",
     "1.7": "cc07ed10773c8f4174113c4962165d721e184caf891dc960d3b3c3a587c59069",
+    "1.8": "816d238f7b4c3c327a3b758693c329993b6e7f015e562590dca60d15ac0c1ecb",
 }
 
 
@@ -53,7 +54,7 @@ def test_a_copy_is_its_source_byte_for_byte(copy: str, source: str) -> None:
 def test_the_protocol_holds_no_code() -> None:
     """The protocol is its specification, its changelog, its version and its schemas — nothing any language would have to run."""
     held = sorted(str(p.relative_to(PROTOCOL)) for p in PROTOCOL.rglob("*") if p.is_file())
-    assert held == ["CHANGELOG.md", "README.md", "graph/1.0.json", "graph/1.1.json", "graph/1.2.json", "graph/1.3.json", "graph/1.4.json", "graph/1.5.json", "graph/1.6.json", "graph/1.7.json", "version.toml"]
+    assert held == ["CHANGELOG.md", "README.md", "graph/1.0.json", "graph/1.1.json", "graph/1.2.json", "graph/1.3.json", "graph/1.4.json", "graph/1.5.json", "graph/1.6.json", "graph/1.7.json", "graph/1.8.json", "version.toml"]
 
 
 @pytest.mark.parametrize("version", sorted(PUBLISHED))
@@ -131,3 +132,14 @@ def test_1_7_is_1_6_with_the_data_source() -> None:
             },
         ]
     }
+
+
+def test_1_8_is_1_7_with_its_own_version() -> None:
+    """1.8 changes only rules a schema cannot check, each joining several rows: its schema is 1.7's under a new version."""
+    old = json.loads((PROTOCOL / "graph" / "1.7.json").read_text(encoding="utf-8"))
+    new = json.loads((PROTOCOL / "graph" / "1.8.json").read_text(encoding="utf-8"))
+    assert new["properties"]["schema_version"] == {**old["properties"]["schema_version"], "const": "1.8"}
+    for schema in (old, new):
+        del schema["$id"]
+        del schema["properties"]["schema_version"]
+    assert new == old
