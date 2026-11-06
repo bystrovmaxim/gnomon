@@ -11,4 +11,4 @@ One phase = one commit, referencing (#52).
 - [x] T007 Phase 7: rebuild graph files, raise versions
 - [ ] T008 Phase 8: the closing check run, browser checks included
 - [x] T009 Phase 9: documentation
-- [ ] T010 Phase 10: changelog
+- [x] T010 Phase 10: changelog
