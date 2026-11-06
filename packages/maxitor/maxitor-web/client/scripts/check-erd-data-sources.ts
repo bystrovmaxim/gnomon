@@ -109,6 +109,8 @@ check("one outer contour for the data source, one contour per resource", source 
 check("the outer contour is headed by the data source's name", source?.label === "ShopDataSource", source?.label);
 const nameCount = [...svg.matchAll(/<text[^>]*>ShopDataSource<\/text>/g)].length;
 check("the data source's name is drawn once, in its header (spec 065)", nameCount === 1, `${nameCount} times`);
+const named = [...svg.matchAll(/<g id="(dc:[^"]+)" class="cluster">/g)].map((match) => match[1]);
+check("only the data source's own contour carries its id (spec 065)", named.length === 1 && named[0] === `dc:${SHOP_DB}`, named.join(", "));
 check("the outer contour holds the contours of exactly its resources", inside(storefront!.box, source!.box) && inside(support!.box, source!.box) && !inside(billing!.box, source!.box));
 check("each resource contour holds its table", inside(nodeBox(svg, "shop.Order"), storefront!.box) && inside(nodeBox(svg, "shop.Ticket"), support!.box) && inside(nodeBox(svg, "shop.Invoice"), billing!.box));
 const pad = 1;

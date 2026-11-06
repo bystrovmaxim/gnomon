@@ -647,9 +647,11 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     return [
       `  subgraph "cluster_resource_${index}_room" {`,
       "    style=invis;",
-      // Graphviz passes a frame's label down to the frames inside it: without its own, this frame would draw the data
-      // source's name again above the resource (spec 065).
+      // Graphviz passes a frame's label, id and tooltip down to the frames inside it: without its own, this frame would
+      // draw the data source's name again above the resource, and take the data source's id and tooltip (spec 065).
       '    label="";',
+      '    id="";',
+      '    tooltip="";',
       "    margin=36;",
       `  subgraph "cluster_resource_${index}" {`,
       // Spec 064: the contour's group is named by its resource, so a hover on its border knows whose links to light;

@@ -47,7 +47,7 @@ describe("Boundary: one contour per resource (spec 061)", () => {
 
   it("keeps each contour apart from the next inside an invisible cluster", () => {
     const dot = buildDotSource(shop(true), "gv-dot-lr");
-    expect(dot).toContain('subgraph "cluster_resource_0_room" {\n    style=invis;\n    label="";\n    margin=36;\n  subgraph "cluster_resource_0" {');
+    expect(dot).toContain('subgraph "cluster_resource_0_room" {\n    style=invis;\n    label="";\n    id="";\n    tooltip="";\n    margin=36;\n  subgraph "cluster_resource_0" {');
   });
 
   it("off, draws today's text: no contour", () => {
@@ -188,7 +188,7 @@ describe("a resource contour is named by its resource (spec 064)", () => {
     const found = named(buildDotSource(shop(true), "gv-dot-lr"));
     expect(found.cluster_resource_0).toEqual([`id="rc:${BILLING}";`, `tooltip="${BILLING}";`]);
     expect(found.cluster_resource_1).toEqual([`id="rc:${STOREFRONT}";`, `tooltip="${STOREFRONT}";`]);
-    expect(found.cluster_resource_0_room).toEqual([]);
+    expect(found.cluster_resource_0_room).toEqual(['id="";', 'tooltip="";']);
   });
 
   it("names a data source contour dc:<data source>, never rc:, so it never takes a resource's hover (spec 065)", () => {
