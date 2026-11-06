@@ -7,4 +7,4 @@ One phase = one commit, referencing (#55).
 - [x] T003 Phase 3: rebuild the graph files if they changed; raise the versions of `maxitor-web` and `maxitor`
 - [ ] T004 Phase 4: the closing check run, browser checks included
 - [x] T005 Phase 5: documentation — the ERD section of the `maxitor-web` README, beside Boundary
-- [ ] T006 Phase 6: changelog
+- [x] T006 Phase 6: changelog
