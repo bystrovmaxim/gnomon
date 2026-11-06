@@ -144,7 +144,7 @@ def test_a_1_0_graph_compares_with_a_1_1_graph() -> None:
 @pytest.mark.parametrize(
     ("document", "words"),
     [
-        ({"schema_version": "2.0", "nodes": [], "edges": []}, "schema_version '2.0'"),
+        ({"schema_version": "9.9", "nodes": [], "edges": []}, "schema_version '9.9'"),
         ({"schema_version": "1.1", "edges": []}, "no 'nodes' list"),
         ({"schema_version": "1.1", "nodes": [], "edges": {}}, "no 'edges' list"),
         ({"schema_version": "1.1", "nodes": ["a.X"], "edges": []}, "nodes[0] is not an object"),
@@ -211,4 +211,19 @@ def test_two_1_8_graphs_compare_and_a_relation_across_data_sources_is_added() ->
     across = {"id": "a.Invoice|entity_relation|a.Order", "source_id": "a.Invoice", "target_id": "a.Order", "type": "entity_relation", "relationship": "Association", "is_dag": False, "properties": {}}
     result = compare(_graph([order, invoice], [], "1.8"), _graph([order, invoice], [across], "1.8"))
     assert result.edges["a.Invoice|entity_relation|a.Order"].status is Status.ADDED
+    assert result.edge_counts == Counts(added=1)
+
+
+def test_two_2_0_graphs_compare_and_an_entity_kept_by_a_second_resource_is_added() -> None:
+    """A 2.0 graph is read like any known version: a resource that starts keeping an entity adds one ``resource_entity`` edge."""
+    order = _node("a.Order")
+    shop, archive = ({"id": rid, "type": "Resource", "label": rid, "properties": {"description": rid}} for rid in ("a.ShopStorage", "a.ArchiveStorage"))
+
+    def keeps(resource: str) -> dict[str, Any]:
+        return {"id": f"{resource}|resource_entity|a.Order", "source_id": resource, "target_id": "a.Order", "type": "resource_entity", "relationship": "Aggregation", "is_dag": True, "properties": {}}
+
+    older = _graph([order, shop, archive], [keeps("a.ShopStorage")], "2.0")
+    newer = _graph([order, shop, archive], [keeps("a.ShopStorage"), keeps("a.ArchiveStorage")], "2.0")
+    result = compare(older, newer)
+    assert result.edges["a.ArchiveStorage|resource_entity|a.Order"].status is Status.ADDED
     assert result.edge_counts == Counts(added=1)
