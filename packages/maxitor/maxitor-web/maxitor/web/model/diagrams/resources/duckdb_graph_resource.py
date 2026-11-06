@@ -43,9 +43,11 @@ from typing import Any, cast
 
 import duckdb
 import httpx
+from maxitor.web.model.diagrams.data_sources.graph_data_source import GraphDataSource
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
 
 from aoa.action_machine.intents.meta import meta
+from aoa.action_machine.resources import BaseController
 from aoa.action_machine.resources.external_service.external_service_resource import ExternalServiceResource
 
 DEFAULT_EXAMPLE_GRAPH_JSON_URL = "http://127.0.0.1:8001/examples/model/graph-json"
@@ -58,7 +60,7 @@ DUCKDB_GRAPH_CONNECTION_KEY = "DuckDBGraph"
     description="DuckDB in-memory store for coordinator graph JSON (HTTP + entity/domain helpers)",
     domain=DiagramsDomain,
 )
-class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection]):
+class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection], BaseController[GraphDataSource]):
     """
     AI-CORE-BEGIN
     ROLE: Load coordinator graph JSON into DuckDB; :attr:`.service` is the DuckDB connection.
