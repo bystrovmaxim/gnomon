@@ -8,5 +8,5 @@ One phase = one commit, referencing (#56).
 - [x] T004 Phase 4: folding — `foldPlan` and the folded DOT, fold controls, bundle plates and hover, canvas clicks and cards, `folded_contours` setting and address, room settings of the ERD (`pages.py`); Vitest, pytest, `check-erd-contour-fold.ts`
 - [x] T005 Phase 5: rebuild the graph files if they changed; raise the versions of `maxitor-web` and `maxitor`
 - [ ] T006 Phase 6: the closing check run, browser checks included
-- [ ] T007 Phase 7: documentation — the ERD and navigation sections of the `maxitor-web` README
+- [x] T007 Phase 7: documentation — the ERD and navigation sections of the `maxitor-web` README
 - [ ] T008 Phase 8: changelog
