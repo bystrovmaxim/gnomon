@@ -27,6 +27,7 @@ COPIES = {
     "packages/maxitor/tools/graph-builder/maxitor/graph_builder/schemas/1.6.json": "graph/1.6.json",
     "packages/maxitor/tools/graph-builder/maxitor/graph_builder/schemas/1.7.json": "graph/1.7.json",
     "packages/maxitor/tools/graph-builder/maxitor/graph_builder/schemas/1.8.json": "graph/1.8.json",
+    "packages/maxitor/tools/graph-builder/maxitor/graph_builder/schemas/2.0.json": "graph/2.0.json",
 }
 
 # SHA-256 of each published schema without its ``$id``, as ``json.dumps(..., sort_keys=True)``.
