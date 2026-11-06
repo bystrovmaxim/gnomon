@@ -1,6 +1,6 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/bystrovmaxim/aoa/main/docs/assets/aoa-logo.png" alt="AOA" width="540"><br><br>
-  <img src="https://img.shields.io/badge/version-1.7-informational" alt="Version 1.7">
+  <img src="https://img.shields.io/badge/version-1.8-informational" alt="Version 1.8">
   <img src="https://img.shields.io/badge/status-stable-brightgreen" alt="Stable">
   <a href="https://json-schema.org/draft/2020-12"><img src="https://img.shields.io/badge/JSON_Schema-2020--12-blue" alt="JSON Schema 2020-12"></a>
   <a href="https://github.com/bystrovmaxim/gnomon/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="Apache-2.0"></a>
@@ -27,7 +27,7 @@ The Open Gnomon Protocol makes the model a first-class artifact:
 
 ```json
 {
-  "schema_version": "1.7",
+  "schema_version": "1.8",
   "nodes": [
     {"id": "shop.PlaceOrder", "type": "Action", "label": "Place order",
      "properties": {"description": "Place a customer order."}},
@@ -54,7 +54,7 @@ edges[id=aoa.demo.model.telemetry_pipeline.telemetry_pipeline_domain.TelemetryPi
 
 | | |
 |---|---|
-| **Version** | `1.7` — [graph/1.7.json](graph/1.7.json) |
+| **Version** | `1.8` — [graph/1.8.json](graph/1.8.json) |
 | **Status** | Stable. A published version never changes. |
 | **Normative schema** | JSON Schema 2020-12, one file per version in [graph/](graph/) |
 
@@ -81,7 +81,7 @@ One JSON object with exactly three members:
 
 A document is a graph of version *V* if and only if it declares `"schema_version": "V"` and is valid against [graph/*V*.json](graph/).
 
-### 2. Vocabulary of version 1.7
+### 2. Vocabulary of version 1.8
 
 | | Kinds |
 |---|---|
@@ -98,7 +98,9 @@ An `Entity` is stored by one resource. `entity_resource` goes from the entity to
 {"id": "shop.SalesOrderCoreEntity|entity_resource|shop.StorefrontDatabase", "source_id": "shop.SalesOrderCoreEntity", "target_id": "shop.StorefrontDatabase", "type": "entity_resource", "relationship": "Aggregation", "is_dag": true, "properties": {}}
 ```
 
-A `DataSource` is one database or other store that several resources share — a resource is often a part of a database, not the whole of it. Its `properties` carry its `description`. A data source belongs to no domain: it is physical, and resources of several domains may share it. It belongs to the application instead, as a `Domain` and a `Role` do: a `DataSource` node MUST have exactly one `application` edge, to the `Application` node. `resource_data_source` goes from a `Resource` to its `DataSource`, as an `Aggregation` with `is_dag` `true` and no properties. A data source is optional: a `Resource` of any kind MUST have at most one `resource_data_source` edge, and a resource with none works on its own, as before `1.7`. A `DataSource` node MUST have at least one resource. From `1.7` a model whose resources share a store says so:
+A `DataSource` is one store — a database, an external service, an in-memory store — and the physical place of the entities its resources store; a resource is often a part of a store, not the whole of it. Its `properties` carry its `description`. A data source belongs to no domain: it is physical, and resources of several domains may share it. It belongs to the application instead, as a `Domain` and a `Role` do: a `DataSource` node MUST have exactly one `application` edge, to the `Application` node. `resource_data_source` goes from a `Resource` to its `DataSource`, as an `Aggregation` with `is_dag` `true` and no properties. A `Resource` MUST have at most one `resource_data_source` edge; from `1.8` a `Resource` that stores an entity — one with at least one incoming `entity_resource` edge — MUST have exactly one, while a resource that stores none (a gateway that only calls out, for one) may have none. Two `Resource` nodes with the same `domain` edge MUST NOT have `resource_data_source` edges to the same `DataSource`: a domain reaches a data source through one resource, and a data source serves resources of several domains, one each. A `DataSource` node MUST have at least one resource.
+
+The model has two axes. The logical one says what things are: domains, entities and the relations between them. The physical one says where they live: a resource and its data source. A relation is a fact of the logical model: it promises no foreign key, no join and no shared transaction. So from `1.8` `entity_relation`, `entity_reference`, `entity_specialization`, `parent_entity` and a lifecycle's state type may join entities of any resources and data sources; `1.7` kept them inside one data source, or inside one resource that had none. A model whose resources share a store says so:
 
 ```json
 {"id": "shop.ShopDataSource", "type": "DataSource", "label": "ShopDataSource", "properties": {"description": "Main shop database"}}
@@ -106,7 +108,7 @@ A `DataSource` is one database or other store that several resources share — a
 {"id": "shop.OrdersResource|resource_data_source|shop.ShopDataSource", "source_id": "shop.OrdersResource", "target_id": "shop.ShopDataSource", "type": "resource_data_source", "relationship": "Aggregation", "is_dag": true, "properties": {}}
 ```
 
-A schema checks each row on its own: it cannot count rows, follow an `id` to its node or compare two rows. So the schema of `1.7` checks only the shape of the new rows, and the producer keeps every other rule; a consumer may rely on all of them:
+The checks are divided by what can see them. A schema checks each row on its own, and checks everything one row shows. A rule that counts rows, follows an `id` to its node or compares two rows is no schema's: the producer keeps it, checking it when it builds the model and again when it writes the graph, and a consumer may rely on it. So the schema of `1.8` is that of `1.7` under a new version — every rule `1.8` adds joins several rows:
 
 | Rule | Checked by |
 |---|---|
@@ -114,8 +116,10 @@ A schema checks each row on its own: it cannot count rows, follow an `id` to its
 | A `resource_data_source` edge is an `Aggregation`, `is_dag` `true`, with no properties | the schema, and the producer |
 | The edge goes from a `Resource` to a `DataSource` | the producer |
 | A `Resource` has at most one `resource_data_source` edge | the producer |
+| From `1.8`: a `Resource` with an incoming `entity_resource` edge has exactly one `resource_data_source` edge | the producer |
+| From `1.8`: two `Resource` nodes of one domain have no `resource_data_source` edges to the same `DataSource` | the producer |
 | A `DataSource` has exactly one `application` edge, to the `Application` node, and at least one resource | the producer |
-| A relation between entities stays inside one data source, or inside one resource when it has none | the producer |
+| In `1.7` only: a relation between entities stays inside one data source, or inside one resource when it has none | the producer |
 
 An `Event` is a fact a service can publish; its fields are `Field` nodes, as for `Params` and `Result`. `@emits` goes from a method to an event it may publish. `domain_event` goes from a domain to an event of its vocabulary. A `Domain` says in `typed_events` whether it has a vocabulary at all, so a reader tells "no vocabulary" from "an empty vocabulary".
 
@@ -133,6 +137,7 @@ The 1.x vocabulary comes from [AOA](https://github.com/bystrovmaxim/aoa)'s model
 | [`1.5`](graph/1.5.json) | A cache that stores entity by entity: the `Cache` kind `entity_key` and the edge type `@cache_entity_key`. |
 | [`1.6`](graph/1.6.json) | Where an entity is stored: the edge type `entity_resource` from an `Entity` to its `Resource`, exactly one per entity. |
 | [`1.7`](graph/1.7.json) | Resources that share a store: the node type `DataSource`, on the application, and the edge type `resource_data_source` from a `Resource` to it, at most one per resource. |
+| [`1.8`](graph/1.8.json) | The logical data model: the vocabulary and schema of `1.7`; a resource that stores an entity names exactly one data source, a domain reaches a data source through one resource, and a relation may join entities of any resources and data sources. |
 
 A release of the protocol is the git tag `open-gnomon-protocol-v<version>`; its history is [CHANGELOG.md](CHANGELOG.md).
 
@@ -149,7 +154,7 @@ A release of the protocol is the git tag `open-gnomon-protocol-v<version>`; its 
 
 | Role | Conforms when it… |
 |---|---|
-| **Producer** | prints valid graphs of the version it declares, with ids derived from the model (§4). |
+| **Producer** | prints valid graphs of the version it declares, with ids derived from the model (§4), and keeps every rule of that version a schema cannot check (§2). |
 | **Consumer** | checks each document against its declared version, refuses unknown versions, and compares revisions by `id`. |
 
 ## Implementations

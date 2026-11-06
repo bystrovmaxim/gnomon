@@ -203,3 +203,12 @@ def test_a_data_source_appearing_and_a_resource_moving_to_it_are_reported() -> N
     assert result.nodes["a.ArchiveDataSource"].status is Status.ADDED
     assert result.edges["a.Store|resource_data_source|a.ShopDataSource"].status is Status.REMOVED
     assert result.edges["a.Store|resource_data_source|a.ArchiveDataSource"].status is Status.ADDED
+
+
+def test_two_1_8_graphs_compare_and_a_relation_across_data_sources_is_added() -> None:
+    """A 1.8 graph is read like any known version: a relation that appears between entities of two data sources is added."""
+    order, invoice = _node("a.Order"), _node("a.Invoice")
+    across = {"id": "a.Invoice|entity_relation|a.Order", "source_id": "a.Invoice", "target_id": "a.Order", "type": "entity_relation", "relationship": "Association", "is_dag": False, "properties": {}}
+    result = compare(_graph([order, invoice], [], "1.8"), _graph([order, invoice], [across], "1.8"))
+    assert result.edges["a.Invoice|entity_relation|a.Order"].status is Status.ADDED
+    assert result.edge_counts == Counts(added=1)

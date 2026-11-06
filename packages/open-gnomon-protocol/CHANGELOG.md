@@ -2,6 +2,10 @@
 
 A version of the protocol is a schema file in [graph/](graph/) that never changes once published. A release is the git tag `open-gnomon-protocol-v<version>`.
 
+## 1.8 — 2026-11-06 18:23
+
+The data model is logical. A relation between entities says that they are related and promises no foreign key, no join and no shared transaction, so from 1.8 a relation, a reference, a specialization, a parent entity and a lifecycle's state type may join entities of any resources and data sources. In exchange every stored entity has a physical place: a resource that stores an entity names exactly one data source, and a domain reaches a data source through one resource, while a data source serves resources of several domains, one each. A data source is any store — a database, an external service, an in-memory store. The vocabulary is that of 1.7, and so is the schema under its new version: every new rule joins several rows, and the README now states the division of checks as a rule of the protocol — the schema checks everything one row shows, the producer keeps every rule across rows and checks it when it builds the model and the graph. Schema: [graph/1.8.json](graph/1.8.json).
+
 ## 1.7 — 2026-11-06 14:03
 
 A document can say which resources share a store: the node type `DataSource` is one database or other store, with its `description`, and the edge `resource_data_source` goes from a `Resource` to it, as an `Aggregation` with `is_dag` `true` and no properties. A data source belongs to the application, by the `application` edge a domain and a role have, and to no domain. It is optional: a resource has at most one, and a resource with none works on its own, as before. The schema checks the shape of each new row; the rest — at most one data source per resource, the ends of the edge, one `application` edge per data source, relations kept inside one data source — the producer keeps, and the README lists each rule. Nothing earlier changes, so a 1.6 document becomes a 1.7 one by changing its `schema_version`. Schema: [graph/1.7.json](graph/1.7.json).
