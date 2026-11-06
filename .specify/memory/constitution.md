@@ -1,5 +1,15 @@
 <!-- Sync Impact Report
-  Version change: 1.3.0 → 1.4.0 (MINOR: amended rules).
+  Version change: 1.4.0 → 1.5.0 (MINOR: amended rules).
+  Amended rules 13, 15, 24, 25, 26 and 53 in the schema rules and in Data
+    model and resources: a resource is a database and names its entities; an
+    entity names only its domain and may lie in several resources or in none;
+    a resource has no domain; a relation may join entities of any resources;
+    there is no data source and no rule of one resource per domain and data
+    source; a pool is chosen by the application, outside the model; written
+    for issue #66 within the change the maintainer set out in
+    bystrovmaxim/aoa#488.
+
+  Version 1.4.0: 1.3.0 → 1.4.0 (MINOR: amended rules).
   Amended rules 24, 25 and 26 in Data model and resources: the data model is
     logical — a relation is allowed between any two entities and promises no
     foreign key, join or transaction; a domain reaches a data source through
@@ -245,7 +255,7 @@ and the database on the server is brought to the snapshot by direct commands.
     (`DROP COLUMN`, `DROP TABLE`) a backup is mandatory.
 13. **Domain passport.** Each domain folder holds a `README.md` — the passport
     of the domain, not a retelling of its tables; the rule applies to the
-    domains of `schema/`, and the domains of `datamodel/` and `resources/` have
+    domains of `schema/`, and the folders of `datamodel/` and `resources/` have
     no passports (rule 15). The passport MUST contain: the purpose of the domain
     and why it exists; its boundaries — what belongs to it and what clearly does
     not; the list of tables with the kind of each and one line of meaning; the
@@ -317,7 +327,8 @@ and the database on the server is brought to the snapshot by direct commands.
 
 15. **Layers beside the schema.** Beside `schema/` inside a package lie
     `datamodel/` — business entities — and `resources/` — access to the
-    store. Their domains are the same as in `schema/`, and they have no
+    store. `datamodel/` is divided by the domains of `schema/`; `resources/`
+    by database, since a resource has no domain (rule 25). Neither has
     passports: a domain passport describes tables, and the model and the
     resources do not describe tables.
 16. **One file — one business entity.** Each business entity lives in its own
@@ -368,21 +379,26 @@ and the database on the server is brought to the snapshot by direct commands.
     mandatory. The author of the model derives them from the meaning and the
     schema and MUST confirm them at the clarify stage: the database does not
     tell the cardinality.
-24. **One resource per entity.** Each model entity MUST have exactly one
-    resource. While it is unknown what to read, the resource is created as an
-    empty stub — without read methods; a method appears when it is known what
-    exactly has to be fetched. A relation is a fact of the logical model: it is
-    allowed between any two entities, whatever their resources and data
-    sources, and promises no foreign key, no join and no shared transaction.
-    Where an entity lives is the physical model — its resource and that
-    resource's data source (rule 26).
-25. **A resource belongs to a domain.** A resource MUST declare its domain, MUST
-    lie in the folder of that domain, and the declared domain MUST match the
-    domain of the folder: a mismatch between declaration and place is visible,
-    not guessed. A domain reaches a data source through one resource: two
-    resources of one domain MUST NOT name the same data source; a data source
-    MAY serve resources of several domains, one each.
-    Check: no two resources of one domain name one data source.
+24. **A resource is a database and names its entities.** A resource is one
+    physical boundary, reached by one connection per call; only an action
+    glues the data of two resources. A resource MUST list the entities it
+    keeps (`@entities(...)`), and those are the only entities it may return.
+    An entity names its domain (`@entity(description, domain=...)`) and never
+    its store: the model knows no store, the store knows the model. An entity
+    MAY lie in several resources or in none, and the graph shows which. While
+    it is unknown what to read, a resource is created as an empty stub —
+    without read methods; a method appears when it is known what exactly has
+    to be fetched. A relation is a fact of the logical model: it is allowed
+    between any two entities, whatever their resources, and promises no
+    foreign key, no join and no shared transaction; a relation that crosses
+    two resources is glued by an action.
+    Check: every entity a resource returns is listed in its `@entities`.
+25. **A resource has no domain.** A resource MUST NOT declare a domain: its
+    domains are the domains of its entities, and a resource that keeps none is
+    reached through the actions that use it. It lies in the storage package.
+    Writes are not bounded by domain: an action of any domain may write
+    through any resource it uses.
+    Check: no resource declares a domain.
 26. **A resource is a manager; a nested call gets a wrapper.** A resource owns
     the connection and the transport. A resource MUST take its base from the
     framework and inherit it **directly**, without its own mixins and
@@ -400,23 +416,15 @@ and the database on the server is brought to the snapshot by direct commands.
     `get_wrapper_class()` returns itself, so that the guarantee holds at any
     depth of nesting. There MUST NOT be a shared mixin for the wrapper: it is
     declared in the resource itself, not moved into a shared class.
-    **Every stored entity has a data source.** A resource that stores an
-    entity MUST name its data source as the type argument of its framework
-    base (`PostgresResource[ShopDataSource]`) — still directly, as above; a
-    resource that stores nothing MAY name none. A data source class is named
-    `<Name>DataSource`, derives from the framework's data source of its kind
-    (`PostgresDataSource`, `ExternalServiceDataSource`, `InMemoryDataSource`)
-    and declares only its description and no domain. Connection parameters
-    and the pool live only in a data source: a resource MUST NOT take a pool
-    or connection parameters. The resource keeps the transaction — it opens,
-    begins, commits and rolls back —; the data source only hands connections
-    out and takes them back, so the connection policy — one shared client, a
-    pool, a shared client with one rate limit for all its resources — is the
-    data source's alone, and changing it changes the data source only. The
-    application creates the data source in its lifespan and passes it to every
-    resource that names it (`data_source=`).
-    Check: every resource that stores an entity names a data source; no
-    resource takes `pool=` or connection parameters.
+    **How a resource connects is the application's choice.** The model has no
+    data source and no pool. A resource keeps the transaction — it opens,
+    begins, commits and rolls back. A PostgreSQL resource takes exactly one of
+    `pool=` — a connection from a `PostgresPool` — or `connection_params=` —
+    a connection of its own per call; the application chooses when it is
+    assembled: a pool in a service's lifespan, an own connection in a script,
+    a substitute pool in a test. A pool is not in the graph.
+    Check: no resource takes both `pool=` and `connection_params=`, or
+    neither.
 27. **A resource holds no rules.** A resource MUST NOT contain domain
     conditions — "if premium", "if the term has expired" — and MUST NOT compute
     or derive values: it returns what it fetched. Conditions about the fetching
@@ -616,7 +624,7 @@ an ordinary table.
     directly and MUST NOT create one more layer inside itself — its own
     protocol, a "reader" or a store adapter. An extra layer hides what the
     resource really talks to and multiplies descriptions of one connection.
-    The data source (rule 26) is the framework's own layer, not a layer of the
+    The pool (rule 26) is the framework's own layer, not a layer of the
     resource: taking a connection from it is working with the store directly.
     Check: a resource has no intermediary types of its own over the store.
 
@@ -896,4 +904,4 @@ an ordinary table.
 - The sources of truth about the data structure are the constitution, `specs/`
   and `schema/`. There are no others.
 
-**Version**: 1.4.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-06
+**Version**: 1.5.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-06

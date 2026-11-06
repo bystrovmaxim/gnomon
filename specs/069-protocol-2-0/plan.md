@@ -23,7 +23,7 @@ Protocol 2.0 is 1.8 without `DataSource` and `resource_data_source`, with `entit
 | One phase = one commit | Pass | the nine phases of #66 |
 | A PR raises every changed level | Pass | protocol 1.8.0 → 2.0.0, `graph-builder` 1.6.0 → 1.7.0, `maxitor-web` 1.16.0 → 1.17.0, `maxitor` 3.24.0 → 3.25.0 |
 | Verification is adversarial | Pass | each new test broken once on purpose |
-| Data model rules 24–26, 53 | Rewritten | phase 5, at the maintainer's issue #66 (1.3) |
+| Rules 13, 15, 24–26, 53 | Rewritten | phase 5, at the maintainer's issue #66 (1.3) |
 | Browser checks alongside CI | Run | the store changes what the ERD and the sidebar get for a 1.7–1.8 graph |
 
 ## Project Structure
