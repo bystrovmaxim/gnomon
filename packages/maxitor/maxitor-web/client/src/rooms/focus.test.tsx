@@ -147,6 +147,15 @@ describe("a Graphviz drawing's hover", () => {
     expect(elementsOf(root, { kind: "table", id: "Orders" })).toEqual([root.querySelector("g.node")]);
   });
 
+  it("leaves a control's hint native — the ERD's fold control says Fold — while quieting the element titles (spec 068)", () => {
+    const root = drawing();
+    root.querySelector("g.node")!.insertAdjacentHTML("beforeend", '<g role="button" class="erd-fold-control"><title>Fold</title></g>');
+    renderHook(() => useGraphvizFocus(root, "svg-1", ERD, "table"));
+    const hint = root.querySelector(".erd-fold-control > title")!;
+    expect([hint.namespaceURI, hint.textContent]).toEqual(["http://www.w3.org/2000/svg", "Fold"]);
+    expect(root.querySelector("g.node > title")!.namespaceURI).not.toBe("http://www.w3.org/2000/svg");
+  });
+
   it("puts the label under the element, inside the window", () => {
     const element = document.createElement("div");
     const label = document.createElement("div");

@@ -76,7 +76,8 @@ const QUIET_TITLE_NS = "urn:maxitor:quiet-title";
  */
 export function takeOffNativeTooltips(root: ParentNode): void {
   for (const title of root.querySelectorAll("title")) {
-    if (title.namespaceURI !== "http://www.w3.org/2000/svg") continue;
+    // A control's hint — the ERD's fold control (spec 068) — names an action, not the element, and stays native.
+    if (title.namespaceURI !== "http://www.w3.org/2000/svg" || title.parentElement?.getAttribute("role") === "button") continue;
     const quiet = document.createElementNS(QUIET_TITLE_NS, "title");
     quiet.textContent = title.textContent;
     title.replaceWith(quiet);

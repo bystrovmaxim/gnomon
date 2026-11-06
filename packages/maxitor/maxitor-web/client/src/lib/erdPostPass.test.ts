@@ -471,14 +471,28 @@ describe("folded contours and their bundles (spec 065)", () => {
   it("puts a minus in the top right corner of each contour and a plus on each folded box, once", () => {
     const root = mountFold();
     addFoldControls(root);
-    const controls = [...root.querySelectorAll(".erd-fold-control")].map((c) => [c.getAttribute("data-fold"), c.getAttribute("data-folded"), c.querySelector("rect")!.getAttribute("x"), c.querySelector("rect")!.getAttribute("y")]);
+    const controls = [...root.querySelectorAll(".erd-fold-control")].map((c) => [c.getAttribute("data-fold"), c.getAttribute("data-folded"), c.getAttribute("transform"), c.getAttribute("aria-label")]);
     expect(controls).toEqual([
-      ["dc:Shop", "0", "180", "8"],
-      ["rc:Billing", "0", "40", "18"],
-      ["rc:Orders", "1", "160", "28"],
+      ["dc:Shop", "0", "translate(197,3)", "Fold"],
+      ["rc:Billing", "0", "translate(57,13)", "Fold"],
+      ["rc:Orders", "1", "translate(183,20)", "Unfold"],
     ]);
     expect(root.querySelector('[data-fold="rc:Orders"] path')!.getAttribute("d")).toContain("V");
     expect(root.querySelector('[data-fold="rc:Billing"] path')!.getAttribute("d")).not.toContain("V");
+  });
+
+  it("draws a fold control at screen size: a 16-pixel face inside a 28-pixel hit area, growing inward from the corner (spec 068)", () => {
+    const root = mountFold();
+    addFoldControls(root);
+    const control = root.querySelector('[data-fold="rc:Billing"]')!;
+    const box = (selector: string) => ["x", "y", "width", "height"].map((name) => Number(control.querySelector(selector)!.getAttribute(name)));
+    expect(box(".erd-fold-hit")).toEqual([-28, 0, 28, 28]);
+    expect(box(".erd-fold-face")).toEqual([-22, 6, 16, 16]);
+    expect(control.querySelector(".erd-fold-scale")!.contains(control.querySelector(".erd-fold-face"))).toBe(true);
+    expect(control.querySelector("title")!.textContent).toBe("Fold");
+    const folded = root.querySelector('[data-fold="rc:Orders"]')!;
+    expect(["x", "width"].map((name) => Number(folded.querySelector(".erd-fold-hit")!.getAttribute(name)))).toEqual([0, 28]);
+    expect(erdFoldSx["& .erd-fold-scale"]).toMatchObject({ transform: "scale(var(--erd-fold-scale, 1))", transformOrigin: "0 0", opacity: 0.75 });
   });
 
   it("lights a hovered bundle, marks the rows of every relation it stands for, and keeps its ends bright", () => {
@@ -505,6 +519,5 @@ describe("folded contours and their bundles (spec 065)", () => {
 
   it("keeps a bundle's count on view at all times", () => {
     expect(erdBundleSx["& g.edge[id^='rb'] text, & g.edge[id^='rb'] rect.erd-end-label"]).toEqual({ visibility: "visible" });
-    expect(erdFoldSx["& .erd-fold-control"]).toMatchObject({ opacity: 0.35 });
   });
 });

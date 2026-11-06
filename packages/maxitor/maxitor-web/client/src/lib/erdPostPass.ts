@@ -327,19 +327,44 @@ export const erdBundleSx = {
 export const FOLD_CONTROL_CLASS = "erd-fold-control";
 export const FOLD_ATTRIBUTE = "data-fold";
 
-/** The canvas's style for the fold controls: faint until the pointer is on their contour or box. */
+/** The CSS variable the canvas keeps at one over its zoom, so a fold control keeps its size on screen (spec 068). */
+export const FOLD_SCALE_VARIABLE = "--erd-fold-scale";
+
+/** The class of the part of a fold control that is drawn at screen size. */
+const FOLD_SCALE_CLASS = "erd-fold-scale";
+
+/**
+ * The canvas's style for the fold controls (spec 068): drawn at screen size whatever the zoom, plain at rest, darker
+ * under the pointer, with the hand cursor.
+ */
 export const erdFoldSx = {
-  [`& .${FOLD_CONTROL_CLASS}`]: { opacity: 0.35, cursor: "pointer", transition: "opacity 120ms ease" },
-  [`& g.cluster:hover .${FOLD_CONTROL_CLASS}, & g.node:hover .${FOLD_CONTROL_CLASS}, & .${FOLD_CONTROL_CLASS}:hover`]: { opacity: 1 },
+  [`& .${FOLD_CONTROL_CLASS}`]: { cursor: "pointer" },
+  [`& .${FOLD_SCALE_CLASS}`]: {
+    transform: `scale(var(${FOLD_SCALE_VARIABLE}, 1))`,
+    transformBox: "view-box",
+    transformOrigin: "0 0",
+    opacity: 0.75,
+    transition: "opacity 120ms ease",
+  },
+  [`& g.cluster:hover .${FOLD_SCALE_CLASS}, & g.node:hover .${FOLD_SCALE_CLASS}`]: { opacity: 0.9 },
+  [`& .${FOLD_CONTROL_CLASS}:hover .${FOLD_SCALE_CLASS}`]: { opacity: 1 },
+  [`& .${FOLD_CONTROL_CLASS}:hover .erd-fold-face`]: { strokeWidth: 2.2 },
 } as const;
 
-/** Side of a fold control, and its distance from its contour's top right corner, in drawing units. */
-const FOLD_SIZE = 12;
-const FOLD_INSET = 8;
+/**
+ * A fold control's sizes in screen pixels (spec 068): the square a reader sees, the area that takes the click, and the
+ * gap between the square and its contour's top right corner. On a contour the control grows from that corner inward, so
+ * it never reaches the name, which stands in the middle of the header. A folded box can be smaller on screen than the
+ * control, so there it stands outside, to the right of the box's top right corner.
+ */
+const FOLD_FACE = 16;
+const FOLD_HIT = 28;
+const FOLD_GAP = 6;
 
 /**
  * Put a fold control in the top right corner of every resource and data source contour — a minus — and of every
  * folded box — a plus (spec 065). It sits inside the contour's group, so pointing at it is pointing at the contour.
+ * It is drawn at screen size: the canvas sets ``--erd-fold-scale`` to one over its zoom (spec 068).
  */
 export function addFoldControls(root: ParentNode): void {
   const groups: Array<{ group: Element; id: string; folded: boolean }> = [];
@@ -356,19 +381,28 @@ export function addFoldControls(root: ParentNode): void {
     const span = spanOf(outline?.getAttribute("d") ?? outline?.getAttribute("points") ?? "");
     if (!outline || !span) continue;
     const ink = outline.getAttribute("stroke") ?? "#64748b";
-    const x = span.x1 - FOLD_INSET - FOLD_SIZE;
-    const y = span.y0 + FOLD_INSET;
-    const middle = { x: x + FOLD_SIZE / 2, y: y + FOLD_SIZE / 2 };
-    const arm = FOLD_SIZE * 0.28;
+    // In screen pixels, from the corner: the hit area fills the corner — inside a contour, outside a folded box — and
+    // the face sits in its middle.
+    const hitX = folded ? 0 : -FOLD_HIT;
+    const face = { x: hitX + (FOLD_HIT - FOLD_FACE) / 2, y: (FOLD_HIT - FOLD_FACE) / 2 };
+    const middle = { x: face.x + FOLD_FACE / 2, y: face.y + FOLD_FACE / 2 };
+    const arm = FOLD_FACE * 0.28;
     const sign = `M${fixed(middle.x - arm)} ${fixed(middle.y)}H${fixed(middle.x + arm)}` + (folded ? `M${fixed(middle.x)} ${fixed(middle.y - arm)}V${fixed(middle.y + arm)}` : "");
     const control = document.createElementNS("http://www.w3.org/2000/svg", "g");
     control.setAttribute("class", FOLD_CONTROL_CLASS);
     control.setAttribute(FOLD_ATTRIBUTE, id);
     control.setAttribute("data-folded", folded ? "1" : "0");
     control.setAttribute("pointer-events", "all");
+    control.setAttribute("role", "button");
+    control.setAttribute("aria-label", folded ? "Unfold" : "Fold");
+    control.setAttribute("transform", `translate(${fixed(span.x1 + (folded ? FOLD_GAP / 2 : -FOLD_GAP / 2))},${fixed(span.y0 + (folded ? 0 : FOLD_GAP / 2))})`);
     control.innerHTML =
-      `<rect x="${fixed(x)}" y="${fixed(y)}" width="${FOLD_SIZE}" height="${FOLD_SIZE}" rx="3" fill="white" stroke="${ink}" stroke-width="1.2"/>` +
-      `<path d="${sign}" fill="none" stroke="${ink}" stroke-width="1.5" stroke-linecap="round"/>`;
+      `<title>${folded ? "Unfold" : "Fold"}</title>` +
+      `<g class="${FOLD_SCALE_CLASS}">` +
+      `<rect class="erd-fold-hit" x="${hitX}" y="0" width="${FOLD_HIT}" height="${FOLD_HIT}" fill="transparent"/>` +
+      `<rect class="erd-fold-face" x="${fixed(face.x)}" y="${fixed(face.y)}" width="${FOLD_FACE}" height="${FOLD_FACE}" rx="4" fill="#ffffff" stroke="${ink}" stroke-width="1.5"/>` +
+      `<path d="${sign}" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round"/>` +
+      `</g>`;
     group.appendChild(control);
   }
 }

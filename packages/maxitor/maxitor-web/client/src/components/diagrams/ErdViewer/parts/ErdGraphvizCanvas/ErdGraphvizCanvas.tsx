@@ -62,7 +62,7 @@ import { DiffCard } from "@/components/history/DiffCard";
 import { COPY_CLICK_SLOP_PX } from "@/lib/erdCopy";
 import type { ErdDomainsBundle } from "@/lib/loadErdDomainsBundle";
 import { bindNameCopy } from "@/lib/erdCopy";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, clearTableFocus, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdFoldSx, erdLineHoverSx, FOLD_ATTRIBUTE, FOLD_CONTROL_CLASS, focusTables, placeKindIcons } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, clearTableFocus, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdFoldSx, erdLineHoverSx, FOLD_ATTRIBUTE, FOLD_CONTROL_CLASS, FOLD_SCALE_VARIABLE, focusTables, placeKindIcons } from "@/lib/erdPostPass";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { kindGlyphSvg, kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
@@ -399,6 +399,12 @@ export function ErdGraphvizCanvas({
     else closeCard();
   }, [closeCard, pannerRef, subjectOf, wantCardNow]);
   useEffect(() => onTransform(moveOrClose), [moveOrClose, onTransform]);
+  // A fold control keeps its size on screen: the canvas tells it one over the zoom, on every move and every drawing (spec 068).
+  const keepFoldControlsOnScreen = useCallback(() => {
+    pannerRef.current?.style.setProperty(FOLD_SCALE_VARIABLE, String(1 / Math.max(panZoom.getScale(), 0.01)));
+  }, [pannerRef, panZoom.getScale]);
+  useEffect(() => onTransform(keepFoldControlsOnScreen), [keepFoldControlsOnScreen, onTransform]);
+  useEffect(() => keepFoldControlsOnScreen(), [keepFoldControlsOnScreen, svgMarkup]);
   useEffect(() => moveOrClose(), [moveOrClose, svgMarkup]);
   // Tables collapsed to their keys (spec 043): one switch and the tables that differ from it, both page settings.
   const [fieldsCollapsed, setFieldsCollapsed] = usePageSetting<boolean>("fields_collapsed", false);
