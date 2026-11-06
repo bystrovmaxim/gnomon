@@ -1,5 +1,12 @@
 <!-- Sync Impact Report
-  Version change: 1.1.0 → 1.2.0 (MINOR: a new rule).
+  Version change: 1.2.0 → 1.3.0 (MINOR: amended rules).
+  Amended rules 24, 26 and 53 in Data model and resources: resources of one
+    database share one data source, a pool lives only in a data source, the
+    resource keeps the transaction, relations stay inside one data source (or
+    one resource without one); written for issue #52 within the data source
+    chain the maintainer authorised.
+
+  Version 1.2.0: 1.1.0 → 1.2.0 (MINOR: a new rule).
   Added rule 71 in Pull requests: the browser checks start right after every
     push, in parallel with CI, dictated by the maintainer.
 
@@ -355,7 +362,10 @@ and the database on the server is brought to the snapshot by direct commands.
 24. **One resource per entity.** Each model entity MUST have exactly one
     resource. While it is unknown what to read, the resource is created as an
     empty stub — without read methods; a method appears when it is known what
-    exactly has to be fetched.
+    exactly has to be fetched. A relation of an entity stays inside the data
+    source of its resource (rule 26), or inside its resource when the resource
+    names none: between entities of different resources of one database a
+    relation is ordinary, across databases it is refused.
 25. **A resource belongs to a domain.** A resource MUST declare its domain, MUST
     lie in the folder of that domain, and the declared domain MUST match the
     domain of the folder: a mismatch between declaration and place is visible,
@@ -377,6 +387,21 @@ and the database on the server is brought to the snapshot by direct commands.
     `get_wrapper_class()` returns itself, so that the guarantee holds at any
     depth of nesting. There MUST NOT be a shared mixin for the wrapper: it is
     declared in the resource itself, not moved into a shared class.
+    **Resources of one database share one data source.** When several
+    resources of the service work with one database, that database MUST have
+    exactly one data source class, named `<Name>DataSource`, derived from the
+    framework's data source of its kind (`PostgresDataSource` for PostgreSQL),
+    and each of those resources MUST name it as the type argument of its
+    framework base (`PostgresResource[ShopDataSource]`) — still directly, as
+    above. A data source declares only its description and no domain. A pool
+    lives only in a data source: a resource that needs a pool MUST work through
+    one and MUST NOT take a pool or connection parameters; a resource with no
+    data source opens its own connection from its connection parameters. The
+    resource keeps the transaction — it opens, begins, commits and rolls back —;
+    the data source only hands connections out and takes them back. The
+    application creates the data source in its lifespan and passes it to every
+    resource that names it (`data_source=`).
+    Check: no resource takes `pool=`; resources of one database name one data source.
 27. **A resource holds no rules.** A resource MUST NOT contain domain
     conditions — "if premium", "if the term has expired" — and MUST NOT compute
     or derive values: it returns what it fetched. Conditions about the fetching
@@ -576,6 +601,8 @@ an ordinary table.
     directly and MUST NOT create one more layer inside itself — its own
     protocol, a "reader" or a store adapter. An extra layer hides what the
     resource really talks to and multiplies descriptions of one connection.
+    The data source (rule 26) is the framework's own layer, not a layer of the
+    resource: taking a connection from it is working with the store directly.
     Check: a resource has no intermediary types of its own over the store.
 
 54. **The file is named like the class.** A file MUST be named after the class
@@ -854,4 +881,4 @@ an ordinary table.
 - The sources of truth about the data structure are the constitution, `specs/`
   and `schema/`. There are no others.
 
-**Version**: 1.2.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-05
+**Version**: 1.3.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-06
