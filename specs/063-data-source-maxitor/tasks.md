@@ -10,5 +10,5 @@ One phase = one commit, referencing (#52).
 - [x] T006 Phase 6: graph history — the comparison reports data source rows (covered by #51's reader; a test on the demo pair)
 - [x] T007 Phase 7: rebuild graph files, raise versions
 - [ ] T008 Phase 8: the closing check run, browser checks included
-- [ ] T009 Phase 9: documentation
+- [x] T009 Phase 9: documentation
 - [ ] T010 Phase 10: changelog

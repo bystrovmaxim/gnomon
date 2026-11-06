@@ -26,6 +26,10 @@ From protocol 1.6 every table carries `resource_id`, and the bundle carries each
 
 The resources switched off and Boundary come from `useErdResourceSettings` (`@/lib/erdResourceSettings`), page settings a room shares. A fit still measures only the tables and lines, which every engine draws alike — a contour's name is text, measured a little differently by each — and with Boundary on it keeps a fixed 48 px margin, so a contour and its name are never cut at the screen's edge. `scripts/check-erd-resources.ts` checks the drawing on the real WASM build.
 
+## Data sources around resources
+
+From protocol 1.7 a resource may share a data source; the bundle carries each resource's data source and each data source's colour and name (`resource_data_sources`, `data_source_colors`, `data_source_labels`), as the server gives them (spec 063). The canvas filters by the Data sources section (`filterGraphByDataSources`, `@/lib/erdDataSourceFilter`, whose `NO_DATA_SOURCE` row stands for the resources that name none), paints by data source when the gear shift says so (`setErdPaint("data_source", data_source_colors)`), and hands `buildDotSource` the two maps: with Boundary on, the contours of the resources of one data source go into one `cluster_data_source_<n>` (n by sorted data source id), dashed, headed by the data source's name at 17 pt, inside an invisible `_room` cluster with a 40 pt margin. A resource without a data source keeps its single contour outside.
+
 ## A card's fills follow its contour
 
 Graphviz draws a table card as an HTML-like label: the outline is a rounded rectangle
