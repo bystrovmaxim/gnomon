@@ -28,7 +28,7 @@ Each phase is one commit, the phases of issue #51. After a phase only its own te
 
 ## Phase 5: Documentation
 
-- [ ] T011 `packages/maxitor/core/graph_compare/README.md`: the known versions `1.0` to `1.7`
+- [x] T011 `packages/maxitor/core/graph_compare/README.md`: the known versions `1.0` to `1.7`
 
 ## Phase 6: Changelog
 
