@@ -23,11 +23,11 @@ primary key: the diagram queries read through neither (``specs/025-graph-index-m
 VARCHAR and mirrors it in the ``edges`` view JSON ``payload``.
 ``parent_action_edges`` / ``parent_role_edges`` / ``parent_domain_edges`` mirror wire ``parent_*`` edges
 (same four columns as ``domain_edges``; relationship is GENERALIZATION in JSON).
-``entity_resource_edges`` (protocol 1.6) holds each entity's resource — entity → resource, the same
-four columns as ``domain_edges``; a graph of 1.0–1.5 leaves it empty. ``data_source`` (protocol 1.7)
-holds the stores several resources share, and ``resource_data_source_edges`` each resource's data
-source — resource → data source, the same four columns; a resource without one has no row, and a
-graph of 1.0–1.6 leaves both empty.
+``resource_entity_edges`` holds where each entity lies — resource → entity, the same four columns as
+``domain_edges``. A graph of protocol 2.0 fills it from ``resource_entity``, from 0 to N resources per
+entity; a graph of 1.6–1.8 fills it from ``entity_resource`` turned around, one resource per entity; a
+graph of 1.0–1.5 leaves it empty. The store knows no data source: the ``DataSource`` nodes of 1.7–1.8,
+their ``application`` edges and ``resource_data_source`` are not loaded.
 ``parent_entity_edges`` is the same relationship **with properties** — the four the wire edge carries —
 and ``entity_specialization_edges`` mirrors the head→alternative edges, one row per alternative, with
 the whole ordered alternative list on each row so a consumer holding one row has the set.
@@ -169,11 +169,6 @@ class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection], Ba
       label VARCHAR NOT NULL,
       description VARCHAR NOT NULL
     );""",
-            """CREATE TABLE data_source (
-      id VARCHAR NOT NULL,
-      label VARCHAR NOT NULL,
-      description VARCHAR NOT NULL
-    );""",
             """CREATE TABLE params (
       id VARCHAR NOT NULL,
       label VARCHAR NOT NULL
@@ -284,13 +279,7 @@ class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection], Ba
       relationship VARCHAR NOT NULL,
       is_dag BOOLEAN NOT NULL
     );""",
-            """CREATE TABLE entity_resource_edges (
-      source_id VARCHAR NOT NULL,
-      target_id VARCHAR NOT NULL,
-      relationship VARCHAR NOT NULL,
-      is_dag BOOLEAN NOT NULL
-    );""",
-            """CREATE TABLE resource_data_source_edges (
+            """CREATE TABLE resource_entity_edges (
       source_id VARCHAR NOT NULL,
       target_id VARCHAR NOT NULL,
       relationship VARCHAR NOT NULL,
@@ -630,7 +619,6 @@ _NODE_TABLE_NAMES: tuple[str, ...] = (
     "entity",
     "entity_field",
     "resource",
-    "data_source",
     "params",
     "result",
     "event",
@@ -654,8 +642,7 @@ _NODE_TABLE_NAMES: tuple[str, ...] = (
 _EDGE_TABLE_NAMES: tuple[str, ...] = (
     "application_edges",
     "domain_edges",
-    "entity_resource_edges",
-    "resource_data_source_edges",
+    "resource_entity_edges",
     "parent_action_edges",
     "parent_domain_edges",
     "parent_role_edges",
@@ -720,7 +707,6 @@ def _graph_union_view_ddls() -> list[str]:
         "SELECT id, label, CAST('entity' AS VARCHAR) AS type, json_object('description', description, 'entity_kind', entity_kind, 'entity_kind_label', entity_kind_label, 'values', from_json(values_json, '[\"json\"]')) AS payload FROM entity",
         "SELECT id, label, CAST('entity_field' AS VARCHAR) AS type, json_object('field_type', field_type, 'primary_key_hint', primary_key_hint, 'description', description) AS payload FROM entity_field",
         "SELECT id, label, CAST('resource' AS VARCHAR) AS type, json_object('description', description) AS payload FROM resource",
-        "SELECT id, label, CAST('data_source' AS VARCHAR) AS type, json_object('description', description) AS payload FROM data_source",
         f"SELECT id, label, CAST('params' AS VARCHAR) AS type, {_nj()} AS payload FROM params",
         f"SELECT id, label, CAST('result' AS VARCHAR) AS type, {_nj()} AS payload FROM result",
         f"SELECT id, label, CAST('event' AS VARCHAR) AS type, {_nj()} AS payload FROM event",
@@ -742,8 +728,7 @@ def _graph_union_view_ddls() -> list[str]:
     edge_parts: list[str] = [
         f"SELECT source_id, target_id, relationship, is_dag, CAST('application_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM application_edges",
         f"SELECT source_id, target_id, relationship, is_dag, CAST('domain_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM domain_edges",
-        f"SELECT source_id, target_id, relationship, is_dag, CAST('entity_resource_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM entity_resource_edges",
-        f"SELECT source_id, target_id, relationship, is_dag, CAST('resource_data_source_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM resource_data_source_edges",
+        f"SELECT source_id, target_id, relationship, is_dag, CAST('resource_entity_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM resource_entity_edges",
         f"SELECT source_id, target_id, relationship, is_dag, CAST('parent_action_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM parent_action_edges",
         f"SELECT source_id, target_id, relationship, is_dag, CAST('parent_domain_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM parent_domain_edges",
         f"SELECT source_id, target_id, relationship, is_dag, CAST('parent_role_edges' AS VARCHAR) AS type, {_nj()} AS payload FROM parent_role_edges",
@@ -1036,6 +1021,8 @@ def _fill_database(con: duckdb.DuckDBPyConnection, json_data: dict[str, Any]) ->
         edges_by_type.setdefault(str(e["type"]), []).append(e)
 
     _assert_no_unknown_graph_types(nodes_by_type, edges_by_type)
+    _forget_data_sources(nodes_by_type, edges_by_type)
+    _turn_entity_resource_around(edges_by_type)
 
     _fill_simple_edge_tables(con, edges_by_type)
     _fill_model_node_tables(con, nodes_by_type)
@@ -1046,13 +1033,30 @@ def _fill_database(con: duckdb.DuckDBPyConnection, json_data: dict[str, Any]) ->
     _fill_detail_edge_tables(con, edges_by_type)
 
 
+def _forget_data_sources(
+    nodes_by_type: dict[str, list[dict[str, Any]]],
+    edges_by_type: dict[str, list[dict[str, Any]]],
+) -> None:
+    """Drop the data sources of protocol 1.7–1.8 — the nodes, their ``application`` edges, ``resource_data_source``."""
+    data_sources = {str(n["id"]) for n in nodes_by_type.pop("DataSource", [])}
+    edges_by_type.pop("resource_data_source", None)
+    if data_sources and "application" in edges_by_type:
+        edges_by_type["application"] = [e for e in edges_by_type["application"] if str(e["source_id"]) not in data_sources]
+
+
+def _turn_entity_resource_around(edges_by_type: dict[str, list[dict[str, Any]]]) -> None:
+    """Read ``entity_resource`` of protocol 1.6–1.8 (entity → resource) as ``resource_entity`` of 2.0 (resource → entity)."""
+    turned = [{**e, "source_id": e["target_id"], "target_id": e["source_id"]} for e in edges_by_type.pop("entity_resource", [])]
+    if turned:
+        edges_by_type["resource_entity"] = [*edges_by_type.get("resource_entity", []), *turned]
+
+
 def _fill_simple_edge_tables(con: duckdb.DuckDBPyConnection, edges_by_type: dict[str, list[dict[str, Any]]]) -> None:
     """Fill the edge tables that hold only the four base columns."""
     simple_edge_types = {
         "application": "application_edges",
         "domain": "domain_edges",
-        "entity_resource": "entity_resource_edges",
-        "resource_data_source": "resource_data_source_edges",
+        "resource_entity": "resource_entity_edges",
         "parent_action": "parent_action_edges",
         "parent_domain": "parent_domain_edges",
         "parent_role": "parent_role_edges",
@@ -1145,11 +1149,6 @@ def _fill_schema_node_tables(con: duckdb.DuckDBPyConnection, nodes_by_type: dict
         con,
         "INSERT INTO resource VALUES (?, ?, ?)",
         [[n["id"], n["label"], _get_properties(n)["description"]] for n in nodes_by_type.get("Resource", [])],
-    )
-    _executemany(
-        con,
-        "INSERT INTO data_source VALUES (?, ?, ?)",
-        [[n["id"], n["label"], _get_properties(n)["description"]] for n in nodes_by_type.get("DataSource", [])],
     )
     _executemany(
         con, "INSERT INTO params VALUES (?, ?)", [[n["id"], n["label"]] for n in nodes_by_type.get("Params", [])]
@@ -1344,6 +1343,7 @@ def _assert_no_unknown_graph_types(
     known_edges = {
         "application",
         "domain",
+        "resource_entity",
         "entity_resource",
         "resource_data_source",
         "parent_action",

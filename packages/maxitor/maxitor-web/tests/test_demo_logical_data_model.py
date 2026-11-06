@@ -1,11 +1,10 @@
 # packages/maxitor/maxitor-web/tests/test_demo_logical_data_model.py
 """
-The AOA demo's graph at protocol 1.8, as the ERD reads it (spec 067).
+The AOA demo's graph at protocol 1.8, as the ERD reads it (specs 067, 069).
 
 A relation knows no store: the Billing ERD, with its neighbours, draws the chargeback ticket's line to
-the shop database's customer order, two tables of two data sources, so the line leaves one data source
-contour for another. Every resource that stores an entity names a data source, so the ERD has no
-"No data source" row on a 1.8 graph.
+the shop's customer order, two tables kept by two resources. The store reads the demo's ``entity_resource``
+turned around and leaves its data sources out, so every stored entity has its resource and no data source.
 """
 
 from __future__ import annotations
@@ -20,39 +19,44 @@ DEMO_GRAPH = Path(__file__).resolve().parents[4] / "external" / "aoa" / "package
 BILLING = "aoa.demo.model.billing.domain.BillingDomain"
 
 
-def _duck() -> DuckDBGraphResource:
-    return DuckDBGraphResource.build_from_json(json.loads(DEMO_GRAPH.read_text(encoding="utf-8")))
+def _demo() -> dict:
+    graph: dict = json.loads(DEMO_GRAPH.read_text(encoding="utf-8"))
+    return graph
 
 
-def _data_source_of(duck: DuckDBGraphResource) -> dict[str, str | None]:
-    """Each stored entity's label, mapped to the label of its resource's data source."""
+def _resource_of(duck: DuckDBGraphResource) -> dict[str, str]:
+    """Each stored entity's label, mapped to the label of the resource that keeps it."""
     rows = duck.execute_fetch_dicts(
         """
-        SELECT e.label AS entity, ds.label AS data_source
+        SELECT e.label AS entity, r.label AS resource
         FROM entity e
-        JOIN entity_resource_edges rre ON rre.source_id = e.id
-        LEFT JOIN resource_data_source_edges rds ON rds.source_id = rre.target_id
-        LEFT JOIN data_source ds ON ds.id = rds.target_id
+        JOIN resource_entity_edges rre ON rre.target_id = e.id
+        JOIN resource r ON r.id = rre.source_id
         """
     )
-    return {str(row["entity"]): None if row["data_source"] is None else str(row["data_source"]) for row in rows}
+    return {str(row["entity"]): str(row["resource"]) for row in rows}
 
 
 def test_the_demo_graph_is_1_8() -> None:
-    assert json.loads(DEMO_GRAPH.read_text(encoding="utf-8"))["schema_version"] == "1.8"
+    assert _demo()["schema_version"] == "1.8"
 
 
-def test_the_billing_erd_draws_a_line_from_one_data_source_to_another() -> None:
-    """The chargeback ticket, in the billing warehouse, points at the order of the shop database."""
-    duck = _duck()
+def test_the_billing_erd_draws_a_line_from_one_resource_to_another() -> None:
+    """The chargeback ticket, in the billing warehouse, points at the order the shop keeps."""
+    duck = DuckDBGraphResource.build_from_json(_demo())
     payload = ListEntitiesAction._slice_payload(duck, BILLING, include_neighbors=True)
     labels = {entity["id"]: entity["label"] for entity in payload["entities"]}
     lines = {(labels.get(rel["source"]), labels.get(rel["target"])) for rel in payload["relations"]}
     assert ("ChargebackTicketCoreEntity", "SalesOrderCoreEntity") in lines
-    data_source = _data_source_of(duck)
-    assert (data_source["ChargebackTicketCoreEntity"], data_source["SalesOrderCoreEntity"]) == ("BillingWarehouseDataSource", "ShopDataSource")
+    resource = _resource_of(duck)
+    assert resource["ChargebackTicketCoreEntity"] != resource["SalesOrderCoreEntity"]
 
 
-def test_every_stored_entity_has_a_data_source() -> None:
-    """At 1.8 no entity's resource is without a data source, so no "No data source" row appears."""
-    assert [entity for entity, source in _data_source_of(_duck()).items() if source is None] == []
+def test_every_entity_the_demo_stores_keeps_its_resource() -> None:
+    """Each ``entity_resource`` edge of the demo becomes one row of the store, turned around."""
+    graph = _demo()
+    stored = {(e["target_id"], e["source_id"]) for e in graph["edges"] if e["type"] == "entity_resource"}
+    duck = DuckDBGraphResource.build_from_json(graph)
+    rows = duck.execute_fetch_dicts("SELECT source_id, target_id FROM resource_entity_edges")
+    assert {(str(r["source_id"]), str(r["target_id"])) for r in rows} == stored
+    assert any(node["type"] == "DataSource" for node in graph["nodes"])
