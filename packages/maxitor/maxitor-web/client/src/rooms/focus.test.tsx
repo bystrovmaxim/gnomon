@@ -282,6 +282,41 @@ describe("a resource contour's hover (spec 064)", () => {
   });
 });
 
+describe("a folded box and a bundle in a room (spec 068)", () => {
+  function folded(): HTMLDivElement {
+    const root = document.createElement("div");
+    root.innerHTML = `
+      <svg>
+        <g class="node" id="node1"><title>rc:shop.OrdersResource</title><path d="M0 0"/></g>
+        <g class="node" id="node2"><title>shop.Ticket</title><path d="M0 0"/></g>
+        <g class="edge" id="rb0"><title>shop.Ticket->rc:shop.OrdersResource</title><path d="M0 0"/></g>
+      </svg>`;
+    document.body.appendChild(root);
+    return root;
+  }
+
+  it("names a folded box by its contour and a bundle by its place, as a table and a line are", () => {
+    const root = folded();
+    expect(elementRefOf(root.querySelector("#node1 path")!, "table")).toEqual({ kind: "table", id: "rc:shop.OrdersResource" });
+    expect(elementRefOf(root.querySelector("#rb0 path")!, "table")).toEqual({ kind: "edge", id: "rb0" });
+  });
+
+  it("replays the followed person's hover of a folded box and of a bundle on the follower's drawing", () => {
+    for (const hover of [{ kind: "table", id: "rc:shop.OrdersResource" }, { kind: "edge", id: "rb0" }] as const) {
+      clearFocus();
+      document.body.innerHTML = "";
+      putFocus("anna", { ...annasFocus, hover, tooltip: hover });
+      setFollowTarget("anna");
+      const root = folded();
+      const entered: string[] = [];
+      root.querySelector("#node1")!.addEventListener("mouseenter", () => entered.push("box"));
+      root.querySelector("#rb0")!.addEventListener("mouseenter", () => entered.push("bundle"));
+      renderHook(() => useGraphvizFocus(root, "svg-1", ERD, "table"));
+      expect(entered).toEqual([hover.kind === "table" ? "box" : "bundle"]);
+    }
+  });
+});
+
 describe("a panel while following (spec 029, FR-012)", () => {
   /** A filter panel's state through ``useShownPanel``. */
   function usePanel() {

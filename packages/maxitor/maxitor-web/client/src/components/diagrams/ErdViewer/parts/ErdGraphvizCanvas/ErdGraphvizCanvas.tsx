@@ -242,7 +242,8 @@ export function ErdGraphvizCanvas({
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);
   useSvgDiagramSurface(viewportRef, panZoom, Boolean(svgMarkup) && panZoom.fitted);
-  const portable = useMemo(() => erdPortable(() => ({ entities: markupDataRef.current?.entities ?? [], relations: markupDataRef.current?.relations ?? [] })), []);
+  // Rows, lines and bundles pass to the other half by identity; a bundle's place is ``bundlesRef``, set with each drawing (spec 068).
+  const portable = useMemo(() => erdPortable(() => ({ entities: markupDataRef.current?.entities ?? [], relations: markupDataRef.current?.relations ?? [], bundles: bundlesRef.current })), []);
 
   const tabsOn = useMemo(() => (multiTab ? enabledDomains : new Set(domainKeyList)), [multiTab, enabledDomains, domainKeyList]);
 
@@ -484,7 +485,7 @@ export function ErdGraphvizCanvas({
     centreOnClient,
     drawing: svgMarkup,
     nodeKind: "table",
-    holds: (ref) => (ownBase ? erdHolds(ownBase, ref) : false),
+    holds: (ref) => (ownBase ? erdHolds({ ...ownBase, resource_data_sources: bundle.resource_data_sources ?? {} }, ref) : false),
     portable,
   });
   useEffect(() => () => {
