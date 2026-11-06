@@ -6,5 +6,5 @@ One phase = one commit, referencing (#55).
 - [x] T002 Phase 2: the room — focus kind `contour` on the client (`focusStore.ts`, `graphvizFocus.ts`) and on the server (`room_registry.py`); Vitest and pytest; the drawing check `check-erd-contour-hover.ts` in the check run
 - [x] T003 Phase 3: rebuild the graph files if they changed; raise the versions of `maxitor-web` and `maxitor`
 - [ ] T004 Phase 4: the closing check run, browser checks included
-- [ ] T005 Phase 5: documentation — the ERD section of the `maxitor-web` README, beside Boundary
+- [x] T005 Phase 5: documentation — the ERD section of the `maxitor-web` README, beside Boundary
 - [ ] T006 Phase 6: changelog
