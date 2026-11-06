@@ -8,4 +8,4 @@ One phase = one commit, referencing (#63).
 - [x] T004 Phase 4: raise the versions
 - [ ] T005 Phase 5: the closing check run, browser checks included
 - [x] T006 Phase 6: documentation
-- [ ] T007 Phase 7: changelog
+- [x] T007 Phase 7: changelog
