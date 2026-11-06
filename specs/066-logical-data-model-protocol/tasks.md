@@ -7,4 +7,4 @@ One phase = one commit, referencing (#59). After a phase only its own tests run;
 - [x] T003 Phase 3: versions — protocol 1.8.0, `graph-builder` 1.6.0, `maxitor` 3.22.0 and `uv.lock`
 - [ ] T004 Phase 4: the closing check run on the pull request, taken to zero
 - [x] T005 Phase 5: documentation — the known versions in the `graph_compare` README and the `graph-builder` pages that list them
-- [ ] T006 Phase 6: changelogs — protocol `## 1.8`, Maxitor under Unreleased
+- [x] T006 Phase 6: changelogs — protocol `## 1.8`, Maxitor under Unreleased
