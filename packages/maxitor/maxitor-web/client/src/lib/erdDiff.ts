@@ -11,7 +11,7 @@ import type { ChangedPart, CompareResult, DiffStatus } from "@/api/compare";
 import { drawnOn, type Side } from "@/lib/half";
 import type { Portable } from "@/lib/halfPicking";
 import type { ElementRef } from "@/rooms/focusStore";
-import type { ErdEntity, ErdField, ErdRelation } from "@/lib/buildDotSource";
+import { CONTOUR_ID_PREFIX, DATA_SOURCE_CONTOUR_ID_PREFIX, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
 
 /** One domain's slice of the ERD, as ``list-entities`` gives it. */
 export type ErdSlice = { entities?: ErdEntity[]; relations?: ErdRelation[]; groups?: unknown[] };
@@ -200,13 +200,39 @@ export function erdOfSide<T extends { entities: ErdEntity[]; relations?: ErdRela
   return { ...data, entities: ordered.entities, relations: ordered.relations.filter((relation) => tables.has(relation.source) && tables.has(relation.target)) };
 }
 
-type ErdDrawing = { entities: readonly ErdEntity[]; relations?: readonly ErdRelation[] };
+type ErdDrawing = {
+  entities: readonly ErdEntity[];
+  relations?: readonly ErdRelation[];
+  /** The lines between folded boxes, as drawn (spec 065). */
+  bundles?: readonly ErdBundle[];
+  /** Each resource's data source (spec 063). */
+  resource_data_sources?: Readonly<Record<string, string>>;
+};
 
-/** Whether ``data`` holds the element a ref names by identity: a table, ``<table>:<field>``, or a line by ``relationKey``. */
+/** A bundle's identity: its two ends, a table's id or a folded contour's id (spec 068). */
+const BUNDLE_IDENTITY = "bundle:";
+const bundleKey = (bundle: { source: string; target: string }) => `${BUNDLE_IDENTITY}${bundle.source}|${bundle.target}`;
+
+/** Whether ``data`` holds a table, or the resource or data source a folded contour's id names. */
+function holdsEnd(data: ErdDrawing, id: string): boolean {
+  if (id.startsWith(CONTOUR_ID_PREFIX)) return data.entities.some((entity) => entity.resource_id === id.slice(CONTOUR_ID_PREFIX.length));
+  if (id.startsWith(DATA_SOURCE_CONTOUR_ID_PREFIX)) {
+    const source = id.slice(DATA_SOURCE_CONTOUR_ID_PREFIX.length);
+    return data.entities.some((entity) => entity.resource_id != null && data.resource_data_sources?.[entity.resource_id] === source);
+  }
+  return data.entities.some((entity) => entity.id === id);
+}
+
+/**
+ * Whether ``data`` holds the element a ref names by identity: a table or a folded box, ``<table>:<field>``, a line by
+ * ``relationKey``, a bundle by its two ends, or a resource contour by its resource.
+ */
 export function erdHolds(data: ErdDrawing, ref: ElementRef): boolean {
+  if (ref.kind === "edge" && ref.id.startsWith(BUNDLE_IDENTITY)) return ref.id.slice(BUNDLE_IDENTITY.length).split("|").every((end) => holdsEnd(data, end));
   if (ref.kind === "edge") return (data.relations ?? []).some((relation) => relationKey(relation) === ref.id);
   if (ref.kind === "row") return data.entities.some((entity) => (entity.fields ?? []).some((field) => `${entity.id}:${field.name}` === ref.id));
-  return data.entities.some((entity) => entity.id === ref.id);
+  if (ref.kind === "contour") return holdsEnd(data, `${CONTOUR_ID_PREFIX}${ref.id}`);
+  return holdsEnd(data, ref.id);
 }
 
 /**
@@ -225,10 +251,17 @@ export function erdPortable(drawn: () => ErdDrawing): Portable {
       }
       const line = ref.kind === "edge" ? /^re(\d+)$/.exec(ref.id) : null;
       const relation = line ? relations[Number(line[1])] : undefined;
-      return relation ? { kind: "edge", id: relationKey(relation) } : ref;
+      if (relation) return { kind: "edge", id: relationKey(relation) };
+      // A bundle's ``rb<j>`` is a place on one drawing; its two ends are the same on any (spec 068).
+      const bundle = ref.kind === "edge" ? (drawn().bundles ?? []).find((each) => each.id === ref.id) : undefined;
+      return bundle ? { kind: "edge", id: bundleKey(bundle) } : ref;
     },
     fromIdentity(ref) {
-      const { entities, relations = [] } = drawn();
+      const { entities, relations = [], bundles = [] } = drawn();
+      if (ref.kind === "edge" && ref.id.startsWith(BUNDLE_IDENTITY)) {
+        const bundle = bundles.find((each) => bundleKey(each) === ref.id);
+        return bundle ? { kind: "edge", id: bundle.id } : null;
+      }
       if (ref.kind === "edge") {
         const index = relations.findIndex((relation) => relationKey(relation) === ref.id);
         return index >= 0 ? { kind: "edge", id: `re${index}` } : null;

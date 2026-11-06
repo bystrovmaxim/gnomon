@@ -194,3 +194,13 @@ describe("links on a card", () => {
     expect(open).toHaveBeenCalledOnce();
   });
 });
+
+describe("an icon beside the title (spec 068)", () => {
+  it("draws the icon it is given before the title, and none without one", () => {
+    show({ icon: "data:image/svg+xml,%3Csvg%2F%3E", nodeId: null });
+    expect(screen.getByTestId("card-icon").getAttribute("src")).toBe("data:image/svg+xml,%3Csvg%2F%3E");
+    cleanup();
+    show({ nodeId: null });
+    expect(screen.queryByTestId("card-icon")).toBeNull();
+  });
+});

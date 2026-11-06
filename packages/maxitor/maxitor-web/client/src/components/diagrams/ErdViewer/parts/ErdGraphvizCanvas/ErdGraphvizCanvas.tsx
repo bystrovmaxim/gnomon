@@ -62,7 +62,7 @@ import { DiffCard } from "@/components/history/DiffCard";
 import { COPY_CLICK_SLOP_PX } from "@/lib/erdCopy";
 import type { ErdDomainsBundle } from "@/lib/loadErdDomainsBundle";
 import { bindNameCopy } from "@/lib/erdCopy";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, clearTableFocus, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdFoldSx, erdLineHoverSx, FOLD_ATTRIBUTE, FOLD_CONTROL_CLASS, focusTables, placeKindIcons } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, clearTableFocus, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdFoldSx, erdLineHoverSx, FOLD_ATTRIBUTE, FOLD_CONTROL_CLASS, focusTables, placeKindIcons, scaleFoldControls } from "@/lib/erdPostPass";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { kindGlyphSvg, kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
@@ -242,7 +242,8 @@ export function ErdGraphvizCanvas({
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);
   useSvgDiagramSurface(viewportRef, panZoom, Boolean(svgMarkup) && panZoom.fitted);
-  const portable = useMemo(() => erdPortable(() => ({ entities: markupDataRef.current?.entities ?? [], relations: markupDataRef.current?.relations ?? [] })), []);
+  // Rows, lines and bundles pass to the other half by identity; a bundle's place is ``bundlesRef``, set with each drawing (spec 068).
+  const portable = useMemo(() => erdPortable(() => ({ entities: markupDataRef.current?.entities ?? [], relations: markupDataRef.current?.relations ?? [], bundles: bundlesRef.current })), []);
 
   const tabsOn = useMemo(() => (multiTab ? enabledDomains : new Set(domainKeyList)), [multiTab, enabledDomains, domainKeyList]);
 
@@ -377,7 +378,9 @@ export function ErdGraphvizCanvas({
   );
   const hoverCards = useMemo<HoverCards>(
     () => ({
-      has: (ref) => pannerRef.current !== null && erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, {}, {}, {}, bundlesRef.current) !== null,
+      has: (ref) =>
+        pannerRef.current !== null &&
+        erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, bundlesRef.current) !== null,
       show: (ref, elements) => wantCard(ref ? subjectOf(ref, elements) : null),
       open: (ref, elements) => {
         const subject = subjectOf(ref, elements);
@@ -385,7 +388,7 @@ export function ErdGraphvizCanvas({
       },
       close: closeCard,
     }),
-    [closeCard, drawnTables, pannerRef, subjectOf, wantCard, wantCardNow],
+    [bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, closeCard, drawnTables, pannerRef, subjectOf, wantCard, wantCardNow],
   );
   // Hover and tooltip shared with followers, and the followed person's shown here (spec 029).
   useGraphvizFocus(pannerRef.current, svgMarkup, useCurrentPage(), "table", hoverCards, portable);
@@ -399,6 +402,18 @@ export function ErdGraphvizCanvas({
     else closeCard();
   }, [closeCard, pannerRef, subjectOf, wantCardNow]);
   useEffect(() => onTransform(moveOrClose), [moveOrClose, onTransform]);
+  // A fold control keeps its size on screen (spec 068): rescaled when the zoom changes and on each new drawing — a pan
+  // alone changes nothing, so the tables and their fields move as one.
+  const foldZoomRef = useRef<number | null>(null);
+  const keepFoldControlsOnScreen = useCallback((force: boolean) => {
+    const panner = pannerRef.current;
+    const zoom = panZoom.getScale();
+    if (!panner || (!force && foldZoomRef.current === zoom)) return;
+    foldZoomRef.current = zoom;
+    scaleFoldControls(panner, zoom);
+  }, [pannerRef, panZoom.getScale]);
+  useEffect(() => onTransform(() => keepFoldControlsOnScreen(false)), [keepFoldControlsOnScreen, onTransform]);
+  useEffect(() => keepFoldControlsOnScreen(true), [keepFoldControlsOnScreen, svgMarkup]);
   useEffect(() => moveOrClose(), [moveOrClose, svgMarkup]);
   // Tables collapsed to their keys (spec 043): one switch and the tables that differ from it, both page settings.
   const [fieldsCollapsed, setFieldsCollapsed] = usePageSetting<boolean>("fields_collapsed", false);
@@ -478,7 +493,7 @@ export function ErdGraphvizCanvas({
     centreOnClient,
     drawing: svgMarkup,
     nodeKind: "table",
-    holds: (ref) => (ownBase ? erdHolds(ownBase, ref) : false),
+    holds: (ref) => (ownBase ? erdHolds({ ...ownBase, resource_data_sources: bundle.resource_data_sources ?? {} }, ref) : false),
     portable,
   });
   useEffect(() => () => {
@@ -574,6 +589,7 @@ export function ErdGraphvizCanvas({
       addEdgeHitAreas(svg);
       addContourHitAreas(svg);
       addFoldControls(svg);
+      scaleFoldControls(svg, panZoom.getScale());
       addEndLabelBadges(svg);
       bindLineHover(svg, drawnData.relations, drawnData.entities, ac.signal, bundlesRef.current);
     }

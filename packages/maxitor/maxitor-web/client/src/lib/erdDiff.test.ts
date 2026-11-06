@@ -253,3 +253,39 @@ describe("a table's resource in Diff (spec 061, FR-014)", () => {
     expect(invoice!.resource_id).toBe("shop.BillingDatabase");
   });
 });
+
+describe("contours and bundles in Side by side (spec 068)", () => {
+  const ORDERS = "shop.OrdersResource";
+  const SUPPORT = "shop.SupportResource";
+  const table = (id: string, resource_id: string): ErdEntity => ({ id, label: id, resource_id, fields: [] });
+  const entities = [table("shop.Order", ORDERS), table("shop.Ticket", SUPPORT)];
+  const drawing = (bundles: { id: string; source: string; target: string; relations: number[] }[]) => ({
+    entities,
+    relations: [],
+    bundles,
+    resource_data_sources: { [ORDERS]: "shop.ShopDataSource" },
+  });
+
+  it("passes a bundle to the other half by its two ends, whatever its place there", () => {
+    const here = drawing([{ id: "rb0", source: "shop.Ticket", target: `rc:${ORDERS}`, relations: [0] }]);
+    const there = drawing([
+      { id: "rb0", source: `rc:${SUPPORT}`, target: `rc:${ORDERS}`, relations: [1] },
+      { id: "rb1", source: "shop.Ticket", target: `rc:${ORDERS}`, relations: [0] },
+    ]);
+    const identity = erdPortable(() => here).toIdentity({ kind: "edge", id: "rb0" });
+    expect(identity).toEqual({ kind: "edge", id: `bundle:shop.Ticket|rc:${ORDERS}` });
+    expect(erdPortable(() => there).fromIdentity(identity)).toEqual({ kind: "edge", id: "rb1" });
+    expect(erdPortable(() => drawing([])).fromIdentity(identity)).toBeNull();
+  });
+
+  it("holds a contour, a folded box and a bundle when their resources or data sources are on the half", () => {
+    const half = drawing([]);
+    expect(erdHolds(half, { kind: "contour", id: ORDERS })).toBe(true);
+    expect(erdHolds(half, { kind: "contour", id: "shop.Gone" })).toBe(false);
+    expect(erdHolds(half, { kind: "table", id: `rc:${SUPPORT}` })).toBe(true);
+    expect(erdHolds(half, { kind: "table", id: "dc:shop.ShopDataSource" })).toBe(true);
+    expect(erdHolds(half, { kind: "table", id: "dc:shop.OtherDataSource" })).toBe(false);
+    expect(erdHolds(half, { kind: "edge", id: `bundle:shop.Ticket|rc:${ORDERS}` })).toBe(true);
+    expect(erdHolds(half, { kind: "edge", id: "bundle:shop.Gone|rc:shop.OrdersResource" })).toBe(false);
+  });
+});
