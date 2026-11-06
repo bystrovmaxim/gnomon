@@ -40,7 +40,7 @@ A reader looks at the ERD of a service with several resources on one database an
 
 A presenter in a room hovers a resource contour; a follower sees the same lines and tables lit.
 
-**Independent Test**: two tabs in one room, one following the other; a contour hover in the first lights the same lines and tables in the second.
+**Independent Test**: a follower's drawing receives the followed person's contour hover and replays it on the same contour; the room server relays a focus that names a contour.
 
 **Acceptance Scenarios**:
 
@@ -78,7 +78,7 @@ A presenter in a room hovers a resource contour; a follower sees the same lines 
 ### Measurable Outcomes
 
 - **SC-001**: On the AOA demo graph a reader finds every link between two resources with one hover, without following any line by eye.
-- **SC-002**: The unit tests of the post-pass and of the room focus pass; the new browser check passes on the AOA demo graph, the room follower included.
+- **SC-002**: The unit tests of the post-pass and of the room focus pass; the drawing check lays out a shop of two data sources through the client's Graphviz build and proves the hover on the SVG it gives; on the AOA demo graph, hovering the dead-letter store's contour in the Messaging ERD lights its one line to the outbox and the two tables at its ends.
 - **SC-003**: With Boundary off, every existing ERD browser check passes unchanged.
 
 ## Assumptions

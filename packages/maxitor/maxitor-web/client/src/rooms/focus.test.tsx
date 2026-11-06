@@ -227,6 +227,52 @@ describe("a Graphviz drawing's hover", () => {
   });
 });
 
+describe("a resource contour's hover (spec 064)", () => {
+  /** A drawing with a data source contour, a resource contour round one table, and that table. */
+  function contoured(): HTMLDivElement {
+    const root = document.createElement("div");
+    root.innerHTML = `
+      <svg>
+        <g class="cluster" id="clust1"><title>cluster_data_source_0</title><path d="M0 0"/></g>
+        <g class="cluster" id="rc:shop.OrdersResource"><title>cluster_resource_0</title>
+          <g id="a_rc:shop.OrdersResource"><a xlink:title="shop.OrdersResource"><path d="M0 0"/><text>OrdersResource</text></a></g>
+        </g>
+        <g class="node"><title>Orders</title><g id="a_fn0_1"><a xlink:title="customer_id: str"><text>customer_id</text></a></g></g>
+      </svg>`;
+    document.body.appendChild(root);
+    return root;
+  }
+  const ORDERS = { kind: "contour", id: "shop.OrdersResource" } as const;
+
+  it("names a resource contour by its resource, from its border or its name; a data source contour names nothing", () => {
+    const root = contoured();
+    const contour = root.querySelector('g[id="rc:shop.OrdersResource"]')!;
+    expect(elementRefOf(contour.querySelector("path")!, "table")).toEqual(ORDERS);
+    expect(elementRefOf(contour.querySelector("text")!, "table")).toEqual(ORDERS);
+    expect(elementRefOf(root.querySelector("#clust1 path")!, "table")).toBeNull();
+    expect(elementsOf(root, ORDERS)).toEqual([contour]);
+    expect(elementsOf(root, { kind: "contour", id: "shop.Missing" })).toEqual([]);
+    expect(tooltipOf(contour)).toBe("shop.OrdersResource");
+  });
+
+  it("is sent to followers and replayed on the follower's contour", () => {
+    const root = contoured();
+    renderHook(() => useGraphvizFocus(root, "svg-1", ERD, "table"));
+    hoverTrusted(root.querySelector('g[id="rc:shop.OrdersResource"] text')!);
+    expect(focusToSend(ERD).hover).toEqual(ORDERS);
+    clearFocus();
+    document.body.innerHTML = "";
+
+    putFocus("anna", { ...annasFocus, hover: ORDERS, tooltip: ORDERS });
+    setFollowTarget("anna");
+    const follower = contoured();
+    const entered: string[] = [];
+    follower.querySelector('g[id="rc:shop.OrdersResource"]')!.addEventListener("mouseenter", () => entered.push("contour"));
+    renderHook(() => useGraphvizFocus(follower, "svg-1", ERD, "table"));
+    expect(entered).toEqual(["contour"]);
+  });
+});
+
 describe("a panel while following (spec 029, FR-012)", () => {
   /** A filter panel's state through ``useShownPanel``. */
   function usePanel() {

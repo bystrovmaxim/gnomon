@@ -80,8 +80,9 @@ _RELAYED_OPTIONAL_FIELDS: dict[str, tuple[str, ...]] = {
     "viewport": ("pw", "ph"),
 }
 
-#: The diagram elements a ``focus`` may name, and the longest id or page key it may carry.
-_FOCUS_KINDS = frozenset({"node", "row", "edge", "table", "version"})
+#: The diagram elements a ``focus`` may name — a ``contour`` is an ERD resource contour, by its resource id (spec 064) —
+#: and the longest id or page key it may carry.
+_FOCUS_KINDS = frozenset({"node", "row", "edge", "table", "contour", "version"})
 #: A pointer frame's name: ``screen`` or a panel's own frame, short and lowercase (spec 038).
 _FRAME_NAME = re.compile(r"[a-z][a-z0-9-]{0,31}")
 _FOCUS_TEXT_MAX = 512
@@ -307,7 +308,7 @@ def focus_values(message: Mapping[str, Any]) -> dict[str, Any] | None:
 
     AI-CORE-BEGIN
     ROLE: Validate what a person says they are looking at before it is relayed to their followers.
-    CONTRACT: Element kinds from ``node``/``row``/``edge``/``table``, ids and page ≤ 512 chars, at most 200 open branches; anything else drops the message.
+    CONTRACT: Element kinds from ``node``/``row``/``edge``/``table``/``contour``, ids and page ≤ 512 chars, at most 200 open branches; anything else drops the message.
     AI-CORE-END
     """
     page, panels = message.get("page"), _panels(message.get("panels"))

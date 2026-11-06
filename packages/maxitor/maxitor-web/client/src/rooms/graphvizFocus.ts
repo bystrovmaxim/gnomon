@@ -11,6 +11,7 @@
  * element's tooltip text in a small label beside it — and so does everyone over their own diagram: the native tooltip
  * is taken off, its text kept as ``data-tooltip``, so the two always look alike (spec 038).
  */
+import { CONTOUR_ID_PREFIX } from "@/lib/buildDotSource";
 import { dimUnpaired, hoverAcross, reportHalfHover, subscribeHalfHover, type Portable } from "@/lib/halfPicking";
 import { useHalf } from "@/lib/half";
 import { useEffect, useRef } from "react";
@@ -27,7 +28,7 @@ function titleOf(element: Element): string {
   return element.querySelector(":scope > title")?.textContent?.trim() ?? "";
 }
 
-/** The element under ``target`` a hover names: a table row, else a line, else a node; ``null`` outside them. */
+/** The element under ``target`` a hover names: a table row, else a line, else a node, else an ERD resource contour; ``null`` outside them. */
 export function elementRefOf(target: Element, nodeKind: "node" | "table"): ElementRef | null {
   const cell = target.closest(ROW_CELL);
   if (cell) return { kind: "row", id: cell.id.slice(2) };
@@ -36,7 +37,10 @@ export function elementRefOf(target: Element, nodeKind: "node" | "table"): Eleme
   if (edge) return { kind: "edge", id: /^edge\d+$/.test(edge.id) ? titleOf(edge) : edge.id || titleOf(edge) };
   const node = target.closest("g.node");
   const title = node ? titleOf(node) : "";
-  return title ? { kind: nodeKind, id: title } : null;
+  if (title) return { kind: nodeKind, id: title };
+  // A resource contour is named by its resource (spec 064); a data source contour has no such id and names nothing.
+  const contour = target.closest("g.cluster");
+  return contour?.id.startsWith(CONTOUR_ID_PREFIX) ? { kind: "contour", id: contour.id.slice(CONTOUR_ID_PREFIX.length) } : null;
 }
 
 /** The elements a hover of ``ref`` enters, outermost first; the last one carries its tooltip. */
@@ -45,6 +49,10 @@ export function elementsOf(root: ParentNode, ref: ElementRef): Element[] {
     const cell = [...root.querySelectorAll(ROW_CELL)].find((e) => e.id === `a_${ref.id}`);
     const node = cell?.closest("g.node");
     return [node, cell].filter((e): e is Element => e != null);
+  }
+  if (ref.kind === "contour") {
+    const contour = [...root.querySelectorAll("g.cluster")].find((e) => e.id === `${CONTOUR_ID_PREFIX}${ref.id}`);
+    return contour ? [contour] : [];
   }
   const selector = ref.kind === "edge" ? "g.edge" : "g.node";
   const found = [...root.querySelectorAll(selector)].find((e) => (ref.kind === "edge" && e.id === ref.id) || titleOf(e) === ref.id);

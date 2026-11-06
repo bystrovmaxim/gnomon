@@ -51,7 +51,8 @@ The invisible `_room` cluster and the data source contours get no id, so they ne
 
 - Vitest: `buildDotSource.test.ts` (id and tooltip on a resource contour, none on a data source contour or with Boundary off); `erdPostPass.test.ts` (lit lines and tables for a resource with cross lines, for one without, restore on leave, inside of the contour not reacting); `graphvizFocus` test for `elementRefOf`/`elementsOf` of a contour.
 - pytest: a `focus` naming a contour is relayed; an unknown kind still dropped.
-- Browser: `client/scripts/check-erd-contour-hover.ts` on the AOA demo graph — hover a contour of a resource with cross lines, read which tables and lines are lit; a follower in a room sees the same.
+- Drawing check: `client/scripts/check-erd-contour-hover.ts`, a row of the check run — a shop of two data sources laid out by the client's Graphviz build, the production passes and hover bound on its SVG in a DOM: which contours are named, which lines and tables are lit, what leaving restores.
+- In the browser, on the AOA demo graph: the Messaging ERD, the dead-letter store's contour.
 
 ## Levels whose version is raised
 

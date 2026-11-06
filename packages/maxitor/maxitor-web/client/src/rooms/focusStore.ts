@@ -12,8 +12,11 @@
 import type { Side } from "@/lib/half";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
-/** A diagram element, named by the id every viewer already uses for it — or a version on the picker's track. */
-export type ElementRef = { kind: "node" | "row" | "edge" | "table" | "version"; id: string };
+/**
+ * A diagram element, named by the id every viewer already uses for it — an ERD resource contour by its resource's id
+ * (spec 064) — or a version on the picker's track.
+ */
+export type ElementRef = { kind: "node" | "row" | "edge" | "table" | "contour" | "version"; id: string };
 
 /** The version picker's track as its person moves it: the range a dragged handle or stretch would leave, and its scroll. */
 export type TrackState = { a: string | null; b: string | null; offset: number };
