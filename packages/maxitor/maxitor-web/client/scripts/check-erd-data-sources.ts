@@ -4,7 +4,7 @@
  *
  * It lays out a shop whose storefront and support desk share one database, and a billing database of its own, through
  * the WASM Graphviz build the client loads, with the production passes, and asserts what the reader sees: one outer
- * contour per data source, headed by its name, holding the contours of exactly its resources; the relation between
+ * contour per data source, headed by its name — written once — holding the contours of exactly its resources; the relation between
  * tables of those resources inside it; a resource without a data source outside it; the outer contour and the headers
  * in the data source's colour when data sources paint; and a graph with no data source drawn as before.
  *
@@ -107,6 +107,10 @@ const storefront = clusters.get("cluster_resource_1");
 const support = clusters.get("cluster_resource_2");
 check("one outer contour for the data source, one contour per resource", source !== undefined && billing !== undefined && storefront !== undefined && support !== undefined && clusters.size === 4, `clusters: ${[...clusters.keys()].join(", ")}`);
 check("the outer contour is headed by the data source's name", source?.label === "ShopDataSource", source?.label);
+const nameCount = [...svg.matchAll(/<text[^>]*>ShopDataSource<\/text>/g)].length;
+check("the data source's name is drawn once, in its header (spec 065)", nameCount === 1, `${nameCount} times`);
+const named = [...svg.matchAll(/<g id="(dc:[^"]+)" class="cluster">/g)].map((match) => match[1]);
+check("only the data source's own contour carries its id (spec 065)", named.length === 1 && named[0] === `dc:${SHOP_DB}`, named.join(", "));
 check("the outer contour holds the contours of exactly its resources", inside(storefront!.box, source!.box) && inside(support!.box, source!.box) && !inside(billing!.box, source!.box));
 check("each resource contour holds its table", inside(nodeBox(svg, "shop.Order"), storefront!.box) && inside(nodeBox(svg, "shop.Ticket"), support!.box) && inside(nodeBox(svg, "shop.Invoice"), billing!.box));
 const pad = 1;

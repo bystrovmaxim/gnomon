@@ -4,8 +4,8 @@ import type { SidebarPayload } from "@/model/sidebar";
 import { deepLinkToSelection, selectionToParams } from "@/lib/urlState";
 
 /**
- * The canonical key of a page: its address parameters in the fixed order ``view``, ``domain``,
- * ``node``, ``host`` — the same key the room server builds from the left panel (``pages.py``).
+ * The canonical key of a page: its address parameters in the fixed order ``view``, ``domain``, ``data_source``,
+ * ``resource``, ``node``, ``host`` — the same key the room server builds from the left panel (``pages.py``).
  */
 export function pageKeyOf(selection: DiagramSelection): string {
   return new URLSearchParams(selectionToParams(selection)).toString();
@@ -18,6 +18,8 @@ export function selectionOfPageKey(key: string): DiagramSelection | null {
     source: null,
     view: params.get("view"),
     domain: params.get("domain"),
+    data_source: params.get("data_source"),
+    resource: params.get("resource"),
     node: params.get("node"),
     host: params.get("host"),
     room: null,
@@ -39,6 +41,8 @@ export function pageLabel(key: string | null, sidebar: SidebarPayload | null): s
     case "interchange_graph":
       return "Full graph";
     case "erd":
+      if (selection.data_source) return `ERD · ${labelOf(sidebar, selection.data_source)}`;
+      if (selection.resource) return `ERD · ${labelOf(sidebar, `erd_resource:${selection.resource}`).replace(/^ERD — | view$/g, "")}`;
       return selection.qualifier ? `ERD · ${labelOf(sidebar, selection.qualifier)}` : "ERD · all domains";
     case "use_case":
       return `Use case · ${labelOf(sidebar, selection.domain_qualifier)}`;

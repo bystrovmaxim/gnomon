@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import pytest
-from maxitor.web.model.rooms.pages import page_key, setting_error
+from maxitor.web.model.rooms.pages import page_key, page_keys, setting_error
 
 
 @pytest.mark.parametrize(
@@ -18,6 +20,12 @@ from maxitor.web.model.rooms.pages import page_key, setting_error
         (page_key("domain-erd"), "paint", "kinds"),
         (page_key("domain-erd"), "paint_diff", "changes"),
         (page_key("domain-erd"), "one_hop", False),
+        (page_key("domain-erd"), "boundary", False),
+        (page_key("domain-erd"), "disabled_resources", ["shop.Orders"]),
+        (page_key("domain-erd"), "disabled_data_sources", ["no_data_source"]),
+        (page_key("domain-erd", resource="shop.Orders"), "folded_contours", ["rc:shop.Orders", "dc:shop.ShopDataSource"]),
+        (page_key("domain-erd"), "paint", "resources"),
+        (page_key("domain-erd"), "paint_diff", "data_sources"),
         (page_key("use-case", domain="players"), "layout", "dot_tb"),
         (page_key("use-case", domain="players"), "boundary", True),
         (page_key("use-case", domain="players"), "disabled_changes", ["unchanged"]),
@@ -91,3 +99,16 @@ def test_a_room_shares_each_half_s_layout_and_the_selection(page: str, name: str
 def test_a_selection_out_of_shape_is_refused(value: object) -> None:
     """A selection is a known kind with a short id, nothing more."""
     assert setting_error("view=domain-erd", "selected", value)
+
+
+def test_the_erd_of_a_data_source_and_of_a_resource_are_pages_of_their_own() -> None:
+    """Spec 065: the Data sources rows of the left panel name ERD pages by ``data_source`` or ``resource``."""
+    sidebar = SimpleNamespace(
+        level2_diagrams=[],
+        level3_diagrams=[
+            SimpleNamespace(type="erd_data_source", id="erd_data_source:shop.ShopDataSource", parent_id="shop.ShopDataSource"),
+            SimpleNamespace(type="erd_resource", id="erd_resource:shop.Orders", parent_id="no_data_source"),
+        ],
+    )
+    assert page_keys(sidebar) == {"view=domain-erd&data_source=shop.ShopDataSource", "view=domain-erd&resource=shop.Orders"}
+    assert setting_error("view=domain-erd&data_source=shop.ShopDataSource", "one_hop", False) is None

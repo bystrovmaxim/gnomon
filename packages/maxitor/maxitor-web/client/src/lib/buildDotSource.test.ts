@@ -1,6 +1,6 @@
 // src/lib/buildDotSource.test.ts
 import { afterEach, describe, expect, it } from "vitest";
-import { buildDotSource, setErdPaint, type ErdEntity, type ErdGraphPayload } from "@/lib/buildDotSource";
+import { buildDotSource, bundleWidth, foldPlan, setErdPaint, type ErdEntity, type ErdGraphPayload } from "@/lib/buildDotSource";
 
 const STOREFRONT = "shop.StorefrontDatabase";
 const BILLING = "shop.BillingDatabase";
@@ -47,7 +47,7 @@ describe("Boundary: one contour per resource (spec 061)", () => {
 
   it("keeps each contour apart from the next inside an invisible cluster", () => {
     const dot = buildDotSource(shop(true), "gv-dot-lr");
-    expect(dot).toContain('subgraph "cluster_resource_0_room" {\n    style=invis;\n    margin=36;\n  subgraph "cluster_resource_0" {');
+    expect(dot).toContain('subgraph "cluster_resource_0_room" {\n    style=invis;\n    label="";\n    id="";\n    tooltip="";\n    margin=36;\n  subgraph "cluster_resource_0" {');
   });
 
   it("off, draws today's text: no contour", () => {
@@ -188,20 +188,107 @@ describe("a resource contour is named by its resource (spec 064)", () => {
     const found = named(buildDotSource(shop(true), "gv-dot-lr"));
     expect(found.cluster_resource_0).toEqual([`id="rc:${BILLING}";`, `tooltip="${BILLING}";`]);
     expect(found.cluster_resource_1).toEqual([`id="rc:${STOREFRONT}";`, `tooltip="${STOREFRONT}";`]);
-    expect(found.cluster_resource_0_room).toEqual([]);
+    expect(found.cluster_resource_0_room).toEqual(['id="";', 'tooltip="";']);
   });
 
-  it("gives a data source contour no id, so it never takes the hover", () => {
+  it("names a data source contour dc:<data source>, never rc:, so it never takes a resource's hover (spec 065)", () => {
     const SHOP_DB = "shop.ShopDataSource";
     const data = { ...shop(true), resource_data_sources: { [STOREFRONT]: SHOP_DB, [BILLING]: SHOP_DB }, data_source_labels: { [SHOP_DB]: "ShopDataSource" } };
     const found = named(buildDotSource(data, "gv-dot-lr"));
-    expect(found.cluster_data_source_0).toEqual([]);
+    expect(found.cluster_data_source_0).toEqual([`id="dc:${SHOP_DB}";`, `tooltip="${SHOP_DB}";`]);
     expect(found.cluster_resource_0).toContain(`id="rc:${BILLING}";`);
+  });
+
+  it("gives every invisible spacing frame an empty label, so no name is drawn twice (spec 065)", () => {
+    const SHOP_DB = "shop.ShopDataSource";
+    const data = { ...shop(true), resource_data_sources: { [STOREFRONT]: SHOP_DB, [BILLING]: SHOP_DB }, data_source_labels: { [SHOP_DB]: "ShopDataSource" } };
+    const dot = buildDotSource(data, "gv-dot-lr");
+    const frames = [...dot.matchAll(/subgraph "(cluster_[^"]+_room)" \{\n    style=invis;\n    (label="";)?/g)];
+    expect(frames.map((frame) => frame[1]).sort()).toEqual(["cluster_data_source_0_room", "cluster_resource_0_room", "cluster_resource_1_room"]);
+    expect(frames.every((frame) => frame[2] === 'label="";')).toBe(true);
   });
 
   it("escapes a quote in a resource id inside the DOT string", () => {
     const odd = 'shop."Odd"';
     const data: ErdGraphPayload = { entities: [table("shop.Order", odd)], relations: [], boundary: true, resource_labels: {} };
     expect(buildDotSource(data, "gv-dot-lr")).toContain('id="rc:shop.\\"Odd\\"";');
+  });
+});
+
+describe("folding a contour (spec 065)", () => {
+  const SHOP_DB = "shop.ShopDataSource";
+  const SUPPORT = "shop.SupportDatabase";
+  // Order and OrderLine in the storefront, Ticket and Note in support (both of ShopDataSource), Invoice in billing.
+  const data = (folded: string[], boundary = true): ErdGraphPayload => ({
+    entities: [table("shop.Order", STOREFRONT), table("shop.OrderLine", STOREFRONT), table("shop.Ticket", SUPPORT), table("shop.Note", SUPPORT), table("shop.Invoice", BILLING)],
+    relations: [
+      { source: "shop.OrderLine", target: "shop.Order", source_field: "order", relationship_kind: "composition" },
+      { source: "shop.Ticket", target: "shop.Order", source_field: "order", relationship_kind: "association" },
+      { source: "shop.Note", target: "shop.Order", source_field: "order", relationship_kind: "association" },
+      { source: "shop.Note", target: "shop.OrderLine", source_field: "line", relationship_kind: "association" },
+    ],
+    boundary,
+    resource_labels: { ...labels, [SUPPORT]: "SupportDatabase" },
+    resource_data_sources: { [STOREFRONT]: SHOP_DB, [SUPPORT]: SHOP_DB },
+    data_source_labels: { [SHOP_DB]: "ShopDataSource" },
+    folded_contours: new Set(folded),
+  });
+
+  it("draws a folded resource in its box; each link of a table still drawn keeps a line of its own to the box", () => {
+    const plan = foldPlan(data([`rc:${STOREFRONT}`]));
+    expect([...plan.holder]).toEqual([["shop.Order", `rc:${STOREFRONT}`], ["shop.OrderLine", `rc:${STOREFRONT}`]]);
+    expect(plan.bundles).toEqual([
+      { id: "rb0", source: "shop.Ticket", target: `rc:${STOREFRONT}`, relations: [1] },
+      { id: "rb1", source: "shop.Note", target: `rc:${STOREFRONT}`, relations: [2] },
+      { id: "rb2", source: "shop.Note", target: `rc:${STOREFRONT}`, relations: [3] },
+    ]);
+    expect(plan.counts.get(`rc:${STOREFRONT}`)).toEqual({ tables: 2, inside: 1, resources: 1, changed: 0 });
+  });
+
+  it("bundles the relations between two folded boxes into one line, wider and plated for more than one", () => {
+    const plan = foldPlan(data([`rc:${STOREFRONT}`, `rc:${SUPPORT}`]));
+    expect(plan.bundles).toEqual([{ id: "rb0", source: `rc:${SUPPORT}`, target: `rc:${STOREFRONT}`, relations: [1, 2, 3] }]);
+    const dot = buildDotSource(data([`rc:${STOREFRONT}`, `rc:${SUPPORT}`]), "gv-dot-lr");
+    expect(dot).toContain(`"rc:${SUPPORT}" -> "rc:${STOREFRONT}" [id="rb0" arrowhead=none penwidth=4.4 label="×3"`);
+  });
+
+  it("writes the box, no table inside it, and a line from each table's link to the box", () => {
+    const dot = buildDotSource(data([`rc:${STOREFRONT}`]), "gv-dot-lr");
+    expect(dot).toContain(`"rc:${STOREFRONT}" [shape=box style="rounded,filled"`);
+    expect(dot).toContain("2 tables · 1 relation inside");
+    expect(dot).not.toMatch(/"shop\.Order" \[label=</);
+    expect(dot).not.toContain(`subgraph "cluster_resource_1" {`);
+    expect(dot).toContain(`"shop.Ticket" -> "rc:${STOREFRONT}" [id="rb0" arrowhead=none penwidth=1]`);
+    expect(dot).toContain(`"shop.Note" -> "rc:${STOREFRONT}" [id="rb1" arrowhead=none penwidth=1]`);
+    expect(dot).toContain(`"shop.Note" -> "rc:${STOREFRONT}" [id="rb2" arrowhead=none penwidth=1]`);
+    expect(dot).not.toContain("×");
+    expect(dot).not.toContain('id="re1"');
+  });
+
+  it("folds a data source whole, over its folded resources, and counts its resources", () => {
+    const dot = buildDotSource(data([`dc:${SHOP_DB}`, `rc:${STOREFRONT}`]), "gv-dot-lr");
+    const plan = foldPlan(data([`dc:${SHOP_DB}`, `rc:${STOREFRONT}`]));
+    expect(new Set(plan.holder.values())).toEqual(new Set([`dc:${SHOP_DB}`]));
+    expect(plan.bundles).toEqual([]);
+    expect(plan.counts.get(`dc:${SHOP_DB}`)).toEqual({ tables: 4, inside: 4, resources: 2, changed: 0 });
+    expect(dot).toContain("2 resources · 4 tables");
+    expect(dot).not.toContain("cluster_data_source_0");
+    expect(dot).toContain('"shop.Invoice" [label=<');
+  });
+
+  it("folds nothing with Boundary off, and ignores an id that names no contour", () => {
+    expect(foldPlan(data([`rc:${STOREFRONT}`], false)).holder.size).toBe(0);
+    expect(buildDotSource(data(["rc:shop.Nowhere"]), "gv-dot-lr")).toBe(buildDotSource(data([]), "gv-dot-lr"));
+  });
+
+  it("marks a folded box whose tables changed, in Diff", () => {
+    const marked = data([`rc:${STOREFRONT}`]);
+    marked.entities = marked.entities.map((entity) => (entity.id === "shop.Order" ? { ...entity, diff: "changed" as const } : { ...entity, diff: "unchanged" as const }));
+    expect(foldPlan(marked).counts.get(`rc:${STOREFRONT}`)!.changed).toBe(1);
+    expect(buildDotSource(marked, "gv-dot-lr")).toContain("~ 1 changed");
+  });
+
+  it("widens a bundle with its count, relative to the widest of the drawing", () => {
+    expect([bundleWidth(1, 5), bundleWidth(3, 5), bundleWidth(5, 5), bundleWidth(2, 2)]).toEqual([1, 2.7, 4.4, 4.4]);
   });
 });

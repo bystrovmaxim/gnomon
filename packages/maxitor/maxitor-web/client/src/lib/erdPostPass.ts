@@ -15,7 +15,7 @@
  */
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
-import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, isContourId, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
 export type KindGlyphDrawer = (word: string, ink: string, strokeWidth: number) => string;
@@ -221,8 +221,10 @@ export function addEndLabelBadges(root: ParentNode): void {
     if (!(box.width > 0)) return;
     const size = { width: box.width + 6, height: box.height + 2 };
     let place: Box = { x: box.x - 3, y: box.y - 1, ...size };
-    // Graphviz sets a label at its line's end, often on the table there; it moves along the line, clear.
-    const line = label.closest("g.edge")?.querySelector<SVGPathElement>("path:not(.erd-hit)");
+    // Graphviz sets a label at its line's end, often on the table there; it moves along the line, clear. A bundle's
+    // count stays in the middle, where Graphviz put it (spec 065).
+    const edge = label.closest("g.edge");
+    const line = edge?.id.startsWith("rb") ? null : edge?.querySelector<SVGPathElement>("path:not(.erd-hit)");
     if (line && typeof line.getTotalLength === "function") {
       const length = line.getTotalLength();
       const start = line.getPointAtLength(0);
@@ -315,6 +317,61 @@ export const erdContourHoverSx = {
   "& g.cluster path": { transition: "stroke-width 100ms ease" },
   [`& g.cluster.${EDGE_HOVER_CLASS} path:not(.erd-hit)`]: { strokeWidth: 3.5 },
 } as const;
+
+/** The canvas's style for a bundle's count (spec 065): on its plate at all times, not only while hovered. */
+export const erdBundleSx = {
+  [`& g.edge[id^='rb'] text, & g.edge[id^='rb'] rect.${END_LABEL_CLASS}`]: { visibility: "visible" },
+} as const;
+
+/** The class of a contour's fold control, and the attribute naming the contour it folds (spec 065). */
+export const FOLD_CONTROL_CLASS = "erd-fold-control";
+export const FOLD_ATTRIBUTE = "data-fold";
+
+/** The canvas's style for the fold controls: faint until the pointer is on their contour or box. */
+export const erdFoldSx = {
+  [`& .${FOLD_CONTROL_CLASS}`]: { opacity: 0.35, cursor: "pointer", transition: "opacity 120ms ease" },
+  [`& g.cluster:hover .${FOLD_CONTROL_CLASS}, & g.node:hover .${FOLD_CONTROL_CLASS}, & .${FOLD_CONTROL_CLASS}:hover`]: { opacity: 1 },
+} as const;
+
+/** Side of a fold control, and its distance from its contour's top right corner, in drawing units. */
+const FOLD_SIZE = 12;
+const FOLD_INSET = 8;
+
+/**
+ * Put a fold control in the top right corner of every resource and data source contour — a minus — and of every
+ * folded box — a plus (spec 065). It sits inside the contour's group, so pointing at it is pointing at the contour.
+ */
+export function addFoldControls(root: ParentNode): void {
+  const groups: Array<{ group: Element; id: string; folded: boolean }> = [];
+  root.querySelectorAll("g.cluster").forEach((cluster) => {
+    if (isContourId(cluster.id)) groups.push({ group: cluster, id: cluster.id, folded: false });
+  });
+  root.querySelectorAll("g.node").forEach((node) => {
+    const title = tableOf(node);
+    if (isContourId(title)) groups.push({ group: node, id: title, folded: true });
+  });
+  for (const { group, id, folded } of groups) {
+    if (group.querySelector(`:scope > .${FOLD_CONTROL_CLASS}`)) continue;
+    const outline = group.querySelector("path:not(.erd-hit), polygon");
+    const span = spanOf(outline?.getAttribute("d") ?? outline?.getAttribute("points") ?? "");
+    if (!outline || !span) continue;
+    const ink = outline.getAttribute("stroke") ?? "#64748b";
+    const x = span.x1 - FOLD_INSET - FOLD_SIZE;
+    const y = span.y0 + FOLD_INSET;
+    const middle = { x: x + FOLD_SIZE / 2, y: y + FOLD_SIZE / 2 };
+    const arm = FOLD_SIZE * 0.28;
+    const sign = `M${fixed(middle.x - arm)} ${fixed(middle.y)}H${fixed(middle.x + arm)}` + (folded ? `M${fixed(middle.x)} ${fixed(middle.y - arm)}V${fixed(middle.y + arm)}` : "");
+    const control = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    control.setAttribute("class", FOLD_CONTROL_CLASS);
+    control.setAttribute(FOLD_ATTRIBUTE, id);
+    control.setAttribute("data-folded", folded ? "1" : "0");
+    control.setAttribute("pointer-events", "all");
+    control.innerHTML =
+      `<rect x="${fixed(x)}" y="${fixed(y)}" width="${FOLD_SIZE}" height="${FOLD_SIZE}" rx="3" fill="white" stroke="${ink}" stroke-width="1.2"/>` +
+      `<path d="${sign}" fill="none" stroke="${ink}" stroke-width="1.5" stroke-linecap="round"/>`;
+    group.appendChild(control);
+  }
+}
 
 /** The canvas's style for line labels: hidden, and shown on their plates while the line is hovered. */
 export const erdEndLabelSx = {
@@ -416,6 +473,7 @@ export function bindLineHover(
   relations: readonly ErdLineInfo[],
   entities: readonly ErdEntity[],
   signal: AbortSignal,
+  bundles: readonly ErdBundle[] = [],
 ): void {
   const tables = new Map(entities.map((e, index) => [e.id, { index, fields: e.fields }]));
   const edgeRows = relations.map((line) => rowsOf(line, tables));
@@ -474,21 +532,66 @@ export function bindLineHover(
     }, { signal });
   });
 
+  // Bundles (spec 065): a bundle is lit as a line is, every row of its relations marked; its ends stay bright.
+  const bundleEdge = (bundle: ErdBundle) => root.querySelector(`g[id="${bundle.id}"]`);
+  const showBundles = (list: readonly ErdBundle[], on: boolean) => {
+    for (const bundle of list) {
+      const edge = bundleEdge(bundle);
+      if (!edge) continue;
+      edge.classList.toggle(EDGE_HOVER_CLASS, on);
+      if (on && edge.parentNode && edge.parentNode.lastElementChild !== edge) edge.parentNode.appendChild(edge);
+      for (const k of bundle.relations) markRows(root, edgeRows[k] ?? [], on);
+    }
+  };
+  const bundleEdges = (list: readonly ErdBundle[]) => list.map(bundleEdge).filter((edge): edge is Element => edge !== null);
+  const bundleEnds = (list: readonly ErdBundle[]) => list.flatMap((bundle) => [bundle.source, bundle.target]);
+  for (const bundle of bundles) {
+    const edge = bundleEdge(bundle);
+    if (!edge) continue;
+    edge.addEventListener("mouseenter", () => {
+      showBundles([bundle], true);
+      focusTables(root, new Set(bundleEnds([bundle])), new Set([edge]));
+    }, { signal });
+    edge.addEventListener("mouseleave", () => {
+      showBundles([bundle], false);
+      clearTableFocus(root);
+    }, { signal });
+  }
+  // A folded box: its bundles are lit, the tables and boxes at their other ends stay bright, the rest dims.
+  root.querySelectorAll("g.node").forEach((node) => {
+    const box = tableOf(node);
+    if (!isContourId(box)) return;
+    const own = bundles.filter((bundle) => bundle.source === box || bundle.target === box);
+    node.addEventListener("mouseenter", () => {
+      showBundles(own, true);
+      focusTables(root, new Set([box, ...bundleEnds(own)]), new Set(bundleEdges(own)));
+    }, { signal });
+    node.addEventListener("mouseleave", () => {
+      showBundles(own, false);
+      clearTableFocus(root);
+    }, { signal });
+  });
+
   // A resource contour (spec 064): its lines to other resources are lit as a hovered line is, the tables at their
-  // ends stay bright, its border widens, and everything else dims — everything, when it has no such line.
+  // ends stay bright, its border widens, and everything else dims — everything, when it has no such line. Its
+  // bundles to folded boxes are lit the same way (spec 065).
+  const homeOf = new Map(entities.map((entity) => [entity.id, entity.resource_id ?? null]));
   root.querySelectorAll("g.cluster").forEach((cluster) => {
     const resource = contourResource(cluster);
     if (resource === null) return;
     const lines = crossLines(resource, relations, entities);
+    const own = bundles.filter((bundle) => homeOf.get(bundle.source) === resource || homeOf.get(bundle.target) === resource);
     cluster.addEventListener("mouseenter", () => {
       const edges = edgesById(lines);
       cluster.classList.add(EDGE_HOVER_CLASS);
       show(edges, true);
-      focusTables(root, joined(edges), new Set(edges));
+      showBundles(own, true);
+      focusTables(root, new Set([...joined(edges), ...bundleEnds(own)]), new Set([...edges, ...bundleEdges(own)]));
     }, { signal });
     cluster.addEventListener("mouseleave", () => {
       cluster.classList.remove(EDGE_HOVER_CLASS);
       show(edgesById(lines), false);
+      showBundles(own, false);
       clearTableFocus(root);
     }, { signal });
   });

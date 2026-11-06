@@ -214,6 +214,7 @@ STEPS: tuple[Step, ...] = (
     _client("Maxitor client: ERD resources and Boundary", "node scripts/check-erd-resources.ts"),
     _client("Maxitor client: ERD data sources", "node scripts/check-erd-data-sources.ts"),
     _client("Maxitor client: ERD resource contour hover", "node scripts/check-erd-contour-hover.ts"),
+    _client("Maxitor client: ERD contour fold", "node scripts/check-erd-contour-fold.ts"),
     # The only Ruff step: it fixes here, and in CI, which must not change the tree, it
     # only reports. It takes the same scope as `task lint`, so the two agree on what this repository
     # lints; `external/` is AOA's and is linted in its own repository.

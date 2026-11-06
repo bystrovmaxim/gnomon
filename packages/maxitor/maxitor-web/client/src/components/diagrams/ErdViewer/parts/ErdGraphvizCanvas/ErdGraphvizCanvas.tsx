@@ -33,6 +33,8 @@ import {
   type ErdGroup,
   type ErdGraphvizLayout,
   type ErdRelation,
+  foldPlan,
+  isContourId,
 } from "@/lib/buildDotSource";
 import { containNodeFills } from "@/lib/containNodeFills";
 import { enrichErdDataForViewer } from "@/lib/enrichErdData";
@@ -60,7 +62,7 @@ import { DiffCard } from "@/components/history/DiffCard";
 import { COPY_CLICK_SLOP_PX } from "@/lib/erdCopy";
 import type { ErdDomainsBundle } from "@/lib/loadErdDomainsBundle";
 import { bindNameCopy } from "@/lib/erdCopy";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, clearTableFocus, drawErdCards, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, clearTableFocus, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdFoldSx, erdLineHoverSx, FOLD_ATTRIBUTE, FOLD_CONTROL_CLASS, focusTables, placeKindIcons } from "@/lib/erdPostPass";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { kindGlyphSvg, kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
@@ -222,7 +224,7 @@ export function ErdGraphvizCanvas({
   /** Entity kinds switched off; a kind the graph gains later starts on. */
   const [disabledKindList, setDisabledKindList] = usePageSetting<string[]>("disabled_kinds", []);
   /** Resources switched off and Boundary (spec 061): page settings, shared in a room. */
-  const { disabledResources, toggleResource, boundary, setBoundary, disabledDataSources, toggleDataSource } = useErdResourceSettings();
+  const { disabledResources, toggleResource, boundary, setBoundary, disabledDataSources, toggleDataSource, foldedContours, toggleFold, unfold } = useErdResourceSettings();
 
   // A domain the model no longer has stops applying (spec 028, FR-076).
   const enabledDomains = useMemo(
@@ -354,7 +356,7 @@ export function ErdGraphvizCanvas({
       const stage = viewportRef.current?.getBoundingClientRect();
       const { entities, relations } = drawnTables();
       const named = fromAfar(ref, elements.at(-1), entities, touch);
-      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels) : null;
+      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, bundlesRef.current) : null;
       const [outer, inner] = [elements[0], named === ref ? elements.at(-1) : elements[0]];
       if (!facts || !stage || !outer || !inner) return null;
       // A line's box can span the screen: the card stands by its middle.
@@ -375,7 +377,7 @@ export function ErdGraphvizCanvas({
   );
   const hoverCards = useMemo<HoverCards>(
     () => ({
-      has: (ref) => pannerRef.current !== null && erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations) !== null,
+      has: (ref) => pannerRef.current !== null && erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, {}, {}, {}, bundlesRef.current) !== null,
       show: (ref, elements) => wantCard(ref ? subjectOf(ref, elements) : null),
       open: (ref, elements) => {
         const subject = subjectOf(ref, elements);
@@ -412,9 +414,18 @@ export function ErdGraphvizCanvas({
       resource_labels: bundle.resource_labels,
       resource_data_sources: bundle.resource_data_sources,
       data_source_labels: bundle.data_source_labels,
+      folded_contours: foldedContours,
     }),
-    [drawnData, folds, boundary, baseResources, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels],
+    [drawnData, folds, boundary, baseResources, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, foldedContours],
   );
+  // The bundles of the drawing on screen (spec 065): its lines to folded boxes, for their hover and their card.
+  const bundles = useMemo(() => foldPlan(foldedData).bundles, [foldedData]);
+  const bundlesRef = useRef(bundles);
+  bundlesRef.current = bundles;
+  const toggleContourRef = useRef(toggleFold);
+  toggleContourRef.current = toggleFold;
+  const unfoldContoursRef = useRef(unfold);
+  unfoldContoursRef.current = unfold;
   const allCollapsed = fieldsCollapsed && fieldsExcept.length === 0;
   const canCollapse = useMemo(() => [...folds.values()].some((fold) => fold.hidden.size > 0), [folds]);
   /** Where the header of the table just toggled stood, so the new drawing keeps it there (FR-029). */
@@ -562,14 +573,32 @@ export function ErdGraphvizCanvas({
       postProcessGraphvizSvgDom(svg);
       addEdgeHitAreas(svg);
       addContourHitAreas(svg);
+      addFoldControls(svg);
       addEndLabelBadges(svg);
-      bindLineHover(svg, drawnData.relations, drawnData.entities, ac.signal);
+      bindLineHover(svg, drawnData.relations, drawnData.entities, ac.signal, bundlesRef.current);
     }
     bindNameCopy(panner, setCopyMessage, ac.signal);
     let press: { x: number; y: number } | null = null;
     panner.addEventListener("pointerdown", (event) => void (press = { x: event.clientX, y: event.clientY }), { signal: ac.signal });
     const stayed = (event: MouseEvent) => press !== null && Math.hypot(event.clientX - press.x, event.clientY - press.y) <= COPY_CLICK_SLOP_PX;
     // On ``click``, not on the press's end: the new drawing rebinds the pan, and must not do so before ``mouseup`` has ended it.
+    // A contour's fold control folds or unfolds it; a click on a bundle unfolds the folded boxes at its ends (spec 065).
+    panner.addEventListener(
+      "click",
+      (event) => {
+        const target = event.target as Element | null;
+        if (!target?.closest || !stayed(event)) return;
+        const fold = target.closest(`.${FOLD_CONTROL_CLASS}`)?.getAttribute(FOLD_ATTRIBUTE);
+        if (fold) {
+          toggleContourRef.current(fold);
+          return;
+        }
+        const line = target.closest('g.edge[id^="rb"]');
+        const opened = line ? bundlesRef.current.find((each) => each.id === line.id) : undefined;
+        if (opened) unfoldContoursRef.current([opened.source, opened.target].filter(isContourId));
+      },
+      { signal: ac.signal },
+    );
     panner.addEventListener(
       "click",
       (event) => {
@@ -603,6 +632,8 @@ export function ErdGraphvizCanvas({
 
     panner.querySelectorAll("g.node").forEach((node) => {
       (node as HTMLElement).style.cursor = "pointer";
+      // A folded box lights its own bundles (``bindLineHover``), not the lines of a table.
+      if (isContourId(node.querySelector("title")?.textContent?.trim() ?? "")) return;
       node.addEventListener("mouseenter", onEnter, { signal: ac.signal });
       node.addEventListener("mouseleave", onLeave, { signal: ac.signal });
     });
@@ -851,6 +882,9 @@ export function ErdGraphvizCanvas({
               ...erdContourHoverSx,
               // A line's end labels show only on hover, on a white plate (spec 029, FR-042).
               ...erdEndLabelSx,
+              // A bundle's count on its plate, and the faint fold controls of the contours (spec 065).
+              ...erdBundleSx,
+              ...erdFoldSx,
               "@media (prefers-reduced-motion: reduce)": { "& g.edge path": { transition: "none" } },
               "& g[id^='a_cl'], & g[id^='a_cl'] text": { cursor: "pointer" },
               "& svg": {

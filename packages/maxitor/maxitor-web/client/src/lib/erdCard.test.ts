@@ -156,3 +156,28 @@ describe("the data source on a table's card (spec 063)", () => {
     expect(resourceLine(entity, labels)).toBe("Resource: Storefront");
   });
 });
+
+describe("a bundle's card (spec 065)", () => {
+  const shopEntities: ErdEntity[] = [{ id: "shop.Ticket", label: "Ticket" }, { id: "shop.Order", label: "Order" }, { id: "shop.Line", label: "Line" }];
+  const shopRelations: ErdRelation[] = [
+    { source: "shop.Ticket", target: "shop.Order", source_field: "order", relationship_kind: "association", source_cardinality: "zero_many", target_cardinality: "one", description: "The order it is about" },
+    { source: "shop.Ticket", target: "shop.Line", source_field: "line", relationship_kind: "association" },
+  ];
+  const bundles = [{ id: "rb0", source: "shop.Ticket", target: "rc:shop.Orders", relations: [0, 1] }];
+
+  it("names its two ends and lists each relation it stands for", () => {
+    document.body.innerHTML = "<div></div>";
+    const subject = erdSubject({ kind: "edge", id: "rb0" }, shopEntities, document.body, shopRelations, { "shop.Orders": "OrdersResource" }, {}, {}, bundles)!;
+    expect(subject.title).toBe("Ticket ↔ OrdersResource");
+    expect(subject.fieldNoun).toBe("relation");
+    expect(subject.fields).toEqual([
+      { name: "Ticket.order → Order", type: "association · 0..* → 1", description: "The order it is about" },
+      { name: "Ticket.line → Line", type: "association", description: undefined },
+    ]);
+  });
+
+  it("leaves an ordinary line's card as it was", () => {
+    document.body.innerHTML = "<div></div>";
+    expect(erdSubject({ kind: "edge", id: "re0" }, shopEntities, document.body, shopRelations, {}, {}, {}, bundles)!.title).toBe("Ticket.order → Order");
+  });
+});

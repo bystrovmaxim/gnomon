@@ -27,6 +27,7 @@ const SETTINGS: Readonly<Record<string, { param: string; kind: Kind }>> = {
   fields_collapsed: { param: "collapsed", kind: "switch" },
   fields_except: { param: "except", kind: "list" },
   boundary: { param: "boundary", kind: "switch" },
+  folded_contours: { param: "folded", kind: "list" },
   rankdir: { param: "rankdir", kind: "choice" },
   rankdir_a: { param: "rankdir_a", kind: "choice" },
   rankdir_b: { param: "rankdir_b", kind: "choice" },

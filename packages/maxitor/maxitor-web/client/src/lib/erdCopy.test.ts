@@ -74,6 +74,43 @@ describe("bindNameCopy", () => {
   });
 });
 
+describe("a contour's name (spec 065)", () => {
+  function contours() {
+    document.body.innerHTML =
+      '<div id="root"><svg>' +
+      '<g id="dc:shop.ShopDataSource" class="cluster"><title>cluster_data_source_0</title><g id="a_dc:shop.ShopDataSource"><a><path d="M0 0"/><text>ShopDataSource</text></a></g></g>' +
+      '<g id="rc:shop.Orders" class="cluster"><title>cluster_resource_0</title><g id="a_rc:shop.Orders"><a><path d="M0 0"/><text>OrdersResource</text></a></g></g>' +
+      '<g id="clust3" class="cluster"><title>cluster_shop.Order:kind</title><text>kind (by code)</text></g>' +
+      "</svg></div>";
+    const root = document.getElementById("root")!;
+    const report = vi.fn();
+    bindNameCopy(root, report, new AbortController().signal);
+    return { root, report };
+  }
+
+  it("copies a resource's and a data source's name from their contours' headers", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    const { root, report } = contours();
+    press(root.querySelector('g[id="rc:shop.Orders"] text')!);
+    press(root.querySelector('g[id="dc:shop.ShopDataSource"] text')!);
+    await flush();
+    expect(writeText.mock.calls).toEqual([["OrdersResource"], ["ShopDataSource"]]);
+    expect(report.mock.calls).toEqual([["Copied OrdersResource"], ["Copied ShopDataSource"]]);
+  });
+
+  it("copies nothing from a contour's border, a drag on its name, or another cluster's label", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    const { root } = contours();
+    press(root.querySelector('g[id="rc:shop.Orders"] path')!);
+    press(root.querySelector('g[id="rc:shop.Orders"] text')!, 5);
+    press(root.querySelector("#clust3 text")!);
+    await flush();
+    expect(writeText).not.toHaveBeenCalled();
+  });
+});
+
 describe("a name written with its Diff sign", () => {
   it("is copied bare (spec 038)", () => {
     expect(["+ region", "− is_activated", "~ erid", "region", "  ~ OfferEntity "].map(bareName)).toEqual(["region", "is_activated", "erid", "region", "OfferEntity"]);

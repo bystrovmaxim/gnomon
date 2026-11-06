@@ -15,13 +15,13 @@ type ErdViewerProps = {
 export function ErdViewer({ selection }: ErdViewerProps) {
   // A page setting: shared inside a room (spec 028, FR-030).
   const [includeOneHop, setIncludeOneHop] = usePageSetting("one_hop", true);
-  const { qualifier } = selection;
+  const { qualifier, data_source, resource } = selection;
 
   // The base always holds the 1-hop neighbours: 1-hop is applied on the page, over the filters, so switching it
   // neither reloads the diagram nor touches a filter (spec 038).
-  const loadBundle = useCallback(() => loadErdDomainsBundle({ kind: "erd", qualifier }, true), [qualifier]);
+  const loadBundle = useCallback(() => loadErdDomainsBundle({ kind: "erd", qualifier, data_source, resource }, true), [qualifier, data_source, resource]);
 
-  const diagramResetKey = qualifier ?? "all";
+  const diagramResetKey = data_source ? `data_source:${data_source}` : resource ? `resource:${resource}` : (qualifier ?? "all");
 
   const { data: bundle, dataVersion, loading, error } = useDiagramLoader(loadBundle, { keepPreviousData: true });
 
