@@ -7,8 +7,6 @@ import { VIEW_PARAMS } from "@/lib/viewUrl";
 const PARAM_SOURCE = "source";
 const PARAM_VIEW = "view";
 const PARAM_DOMAIN = "domain";
-const PARAM_DATA_SOURCE = "data_source";
-const PARAM_RESOURCE = "resource";
 const PARAM_NODE = "node";
 const PARAM_HOST = "host";
 const PARAM_ROOM = "room";
@@ -71,10 +69,6 @@ export type UrlDeepLink = {
   source: string | null;
   view: string | null;
   domain: string | null;
-  /** The data source an ERD is narrowed to (spec 065). */
-  data_source?: string | null;
-  /** The resource an ERD is narrowed to (spec 065). */
-  resource?: string | null;
   node: string | null;
   host: string | null;
   room: string | null;
@@ -96,8 +90,6 @@ export function readUrlDeepLink(): UrlDeepLink {
     source: params.get(PARAM_SOURCE),
     view: params.get(PARAM_VIEW),
     domain: params.get(PARAM_DOMAIN),
-    data_source: params.get(PARAM_DATA_SOURCE),
-    resource: params.get(PARAM_RESOURCE),
     node: params.get(PARAM_NODE),
     host: params.get(PARAM_HOST),
     room: params.get(PARAM_ROOM),
@@ -111,8 +103,6 @@ export function readUrlDeepLink(): UrlDeepLink {
 /** Fully-specified selections resolve without sidebar data (``erd`` with no ``domain`` means "all domains"). */
 export function deepLinkToSelection(link: UrlDeepLink): DiagramSelection | null {
   if (link.view === "full-graph") return { kind: "interchange_graph" };
-  if (link.view === "domain-erd" && link.data_source) return { kind: "erd", qualifier: null, data_source: link.data_source };
-  if (link.view === "domain-erd" && link.resource) return { kind: "erd", qualifier: null, resource: link.resource };
   if (link.view === "domain-erd") return { kind: "erd", qualifier: link.domain };
   if (link.view === "use-case" && link.domain) return { kind: "use_case", domain_qualifier: link.domain };
   if (link.view === "use-case-all") return { kind: "use_case_all" };
@@ -133,8 +123,6 @@ export function deepLinkNeedsSidebarDefault(link: UrlDeepLink): "use_case" | "li
 
 export function selectionToParams(sel: DiagramSelection): Record<string, string> {
   const view = VIEW_SLUG_BY_KIND[sel.kind];
-  if (sel.kind === "erd" && sel.data_source) return { view, data_source: sel.data_source };
-  if (sel.kind === "erd" && sel.resource) return { view, resource: sel.resource };
   if (sel.kind === "erd") return sel.qualifier ? { view, domain: sel.qualifier } : { view };
   if (sel.kind === "use_case" || sel.kind === "events") return { view, domain: sel.domain_qualifier };
   if (sel.kind === "lifecycle_fsm") return { view, node: sel.lifecycle_graph_node_id, host: sel.host_entity_interchange_id };

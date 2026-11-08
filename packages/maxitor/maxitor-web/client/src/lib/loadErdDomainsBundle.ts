@@ -4,7 +4,7 @@ import { compareVersions } from "@/api/compare";
 import { listDomains, listEntities, listEntityKinds } from "@/api/erd";
 import { markErd, mergeErdSlices, mergeRelations, type ErdSlice } from "@/lib/erdDiff";
 import type { ErdRelation } from "@/lib/buildDotSource";
-import type { EntityKindRow, ErdDataSourceRow, ErdResourceRow } from "@/model/erd";
+import type { EntityKindRow, ErdResourceRow } from "@/model/erd";
 import type { DiagramSelection } from "@/model/diagramSelection";
 import { allocateDomainTabKey } from "@/lib/domainTabKeys";
 
@@ -30,12 +30,10 @@ export type ErdDomainsBundle = {
   resource_colors: Record<string, string>;
   /** Resource id → its name. */
   resource_labels: Record<string, string>;
-  /** Resource id → the data source it shares (spec 063); a resource that names none is absent. */
-  resource_data_sources: Record<string, string>;
-  /** Data source id → its colour, as the server gives it. */
-  data_source_colors: Record<string, string>;
-  /** Data source id → its name. */
-  data_source_labels: Record<string, string>;
+  /** Every resource of the graph, by id — one that keeps no entity too: the physical view frames each (spec 070). */
+  resource_ids: string[];
+  /** Whether the graph says where any entity lies; false before protocol 1.6, so the physical view is unavailable. */
+  storage_known: boolean;
 };
 
 export type ErdDomainSliceRequest = {
@@ -51,11 +49,6 @@ export async function loadErdDomainsBundle(
   selection: ErdViewerSelection,
   includeOneHopNeighbors: boolean,
 ): Promise<ErdDomainsBundle> {
-  // The ERD of a data source or of a resource is the ERD of all domains, narrowed to the tables stored there (spec 065).
-  if (selection.data_source || selection.resource) {
-    const all = await loadErdDomainsBundle({ kind: "erd", qualifier: null }, includeOneHopNeighbors);
-    return scopeErdBundle(all, selection);
-  }
   if (getActiveBase()) return loadErdDiffBundle(selection, includeOneHopNeighbors);
   const listing = await listDomains();
   const domain_qualifier_colors = Object.fromEntries(
@@ -76,7 +69,7 @@ export async function loadErdDomainsBundle(
   const domain_qualifiers: Record<string, string> = {};
   const domain_tab_labels: Record<string, string> = {};
 
-  const [{ domain_slices: payloads, relations, resources, data_sources }, kinds] = await Promise.all([
+  const [{ domain_slices: payloads, relations, resources, storage_known }, kinds] = await Promise.all([
     listEntities(quals, includeOneHopNeighbors),
     listEntityKinds(),
   ]);
@@ -99,65 +92,22 @@ export async function loadErdDomainsBundle(
     relations,
     entity_kinds: kinds.list_entity_kinds,
     ...resourceMaps(resources ?? []),
-    ...dataSourceMaps(data_sources ?? []),
+    storage_known: storage_known ?? false,
   };
-}
-
-type ScopedRow = { id?: unknown; resource_id?: unknown; source?: unknown; target?: unknown };
-
-/**
- * ``bundle`` narrowed to ``scope`` (spec 065): the tables stored in its data source or its resource, the lines between
- * them, and the domains left with a table. A table no resource stores is in no scope.
- */
-export function scopeErdBundle(bundle: ErdDomainsBundle, scope: Pick<ErdViewerSelection, "data_source" | "resource">): ErdDomainsBundle {
-  const inScope = (resource: unknown) =>
-    typeof resource === "string" && (scope.resource ? resource === scope.resource : bundle.resource_data_sources[resource] === scope.data_source);
-  const kept = new Set<string>();
-  for (const slice of Object.values(bundle.domains)) {
-    for (const entity of slice.entities as ScopedRow[]) if (inScope(entity.resource_id)) kept.add(String(entity.id));
-  }
-  const between = (line: ScopedRow) => kept.has(String(line.source)) && kept.has(String(line.target));
-  const domains: ErdDomainsBundle["domains"] = {};
-  const domain_qualifiers: Record<string, string> = {};
-  const domain_tab_labels: Record<string, string> = {};
-  let first_domain_label: string | undefined;
-  for (const [key, slice] of Object.entries(bundle.domains)) {
-    const entities = (slice.entities as ScopedRow[]).filter((entity) => kept.has(String(entity.id)));
-    if (!entities.length) continue;
-    domains[key] = { ...slice, entities, relations: (slice.relations as ScopedRow[]).filter(between) };
-    domain_qualifiers[key] = bundle.domain_qualifiers[key]!;
-    domain_tab_labels[key] = bundle.domain_tab_labels?.[key] ?? key;
-    first_domain_label ??= domain_tab_labels[key];
-  }
-  return { ...bundle, domains, domain_qualifiers, domain_tab_labels, first_domain_label, relations: ((bundle.relations ?? []) as ScopedRow[]).filter(between) };
 }
 
 /** The colours and names of the resources, newer rows first: a resource only the older version has keeps its own. */
 export function resourceMaps(
   ...listings: readonly (readonly ErdResourceRow[])[]
-): Pick<ErdDomainsBundle, "resource_colors" | "resource_labels" | "resource_data_sources"> {
+): Pick<ErdDomainsBundle, "resource_colors" | "resource_labels" | "resource_ids"> {
   const resource_colors: Record<string, string> = {};
   const resource_labels: Record<string, string> = {};
-  const resource_data_sources: Record<string, string> = {};
   for (const row of listings.flat()) {
     if (row.id in resource_colors) continue;
     resource_colors[row.id] = row.color;
     resource_labels[row.id] = row.label;
-    if (row.data_source_id) resource_data_sources[row.id] = row.data_source_id;
   }
-  return { resource_colors, resource_labels, resource_data_sources };
-}
-
-/** The colours and names of the data sources (spec 063), newer rows first, as for resources. */
-export function dataSourceMaps(...listings: readonly (readonly ErdDataSourceRow[])[]): Pick<ErdDomainsBundle, "data_source_colors" | "data_source_labels"> {
-  const data_source_colors: Record<string, string> = {};
-  const data_source_labels: Record<string, string> = {};
-  for (const row of listings.flat()) {
-    if (row.id in data_source_colors) continue;
-    data_source_colors[row.id] = row.color;
-    data_source_labels[row.id] = row.label;
-  }
-  return { data_source_colors, data_source_labels };
+  return { resource_colors, resource_labels, resource_ids: Object.keys(resource_colors).sort() };
 }
 
 export async function loadErdDomainSlicesBundle(
@@ -213,7 +163,7 @@ async function readErdDiffBundle(selection: ErdViewerSelection, includeOneHopNei
   if (!quals.length) throw new Error("No domain qualnames");
   const newerQuals = quals.filter((qual) => inNewer.has(qual));
   const olderQuals = quals.filter((qual) => inOlder.has(qual));
-  const empty = { domain_slices: [], relations: [] as unknown[], resources: [] as ErdResourceRow[], data_sources: [] as ErdDataSourceRow[] };
+  const empty = { domain_slices: [], relations: [] as unknown[], resources: [] as ErdResourceRow[], storage_known: false };
   const [newer, older] = await Promise.all([
     newerQuals.length ? listEntities(newerQuals, includeOneHopNeighbors) : empty,
     olderQuals.length ? listEntities(olderQuals, includeOneHopNeighbors, base) : empty,
@@ -249,6 +199,6 @@ async function readErdDiffBundle(selection: ErdViewerSelection, includeOneHopNei
     entity_kinds: kinds.list_entity_kinds,
     diff: true,
     ...resourceMaps(newer.resources ?? [], older.resources ?? []),
-    ...dataSourceMaps(newer.data_sources ?? [], older.data_sources ?? []),
+    storage_known: Boolean(newer.storage_known || older.storage_known),
   };
 }

@@ -54,11 +54,10 @@ export type ErdEntity = {
   values?: ErdValue[];
   /** Interchange domain qualname (for legend / filter when 1-hop adds neighbors). */
   domain_qualname?: string;
-  /** The resource that stores the table (protocol 1.6); ``null`` or absent in an older graph. */
-  resource_id?: string | null;
-  resource_label?: string | null;
-  /** In Diff: the resource A gave it, set only when A and B both give one and they differ. */
-  previous_resource_id?: string | null;
+  /** Every resource that keeps the table, by id (protocol 1.6); empty or absent when none does, or in an older graph. */
+  resource_ids?: string[];
+  /** In Diff: the resources A gave it, set only when A's set and B's differ. */
+  previous_resource_ids?: string[];
   fields?: ErdField[];
   /** In Diff: it stands in another domain than it did in A. */
   movedDomain?: boolean;
@@ -102,13 +101,13 @@ export type ErdRelation = {
 export const erdEdgeId = (k: number) => `re${k}`;
 
 /**
- * Prefix of the id Graphviz writes on a resource contour's group: ``rc:<resource id>`` (spec 064). Only a resource
- * contour has one, so the post-pass and the room tell it from a data source contour and from the invisible spacing.
+ * Prefix of the id Graphviz writes on a resource frame's group: ``rc:<resource id>`` (spec 064). Only a resource frame
+ * has one, so the post-pass and the room tell it from a domain frame and from the invisible spacing.
  */
 export const CONTOUR_ID_PREFIX = "rc:";
 
-/** Prefix of the id Graphviz writes on a data source contour's group: ``dc:<data source id>`` (spec 065). */
-export const DATA_SOURCE_CONTOUR_ID_PREFIX = "dc:";
+/** Id of the ``i``-th "same entity" line of the ``k``-th entity drawn more than once (spec 070). */
+export const erdSameId = (k: number, i: number) => `se${k}_${i}`;
 
 /** Id of the thin dashed line to where the ``k``-th relation pointed in A (spec 038, FR-024). */
 export const erdPreviousEdgeId = (k: number) => `rp${k}`;
@@ -127,18 +126,18 @@ export const ERD_DIFF_TINT_ALPHA = "24";
 /** A status that marks something, or ``null`` for unchanged and for one version. */
 // how Diff paints the ERD — the chosen variant "2 + 3": the body is neutral (grey frame,
 // grey zebra), the filter's gear shift chooses what paints the headers, and a halo lies under every table that changed.
-export type ErdPaintSource = "domain" | "kind" | "resource" | "data_source" | "change";
+export type ErdPaintSource = "domain" | "kind" | "resource" | "change";
 let paintSource: ErdPaintSource = "change";
 let paintColours: Readonly<Record<string, string>> = {};
 /**
- * what paints the headers now, and the colours when kinds, resources or data sources do — by kind word, by resource
- * id, or by data source id; the canvas sets it before it draws.
+ * what paints the headers now, and the colours when kinds or resources do — by kind word or by resource id; the
+ * canvas sets it before it draws.
  */
 export function setErdPaint(source: ErdPaintSource, colours: Readonly<Record<string, string>>): void {
   paintSource = source;
   paintColours = colours;
 }
-/** The grey of a table that the painting section says nothing of: a kind it does not know, a table with no resource or no data source. */
+/** The grey of a table that the painting section says nothing of: a kind it does not know, a table with no resource. */
 const UNPAINTED = "#64748b";
 const paintByChange = () => paintSource === "change";
 /** kinds' colours when they paint — mid tones of the whole wheel, like the domains' own. */
@@ -215,22 +214,23 @@ export type ErdGraphPayload = {
   /** Each table's rows a collapse hides and whether it is collapsed (spec 043); absent, every table is whole with no control. */
   folds?: ReadonlyMap<string, ErdFold>;
   /**
-   * Boundary (spec 061): the tables of each resource inside one rounded contour headed by the resource's name, the
-   * specialization containers of those tables nested in it. Absent or off, no contour, and the text is today's.
+   * The view drawn (spec 070): ``logical`` frames each domain round its tables; ``physical`` frames each resource of
+   * ``resource_ids`` — an empty one too — round a frame per domain of its copies, and gathers the copies no resource
+   * keeps in "Not stored". Absent, no frame at all: the drawing checks and the measuring pass draw tables alone.
    */
-  boundary?: boolean;
-  /** Resource id → its name, for the contour's header. */
+  model?: "logical" | "physical";
+  /** Domain qualname → its name and its colour, for a domain frame's header and outline. */
+  domain_labels?: Readonly<Record<string, string>>;
+  domain_colors?: Readonly<Record<string, string>>;
+  /** Every resource the physical view frames, in order, an empty one too. */
+  resource_ids?: readonly string[];
+  /** Resource id → its name, for its frame's header. */
   resource_labels?: Readonly<Record<string, string>>;
+  /** Each entity drawn more than once in the physical view: its copies' ids, joined by "same entity" lines. */
+  same?: readonly (readonly string[])[];
   /**
-   * Resource id → the data source it shares (protocol 1.7, spec 063). With Boundary on, the resources of one data source
-   * are drawn inside one outer contour headed by the data source's name; a resource absent here has no outer contour.
-   */
-  resource_data_sources?: Readonly<Record<string, string>>;
-  /** Data source id → its name, for the outer contour's header. */
-  data_source_labels?: Readonly<Record<string, string>>;
-  /**
-   * The contours drawn folded (spec 065), by their ids: ``rc:<resource>`` and ``dc:<data source>``. Each is one box
-   * standing for its tables; its relations to the rest are bundled. Used only with Boundary on.
+   * The resource frames drawn folded (spec 065), by their ids ``rc:<resource>``: each is one box standing for its
+   * copies, its relations to the rest bundled. Used only in the physical view.
    */
   folded_contours?: ReadonlySet<string>;
 };
@@ -249,7 +249,7 @@ export type ErdBundle = {
   relations: number[];
 };
 
-/** What a folded contour stands for: its tables, the relations between them, and, for a data source, its resources. */
+/** What a folded frame stands for: its tables and the relations between them. */
 export type ErdFoldCount = { tables: number; inside: number; resources: number; changed: number };
 
 /** How the folded contours of ``data`` are drawn: where each table goes, the bundles, and each box's counts. */
@@ -260,40 +260,40 @@ export type ErdFoldPlan = {
   counts: ReadonlyMap<string, ErdFoldCount>;
 };
 
-/** Whether ``id`` names a contour: a resource's (``rc:``) or a data source's (``dc:``). */
+/** Whether ``id`` names a resource frame (``rc:``). */
 export function isContourId(id: string): boolean {
-  return id.startsWith(CONTOUR_ID_PREFIX) || id.startsWith(DATA_SOURCE_CONTOUR_ID_PREFIX);
+  return id.startsWith(CONTOUR_ID_PREFIX);
+}
+
+/** The resource a drawn table lies in: a copy's resource in the physical view, else none. */
+export function tableResource(entity: ErdEntity): string | null {
+  return (entity as { copy_resource?: string | null }).copy_resource ?? null;
 }
 
 /**
- * The fold plan of ``data`` (spec 065). A table is drawn in the outermost folded contour that holds it — its data
- * source's when that is folded, else its resource's. A relation between two folded boxes joins the bundle of those two
- * boxes, whichever way it points; a relation from a table still drawn to a box is a line of its own; one with both ends
- * in one box is counted inside it. A specialization is never drawn.
+ * The fold plan of ``data`` (spec 065): in the physical view a copy is drawn in its resource's frame when that frame is
+ * folded. A relation between two folded boxes joins the bundle of those two boxes, whichever way it points; a relation
+ * from a table still drawn to a box is a line of its own; one with both ends in one box is counted inside it. A
+ * specialization is never drawn.
  */
 export function foldPlan(data: ErdGraphPayload): ErdFoldPlan {
-  const folded = data.boundary ? (data.folded_contours ?? new Set<string>()) : new Set<string>();
+  const folded = data.model === "physical" ? (data.folded_contours ?? new Set<string>()) : new Set<string>();
   const holder = new Map<string, string>();
   const counts = new Map<string, ErdFoldCount>();
   const count = (id: string) => {
-    if (!counts.has(id)) counts.set(id, { tables: 0, inside: 0, resources: 0, changed: 0 });
+    if (!counts.has(id)) counts.set(id, { tables: 0, inside: 0, resources: 1, changed: 0 });
     return counts.get(id)!;
   };
-  const resourcesOf = new Map<string, Set<string>>();
   for (const entity of data.entities ?? []) {
-    const resource = entity.resource_id;
-    if (!resource) continue;
-    const source = data.resource_data_sources?.[resource];
-    const id = source && folded.has(`${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}`) ? `${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}` : folded.has(`${CONTOUR_ID_PREFIX}${resource}`) ? `${CONTOUR_ID_PREFIX}${resource}` : null;
-    if (!id) continue;
+    const resource = tableResource(entity);
+    const id = resource ? `${CONTOUR_ID_PREFIX}${resource}` : null;
+    if (!id || !folded.has(id)) continue;
     holder.set(entity.id, id);
     const box = count(id);
     box.tables += 1;
     if (entity.diff !== undefined && erdGlance(entity) !== "unchanged") box.changed += 1;
-    if (!resourcesOf.has(id)) resourcesOf.set(id, new Set());
-    resourcesOf.get(id)!.add(resource);
   }
-  for (const [id, resources] of resourcesOf) count(id).resources = resources.size;
+  for (const id of folded) if ((data.resource_ids ?? []).includes(id.slice(CONTOUR_ID_PREFIX.length))) count(id);
   const bundles: ErdBundle[] = [];
   const byEnds = new Map<string, ErdBundle>();
   (data.relations ?? []).forEach((relation, k) => {
@@ -605,10 +605,8 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
       paintSource === "kind"
         ? (paintColours[nd.entity_kind?.trim() || "unknown"] ?? UNPAINTED)
         : paintSource === "resource"
-          ? (paintColours[nd.resource_id ?? ""] ?? UNPAINTED)
-          : paintSource === "data_source"
-            ? (paintColours[data.resource_data_sources?.[nd.resource_id ?? ""] ?? ""] ?? UNPAINTED)
-            : domainColour;
+          ? (paintColours[tableResource(nd) ?? ""] ?? UNPAINTED)
+          : domainColour;
     // the header's fill, the frame and the zebra, as the painting asks. Where the filter chooses what
     // paints, the header takes that section's colour alone — a changed table's header too, when domains or kinds
     // paint; its change is then told by its frame, its sign, its rows and its halo.
@@ -619,7 +617,10 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     const headInk = quietHead ? "#334155" : "white";
     // The name carries what happened to the table as a whole: ``~`` for any change inside, its own properties or a row.
     const sign = glance !== "unchanged" ? ERD_DIFF_SIGN[glance] : null;
-    const title = sign ? `${sign} ${nd.label || nd.id}` : nd.label || nd.id;
+    // A copy of an entity kept in several databases says how many there are (spec 070).
+    const copies = (nd as { copies?: number }).copies ?? 1;
+    const name = `${nd.label || nd.id}${copies > 1 ? ` ×${copies}` : ""}`;
+    const title = sign ? `${sign} ${name}` : name;
     const table = tableIndex.get(nd.id) ?? 0;
     const kind = nd.entity_kind?.trim() || "unknown";
     const kindLabel = nd.entity_kind_label || kind.charAt(0).toUpperCase() + kind.slice(1);
@@ -726,24 +727,15 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     ];
   };
 
-  // Boundary (spec 061): one contour per resource, by resource id. A specialization container goes inside its
-  // resource's contour when all its tables are stored there — always so in a graph from AOA, which keeps every link
-  // inside one resource; a table is declared once, in its innermost cluster.
-  const resourceOf = (id: string) => entityById.get(id)?.resource_id ?? null;
-  const resourceIds = data.boundary ? [...new Set((entities ?? []).flatMap((nd) => (nd.resource_id ? [nd.resource_id] : [])))].sort() : [];
-  const groupHome = (group: ErdGroup): string | null => {
-    const homes = new Set(group.members.filter((id) => entityById.has(id)).map(resourceOf));
-    return homes.size === 1 ? [...homes][0]! : null;
-  };
+  // The frames of the view (spec 070). A specialization container goes inside the innermost frame that holds all its
+  // tables; a table is declared once, in its innermost cluster.
   const plan = foldPlan(data);
   const isFolded = (id: string) => plan.counts.has(id);
-  /** A folded contour (spec 065): one box in the contour's style, its name, what it stands for, and in Diff what changed. */
+  /** A folded resource frame (spec 065): one box in the frame's style, its name, what it stands for, and in Diff what changed. */
   const foldNode = (id: string, name: string, colour: string, nameInk: string): string[] => {
-    const box = plan.counts.get(id) ?? { tables: 0, inside: 0, resources: 0, changed: 0 };
+    const box = plan.counts.get(id) ?? { tables: 0, inside: 0, resources: 1, changed: 0 };
     const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-    const what = id.startsWith(DATA_SOURCE_CONTOUR_ID_PREFIX)
-      ? `${plural(box.resources, "resource")} · ${plural(box.tables, "table")}`
-      : `${plural(box.tables, "table")} · ${plural(box.inside, "relation")} inside`;
+    const what = `${plural(box.tables, "table")} · ${plural(box.inside, "relation")} inside`;
     const changed = box.changed > 0 ? `<TR><TD ALIGN="LEFT" COLSPAN="2"><FONT POINT-SIZE="10" COLOR="${ERD_DIFF_COLOUR.changed}"><B>${ERD_DIFF_SIGN.changed} ${box.changed} changed</B></FONT></TD></TR>` : "";
     return [
       `  "${escDot(id)}" [shape=box style="rounded,filled" fillcolor="white" color="${colour}" penwidth=2 margin="0.28,0.14" tooltip="${escDot(id.slice(3))}" ` +
@@ -751,81 +743,87 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
         `<TR><TD ALIGN="LEFT" COLSPAN="2"><FONT POINT-SIZE="10" COLOR="#64748b">${escHtml(what)}</FONT></TD></TR>${changed}</TABLE>>]`,
     ];
   };
-  const resourceContour = (resource: string, index: number): string[] => {
-    const colour = paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : "#94a3b8";
-    if (isFolded(`${CONTOUR_ID_PREFIX}${resource}`)) return foldNode(`${CONTOUR_ID_PREFIX}${resource}`, data.resource_labels?.[resource] ?? resource, colour, paintSource === "resource" ? colour : "#475569");
-    // An invisible cluster round each contour keeps the contours apart: Graphviz spaces clusters only by nodesep.
+  const domainOf = (nd: ErdEntity) => nd.domain_qualname?.trim() || "";
+  const domainName = (qual: string) => data.domain_labels?.[qual] ?? (qual.split(".").pop() || qual);
+  /** The tables of ``members`` that one frame holds, its containers inside it, as DOT lines. */
+  const frameBody = (members: readonly ErdEntity[]): string[] => {
+    const here = new Set(members.map((nd) => nd.id));
+    const inner = groups.filter((group) => group.members.filter((id) => entityById.has(id)).every((id) => here.has(id)) && group.members.some((id) => here.has(id)));
+    const held = new Set(inner.flatMap((group) => group.members));
+    return [...inner.flatMap(groupSource), ...members.filter((nd) => !held.has(nd.id)).map((nd) => nodeSource(nd))];
+  };
+  /** A domain's frame (logical view), or a domain's frame inside a resource's (physical view). */
+  const domainFrame = (name: string, qual: string, members: readonly ErdEntity[], nested: boolean): string[] => {
+    const colour = !nested && paintSource === "domain" ? (data.domain_colors?.[qual] ?? "#94a3b8") : "#94a3b8";
     return [
-      `  subgraph "cluster_resource_${index}_room" {`,
-      "    style=invis;",
-      // Graphviz passes a frame's label, id and tooltip down to the frames inside it: without its own, this frame would
-      // draw the data source's name again above the resource, and take the data source's id and tooltip (spec 065).
-      '    label="";',
+      `  subgraph "${name}" {`,
       '    id="";',
-      '    tooltip="";',
-      "    margin=36;",
-      `  subgraph "cluster_resource_${index}" {`,
-      // Spec 064: the contour's group is named by its resource, so a hover on its border knows whose links to light;
-      // the hover label is the resource's full id.
-      `    id="${escDot(`${CONTOUR_ID_PREFIX}${resource}`)}";`,
-      `    tooltip="${escDot(resource)}";`,
-      // The name stands clear of the top border, in a cell with room round it, a little larger than a table's name.
-      `    label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>${escHtml(data.resource_labels?.[resource] ?? resource)}</B></TD></TR></TABLE>>;`,
-      '    style="rounded";',
+      `    tooltip="${escDot(qual)}";`,
+      `    label=<<TABLE BORDER="0" CELLPADDING="${nested ? 6 : 10}"><TR><TD><B>${escHtml(domainName(qual))}</B></TD></TR></TABLE>>;`,
+      `    style="${nested ? "rounded,dashed" : "rounded"}";`,
       `    color="${colour}";`,
-      `    fontcolor="${paintSource === "resource" ? colour : "#475569"}";`,
-      "    penwidth=2;",
-      "    fontsize=15;",
-      "    margin=20;",
-      ...groups.filter((group) => groupHome(group) === resource).flatMap(groupSource),
-      ...(entities ?? []).filter((nd) => nd.resource_id === resource && !grouped.has(nd.id)).map((nd) => nodeSource(nd)),
-      "  }",
+      `    fontcolor="${nested ? "#64748b" : colour === "#94a3b8" ? "#475569" : colour}";`,
+      `    penwidth=${nested ? 1 : 2};`,
+      `    fontsize=${nested ? 12 : 15};`,
+      `    margin=${nested ? 14 : 20};`,
+      ...frameBody(members),
       "  }",
     ];
   };
-  // Spec 063: the resources of one data source sit inside one outer contour, headed by the data source's name. A
-  // relation may cross a resource contour inside it, never a data source contour: AOA keeps every relation inside
-  // one data source, or inside one resource when it names none.
-  const dataSourceOf = (resource: string): string | null => data.resource_data_sources?.[resource] ?? null;
-  const dataSourceIds = [...new Set(resourceIds.flatMap((resource) => (dataSourceOf(resource) ? [dataSourceOf(resource)!] : [])))].sort();
-  dataSourceIds.forEach((source, sourceIndex) => {
-    const colour = paintSource === "data_source" ? (paintColours[source] ?? UNPAINTED) : "#64748b";
-    if (isFolded(`${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}`)) {
-      lines.push(...foldNode(`${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}`, data.data_source_labels?.[source] ?? source, colour, paintSource === "data_source" ? colour : "#334155"));
-      return;
-    }
-    lines.push(
-      `  subgraph "cluster_data_source_${sourceIndex}_room" {`,
-      "    style=invis;",
-      '    label="";',
-      "    margin=40;",
-      `  subgraph "cluster_data_source_${sourceIndex}" {`,
-      // Named by its data source, as a resource contour by its resource: the name copies and the contour folds (spec 065).
-      `    id="${escDot(`${DATA_SOURCE_CONTOUR_ID_PREFIX}${source}`)}";`,
-      `    tooltip="${escDot(source)}";`,
-      `    label=<<TABLE BORDER="0" CELLPADDING="12"><TR><TD><B>${escHtml(data.data_source_labels?.[source] ?? source)}</B></TD></TR></TABLE>>;`,
-      '    style="rounded,dashed";',
-      `    color="${colour}";`,
-      `    fontcolor="${paintSource === "data_source" ? colour : "#334155"}";`,
-      "    penwidth=2.5;",
-      "    fontsize=17;",
-      "    margin=24;",
-      ...resourceIds.flatMap((resource, index) => (dataSourceOf(resource) === source ? resourceContour(resource, index) : [])),
-      "  }",
-      "  }",
-    );
-  });
-  resourceIds.forEach((resource, index) => {
-    if (dataSourceOf(resource) === null) lines.push(...resourceContour(resource, index));
-  });
-  const inContour = new Set(resourceIds);
+  const byDomain = (members: readonly ErdEntity[]) => {
+    const quals = [...new Set(members.map(domainOf))].sort();
+    return quals.map((qual) => ({ qual, members: members.filter((nd) => domainOf(nd) === qual) }));
+  };
+  const framed = new Set<string>();
+  if (data.model === "logical") {
+    byDomain(entities ?? []).forEach(({ qual, members }, index) => {
+      members.forEach((nd) => framed.add(nd.id));
+      lines.push(`  subgraph "cluster_domain_${index}_room" {`, "    style=invis;", '    label="";', '    id="";', '    tooltip="";', "    margin=36;", ...domainFrame(`cluster_domain_${index}`, qual, members, false), "  }");
+    });
+  }
+  if (data.model === "physical") {
+    const resourceFrame = (resource: string | null, index: number): string[] => {
+      const members = (entities ?? []).filter((nd) => tableResource(nd) === resource);
+      members.forEach((nd) => framed.add(nd.id));
+      const id = resource === null ? null : `${CONTOUR_ID_PREFIX}${resource}`;
+      const colour = resource !== null && paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : "#94a3b8";
+      const name = resource === null ? "Not stored" : (data.resource_labels?.[resource] ?? (resource.split(".").pop() || resource));
+      if (id && isFolded(id)) return foldNode(id, name, colour, paintSource === "resource" ? colour : "#475569");
+      // An invisible frame round each frame keeps them apart: Graphviz spaces clusters only by nodesep.
+      return [
+        `  subgraph "cluster_resource_${index}_room" {`,
+        "    style=invis;",
+        // Graphviz passes a frame's label, id and tooltip down to the frames inside it: each frame says its own.
+        '    label="";',
+        '    id="";',
+        '    tooltip="";',
+        "    margin=36;",
+        `  subgraph "cluster_resource_${index}" {`,
+        // Spec 064: a resource's frame is named by its resource, so a hover on its border knows whose links to light.
+        ...(id ? [`    id="${escDot(id)}";`, `    tooltip="${escDot(resource!)}";`] : ['    id="";', '    tooltip="Entities no resource keeps";']),
+        `    label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>${escHtml(name)}</B></TD></TR></TABLE>>;`,
+        `    style="${resource === null ? "rounded,dashed" : "rounded"}";`,
+        `    color="${colour}";`,
+        `    fontcolor="${resource !== null && paintSource === "resource" ? colour : "#475569"}";`,
+        "    penwidth=2;",
+        "    fontsize=15;",
+        "    margin=20;",
+        // A frame with no table still stands, with its name: nothing of the model is hidden.
+        ...(members.length ? byDomain(members).flatMap(({ qual, members: inDomain }, j) => domainFrame(`cluster_resource_${index}_domain_${j}`, qual, inDomain, true)) : [`    "rc_empty_${index}" [shape=point style=invis width=1.2]`]),
+        "  }",
+        "  }",
+      ];
+    };
+    (data.resource_ids ?? []).forEach((resource, index) => lines.push(...resourceFrame(resource, index)));
+    if ((entities ?? []).some((nd) => tableResource(nd) === null)) lines.push(...resourceFrame(null, (data.resource_ids ?? []).length));
+  }
   for (const group of groups) {
-    if (inContour.has(groupHome(group) ?? "")) continue;
+    if (group.members.some((id) => framed.has(id))) continue;
     lines.push(...groupSource(group));
   }
 
   for (const nd of entities ?? []) {
-    if (grouped.has(nd.id) || inContour.has(nd.resource_id ?? "")) continue;
+    if (grouped.has(nd.id) || framed.has(nd.id)) continue;
     lines.push(nodeSource(nd));
   }
 
@@ -843,7 +841,9 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
       : ed.diff === "unchanged"
         ? `color="${ERD_FADED_COLOUR}55" `
         : "";
-    const id = `id="${erdEdgeId(k)}" ${look}`;
+    // A line between copies in two databases is dashed: no join is possible there, an action glues the data (spec 070).
+    const across = (ed as { across?: boolean }).across === true && ed.relationship_kind !== "generalization" ? "style=dashed " : "";
+    const id = `id="${erdEdgeId(k)}" ${look}${across}`;
     // A field that now points at another table is one changed line: solid to where it points in B, and thin and
     // dashed to where it pointed in A — never a red line and a green one.
     if (ed.previous_target && entityById.has(ed.previous_target) && ed.previous_target !== ed.target) {
@@ -870,6 +870,13 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
       `  "${ed.source}" -> "${ed.target}" [${id}dir=both arrowtail=${erdEnd(ed.source_cardinality)} ` +
         `arrowhead=${erdEnd(ed.target_cardinality)} headlabel="${escHtml(ed.source_field)}"${tail} labelfontsize=9]`,
     );
+  });
+  // Spec 070: the copies of one entity are joined by a dashed "same entity" line, which never ranks the layout.
+  (data.same ?? []).forEach((ids, k) => {
+    const drawn = ids.filter((id) => entityById.has(id) && !plan.holder.has(id));
+    for (let i = 1; i < drawn.length; i += 1) {
+      lines.push(`  "${escDot(drawn[i - 1]!)}" -> "${escDot(drawn[i]!)}" [id="${erdSameId(k, i)}" class="erd-same" style=dashed color="#94a3b8" penwidth=1.2 arrowhead=none constraint=false]`);
+    }
   });
   // Spec 065: one line per pair of drawn ends with a folded box among them, wider with the relations it stands for,
   // its count on a plate in the middle; no cardinality, since its relations differ.

@@ -7,20 +7,20 @@
  * most 4 px before release, so panning the canvas by dragging never copies. When the browser refuses the
  * clipboard, the name is selected instead and the message says how to copy it by hand. In Diff (spec 038) a
  * name carries its sign (``+ region``): the bare name is copied. A tap opens the card, whose button copies (spec 043).
- * The name in a resource contour's or a data source contour's header copies the same way (spec 065).
+ * The name in a resource frame's header copies the same way (spec 065).
  */
 
-import { CONTOUR_ID_PREFIX, DATA_SOURCE_CONTOUR_ID_PREFIX } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX } from "./buildDotSource.ts";
 
 const NAME_CELL = 'g[id^="a_hn"], g[id^="a_fn"]';
 /** The farthest a pointer may move during a press that still counts as a click, in CSS px. */
 export const COPY_CLICK_SLOP_PX = 4;
 
-/** The name text of a resource or data source contour under ``target``, or ``null``: the contour's group carries its id. */
+/** The name text of a resource frame under ``target``, or ``null``: the frame's group carries its id. */
 function contourName(target: Element): Element | null {
   const text = target.closest("text");
   const id = text?.closest("g.cluster")?.id ?? "";
-  return text && (id.startsWith(CONTOUR_ID_PREFIX) || id.startsWith(DATA_SOURCE_CONTOUR_ID_PREFIX)) ? text : null;
+  return text && id.startsWith(CONTOUR_ID_PREFIX) ? text : null;
 }
 
 /** Select a node's text so the user can copy it with the keyboard. */

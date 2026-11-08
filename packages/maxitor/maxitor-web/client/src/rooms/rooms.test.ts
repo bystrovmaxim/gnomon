@@ -124,19 +124,9 @@ describe("page keys", () => {
     expect(selectionOfPageKey("view=use-case&domain=x")).toEqual({ kind: "use_case", domain_qualifier: "x" });
   });
 
-  it("name the ERD of a data source and of a resource, and read back (spec 065)", () => {
-    expect(pageKeyOf({ kind: "erd", qualifier: null, data_source: "shop.ShopDataSource" })).toBe("view=domain-erd&data_source=shop.ShopDataSource");
-    expect(pageKeyOf({ kind: "erd", qualifier: null, resource: "shop.Orders" })).toBe("view=domain-erd&resource=shop.Orders");
-    expect(selectionOfPageKey("view=domain-erd&data_source=shop.ShopDataSource")).toEqual({ kind: "erd", qualifier: null, data_source: "shop.ShopDataSource" });
-    expect(selectionOfPageKey("view=domain-erd&resource=shop.Orders")).toEqual({ kind: "erd", qualifier: null, resource: "shop.Orders" });
-    const sidebar = {
-      level1_nodes: [],
-      level2_diagrams: [],
-      level2_nodes: [{ id: "shop.ShopDataSource", parent_id: "data_sources_root", label: "ShopDataSource", type: "DataSource" }],
-      level3_diagrams: [{ id: "erd_resource:shop.Orders", parent_id: "shop.ShopDataSource", label: "ERD — OrdersResource view", type: "erd_resource" }],
-    };
-    expect(pageLabel("view=domain-erd&data_source=shop.ShopDataSource", sidebar)).toBe("ERD · ShopDataSource");
-    expect(pageLabel("view=domain-erd&resource=shop.Orders", sidebar)).toBe("ERD · OrdersResource");
+  it("read an old ERD of a data source or of a resource as the ERD of all domains (spec 070)", () => {
+    expect(selectionOfPageKey("view=domain-erd&data_source=shop.ShopDataSource")).toEqual({ kind: "erd", qualifier: null });
+    expect(selectionOfPageKey("view=domain-erd&resource=shop.Orders")).toEqual({ kind: "erd", qualifier: null });
   });
 
   it("read as words", () => {

@@ -35,13 +35,15 @@ import {
   type ErdRelation,
   foldPlan,
   isContourId,
+  tableResource,
 } from "@/lib/buildDotSource";
 import { containNodeFills } from "@/lib/containNodeFills";
 import { enrichErdDataForViewer } from "@/lib/enrichErdData";
 import { filterGraphByKinds, kindsOnDiagram, pruneGraphToEntities } from "@/lib/erdKindFilter";
-import { filterGraphByResources, resourcesOnDiagram } from "@/lib/erdResourceFilter";
-import { dataSourceOfEntity, dataSourcesOnDiagram, filterGraphByDataSources, NO_DATA_SOURCE } from "@/lib/erdDataSourceFilter";
+import { resourcesOnDiagram } from "@/lib/erdResourceFilter";
 import { useErdResourceSettings } from "@/lib/erdResourceSettings";
+import { copyEntity, physicalDrawing } from "@/lib/erdViews";
+import { ErdModelPill } from "./ErdModelPill";
 import { changeDiskUri, changesOnDiagram, domainsOn, filterGraphByChanges, onScreen, tablesToDraw } from "@/lib/erdFilterPresence";
 import { mergeRelationsOnScreen } from "@/lib/mergeErdRelations";
 import { diagramCounts, erdHolds, erdOfSide, erdPortable, nothingChanged, unmarked } from "@/lib/erdDiff";
@@ -176,7 +178,7 @@ const LAYOUT_TOOLS: {
 ];
 
 
-/** The room a fit keeps round the tables for the contours of resources and their names, in screen pixels. */
+/** The room a fit keeps round the tables for the frames of domains and resources and their names, in screen pixels. */
 const RESOURCE_CONTOUR_FIT_MARGIN_PX = 48;
 
 export function ErdGraphvizCanvas({
@@ -223,8 +225,10 @@ export function ErdGraphvizCanvas({
   const [disabledEntityList, setDisabledEntityList] = usePageSetting<string[]>("disabled_entities", []);
   /** Entity kinds switched off; a kind the graph gains later starts on. */
   const [disabledKindList, setDisabledKindList] = usePageSetting<string[]>("disabled_kinds", []);
-  /** Resources switched off and Boundary (spec 061): page settings, shared in a room. */
-  const { disabledResources, toggleResource, boundary, setBoundary, disabledDataSources, toggleDataSource, foldedContours, toggleFold, unfold } = useErdResourceSettings();
+  /** The view, the resources switched off and the frames folded (spec 070): page settings, shared in a room. */
+  const { model: chosenModel, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold } = useErdResourceSettings();
+  // A graph that does not say where entities lie has no physical view: a stored choice of it opens the logical one.
+  const model = bundle.storage_known ? chosenModel : "logical";
 
   // A domain the model no longer has stops applying (spec 028, FR-076).
   const enabledDomains = useMemo(
@@ -234,10 +238,9 @@ export function ErdGraphvizCanvas({
   const disabledKinds = useMemo(() => new Set(disabledKindList), [disabledKindList]);
 
   const side = useHalf()?.side ?? null;
-  // A fit measures the tables and lines, whose boxes every engine draws alike; the contours of resources stand outside
-  // them, so with Boundary on the fit keeps a fixed margin for them instead of measuring their text (spec 061).
-  const contoured = boundary && Object.keys(bundle.resource_colors).length > 0;
-  const panZoom = useSvgPanZoom(contoured ? { fitMarginPx: RESOURCE_CONTOUR_FIT_MARGIN_PX } : undefined);
+  // A fit measures the tables and lines, whose boxes every engine draws alike; the frames of both views stand outside
+  // them, so the fit keeps a fixed margin for them instead of measuring their text (spec 061, spec 070).
+  const panZoom = useSvgPanZoom({ fitMarginPx: RESOURCE_CONTOUR_FIT_MARGIN_PX });
   const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform } = panZoom;
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);
@@ -284,15 +287,14 @@ export function ErdGraphvizCanvas({
   // those left — the neighbours from other domains, and any table a filter hid.
   const qualsOn = useMemo(() => domainsOn(bundle.domain_qualifiers, tabsOn), [bundle.domain_qualifiers, tabsOn]);
   const mergedData = useMemo(() => {
-    const byResources = filterGraphByResources(filterGraphByKinds(beforeKinds, disabledKinds), disabledResources);
-    const filtered = filterGraphByChanges(filterGraphByDataSources(byResources, disabledDataSources, bundle.resource_data_sources ?? {}), offChanges);
+    // The resources switched off hide their frames in the physical view, not the tables of the logical one (spec 070).
+    const filtered = filterGraphByChanges(filterGraphByKinds(beforeKinds, disabledKinds), offChanges);
     return tablesToDraw(filtered, baseGraph, qualsOn, (entity) => readEntityQual(entity) ?? fallbackQual, includeOneHop);
-  }, [beforeKinds, disabledKinds, disabledResources, disabledDataSources, bundle.resource_data_sources, offChanges, includeOneHop, baseGraph, qualsOn, fallbackQual]);
-  // The resources of the diagram's base: the Resources section's rows, the Boundary switch and the paint point exist
-  // while it has one (spec 061, FR-003, FR-005).
-  const baseResources = useMemo(() => resourcesOnDiagram(baseEntities), [baseEntities]);
-  // The data sources of the diagram's base (spec 063): the Data sources section and its paint point exist while it has one.
-  const baseDataSources = useMemo(() => dataSourcesOnDiagram(baseEntities, bundle.resource_data_sources ?? {}), [baseEntities, bundle.resource_data_sources]);
+  }, [beforeKinds, disabledKinds, offChanges, includeOneHop, baseGraph, qualsOn, fallbackQual]);
+  // Every resource of the graph frames in the physical view, an empty one too (spec 070, FR-003): the Resources
+  // section's rows and the paint point are theirs.
+  const baseResources = bundle.resource_ids;
+  const framedResources = useMemo(() => baseResources.filter((resource) => !disabledResources.has(resource)), [baseResources, disabledResources]);
 
   const erdEmptyOverlay =
     mergedData.entities.length === 0 ? (
@@ -317,7 +319,13 @@ export function ErdGraphvizCanvas({
   const pairData = useMemo(() => (counts && nothingChanged(counts) ? unmarked({ ...labelledData, relations: labelledData.relations ?? [] }) : labelledData), [counts, labelledData]);
   const half = useHalf();
   // A half draws what its version has, in its own layout; the counts and the steps stay the pair's (spec 044).
-  const drawnData = useMemo(() => (half ? erdOfSide(pairData, half.side) : pairData), [half, pairData]);
+  const sideData = useMemo(() => (half ? erdOfSide(pairData, half.side) : pairData), [half, pairData]);
+  // The physical view draws a copy of each entity in each resource that keeps it, and a line per pair of copies (spec 070).
+  const physical = useMemo(
+    () => (model === "physical" ? physicalDrawing(sideData.entities, sideData.relations ?? [], disabledResources, sideData.groups ?? []) : null),
+    [model, sideData, disabledResources],
+  );
+  const drawnData = useMemo(() => (physical ? { ...sideData, entities: physical.entities, relations: physical.relations, groups: physical.groups } : sideData), [physical, sideData]);
   const writesPair = writesForPair(half);
   useEffect(() => {
     if (writesPair) setDiffCounts(counts);
@@ -357,7 +365,7 @@ export function ErdGraphvizCanvas({
       const stage = viewportRef.current?.getBoundingClientRect();
       const { entities, relations } = drawnTables();
       const named = fromAfar(ref, elements.at(-1), entities, touch);
-      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, bundlesRef.current) : null;
+      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known) : null;
       const [outer, inner] = [elements[0], named === ref ? elements.at(-1) : elements[0]];
       if (!facts || !stage || !outer || !inner) return null;
       // A line's box can span the screen: the card stands by its middle.
@@ -374,13 +382,13 @@ export function ErdGraphvizCanvas({
       ];
       return { ...facts, at: cardBeside(stage, beside, level), around: { beside, level, avoid }, project: projection };
     },
-    [bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, drawnTables, pannerRef, projection, viewportRef],
+    [bundle.resource_labels, bundle.domain_qualifier_labels, bundle.storage_known, drawnTables, pannerRef, projection, viewportRef],
   );
   const hoverCards = useMemo<HoverCards>(
     () => ({
       has: (ref) =>
         pannerRef.current !== null &&
-        erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, bundlesRef.current) !== null,
+        erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known) !== null,
       show: (ref, elements) => wantCard(ref ? subjectOf(ref, elements) : null),
       open: (ref, elements) => {
         const subject = subjectOf(ref, elements);
@@ -388,7 +396,7 @@ export function ErdGraphvizCanvas({
       },
       close: closeCard,
     }),
-    [bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, closeCard, drawnTables, pannerRef, subjectOf, wantCard, wantCardNow],
+    [bundle.resource_labels, bundle.domain_qualifier_labels, bundle.storage_known, closeCard, drawnTables, pannerRef, subjectOf, wantCard, wantCardNow],
   );
   // Hover and tooltip shared with followers, and the followed person's shown here (spec 029).
   useGraphvizFocus(pannerRef.current, svgMarkup, useCurrentPage(), "table", hoverCards, portable);
@@ -425,13 +433,15 @@ export function ErdGraphvizCanvas({
     () => ({
       ...drawnData,
       folds,
-      boundary: boundary && baseResources.length > 0,
+      model,
+      domain_labels: bundle.domain_qualifier_labels,
+      domain_colors: bundle.domain_qualifier_colors,
+      resource_ids: framedResources,
       resource_labels: bundle.resource_labels,
-      resource_data_sources: bundle.resource_data_sources,
-      data_source_labels: bundle.data_source_labels,
+      same: physical?.same ?? [],
       folded_contours: foldedContours,
     }),
-    [drawnData, folds, boundary, baseResources, bundle.resource_labels, bundle.resource_data_sources, bundle.data_source_labels, foldedContours],
+    [drawnData, folds, model, bundle.domain_qualifier_labels, bundle.domain_qualifier_colors, framedResources, bundle.resource_labels, physical, foldedContours],
   );
   // The bundles of the drawing on screen (spec 065): its lines to folded boxes, for their hover and their card.
   const bundles = useMemo(() => foldPlan(foldedData).bundles, [foldedData]);
@@ -466,24 +476,22 @@ export function ErdGraphvizCanvas({
   // What paints the headers is a page setting, One's and Diff's apart: a room shares it, the address carries it.
   const diffDrawing = Boolean(bundle.diff);
   const [chosenPaint, setChosenPaint] = usePageSetting<PaintSection>(paintSettingName(diffDrawing), defaultPaint(diffDrawing));
+  // Resources paint only the physical view; there they paint until someone chooses another section (spec 070).
   const paintSections: PaintSection[] = [
     "domains",
     ...(Object.keys(kindPaint).length > 1 ? (["kinds"] as const) : []),
-    ...(baseResources.length > 0 ? (["resources"] as const) : []),
-    ...(baseDataSources.length > 0 ? (["data_sources"] as const) : []),
+    ...(model === "physical" && baseResources.length > 0 ? (["resources"] as const) : []),
     ...(diffDrawing && changesOnDiagram(baseEntities).length > 0 ? (["changes"] as const) : []),
   ];
-  const paintSection = paintSource(paintSections, chosenPaint);
-  const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}|${JSON.stringify(bundle.data_source_colors)}`;
+  const paintSection = paintSource(paintSections, model === "physical" && chosenPaint === defaultPaint(diffDrawing) && !diffDrawing ? "resources" : chosenPaint);
+  const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}|${JSON.stringify(bundle.domain_qualifier_colors)}`;
   // What the Graphviz text is painted by: a section's name, and the colours of its rows when kinds or resources paint.
   const applyPaint = useCallback(
     () =>
       paintSection === "resources"
         ? setErdPaint("resource", bundle.resource_colors)
-        : paintSection === "data_sources"
-          ? setErdPaint("data_source", bundle.data_source_colors ?? {})
-          : setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint),
-    [paintSection, kindPaint, bundle.resource_colors, bundle.data_source_colors],
+        : setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint),
+    [paintSection, kindPaint, bundle.resource_colors],
   );
   const diffNames = useDiffNames();
   const ownBase = useMemo(() => (half ? erdOfSide({ ...baseGraph, entities: baseGraph.entities ?? [] }, half.side) : null), [half, baseGraph]);
@@ -493,7 +501,7 @@ export function ErdGraphvizCanvas({
     centreOnClient,
     drawing: svgMarkup,
     nodeKind: "table",
-    holds: (ref) => (ownBase ? erdHolds({ ...ownBase, resource_data_sources: bundle.resource_data_sources ?? {} }, ref) : false),
+    holds: (ref) => (ownBase ? erdHolds(ownBase, ref) : false),
     portable,
   });
   useEffect(() => () => {
@@ -640,9 +648,10 @@ export function ErdGraphvizCanvas({
       { signal: ac.signal },
     );
 
+    // Hovering a copy lights every copy of its entity (spec 070, FR-004).
     const onEnter = (evt: Event) => {
-      const el = evt.currentTarget as Element;
-      focusTables(panner, new Set([el.querySelector("title")?.textContent?.trim() || ""]));
+      const id = (evt.currentTarget as Element).querySelector("title")?.textContent?.trim() || "";
+      focusTables(panner, new Set(drawnData.entities.filter((entity) => copyEntity(entity.id) === copyEntity(id)).map((entity) => entity.id).concat(id)));
     };
     const onLeave = () => clearTableFocus(panner);
 
@@ -780,31 +789,24 @@ export function ErdGraphvizCanvas({
   }));
 
 
-  // One row per resource of the base, in the server's colour, the same for everyone (spec 061, FR-009).
-  const shownResources = new Set(mergedData.entities.flatMap((entity) => (entity.resource_id ? [entity.resource_id] : [])));
-  const resourceRows: ErdFilterRow[] = baseResources.map((resource) => ({
-    key: resource,
-    // A resource that shares a data source names it beside its own name (spec 063).
-    label: [bundle.resource_labels[resource] ?? resource, ...(bundle.resource_data_sources?.[resource] ? [bundle.data_source_labels?.[bundle.resource_data_sources[resource]!] ?? bundle.resource_data_sources[resource]!] : [])].join(" · "),
-    hint: resource,
-    iconSrc: svgDataUriForInterchangeDomainLegend(paintSection === "resources" ? (bundle.resource_colors[resource] ?? IDLE_DISK) : IDLE_DISK),
-    on: !disabledResources.has(resource),
-    absent: !shownResources.has(resource),
+  // One row per resource of the graph in the physical view, in the server's colour, the same for everyone (spec 070).
+  const shownResources = new Set(drawnData.entities.flatMap((entity) => {
+    const resource = tableResource(entity);
+    return resource ? [resource] : [];
   }));
-
-  // One row per data source of the base, in the server's colour, and one for the resources that name none (spec 063).
-  const shownDataSources = new Set(mergedData.entities.flatMap((entity) => {
-    const key = dataSourceOfEntity(entity, bundle.resource_data_sources ?? {});
-    return key === null ? [] : [key];
-  }));
-  const dataSourceRows: ErdFilterRow[] = baseDataSources.map((source) => ({
-    key: source,
-    label: source === NO_DATA_SOURCE ? "No data source" : (bundle.data_source_labels?.[source] ?? source),
-    hint: source === NO_DATA_SOURCE ? "The resources that name no data source" : source,
-    iconSrc: svgDataUriForInterchangeDomainLegend(paintSection === "data_sources" && source !== NO_DATA_SOURCE ? (bundle.data_source_colors?.[source] ?? IDLE_DISK) : IDLE_DISK),
-    on: !disabledDataSources.has(source),
-    absent: !shownDataSources.has(source),
-  }));
+  const resourceRows: ErdFilterRow[] =
+    model === "physical"
+      ? baseResources.map((resource) => ({
+          key: resource,
+          label: bundle.resource_labels[resource] ?? resource,
+          hint: resource,
+          iconSrc: svgDataUriForInterchangeDomainLegend(paintSection === "resources" ? (bundle.resource_colors[resource] ?? IDLE_DISK) : IDLE_DISK),
+          on: !disabledResources.has(resource),
+          absent: !shownResources.has(resource) && resourcesOnDiagram(mergedData.entities).includes(resource),
+        }))
+      : [];
+  // What the pill counts: the domains drawn, and the resource frames drawn (spec 070, FR-001).
+  const modelCounts = { logical: new Set(sideData.entities.map((entity) => readEntityQual(entity) ?? fallbackQual ?? "")).size, physical: framedResources.length };
 
   const toggleEntityQual = (qual: string) => {
     const next = new Set(disabledEntityList);
@@ -840,11 +842,10 @@ export function ErdGraphvizCanvas({
             onToggleChange={toggleChange}
             resourceRows={resourceRows}
             onToggleResource={toggleResource}
-            dataSourceRows={dataSourceRows}
-            onToggleDataSource={toggleDataSource}
             paint={choosing ? { source: paintSection, onPaint: setChosenPaint } : null}
           />
         )}
+        {half?.side !== "b" && <ErdModelPill model={model} counts={modelCounts} physicalKnown={bundle.storage_known} onModel={setModel} />}
         {erdEmptyOverlay}
         <HalfNote text={halfNote} />
         {half && !erdEmptyOverlay && drawnData.entities.length === 0 && (
@@ -998,7 +999,6 @@ export function ErdGraphvizCanvas({
             sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
           />
           <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />
-          {baseResources.length > 0 && <OneHopToggle checked={boundary} onChange={setBoundary} label="Boundary" />}
           {canCollapse && (
             <CollapseAllButton
               collapsed={allCollapsed}

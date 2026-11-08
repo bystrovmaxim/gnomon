@@ -74,13 +74,10 @@ ListEntitiesDomainSlicesJson = JsonSchemaValue.define(
                                             "(for accent coloring)."
                                         ),
                                     },
-                                    "resource_id": {
-                                        "type": ["string", "null"],
-                                        "description": "The resource that stores the entity (protocol 1.6), or null.",
-                                    },
-                                    "resource_label": {
-                                        "type": ["string", "null"],
-                                        "description": "That resource's name, or null.",
+                                    "resource_ids": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                        "description": "Every resource that keeps the entity, sorted by id; empty when none does.",
                                     },
                                     "entity_kind": {
                                         "type": "string",
@@ -165,6 +162,7 @@ ListEntitiesDomainSlicesJson = JsonSchemaValue.define(
                                     "id",
                                     "label",
                                     "domain_qualname",
+                                    "resource_ids",
                                     "entity_kind",
                                     "values",
                                     "fields",
@@ -249,28 +247,10 @@ ListEntitiesResourcesJson = JsonSchemaValue.define(
                 "id": {"type": "string", "minLength": 1},
                 "label": {"type": "string", "minLength": 1},
                 "color": {"type": "string", "minLength": 1},
-                "data_source_id": {"type": ["string", "null"]},
-            },
-            "required": ["id", "label", "color", "data_source_id"],
-            "additionalProperties": False,
-        },
-    },
-)
-
-# The data sources of the graph that a listed resource names, each with the colour every reader sees.
-ListEntitiesDataSourcesJson = JsonSchemaValue.define(
-    name="ListEntitiesDataSourcesJson",
-    schema={
-        "type": "array",
-        "items": {
-            "type": "object",
-            "properties": {
-                "id": {"type": "string", "minLength": 1},
-                "label": {"type": "string", "minLength": 1},
-                "color": {"type": "string", "minLength": 1},
             },
             "required": ["id", "label", "color"],
             "additionalProperties": False,
         },
     },
 )
+

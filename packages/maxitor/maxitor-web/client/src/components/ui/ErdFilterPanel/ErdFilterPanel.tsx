@@ -43,9 +43,6 @@ export type ErdFilterPanelProps = {
   /** (spec 061) the resources that store a table of the diagram; the section stands even for one, and paints. */
   resourceRows?: ErdFilterRow[];
   onToggleResource?: (key: string) => void;
-  /** (spec 063) the data sources the diagram's resources share, and one row for those that name none; absent without a data source. */
-  dataSourceRows?: ErdFilterRow[];
-  onToggleDataSource?: (key: string) => void;
   /** which section paints the diagram, chosen by the gear shift at the panel's foot; absent, none. */
   paint?: { source: string; onPaint(source: string): void } | null;
   /**
@@ -255,7 +252,7 @@ function SectionHeader({
  * panel stops above the zoom toolbar and scrolls inside itself. On a narrow screen it starts as a
  * "Filter" pill; opened, it shows the sections straight away, without the word "Filter".
  */
-export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleKind, kindsTitle = "Kinds", kindsPaint = true, withDomains = true, changeRows = [], onToggleChange, resourceRows = [], onToggleResource, dataSourceRows = [], onToggleDataSource, paint = null, sections, onToggleRow }: ErdFilterPanelProps) {
+export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleKind, kindsTitle = "Kinds", kindsPaint = true, withDomains = true, changeRows = [], onToggleChange, resourceRows = [], onToggleResource, paint = null, sections, onToggleRow }: ErdFilterPanelProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   // The section that paints is the one open first; without a gear shift, Domains (spec 040, FR-032).
@@ -348,14 +345,12 @@ export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleK
     domains: onToggleDomain,
     kinds: onToggleKind,
     resources: (key) => onToggleResource?.(key),
-    data_sources: (key) => onToggleDataSource?.(key),
     changes: (key) => onToggleChange?.(key),
   };
   const list: readonly FilterSection[] = sections ?? [
     ...(withDomains ? [{ id: "domains", title: "Domains", rows: domainRows, paints: true }] : []),
     ...(kindRows.length > 1 ? [{ id: "kinds", title: kindsTitle, rows: kindRows, paints: kindsPaint }] : []),
     ...(resourceRows.length > 0 && onToggleResource ? [{ id: "resources", title: "Resources", rows: resourceRows, paints: true }] : []),
-    ...(dataSourceRows.length > 0 && onToggleDataSource ? [{ id: "data_sources", title: "Data sources", rows: dataSourceRows, paints: true }] : []),
     ...(changeRows.length > 0 && onToggleChange ? [{ id: "changes", title: "Changes", rows: changeRows, paints: true }] : []),
   ];
   const toggleOf = (id: string) => (key: string) => (sections ? onToggleRow?.(id, key) : toggles[id]?.(key));

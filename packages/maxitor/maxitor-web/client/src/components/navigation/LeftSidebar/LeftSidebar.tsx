@@ -128,8 +128,6 @@ function selectionKey(sel: DiagramSelection): string {
   if (sel.kind === "use_case_all") return "use_case_all";
   if (sel.kind === "events") return `events:${sel.domain_qualifier}`;
   if (sel.kind === "events_all") return "events_all";
-  if (sel.data_source) return `erd:data_source:${sel.data_source}`;
-  if (sel.resource) return `erd:resource:${sel.resource}`;
   return `erd:${sel.qualifier ?? "all"}`;
 }
 
@@ -228,15 +226,7 @@ export function LeftSidebar({
     if (!diagram) return;
     setExpandedById((prev) => {
       const next = { ...prev };
-      // The ERD of a data source or of a resource stands under Data sources, in its data source's node (spec 065).
-      const scoped = diagram.kind === "erd" && (diagram.data_source || diagram.resource);
-      if (scoped) {
-        const rowId = diagram.data_source ? `erd_data_source:${diagram.data_source}` : `erd_resource:${diagram.resource}`;
-        const parent = sidebar?.level3_diagrams.find((row) => row.id === rowId)?.parent_id;
-        next.data_sources_root = true;
-        if (parent) next[parent] = true;
-      }
-      if (!scoped && (diagram.kind === "interchange_graph" || diagram.kind === "use_case_all" || diagram.kind === "events_all" || (diagram.kind === "erd" && !diagram.qualifier))) {
+      if ((diagram.kind === "interchange_graph" || diagram.kind === "use_case_all" || diagram.kind === "events_all" || (diagram.kind === "erd" && !diagram.qualifier))) {
         next.applications_root = true;
       }
       if (diagram.kind === "erd" && diagram.qualifier) {

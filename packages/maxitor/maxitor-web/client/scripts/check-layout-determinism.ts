@@ -835,6 +835,9 @@ const ERD_CHANGES: VisualChange[] = [
   { label: "paint by domains", act: click('[aria-label="Paint by Domains"]') },
   { label: "top to bottom", act: click('[aria-label="Dot — top to bottom"]') },
   { label: "left to right", act: click('[aria-label="Dot — left to right"]') },
+  // The two views of spec 070: the physical one frames each database round its copies, the logical one each domain.
+  { label: "physical view", act: click('[data-testid="erd-model-physical"]') },
+  { label: "logical view", act: click('[data-testid="erd-model-logical"]') },
   { label: "1-hop on", act: async (tab) => void (await waitInPage(tab, clickLabelInPage, "1-hop", HASH_TIMEOUT_MS, "1-hop")) },
 ];
 const ONE_DOMAIN_CHANGES: VisualChange[] = [

@@ -20,12 +20,12 @@ from maxitor.web.model.rooms.pages import page_key, page_keys, setting_error
         (page_key("domain-erd"), "paint", "kinds"),
         (page_key("domain-erd"), "paint_diff", "changes"),
         (page_key("domain-erd"), "one_hop", False),
-        (page_key("domain-erd"), "boundary", False),
+        (page_key("domain-erd"), "model", "physical"),
+        (page_key("domain-erd"), "model", "logical"),
         (page_key("domain-erd"), "disabled_resources", ["shop.Orders"]),
-        (page_key("domain-erd"), "disabled_data_sources", ["no_data_source"]),
-        (page_key("domain-erd", resource="shop.Orders"), "folded_contours", ["rc:shop.Orders", "dc:shop.ShopDataSource"]),
+        (page_key("domain-erd"), "folded_contours", ["rc:shop.Orders"]),
         (page_key("domain-erd"), "paint", "resources"),
-        (page_key("domain-erd"), "paint_diff", "data_sources"),
+        (page_key("domain-erd"), "paint_diff", "resources"),
         (page_key("use-case", domain="players"), "layout", "dot_tb"),
         (page_key("use-case", domain="players"), "boundary", True),
         (page_key("use-case", domain="players"), "disabled_changes", ["unchanged"]),
@@ -58,6 +58,11 @@ def test_every_setting_a_viewer_sends_is_accepted(page: str, name: str, value: o
         (page_key("events-all"), "layout", "neato"),
         (page_key("events-all"), "mode", "methods"),
         (page_key("events-all"), "boundary", True),
+        # Spec 070: Boundary and the data sources left the ERD; a view is logical or physical.
+        (page_key("domain-erd"), "boundary", False),
+        (page_key("domain-erd"), "disabled_data_sources", ["no_data_source"]),
+        (page_key("domain-erd"), "paint", "data_sources"),
+        (page_key("domain-erd"), "model", "boundary"),
     ],
 )
 def test_names_and_values_the_viewers_do_not_send_are_refused(page: str, name: str, value: object) -> None:
@@ -101,8 +106,8 @@ def test_a_selection_out_of_shape_is_refused(value: object) -> None:
     assert setting_error("view=domain-erd", "selected", value)
 
 
-def test_the_erd_of_a_data_source_and_of_a_resource_are_pages_of_their_own() -> None:
-    """Spec 065: the Data sources rows of the left panel name ERD pages by ``data_source`` or ``resource``."""
+def test_no_row_of_the_left_panel_names_an_erd_of_a_data_source_or_a_resource() -> None:
+    """Spec 070: a page key carries ``view``, ``domain``, ``node`` and ``host`` only; old rows name no page."""
     sidebar = SimpleNamespace(
         level2_diagrams=[],
         level3_diagrams=[
@@ -110,5 +115,5 @@ def test_the_erd_of_a_data_source_and_of_a_resource_are_pages_of_their_own() -> 
             SimpleNamespace(type="erd_resource", id="erd_resource:shop.Orders", parent_id="no_data_source"),
         ],
     )
-    assert page_keys(sidebar) == {"view=domain-erd&data_source=shop.ShopDataSource", "view=domain-erd&resource=shop.Orders"}
-    assert setting_error("view=domain-erd&data_source=shop.ShopDataSource", "one_hop", False) is None
+    assert page_keys(sidebar) == set()
+    assert page_key("domain-erd", data_source="shop.ShopDataSource", resource="shop.Orders") == "view=domain-erd"

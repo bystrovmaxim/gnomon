@@ -18,7 +18,7 @@ function inRoom(room: RoomSettings) {
   return renderHook(() => useErdResourceSettings(), { wrapper });
 }
 
-describe("the ERD's resource settings in a room (spec 061, FR-006, FR-007)", () => {
+describe("the ERD's view and resource settings in a room (spec 061, spec 070)", () => {
   it("sends a resource switched off to the room as the whole new list", () => {
     const set = vi.fn();
     const view = inRoom({ settings: { [ERD]: { disabled_resources: ["shop.ArchiveDatabase"] } }, set });
@@ -26,21 +26,26 @@ describe("the ERD's resource settings in a room (spec 061, FR-006, FR-007)", () 
     expect(set).toHaveBeenCalledWith(ERD, "disabled_resources", ["shop.ArchiveDatabase", "shop.BillingDatabase"]);
   });
 
-  it("sends Boundary to the room", () => {
+  it("sends the view chosen to the room", () => {
     const set = vi.fn();
     const view = inRoom({ settings: {}, set });
-    act(() => view.result.current.setBoundary(false));
-    expect(set).toHaveBeenCalledWith(ERD, "boundary", false);
+    act(() => view.result.current.setModel("physical"));
+    expect(set).toHaveBeenCalledWith(ERD, "model", "physical");
   });
 
-  it("gives a member who joins later the room's resources and Boundary", () => {
-    const view = inRoom({ settings: { [ERD]: { disabled_resources: ["shop.BillingDatabase"], boundary: false } }, set: vi.fn() });
+  it("gives a member who joins later the room's resources and view", () => {
+    const view = inRoom({ settings: { [ERD]: { disabled_resources: ["shop.BillingDatabase"], model: "physical" } }, set: vi.fn() });
     expect([...view.result.current.disabledResources]).toEqual(["shop.BillingDatabase"]);
-    expect(view.result.current.boundary).toBe(false);
+    expect(view.result.current.model).toBe("physical");
   });
 
-  it("starts with every resource on and Boundary on", () => {
+  it("starts with every resource on and the logical view", () => {
     const view = inRoom({ settings: {}, set: vi.fn() });
-    expect([view.result.current.disabledResources.size, view.result.current.boundary]).toEqual([0, true]);
+    expect([view.result.current.disabledResources.size, view.result.current.model]).toEqual([0, "logical"]);
+  });
+
+  it("reads anything but the physical view as the logical one", () => {
+    const view = inRoom({ settings: { [ERD]: { model: "boundary" } }, set: vi.fn() });
+    expect(view.result.current.model).toBe("logical");
   });
 });

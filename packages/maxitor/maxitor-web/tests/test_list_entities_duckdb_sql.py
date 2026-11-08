@@ -33,7 +33,7 @@ def test_slice_payload_empty_fields_list_when_entity_has_no_scalar_rows() -> Non
     duck = DuckDBGraphStorage.build_from_json(payload)
     out = _slice(duck, "d1")
     assert out["entities"] == [
-        {"id": "e1", "label": "E", "domain_qualname": "d1", "entity_kind": "core", "resource_id": None, "resource_label": None, "values": [], "fields": []},
+        {"id": "e1", "label": "E", "domain_qualname": "d1", "entity_kind": "core", "resource_ids": [], "values": [], "fields": []},
     ]
 
 
