@@ -42,7 +42,7 @@ import { enrichErdDataForViewer } from "@/lib/enrichErdData";
 import { filterGraphByKinds, kindsOnDiagram, pruneGraphToEntities } from "@/lib/erdKindFilter";
 import { resourcesOnDiagram } from "@/lib/erdResourceFilter";
 import { useErdResourceSettings } from "@/lib/erdResourceSettings";
-import { copyEntity, physicalDrawing } from "@/lib/erdViews";
+import { copyEntity, physicalDrawing, viewLayout } from "@/lib/erdViews";
 import { ErdModelPill } from "./ErdModelPill";
 import { changeDiskUri, changesOnDiagram, domainsOn, filterGraphByChanges, onScreen, tablesToDraw } from "@/lib/erdFilterPresence";
 import { mergeRelationsOnScreen } from "@/lib/mergeErdRelations";
@@ -188,7 +188,7 @@ export function ErdGraphvizCanvas({
   onIncludeOneHopChange,
 }: ErdGraphvizCanvasProps) {
   // Page settings: the person's own outside a room, the room's inside one (spec 028, FR-030).
-  const [layout, setLayout] = usePageSetting<ErdGraphvizLayout>("layout", "gv-dot-lr");
+  const [chosenLayout, setLayout] = usePageSetting<ErdGraphvizLayout>("layout", "gv-dot-lr");
   const [svgMarkup, setSvgMarkup] = useState("");
   /** Graphviz's output before the post-passes; its hash fixes every node's position (FR-005, FR-090). */
   const [rawSvg, setRawSvg] = useState("");
@@ -229,6 +229,8 @@ export function ErdGraphvizCanvas({
   const { model: chosenModel, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold } = useErdResourceSettings();
   // A graph that does not say where entities lie has no physical view: a stored choice of it opens the logical one.
   const model = bundle.storage_known ? chosenModel : "logical";
+  // Frames are drawn under Dot only, and the physical view offers Dot alone (spec 070; ``viewLayout``).
+  const { layout, framed } = viewLayout(model, chosenLayout);
 
   // A domain the model no longer has stops applying (spec 028, FR-076).
   const enabledDomains = useMemo(
@@ -433,7 +435,7 @@ export function ErdGraphvizCanvas({
     () => ({
       ...drawnData,
       folds,
-      model,
+      model: framed ? model : undefined,
       domain_labels: bundle.domain_qualifier_labels,
       domain_colors: bundle.domain_qualifier_colors,
       resource_ids: framedResources,
@@ -441,7 +443,7 @@ export function ErdGraphvizCanvas({
       same: physical?.same ?? [],
       folded_contours: foldedContours,
     }),
-    [drawnData, folds, model, bundle.domain_qualifier_labels, bundle.domain_qualifier_colors, framedResources, bundle.resource_labels, physical, foldedContours],
+    [drawnData, folds, model, framed, bundle.domain_qualifier_labels, bundle.domain_qualifier_colors, framedResources, bundle.resource_labels, physical, foldedContours],
   );
   // The bundles of the drawing on screen (spec 065): its lines to folded boxes, for their hover and their card.
   const bundles = useMemo(() => foldPlan(foldedData).bundles, [foldedData]);
@@ -974,7 +976,7 @@ export function ErdGraphvizCanvas({
               },
             }}
           >
-            {LAYOUT_TOOLS.map(({ value, title, Glyph }) => (
+            {LAYOUT_TOOLS.filter(({ value }) => model !== "physical" || value === "gv-dot-lr" || value === "gv-dot-tb").map(({ value, title, Glyph }) => (
               <ToggleButton key={value} value={value} aria-label={title}>
                 <Tooltip title={title} placement="top">
                   <Box
