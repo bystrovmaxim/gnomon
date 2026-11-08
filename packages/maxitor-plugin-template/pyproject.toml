@@ -17,11 +17,22 @@ authors = [{ name = "@Bystrov.Maxim" }]
 classifiers = ["Private :: Do Not Upload"]
 # The plugin's own Python libraries. Other Maxitor plugins are never listed here: they are dependencies of the
 # passport, and Maxitor's installer resolves them.
-dependencies = []
+dependencies = [
+    "aoa-action-machine[postgres,jwt]>=1.6.0b2",
+    "aoa-fastapi-adapter>=1.5.0",
+    "PyYAML>=6.0,<7",
+    "uvicorn>=0.30",
+]
 
 # Maxitor's installer finds the passport through this entry point, reading the wheel without installing it.
 [project.entry-points."maxitor.plugins"]
 notes = "maxitor_notes"
+
+# Inside the gnomon repository AOA comes from the submodule external/aoa; a copy of the template drops this table
+# and takes AOA from PyPI.
+[tool.uv.sources]
+aoa-action-machine = { path = "../../external/aoa/packages/aoa-action-machine", editable = true }
+aoa-fastapi-adapter = { path = "../../external/aoa/packages/aoa-fastapi-adapter", editable = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/maxitor_notes"]

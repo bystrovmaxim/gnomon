@@ -10,7 +10,7 @@ license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.12"
 authors = [{ name = "@Bystrov.Maxim" }]
 classifiers = ["Private :: Do Not Upload"]
-dependencies = ["maxitor[all]"]
+dependencies = ["maxitor[all]", "maxitor-plugin-template"]
 
 [project.optional-dependencies]
 dev = [
@@ -32,10 +32,11 @@ dev = [
 package = false
 
 [tool.uv.workspace]
-members = ["packages/maxitor"]
+members = ["packages/maxitor", "packages/maxitor-plugin-template"]
 
 [tool.uv.sources]
 maxitor = { workspace = true }
+maxitor-plugin-template = { workspace = true }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

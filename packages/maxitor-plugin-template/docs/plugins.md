@@ -27,7 +27,8 @@ In short: a plugin is a Python package (pip or a ready wheel) that carries a pas
 | **right panel** | the grey field with dots on the right; a plugin's page opens in it |
 | **canvas** | `<MaxitorCanvas>`: one field for all of Maxitor with moving, zooming and a camera; a plugin puts only its content into it |
 | **controls** | the mode pill, the view switch, filters and the legend over the panel; a plugin declares them in `controls`, the core draws them |
-| **panel address** | the page's address in the browser's address bar: `/w/<owner>/<path>?<parameters>`; the only source of the panel's state |
+| **organization** | the area inside which data lives and changes are ordered; a person may belong to several; it is the first segment of every panel address and is checked by membership on every request |
+| **panel address** | the page's address in the browser's address bar: `/w/<organization>/<owner>/<path>?<parameters>`; the only source of the panel's state |
 | **room** | looking together: several people see each other, one moment, and can follow each other |
 
 ## 1. What a plugin is
@@ -317,7 +318,7 @@ A key into a core table means a core row cannot be deleted while a plugin refers
 
 ### 5.4. Its own resource and the bounds of a transaction
 
-A plugin's backend works with the database through **its own resource** — a `PostgresResource` connected as `plg_<name>`. That is one physical boundary: one connection per call, writing only into its own schema, reading from any schema.
+A plugin's backend works with the database through **its own resource** — a `PostgresStorage` connected as `plg_<name>`. That is one physical boundary: one connection per call, writing only into its own schema, reading from any schema.
 
 Hence a rule easy to miss: **a transaction does not cross schemas of different owners.** One transaction — one connection — one role — writing into one schema. An action that needs to change both the core's data and the plugin's makes two changes with two times: its own through its resource, the core's through the core's action over HTTP. This is what rule 24 of the constitution says about two resources: an action glues them, not a shared transaction. The organization's lock does not suffer: PostgreSQL advisory locks are shared by every role of one database, and all of an organization's writers in all schemas still line up in one row.
 
@@ -334,13 +335,13 @@ The site is one origin. The core's gateway takes every request and hands it on b
 | Path | Where |
 |---|---|
 | `/api/**` | the core's backend |
-| `/p/<name>/api/**` | a plugin's backend |
-| `/p/<name>/**` | a plugin's frontend (Next.js) — only inside the right panel |
-| `/**`, including `/w/**` | the core's frontend (Next.js): the frame and the core's pages |
+| `/p/<name>/api/<organization>/**` | a plugin's backend |
+| `/p/<name>/<organization>/**` | a plugin's frontend (Next.js) — only inside the right panel |
+| `/**`, including `/w/<organization>/**` | the core's frontend (Next.js): the frame and the core's pages |
 
 The processes of the core and the plugins listen only on an inner address the core assigns them; from outside only the gateway is reachable.
 
-Each plugin has its own Next.js application with its own `basePath`, its own Next.js version and its own build. The browser's address bar always holds a core address `/w/...`; a plugin's page lives in the right panel (section 7). Today the core's frontend is built with Vite; moving it to Next.js is separate work that comes before the first plugin.
+Each plugin has its own Next.js application with its own `basePath`, its own Next.js version and its own build. The browser's address bar always holds a core address `/w/<organization>/...`; a plugin's page lives in the right panel (section 7). Today the core's frontend is built with Vite; moving it to Next.js is separate work that comes before the first plugin.
 
 ```ts
 // web/next.config.ts of the plugin notes
@@ -353,7 +354,7 @@ export default {
 ### 6.2. One sign-in
 
 1. A person signs in at the core. The core sets the session cookie `__Host-maxitor_session` — `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`.
-2. A request to `/p/notes/**` comes to the gateway with that cookie. The gateway checks the session, **removes** the core's cookie from the request and adds `Authorization: Bearer <token>`.
+2. A request to `/p/notes/<organization>/**` or `/p/notes/api/<organization>/**` comes to the gateway with that cookie. The gateway checks the session and the person's membership in the organization of the address (6.5), **removes** the core's cookie from the request and adds `Authorization: Bearer <token>`.
 3. The token is a JWT signed with **the core's private key** (Ed25519, `EdDSA`) and lives 60 seconds:
 
 ```json
@@ -362,7 +363,7 @@ export default {
   "aud": "io.github.acme.notes",
   "sub": "user:7f3c…",
   "sid": "…",
-  "org": "a1b2…",
+  "org": "acme",
   "roles": ["reader", "editor"],
   "iat": 1794211200,
   "exp": 1794211260
@@ -376,7 +377,7 @@ What this gives:
 - **a plugin cannot forge a token** — it has only the public key; that is why the signature is asymmetric and not a shared `HS256` secret;
 - **a plugin cannot use someone else's token** — a token for `notes` does not pass `aud` in `tags`;
 - **a plugin does not see the session** — the cookie never reaches it, and a person's sign-in cannot be stolen from a request;
-- **the organization comes from the token** (`org`), as versioned storage requires; the client does not pass it;
+- **the organization is the address's, checked** — `org` is the organization of the address the gateway has checked membership in; the plugin's roles in the token are the roles in that organization;
 - **roles are its own** — a token for a plugin carries only that plugin's roles assigned to the person in this organization;
 - **sign-out** — the core deletes the session; issued tokens expire within a minute.
 
@@ -385,13 +386,26 @@ The gateway lets changing requests through only with its own site's `Origin` hea
 ### 6.3. A plugin's frontend and its backend
 
 - A Next.js **server component** takes the `authorization` header of the incoming request and goes with it to its own backend at the inner address from the environment (`MAXITOR_PLUGIN_API`). The token is issued for this plugin; the backend accepts it.
-- A **client component** calls `/p/notes/api/...` by a relative path: the page in the panel is opened from the same origin, the browser sends the cookie, and the gateway replaces it with a token.
+- A **client component** calls `/p/notes/api/<organization>/...` by a relative path: the page in the panel is opened from the same origin, the browser sends the cookie, and the gateway replaces it with a token.
 
 A plugin's frontend keeps and receives no secrets.
 
 ### 6.4. A plugin calls another plugin or the core
 
-On a person's behalf: a plugin's backend calls `/p/<dependency>/api/...` or `/api/...` through the gateway's inner address and passes on its incoming token. The gateway checks that the callee is the core or a direct dependency of the caller and issues a token for the callee with the same person and organization. Without a person (background work) a plugin presents its service key, issued on installation, and gets a token with `sub: "plugin:<id>"` and service roles.
+On a person's behalf: a plugin's backend calls `/p/<dependency>/api/<organization>/...` or `/api/<organization>/...` through the gateway's inner address and passes on its incoming token. The gateway checks that the callee is the core or a direct dependency of the caller and issues a token for the callee with the same person and organization. Without a person (background work) a plugin presents its service key, issued on installation, and gets a token with `sub: "plugin:<id>"` and service roles.
+
+### 6.5. The organization in the address
+
+A person may belong to several organizations, and a link to a colleague must open the same organization. So the organization is not a setting of the session but **the first segment of every address**: the panel's (`/w/acme/notes/items/4f1c`), a plugin's page in the panel (`/p/notes/acme/items/4f1c`) and a plugin's backend (`/p/notes/api/acme/items/4f1c/notes`). Its value is the organization's `code` — a short ASCII name, as rule 61 of the constitution requires of identifiers in addresses.
+
+An address comes from the client, so it is checked, never trusted:
+
+1. **The gateway checks membership.** The session gives the person's `id`; the core's membership table says which organizations that person belongs to. A request whose organization the person does not belong to is refused with `404` by the gateway and reaches neither the core's actions nor a plugin — it does not even reveal whether the organization exists.
+2. **The token names it.** The token the gateway issues for the plugin carries `org` — the organization it has checked — and the person's roles in that organization only.
+3. **The plugin checks again.** An action that reads or writes an organization's data takes the organization as a parameter of its path and declares the membership check of `maxitor-plugin-sdk`: an aspect that reads the core's membership table by the person's `id` from the token. The gateway is the guard, the aspect a second lock — a call from another plugin, a bug in the gateway or a test without it never yields another organization's data.
+4. **Every query is bound to it.** `organization_id` stands in every condition of every query, as versioned storage requires; its value is the checked organization, never a field of the request body.
+
+The core's row has an organization switch: it goes to the same page of another organization, or to its root when that page does not exist there. The tree, the moment and the room belong to one organization: a room is a room of one organization, and its page key starts with it.
 
 ## 7. The frame: the tree and the right panel
 
@@ -525,15 +539,16 @@ The builder refuses when:
 
 ### 7.4. List nodes at run time
 
-Ordinary nodes come to the browser from the built tree, filtered by roles, in one action of the core. A list node's instances load when its parent opens: the core calls the owner's `source` through the gateway with the person's token, the scope's parameters and the moment.
+Ordinary nodes come to the browser from the built tree, filtered by roles, in one action of the core. A list node's instances load when its parent opens: the core calls the owner's `source` through the gateway with the person's token, the organization, the scope's parameters and the moment.
 
 ```json
 // the input of a list action
-{ "params": { "product_id": "42" }, "at": "2026-11-08T10:15:00.123456Z", "limit": 50, "after": null }
+{ "organization": "acme", "params": { "product_id": "42" }, "at": "2026-11-08T10:15:00.123456Z", "limit": 50, "after": null }
 // the output
-{ "items": [ { "key": "c-17", "title": "billing-api", "icon": "container" } ], "next": "c-17" }
+{ "entries": [ { "key": "c-17", "title": "billing-api", "icon": "container" } ], "next": "c-17" }
 ```
 
+- The core calls a list at `GET /p/<name>/api/<organization>/lists/<source>?<scope parameters>&at=…&limit=…&after=…`; a control's `source` is called the same way.
 - Titles are plain text; the tree has no markup.
 - A list is read **at the panel's moment**: at a past moment the tree holds the records that existed then.
 - A long list comes in parts; its last node is "More…".
@@ -545,13 +560,14 @@ Ordinary nodes come to the browser from the built tree, filtered by roles, in on
 Every page in the right panel has one address in the browser's address bar:
 
 ```text
-/w/<owner>/<page path>?<page parameters>&at=<moment>
+/w/<organization>/<owner>/<page path>?<page parameters>&at=<moment>
 
-/w/core/items/4f1c/overview
-/w/notes/items/4f1c?author=me&view=table&at=2026-11-08T10:15:00.123456Z
-/w/containers/products/42/containers?state=running&view=grid
+/w/acme/core/items/4f1c/overview
+/w/acme/notes/items/4f1c?author=me&view=table&at=2026-11-08T10:15:00.123456Z
+/w/acme/containers/products/42/containers?state=running&view=grid
 ```
 
+- **The organization** comes first; a plugin's `page` templates never mention it — the core puts it in front of every path (6.5).
 - **The path** is `page` with the scope's parameters put in; each value is encoded as a path segment.
 - **Page parameters** are filters, the view mode, sorting, the open record, the tab. The rule: **if a person opening the address again must see the same thing, it is in the address.** Outside the address there is only the fleeting: hover, scrolling, an open drop-down, unsaved input.
 - **Reserved** are `at` (the moment) and every name starting with `_`; the rest belong to the page.
@@ -563,7 +579,7 @@ Every page in the right panel has one address in the browser's address bar:
 
 ### 7.6. How a plugin gets the panel
 
-The core draws the grey field with dots and lays a transparent `iframe` over it with the address `/p/<name>/<path>?<parameters>&at=…`. The plugin's page draws only its content on the field — with the components of `@maxitor/panel`, so that cards, tables and toolbars look as everywhere else in Maxitor. `@maxitor/panel` makes the document's background transparent; a plugin sets no background of its own.
+The core draws the grey field with dots and lays a transparent `iframe` over it with the address `/p/<name>/<organization>/<path>?<parameters>&at=…`. The plugin's page draws only its content on the field — with the components of `@maxitor/panel`, so that cards, tables and toolbars look as everywhere else in Maxitor. `@maxitor/panel` makes the document's background transparent; a plugin sets no background of its own.
 
 Why an `iframe`, and not shared components in one application, nor separate sites with a header of their own:
 
@@ -588,7 +604,7 @@ Rules:
 - **A page does not answer `panel.location` with `panel.navigate`.** It rebuilds its view from the new address silently; `panel.navigate` is sent only on a person's action.
 - A tree node of the same plugin — `panel.location` without a reload; a node of another owner — a new `iframe` address.
 - A page builds its view **from its address only**: on the server from `searchParams`, after `panel.location` from the new address.
-- `/p/<name>/...` opened outside the panel (the gateway sees `Sec-Fetch-Dest: document`) is redirected to `/w/<name>/...`. Responses of `/p/**` carry `Content-Security-Policy: frame-ancestors 'self'`.
+- `/p/<name>/<organization>/...` opened outside the panel (the gateway sees `Sec-Fetch-Dest: document`) is redirected to `/w/<organization>/<name>/...`. Responses of `/p/**` carry `Content-Security-Policy: frame-ancestors 'self'`.
 - The core draws its own pages in the panel itself, without an `iframe`, by the same rules of the address.
 
 ```tsx
@@ -717,7 +733,7 @@ Works on every page that keeps the rules of section 7:
 | Room feature | Why it works by itself |
 |---|---|
 | **controls** | mode, view and filters are address parameters (7.8); those in `room.shared` are common to all |
-| **who is where** | the core knows each participant's panel address; the page key is the owner and the path |
+| **who is where** | the core knows each participant's panel address; the page key is the organization, the owner and the path |
 | **the common moment** | the moment is the address parameter `at`; changing the room's moment sends `panel.location` to all |
 | **following** | the follower gets the leader's panel address; the core replaces the window's address (piling up no history entries) and sends `panel.location` or opens a new `iframe` |
 | **shared page parameters** | a node's `room.shared` parameters (for example `view`) are common to all participants on that page: one changes it — the core sends the new address to the others; the last value wins |
@@ -857,11 +873,19 @@ acme-maxitor-notes/
             0001_note.sql
         foreign-keys.yaml
         navigation.yaml
-        roles.py
-        resources/notes_resource.py
+        notes_domain.py
+        notes_reader_role.py
+        notes_editor_role.py
+        organization_member.py
+        organization_auth_coordinator.py
+        membership.py
+        entities/note_entity.py
+        entities/note_author_entity.py
+        storage/notes_storage.py
         actions/add_note_action.py
-        actions/list_notes_action.py
+        actions/list_item_notes_action.py
         actions/list_note_authors_action.py
+        build_graph.py
         _web/                   # the build of web/, not in git
     web/                        # the Next.js sources
         package.json            # depends on @maxitor/panel
@@ -869,7 +893,7 @@ acme-maxitor-notes/
         app/
             layout.tsx
             page.tsx
-            items/[item_id]/page.tsx
+            [org]/items/[item_id]/page.tsx
     tests/
     CHANGELOG.md
 ```
@@ -938,13 +962,13 @@ foreign_keys:
 ```python
 @meta("Notes of catalog items, in the plugin's own schema.")
 @entities(Note)
-class NotesResource(PostgresResource):
+class NotesStorage(PostgresStorage):
     async def add(self, change: Change, note: Note) -> None:
         await versioning.insert_row(self, change, "note", note)
 
-    async def list_for_item(self, org: str, item_id: str, moment: str) -> list[Note]:
+    async def list_for_item(self, organization: str, item_id: str, moment: str) -> list[Note]:
         return await versioning.select_at(
-            self, Note, "note_versions", org=org, moment=moment, where={"item_id": item_id}
+            self, Note, "note_versions", organization=organization, moment=moment, where={"item_id": item_id}
         )
 ```
 
@@ -952,30 +976,35 @@ class NotesResource(PostgresResource):
 @meta("Adds a note to a catalog item.", domain=NotesDomain)
 @check_roles(NotesEditor)
 class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
+    @regular_aspect("Check that the person belongs to the organization of the address.")
+    async def member_aspect(self, params, state, box, connections):
+        await membership.require(connections.notes, ctx.get("user.organization"), ctx.get("user.user_id"))
+        return {}
+
     @summary_aspect("Writes the note and returns the change time.")
     async def write_summary(self, params, state, box, connections):
-        async with versioning.change(connections.notes, box.context.org, box.context.user) as change:
+        async with versioning.change(connections.notes, state["organization_id"], ctx.get("user.user_id")) as change:
             await change.resource.add(change, Note.new(params.item_id, params.body))
         return ChangeResult(changed_at=change.changed_at)
 ```
 
-`versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
+`user.organization` is the organization of the address (`/p/notes/api/<organization>/notes`): the plugin's auth coordinator takes it from the path the gateway has already checked and puts it into the context beside the token's person, so a write and a read are bound to it alike; `membership.require` checks it again. `versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
 
 **5. Tree nodes and controls.** In `navigation.yaml` — the node "Notes" under every catalog item (`attach: core:item`, `page: /items/{item_id}`) with `room: {shared: [view], surface: document}`, as in section 7.2, and controls: the view `list`/`table` and an author filter whose options come from the action `list_note_authors` (section 7.8). `maxitor plugin check` builds the tree together with the core's tree and shows where the node stands.
 
-**6. The page.** It opens in the right panel at `/w/notes/items/<id>?view=…&author=…&at=…`; everything that changes the view is in the address.
+**6. The page.** It opens in the right panel at `/w/<organization>/notes/items/<id>?view=…&author=…&at=…`; everything that changes the view is in the address. The plugin's routes start with the organization: `app/[org]/items/[item_id]/page.tsx`.
 
 ```tsx
-// web/app/items/[item_id]/page.tsx — a server component
+// web/app/[org]/items/[item_id]/page.tsx — a server component
 import { headers } from "next/headers";
 import { PanelPage, momentFrom } from "@maxitor/panel";
 import { NotesView } from "./NotesView";
 
 export default async function ItemNotesPage({ params, searchParams }) {
-  const { item_id } = await params;
+  const { org, item_id } = await params;
   const query = await searchParams;                       // view, author, at
   const auth = (await headers()).get("authorization") ?? "";
-  const url = new URL(`${process.env.MAXITOR_PLUGIN_API}/items/${item_id}/notes`);
+  const url = new URL(`${process.env.MAXITOR_PLUGIN_API}/${org}/items/${item_id}/notes`);
   url.searchParams.set("at", momentFrom(query));
   if (query.author) url.searchParams.set("author", query.author);
   const notes = await fetch(url, { headers: { authorization: auth } }).then((r) => r.json());
@@ -989,7 +1018,7 @@ export default async function ItemNotesPage({ params, searchParams }) {
 ```
 
 ```tsx
-// web/app/items/[item_id]/NotesView.tsx — a client component
+// web/app/[org]/items/[item_id]/NotesView.tsx — a client component
 "use client";
 import { usePanelQuery, RoomLayer, NoteCard, DataTable } from "@maxitor/panel";
 
@@ -999,7 +1028,7 @@ export function NotesView({ notes }) {
   return (
     <>
       {view === "table"
-        ? <DataTable rows={notes} columns={["author_name", "body"]} anchor={(n) => `note:${n.id}`} />
+        ? <DataTable rows={notes} columns={["writer_name", "body"]} anchor={(n) => `note:${n.id}`} />
         : notes.map((n) => <NoteCard key={n.id} data-room-anchor={`note:${n.id}`} note={n} />)}
       <RoomLayer />
     </>
@@ -1059,10 +1088,11 @@ maxitor plugin check dist/acme_maxitor_notes-1.0.0-py3-none-any.whl
 24. Everything a person sees on a page is in the panel address; a page builds its view from its address only.
 25. Inside the panel a plugin creates no history entries and does not answer `panel.location` with `panel.navigate`.
 26. The moment is the address parameter `at`; it never passes through `Date`.
-27. A room works on every page; pointers travel in the coordinates of the surface declared in `room.surface`; a plugin has no room connection of its own.
-28. A plugin has no canvas of its own: moving, zooming, the field and the camera come from the core's `<MaxitorCanvas>`, one for every plugin.
-29. Controls — mode, view, filters, legend — are declared by a plugin in `controls` and drawn by the core; each control is an address parameter; the set of controls is closed.
-30. Colours and sizes come from `@maxitor/tokens` and the core's palette; no code has numbers of its own.
+27. The organization is the first segment of every address; the gateway checks the person's membership in it, an organization-scoped action checks it again, and every query is bound to it.
+28. A room works on every page; pointers travel in the coordinates of the surface declared in `room.surface`; a plugin has no room connection of its own.
+29. A plugin has no canvas of its own: moving, zooming, the field and the camera come from the core's `<MaxitorCanvas>`, one for every plugin.
+30. Controls — mode, view, filters, legend — are declared by a plugin in `controls` and drawn by the core; each control is an address parameter; the set of controls is closed.
+31. Colours and sizes come from `@maxitor/tokens` and the core's palette; no code has numbers of its own.
 
 ## 14. What the tests check
 
@@ -1083,9 +1113,9 @@ Code breaks — a test catches it, each of these:
 13. a `navigation.yaml` with `attach` to a plugin that is not a dependency, an undefined `{parameter}`, a repeated `key` in a scope or equal `page` templates fails the tree build, and the operation is undone;
 14. a plugin's node cannot hide, rename or move a node of the core: the schema lets no such field through;
 15. a list that does not answer in one plugin does not break the rest of the tree;
-16. a `/w/...` address opened again gives the same view, the same node in the tree and the same moment;
+16. a `/w/...` address opened again gives the same organization, view, node in the tree and moment;
 17. ten switches of the mode give exactly ten history entries, and Back returns them one by one;
-18. `/p/<name>/...` opened outside the panel is redirected to `/w/<name>/...`;
+18. `/p/<name>/<organization>/...` opened outside the panel is redirected to `/w/<organization>/<name>/...`;
 19. a follower in a room gets the leader's address and does not end following by itself; a page that answers `panel.location` with `panel.navigate` is caught by a test of `@maxitor/panel`;
 20. a change of a `room.shared` parameter reaches every participant on the page, and of a parameter not on the list — none;
 21. the core relays a pointer from a plugin's page with the participant it assigned itself, and only to participants on the same page;
@@ -1097,7 +1127,9 @@ Code breaks — a test catches it, each of these:
 27. two plugins that need incompatible ranges of a third are not installed together, and the refusal names both requirements;
 28. an upgrade of the core or of a plugin after which a dependent plugin falls out of its range is refused; removing a plugin others depend on is refused;
 29. a plugin with an SDK of another major version than the core's is not enabled;
-30. the installer, `maxitor plugin check` and the core's upgrade give the same answer on the same set: the function is one.
+30. the installer, `maxitor plugin check` and the core's upgrade give the same answer on the same set: the function is one;
+31. a request to an organization the person does not belong to is answered `404` by the gateway and reaches no action; the same call made straight to a plugin's backend is refused by its membership check;
+32. an organization in a request body never replaces the organization of the address.
 
 ## 15. What changes in the constitution
 

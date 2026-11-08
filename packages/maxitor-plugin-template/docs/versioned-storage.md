@@ -193,7 +193,7 @@ Three rules of a query:
 
 - **one moment for the whole query** — all participants of a join, whatever schemas they come from, are taken at the same `T`;
 - **a condition at every table** — no version table without a condition on the moment; a test that parses the SQL of reading actions checks this;
-- **`organization_id` in every condition** — both in `WHERE` and in every `JOIN`. The organization comes from the token, not from the client's parameters.
+- **`organization_id` in every condition** — both in `WHERE` and in every `JOIN`. The organization is the one in the request's address, whose membership the gateway and the action have checked (see [plugins, section 6.5](plugins.md)); it never comes from the request body.
 
 **Indexes.** Each version table has one GiST for the constraint and a B-tree for each access path; the set is confirmed by plans and measurements:
 
@@ -251,7 +251,7 @@ Version rows physically disappear in three cases only, and none of them is a use
 
 **Personal data.** Versions keep old values of fields about people. Erasing personal data on request is a system operation that rewrites the fields in all versions and in the current row, without a new change. This is the second and last case where the past is rewritten; it is documented separately.
 
-**Isolating organizations.** `organization_id` in every version table and in every condition; the organization from the token. This also prepares the next steps: partitioning by organization, then a database per organization, a database per plugin schema and an archive database for an old period. The choice of connection is central: an action asks a resource, the resource knows where to go by (schema, organization, moment). Reading actions know neither the address nor that there may be several databases.
+**Isolating organizations.** `organization_id` in every version table and in every condition; the organization from the address, checked by membership. This also prepares the next steps: partitioning by organization, then a database per organization, a database per plugin schema and an archive database for an old period. The choice of connection is central: an action asks a resource, the resource knows where to go by (schema, organization, moment). Reading actions know neither the address nor that there may be several databases.
 
 **The archive.** The boundary of a period is a moment `B`: the active database starts with the full state at `B`, everything earlier lies in the archive with the same reading contract. Moving and managing archives is not the first implementation, but the layout does not rule them out: a full row in every version is exactly what lets a database start from any moment. Separate databases have different clocks, so a moment is comparable between them to the accuracy of their drift; for a scale where a person picks seconds that is enough, and inside one database the time is exact.
 
@@ -263,7 +263,7 @@ Version rows physically disappear in three cases only, and none of them is a use
 
 **Partial loading.** `BaseEntity.partial()` works unchanged: a version table repeats the columns of the current one, a query lists its fields explicitly (rule 50), the resource returns a partial entity just as from a current table.
 
-**Where the mechanism lives.** Rule 26 of the constitution forbids a resource intermediate base classes between it and `PostgresResource`. So the shared mechanism of writing versions is not a base class but a module of functions in the storage package, which a resource's methods call for each affected row. When the mechanism has proved itself, its place is in AOA as the framework's `VersionedPostgresResource`; that is separate work in the AOA repository.
+**Where the mechanism lives.** Rule 26 of the constitution forbids a resource intermediate base classes between it and `PostgresStorage`. So the shared mechanism of writing versions is not a base class but a module of functions in the storage package, which a resource's methods call for each affected row. When the mechanism has proved itself, its place is in AOA as the framework's `VersionedPostgresStorage`; that is separate work in the AOA repository.
 
 **What the tests check.** Code breaks — a test catches it, each of these:
 
@@ -273,7 +273,7 @@ Version rows physically disappear in three cases only, and none of them is a use
 4. two parallel writers of one organization get strictly increasing times in commit order, including when the database clock is replaced by a step back;
 5. reading at `T − 1 µs` and at `T` shows the state before and after;
 6. a change that only deletes rows moves the watermark, and "now" does not show what was deleted;
-7. a query with someone else's `organization_id` in its parameters returns nothing;
+7. a request to an organization the person does not belong to is refused before any query runs, and an `organization_id` in a request body is never used;
 8. a reading action with a version table without a condition on the moment fails the SQL check;
 9. at any moment the rows of a plugin's schema refer only to rows of the core and of its dependencies that exist at that moment;
 10. dropping a plugin's schema changes not a single row of the core.

@@ -1,11 +1,13 @@
 -- 0001_note.sql — the note: a current table and its version table, by the rules of versioned storage.
 -- Runs under the plugin's own role plg_notes with search_path = notes, so every name below lands in the schema notes.
--- The foreign key to core.items is not here: it is declared in foreign-keys.yaml and Maxitor's installer creates it.
+-- The foreign keys to core.items and core.members are not here: they are declared in foreign-keys.yaml and
+-- Maxitor's installer creates them.
 
 CREATE TABLE note (
     id              uuid        NOT NULL PRIMARY KEY,
     organization_id uuid        NOT NULL,
     item_id         uuid        NOT NULL,
+    writer_id       uuid        NOT NULL,
     body            text        NOT NULL,
     created_at      timestamptz NOT NULL,
     updated_at      timestamptz NOT NULL
@@ -15,6 +17,7 @@ COMMENT ON TABLE note IS 'A note on a catalog item. Read only by changing action
 COMMENT ON COLUMN note.id IS 'The note.';
 COMMENT ON COLUMN note.organization_id IS 'The organization the note belongs to.';
 COMMENT ON COLUMN note.item_id IS 'The catalog item the note is about.';
+COMMENT ON COLUMN note.writer_id IS 'The member of the organization who wrote the note.';
 COMMENT ON COLUMN note.body IS 'The text of the note.';
 COMMENT ON COLUMN note.created_at IS 'When the note was created.';
 COMMENT ON COLUMN note.updated_at IS 'When the note was last changed.';
@@ -30,6 +33,7 @@ CREATE TABLE note_versions (
     closed_by        uuid        NULL,
     closed_operation text        NULL,
     item_id          uuid        NOT NULL,
+    writer_id        uuid        NOT NULL,
     body             text        NOT NULL,
     created_at       timestamptz NOT NULL,
     updated_at       timestamptz NOT NULL,
@@ -49,6 +53,7 @@ COMMENT ON COLUMN note_versions.operation IS 'The action or system operation tha
 COMMENT ON COLUMN note_versions.closed_by IS 'Who closed the version; NULL while it is open.';
 COMMENT ON COLUMN note_versions.closed_operation IS 'The action that closed the version; NULL while it is open.';
 COMMENT ON COLUMN note_versions.item_id IS 'The catalog item the note is about.';
+COMMENT ON COLUMN note_versions.writer_id IS 'The member of the organization who wrote the note.';
 COMMENT ON COLUMN note_versions.body IS 'The text of the note.';
 COMMENT ON COLUMN note_versions.created_at IS 'When the note was created.';
 COMMENT ON COLUMN note_versions.updated_at IS 'When the note was last changed.';

@@ -1,8 +1,8 @@
-// web/app/items/[item_id]/NotesView.tsx — the notes of an item, as a list or a table.
+// web/app/[org]/items/[item_id]/NotesView.tsx — the notes of an item, as a list or a table.
 "use client";
 import { DataTable, NoteCard, RoomLayer, usePanelQuery } from "@maxitor/panel";
 
-export type Note = { id: string; body: string; author_name: string; updated_at: string };
+export type Note = { id: string; item_id: string; writer_id: string; writer_name: string; body: string; updated_at: string };
 
 export function NotesView({ notes }: { notes: Note[] }) {
   // The view switch and the author filter are Maxitor's controls, declared in navigation.yaml. Maxitor draws them and
@@ -13,7 +13,7 @@ export function NotesView({ notes }: { notes: Note[] }) {
     <>
       {view === "table" ? (
         // The anchor is the note's id: the same on every participant's screen, so a pointer lands on the same note.
-        <DataTable rows={notes} columns={["author_name", "body"]} anchor={(note: Note) => `note:${note.id}`} />
+        <DataTable rows={notes} columns={["writer_name", "body"]} anchor={(note: Note) => `note:${note.id}`} />
       ) : (
         notes.map((note) => <NoteCard key={note.id} data-room-anchor={`note:${note.id}`} note={note} />)
       )}
