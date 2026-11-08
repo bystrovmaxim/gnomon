@@ -2,7 +2,7 @@
 kind = "repository"
 driver = "python"
 require_bump = false
-untracked = ["packages/maxitor/maxitor-web/client", "packages/maxitor-plugin-template/web"]
+untracked = ["packages/maxitor/maxitor-web/client"]
 
 [changes]
 ignore = [
