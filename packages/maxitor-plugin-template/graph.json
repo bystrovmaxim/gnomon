@@ -1137,6 +1137,14 @@
       "type": "Role"
     },
     {
+      "id": "maxitor_notes.storage.migrations_storage.MigrationsStorage",
+      "label": "MigrationsStorage",
+      "properties": {
+        "description": "The plugin's schema notes as its migrator sees it, connected as plg_notes"
+      },
+      "type": "Resource"
+    },
+    {
       "id": "maxitor_notes.storage.notes_storage.NotesStorage",
       "label": "NotesStorage",
       "properties": {

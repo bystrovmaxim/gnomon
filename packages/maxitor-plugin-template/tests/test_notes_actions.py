@@ -2,14 +2,6 @@
 """The actions: a person outside the organization gets nothing; a member reads and writes in the organization of the address."""
 
 import pytest
-
-from aoa.action_machine.context import Context
-from aoa.action_machine.exceptions import AuthorizationError
-from aoa.action_machine.exceptions.access_denied import AccessDenied
-from aoa.action_machine.intents.entities import entities
-from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
-from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 from maxitor_notes.actions.add_note_action import AddNoteAction, AddNoteParams
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction, ListItemNotesParams
 from maxitor_notes.actions.list_note_authors_action import ListNoteAuthorsAction, ListNoteAuthorsParams
@@ -19,6 +11,14 @@ from maxitor_notes.notes_editor_role import NotesEditorRole
 from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.organization_member import OrganizationMember
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
+
+from aoa.action_machine.context import Context
+from aoa.action_machine.exceptions import AuthorizationError
+from aoa.action_machine.exceptions.access_denied import AccessDenied
+from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
+from aoa.action_machine.intents.entities import entities
+from aoa.action_machine.intents.meta import meta
+from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 
 ACME = "11111111-1111-1111-1111-111111111111"
 ANN = "33333333-3333-3333-3333-333333333333"

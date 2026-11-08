@@ -7,13 +7,13 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from starlette.requests import Request
-
-from aoa.action_machine.auth.jwt_auth.jwt_auth_coordinator import JwtAuthCoordinator
 from maxitor_notes.notes_editor_role import NotesEditorRole
 from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.organization_auth_coordinator import OrganizationAuthCoordinator
 from maxitor_notes.organization_member import OrganizationMember
+from starlette.requests import Request
+
+from aoa.action_machine.auth.jwt_auth.jwt_auth_coordinator import JwtAuthCoordinator
 
 PLUGIN_ID = "io.github.bystrovmaxim.notes"
 CORE_KEY = Ed25519PrivateKey.generate()
