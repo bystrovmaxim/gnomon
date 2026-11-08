@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from typing import Any, cast
 
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 
 def _minimal_depends_payload(*, with_mode: str | None) -> dict:
@@ -47,7 +47,7 @@ def _minimal_depends_payload(*, with_mode: str | None) -> dict:
 
 
 def test_depends_edges_stores_mode_column() -> None:
-    duck = DuckDBGraphResource.build_from_json(_minimal_depends_payload(with_mode="include"))
+    duck = DuckDBGraphStorage.build_from_json(_minimal_depends_payload(with_mode="include"))
     rows = duck.execute_fetch_dicts(
         "SELECT target_id, description, mode FROM depends_edges ORDER BY target_id",
     )
@@ -61,7 +61,7 @@ def test_depends_edges_stores_mode_column() -> None:
 
 
 def test_edges_view_payload_includes_mode_json() -> None:
-    duck = DuckDBGraphResource.build_from_json(_minimal_depends_payload(with_mode="extend"))
+    duck = DuckDBGraphStorage.build_from_json(_minimal_depends_payload(with_mode="extend"))
     payloads = duck.execute_fetch_dicts(
         "SELECT payload FROM edges WHERE type = 'depends_edges' ORDER BY target_id",
     )

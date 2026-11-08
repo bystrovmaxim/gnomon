@@ -8,9 +8,9 @@ import pytest
 from maxitor.web.model.diagrams.actions.get_lifecycle_finite_automaton_action import (
     GetLifecycleFiniteAutomatonAction,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 from aoa.action_machine.model import BaseState
@@ -86,8 +86,8 @@ def _params(node_id: str) -> GetLifecycleFiniteAutomatonAction.Params:
 
 
 @pytest.fixture(scope="module")
-def connections() -> dict[str, DuckDBGraphResource]:
-    return {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphResource.build_from_json(_GRAPH_JSON)}
+def connections() -> dict[str, DuckDBGraphStorage]:
+    return {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphStorage.build_from_json(_GRAPH_JSON)}
 
 
 # ─── parse_interchange_id_aspect ─────────────────────────────────────────────
@@ -119,13 +119,13 @@ async def test_parse_extracts_host_and_normalizes_id() -> None:
 # ─── validate_lifecycle_node_aspect ──────────────────────────────────────────
 
 
-async def test_validate_raises_when_node_absent(connections: dict[str, DuckDBGraphResource]) -> None:
+async def test_validate_raises_when_node_absent(connections: dict[str, DuckDBGraphStorage]) -> None:
     state = _state(lifecycle_graph_node_id="ghost:lifecycle:status", host_entity_type_qualname="ghost")
     with pytest.raises(ValueError, match="not found in the graph of this read's source"):
         await _ACTION.validate_lifecycle_node_aspect(None, state, None, connections)  # type: ignore[arg-type]
 
 
-async def test_validate_threads_state_and_adds_field_name(connections: dict[str, DuckDBGraphResource]) -> None:
+async def test_validate_threads_state_and_adds_field_name(connections: dict[str, DuckDBGraphStorage]) -> None:
     state = _state(lifecycle_graph_node_id=_LC_ID, host_entity_type_qualname=_HOST)
     result = await _ACTION.validate_lifecycle_node_aspect(None, state, None, connections)  # type: ignore[arg-type]
     assert result == {
@@ -138,7 +138,7 @@ async def test_validate_threads_state_and_adds_field_name(connections: dict[str,
 # ─── load_states_aspect ──────────────────────────────────────────────────────
 
 
-async def test_load_states_threads_state_and_adds_rows(connections: dict[str, DuckDBGraphResource]) -> None:
+async def test_load_states_threads_state_and_adds_rows(connections: dict[str, DuckDBGraphStorage]) -> None:
     state = _state(lifecycle_graph_node_id=_LC_ID, host_entity_type_qualname=_HOST, field_name="status")
     result = await _ACTION.load_states_aspect(None, state, None, connections)  # type: ignore[arg-type]
     assert result["lifecycle_graph_node_id"] == _LC_ID
@@ -152,7 +152,7 @@ async def test_load_states_threads_state_and_adds_rows(connections: dict[str, Du
     }
 
 
-async def test_load_states_empty_for_unknown_node(connections: dict[str, DuckDBGraphResource]) -> None:
+async def test_load_states_empty_for_unknown_node(connections: dict[str, DuckDBGraphStorage]) -> None:
     state = _state(lifecycle_graph_node_id="ghost:lifecycle:status", host_entity_type_qualname="ghost", field_name="status")
     result = await _ACTION.load_states_aspect(None, state, None, connections)  # type: ignore[arg-type]
     assert result["state_rows"] == []
@@ -161,7 +161,7 @@ async def test_load_states_empty_for_unknown_node(connections: dict[str, DuckDBG
 # ─── load_transitions_aspect ─────────────────────────────────────────────────
 
 
-async def test_load_transitions_threads_state_and_adds_rows(connections: dict[str, DuckDBGraphResource]) -> None:
+async def test_load_transitions_threads_state_and_adds_rows(connections: dict[str, DuckDBGraphStorage]) -> None:
     state = _state(
         lifecycle_graph_node_id=_LC_ID,
         host_entity_type_qualname=_HOST,
@@ -179,7 +179,7 @@ async def test_load_transitions_threads_state_and_adds_rows(connections: dict[st
 # ─── build_fsm_summary ───────────────────────────────────────────────────────
 
 
-async def test_full_pipeline_payload(connections: dict[str, DuckDBGraphResource]) -> None:
+async def test_full_pipeline_payload(connections: dict[str, DuckDBGraphStorage]) -> None:
     params = _params(_LC_ID)
     state = _state()
     for aspect in (
@@ -288,11 +288,11 @@ _ATTRIBUTES_GRAPH_JSON: dict[str, Any] = {
 
 
 @pytest.fixture(scope="module")
-def attribute_connections() -> dict[str, DuckDBGraphResource]:
-    return {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphResource.build_from_json(_ATTRIBUTES_GRAPH_JSON)}
+def attribute_connections() -> dict[str, DuckDBGraphStorage]:
+    return {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphStorage.build_from_json(_ATTRIBUTES_GRAPH_JSON)}
 
 
-async def _run_pipeline(node_id: str, connections: dict[str, DuckDBGraphResource]) -> Any:
+async def _run_pipeline(node_id: str, connections: dict[str, DuckDBGraphStorage]) -> Any:
     params = _params(node_id)
     state = _state()
     for aspect in (
@@ -306,7 +306,7 @@ async def _run_pipeline(node_id: str, connections: dict[str, DuckDBGraphResource
     return result.lifecycle_finite_automaton
 
 
-async def test_attributes_reach_the_payload(attribute_connections: dict[str, DuckDBGraphResource]) -> None:
+async def test_attributes_reach_the_payload(attribute_connections: dict[str, DuckDBGraphStorage]) -> None:
     fsm = await _run_pipeline(_ATTR_LC_ID, attribute_connections)
     states = {state["key"]: state for state in fsm["states"]}
     assert states["payment_pending"]["attributes"] == {
@@ -318,20 +318,20 @@ async def test_attributes_reach_the_payload(attribute_connections: dict[str, Duc
     assert states["payment_pending"]["display_name"] == "Payment pending"
 
 
-async def test_states_are_ordered_by_sort_order(attribute_connections: dict[str, DuckDBGraphResource]) -> None:
+async def test_states_are_ordered_by_sort_order(attribute_connections: dict[str, DuckDBGraphStorage]) -> None:
     fsm = await _run_pipeline(_ATTR_LC_ID, attribute_connections)
     assert [state["key"] for state in fsm["states"]] == ["payment_pending", "confirmed", "cancelled"]
 
 
 async def test_graph_without_attributes_yields_empty_objects(
-    connections: dict[str, DuckDBGraphResource],
+    connections: dict[str, DuckDBGraphStorage],
 ) -> None:
     fsm = await _run_pipeline(_LC_ID, connections)
     assert all(state["attributes"] == {} for state in fsm["states"])
 
 
 async def test_store_keeps_domain_fields_while_the_wire_drops_them(
-    attribute_connections: dict[str, DuckDBGraphResource],
+    attribute_connections: dict[str, DuckDBGraphStorage],
 ) -> None:
     state = _state(
         lifecycle_graph_node_id=_ATTR_LC_ID,

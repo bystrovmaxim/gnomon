@@ -13,13 +13,6 @@ export function diagramSelectionForRow(row: NodeRow): DiagramSelection | null {
   if (row.type === "erd_domain" && row.parent_id) {
     return { kind: "erd", qualifier: String(row.parent_id) };
   }
-  // The ERD of a data source or of a resource (spec 065): the row's id names it after its prefix.
-  if (row.type === "erd_data_source") {
-    return { kind: "erd", qualifier: null, data_source: row.id.replace(/^erd_data_source:/, "") };
-  }
-  if (row.type === "erd_resource") {
-    return { kind: "erd", qualifier: null, resource: row.id.replace(/^erd_resource:/, "") };
-  }
   if (row.type === "use_case_domain" && row.parent_id) {
     return { kind: "use_case", domain_qualifier: String(row.parent_id) };
   }

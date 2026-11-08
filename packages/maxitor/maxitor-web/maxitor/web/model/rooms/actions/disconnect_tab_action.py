@@ -31,9 +31,9 @@ from maxitor.web.model.rooms.actions.expire_participant_action import (
     ExpireParticipantAction,
     ExpireParticipantParams,
 )
-from maxitor.web.model.rooms.actions.room_action_support import RoomAnswer
+from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult
 from maxitor.web.model.rooms.layout_authority import recheck_layouts
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 
 from aoa.action_machine.auth import GuestRole
@@ -45,7 +45,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import SocketChannel
+from aoa.fastapi import SocketChannelController
 
 
 class DisconnectTabParams(BaseParams):
@@ -54,9 +54,9 @@ class DisconnectTabParams(BaseParams):
 
 @meta(description="Detach a tab whose connection ended", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The tab's connection")
-class DisconnectTabAction(BaseAction[DisconnectTabParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The tab's connection")
+class DisconnectTabAction(BaseAction[DisconnectTabParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Turn a dropped connection into a detached tab, or an away participant with a return window.
@@ -72,16 +72,16 @@ class DisconnectTabAction(BaseAction[DisconnectTabParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Detach the tab; start the return window when no tab of the participant is left."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        found = registry.locate(cast(SocketChannel, connections["socket"]))
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        found = registry.locate(cast(SocketChannelController, connections["socket"]))
         if found is None:
-            return RoomAnswer()
+            return RoomAnswerResult()
         room, participant, tab = found
         async with room.lock:
             if tab.leaving:
-                return RoomAnswer()
+                return RoomAnswerResult()
             registry.remove_tab(participant, tab.id)
             if not participant.tabs:
                 until = registry.clock() + registry.return_window_seconds
@@ -100,4 +100,4 @@ class DisconnectTabAction(BaseAction[DisconnectTabParams, RoomAnswer]):
                 participant=participant.id,
                 room=room.id,
             )
-        return RoomAnswer()
+        return RoomAnswerResult()

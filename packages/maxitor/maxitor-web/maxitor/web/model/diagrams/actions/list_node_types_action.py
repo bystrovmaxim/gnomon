@@ -27,9 +27,9 @@ from typing import cast
 
 from maxitor.web.model.diagrams.actions.list_node_types_action_schema import ListNodeTypesJson
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -38,7 +38,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -126,11 +126,11 @@ def fill_color_for_node_type(node_type: str) -> str:
 )
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Coordinator graph in DuckDB (nodes view for present graph-node types)",
 )
-class ListNodeTypesAction(BaseAction[ParamsStub, "ListNodeTypesAction.Result"]):
+class ListNodeTypesAction(BaseAction[StubParams, "ListNodeTypesAction.Result"]):
     """
     AI-CORE-BEGIN
     ROLE: Emit present ``nodes.type`` rows with their interchange G6 disk fill colours.
@@ -153,13 +153,13 @@ class ListNodeTypesAction(BaseAction[ParamsStub, "ListNodeTypesAction.Result"]):
     @summary_aspect("Resolve graph-node type list with disk fill colours from DuckDB")
     async def build_list_node_types_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> ListNodeTypesAction.Result:
         _ = (state, box)
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         sql = """
         SELECT type AS node_type
         FROM nodes

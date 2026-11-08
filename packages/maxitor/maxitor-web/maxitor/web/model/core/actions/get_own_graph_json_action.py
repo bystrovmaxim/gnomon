@@ -28,7 +28,7 @@ from typing import cast
 from maxitor.web.model.core.core_domain import CoreDomain
 from maxitor.web.model.core.resources.own_model_graph_resource import (
     OWN_MODEL_GRAPH_CONNECTION_KEY,
-    OwnModelGraphResource,
+    OwnModelGraphStorage,
 )
 from pydantic import Field
 
@@ -37,7 +37,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -50,8 +50,8 @@ class OwnGraphJsonResult(BaseResult):
 
 @meta(description="Serve Maxitor's own model as graph-json", domain=CoreDomain)
 @check_roles(GuestRole)
-@connection(OwnModelGraphResource, key=OWN_MODEL_GRAPH_CONNECTION_KEY, description="Maxitor's own model")
-class GetOwnGraphJsonAction(BaseAction[ParamsStub, OwnGraphJsonResult]):
+@connection(OwnModelGraphStorage, key=OWN_MODEL_GRAPH_CONNECTION_KEY, description="Maxitor's own model")
+class GetOwnGraphJsonAction(BaseAction[StubParams, OwnGraphJsonResult]):
     """
     AI-CORE-BEGIN
     ROLE: Answer with Maxitor's own model, so Maxitor can be opened as a service like any other.
@@ -63,11 +63,11 @@ class GetOwnGraphJsonAction(BaseAction[ParamsStub, OwnGraphJsonResult]):
     @summary_aspect("Read Maxitor's own model")
     async def own_graph_json_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> OwnGraphJsonResult:
         """Return the interchange JSON of Maxitor's own model."""
-        model = cast(OwnModelGraphResource, connections[OWN_MODEL_GRAPH_CONNECTION_KEY])
+        model = cast(OwnModelGraphStorage, connections[OWN_MODEL_GRAPH_CONNECTION_KEY])
         return OwnGraphJsonResult(coordinator_json=model.graph_json())

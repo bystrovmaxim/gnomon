@@ -41,7 +41,7 @@ from maxitor.repo_graph_port.auth.history_key_authenticator import HistoryKeyAut
 from maxitor.repo_graph_port.auth.history_key_credential_extractor import HistoryKeyCredentialExtractor
 from maxitor.repo_graph_port.history_context import HistoryContext
 from maxitor.repo_graph_port.history_reader_info import HistoryReaderInfo
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
 from maxitor.repo_graph_port.security_reporter import SecurityReporter
 from maxitor.repo_graph_port.too_many_wrong_keys_error import TooManyWrongKeysError
 
@@ -59,7 +59,7 @@ class HistoryKeyAuthCoordinator(AuthCoordinator):
     AI-CORE-END
     """
 
-    def __init__(self, config: HistoriesConfig, reporter: SecurityReporter | None = None) -> None:
+    def __init__(self, config: HistoriesConfigStorage, reporter: SecurityReporter | None = None) -> None:
         super().__init__(
             HistoryKeyCredentialExtractor(),
             HistoryKeyAuthenticator(config),

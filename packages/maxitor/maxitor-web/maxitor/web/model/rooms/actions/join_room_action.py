@@ -35,11 +35,15 @@ from typing import cast
 from maxitor.web.api.graph_store import GraphBuildError, GraphEntry, GraphStoreBusyError
 from maxitor.web.model.core.history_reading import history_line
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
-from maxitor.web.model.core.resources.history_access import HISTORY_ACCESS_CONNECTION_KEY, HistoryAccess, key_digest
-from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStore
+from maxitor.web.model.core.resources.history_access import (
+    HISTORY_ACCESS_CONNECTION_KEY,
+    HistoryAccessController,
+    key_digest,
+)
+from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
 from maxitor.web.model.core.resources.static_bundle_resource import (
     STATIC_BUNDLE_CONNECTION_KEY,
-    StaticBundleResource,
+    StaticBundleStorage,
 )
 from maxitor.web.model.core.source_label import label
 from maxitor.web.model.rooms.actions.room_action_support import (
@@ -51,11 +55,11 @@ from maxitor.web.model.rooms.actions.room_action_support import (
     ROOM_FULL,
     SOURCE_UNAVAILABLE,
     TOO_MANY_ROOMS,
-    RoomAnswer,
+    RoomAnswerResult,
     origin_allowed,
 )
 from maxitor.web.model.rooms.pages import name_error, page_key, page_keys
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, Room, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, Room, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -68,7 +72,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import ConnectionRefusalError, SocketChannel
+from aoa.fastapi import ConnectionRefusalError, SocketChannelController
 
 #: The room id a connection uses to open a new room.
 NEW_ROOM = "new"
@@ -111,13 +115,13 @@ def _fallback_page(room: Room, pages: set[str]) -> str:
 
 @meta(description="Open a room or join one when a connection opens", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The joining tab's connection")
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The joining tab's connection")
 @connection(GraphStoreController, key=GRAPH_STORE_CONNECTION_KEY, description="Built graphs, for the room's pages")
-@connection(StaticBundleResource, key=STATIC_BUNDLE_CONNECTION_KEY, description="The client build Maxitor serves")
-@connection(HistoryStore, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
-@connection(HistoryAccess, key=HISTORY_ACCESS_CONNECTION_KEY, description="Room tickets of private histories")
-class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswer]):
+@connection(StaticBundleStorage, key=STATIC_BUNDLE_CONNECTION_KEY, description="The client build Maxitor serves")
+@connection(HistoryStoreController, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
+@connection(HistoryAccessController, key=HISTORY_ACCESS_CONNECTION_KEY, description="Room tickets of private histories")
+class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Decide whether a connecting tab may open or join a room, and seat it there.
@@ -136,12 +140,12 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Refuse or seat the connecting tab."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        socket = cast(SocketChannel, connections["socket"])
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        socket = cast(SocketChannelController, connections["socket"])
         store = cast(GraphStoreController, connections[GRAPH_STORE_CONNECTION_KEY])
-        bundle = cast(StaticBundleResource, connections[STATIC_BUNDLE_CONNECTION_KEY])
+        bundle = cast(StaticBundleStorage, connections[STATIC_BUNDLE_CONNECTION_KEY])
 
         if not origin_allowed(params.origin, params.host, registry.allowed_origins):
             await box.warning(Channel.security, "Room join refused: foreign origin {%var.origin}", origin=params.origin)
@@ -150,8 +154,8 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswer]):
             await box.warning(Channel.security, "Room join refused: invalid name for {%var.room}", room=params.room_id)
             raise ConnectionRefusalError(INVALID_VALUE, "invalid name")
 
-        histories = cast(HistoryStore, connections[HISTORY_STORE_CONNECTION_KEY])
-        access = cast(HistoryAccess, connections[HISTORY_ACCESS_CONNECTION_KEY])
+        histories = cast(HistoryStoreController, connections[HISTORY_STORE_CONNECTION_KEY])
+        access = cast(HistoryAccessController, connections[HISTORY_ACCESS_CONNECTION_KEY])
         room, entry = await self._room(params, registry, store, histories, access, box)
         pages = page_keys(entry.sidebar)
 
@@ -187,15 +191,15 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswer]):
             await box.info(Channel.business, "Participant {%var.participant} joined room {%var.room}", participant=participant.id, room=room.id)
         elif was_away:
             await box.info(Channel.business, "Participant {%var.participant} returned to room {%var.room}", participant=participant.id, room=room.id)
-        return RoomAnswer()
+        return RoomAnswerResult()
 
     @staticmethod
     async def _room(
         params: JoinRoomParams,
-        registry: RoomRegistry,
+        registry: RoomRegistryController,
         store: GraphStoreController,
-        histories: HistoryStore,
-        access: HistoryAccess,
+        histories: HistoryStoreController,
+        access: HistoryAccessController,
         box: ToolsBox,
     ) -> tuple[Room, GraphEntry]:
         """Find the named room or open a new one once its source is built; refuse what cannot be."""
@@ -221,10 +225,10 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswer]):
 
 async def _history_room(
     params: JoinRoomParams,
-    registry: RoomRegistry,
+    registry: RoomRegistryController,
     store: GraphStoreController,
-    histories: HistoryStore,
-    access: HistoryAccess,
+    histories: HistoryStoreController,
+    access: HistoryAccessController,
     box: ToolsBox,
 ) -> tuple[Room, GraphEntry]:
     """Open a room on a held history, on the version asked for when the history offers it, else its default."""
@@ -245,7 +249,7 @@ async def _history_room(
     return room, entry
 
 
-async def _admitted(history_name: str | None, ticket: str, histories: HistoryStore, access: HistoryAccess, box: ToolsBox) -> str:
+async def _admitted(history_name: str | None, ticket: str, histories: HistoryStoreController, access: HistoryAccessController, box: ToolsBox) -> str:
     """
     For a room on a private history (spec 037, FR-011d): the remembered key the tab's ticket stands for,
     refused as "not found" before anything of the room is told. ``""`` for a room on a service or a public history.

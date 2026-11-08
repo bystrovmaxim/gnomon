@@ -26,9 +26,9 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor.web.model.rooms.actions.end_room_action import schedule_end_if_empty
-from maxitor.web.model.rooms.actions.room_action_support import RoomAnswer, located
+from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
 from maxitor.web.model.rooms.layout_authority import recheck_layouts
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 
 from aoa.action_machine.auth import GuestRole
@@ -40,7 +40,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import SocketChannel
+from aoa.fastapi import SocketChannelController
 
 
 class LeaveRoomParams(BaseParams):
@@ -49,9 +49,9 @@ class LeaveRoomParams(BaseParams):
 
 @meta(description="Leave a room for good", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The leaving tab's connection")
-class LeaveRoomAction(BaseAction[LeaveRoomParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The leaving tab's connection")
+class LeaveRoomAction(BaseAction[LeaveRoomParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Remove a participant who chose to leave, with all their tabs.
@@ -67,10 +67,10 @@ class LeaveRoomAction(BaseAction[LeaveRoomParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Remove the participant, close their tabs, and tell everyone else."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        room, participant, _ = located(registry, cast(SocketChannel, connections["socket"]))
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        room, participant, _ = located(registry, cast(SocketChannelController, connections["socket"]))
         async with room.lock:
             registry.remove_participant(room, participant.id)
             registry.broadcast(room, {"type": "left", "participant": participant.public()})
@@ -83,4 +83,4 @@ class LeaveRoomAction(BaseAction[LeaveRoomParams, RoomAnswer]):
             participant=participant.id,
             room=room.id,
         )
-        return RoomAnswer()
+        return RoomAnswerResult()

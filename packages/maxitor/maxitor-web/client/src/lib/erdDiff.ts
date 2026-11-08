@@ -11,7 +11,8 @@ import type { ChangedPart, CompareResult, DiffStatus } from "@/api/compare";
 import { drawnOn, type Side } from "@/lib/half";
 import type { Portable } from "@/lib/halfPicking";
 import type { ElementRef } from "@/rooms/focusStore";
-import { CONTOUR_ID_PREFIX, DATA_SOURCE_CONTOUR_ID_PREFIX, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
+import { CONTOUR_ID_PREFIX, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
+import { COPY_SEPARATOR, copyEntity, copyResource } from "@/lib/erdViews";
 
 /** One domain's slice of the ERD, as ``list-entities`` gives it. */
 export type ErdSlice = { entities?: ErdEntity[]; relations?: ErdRelation[]; groups?: unknown[] };
@@ -78,9 +79,10 @@ export function mergeErdSlices(older: ErdSlice | undefined, newer: ErdSlice | un
       const was = before.get(entity.id);
       if (!was) return entity;
       const merged = { ...entity, ...place.get(was), fields: mergedFields(was.fields ?? [], entity.fields ?? []) };
-      // Stored elsewhere in A (spec 061): only when both versions name a resource — a resource that appears where A had
-      // none, as in every 1.5 → 1.6 pair, is not a move.
-      return was.resource_id && entity.resource_id && was.resource_id !== entity.resource_id ? { ...merged, previous_resource_id: was.resource_id } : merged;
+      // Kept elsewhere in A (spec 070): when both versions say where it lies and the two sets of resources differ — a
+      // resource that appears where A had none, as in every 1.5 → 1.6 pair, is not a move.
+      const [then, now] = [[...(was.resource_ids ?? [])].sort(), [...(entity.resource_ids ?? [])].sort()];
+      return then.length && now.length && then.join("\n") !== now.join("\n") ? { ...merged, previous_resource_ids: then } : merged;
     }),
     ...(older?.entities ?? []).filter((entity) => !now.has(entity.id)).map((entity) => ({ ...entity, ...place.get(entity), fields: mergedFields(entity.fields ?? [], []) })),
   ];
@@ -143,8 +145,8 @@ export function markErd(slice: ErdSlice, compared: CompareResult): ErdSlice {
       ...entity,
       // A table that stands in another domain changed, though its own properties did not (spec 043). A table changed only
       // through its rows — a lifecycle among them — keeps "unchanged": its rows carry the change, and it is drawn marked.
-      // A table stored by another resource than in A changed too, by the same rule (spec 061, FR-014).
-      diff: compared.nodes[entity.id] ?? (moved.has(entity.id) || entity.previous_resource_id ? "changed" : "unchanged"),
+      // A table kept by other resources than in A changed too, by the same rule (spec 070, FR-010).
+      diff: compared.nodes[entity.id] ?? (moved.has(entity.id) || entity.previous_resource_ids ? "changed" : "unchanged"),
       movedDomain: !compared.nodes[entity.id] && moved.has(entity.id),
       fields,
     };
@@ -205,20 +207,21 @@ type ErdDrawing = {
   relations?: readonly ErdRelation[];
   /** The lines between folded boxes, as drawn (spec 065). */
   bundles?: readonly ErdBundle[];
-  /** Each resource's data source (spec 063). */
-  resource_data_sources?: Readonly<Record<string, string>>;
 };
 
 /** A bundle's identity: its two ends, a table's id or a folded contour's id (spec 068). */
 const BUNDLE_IDENTITY = "bundle:";
 const bundleKey = (bundle: { source: string; target: string }) => `${BUNDLE_IDENTITY}${bundle.source}|${bundle.target}`;
 
-/** Whether ``data`` holds a table, or the resource or data source a folded contour's id names. */
+/**
+ * Whether ``data`` holds a table — an entity, or a copy of one in a resource or in "Not stored" (spec 070) — or the
+ * resource a frame's id names. ``data`` is a drawing's base: entities, each with the resources that keep it.
+ */
 function holdsEnd(data: ErdDrawing, id: string): boolean {
-  if (id.startsWith(CONTOUR_ID_PREFIX)) return data.entities.some((entity) => entity.resource_id === id.slice(CONTOUR_ID_PREFIX.length));
-  if (id.startsWith(DATA_SOURCE_CONTOUR_ID_PREFIX)) {
-    const source = id.slice(DATA_SOURCE_CONTOUR_ID_PREFIX.length);
-    return data.entities.some((entity) => entity.resource_id != null && data.resource_data_sources?.[entity.resource_id] === source);
+  if (id.startsWith(CONTOUR_ID_PREFIX)) return data.entities.some((entity) => (entity.resource_ids ?? []).includes(id.slice(CONTOUR_ID_PREFIX.length)));
+  if (id.includes(COPY_SEPARATOR)) {
+    const [entity, resource] = [copyEntity(id), copyResource(id)];
+    return data.entities.some((each) => each.id === entity && (resource === null ? !(each.resource_ids ?? []).length : (each.resource_ids ?? []).includes(resource)));
   }
   return data.entities.some((entity) => entity.id === id);
 }
@@ -230,7 +233,12 @@ function holdsEnd(data: ErdDrawing, id: string): boolean {
 export function erdHolds(data: ErdDrawing, ref: ElementRef): boolean {
   if (ref.kind === "edge" && ref.id.startsWith(BUNDLE_IDENTITY)) return ref.id.slice(BUNDLE_IDENTITY.length).split("|").every((end) => holdsEnd(data, end));
   if (ref.kind === "edge") return (data.relations ?? []).some((relation) => relationKey(relation) === ref.id);
-  if (ref.kind === "row") return data.entities.some((entity) => (entity.fields ?? []).some((field) => `${entity.id}:${field.name}` === ref.id));
+  if (ref.kind === "row") {
+    // A row of a copy is the row of its entity, held where the base keeps that copy.
+    const at = ref.id.lastIndexOf(":");
+    const [table, name] = [ref.id.slice(0, at), ref.id.slice(at + 1)];
+    return holdsEnd(data, table) && data.entities.some((entity) => entity.id === copyEntity(table) && (entity.fields ?? []).some((field) => field.name === name));
+  }
   if (ref.kind === "contour") return holdsEnd(data, `${CONTOUR_ID_PREFIX}${ref.id}`);
   return holdsEnd(data, ref.id);
 }
@@ -280,7 +288,7 @@ export function erdPortable(drawn: () => ErdDrawing): Portable {
 export function unmarked<T extends { entities: ErdEntity[]; relations: ErdRelation[] }>(data: T): T {
   return {
     ...data,
-    entities: data.entities.map(({ diff: _diff, previous_resource_id: _resource, ...entity }) => ({ ...entity, fields: (entity.fields ?? []).map(({ diff: _field, previous_type: _type, lifecycle_parts: _parts, ...field }) => field) })),
+    entities: data.entities.map(({ diff: _diff, previous_resource_ids: _resources, ...entity }) => ({ ...entity, fields: (entity.fields ?? []).map(({ diff: _field, previous_type: _type, lifecycle_parts: _parts, ...field }) => field) })),
     relations: data.relations.map(({ diff: _diff, previous_target: _target, ...relation }) => relation),
   };
 }

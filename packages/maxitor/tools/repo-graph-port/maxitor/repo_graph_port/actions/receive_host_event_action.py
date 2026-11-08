@@ -35,10 +35,10 @@ from typing import cast
 
 from maxitor.repo_graph_port.history_reading import refreshed
 from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
-from maxitor.repo_graph_port.resources.version_cache import VersionCache
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
+from maxitor.repo_graph_port.resources.version_cache import VersionCacheStorage
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -71,10 +71,10 @@ class ReceiveHostEventResult(BaseResult):
 
 @meta(description="Refresh the histories a GitHub webhook changes", domain=RepoGraphDomain)
 @check_roles(GuestRole)
-@connection(HistoriesConfig, key="HistoriesConfig", description="The histories of the event's repository")
-@connection(GitMirror, key="GitMirror", description="The repository's mirror, fetched once")
-@connection(GitHubHost, key="GitHubHost", description="The App's token for the fetch")
-@connection(VersionCache, key="VersionCache", description="Pull requests and releases to forget")
+@connection(HistoriesConfigStorage, key="HistoriesConfigStorage", description="The histories of the event's repository")
+@connection(GitMirrorStorage, key="GitMirrorStorage", description="The repository's mirror, fetched once")
+@connection(GitHubHostGateway, key="GitHubHostGateway", description="The App's token for the fetch")
+@connection(VersionCacheStorage, key="VersionCacheStorage", description="Pull requests and releases to forget")
 class ReceiveHostEventAction(BaseAction[ReceiveHostEventParams, ReceiveHostEventResult]):
     """
     AI-CORE-BEGIN
@@ -93,14 +93,14 @@ class ReceiveHostEventAction(BaseAction[ReceiveHostEventParams, ReceiveHostEvent
         connections: Connections,
     ) -> ReceiveHostEventResult:
         """Find the event's histories, fetch once, say which changed."""
-        config = cast(HistoriesConfig, connections["HistoriesConfig"])
-        mirror = cast(GitMirror, connections["GitMirror"])
-        cache = cast(VersionCache, connections["VersionCache"])
+        config = cast(HistoriesConfigStorage, connections["HistoriesConfigStorage"])
+        mirror = cast(GitMirrorStorage, connections["GitMirrorStorage"])
+        cache = cast(VersionCacheStorage, connections["VersionCacheStorage"])
         branch = params.ref.removeprefix("refs/heads/") if params.kind == "push" else None
         histories = config.histories_of(params.repository, branch) if params.kind != "other" else []
         if not histories:
             return ReceiveHostEventResult(changed=[])
-        await refreshed(mirror, cache, cast(GitHubHost, connections["GitHubHost"]), histories[0], 0)
+        await refreshed(mirror, cache, cast(GitHubHostGateway, connections["GitHubHostGateway"]), histories[0], 0)
         changed: list[str] = []
         for history in histories:
             if params.kind == "push":

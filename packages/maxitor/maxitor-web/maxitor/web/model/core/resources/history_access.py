@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/core/resources/history_access.py
 """
-HistoryAccess — which keys a port accepted lately, and the tickets that let a tab into a room.
+HistoryAccessController — which keys a port accepted lately, and the tickets that let a tab into a room.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -36,13 +36,11 @@ import secrets
 import time
 from collections.abc import Callable
 
-from maxitor.web.model.core.core_domain import CoreDomain
-
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_controller import BaseController
 
 #: Connection key under which actions receive the resource.
-HISTORY_ACCESS_CONNECTION_KEY = "HistoryAccess"
+HISTORY_ACCESS_CONNECTION_KEY = "HistoryAccessController"
 #: How long a port's acceptance of a key stands without asking again.
 ACCEPTED_FOR_SECONDS = 30.0
 #: How long a room ticket may wait to be used.
@@ -54,8 +52,8 @@ def key_digest(key: str) -> str:
     return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
-@meta(description="Which keys a port accepted lately, and room tickets", domain=CoreDomain)
-class HistoryAccess(BaseController):
+@meta(description="Which keys a port accepted lately, and room tickets")
+class HistoryAccessController(BaseController):
     """
     AI-CORE-BEGIN
     ROLE: Remember the port's recent answers about keys, and hand out one-use room tickets.
@@ -71,9 +69,10 @@ class HistoryAccess(BaseController):
 
     def __repr__(self) -> str:
         """Show nothing of what is held."""
-        return "HistoryAccess()"
+        return "HistoryAccessController()"
 
-    def get_wrapper_class(self) -> type[BaseController] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseController] | None:
         """Return ``None``: nested actions use this same resource."""
         return None
 

@@ -7,8 +7,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 from maxitor.repo_graph_port.history import History
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
 from maxitor.repo_graph_port.server import create_app
 
 from tests.repo_builder import _Builder, graph
@@ -35,7 +35,7 @@ def _moved_in_a_pull_request(path: Path) -> _Builder:
 
 def _versions(tmp_path: Path, link: str) -> TestClient:
     """The port with no history of ``link`` in its config: it reads the link as a public history."""
-    return TestClient(create_app(config_file(tmp_path), tmp_path / "cache", GitHubHost(transport=StandInGitHub(None).transport())))
+    return TestClient(create_app(config_file(tmp_path), tmp_path / "cache", GitHubHostGateway(transport=StandInGitHub(None).transport())))
 
 
 LINK = "https://github.com/owner/service/blob/main/b/graph.json"
@@ -45,7 +45,7 @@ VERSION_LINK = "https://github.com/owner/service/blob/main/b/version.toml"
 def test_a_mirror_names_the_paths_a_file_had(tmp_path: Path) -> None:
     """FR-003: a move merged as a pull request is found on the first-parent line; a file that never moved has none."""
     builder = _moved_in_a_pull_request(tmp_path / "repo")
-    mirror = GitMirror(tmp_path / "mirrors")
+    mirror = GitMirrorStorage(tmp_path / "mirrors")
     mirror.open(str(builder.path))
     assert mirror.earlier_paths(str(builder.path), "main", "b/graph.json") == ["a/graph.json"]
     assert mirror.earlier_paths(str(builder.path), "main", "b/version.toml") == ["a/version.toml"]
@@ -58,7 +58,7 @@ def test_a_file_moved_twice_names_both_paths_newest_first(tmp_path: Path) -> Non
     builder = _moved_in_a_pull_request(tmp_path / "repo")
     builder.git("mv", "b", "c")
     builder.git("commit", "-q", "-m", "again")
-    mirror = GitMirror(tmp_path / "mirrors")
+    mirror = GitMirrorStorage(tmp_path / "mirrors")
     mirror.open(str(builder.path))
     assert mirror.earlier_paths(str(builder.path), "main", "c/graph.json") == ["b/graph.json", "a/graph.json"]
 

@@ -32,9 +32,9 @@ from typing import Any, cast
 from maxitor.web.model.core.core_domain import CoreDomain
 from maxitor.web.model.core.history_reading import live_same_as, open_history
 from maxitor.web.model.core.resources.graph_source_gateway import GRAPH_SOURCE_CONNECTION_KEY, GraphSourceGateway
-from maxitor.web.model.core.resources.history_access import HISTORY_ACCESS_CONNECTION_KEY, HistoryAccess
-from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStore
-from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistry
+from maxitor.web.model.core.resources.history_access import HISTORY_ACCESS_CONNECTION_KEY, HistoryAccessController
+from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
+from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistryController
 from maxitor.web.model.core.resources.repo_graph_port_gateway import (
     REPO_GRAPH_PORT_CONNECTION_KEY,
     RepoGraphPortGateway,
@@ -74,9 +74,9 @@ class HistoryVersionsResult(BaseResult):
 @check_roles(GuestRole)
 @connection(RepoGraphPortGateway, key=REPO_GRAPH_PORT_CONNECTION_KEY, description="Reads the history from its port")
 @connection(GraphSourceGateway, key=GRAPH_SOURCE_CONNECTION_KEY, description="Downloads Live's and the newest version's graphs to compare them")
-@connection(HistoryStore, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
-@connection(HistoryAccess, key=HISTORY_ACCESS_CONNECTION_KEY, description="Keys the port accepted lately")
-@connection(OpenTabsRegistry, key=OPEN_TABS_CONNECTION_KEY, description="Tabs that show a history")
+@connection(HistoryStoreController, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
+@connection(HistoryAccessController, key=HISTORY_ACCESS_CONNECTION_KEY, description="Keys the port accepted lately")
+@connection(OpenTabsRegistryController, key=OPEN_TABS_CONNECTION_KEY, description="Tabs that show a history")
 class HistoryVersionsAction(BaseAction[HistoryVersionsParams, HistoryVersionsResult]):
     """
     AI-CORE-BEGIN
@@ -99,13 +99,13 @@ class HistoryVersionsAction(BaseAction[HistoryVersionsParams, HistoryVersionsRes
         """The held list for an accepted key, or the port's."""
         _ = state
         key = str(ctx.get("user.history_key") or "")
-        store = cast(HistoryStore, connections[HISTORY_STORE_CONNECTION_KEY])
-        access = cast(HistoryAccess, connections[HISTORY_ACCESS_CONNECTION_KEY])
+        store = cast(HistoryStoreController, connections[HISTORY_STORE_CONNECTION_KEY])
+        access = cast(HistoryAccessController, connections[HISTORY_ACCESS_CONNECTION_KEY])
         entry = store.get(params.history.strip())
         if entry is None or not (entry.public or access.accepted(entry.name, key)):
             gateway = cast(RepoGraphPortGateway, connections[REPO_GRAPH_PORT_CONNECTION_KEY])
             entry = await open_history(box, gateway, store, access, params.history, key, str(ctx.get("request.client_ip") or ""))
-        cast(OpenTabsRegistry, connections[OPEN_TABS_CONNECTION_KEY]).seen(entry.name, store.now())
+        cast(OpenTabsRegistryController, connections[OPEN_TABS_CONNECTION_KEY]).seen(entry.name, store.now())
         graphs = cast(GraphSourceGateway, connections[GRAPH_SOURCE_CONNECTION_KEY])
         return HistoryVersionsResult(
             version_file=entry.version_file,

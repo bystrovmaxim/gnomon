@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 from maxitor.repo_graph_port.cli import main as cli
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
 from maxitor.repo_graph_port.server import create_app
 
 from tests.repo_builder import build_repository
@@ -59,7 +59,7 @@ def test_a_public_link_has_no_live_and_no_reader(tmp_path: Path, github_in: Path
     build_repository(github_in / "owner" / "service.git")
     path = tmp_path / "histories.toml"
     path.write_text("", encoding="utf-8")
-    client = TestClient(create_app(path, tmp_path / "cache", GitHubHost(transport=StandInGitHub(None).transport())))
+    client = TestClient(create_app(path, tmp_path / "cache", GitHubHostGateway(transport=StandInGitHub(None).transport())))
     described = client.get(f"{BASE}/public", params={"link": "https://github.com/owner/service/blob/main/graph.json"}).json()
     assert described["versions"] == 6
     assert (described["live"], described["reader"]) == (None, None)

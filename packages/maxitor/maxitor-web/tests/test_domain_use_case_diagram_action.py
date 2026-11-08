@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 from maxitor.web.model.diagrams.actions.all_use_cases_diagram_action import GetAllUseCasesDiagramAction
 from maxitor.web.model.diagrams.actions.domain_use_case_diagram_action import GetDomainUseCaseDiagramAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 from aoa.action_machine.graph.core.edge_relationship import GENERALIZATION
@@ -138,7 +138,7 @@ def _sample_payload() -> dict:
 async def test_domain_use_case_diagram_closure_and_edges() -> None:
     from aoa.action_machine.context.context import Context
 
-    duck = DuckDBGraphResource.build_from_json(_sample_payload())
+    duck = DuckDBGraphStorage.build_from_json(_sample_payload())
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     result = await machine.run(
         Context(),
@@ -171,11 +171,11 @@ async def test_domain_use_case_diagram_closure_and_edges() -> None:
 @pytest.mark.asyncio
 async def test_all_use_cases_draw_every_action_and_role() -> None:
     from aoa.action_machine.context.context import Context
-    from aoa.action_machine.model import ParamsStub
+    from aoa.action_machine.model import StubParams
 
-    duck = DuckDBGraphResource.build_from_json(_sample_payload())
+    duck = DuckDBGraphStorage.build_from_json(_sample_payload())
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
-    result = await machine.run(Context(), GetAllUseCasesDiagramAction(), ParamsStub(), {DUCKDB_GRAPH_CONNECTION_KEY: duck})
+    result = await machine.run(Context(), GetAllUseCasesDiagramAction(), StubParams(), {DUCKDB_GRAPH_CONNECTION_KEY: duck})
     diagram = result.domain_use_case_diagram
     assert diagram["domain"]["id"] == "all"
     assert {a["id"] for a in diagram["actions"]} >= {"a.child.Action", "a.parent.Action", "a.peer.Action"}
@@ -186,7 +186,7 @@ async def test_all_use_cases_draw_every_action_and_role() -> None:
 async def test_domain_use_case_diagram_unknown_domain() -> None:
     from aoa.action_machine.context.context import Context
 
-    duck = DuckDBGraphResource.build_from_json(_sample_payload())
+    duck = DuckDBGraphStorage.build_from_json(_sample_payload())
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     with pytest.raises(ValueError, match="Unknown domain"):
         await machine.run(

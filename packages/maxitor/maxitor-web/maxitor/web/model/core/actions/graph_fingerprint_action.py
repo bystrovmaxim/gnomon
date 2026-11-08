@@ -19,7 +19,7 @@ ARCHITECTURE / DATA FLOW
 ::
 
     GET /api/v1/graph-fingerprint?source=… ──► OpenTabs.seen ──► fingerprint from GraphStore
-                                                      └─ due? ──► SourceChecks.run_soon(CheckSourceAction)
+                                                      └─ due? ──► SourceChecksController.run_soon(CheckSourceAction)
 """
 
 from __future__ import annotations
@@ -30,8 +30,8 @@ from maxitor.web.model.core.actions.check_source_action import CheckSourceAction
 from maxitor.web.model.core.core_domain import CoreDomain
 from maxitor.web.model.core.freshness import is_due
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
-from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistry
-from maxitor.web.model.core.resources.source_checks import SOURCE_CHECKS_CONNECTION_KEY, SourceChecks
+from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistryController
+from maxitor.web.model.core.resources.source_checks import SOURCE_CHECKS_CONNECTION_KEY, SourceChecksController
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -59,8 +59,8 @@ class GraphFingerprintResult(BaseResult):
 @meta(description="Answer the held graph's fingerprint and keep its source checked while a tab shows it", domain=CoreDomain)
 @check_roles(GuestRole)
 @connection(GraphStoreController, key=GRAPH_STORE_CONNECTION_KEY, description="Built graphs")
-@connection(OpenTabsRegistry, key=OPEN_TABS_CONNECTION_KEY, description="Tabs outside rooms")
-@connection(SourceChecks, key=SOURCE_CHECKS_CONNECTION_KEY, description="Runs a check in the background")
+@connection(OpenTabsRegistryController, key=OPEN_TABS_CONNECTION_KEY, description="Tabs outside rooms")
+@connection(SourceChecksController, key=SOURCE_CHECKS_CONNECTION_KEY, description="Runs a check in the background")
 class GraphFingerprintAction(BaseAction[GraphFingerprintParams, GraphFingerprintResult]):
     """
     AI-CORE-BEGIN
@@ -80,8 +80,8 @@ class GraphFingerprintAction(BaseAction[GraphFingerprintParams, GraphFingerprint
     ) -> GraphFingerprintResult:
         """Answer the held fingerprint; schedule a check when the source is due."""
         store = cast(GraphStoreController, connections[GRAPH_STORE_CONNECTION_KEY])
-        tabs = cast(OpenTabsRegistry, connections[OPEN_TABS_CONNECTION_KEY])
-        checks = cast(SourceChecks, connections[SOURCE_CHECKS_CONNECTION_KEY])
+        tabs = cast(OpenTabsRegistryController, connections[OPEN_TABS_CONNECTION_KEY])
+        checks = cast(SourceChecksController, connections[SOURCE_CHECKS_CONNECTION_KEY])
         now = store.now()
         tabs.seen(params.source, now)
         entry = await store.acquire(params.source)

@@ -29,9 +29,9 @@ from typing import Any, cast
 
 from maxitor.web.model.diagrams.actions.list_entity_kinds_action_schema import ListEntityKindsJson
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -40,7 +40,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -56,11 +56,11 @@ def _capitalised(word: str) -> str:
 )
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Coordinator graph in DuckDB (entity rows for the ERD kind filter)",
 )
-class ListEntityKindsAction(BaseAction[ParamsStub, "ListEntityKindsAction.Result"]):
+class ListEntityKindsAction(BaseAction[StubParams, "ListEntityKindsAction.Result"]):
     """
     AI-CORE-BEGIN
     ROLE: Emit ``list_entity_kinds`` rows (word + display name) for the ERD kind filter.
@@ -81,7 +81,7 @@ class ListEntityKindsAction(BaseAction[ParamsStub, "ListEntityKindsAction.Result
         )
 
     @staticmethod
-    def entity_kind_rows(duck: DuckDBGraphResource) -> list[dict[str, Any]]:
+    def entity_kind_rows(duck: DuckDBGraphStorage) -> list[dict[str, Any]]:
         """Return ``list_entity_kinds`` rows read from the DuckDB ``entity`` table."""
         sql = """
         SELECT entity_kind, MIN(NULLIF(trim(entity_kind_label), '')) AS label
@@ -99,10 +99,10 @@ class ListEntityKindsAction(BaseAction[ParamsStub, "ListEntityKindsAction.Result
     @summary_aspect("Resolve entity kind list from DuckDB graph")
     async def build_list_entity_kinds_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> ListEntityKindsAction.Result:
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         return ListEntityKindsAction.Result(list_entity_kinds=ListEntityKindsAction.entity_kind_rows(duck))

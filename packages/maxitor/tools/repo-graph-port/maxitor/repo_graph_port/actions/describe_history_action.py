@@ -24,10 +24,10 @@ from typing import cast
 
 from maxitor.repo_graph_port.history_reading import chosen, points_of, refreshed, version_problem_of
 from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
-from maxitor.repo_graph_port.resources.version_cache import VersionCache
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
+from maxitor.repo_graph_port.resources.version_cache import VersionCacheStorage
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -69,10 +69,10 @@ class DescribeHistoryResult(BaseResult):
 
 @meta(description="Describe a graph's history: its repository, branch, file and versions", domain=RepoGraphDomain)
 @check_roles(GuestRole)
-@connection(HistoriesConfig, key="HistoriesConfig", description="The histories this server serves")
-@connection(GitMirror, key="GitMirror", description="The repositories' history, read with git")
-@connection(GitHubHost, key="GitHubHost", description="GitHub: the App's token, pull requests, releases")
-@connection(VersionCache, key="VersionCache", description="When each repository was fetched")
+@connection(HistoriesConfigStorage, key="HistoriesConfigStorage", description="The histories this server serves")
+@connection(GitMirrorStorage, key="GitMirrorStorage", description="The repositories' history, read with git")
+@connection(GitHubHostGateway, key="GitHubHostGateway", description="GitHub: the App's token, pull requests, releases")
+@connection(VersionCacheStorage, key="VersionCacheStorage", description="When each repository was fetched")
 class DescribeHistoryAction(BaseAction[DescribeHistoryParams, DescribeHistoryResult]):
     """
     AI-CORE-BEGIN
@@ -93,12 +93,12 @@ class DescribeHistoryAction(BaseAction[DescribeHistoryParams, DescribeHistoryRes
         ctx: ContextView,
     ) -> DescribeHistoryResult:
         """Find the history, refresh its repository, count its versions."""
-        mirror = cast(GitMirror, connections["GitMirror"])
-        host = cast(GitHubHost, connections["GitHubHost"])
-        history = chosen(cast(HistoriesConfig, connections["HistoriesConfig"]), params.history, params.link, ctx.get("user.history"), params.version_link, params.version_key)
-        history = await refreshed(mirror, cast(VersionCache, connections["VersionCache"]), host, history, ctx.get("env.history_refresh_seconds"))
+        mirror = cast(GitMirrorStorage, connections["GitMirrorStorage"])
+        host = cast(GitHubHostGateway, connections["GitHubHostGateway"])
+        history = chosen(cast(HistoriesConfigStorage, connections["HistoriesConfigStorage"]), params.history, params.link, ctx.get("user.history"), params.version_link, params.version_key)
+        history = await refreshed(mirror, cast(VersionCacheStorage, connections["VersionCacheStorage"]), host, history, ctx.get("env.history_refresh_seconds"))
         await box.info(Channel.business, "History {%var.history} described for {%var.reader}", history=history.id, reader=ctx.get("user.user_id") or "a guest")
-        points = await points_of(mirror, cast(VersionCache, connections["VersionCache"]), host, history)
+        points = await points_of(mirror, cast(VersionCacheStorage, connections["VersionCacheStorage"]), host, history)
         return DescribeHistoryResult(
             id=history.id,
             repository=history.repository,

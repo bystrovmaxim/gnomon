@@ -40,7 +40,7 @@ from urllib.parse import urlencode
 import pytest
 from fastapi.testclient import TestClient
 from maxitor.web.api.app import create_app
-from maxitor.web.model.core.resources.static_bundle_resource import StaticBundleResource
+from maxitor.web.model.core.resources.static_bundle_resource import StaticBundleStorage
 from starlette.testclient import WebSocketTestSession
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "ref-graph-2026-10-26.json.gz"
@@ -77,7 +77,7 @@ def source() -> Iterator[str]:
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     """A fresh application whose static bundle reports a known build."""
-    monkeypatch.setattr(StaticBundleResource, "build", lambda self: _SERVER_BUILD)
+    monkeypatch.setattr(StaticBundleStorage, "build", lambda self: _SERVER_BUILD)
     with TestClient(create_app()) as test_client:
         yield test_client
 

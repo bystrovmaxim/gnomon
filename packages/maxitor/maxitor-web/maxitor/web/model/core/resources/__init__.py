@@ -20,9 +20,9 @@ from .graph_source_gateway import (
     Unreachable,
 )
 from .graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
-from .open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistry
-from .source_checks import SOURCE_CHECKS_CONNECTION_KEY, SourceChecks
-from .static_bundle_resource import STATIC_BUNDLE_CONNECTION_KEY, StaticBundleResource
+from .open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistryController
+from .source_checks import SOURCE_CHECKS_CONNECTION_KEY, SourceChecksController
+from .static_bundle_resource import STATIC_BUNDLE_CONNECTION_KEY, StaticBundleStorage
 
 __all__ = [
     "FETCH_TIMEOUT_SECONDS",
@@ -35,8 +35,8 @@ __all__ = [
     "GraphSourceGateway",
     "GraphStoreController",
     "NotModified",
-    "OpenTabsRegistry",
-    "SourceChecks",
-    "StaticBundleResource",
+    "OpenTabsRegistryController",
+    "SourceChecksController",
+    "StaticBundleStorage",
     "Unreachable",
 ]

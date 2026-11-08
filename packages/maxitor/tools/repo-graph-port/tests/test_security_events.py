@@ -32,7 +32,7 @@ BASE = "/api/v1/history"
 WARNING_COLOUR, CRITICAL_COLOUR = "\033[38;2;255;204;0m", "\033[38;2;255;34;34m"
 
 
-class Recorder(BaseLogger):
+class RecorderLogger(BaseLogger):
     """Every line written, with its level and channels."""
 
     def __init__(self) -> None:
@@ -60,7 +60,7 @@ def lines_saying(output: str, text: str) -> list[str]:
 )
 def test_each_event_is_written_on_the_security_channel_at_its_level(kind: SecurityEventKind, level: Level, said: str) -> None:
     """The action writes one line on ``security``, at ``warning`` or ``critical``."""
-    recorder = Recorder()
+    recorder = RecorderLogger()
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator(), log_coordinator=LogCoordinator(loggers=[recorder]))
     params = ReportSecurityEventParams(kind=kind, client="10.0.0.9", history="orders", count=11)
     asyncio.run(machine.run(Context(), ReportSecurityEventAction(), params))

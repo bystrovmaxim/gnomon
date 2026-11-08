@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/core/resources/source_checks.py
 """
-SourceChecks — the clock and the background runner of the freshness checks.
+SourceChecksController — the clock and the background runner of the freshness checks.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -31,8 +31,6 @@ import contextlib
 from collections.abc import Mapping
 from typing import Any
 
-from maxitor.web.model.core.core_domain import CoreDomain
-
 from aoa.action_machine.context import Context
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.model.base_action import BaseAction
@@ -42,14 +40,14 @@ from aoa.action_machine.resources.base_resource import BaseResource
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 
 #: Connection key under which actions receive the runner.
-SOURCE_CHECKS_CONNECTION_KEY = "SourceChecks"
+SOURCE_CHECKS_CONNECTION_KEY = "SourceChecksController"
 
 #: How often the clock asks which sources are due.
 CHECK_EVERY_SECONDS = 10.0
 
 
-@meta(description="Runs the freshness checks of held graphs on a clock and in the background", domain=CoreDomain)
-class SourceChecks(BaseController):
+@meta(description="Runs the freshness checks of held graphs on a clock and in the background")
+class SourceChecksController(BaseController):
     """
     AI-CORE-BEGIN
     ROLE: Run the check actions when no request does: on a clock, and once in the background on request.
@@ -65,7 +63,8 @@ class SourceChecks(BaseController):
         self._tasks: set[asyncio.Task[None]] = set()
         self._clock: asyncio.Task[None] | None = None
 
-    def get_wrapper_class(self) -> type[BaseController] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseController] | None:
         """Return ``None``: nested actions use this same runner."""
         return None
 
@@ -107,7 +106,7 @@ class SourceChecks(BaseController):
         """One run on the machine; its failure is the action's to log, never the clock's to die of."""
         machine = self._machine
         if machine is None:
-            raise RuntimeError("SourceChecks.bind(machine, connections) was not called")
+            raise RuntimeError("SourceChecksController.bind(machine, connections) was not called")
         # The action logs what it did; an error that escapes it must not end the clock.
         with contextlib.suppress(Exception):
             await machine.run(Context(), action_class(), params, self._connections.get(action_class, {}))

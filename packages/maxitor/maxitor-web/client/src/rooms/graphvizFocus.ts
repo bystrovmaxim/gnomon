@@ -38,7 +38,7 @@ export function elementRefOf(target: Element, nodeKind: "node" | "table"): Eleme
   const node = target.closest("g.node");
   const title = node ? titleOf(node) : "";
   if (title) return { kind: nodeKind, id: title };
-  // A resource contour is named by its resource (spec 064); a data source contour has no such id and names nothing.
+  // A resource's frame is named by its resource (spec 064); a domain's frame has no such id and names nothing.
   const contour = target.closest("g.cluster");
   return contour?.id.startsWith(CONTOUR_ID_PREFIX) ? { kind: "contour", id: contour.id.slice(CONTOUR_ID_PREFIX.length) } : null;
 }

@@ -68,13 +68,13 @@ from maxitor.web.model.core.actions.left_sidebar_action import GetLeftMenuSideba
 from maxitor.web.model.core.actions.load_aoa_service_action import LoadAOAServiceAction, LoadAOAServiceParams
 from maxitor.web.model.core.history_address import parse_version_source
 from maxitor.web.model.core.resources.graph_source_gateway import GRAPH_SOURCE_CONNECTION_KEY, GraphSourceGateway
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 from aoa.action_machine.context import Context
-from aoa.action_machine.model import ParamsStub
+from aoa.action_machine.model import StubParams
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 
 #: A source that failed to build is refused without a new download for this long.
@@ -114,7 +114,7 @@ class GraphEntry:
     """
 
     source: str
-    graph: DuckDBGraphResource
+    graph: DuckDBGraphStorage
     sidebar: Any
     last_read: float
     content_sha256: str = ""
@@ -298,11 +298,11 @@ async def build_graph_entry(machine: ActionProductMachine, gateway: GraphSourceG
             connections={GRAPH_SOURCE_CONNECTION_KEY: gateway.with_key(key) if key else gateway},
         )
         # The Result carries the graph's text; the DuckDB resource is built here, where the graph is kept.
-        graph = DuckDBGraphResource.build_from_json(json.loads(load_result.graph_text))
+        graph = DuckDBGraphStorage.build_from_json(json.loads(load_result.graph_text))
         sidebar_result = await machine.run(
             Context(),
             GetLeftMenuSidebarDataAction(),
-            ParamsStub(),
+            StubParams(),
             connections={DUCKDB_GRAPH_CONNECTION_KEY: graph},
         )
     except Exception as exc:

@@ -34,7 +34,7 @@ export type RoomConnectionOptions = {
 /** The pauses before each reconnect, in seconds; the last one repeats. */
 export const RECONNECT_DELAYS = [1, 2, 4, 8, 15];
 
-/** The reason the server closes a participant's tabs with when they leave (``RoomRegistry``). */
+/** The reason the server closes a participant's tabs with when they leave (``RoomRegistryController``). */
 export const LEFT_REASON = "left the room";
 
 const TAB_KEY = "maxitor.tab";

@@ -211,8 +211,8 @@ STEPS: tuple[Step, ...] = (
     _client("Maxitor client: group label composed once", "node scripts/check-erd-group-label.ts"),
     _client("Maxitor client: ERD kinds, tables and lines", "node scripts/check-erd-kinds-and-lines.ts"),
     _client("Maxitor client: ERD table style", "node scripts/check-erd-table-style.ts"),
-    _client("Maxitor client: ERD resources and Boundary", "node scripts/check-erd-resources.ts"),
-    _client("Maxitor client: ERD data sources", "node scripts/check-erd-data-sources.ts"),
+    _client("Maxitor client: ERD logical view", "node scripts/check-erd-logical-view.ts"),
+    _client("Maxitor client: ERD physical view", "node scripts/check-erd-physical-view.ts"),
     _client("Maxitor client: ERD resource contour hover", "node scripts/check-erd-contour-hover.ts"),
     _client("Maxitor client: ERD contour fold", "node scripts/check-erd-contour-fold.ts"),
     # The only Ruff step: it fixes here, and in CI, which must not change the tree, it

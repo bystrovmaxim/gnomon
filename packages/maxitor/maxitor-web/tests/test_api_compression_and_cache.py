@@ -41,7 +41,7 @@ from maxitor.web.api import app as app_module
 from maxitor.web.api.app import create_app
 from maxitor.web.api.graph_source_middleware import MISSING_SOURCE_DETAIL
 from maxitor.web.api.graph_store import BUSY_DETAIL, GraphEntry, GraphStoreBusyError
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _IMMUTABLE = "public, max-age=31536000, immutable"
 _SOURCE = "https://fixture.test/graph-json"
@@ -49,7 +49,7 @@ _SIDEBAR = SimpleNamespace(level1_nodes=[], level2_diagrams=[], level2_nodes=[],
 _ASSET = "/assets/index-abc123.js"
 
 
-def _graph() -> DuckDBGraphResource:
+def _graph() -> DuckDBGraphStorage:
     """Return a small real graph whose full-graph answer is larger than the compression threshold."""
     nodes = [
         {
@@ -60,7 +60,7 @@ def _graph() -> DuckDBGraphResource:
         }
         for index in range(12)
     ]
-    return DuckDBGraphResource.build_from_json({"schema_version": "1.0", "nodes": nodes, "edges": []})
+    return DuckDBGraphStorage.build_from_json({"schema_version": "1.0", "nodes": nodes, "edges": []})
 
 
 class _Store:

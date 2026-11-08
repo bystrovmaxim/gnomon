@@ -25,9 +25,9 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from maxitor.web.model.rooms.actions.room_action_support import INVALID_VALUE, RoomAnswer, located
+from maxitor.web.model.rooms.actions.room_action_support import INVALID_VALUE, RoomAnswerResult, located
 from maxitor.web.model.rooms.pages import setting_error
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -40,7 +40,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import ConnectionRefusalError, SocketChannel
+from aoa.fastapi import ConnectionRefusalError, SocketChannelController
 
 
 class SetPageSettingParams(BaseParams):
@@ -53,9 +53,9 @@ class SetPageSettingParams(BaseParams):
 
 @meta(description="Change a shared filter or layout mode of a page", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The participant's connection")
-class SetPageSettingAction(BaseAction[SetPageSettingParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The participant's connection")
+class SetPageSettingAction(BaseAction[SetPageSettingParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Set one shared setting of one page of the room and tell everyone.
@@ -71,10 +71,10 @@ class SetPageSettingAction(BaseAction[SetPageSettingParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Store the value and announce it."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        room, participant, _ = located(registry, cast(SocketChannel, connections["socket"]))
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        room, participant, _ = located(registry, cast(SocketChannelController, connections["socket"]))
         error = setting_error(params.page, params.name, params.value)
         if error:
             raise ConnectionRefusalError(INVALID_VALUE, error)
@@ -90,4 +90,4 @@ class SetPageSettingAction(BaseAction[SetPageSettingParams, RoomAnswer]):
             setting=params.name,
             room=room.id,
         )
-        return RoomAnswer()
+        return RoomAnswerResult()

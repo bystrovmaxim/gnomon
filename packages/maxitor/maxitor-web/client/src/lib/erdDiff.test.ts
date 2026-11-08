@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CompareResult } from "@/api/compare";
 import { buildDotSource, erdDiffMarks, erdEdgeId, erdGlance, erdPreviousEdgeId, type ErdEntity, type ErdRelation } from "./buildDotSource";
 import { drawErdCards } from "./erdPostPass";
+import { copyId } from "./erdViews";
 import { diagramCounts, erdHolds, erdOfSide, erdPortable, markErd, mergeErdSlices, nothingChanged, unmarked } from "./erdDiff";
 
 const OFFER = "g.OfferEntity";
@@ -233,37 +234,46 @@ describe("a lifecycle is part of its table (spec 044)", () => {
   });
 });
 
-describe("a table's resource in Diff (spec 061, FR-014)", () => {
+describe("a table's resources in Diff (spec 070, FR-010)", () => {
   const nothing = { counts: { nodes: { added: 0, removed: 0, changed: 0 }, edges: { added: 0, removed: 0, changed: 0 } }, nodes: {}, edges: {} } as unknown as CompareResult;
-  const table = (resource_id?: string): ErdEntity => ({ id: "shop.Invoice", label: "Invoice", fields: [], ...(resource_id ? { resource_id, resource_label: resource_id.split(".")[1] } : {}) });
+  const table = (...resource_ids: string[]): ErdEntity => ({ id: "shop.Invoice", label: "Invoice", fields: [], resource_ids });
 
-  it("marks nothing when the older version had no resource, as every 1.5 → 1.6 pair", () => {
-    const withEdges = { ...nothing, edges: { "shop.Invoice|entity_resource|shop.BillingDatabase": "added" } } as unknown as CompareResult;
+  it("marks nothing when the older version said nowhere, as every 1.5 → 1.6 pair", () => {
+    const withEdges = { ...nothing, edges: { "shop.BillingDatabase|resource_entity|shop.Invoice": "added" } } as unknown as CompareResult;
     const [invoice] = markErd(mergeErdSlices({ entities: [table()] }, { entities: [table("shop.BillingDatabase")] }), withEdges).entities!;
-    expect([invoice!.diff, invoice!.previous_resource_id]).toEqual(["unchanged", undefined]);
+    expect([invoice!.diff, invoice!.previous_resource_ids]).toEqual(["unchanged", undefined]);
   });
 
-  it("marks a table stored by another resource than before, and keeps where it was", () => {
+  it("marks a table kept by another resource than before, and keeps where it was", () => {
     const [invoice] = markErd(mergeErdSlices({ entities: [table("shop.BillingDatabase")] }, { entities: [table("shop.StorefrontDatabase")] }), nothing).entities!;
-    expect([invoice!.diff, invoice!.resource_id, invoice!.previous_resource_id]).toEqual(["changed", "shop.StorefrontDatabase", "shop.BillingDatabase"]);
+    expect([invoice!.diff, invoice!.resource_ids, invoice!.previous_resource_ids]).toEqual(["changed", ["shop.StorefrontDatabase"], ["shop.BillingDatabase"]]);
   });
 
-  it("keeps the older resource of a table only the older version has", () => {
+  it("marks a table that gained a second resource", () => {
+    const [invoice] = markErd(mergeErdSlices({ entities: [table("shop.BillingDatabase")] }, { entities: [table("shop.BillingDatabase", "shop.StorefrontDatabase")] }), nothing).entities!;
+    expect([invoice!.diff, invoice!.previous_resource_ids]).toEqual(["changed", ["shop.BillingDatabase"]]);
+  });
+
+  it("leaves a table kept by the same resources, in another order, unmarked", () => {
+    const [invoice] = markErd(mergeErdSlices({ entities: [table("shop.B", "shop.A")] }, { entities: [table("shop.A", "shop.B")] }), nothing).entities!;
+    expect([invoice!.diff, invoice!.previous_resource_ids]).toEqual(["unchanged", undefined]);
+  });
+
+  it("keeps the older resources of a table only the older version has", () => {
     const [invoice] = mergeErdSlices({ entities: [table("shop.BillingDatabase")] }, { entities: [] }).entities!;
-    expect(invoice!.resource_id).toBe("shop.BillingDatabase");
+    expect(invoice!.resource_ids).toEqual(["shop.BillingDatabase"]);
   });
 });
 
 describe("contours and bundles in Side by side (spec 068)", () => {
   const ORDERS = "shop.OrdersResource";
   const SUPPORT = "shop.SupportResource";
-  const table = (id: string, resource_id: string): ErdEntity => ({ id, label: id, resource_id, fields: [] });
+  const table = (id: string, ...resource_ids: string[]): ErdEntity => ({ id, label: id, resource_ids, fields: [] });
   const entities = [table("shop.Order", ORDERS), table("shop.Ticket", SUPPORT)];
   const drawing = (bundles: { id: string; source: string; target: string; relations: number[] }[]) => ({
     entities,
     relations: [],
     bundles,
-    resource_data_sources: { [ORDERS]: "shop.ShopDataSource" },
   });
 
   it("passes a bundle to the other half by its two ends, whatever its place there", () => {
@@ -278,13 +288,14 @@ describe("contours and bundles in Side by side (spec 068)", () => {
     expect(erdPortable(() => drawing([])).fromIdentity(identity)).toBeNull();
   });
 
-  it("holds a contour, a folded box and a bundle when their resources or data sources are on the half", () => {
+  it("holds a frame, a folded box, a copy and a bundle when their resources are on the half", () => {
     const half = drawing([]);
     expect(erdHolds(half, { kind: "contour", id: ORDERS })).toBe(true);
     expect(erdHolds(half, { kind: "contour", id: "shop.Gone" })).toBe(false);
     expect(erdHolds(half, { kind: "table", id: `rc:${SUPPORT}` })).toBe(true);
-    expect(erdHolds(half, { kind: "table", id: "dc:shop.ShopDataSource" })).toBe(true);
-    expect(erdHolds(half, { kind: "table", id: "dc:shop.OtherDataSource" })).toBe(false);
+    expect(erdHolds(half, { kind: "table", id: copyId("shop.Order", ORDERS) })).toBe(true);
+    expect(erdHolds(half, { kind: "table", id: copyId("shop.Order", SUPPORT) })).toBe(false);
+    expect(erdHolds(half, { kind: "row", id: `${copyId("shop.Order", ORDERS)}:id` })).toBe(false);
     expect(erdHolds(half, { kind: "edge", id: `bundle:shop.Ticket|rc:${ORDERS}` })).toBe(true);
     expect(erdHolds(half, { kind: "edge", id: "bundle:shop.Gone|rc:shop.OrdersResource" })).toBe(false);
   });

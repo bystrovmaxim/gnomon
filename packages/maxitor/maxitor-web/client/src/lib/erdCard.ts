@@ -1,7 +1,8 @@
 // src/lib/erdCard.ts
 /** What a card says of a table or a row of the ERD, from what the diagram holds (spec 043, FR-004 – FR-006). */
 import type { CardField, CardSubject } from "@/components/diagrams/ElementCard";
-import { isContourId, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
+import { isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
+import { copyEntity } from "@/lib/erdViews";
 import { FIELDS_CHANGED, rowCard, tableInside, type CardTarget } from "@/lib/erdDiffCard";
 import { svgDataUriForGraphNodeIcon } from "@/lib/icons";
 import { tooltipOf } from "@/rooms/graphvizFocus";
@@ -79,10 +80,9 @@ function bundleSubject(
   entities: readonly ErdEntity[],
   relations: readonly ErdRelation[],
   resourceLabels: Readonly<Record<string, string>>,
-  dataSourceLabels: Readonly<Record<string, string>>,
 ): Omit<CardSubject, "at"> {
-  const table = (id: string) => entities.find((entity) => entity.id === id)?.label || id.split(".").pop() || id;
-  const end = (id: string) => (isContourId(id) ? (id.startsWith("rc:") ? resourceLabels[id.slice(3)] : dataSourceLabels[id.slice(3)]) || id.slice(3) : table(id));
+  const table = (id: string) => entities.find((entity) => entity.id === id)?.label || copyEntity(id).split(".").pop() || id;
+  const end = (id: string) => (isContourId(id) ? resourceLabels[id.slice(3)] || id.slice(3) : table(id));
   const lines = bundle.relations.flatMap((k) => (relations[k] ? [relations[k]] : []));
   const title = `${end(bundle.source)} ↔ ${end(bundle.target)}`;
   return {
@@ -101,65 +101,30 @@ function bundleSubject(
   };
 }
 
-/** The full graph's fill for a resource and a data source, so a card's icon is the one the full graph draws. */
+/** The full graph's fill for a resource, so a card's icon is the one the full graph draws. */
 const RESOURCE_FILL = "#7570B3";
-const DATA_SOURCE_FILL = "#0F766E";
-
-/** ``n`` and its noun, plural when it is not one. */
-const counted = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
 
 /**
- * The card of a resource contour, or of a folded box of a resource or of a data source (spec 068): its kind's icon and
- * name, what it is and where it lives — a data source with how many resources share it —, its description (read from
- * the server) and the tables it holds — for a data source, each with its resource — folded as a table's fields are,
- * their count on the fold.
+ * The card of a resource's frame, or of its folded box (spec 068; spec 070): the resource's icon and name, and the
+ * tables it keeps — an empty frame's card says it keeps none — folded as a table's fields are, their count on the fold.
  */
-function contourSubject(
-  ref: ElementRef,
-  id: string,
-  entities: readonly ErdEntity[],
-  resourceLabels: Readonly<Record<string, string>>,
-  resourceDataSources: Readonly<Record<string, string>>,
-  dataSourceLabels: Readonly<Record<string, string>>,
-): Omit<CardSubject, "at"> | null {
+function contourSubject(ref: ElementRef, id: string, entities: readonly ErdEntity[], resourceLabels: Readonly<Record<string, string>>): Omit<CardSubject, "at"> | null {
+  const resource = id.slice(3);
+  if (!(resource in resourceLabels) && !entities.some((entity) => tableResource(entity) === resource)) return null;
   const short = (full: string) => full.split(".").pop() || full;
-  const tableName = (entity: ErdEntity) => entity.label || short(entity.id);
-  const byName = (one: ErdEntity, other: ErdEntity) => tableName(one).localeCompare(tableName(other));
-  if (id.startsWith("rc:")) {
-    const resource = id.slice(3);
-    const tables = entities.filter((entity) => entity.resource_id === resource).sort(byName);
-    if (!tables.length) return null;
-    const source = resourceDataSources[resource];
-    return {
-      key: `contour:${id}`,
-      ref,
-      title: resourceLabels[resource] || short(resource),
-      icon: svgDataUriForGraphNodeIcon(RESOURCE_FILL, "Resource"),
-      detail: `Resource${source ? ` · Data source: ${dataSourceLabels[source] || short(source)}` : ""}`,
-      nodeId: resource,
-      change: null,
-      fieldNoun: "table",
-      fields: tables.map((entity) => ({ name: tableName(entity), type: entity.entity_kind ?? undefined })),
-      copy: resource,
-    };
-  }
-  const source = id.slice(3);
-  const tables = entities.filter((entity) => entity.resource_id != null && resourceDataSources[entity.resource_id] === source);
-  if (!tables.length) return null;
-  const resources = new Set(tables.map((entity) => entity.resource_id as string));
-  const resourceName = (entity: ErdEntity) => resourceLabels[entity.resource_id as string] || short(entity.resource_id as string);
-  tables.sort((one, other) => resourceName(one).localeCompare(resourceName(other)) || byName(one, other));
+  const tableName = (entity: ErdEntity) => entity.label || short(copyEntity(entity.id));
+  const tables = entities.filter((entity) => tableResource(entity) === resource).sort((one, other) => tableName(one).localeCompare(tableName(other)));
   return {
     key: `contour:${id}`,
     ref,
-    title: dataSourceLabels[source] || short(source),
-    icon: svgDataUriForGraphNodeIcon(DATA_SOURCE_FILL, "DataSource"),
-    detail: `Data source · ${counted(resources.size, "resource")}`,
-    nodeId: source,
+    title: resourceLabels[resource] || short(resource),
+    icon: svgDataUriForGraphNodeIcon(RESOURCE_FILL, "Resource"),
+    detail: tables.length ? "Resource" : "Resource · keeps no entity",
+    nodeId: resource,
     change: null,
     fieldNoun: "table",
-    fields: tables.map((entity) => ({ name: tableName(entity), type: resourceName(entity) })),
-    copy: source,
+    fields: tables.map((entity) => ({ name: tableName(entity), type: entity.entity_kind ?? undefined })),
+    copy: resource,
   };
 }
 
@@ -189,23 +154,24 @@ export function litBy(ref: ElementRef, entities: readonly ErdEntity[], relations
 }
 
 /**
- * The line under a table's name: the resource that stores it (spec 061), and in Diff where it was stored before when
- * that differs; then the data source its resource shares (spec 063), or that it names none when the graph has data
- * sources; nothing for a table of a graph older than protocol 1.6.
+ * The line under a table's name (spec 070, FR-008): its domain and every resource that keeps it, or "Not stored"; in
+ * Diff, the resources A gave it when they differ. A table of a graph older than protocol 1.6 shows its domain alone.
  */
 export function resourceLine(
   entity: ErdEntity,
   resourceLabels: Readonly<Record<string, string>> = {},
-  resourceDataSources: Readonly<Record<string, string>> = {},
-  dataSourceLabels: Readonly<Record<string, string>> = {},
+  domainLabels: Readonly<Record<string, string>> = {},
+  storageKnown = true,
 ): string {
-  if (!entity.resource_id) return "";
-  const now = entity.resource_label || resourceLabels[entity.resource_id] || entity.resource_id;
-  const before = entity.previous_resource_id ? resourceLabels[entity.previous_resource_id] || entity.previous_resource_id : null;
-  const resource = before ? `Resource: ${before} → ${now}` : `Resource: ${now}`;
-  if (Object.keys(dataSourceLabels).length === 0) return resource;
-  const source = resourceDataSources[entity.resource_id];
-  return `${resource} · ${source ? `Data source: ${dataSourceLabels[source] ?? source}` : "No data source"}`;
+  const qual = entity.domain_qualname?.trim() ?? "";
+  const domain = qual ? `Domain: ${domainLabels[qual] ?? (qual.split(".").pop() || qual)}` : "";
+  // A table with no list of resources comes from a server or a graph that does not say where tables lie.
+  if (!storageKnown || entity.resource_ids === undefined) return domain;
+  const name = (resource: string) => resourceLabels[resource] ?? (resource.split(".").pop() || resource);
+  const kept = (entity.resource_ids ?? []).map(name);
+  const before = entity.previous_resource_ids ? `${entity.previous_resource_ids.map(name).join(", ")} → ` : "";
+  const where = kept.length ? `Resources: ${before}${kept.join(", ")}` : "Not stored";
+  return domain ? `${domain} · ${where}` : where;
 }
 
 /** The subject of ``ref``, less its place; ``null`` when it is not a table, a row or a line of the drawing. */
@@ -215,15 +181,15 @@ export function erdSubject(
   root: ParentNode,
   relations: readonly ErdRelation[] = [],
   resourceLabels: Readonly<Record<string, string>> = {},
-  resourceDataSources: Readonly<Record<string, string>> = {},
-  dataSourceLabels: Readonly<Record<string, string>> = {},
   bundles: readonly ErdBundle[] = [],
+  domainLabels: Readonly<Record<string, string>> = {},
+  storageKnown = true,
 ): Omit<CardSubject, "at"> | null {
-  // A resource contour, and a folded box of a resource or a data source, have a card of their own (spec 068).
-  if (ref.kind === "contour") return contourSubject(ref, `rc:${ref.id}`, entities, resourceLabels, resourceDataSources, dataSourceLabels);
-  if (ref.kind === "table" && isContourId(ref.id)) return contourSubject(ref, ref.id, entities, resourceLabels, resourceDataSources, dataSourceLabels);
+  // A resource's frame, and its folded box, have a card of their own (spec 068).
+  if (ref.kind === "contour") return contourSubject(ref, `rc:${ref.id}`, entities, resourceLabels);
+  if (ref.kind === "table" && isContourId(ref.id)) return contourSubject(ref, ref.id, entities, resourceLabels);
   const bundle = ref.kind === "edge" ? bundles.find((each) => each.id === ref.id) : undefined;
-  if (bundle) return bundleSubject(ref, bundle, entities, relations, resourceLabels, dataSourceLabels);
+  if (bundle) return bundleSubject(ref, bundle, entities, relations, resourceLabels);
   if (ref.kind === "edge") return lineSubject(ref, entities, relations);
   if (ref.kind === "table") {
     const entity = entities.find((each) => each.id === ref.id);
@@ -233,8 +199,8 @@ export function erdSubject(
       key: `table:${entity.id}`,
       ref,
       title,
-      detail: resourceLine(entity, resourceLabels, resourceDataSources, dataSourceLabels),
-      nodeId: entity.id,
+      detail: resourceLine(entity, resourceLabels, domainLabels, storageKnown),
+      nodeId: copyEntity(entity.id),
       change: tableChange(entity, title),
       // In Diff what changed comes first: from afar this list is all a person reads (spec 043, FR-006a).
       fields: [...(entity.fields ?? [])]

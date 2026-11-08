@@ -19,7 +19,7 @@ ARCHITECTURE / DATA FLOW
 ::
 
     GET /api/v1/compare?source=<B>&a=<A> ──► GraphSourceMiddleware (both guarded, both bound)
-        ──► ComparisonStore.current() ──► {counts, nodes: {id: status}, edges: {id: status}}
+        ──► ComparisonStoreController.current() ──► {counts, nodes: {id: status}, edges: {id: status}}
 """
 
 from __future__ import annotations
@@ -29,7 +29,10 @@ from typing import cast
 
 from maxitor.graph_compare import Counts, ElementComparison, Status
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.comparison_store import COMPARISON_STORE_CONNECTION_KEY, ComparisonStore
+from maxitor.web.model.diagrams.resources.comparison_store import (
+    COMPARISON_STORE_CONNECTION_KEY,
+    ComparisonStoreController,
+)
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -38,7 +41,7 @@ from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -55,27 +58,27 @@ class CompareVersionsResult(BaseResult):
 
 @meta(description="Compare two versions of a history: the elements that changed and the counts", domain=DiagramsDomain)
 @check_roles(GuestRole)
-@connection(ComparisonStore, key=COMPARISON_STORE_CONNECTION_KEY, description="The comparisons of held versions")
-class CompareVersionsAction(BaseAction[ParamsStub, CompareVersionsResult]):
+@connection(ComparisonStoreController, key=COMPARISON_STORE_CONNECTION_KEY, description="The comparisons of held versions")
+class CompareVersionsAction(BaseAction[StubParams, CompareVersionsResult]):
     """
     AI-CORE-BEGIN
     ROLE: Answer what changed between the two versions the read names.
     CONTRACT: Every node and edge that is added, removed or changed, with its status, and the counts per kind; unchanged elements are left out.
-    INVARIANTS: Computed once per pair by ``ComparisonStore``; names no address and no key in its log.
+    INVARIANTS: Computed once per pair by ``ComparisonStoreController``; names no address and no key in its log.
     AI-CORE-END
     """
 
     @summary_aspect("Give the changed elements and the counts")
     async def compare_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> CompareVersionsResult:
         """Read the pair's comparison and keep what is not unchanged."""
         _ = (params, state)
-        store = cast(ComparisonStore, connections[COMPARISON_STORE_CONNECTION_KEY])
+        store = cast(ComparisonStoreController, connections[COMPARISON_STORE_CONNECTION_KEY])
         before = store.computed
         comparison = await store.current()
         if store.computed != before:

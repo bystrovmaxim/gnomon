@@ -44,7 +44,7 @@ ARCHITECTURE / DATA FLOW
               ContextVar for this request only (reset in finally)
                        │                        │
                        ▼                        ▼
-        DuckDBGraphHolder._resolve()   GET /api/sidebar
+        RequestGraphStorage._resolve()   GET /api/sidebar
                        │                        │
                        ▼                        ▼
                  entry.graph                entry.sidebar

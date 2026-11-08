@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from maxitor.web.model.diagrams.actions.full_graph_action import _build_payload_from_duckdb
 from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 from aoa.action_machine.graph.core.edge_relationship import GENERALIZATION
 
@@ -57,8 +57,8 @@ def _sample_with_parent_edges() -> dict:
 
 
 def test_duckdb_parent_edge_tables_and_edges_view() -> None:
-    duck = DuckDBGraphResource.build_from_json(_sample_with_parent_edges())
-    con = duck.service
+    duck = DuckDBGraphStorage.build_from_json(_sample_with_parent_edges())
+    con = duck.connection
 
     def _count(sql: str) -> int:
         return int(con.execute(sql).fetchone()[0])
@@ -76,7 +76,7 @@ def test_duckdb_parent_edge_tables_and_edges_view() -> None:
 
 
 def test_full_graph_payload_omits_generalization_edges() -> None:
-    duck = DuckDBGraphResource.build_from_json(_sample_with_parent_edges())
+    duck = DuckDBGraphStorage.build_from_json(_sample_with_parent_edges())
     payload = _build_payload_from_duckdb(duck, DOMAIN_PALETTE)
 
     assert len(payload["edges"]) == 1
@@ -148,8 +148,8 @@ def _sample_with_specialization_edges() -> dict:
 
 def test_the_two_directions_reach_the_store() -> None:
     """Both are stored: the exclusion happens when the payload is built, not when rows are written."""
-    duck = DuckDBGraphResource.build_from_json(_sample_with_specialization_edges())
-    con = duck.service
+    duck = DuckDBGraphStorage.build_from_json(_sample_with_specialization_edges())
+    con = duck.connection
 
     assert int(con.execute("SELECT COUNT(*) FROM entity_specialization_edges").fetchone()[0]) == 1
     assert int(con.execute("SELECT COUNT(*) FROM parent_entity_edges").fetchone()[0]) == 1
@@ -164,7 +164,7 @@ def test_full_graph_keeps_the_axis_and_omits_the_generalization() -> None:
     viewer is expected to keep exactly one of them. A change that made the axis a generalization
     would silently empty this diagram of it, and this test is what would say so.
     """
-    duck = DuckDBGraphResource.build_from_json(_sample_with_specialization_edges())
+    duck = DuckDBGraphStorage.build_from_json(_sample_with_specialization_edges())
     payload = _build_payload_from_duckdb(duck, DOMAIN_PALETTE)
 
     kinds = [edge["data"]["edge_type"] for edge in payload["edges"]]  # type: ignore[index]

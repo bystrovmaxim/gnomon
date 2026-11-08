@@ -22,7 +22,7 @@ from maxitor.web.api.graph_store import (
     GraphStore,
     GraphStoreBusyError,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _SOURCE_A = "https://a.test/graph-json"
 _SOURCE_B = "https://b.test/graph-json"
@@ -31,9 +31,9 @@ _DOMAIN_B = "d.b.Dom"
 _SIDEBAR = SimpleNamespace(level1_nodes=[], level2_diagrams=[], level2_nodes=[], level3_diagrams=[])
 
 
-def _graph(domain: str) -> DuckDBGraphResource:
+def _graph(domain: str) -> DuckDBGraphStorage:
     """Return a real in-process graph holding one domain, so diagram actions can query it."""
-    return DuckDBGraphResource.build_from_json(
+    return DuckDBGraphStorage.build_from_json(
         {
             "schema_version": "1.0",
             "nodes": [

@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/diagrams/resources/comparison_store.py
 """
-ComparisonStore — the comparison of the two versions a read names, computed once per pair.
+ComparisonStoreController — the comparison of the two versions a read names, computed once per pair.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -43,7 +43,6 @@ from collections.abc import Callable
 from typing import Any, Protocol
 
 from maxitor.graph_compare import ChangedPart, Comparison, GraphNotComparableError, changed_inside, compare
-from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_controller import BaseController
@@ -78,8 +77,8 @@ class NotComparingError(LookupError):
     """The read is not bound to two versions."""
 
 
-@meta(description="The comparison of two held versions, computed once per pair", domain=DiagramsDomain)
-class ComparisonStore(BaseController):
+@meta(description="The comparison of two held versions, computed once per pair")
+class ComparisonStoreController(BaseController):
     """
     AI-CORE-BEGIN
     ROLE: Compare the two versions the current read names, once per pair, and hold the result.
@@ -98,7 +97,8 @@ class ComparisonStore(BaseController):
         self.last_milliseconds = 0.0
         """How long the last computation took."""
 
-    def get_wrapper_class(self) -> type[BaseController] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseController] | None:
         """Return ``None``: nested actions use this same store."""
         return None
 

@@ -29,9 +29,9 @@ from typing import Any, cast
 
 from maxitor.web.model.diagrams.actions.list_domains_action_schema import ListDomainsJson
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -40,7 +40,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -106,11 +106,11 @@ DOMAIN_PALETTE: tuple[str, ...] = _unique_color_tuple(_EXTRA_LIST_DOMAIN_COLORS)
 )
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Coordinator graph in DuckDB (domain rows for ERD discovery)",
 )
-class ListDomainsAction(BaseAction[ParamsStub, "ListDomainsAction.Result"]):
+class ListDomainsAction(BaseAction[StubParams, "ListDomainsAction.Result"]):
     """
     AI-CORE-BEGIN
     ROLE: Emit ``list_domains`` rows (qualname + color) for ERD tab discovery on the client.
@@ -131,7 +131,7 @@ class ListDomainsAction(BaseAction[ParamsStub, "ListDomainsAction.Result"]):
         )
 
     @staticmethod
-    def _list_domains_rows(duck: DuckDBGraphResource) -> list[dict[str, Any]]:
+    def _list_domains_rows(duck: DuckDBGraphStorage) -> list[dict[str, Any]]:
         """Return ``list_domains`` rows: qualnames from DuckDB with cycling accent colours."""
         sql = """
         SELECT id AS qualname, label AS label
@@ -152,17 +152,17 @@ class ListDomainsAction(BaseAction[ParamsStub, "ListDomainsAction.Result"]):
         ]
 
     @staticmethod
-    def domain_accent_rows(duck: DuckDBGraphResource) -> list[dict[str, Any]]:
+    def domain_accent_rows(duck: DuckDBGraphStorage) -> list[dict[str, Any]]:
         """Same rows as ``list_domains`` (qualname + ERD accent hex); for other diagrams actions."""
         return ListDomainsAction._list_domains_rows(duck)
 
     @summary_aspect("Resolve domain qualifier list from DuckDB graph")
     async def build_list_domains_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> ListDomainsAction.Result:
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         return ListDomainsAction.Result(list_domains=ListDomainsAction.domain_accent_rows(duck))

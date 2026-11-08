@@ -6,14 +6,14 @@ from typing import Any
 
 import pytest
 from maxitor.web.model.diagrams.actions.events_explorer_action import events_explorer
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 from tests.fixtures.explorer_graph import KINDS, explorer_graph, explorer_graph_b
 
 
 @pytest.fixture
 def answer() -> dict[str, Any]:
-    return events_explorer(DuckDBGraphResource.build_from_json(explorer_graph()))
+    return events_explorer(DuckDBGraphStorage.build_from_json(explorer_graph()))
 
 
 def test_every_domain_comes_with_its_vocabulary_flag_an_empty_one_too(answer: dict[str, Any]) -> None:
@@ -51,7 +51,7 @@ def test_every_list_is_sorted_so_one_graph_gives_one_answer(answer: dict[str, An
 
 
 def test_the_second_version_adds_one_event_and_one_emitting_link(answer: dict[str, Any]) -> None:
-    newer = events_explorer(DuckDBGraphResource.build_from_json(explorer_graph_b()))
+    newer = events_explorer(DuckDBGraphStorage.build_from_json(explorer_graph_b()))
     assert {e["id"] for e in newer["events"]} - {e["id"] for e in answer["events"]} == {"e.Refunded"}
     assert len(newer["emits"]) == len(answer["emits"]) + 1
 
@@ -60,7 +60,7 @@ def test_a_document_older_than_events_opens_with_domains_and_actions() -> None:
     old = explorer_graph()
     old["nodes"] = [{**n, "properties": {k: v for k, v in n["properties"].items() if k != "typed_events"}} for n in old["nodes"] if n["type"] in ("Domain", "Action")]
     old["edges"] = [e for e in old["edges"] if e["type"] == "domain"]
-    answer = events_explorer(DuckDBGraphResource.build_from_json(old))
+    answer = events_explorer(DuckDBGraphStorage.build_from_json(old))
     assert (answer["events"], answer["holds"], answer["emits"]) == ([], [], [])
     assert len(answer["domains"]) == 5 and len(answer["actions"]) == 3
     assert not any(d["vocabulary"] for d in answer["domains"])

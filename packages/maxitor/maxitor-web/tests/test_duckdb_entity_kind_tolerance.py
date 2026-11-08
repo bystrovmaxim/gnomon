@@ -19,7 +19,7 @@ from typing import Any
 
 import duckdb
 import pytest
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource, _fill_table_entity
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage, _fill_table_entity
 
 
 def _entity(identifier: str, **properties: Any) -> dict[str, Any]:
@@ -53,7 +53,7 @@ def _graph(nodes: list[dict[str, Any]]) -> dict[str, Any]:
 
 def test_a_graph_without_kinds_loads_and_its_rows_are_unknown() -> None:
     """The graph build stores what the producer sent and ``unknown`` where it sent nothing."""
-    store = DuckDBGraphResource.build_from_json(_graph(ROWS))
+    store = DuckDBGraphStorage.build_from_json(_graph(ROWS))
 
     rows = [tuple(row.values()) for row in store.execute_fetch_dicts(_SELECT)]
 
@@ -63,7 +63,7 @@ def test_a_graph_without_kinds_loads_and_its_rows_are_unknown() -> None:
 def test_the_per_row_fill_writes_the_same_rows() -> None:
     """The second path that writes ``entity`` rows goes through the same rule."""
     con = duckdb.connect(database=":memory:")
-    DuckDBGraphResource._install_database(object.__new__(DuckDBGraphResource), con)
+    DuckDBGraphStorage._install_database(object.__new__(DuckDBGraphStorage), con)
 
     _fill_table_entity(con, ROWS)
 
@@ -74,12 +74,12 @@ def test_the_per_row_fill_writes_the_same_rows() -> None:
 def test_a_non_string_kind_or_name_names_the_node(bad: dict[str, Any]) -> None:
     """A malformed value is the producer's error, and the message points at the row."""
     with pytest.raises(ValueError, match=re.escape("shop.BrokenEntity")):
-        DuckDBGraphResource.build_from_json(_graph([_entity("shop.BrokenEntity", **bad)]))
+        DuckDBGraphStorage.build_from_json(_graph([_entity("shop.BrokenEntity", **bad)]))
 
 
 def test_the_reconstructed_node_carries_its_display_name() -> None:
     """A node read back from the store keeps the name the graph sent."""
-    store = DuckDBGraphResource.build_from_json(_graph(ROWS))
+    store = DuckDBGraphStorage.build_from_json(_graph(ROWS))
 
     rows = store.execute_fetch_dicts(
         "SELECT payload->>'entity_kind_label' AS label FROM nodes WHERE id = 'shop.OrderEntity'"

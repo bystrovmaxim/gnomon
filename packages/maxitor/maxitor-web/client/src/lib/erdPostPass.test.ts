@@ -45,6 +45,9 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
+/** A drawn table of the physical view: a copy, with the resource it lies in (spec 070). */
+type Drawn = ErdEntity & { copy_resource?: string };
+
 describe("addEdgeHitAreas", () => {
   it("adds one transparent 10 px stroke per edge, along its path", () => {
     const { root } = mount();
@@ -345,7 +348,7 @@ describe("a resource contour lights its links to other resources (spec 064)", ()
     `<path fill="none" stroke="#94a3b8" stroke-width="2" d="M0,0L10,0L10,10L0,10Z"/><text>${resource}</text></a></g></g>`;
   const CONTOUR_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g class="graph">
-<g id="clust1" class="cluster"><title>cluster_data_source_0</title><path fill="none" stroke="#64748b" d="M0,0L20,0L20,20L0,20Z"/></g>
+<g id="clust1" class="cluster"><title>cluster_resource_0_domain_0</title><path fill="none" stroke="#94a3b8" d="M0,0L20,0L20,20L0,20Z"/></g>
 ${contour("Orders")}${contour("Support")}${contour("Billing")}
 <g id="node1" class="node"><title>Order</title>${cell("fn0_0", "id")}${cell("ft0_0", "str")}</g>
 <g id="node2" class="node"><title>Line</title>${cell("fn1_0", "id")}${cell("ft1_0", "str")}${cell("fn1_1", "order")}${cell("ft1_1", "OrderEntity")}</g>
@@ -354,11 +357,11 @@ ${contour("Orders")}${contour("Support")}${contour("Billing")}
 <g id="re0" class="edge"><title>Line&#45;&gt;Order</title><path fill="none" stroke="#94a3b8" d="M0,0C1,1 2,2 3,3"/></g>
 <g id="re1" class="edge"><title>Ticket&#45;&gt;Order</title><path fill="none" stroke="#94a3b8" d="M0,0C4,4 5,5 6,6"/></g>
 </g></svg>`;
-  const shopEntities: ErdEntity[] = [
-    { id: "Order", resource_id: "Orders", fields: [{ name: "id", primary_key: true }] },
-    { id: "Line", resource_id: "Orders", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }] },
-    { id: "Ticket", resource_id: "Support", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }] },
-    { id: "Invoice", resource_id: "Billing", fields: [{ name: "id", primary_key: true }] },
+  const shopEntities: Drawn[] = [
+    { id: "Order", copy_resource: "Orders", fields: [{ name: "id", primary_key: true }] },
+    { id: "Line", copy_resource: "Orders", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }] },
+    { id: "Ticket", copy_resource: "Support", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }] },
+    { id: "Invoice", copy_resource: "Billing", fields: [{ name: "id", primary_key: true }] },
   ];
   const shopRelations: ErdLineInfo[] = [
     { source: "Line", target: "Order", relationship_kind: "composition", source_field: "order", target_field: null },
@@ -439,19 +442,18 @@ ${contour("Orders")}${contour("Support")}${contour("Billing")}
 
 describe("folded contours and their bundles (spec 065)", () => {
   // Orders is folded into a box; Ticket (Support) has two relations to tables inside it, bundled as rb0; Billing's
-  // contour is unfolded. A data source contour around them.
+  // frame is unfolded.
   const FOLD_SVG = `
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><g class="graph">
-<g id="dc:Shop" class="cluster"><title>cluster_data_source_0</title><g id="a_dc:Shop"><a><path fill="none" stroke="#64748b" d="M0,0L200,0L200,100L0,100Z"/><text>Shop</text></a></g></g>
 <g id="rc:Billing" class="cluster"><title>cluster_resource_0</title><g id="a_rc:Billing"><a><path fill="none" stroke="#94a3b8" d="M10,10L60,10L60,60L10,60Z"/><text>Billing</text></a></g></g>
 <g id="node1" class="node"><title>rc:Orders</title><path fill="white" stroke="#94a3b8" d="M100,20L180,20L180,50L100,50Z"/><text>Orders</text></g>
 <g id="node2" class="node"><title>Ticket</title>${cell("fn0_0", "id")}${cell("ft0_0", "str")}${cell("fn0_1", "order")}${cell("ft0_1", "OrderEntity")}${cell("fn0_2", "line")}${cell("ft0_2", "LineEntity")}</g>
 <g id="node3" class="node"><title>Invoice</title>${cell("fn1_0", "id")}${cell("ft1_0", "str")}</g>
 <g id="rb0" class="edge"><title>Ticket&#45;&gt;rc:Orders</title><path fill="none" stroke="#94a3b8" d="M0,0C1,1 2,2 3,3"/><text>×2</text></g>
 </g></svg>`;
-  const foldEntities: ErdEntity[] = [
-    { id: "Ticket", resource_id: "Support", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }, { name: "line", foreign_key: true }] },
-    { id: "Invoice", resource_id: "Billing", fields: [{ name: "id", primary_key: true }] },
+  const foldEntities: Drawn[] = [
+    { id: "Ticket", copy_resource: "Support", fields: [{ name: "id", primary_key: true }, { name: "order", foreign_key: true }, { name: "line", foreign_key: true }] },
+    { id: "Invoice", copy_resource: "Billing", fields: [{ name: "id", primary_key: true }] },
   ];
   const foldRelations: ErdLineInfo[] = [
     { source: "Ticket", target: "Order", relationship_kind: "association", source_field: "order", target_field: null },
@@ -473,7 +475,6 @@ describe("folded contours and their bundles (spec 065)", () => {
     addFoldControls(root);
     const controls = [...root.querySelectorAll(".erd-fold-control")].map((c) => [c.getAttribute("data-fold"), c.getAttribute("data-folded"), c.getAttribute("transform"), c.getAttribute("aria-label")]);
     expect(controls).toEqual([
-      ["dc:Shop", "0", "translate(197,3)", "Fold"],
       ["rc:Billing", "0", "translate(57,13)", "Fold"],
       ["rc:Orders", "1", "translate(183,20)", "Unfold"],
     ]);
@@ -494,7 +495,7 @@ describe("folded contours and their bundles (spec 065)", () => {
     expect(["x", "width"].map((name) => Number(folded.querySelector(".erd-fold-hit")!.getAttribute(name)))).toEqual([0, 28]);
     expect(erdFoldSx["& .erd-fold-scale"]).toMatchObject({ transformOrigin: "0 0", opacity: 0.75 });
     scaleFoldControls(root, 0.25);
-    expect([...root.querySelectorAll<SVGGElement>(".erd-fold-scale")].map((part) => part.style.transform)).toEqual(Array(3).fill("scale(4.0000)"));
+    expect([...root.querySelectorAll<SVGGElement>(".erd-fold-scale")].map((part) => part.style.transform)).toEqual(Array(2).fill("scale(4.0000)"));
   });
 
   it("lights a hovered bundle, marks the rows of every relation it stands for, and keeps its ends bright", () => {

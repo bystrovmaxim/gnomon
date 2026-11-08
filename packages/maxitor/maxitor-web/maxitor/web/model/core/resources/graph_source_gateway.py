@@ -39,7 +39,6 @@ import hashlib
 from dataclasses import dataclass
 
 import httpx
-from maxitor.web.model.core.core_domain import CoreDomain
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_gateway import BaseGateway
@@ -74,7 +73,7 @@ class Unreachable:
     status: int | None = None
 
 
-@meta(description="Downloads an AOA service's graph-json", domain=CoreDomain)
+@meta(description="Downloads an AOA service's graph-json")
 class GraphSourceGateway(BaseGateway):
     """
     AI-CORE-BEGIN
@@ -105,7 +104,8 @@ class GraphSourceGateway(BaseGateway):
         keyed._parent = self._parent or self
         return keyed
 
-    def get_wrapper_class(self) -> type[BaseGateway] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseGateway] | None:
         """Return ``None``: nested actions download through this same gateway."""
         return None
 

@@ -45,10 +45,10 @@ from maxitor.repo_graph_port.history import History, public_history
 from maxitor.repo_graph_port.history_not_found_error import HistoryNotFoundError
 from maxitor.repo_graph_port.history_point import HistoryPoint
 from maxitor.repo_graph_port.history_versions import graph_change, graph_differs, graph_facts
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
-from maxitor.repo_graph_port.resources.version_cache import VersionCache
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
+from maxitor.repo_graph_port.resources.version_cache import VersionCacheStorage
 from maxitor.repo_graph_port.version_record import VersionRecord
 from maxitor.repo_graph_port.version_source import (
     BROKEN,
@@ -70,7 +70,7 @@ _REASONS = {
 
 
 def chosen(
-    config: HistoriesConfig,
+    config: HistoriesConfigStorage,
     history_id: str | None,
     link: str | None,
     reader_history: str | None,
@@ -94,7 +94,7 @@ def chosen(
     return history
 
 
-async def credentials(host: GitHubHost, history: History) -> dict[str, str]:
+async def credentials(host: GitHubHostGateway, history: History) -> dict[str, str]:
     """git configuration that reads the history's repository: the App's token for a private GitHub one, nothing otherwise."""
     if history.host != "github" or history.public:
         return {}
@@ -102,10 +102,10 @@ async def credentials(host: GitHubHost, history: History) -> dict[str, str]:
     if token is None:
         # Without an App the port cannot read a private repository.
         raise HistoryNotFoundError()
-    return GitHubHost.git_auth(token)
+    return GitHubHostGateway.git_auth(token)
 
 
-async def refreshed(mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, interval_seconds: int) -> History:
+async def refreshed(mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, interval_seconds: int) -> History:
     """Open the history's repository, fetch it when its last fetch is older than ``interval_seconds``, and answer the history with the paths its files had before they moved."""
     auth = await credentials(host, history)
     if not mirror.is_open(history.repository):
@@ -120,7 +120,7 @@ async def refreshed(mirror: GitMirror, cache: VersionCache, host: GitHubHost, hi
     return history.followed(graph_before, version_before)
 
 
-async def _open(mirror: GitMirror, history: History, auth: dict[str, str]) -> None:
+async def _open(mirror: GitMirrorStorage, history: History, auth: dict[str, str]) -> None:
     """Open the history's repository: a local path as it is, a GitHub one from its address."""
     if history.host == "local":
         await asyncio.to_thread(mirror.open, history.repository)
@@ -134,7 +134,7 @@ async def _open(mirror: GitMirror, history: History, auth: dict[str, str]) -> No
         raise HistoryNotFoundError() from None
 
 
-async def facts_of(mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, sha: str) -> GraphFacts:
+async def facts_of(mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, sha: str) -> GraphFacts:
     """A version's facts: kept, or read from git once and kept."""
     kept = cache.facts(history.repository, history.graph_file, sha)
     if kept is not None:
@@ -142,7 +142,7 @@ async def facts_of(mirror: GitMirror, cache: VersionCache, host: GitHubHost, his
     return (await _read(mirror, cache, host, history, sha))[1]
 
 
-async def graph_of(mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, sha: str) -> bytes:
+async def graph_of(mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, sha: str) -> bytes:
     """A version's file: kept, or read from git once and kept."""
     kept = cache.graph(history.repository, history.graph_file, sha)
     if kept is not None:
@@ -151,7 +151,7 @@ async def graph_of(mirror: GitMirror, cache: VersionCache, host: GitHubHost, his
 
 
 async def detail_of(
-    mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, sha: str, before: str | None, touched: bool = True
+    mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, sha: str, before: str | None, touched: bool = True
 ) -> tuple[Contribution, dict[str, object]]:
     """A version's contribution and what it did to the graph of ``before``: kept, or read once and kept; a commit that did not touch the graph reads none."""
     kept = cache.detail(history.repository, history.graph_file, sha)
@@ -168,7 +168,7 @@ async def detail_of(
     return contribution, change
 
 
-async def pull_request_of(cache: VersionCache, host: GitHubHost, history: History, sha: str, interval_seconds: int) -> dict[str, str | int] | None:
+async def pull_request_of(cache: VersionCacheStorage, host: GitHubHostGateway, history: History, sha: str, interval_seconds: int) -> dict[str, str | int] | None:
     """A version's pull request: one found is kept until a webhook forgets it; none found is asked again after ``interval_seconds``."""
     if history.host != "github":
         return None
@@ -185,7 +185,7 @@ async def pull_request_of(cache: VersionCache, host: GitHubHost, history: Histor
     return pull
 
 
-async def release_of(cache: VersionCache, host: GitHubHost, history: History, tag: str, interval_seconds: int) -> dict[str, str] | None:
+async def release_of(cache: VersionCacheStorage, host: GitHubHostGateway, history: History, tag: str, interval_seconds: int) -> dict[str, str] | None:
     """A tag's release: one found is kept until a webhook forgets it; none found is asked again after ``interval_seconds``."""
     if history.host != "github":
         return None
@@ -202,7 +202,7 @@ async def release_of(cache: VersionCache, host: GitHubHost, history: History, ta
     return release
 
 
-async def _token(host: GitHubHost, history: History) -> str | None:
+async def _token(host: GitHubHostGateway, history: History) -> str | None:
     """The App's token for a private history; for a public one, any installation's token, or none — anonymous — without an App."""
     if not history.public:
         return await host.token_for(history.repository)
@@ -213,7 +213,7 @@ async def _token(host: GitHubHost, history: History) -> str | None:
         return None
 
 
-async def _read(mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, sha: str) -> tuple[bytes, GraphFacts]:
+async def _read(mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, sha: str) -> tuple[bytes, GraphFacts]:
     """Read a version's file from git, decide its facts, keep both."""
     auth = await credentials(host, history)
     found = await asyncio.to_thread(mirror.first_file_at, history.repository, sha, history.graph_paths, auth)
@@ -225,7 +225,7 @@ async def _read(mirror: GitMirror, cache: VersionCache, host: GitHubHost, histor
     return content, facts
 
 
-async def number_at(mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, file: str, sha: str) -> NumberRead:
+async def number_at(mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, file: str, sha: str) -> NumberRead:
     """What the version file gives at ``sha``: kept, or read once and kept."""
     kept = cache.number(history.repository, file, history.version_key, sha)
     if kept is not None:
@@ -237,7 +237,7 @@ async def number_at(mirror: GitMirror, cache: VersionCache, host: GitHubHost, hi
     return read
 
 
-async def points_of(mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History) -> list[HistoryPoint]:
+async def points_of(mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History) -> list[HistoryPoint]:
     """
     AI-CORE-BEGIN
     ROLE: Join a history's graph file and version file into its points, oldest first.
@@ -273,14 +273,14 @@ async def points_of(mirror: GitMirror, cache: VersionCache, host: GitHubHost, hi
     return points
 
 
-async def _graph_moved(mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, sha: str, before: str | None) -> bool:
+async def _graph_moved(mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, sha: str, before: str | None) -> bool:
     """Whether the commit changed the graph document of ``before``, the last commit that touched it."""
     _, change = await detail_of(mirror, cache, host, history, sha, before)
     previous = await graph_of(mirror, cache, host, history, before) if before is not None else None
     return graph_differs(previous, await graph_of(mirror, cache, host, history, sha), change)
 
 
-async def version_problem_of(mirror: GitMirror, host: GitHubHost, history: History) -> str | None:
+async def version_problem_of(mirror: GitMirrorStorage, host: GitHubHostGateway, history: History) -> str | None:
     """
     AI-CORE-BEGIN
     ROLE: Say in plain words why a history's version cannot be read at the head of its branch.
@@ -307,7 +307,7 @@ async def version_problem_of(mirror: GitMirror, host: GitHubHost, history: Histo
 
 
 async def proposals_of(
-    mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, newest: str | None, interval_seconds: int, newest_number: str | None = None
+    mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, newest: str | None, interval_seconds: int, newest_number: str | None = None
 ) -> list[VersionRecord]:
     """
     AI-CORE-BEGIN
@@ -330,7 +330,7 @@ async def proposals_of(
     return found
 
 
-async def _open_pulls(mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, interval_seconds: int) -> list[dict[str, str | int]]:
+async def _open_pulls(mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, interval_seconds: int) -> list[dict[str, str | int]]:
     """The pull requests open into the history's branch: the host's, kept a while, or a local repository's pull heads."""
     if history.host == "github":
         kept = cache.open_pull_requests(history.repository, history.branch)
@@ -355,7 +355,7 @@ async def _open_pulls(mirror: GitMirror, cache: VersionCache, host: GitHubHost, 
 
 
 async def _proposal(
-    mirror: GitMirror, cache: VersionCache, host: GitHubHost, history: History, pull: dict[str, str | int], before: bytes | None, newest_number: str | None, auth: dict[str, str]
+    mirror: GitMirrorStorage, cache: VersionCacheStorage, host: GitHubHostGateway, history: History, pull: dict[str, str | int], before: bytes | None, newest_number: str | None, auth: dict[str, str]
 ) -> VersionRecord | None:
     """One open pull request as a version to look at, or ``None`` when it changes neither the graph nor the version."""
     head = str(pull["head"])

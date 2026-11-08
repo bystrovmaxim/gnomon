@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _MIB = 1024 * 1024
 _CEILING_MIB = 1.75
@@ -59,9 +59,9 @@ def _payload() -> dict[str, Any]:
     }
 
 
-def _graph() -> DuckDBGraphResource:
+def _graph() -> DuckDBGraphStorage:
     """Return a freshly built tiny graph."""
-    return DuckDBGraphResource.build_from_json(_payload())
+    return DuckDBGraphStorage.build_from_json(_payload())
 
 
 def test_the_schema_keeps_no_index_and_no_primary_key() -> None:

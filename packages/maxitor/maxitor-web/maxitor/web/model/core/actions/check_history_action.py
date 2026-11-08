@@ -36,7 +36,7 @@ from typing import Literal, cast
 from maxitor.web.model.core.core_domain import CoreDomain
 from maxitor.web.model.core.history_entry import HistoryEntry
 from maxitor.web.model.core.history_reading import history_line, text_or_none
-from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStore
+from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
 from maxitor.web.model.core.resources.repo_graph_port_gateway import (
     REPO_GRAPH_PORT_CONNECTION_KEY,
     Described,
@@ -46,7 +46,7 @@ from maxitor.web.model.core.resources.repo_graph_port_gateway import (
     RepoGraphPortGateway,
 )
 from maxitor.web.model.core.source_label import label
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -78,8 +78,8 @@ class CheckHistoryResult(BaseResult):
 @meta(description="Ask a held history's port whether its list or its Live changed, and tell its rooms", domain=CoreDomain)
 @check_roles(GuestRole)
 @connection(RepoGraphPortGateway, key=REPO_GRAPH_PORT_CONNECTION_KEY, description="Reads the history from its port")
-@connection(HistoryStore, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Rooms on the history")
+@connection(HistoryStoreController, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Rooms on the history")
 class CheckHistoryAction(BaseAction[CheckHistoryParams, CheckHistoryResult]):
     """
     AI-CORE-BEGIN
@@ -99,7 +99,7 @@ class CheckHistoryAction(BaseAction[CheckHistoryParams, CheckHistoryResult]):
     ) -> CheckHistoryResult:
         """Check the history once."""
         _ = state
-        store = cast(HistoryStore, connections[HISTORY_STORE_CONNECTION_KEY])
+        store = cast(HistoryStoreController, connections[HISTORY_STORE_CONNECTION_KEY])
         entry = store.peek(params.history)
         if entry is None:
             return CheckHistoryResult(status="not_held")
@@ -107,14 +107,14 @@ class CheckHistoryAction(BaseAction[CheckHistoryParams, CheckHistoryResult]):
             return CheckHistoryResult(status="skipped")
         entry.checking = True
         try:
-            status = await _check(entry, cast(RepoGraphPortGateway, connections[REPO_GRAPH_PORT_CONNECTION_KEY]), cast(RoomRegistry, connections[ROOM_REGISTRY_KEY]), box)
+            status = await _check(entry, cast(RepoGraphPortGateway, connections[REPO_GRAPH_PORT_CONNECTION_KEY]), cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY]), box)
         finally:
             entry.checking = False
             entry.last_checked = store.now()
         return CheckHistoryResult(status=status)
 
 
-async def _check(entry: HistoryEntry, gateway: RepoGraphPortGateway, rooms: RoomRegistry, box: ToolsBox) -> HistoryCheckStatus:
+async def _check(entry: HistoryEntry, gateway: RepoGraphPortGateway, rooms: RoomRegistryController, box: ToolsBox) -> HistoryCheckStatus:
     """Ask the port with each remembered key in turn; apply what it says."""
     for key in [""] if entry.public else list(entry.keys):
         listed = await gateway.versions(entry.route, entry.link, key, entry.etag, version_link=entry.version_link, version_key=entry.version_key)
@@ -145,7 +145,7 @@ async def _check(entry: HistoryEntry, gateway: RepoGraphPortGateway, rooms: Room
     return "not_found"
 
 
-def _tell_rooms(entry: HistoryEntry, rooms: RoomRegistry) -> None:
+def _tell_rooms(entry: HistoryEntry, rooms: RoomRegistryController) -> None:
     """Tell every room on the history that it changed; move a room whose version it no longer offers."""
     for room in rooms.rooms_of_history(entry.name):
         rooms.broadcast(room, {"type": "history_changed"})

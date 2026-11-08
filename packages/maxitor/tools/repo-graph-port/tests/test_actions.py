@@ -18,10 +18,10 @@ from maxitor.repo_graph_port.history_context import HistoryContext
 from maxitor.repo_graph_port.history_not_found_error import HistoryNotFoundError
 from maxitor.repo_graph_port.history_reader_info import HistoryReaderInfo
 from maxitor.repo_graph_port.history_reader_role import HistoryReaderRole
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
-from maxitor.repo_graph_port.resources.version_cache import VersionCache
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
+from maxitor.repo_graph_port.resources.version_cache import VersionCacheStorage
 from maxitor.repo_graph_port.tag import Tag
 
 from aoa.action_machine.context import env
@@ -30,7 +30,7 @@ from aoa.action_machine.runtime.action_product_machine import ActionProductMachi
 from tests.repo_builder import GRAPH_FILE, BuiltRepository, add_proposal, build_repository, graph, keep_pull_head
 
 
-class CountingMirror(GitMirror):
+class CountingMirrorStorage(GitMirrorStorage):
     """The real mirror, counting every git read it is asked for."""
 
     def __init__(self, cache: Path) -> None:
@@ -91,12 +91,12 @@ class Server:
             encoding="utf-8",
         )
         self.machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
-        self.mirror = CountingMirror(folder / "cache")
+        self.mirror = CountingMirrorStorage(folder / "cache")
         self.connections: dict[str, Any] = {
-            "HistoriesConfig": HistoriesConfig(config),
-            "GitMirror": self.mirror,
-            "VersionCache": VersionCache(folder / "cache"),
-            "GitHubHost": GitHubHost(),
+            "HistoriesConfigStorage": HistoriesConfigStorage(config),
+            "GitMirrorStorage": self.mirror,
+            "VersionCacheStorage": VersionCacheStorage(folder / "cache"),
+            "GitHubHostGateway": GitHubHostGateway(),
         }
 
     async def run(self, action: Any, params: Any, context: type[HistoryContext] = HistoryContext) -> Any:
@@ -203,7 +203,7 @@ def test_a_config_out_of_shape_is_refused(tmp_path: Path) -> None:
         config = tmp_path / "histories.toml"
         config.write_text(text, encoding="utf-8")
         with pytest.raises(ValueError, match=reason):
-            HistoriesConfig(config)
+            HistoriesConfigStorage(config)
 
 
 async def test_history_lists_the_pull_requests_still_open_that_change_the_graph(tmp_path: Path) -> None:

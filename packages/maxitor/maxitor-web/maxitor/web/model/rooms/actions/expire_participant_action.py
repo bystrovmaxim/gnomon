@@ -26,9 +26,9 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor.web.model.rooms.actions.end_room_action import schedule_end_if_empty
-from maxitor.web.model.rooms.actions.room_action_support import RoomAnswer
+from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult
 from maxitor.web.model.rooms.layout_authority import recheck_layouts
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -53,8 +53,8 @@ class ExpireParticipantParams(BaseParams):
 
 @meta(description="Remove a participant who did not come back in time", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-class ExpireParticipantAction(BaseAction[ExpireParticipantParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+class ExpireParticipantAction(BaseAction[ExpireParticipantParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: End the return window of a participant who lost every connection.
@@ -70,16 +70,16 @@ class ExpireParticipantAction(BaseAction[ExpireParticipantParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Remove the participant when their window ended without a return."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
         room = registry.room(params.room_id)
         if room is None:
-            return RoomAnswer()
+            return RoomAnswerResult()
         async with room.lock:
             participant = room.participants.get(params.participant)
             if participant is None or participant.tabs or participant.return_until != params.until:
-                return RoomAnswer()
+                return RoomAnswerResult()
             registry.remove_participant(room, participant.id)
             registry.broadcast(room, {"type": "left", "participant": participant.public()})
             registry.broadcast(room, {"type": "follows", "follows": room.follows()})
@@ -91,4 +91,4 @@ class ExpireParticipantAction(BaseAction[ExpireParticipantParams, RoomAnswer]):
             participant=participant.id,
             room=room.id,
         )
-        return RoomAnswer()
+        return RoomAnswerResult()

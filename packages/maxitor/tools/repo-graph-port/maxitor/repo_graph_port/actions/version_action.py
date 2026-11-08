@@ -28,10 +28,10 @@ from typing import cast
 from maxitor.repo_graph_port.history_not_found_error import HistoryNotFoundError
 from maxitor.repo_graph_port.history_reading import chosen, graph_of, points_of, refreshed
 from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
-from maxitor.repo_graph_port.resources.version_cache import VersionCache
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
+from maxitor.repo_graph_port.resources.version_cache import VersionCacheStorage
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -65,10 +65,10 @@ class VersionResult(BaseResult):
 
 @meta(description="Read one version's graph file", domain=RepoGraphDomain)
 @check_roles(GuestRole)
-@connection(HistoriesConfig, key="HistoriesConfig", description="The histories this server serves")
-@connection(GitMirror, key="GitMirror", description="The repositories' history, read with git")
-@connection(GitHubHost, key="GitHubHost", description="GitHub: the App's token, pull requests, releases")
-@connection(VersionCache, key="VersionCache", description="Each version's file, read once")
+@connection(HistoriesConfigStorage, key="HistoriesConfigStorage", description="The histories this server serves")
+@connection(GitMirrorStorage, key="GitMirrorStorage", description="The repositories' history, read with git")
+@connection(GitHubHostGateway, key="GitHubHostGateway", description="GitHub: the App's token, pull requests, releases")
+@connection(VersionCacheStorage, key="VersionCacheStorage", description="Each version's file, read once")
 class VersionAction(BaseAction[VersionParams, VersionResult]):
     """
     AI-CORE-BEGIN
@@ -89,10 +89,10 @@ class VersionAction(BaseAction[VersionParams, VersionResult]):
         ctx: ContextView,
     ) -> VersionResult:
         """Answer from the cache, or check the sha is a version and read it once."""
-        mirror = cast(GitMirror, connections["GitMirror"])
-        host = cast(GitHubHost, connections["GitHubHost"])
-        cache = cast(VersionCache, connections["VersionCache"])
-        history = chosen(cast(HistoriesConfig, connections["HistoriesConfig"]), params.history, params.link, ctx.get("user.history"), params.version_link, params.version_key)
+        mirror = cast(GitMirrorStorage, connections["GitMirrorStorage"])
+        host = cast(GitHubHostGateway, connections["GitHubHostGateway"])
+        cache = cast(VersionCacheStorage, connections["VersionCacheStorage"])
+        history = chosen(cast(HistoriesConfigStorage, connections["HistoriesConfigStorage"]), params.history, params.link, ctx.get("user.history"), params.version_link, params.version_key)
         kept = cache.graph(history.repository, history.graph_file, params.sha)
         if kept is None:
             history = await refreshed(mirror, cache, host, history, ctx.get("env.history_refresh_seconds"))

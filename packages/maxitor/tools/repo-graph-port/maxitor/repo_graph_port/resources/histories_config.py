@@ -1,6 +1,6 @@
 # packages/maxitor/tools/repo-graph-port/maxitor/repo_graph_port/resources/histories_config.py
 """
-HistoriesConfig — the histories the port serves and the keys that open them, from its config file.
+HistoriesConfigStorage — the histories the port serves and the keys that open them, from its config file.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -42,7 +42,6 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from maxitor.repo_graph_port.history import History
-from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_storage import BaseStorage
@@ -57,8 +56,8 @@ class _Loaded:
     github: tuple[int, str, str] | None
 
 
-@meta(description="The histories the port serves and their read keys, from its config file", domain=RepoGraphDomain)
-class HistoriesConfig(BaseStorage):
+@meta(description="The histories the port serves and their read keys, from its config file")
+class HistoriesConfigStorage(BaseStorage):
     """
     AI-CORE-BEGIN
     ROLE: Name each configured history, where its graph file lives, and the keys that open it.
@@ -74,9 +73,10 @@ class HistoriesConfig(BaseStorage):
 
     def __repr__(self) -> str:
         """Name the file, never what it holds."""
-        return f"HistoriesConfig({str(self._path)!r})"
+        return f"HistoriesConfigStorage({str(self._path)!r})"
 
-    def get_wrapper_class(self) -> type[BaseStorage] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseStorage] | None:
         """Return ``None``: nested actions read through this same config."""
         return None
 

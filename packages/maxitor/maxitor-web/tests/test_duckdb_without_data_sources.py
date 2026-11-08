@@ -9,16 +9,16 @@ are not loaded, so a 1.8 graph and the same model at 2.0 fill the store alike.
 from __future__ import annotations
 
 import pytest
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 from tests.fixtures.data_source_model import APP, DOMAIN, SHOP_DB, data_source_model_graph
 from tests.fixtures.protocol_2_0 import as_2_0
 
 
-def _graph_1_8() -> DuckDBGraphResource:
+def _graph_1_8() -> DuckDBGraphStorage:
     graph = data_source_model_graph()
     graph["schema_version"] = "1.8"
-    return DuckDBGraphResource.build_from_json(graph)
+    return DuckDBGraphStorage.build_from_json(graph)
 
 
 @pytest.mark.parametrize("table", ["data_source", "resource_data_source_edges", "entity_resource_edges"])
@@ -36,6 +36,6 @@ def test_a_graph_of_1_8_shows_no_data_source() -> None:
 
 def test_a_graph_of_1_8_and_the_same_model_at_2_0_keep_the_same_entities() -> None:
     query = "SELECT source_id, target_id FROM resource_entity_edges ORDER BY ALL"
-    at_2_0 = DuckDBGraphResource.build_from_json(as_2_0(data_source_model_graph()))
+    at_2_0 = DuckDBGraphStorage.build_from_json(as_2_0(data_source_model_graph()))
     assert _graph_1_8().execute_fetch_dicts(query) == at_2_0.execute_fetch_dicts(query)
     assert len(at_2_0.execute_fetch_dicts(query)) == 3

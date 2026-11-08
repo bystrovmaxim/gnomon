@@ -42,7 +42,7 @@ def short_sha(sha: str) -> str:
 class HistoryEntry:
     """
     AI-CORE-BEGIN
-    ROLE: The unit ``HistoryStore`` keeps for one history.
+    ROLE: The unit ``HistoryStoreController`` keeps for one history.
     CONTRACT: ``name`` is the history's address without its key; ``route`` and ``link`` say where its port reads it; ``versions`` is the port's list, oldest first; ``proposals`` are its pull requests still open that change the graph; ``live`` is its Live service or ``None``.
     INVARIANTS: ``keys`` never appears in ``repr``; a key is added only after the port accepted it.
     AI-CORE-END

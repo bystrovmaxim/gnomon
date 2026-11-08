@@ -3,6 +3,7 @@ import type { ErdEntity, ErdRelation } from "@/lib/buildDotSource";
 import type { CompareResult } from "@/api/compare";
 import { erdSubject, fromAfar, litBy, resourceLine } from "@/lib/erdCard";
 import { markErd } from "@/lib/erdDiff";
+import { physicalDrawing } from "@/lib/erdViews";
 
 const entities: ErdEntity[] = [
   { id: "a.Lot", label: "Lot", entity_kind_label: "Core", fields: [{ name: "id", type: "str", primary_key: true, description: "Lot id" }] },
@@ -128,32 +129,34 @@ describe("litBy", () => {
   });
 });
 
-describe("a table's card names its resource (spec 061)", () => {
-  const invoice: ErdEntity = { id: "shop.Invoice", label: "Invoice", fields: [], resource_id: "shop.BillingDatabase", resource_label: "BillingDatabase" };
-  const labels = { "shop.BillingDatabase": "BillingDatabase", "shop.StorefrontDatabase": "StorefrontDatabase" };
+describe("a table's card says its domain and where it lies (spec 070)", () => {
+  const BILLING = "shop.BillingDatabase";
+  const STOREFRONT = "shop.StorefrontDatabase";
+  const invoice: ErdEntity = { id: "shop.Invoice", label: "Invoice", fields: [], domain_qualname: "shop.MoneyDomain", resource_ids: [BILLING] };
+  const labels = { [BILLING]: "BillingDatabase", [STOREFRONT]: "StorefrontDatabase" };
+  const domains = { "shop.MoneyDomain": "Money" };
+  const detail = (entity: ErdEntity, storageKnown = true) => erdSubject({ kind: "table", id: entity.id }, [entity], root, [], labels, [], domains, storageKnown)?.detail;
 
-  it("reads the resource under the table's name", () => {
-    expect(erdSubject({ kind: "table", id: "shop.Invoice" }, [invoice], root, [], labels)?.detail).toBe("Resource: BillingDatabase");
+  it("reads the domain and every resource that keeps the table", () => {
+    expect(detail(invoice)).toBe("Domain: Money · Resources: BillingDatabase");
+    expect(detail({ ...invoice, resource_ids: [BILLING, STOREFRONT] })).toBe("Domain: Money · Resources: BillingDatabase, StorefrontDatabase");
   });
 
-  it("has no resource line for a table of a graph older than 1.6", () => {
+  it("says Not stored when no resource keeps it", () => {
+    expect(detail({ ...invoice, resource_ids: [] })).toBe("Domain: Money · Not stored");
+  });
+
+  it("reads the domain alone for a graph that does not say where tables lie", () => {
+    expect(detail({ ...invoice, resource_ids: [] }, false)).toBe("Domain: Money");
     expect(erdSubject({ kind: "table", id: "a.Lot" }, entities, root, [], labels)?.detail).toBe("");
   });
 
-  it("in Diff names where a moved table was stored before", () => {
-    const moved: ErdEntity = { ...invoice, resource_id: "shop.StorefrontDatabase", resource_label: "StorefrontDatabase", previous_resource_id: "shop.BillingDatabase" };
-    expect(erdSubject({ kind: "table", id: "shop.Invoice" }, [moved], root, [], labels)?.detail).toBe("Resource: BillingDatabase → StorefrontDatabase");
+  it("in Diff names where a table was kept before", () => {
+    expect(detail({ ...invoice, resource_ids: [STOREFRONT], previous_resource_ids: [BILLING] })).toBe("Domain: Money · Resources: BillingDatabase → StorefrontDatabase");
   });
-});
 
-describe("the data source on a table's card (spec 063)", () => {
-  it("names the data source of the table's resource, or that it names none", () => {
-    const entity = { id: "shop.Order", label: "Order", resource_id: "shop.Storefront", fields: [] } as never;
-    const labels = { "shop.Storefront": "Storefront", "shop.Billing": "Billing" };
-    const sources = { "shop.ShopDataSource": "ShopDataSource" };
-    expect(resourceLine(entity, labels, { "shop.Storefront": "shop.ShopDataSource" }, sources)).toBe("Resource: Storefront · Data source: ShopDataSource");
-    expect(resourceLine({ ...(entity as object), resource_id: "shop.Billing" } as never, labels, {}, sources)).toBe("Resource: Billing · No data source");
-    expect(resourceLine(entity, labels)).toBe("Resource: Storefront");
+  it("names no data source", () => {
+    expect(resourceLine(invoice, labels, domains)).not.toMatch(/data source/i);
   });
 });
 
@@ -167,7 +170,7 @@ describe("a bundle's card (spec 065)", () => {
 
   it("names its two ends and lists each relation it stands for", () => {
     document.body.innerHTML = "<div></div>";
-    const subject = erdSubject({ kind: "edge", id: "rb0" }, shopEntities, document.body, shopRelations, { "shop.Orders": "OrdersResource" }, {}, {}, bundles)!;
+    const subject = erdSubject({ kind: "edge", id: "rb0" }, shopEntities, document.body, shopRelations, { "shop.Orders": "OrdersResource" }, bundles)!;
     expect(subject.title).toBe("Ticket ↔ OrdersResource");
     expect(subject.fieldNoun).toBe("relation");
     expect(subject.fields).toEqual([
@@ -178,51 +181,39 @@ describe("a bundle's card (spec 065)", () => {
 
   it("leaves an ordinary line's card as it was", () => {
     document.body.innerHTML = "<div></div>";
-    expect(erdSubject({ kind: "edge", id: "re0" }, shopEntities, document.body, shopRelations, {}, {}, {}, bundles)!.title).toBe("Ticket.order → Order");
+    expect(erdSubject({ kind: "edge", id: "re0" }, shopEntities, document.body, shopRelations, {}, bundles)!.title).toBe("Ticket.order → Order");
   });
 });
 
-describe("the card of a contour and of a folded box (spec 068)", () => {
+describe("the card of a resource's frame and of its folded box (spec 068, spec 070)", () => {
   const ORDERS = "shop.OrdersResource";
   const SUPPORT = "shop.SupportResource";
-  const SHOP = "shop.ShopDataSource";
-  const table = (id: string, resource_id: string, entity_kind = "core"): ErdEntity => ({ id, label: id.split(".")[1], resource_id, entity_kind, fields: [] });
-  const entities = [table("shop.Order", ORDERS), table("shop.Line", ORDERS, "detail"), table("shop.Ticket", SUPPORT)];
-  const labels = { [ORDERS]: "OrdersResource", [SUPPORT]: "SupportResource" };
-  const sources = { [ORDERS]: SHOP, [SUPPORT]: SHOP };
-  const sourceLabels = { [SHOP]: "ShopDataSource" };
-  const card = (ref: { kind: "contour" | "table"; id: string }) => erdSubject(ref, entities, document.createElement("div"), [], labels, sources, sourceLabels);
+  const ARCHIVE = "shop.ArchiveResource";
+  const copy = (entity: string, resource: string, entity_kind = "core"): ErdEntity => ({ ...physicalDrawing([{ id: entity, label: entity.split(".")[1], resource_ids: [resource], entity_kind, fields: [] }], []).entities[0]! });
+  const drawn = [copy("shop.Order", ORDERS), copy("shop.Line", ORDERS, "detail"), copy("shop.Ticket", SUPPORT)];
+  const labels = { [ORDERS]: "OrdersResource", [SUPPORT]: "SupportResource", [ARCHIVE]: "ArchiveResource" };
+  const card = (ref: { kind: "contour" | "table"; id: string }) => erdSubject(ref, drawn, document.createElement("div"), [], labels);
 
-  it("gives a resource contour its icon, name, data source and tables — their count only on the fold — and the full id to copy", () => {
+  it("gives a resource's frame its icon, name and copies — their count only on the fold — and the full id to copy", () => {
     const subject = card({ kind: "contour", id: ORDERS })!;
-    expect([subject.title, subject.detail, subject.nodeId, subject.copy, subject.fieldNoun]).toEqual([
-      "OrdersResource",
-      "Resource · Data source: ShopDataSource",
-      ORDERS,
-      ORDERS,
-      "table",
-    ]);
+    expect([subject.title, subject.detail, subject.nodeId, subject.copy, subject.fieldNoun]).toEqual(["OrdersResource", "Resource", ORDERS, ORDERS, "table"]);
     expect(subject.fields).toEqual([{ name: "Line", type: "detail" }, { name: "Order", type: "core" }]);
-    expect(subject.icon).toMatch(/^data:image\/svg\+xml,/);
     expect(decodeURIComponent(subject.icon!)).toContain("#7570B3");
   });
 
-  it("gives a folded resource box the same card as its contour", () => {
+  it("gives a folded resource box the same card as its frame", () => {
     expect(card({ kind: "table", id: `rc:${ORDERS}` })!.fields).toEqual(card({ kind: "contour", id: ORDERS })!.fields);
   });
 
-  it("gives a folded data source box its own icon, its resources and tables, each table with its resource", () => {
-    const subject = card({ kind: "table", id: `dc:${SHOP}` })!;
-    expect([subject.title, subject.detail, subject.nodeId]).toEqual(["ShopDataSource", "Data source · 2 resources", SHOP]);
-    expect(subject.fields).toEqual([
-      { name: "Line", type: "OrdersResource" },
-      { name: "Order", type: "OrdersResource" },
-      { name: "Ticket", type: "SupportResource" },
-    ]);
-    expect(decodeURIComponent(subject.icon!)).toContain("#0F766E");
+  it("gives an empty resource's frame a card that says it keeps nothing", () => {
+    expect(card({ kind: "contour", id: ARCHIVE })).toMatchObject({ title: "ArchiveResource", detail: "Resource · keeps no entity", fields: [] });
   });
 
-  it("has no card for a contour of nothing on the diagram", () => {
+  it("has no card for a frame of a resource the graph does not have", () => {
     expect(card({ kind: "contour", id: "shop.Gone" })).toBeNull();
+  });
+
+  it("reads a copy's card as its entity's, naming the entity for the full graph", () => {
+    expect(erdSubject({ kind: "table", id: drawn[0]!.id }, drawn, document.createElement("div"), [], labels)).toMatchObject({ title: "Order", nodeId: "shop.Order" });
   });
 });

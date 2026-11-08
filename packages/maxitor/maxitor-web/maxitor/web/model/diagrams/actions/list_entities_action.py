@@ -14,12 +14,12 @@ edges); relation slots appear as FK rows whose type is the target table's label.
 :mod:`~maxitor.web.model.diagrams.actions.list_entities_action_schema` (a
 :class:`~aoa.action_machine.model.json_schema_value.JsonSchemaValue` alias).
 
-Each entity row names a resource that keeps it (``resource_entity_edges``: protocol 2.0, or 1.6–1.8
-turned around) — the first by id when several keep it — and the result lists the resources of the whole
-graph that keep an entity, sorted by id, each with its colour from ``DOMAIN_PALETTE`` by its place in that
+Each entity row lists every resource that keeps it, sorted by id (``resource_entity_edges``: protocol 2.0,
+or 1.6–1.8 turned around), empty when none does. The result lists every resource of the whole graph — one
+that keeps no entity too — sorted by id, each with its colour from ``DOMAIN_PALETTE`` by its place in that
 list: the colour depends on the graph alone, never on the domains asked for, so every reader of one graph
-sees one resource in one colour (spec 061). The store knows no data source, so no resource names one and
-``data_sources`` is empty.
+sees one resource in one colour (spec 061). ``storage_known`` says whether the graph tells where any entity
+lies; a graph before protocol 1.6 does not, and the ERD then has no physical view (spec 070).
 """
 
 from __future__ import annotations
@@ -29,15 +29,14 @@ from typing import Annotated, Any, cast
 
 from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
 from maxitor.web.model.diagrams.actions.list_entities_action_schema import (
-    ListEntitiesDataSourcesJson,
     ListEntitiesDomainSlicesJson,
     ListEntitiesRelationsJson,
     ListEntitiesResourcesJson,
 )
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -61,7 +60,7 @@ _KIND_FIELDS = frozenset({"code", "display_name"})
 )
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Coordinator graph in DuckDB (entity / domain / entity_relation)",
 )
@@ -165,15 +164,13 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         resources: ListEntitiesResourcesJson = Field(
             default_factory=list,
             description=(
-                "Every resource of the graph that keeps an entity, sorted by id, with its colour and no data source; "
+                "Every resource of the graph, one that keeps no entity too, sorted by id, with its colour; "
                 "the same for every request on one graph, whatever domains it asks for."
             ),
         )
-        data_sources: ListEntitiesDataSourcesJson = Field(
-            default_factory=list,
-            description=(
-                "Empty: the store knows no data source, so no listed resource names one."
-            ),
+        storage_known: bool = Field(
+            default=False,
+            description="Whether the graph says where any entity lies: false before protocol 1.6, so no physical view.",
         )
         relations: ListEntitiesRelationsJson = Field(
             default_factory=list,
@@ -184,9 +181,9 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         )
 
     @staticmethod
-    def _domain_label(duck: DuckDBGraphResource, qual: str) -> str:
+    def _domain_label(duck: DuckDBGraphStorage, qual: str) -> str:
         """Return ``domain`` label from DuckDB, or ``qual`` when the row is missing."""
-        row = duck.service.execute(
+        row = duck.connection.execute(
             "SELECT COALESCE(NULLIF(name, ''), label, id) FROM domain WHERE id = ?",
             [qual],
         ).fetchone()
@@ -219,7 +216,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         )"""
 
     @staticmethod
-    def _association_rows(duck: DuckDBGraphResource, quals: list[str], include_neighbors: bool) -> list[dict[str, Any]]:
+    def _association_rows(duck: DuckDBGraphStorage, quals: list[str], include_neighbors: bool) -> list[dict[str, Any]]:
         """Relations, dictionary references and axis dictionaries whose two ends are both among the selected entities.
 
         Why a table is on screen — its own domain or a 1-hop neighbour — never decides whether its lines are drawn.
@@ -292,7 +289,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
 
     @staticmethod
     def _generalization_rows(
-        duck: DuckDBGraphResource, quals: list[str], include_neighbors: bool
+        duck: DuckDBGraphStorage, quals: list[str], include_neighbors: bool
     ) -> list[dict[str, Any]]:
         """Extension → head lines whose two ends are both among the selected entities."""
         sql = ListEntitiesAction._selection_cte(len(quals), include_neighbors) + """
@@ -313,7 +310,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         return duck.execute_fetch_dicts(sql, quals)
 
     @staticmethod
-    def request_relations(duck: DuckDBGraphResource, quals: list[str], include_neighbors: bool) -> list[dict[str, Any]]:
+    def request_relations(duck: DuckDBGraphStorage, quals: list[str], include_neighbors: bool) -> list[dict[str, Any]]:
         """Every line between two tables of the whole request, so a line whose ends come from two slices exists."""
         if not quals:
             return []
@@ -322,7 +319,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         return rows
 
     @staticmethod
-    def _slice_payload(duck: DuckDBGraphResource, qual: str, include_neighbors: bool) -> dict[str, Any]:
+    def _slice_payload(duck: DuckDBGraphStorage, qual: str, include_neighbors: bool) -> dict[str, Any]:
         """Run DuckDB SQL for one domain slice and return ``entities`` + ``relations`` lists."""
         neighbor_clause = (
             """
@@ -345,8 +342,8 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
           SELECT id FROM domain_entity
           {neighbor_clause}
         ), stored_by AS (
-          -- A resource that keeps each entity, the first by id; a graph of 1.0–1.5 has none.
-          SELECT rre.target_id AS entity_id, arg_min(r.id, r.id) AS resource_id, arg_min(r.label, r.id) AS resource_label
+          -- Every resource that keeps each entity, by id; a graph of 1.0–1.5 has none.
+          SELECT rre.target_id AS entity_id, list(DISTINCT r.id ORDER BY r.id) AS resource_ids
           FROM resource_entity_edges rre
           JOIN resource r ON r.id = rre.source_id
           GROUP BY rre.target_id
@@ -433,7 +430,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         )
         SELECT e.id, e.label, COALESCE(MIN(de.target_id), '') AS domain_qualname,
                e.entity_kind AS entity_kind, e.values_json AS values_json, e.declares_values AS declares_values,
-               sb.resource_id AS resource_id, sb.resource_label AS resource_label,
+               COALESCE(sb.resource_ids, CAST([] AS VARCHAR[])) AS resource_ids,
                COALESCE(
                  list(struct_pack(
                    field_id := fr.field_node_id,
@@ -463,7 +460,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         LEFT JOIN domain_edges de ON de.source_id = e.id
         LEFT JOIN stored_by sb ON sb.entity_id = e.id
         LEFT JOIN ordered_field_rows fr ON fr.entity_id = e.id
-        GROUP BY e.id, e.label, e.entity_kind, e.values_json, e.declares_values, sb.resource_id, sb.resource_label
+        GROUP BY e.id, e.label, e.entity_kind, e.values_json, e.declares_values, sb.resource_ids
         ORDER BY e.id
     """
         group_sql = f"""
@@ -538,14 +535,13 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         box: ToolsBox,
         connections: Connections,
     ) -> ListEntitiesAction.Result:
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         # The resources of the whole graph, never only of the domains asked for: a colour then depends on
         # the graph alone, and one resource looks the same on every diagram and to every reader.
         stored = duck.execute_fetch_dicts(
             """
             SELECT r.id AS id, r.label AS label
             FROM resource r
-            WHERE EXISTS (SELECT 1 FROM resource_entity_edges rre JOIN entity e ON e.id = rre.target_id WHERE rre.source_id = r.id)
             ORDER BY r.id
             """
         )
@@ -554,12 +550,13 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
                 "id": str(row["id"]),
                 "label": str(row["label"]),
                 "color": DOMAIN_PALETTE[i % len(DOMAIN_PALETTE)],
-                "data_source_id": None,
             }
             for i, row in enumerate(stored)
         ]
+        known = duck.execute_fetch_dicts("SELECT EXISTS (SELECT 1 FROM resource_entity_edges) AS known")
+        storage_known = bool(known[0]["known"])
         if not params.domain_qualnames:
-            return ListEntitiesAction.Result(domain_slices=[], resources=resources)
+            return ListEntitiesAction.Result(domain_slices=[], resources=resources, storage_known=storage_known)
 
         slices = [
             {
@@ -570,4 +567,4 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
             for qual in params.domain_qualnames
         ]
         relations = self.request_relations(duck, list(dict.fromkeys(params.domain_qualnames)), params.include_one_hop_neighbors)
-        return ListEntitiesAction.Result(domain_slices=slices, resources=resources, relations=relations)
+        return ListEntitiesAction.Result(domain_slices=slices, resources=resources, storage_known=storage_known, relations=relations)

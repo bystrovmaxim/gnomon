@@ -13,7 +13,7 @@ learns which command it was and what git said, in one exception.
 ARCHITECTURE / DATA FLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
-``GitMirror`` ──git exits non-zero or times out──► ``GitError(command, said)``.
+``GitMirrorStorage`` ──git exits non-zero or times out──► ``GitError(command, said)``.
 The command is named by its git subcommand only, never by its arguments or
 environment, so nothing that authenticates a call reaches a message.
 """

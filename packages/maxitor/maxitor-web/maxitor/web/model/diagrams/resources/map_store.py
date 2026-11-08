@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/diagrams/resources/map_store.py
 """
-MapStore — the map of a version, laid out once, kept on disk and shared by every reader.
+MapStoreController — the map of a version, laid out once, kept on disk and shared by every reader.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -68,7 +68,6 @@ from maxitor.graph_map import (
     union_document,
     union_layouts,
 )
-from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_controller import BaseController
@@ -153,8 +152,8 @@ def _with_edge_ids(document: dict[str, Any]) -> dict[str, Any]:
     return document
 
 
-@meta(description="The map of a version, laid out once and kept on disk", domain=DiagramsDomain)
-class MapStore(BaseController):
+@meta(description="The map of a version, laid out once and kept on disk")
+class MapStoreController(BaseController):
     """
     AI-CORE-BEGIN
     ROLE: Make each version's map once, keep it on disk, and read it back in parts.
@@ -189,7 +188,8 @@ class MapStore(BaseController):
         self.laid_out = 0
         """How many areas were laid out, not found under their content hash."""
 
-    def get_wrapper_class(self) -> type[BaseController] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseController] | None:
         """Return ``None``: nested actions use this same store."""
         return None
 

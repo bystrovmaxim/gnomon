@@ -10,7 +10,7 @@ from typing import Any
 import httpx
 from maxitor.web.api.app import create_app
 from maxitor.web.api.graph_store import GraphEntry, GraphStore
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _SOURCE = "https://burst.aoa.run/graph-json"
 _SIDEBAR = SimpleNamespace(level1_nodes=[], level2_diagrams=[], level2_nodes=[], level3_diagrams=[])
@@ -32,9 +32,9 @@ class FakeClock:
         self.now += seconds
 
 
-def _graph() -> DuckDBGraphResource:
+def _graph() -> DuckDBGraphStorage:
     """Return a real in-process graph, so the diagram route has something to query."""
-    return DuckDBGraphResource.build_from_json(
+    return DuckDBGraphStorage.build_from_json(
         {
             "schema_version": "1.0",
             "nodes": [
@@ -53,7 +53,7 @@ def _graph() -> DuckDBGraphResource:
 class CountingBuilder:
     """A builder that counts builds and takes long enough for the readers to overlap."""
 
-    def __init__(self, graph: DuckDBGraphResource, delay: float = 0.01) -> None:
+    def __init__(self, graph: DuckDBGraphStorage, delay: float = 0.01) -> None:
         self.calls: list[str] = []
         self._graph = graph
         self._delay = delay

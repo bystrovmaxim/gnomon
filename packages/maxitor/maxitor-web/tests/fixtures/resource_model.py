@@ -8,7 +8,7 @@ from typing import Any
 DOMAIN = "shop.ShopDomain"
 STOREFRONT = "shop.StorefrontDatabase"
 BILLING = "shop.BillingDatabase"
-SOCKET = "shop.SocketChannel"
+SOCKET = "shop.SocketChannelController"
 ORDER = "shop.Order"
 ORDER_LINE = "shop.OrderLine"
 INVOICE = "shop.Invoice"
@@ -36,7 +36,7 @@ def _edge(source: str, edge_type: str, target: str, relationship: str = "Aggrega
 def resource_model_graph() -> dict[str, Any]:
     """
     Protocol 1.6: ``Order`` and ``OrderLine`` (an order has many lines) stored by ``StorefrontDatabase``,
-    ``Invoice`` by ``BillingDatabase``, and ``SocketChannel`` storing nothing; all in ``ShopDomain``.
+    ``Invoice`` by ``BillingDatabase``, and ``SocketChannelController`` storing nothing; all in ``ShopDomain``.
     Every entity has one ``entity_resource`` edge and keeps its ``domain`` edge.
     """
     nodes: list[dict[str, Any]] = [

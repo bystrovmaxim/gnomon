@@ -24,7 +24,7 @@ from typing import Any
 
 import pytest
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _REFERENCE_GRAPH = (
     Path(__file__).resolve().parents[4] / "specs/025-graph-index-memory/data/ref-graph-2026-10-26.json.gz"
@@ -46,9 +46,9 @@ def graph() -> dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def duck(graph: dict[str, Any]) -> DuckDBGraphResource:
+def duck(graph: dict[str, Any]) -> DuckDBGraphStorage:
     """The reference graph loaded into the store."""
-    return DuckDBGraphResource.build_from_json(graph)
+    return DuckDBGraphStorage.build_from_json(graph)
 
 
 @pytest.fixture(scope="module")
@@ -62,12 +62,12 @@ def _pairs(rows: list[dict[str, Any]]) -> set[tuple[str, str]]:
     return {tuple(sorted((_short(r["source"]), _short(r["target"])))) for r in rows}
 
 
-def _slice(duck: DuckDBGraphResource, qual: str) -> dict[str, Any]:
+def _slice(duck: DuckDBGraphStorage, qual: str) -> dict[str, Any]:
     """One domain slice with its 1-hop neighbours."""
     return ListEntitiesAction._slice_payload(duck, qual, include_neighbors=True)
 
 
-def test_two_neighbours_of_a_domain_are_joined(duck: DuckDBGraphResource, domains: dict[str, str]) -> None:
+def test_two_neighbours_of_a_domain_are_joined(duck: DuckDBGraphStorage, domains: dict[str, str]) -> None:
     """On ``EventsDomain`` the neighbours ``PlayerCore`` and ``ShowcaseCore`` are both drawn, so their line is."""
     pairs = _pairs(_slice(duck, domains["EventsDomain"])["relations"])
 
@@ -76,7 +76,7 @@ def test_two_neighbours_of_a_domain_are_joined(duck: DuckDBGraphResource, domain
     assert ("EnergyResourceCoreEntity", "GameCoreEntity") in pairs
 
 
-def test_a_generalization_between_neighbours_is_drawn(duck: DuckDBGraphResource, domains: dict[str, str]) -> None:
+def test_a_generalization_between_neighbours_is_drawn(duck: DuckDBGraphStorage, domains: dict[str, str]) -> None:
     """On ``PlayersDomain`` the extensions of ``UserEventCore`` on screen keep their line to it."""
     rows = [
         r for r in _slice(duck, domains["PlayersDomain"])["relations"] if r["relationship_kind"] == "generalization"
@@ -90,7 +90,7 @@ def test_a_generalization_between_neighbours_is_drawn(duck: DuckDBGraphResource,
 
 
 def test_a_specialization_head_is_joined_to_its_axis_dictionary(
-    duck: DuckDBGraphResource, domains: dict[str, str]
+    duck: DuckDBGraphStorage, domains: dict[str, str]
 ) -> None:
     """``UserEventCore`` specializes by ``kind`` from ``EventKindEnum``: one reference line joins them."""
     events = _slice(duck, domains["EventsDomain"])
@@ -105,7 +105,7 @@ def test_a_specialization_head_is_joined_to_its_axis_dictionary(
 
 
 def test_a_line_whose_ends_come_from_two_slices_is_in_the_request_list(
-    duck: DuckDBGraphResource, domains: dict[str, str]
+    duck: DuckDBGraphStorage, domains: dict[str, str]
 ) -> None:
     """``OfferCore`` comes with the Players slice, ``IndustryEnum`` with the Showcases slice."""
     quals = [domains["PlayersDomain"], domains["ShowcasesDomain"]]
@@ -127,7 +127,7 @@ def _graph_lines(graph: dict[str, Any]) -> list[tuple[str, str]]:
     return lines
 
 
-def _views(duck: DuckDBGraphResource, quals: list[str]) -> list[tuple[list[str], list[dict[str, Any]]]]:
+def _views(duck: DuckDBGraphStorage, quals: list[str]) -> list[tuple[list[str], list[dict[str, Any]]]]:
     """Each slice alone and each set of domains, with the rows drawn in that view."""
     views: list[tuple[list[str], list[dict[str, Any]]]] = [
         ([q], [r for r in _slice(duck, q)["relations"] if r["relationship_kind"] != "specialization"]) for q in quals
@@ -153,7 +153,7 @@ def _missing_lines(
 
 
 def test_no_line_is_missing_or_off_screen_for_any_view(
-    graph: dict[str, Any], duck: DuckDBGraphResource, domains: dict[str, str]
+    graph: dict[str, Any], duck: DuckDBGraphStorage, domains: dict[str, str]
 ) -> None:
     """Every slice and every set of domains: each graph line between two tables on screen is drawn, and only those."""
     lines = _graph_lines(graph)

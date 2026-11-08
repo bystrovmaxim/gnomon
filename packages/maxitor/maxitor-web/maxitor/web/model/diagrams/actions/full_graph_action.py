@@ -23,9 +23,9 @@ from maxitor.web.model.diagrams.actions.list_node_types_action import (
     interchange_node_type_from_duck,
 )
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -35,7 +35,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -189,7 +189,7 @@ def _legend_items(node_types: list[str]) -> list[dict[str, str]]:
 
 
 def _build_payload_from_duckdb(
-    duck: DuckDBGraphResource,
+    duck: DuckDBGraphStorage,
     palette: tuple[str, ...],
 ) -> dict[str, Any]:
     """Run unified SQL once, split rows by ``result_type``, build G6 payload."""
@@ -233,11 +233,11 @@ def _build_payload_from_duckdb(
 )
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Coordinator graph in DuckDB (nodes and edges views for full graph)",
 )
-class FullGraphAction(BaseAction[ParamsStub, "FullGraphAction.Result"]):
+class FullGraphAction(BaseAction[StubParams, "FullGraphAction.Result"]):
     """
     AI-CORE-BEGIN
     ROLE: Emit a G6-oriented full graph payload from DuckDB ``nodes`` / ``edges`` views.
@@ -256,13 +256,13 @@ class FullGraphAction(BaseAction[ParamsStub, "FullGraphAction.Result"]):
     @summary_aspect("Build full graph JSON from DuckDB (single unified SQL query)")
     async def build_full_graph_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> FullGraphAction.Result:
         _ = (state, box)
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
 
         payload = _build_payload_from_duckdb(
             duck,

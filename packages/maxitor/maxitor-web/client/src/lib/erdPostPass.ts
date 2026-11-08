@@ -15,7 +15,7 @@
  */
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
-import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, isContourId, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
 export type KindGlyphDrawer = (word: string, ink: string, strokeWidth: number) => string;
@@ -194,11 +194,11 @@ export function addContourHitAreas(root: ParentNode): void {
 }
 
 /**
- * The relations that leave ``resource``: one end on a table of it, the other on a table of another resource
- * (spec 064, FR-001). A table with no resource is in none, so a line to it is not one.
+ * The relations that leave ``resource``: one end on a copy in it, the other on a copy in another resource
+ * (spec 064, FR-001; spec 070). A copy in "Not stored" is in none, so a line to it is not one.
  */
 export function crossLines(resource: string, relations: readonly ErdLineInfo[], entities: readonly ErdEntity[]): number[] {
-  const home = new Map(entities.map((entity) => [entity.id, entity.resource_id ?? null]));
+  const home = new Map(entities.map((entity) => [entity.id, tableResource(entity)]));
   return relations.flatMap((line, k) => {
     const [from, to] = [home.get(line.source) ?? null, home.get(line.target) ?? null];
     return from !== null && to !== null && from !== to && (from === resource || to === resource) ? [k] : [];
@@ -358,7 +358,7 @@ const FOLD_HIT = 28;
 const FOLD_GAP = 6;
 
 /**
- * Put a fold control in the top right corner of every resource and data source contour — a minus — and of every
+ * Put a fold control in the top right corner of every resource frame — a minus — and of every
  * folded box — a plus (spec 065). It sits inside the contour's group, so pointing at it is pointing at the contour.
  * It is drawn at screen size: the canvas scales it by one over its zoom through ``scaleFoldControls`` (spec 068).
  */
@@ -617,7 +617,7 @@ export function bindLineHover(
   // A resource contour (spec 064): its lines to other resources are lit as a hovered line is, the tables at their
   // ends stay bright, its border widens, and everything else dims — everything, when it has no such line. Its
   // bundles to folded boxes are lit the same way (spec 065).
-  const homeOf = new Map(entities.map((entity) => [entity.id, entity.resource_id ?? null]));
+  const homeOf = new Map(entities.map((entity) => [entity.id, tableResource(entity)]));
   root.querySelectorAll("g.cluster").forEach((cluster) => {
     const resource = contourResource(cluster);
     if (resource === null) return;

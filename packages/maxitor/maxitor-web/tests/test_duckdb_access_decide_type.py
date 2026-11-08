@@ -33,7 +33,7 @@ from maxitor.web.model.diagrams.actions.list_node_types_action import (
     NODE_TYPE_FILL_COLORS,
     interchange_node_type_from_duck,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _ICONS = (
     Path(__file__).resolve().parents[1] / "client" / "src" / "lib" / "icons" / "graph_node_disk_icons.ts"
@@ -80,29 +80,29 @@ def _count(con: object, sql: str) -> int:
 
 class TestTheTypeIsKnown:
     def test_a_graph_carrying_the_check_is_accepted(self) -> None:
-        duck = DuckDBGraphResource.build_from_json(_graph())
+        duck = DuckDBGraphStorage.build_from_json(_graph())
 
-        assert _count(duck.service, "SELECT COUNT(*) FROM access_decide") == 1
+        assert _count(duck.connection, "SELECT COUNT(*) FROM access_decide") == 1
 
     def test_its_rows_carry_what_the_client_draws(self) -> None:
-        duck = DuckDBGraphResource.build_from_json(_graph())
+        duck = DuckDBGraphStorage.build_from_json(_graph())
 
-        row = duck.service.execute("SELECT id, label, description FROM access_decide").fetchone()
+        row = duck.connection.execute("SELECT id, label, description FROM access_decide").fetchone()
 
         assert row[0] == _NODE
         assert row[1] == "cancel_order_access_decide"
 
     def test_the_edge_lands_in_its_own_table(self) -> None:
-        duck = DuckDBGraphResource.build_from_json(_graph())
+        duck = DuckDBGraphStorage.build_from_json(_graph())
 
-        assert _count(duck.service, "SELECT COUNT(*) FROM access_decide_edges") == 1
-        types = {r[0] for r in duck.service.execute("SELECT DISTINCT type FROM edges").fetchall()}
+        assert _count(duck.connection, "SELECT COUNT(*) FROM access_decide_edges") == 1
+        types = {r[0] for r in duck.connection.execute("SELECT DISTINCT type FROM edges").fetchall()}
         assert "access_decide_edges" in types
 
     def test_the_node_view_reports_the_type_the_client_translates(self) -> None:
-        duck = DuckDBGraphResource.build_from_json(_graph())
+        duck = DuckDBGraphStorage.build_from_json(_graph())
 
-        types = {r[0] for r in duck.service.execute("SELECT DISTINCT type FROM nodes").fetchall()}
+        types = {r[0] for r in duck.connection.execute("SELECT DISTINCT type FROM nodes").fetchall()}
 
         assert "access_decide" in types
 
@@ -130,11 +130,11 @@ class TestTheGuardStillWorks:
         graph["nodes"][1]["type"] = "NotADeclaredType"
 
         with pytest.raises(KeyError, match="Unknown nodes graph type"):
-            DuckDBGraphResource.build_from_json(graph)
+            DuckDBGraphStorage.build_from_json(graph)
 
     def test_an_edge_type_nobody_declared_is_still_refused(self) -> None:
         graph = _graph()
         graph["edges"][0]["type"] = "@not_declared"
 
         with pytest.raises(KeyError, match="Unknown edge graph type"):
-            DuckDBGraphResource.build_from_json(graph)
+            DuckDBGraphStorage.build_from_json(graph)

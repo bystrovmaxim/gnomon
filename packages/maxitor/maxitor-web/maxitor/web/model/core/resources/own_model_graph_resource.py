@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/core/resources/own_model_graph_resource.py
 """
-OwnModelGraphResource — Maxitor's own model, as the graph-json every AOA service serves.
+OwnModelGraphStorage — Maxitor's own model, as the graph-json every AOA service serves.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -18,13 +18,11 @@ ARCHITECTURE / DATA FLOW
 
 ::
 
-    ActionProductMachine.graph_coordinator ──► OwnModelGraphResource
+    ActionProductMachine.graph_coordinator ──► OwnModelGraphStorage
                                                   └─ graph_json() ──► to_json(), kept after the first call
 """
 
 from __future__ import annotations
-
-from maxitor.web.model.core.core_domain import CoreDomain
 
 from aoa.action_machine.graph.core.node_graph_coordinator import NodeGraphCoordinator
 from aoa.action_machine.intents.meta import meta
@@ -34,8 +32,8 @@ from aoa.action_machine.resources.base_storage import BaseStorage
 OWN_MODEL_GRAPH_CONNECTION_KEY = "OwnModelGraph"
 
 
-@meta(description="Maxitor's own model as interchange graph JSON", domain=CoreDomain)
-class OwnModelGraphResource(BaseStorage):
+@meta(description="Maxitor's own model as interchange graph JSON")
+class OwnModelGraphStorage(BaseStorage):
     """
     AI-CORE-BEGIN
     ROLE: The resource through which an action reads Maxitor's own model as interchange JSON.
@@ -48,7 +46,8 @@ class OwnModelGraphResource(BaseStorage):
         self._coordinator = coordinator
         self._json: str | None = None
 
-    def get_wrapper_class(self) -> type[BaseStorage] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseStorage] | None:
         """Return ``None``: nested actions read through this same resource."""
         return None
 

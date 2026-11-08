@@ -1,6 +1,6 @@
 # packages/maxitor/tools/repo-graph-port/maxitor/repo_graph_port/resources/git_mirror.py
 """
-GitMirror — a repository's history, read with the ``git`` command.
+GitMirrorStorage — a repository's history, read with the ``git`` command.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -46,15 +46,14 @@ from pathlib import Path
 from maxitor.repo_graph_port.commit import Commit
 from maxitor.repo_graph_port.contribution import Contribution
 from maxitor.repo_graph_port.git_error import GitError
-from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
 from maxitor.repo_graph_port.tag import Tag
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_storage import BaseStorage
 
 
-@meta(description="The history of a repository, read with git from a local path or a partial mirror", domain=RepoGraphDomain)
-class GitMirror(BaseStorage):
+@meta(description="The history of a repository, read with git from a local path or a partial mirror")
+class GitMirrorStorage(BaseStorage):
     """
     AI-CORE-BEGIN
     ROLE: Read a repository's first-parent history, tags and files with git.
@@ -70,7 +69,8 @@ class GitMirror(BaseStorage):
         self._locks: dict[str, threading.Lock] = {}
         self._locks_lock = threading.Lock()
 
-    def get_wrapper_class(self) -> type[BaseStorage] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseStorage] | None:
         """Return ``None``: nested actions read through this same mirror."""
         return None
 

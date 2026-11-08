@@ -32,9 +32,9 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor.web.model.core.history_entry import HistoryEntry
-from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStore
-from maxitor.web.model.rooms.actions.room_action_support import RoomAnswer, located
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
+from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -47,7 +47,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import SocketChannel
+from aoa.fastapi import SocketChannelController
 
 
 class SetRoomVersionParams(BaseParams):
@@ -60,10 +60,10 @@ class SetRoomVersionParams(BaseParams):
 
 @meta(description="Move a room on a history to another version", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The participant's connection")
-@connection(HistoryStore, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
-class SetRoomVersionAction(BaseAction[SetRoomVersionParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The participant's connection")
+@connection(HistoryStoreController, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
+class SetRoomVersionAction(BaseAction[SetRoomVersionParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Set the version of a room on a history and tell everyone.
@@ -79,13 +79,13 @@ class SetRoomVersionAction(BaseAction[SetRoomVersionParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Move the room to the picked version, or tell the picker why not."""
         _ = state
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        socket = cast(SocketChannel, connections["socket"])
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        socket = cast(SocketChannelController, connections["socket"])
         room, participant, _ = located(registry, socket)
-        history = cast(HistoryStore, connections[HISTORY_STORE_CONNECTION_KEY]).peek(room.history) if room.history else None
+        history = cast(HistoryStoreController, connections[HISTORY_STORE_CONNECTION_KEY]).peek(room.history) if room.history else None
         source = history.source_of(params.b) if history is not None else None
         reason = None
         if history is None or source is None:
@@ -97,12 +97,12 @@ class SetRoomVersionAction(BaseAction[SetRoomVersionParams, RoomAnswer]):
         if reason is not None:
             socket.send({"type": "error", "reason": reason})
             await box.info(Channel.business, "Version refused in room {%var.room}", room=room.id)
-            return RoomAnswer()
+            return RoomAnswerResult()
         async with room.lock:
             room.version, room.version_a, room.view, room.source = params.b, params.a, view, cast(str, source)
             registry.broadcast(room, {"type": "version", "b": params.b, "a": params.a, "view": view, "by": participant.id})
         await box.info(Channel.business, "Room {%var.room} moved to version {%var.version}", room=room.id, version=params.b)
-        return RoomAnswer()
+        return RoomAnswerResult()
 
 
 def _view_refusal(view: str, a: str | None) -> str | None:

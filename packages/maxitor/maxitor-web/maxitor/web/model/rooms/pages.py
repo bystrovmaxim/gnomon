@@ -30,7 +30,7 @@ from typing import Any
 from urllib.parse import parse_qsl, urlencode
 
 #: The order of the address parameters in a page key (``client/src/lib/urlState.ts``).
-_KEY_ORDER = ("view", "domain", "data_source", "resource", "node", "host")
+_KEY_ORDER = ("view", "domain", "node", "host")
 
 
 def page_key(view: str, **params: str) -> str:
@@ -57,10 +57,6 @@ def page_keys(sidebar: Any) -> set[str]:
             keys.add(page_key("domain-erd"))
         elif kind == "erd_domain" and parent:
             keys.add(page_key("domain-erd", domain=str(parent)))
-        elif kind == "erd_data_source":
-            keys.add(page_key("domain-erd", data_source=str(getattr(row, "id", "")).removeprefix("erd_data_source:")))
-        elif kind == "erd_resource":
-            keys.add(page_key("domain-erd", resource=str(getattr(row, "id", "")).removeprefix("erd_resource:")))
         elif kind == "use_case_domain" and parent:
             keys.add(page_key("use-case", domain=str(parent)))
         elif kind == "use_case_all":
@@ -145,13 +141,12 @@ SETTINGS: dict[str, dict[str, Callable[[Any], bool]]] = {
         "one_hop": _boolean,
         "fields_collapsed": _boolean,
         "fields_except": _strings,
-        # Resources and data sources (specs 061, 063) and the contours drawn folded (spec 065).
+        # The view drawn (spec 070), the resources switched off (spec 061) and the frames drawn folded (spec 065).
+        "model": _one_of("logical", "physical"),
         "disabled_resources": _strings,
-        "disabled_data_sources": _strings,
-        "boundary": _boolean,
         "folded_contours": _strings,
-        "paint": _one_of("domains", "kinds", "resources", "data_sources", "changes"),
-        "paint_diff": _one_of("domains", "kinds", "resources", "data_sources", "changes"),
+        "paint": _one_of("domains", "kinds", "resources", "changes"),
+        "paint_diff": _one_of("domains", "kinds", "resources", "changes"),
     },
     "use-case": _USE_CASE_SETTINGS,
     "use-case-all": _USE_CASE_SETTINGS,

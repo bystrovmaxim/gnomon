@@ -37,11 +37,11 @@ from typing import cast
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
 from maxitor.web.model.core.resources.static_bundle_resource import (
     STATIC_BUNDLE_CONNECTION_KEY,
-    StaticBundleResource,
+    StaticBundleStorage,
 )
-from maxitor.web.model.rooms.actions.room_action_support import RoomAnswer, located
+from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
 from maxitor.web.model.rooms.layout_authority import layout_verdict, recheck_layouts
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, Room, RoomRegistry, Tab
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, Room, RoomRegistryController, Tab
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -53,7 +53,7 @@ from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import SocketChannel
+from aoa.fastapi import SocketChannelController
 
 
 class ReportPageParams(BaseParams):
@@ -83,11 +83,11 @@ def _verdict(params: ReportPageParams, tab: Tab, room: Room, server_build: str, 
 
 @meta(description="Record a tab's page and check what it drew", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The reporting tab's connection")
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The reporting tab's connection")
 @connection(GraphStoreController, key=GRAPH_STORE_CONNECTION_KEY, description="Built graphs, for the fingerprint")
-@connection(StaticBundleResource, key=STATIC_BUNDLE_CONNECTION_KEY, description="The client build Maxitor serves")
-class ReportPageAction(BaseAction[ReportPageParams, RoomAnswer]):
+@connection(StaticBundleStorage, key=STATIC_BUNDLE_CONNECTION_KEY, description="The client build Maxitor serves")
+class ReportPageAction(BaseAction[ReportPageParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Keep a tab's page and visibility current, and judge whether its picture is the room's.
@@ -104,12 +104,12 @@ class ReportPageAction(BaseAction[ReportPageParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Update the tab, answer ``check`` when the report carries a picture, and announce presence."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        socket = cast(SocketChannel, connections["socket"])
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        socket = cast(SocketChannelController, connections["socket"])
         store = cast(GraphStoreController, connections[GRAPH_STORE_CONNECTION_KEY])
-        bundle = cast(StaticBundleResource, connections[STATIC_BUNDLE_CONNECTION_KEY])
+        bundle = cast(StaticBundleStorage, connections[STATIC_BUNDLE_CONNECTION_KEY])
         room, participant, tab = located(registry, socket)
         async with room.lock:
             tab.last_activity = registry.clock()
@@ -133,4 +133,4 @@ class ReportPageAction(BaseAction[ReportPageParams, RoomAnswer]):
                 if arrived:
                     registry.catch_up(room, tab, participant.id)
             registry.broadcast(room, {"type": "presence", **participant.public()}, except_participant=participant.id)
-        return RoomAnswer()
+        return RoomAnswerResult()

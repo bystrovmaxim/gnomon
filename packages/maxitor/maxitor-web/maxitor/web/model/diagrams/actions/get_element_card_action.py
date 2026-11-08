@@ -26,9 +26,9 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -72,7 +72,7 @@ class GetElementCardResult(BaseResult):
 
 @meta(description="Read what a card says about one node of a version", domain=DiagramsDomain)
 @check_roles(GuestRole)
-@connection(DuckDBGraphResource, key=DUCKDB_GRAPH_CONNECTION_KEY, description="Coordinator graph in DuckDB (nodes view)")
+@connection(DuckDBGraphStorage, key=DUCKDB_GRAPH_CONNECTION_KEY, description="Coordinator graph in DuckDB (nodes view)")
 class GetElementCardAction(BaseAction[GetElementCardParams, GetElementCardResult]):
     """
     AI-CORE-BEGIN
@@ -92,7 +92,7 @@ class GetElementCardAction(BaseAction[GetElementCardParams, GetElementCardResult
     ) -> GetElementCardResult:
         """Look the node up in the version's graph."""
         _ = (state, box)
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         rows = duck.execute_fetch_dicts(_NODE_SQL, [params.id])
         if not rows:
             raise ElementNotInGraphError("not found")

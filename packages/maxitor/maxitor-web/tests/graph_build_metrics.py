@@ -56,14 +56,14 @@ from maxitor.web.model.diagrams.actions.get_lifecycle_finite_automaton_action im
 from maxitor.web.model.diagrams.actions.list_domains_action import ListDomainsAction
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
 from maxitor.web.model.diagrams.actions.list_node_types_action import ListNodeTypesAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 from aoa.action_machine.context import Context
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
-from aoa.action_machine.model import ParamsStub
+from aoa.action_machine.model import StubParams
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 from tests.payload_wire_metrics import interchange_json_bytes
 
@@ -105,7 +105,7 @@ def load_payload(ref: str) -> dict[str, Any]:
     return _decode(_read_ref(ref))
 
 
-def memory_by_tag(resource: DuckDBGraphResource) -> dict[str, float]:
+def memory_by_tag(resource: DuckDBGraphStorage) -> dict[str, float]:
     """Return the built graph's memory in MiB per non-zero ``duckdb_memory()`` tag, plus ``total``."""
     rows = resource.execute_fetch_dicts(
         "SELECT tag, memory_usage_bytes FROM duckdb_memory() WHERE memory_usage_bytes > 0",
@@ -140,7 +140,7 @@ def rss_per_graph(payload: dict[str, Any], count: int = _DEFAULT_RSS_COUNT) -> d
     """Return how many MiB the process gains per graph while ``count`` graphs are held."""
     gc.collect()
     method, before = _rss_mib()
-    held = [DuckDBGraphResource.build_from_json(payload) for _ in range(count)]
+    held = [DuckDBGraphStorage.build_from_json(payload) for _ in range(count)]
     _, after = _rss_mib()
     del held
     gc.collect()
@@ -152,12 +152,12 @@ def rss_per_graph(payload: dict[str, Any], count: int = _DEFAULT_RSS_COUNT) -> d
     }
 
 
-def _apply_setting(resource: DuckDBGraphResource, setting: str) -> None:
+def _apply_setting(resource: DuckDBGraphStorage, setting: str) -> None:
     """Apply one ``name=value`` DuckDB setting to a built graph's connection."""
     name, _, value = setting.partition("=")
     if not name.strip() or not value.strip():
         raise ValueError(f"Expected name=value, got {setting!r}")
-    resource.service.execute(f"SET {name.strip()} = {value.strip()}")
+    resource.connection.execute(f"SET {name.strip()} = {value.strip()}")
 
 
 def rss_sequence(payload: dict[str, Any], setting: str | None = None) -> list[dict[str, Any]]:
@@ -169,11 +169,11 @@ def rss_sequence(payload: dict[str, Any], setting: str | None = None) -> list[di
         _, rss = _rss_mib()
         steps.append({"step": label, "rss": round(rss, 1)})
 
-    held: list[DuckDBGraphResource] = []
+    held: list[DuckDBGraphStorage] = []
     record("0 held")
     for target in (1, 5, 10):
         while len(held) < target:
-            resource = DuckDBGraphResource.build_from_json(payload)
+            resource = DuckDBGraphStorage.build_from_json(payload)
             if setting:
                 _apply_setting(resource, setting)
             held.append(resource)
@@ -181,7 +181,7 @@ def rss_sequence(payload: dict[str, Any], setting: str | None = None) -> list[di
     held.clear()
     gc.collect()
     record("all dropped")
-    again = [DuckDBGraphResource.build_from_json(payload) for _ in range(3)]
+    again = [DuckDBGraphStorage.build_from_json(payload) for _ in range(3)]
     for resource in again:
         if setting:
             _apply_setting(resource, setting)
@@ -194,20 +194,20 @@ def build_time_ms(payload: dict[str, Any], runs: int = _DEFAULT_BUILD_RUNS) -> f
     samples: list[float] = []
     for _ in range(runs):
         started = time.perf_counter()
-        DuckDBGraphResource.build_from_json(payload)
+        DuckDBGraphStorage.build_from_json(payload)
         samples.append((time.perf_counter() - started) * 1000)
     return round(statistics.median(samples), 1)
 
 
-def _query_cases(resource: DuckDBGraphResource) -> list[tuple[str, type, Any]]:
+def _query_cases(resource: DuckDBGraphStorage) -> list[tuple[str, type, Any]]:
     """Return ``(key, action class, params)`` for every diagram query and the sidebar build."""
     domains = [str(row["id"]) for row in resource.execute_fetch_dicts("SELECT id FROM domain ORDER BY id")]
     lifecycles = [str(row["id"]) for row in resource.execute_fetch_dicts("SELECT id FROM lifecycle ORDER BY id")]
     cases: list[tuple[str, type, Any]] = [
-        ("list-domains", ListDomainsAction, ParamsStub()),
-        ("list-node-types", ListNodeTypesAction, ParamsStub()),
-        ("full-graph", FullGraphAction, ParamsStub()),
-        ("sidebar", GetLeftMenuSidebarDataAction, ParamsStub()),
+        ("list-domains", ListDomainsAction, StubParams()),
+        ("list-node-types", ListNodeTypesAction, StubParams()),
+        ("full-graph", FullGraphAction, StubParams()),
+        ("sidebar", GetLeftMenuSidebarDataAction, StubParams()),
     ]
     cases.extend(
         (
@@ -238,7 +238,7 @@ def _query_cases(resource: DuckDBGraphResource) -> list[tuple[str, type, Any]]:
 
 def _run_action(
     machine: ActionProductMachine,
-    resource: DuckDBGraphResource,
+    resource: DuckDBGraphStorage,
     action_cls: type,
     params: Any,
 ) -> Any:
@@ -256,7 +256,7 @@ def _run_action(
 
 
 def query_medians(
-    resource: DuckDBGraphResource,
+    resource: DuckDBGraphStorage,
     runs: int = _DEFAULT_RUNS,
     warmups: int = _DEFAULT_WARMUPS,
 ) -> dict[str, float]:
@@ -276,7 +276,7 @@ def query_medians(
     return {family: round(value, 2) for family, value in medians.items()}
 
 
-def fingerprints(resource: DuckDBGraphResource) -> dict[str, str]:
+def fingerprints(resource: DuckDBGraphStorage) -> dict[str, str]:
     """Return the SHA-256 of each answer's canonical JSON, keyed as in ``query_medians``."""
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     result: dict[str, str] = {}
@@ -329,7 +329,7 @@ def _inline_parameters(sql: str, parameters: tuple[Any, ...]) -> str:
     return "".join(chunks)
 
 
-def _recorded_statements(resource: DuckDBGraphResource) -> list[tuple[str, str, tuple[Any, ...]]]:
+def _recorded_statements(resource: DuckDBGraphStorage) -> list[tuple[str, str, tuple[Any, ...]]]:
     """Return ``(query family, SQL, parameters)`` for every statement the seven actions run."""
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     inner = resource._service
@@ -374,13 +374,13 @@ def _structures_in_plan(plan: Any, names: set[str]) -> set[str]:
     return found
 
 
-def _explain_plan(resource: DuckDBGraphResource, sql: str, parameters: tuple[Any, ...]) -> Any:
+def _explain_plan(resource: DuckDBGraphStorage, sql: str, parameters: tuple[Any, ...]) -> Any:
     """Return the JSON physical plan of ``sql`` executed with its parameter values."""
     rows = resource.execute_fetch_dicts("EXPLAIN (FORMAT JSON) " + _inline_parameters(sql, parameters))
     return json.loads(rows[0]["explain_value"])
 
 
-def index_usage(resource: DuckDBGraphResource) -> dict[str, list[str]]:
+def index_usage(resource: DuckDBGraphStorage) -> dict[str, list[str]]:
     """Return, for every index and primary key, the query families whose plan reads through it."""
     indexes = resource.execute_fetch_dicts("SELECT index_name FROM duckdb_indexes() ORDER BY index_name")
     keys = resource.execute_fetch_dicts(
@@ -417,7 +417,7 @@ def measure(
     if sequence:
         sequence_steps = rss_sequence(payload, setting)
     rss = rss_per_graph(payload, rss_count)
-    resource = DuckDBGraphResource.build_from_json(payload)
+    resource = DuckDBGraphStorage.build_from_json(payload)
     report: dict[str, Any] = {
         "source": {
             "ref": ref,

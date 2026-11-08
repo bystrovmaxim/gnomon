@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient
 from maxitor.web.api.app import create_app
 from maxitor.web.api.graph_store import GraphEntry, GraphStore
 from maxitor.web.model.diagrams.actions.list_entity_kinds_action import ListEntityKindsAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _SOURCE = "https://kinds.test/graph-json"
 _REFERENCE_GRAPH = Path(__file__).resolve().parents[4] / "specs/025-graph-index-memory/data/ref-graph-2026-10-26.json.gz"
@@ -59,7 +59,7 @@ def _client(graph: dict[str, Any]) -> TestClient:
     async def builder(source: str) -> GraphEntry:
         """Build the one graph the test serves."""
         empty_sidebar = SimpleNamespace(level1_nodes=[], level2_diagrams=[], level2_nodes=[], level3_diagrams=[])
-        return GraphEntry(source=source, graph=DuckDBGraphResource.build_from_json(graph), sidebar=empty_sidebar, last_read=0.0)
+        return GraphEntry(source=source, graph=DuckDBGraphStorage.build_from_json(graph), sidebar=empty_sidebar, last_read=0.0)
 
     app = create_app()
     app.state.graph_store = GraphStore(builder)
@@ -68,7 +68,7 @@ def _client(graph: dict[str, Any]) -> TestClient:
 
 def test_the_listing_is_the_graphs_kinds_named_by_the_graph() -> None:
     """Every word the graph states, ordered, named by the graph or by the capitalised word."""
-    rows = ListEntityKindsAction.entity_kind_rows(DuckDBGraphResource.build_from_json(_foreign_graph()))
+    rows = ListEntityKindsAction.entity_kind_rows(DuckDBGraphStorage.build_from_json(_foreign_graph()))
 
     assert rows == [
         {"entity_kind": "aggregate", "label": "Aggregate root"},
@@ -103,7 +103,7 @@ def test_the_reference_graph_lists_aoas_words_with_capitalised_fallbacks() -> No
     graph = graph.get("coordinator_json", graph)
     graph = json.loads(graph) if isinstance(graph, str) else graph
 
-    rows = ListEntityKindsAction.entity_kind_rows(DuckDBGraphResource.build_from_json(graph))
+    rows = ListEntityKindsAction.entity_kind_rows(DuckDBGraphStorage.build_from_json(graph))
 
     assert rows == [
         {"entity_kind": "core", "label": "Core"},
