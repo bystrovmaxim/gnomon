@@ -19,24 +19,6 @@
       "type": "application"
     },
     {
-      "id": "aoa.fastapi.socket_channel.SocketChannelController|domain|aoa.fastapi.socket_channel.TransportDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "aoa.fastapi.socket_channel.SocketChannelController",
-      "target_id": "aoa.fastapi.socket_channel.TransportDomain",
-      "type": "domain"
-    },
-    {
-      "id": "aoa.fastapi.socket_channel.TransportDomain|application|aoa.action_machine.application.application.Application",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "aoa.fastapi.socket_channel.TransportDomain",
-      "target_id": "aoa.action_machine.application.application.Application",
-      "type": "application"
-    },
-    {
       "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction:describe_summary|@required_context|maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction:describe_summary:reqctx:env.history_refresh_seconds",
       "is_dag": false,
       "properties": {
@@ -79,51 +61,51 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction|@connection|maxitor.repo_graph_port.resources.git_mirror.GitMirror",
+      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction|@connection|maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
       "is_dag": true,
       "properties": {
         "description": "The repositories' history, read with git",
-        "key": "GitMirror"
+        "key": "GitMirrorStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction",
-      "target_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirror",
+      "target_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction|@connection|maxitor.repo_graph_port.resources.github_host.GitHubHost",
+      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction|@connection|maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
       "is_dag": true,
       "properties": {
         "description": "GitHub: the App's token, pull requests, releases",
-        "key": "GitHubHost"
+        "key": "GitHubHostGateway"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction",
-      "target_id": "maxitor.repo_graph_port.resources.github_host.GitHubHost",
+      "target_id": "maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction|@connection|maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
+      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction|@connection|maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
       "is_dag": true,
       "properties": {
         "description": "The histories this server serves",
-        "key": "HistoriesConfig"
+        "key": "HistoriesConfigStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction",
-      "target_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
+      "target_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction|@connection|maxitor.repo_graph_port.resources.version_cache.VersionCache",
+      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction|@connection|maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
       "is_dag": true,
       "properties": {
         "description": "When each repository was fetched",
-        "key": "VersionCache"
+        "key": "VersionCacheStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction",
-      "target_id": "maxitor.repo_graph_port.resources.version_cache.VersionCache",
+      "target_id": "maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
       "type": "@connection"
     },
     {
@@ -331,51 +313,51 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction|@connection|maxitor.repo_graph_port.resources.git_mirror.GitMirror",
+      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction|@connection|maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
       "is_dag": true,
       "properties": {
         "description": "The repositories' history, read with git",
-        "key": "GitMirror"
+        "key": "GitMirrorStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.history_action.HistoryAction",
-      "target_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirror",
+      "target_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction|@connection|maxitor.repo_graph_port.resources.github_host.GitHubHost",
+      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction|@connection|maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
       "is_dag": true,
       "properties": {
         "description": "GitHub: the App's token, pull requests, releases",
-        "key": "GitHubHost"
+        "key": "GitHubHostGateway"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.history_action.HistoryAction",
-      "target_id": "maxitor.repo_graph_port.resources.github_host.GitHubHost",
+      "target_id": "maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction|@connection|maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
+      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction|@connection|maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
       "is_dag": true,
       "properties": {
         "description": "The histories this server serves",
-        "key": "HistoriesConfig"
+        "key": "HistoriesConfigStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.history_action.HistoryAction",
-      "target_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
+      "target_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction|@connection|maxitor.repo_graph_port.resources.version_cache.VersionCache",
+      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction|@connection|maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
       "is_dag": true,
       "properties": {
         "description": "Each version's facts, read once",
-        "key": "VersionCache"
+        "key": "VersionCacheStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.history_action.HistoryAction",
-      "target_id": "maxitor.repo_graph_port.resources.version_cache.VersionCache",
+      "target_id": "maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
       "type": "@connection"
     },
     {
@@ -496,51 +478,51 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@connection|maxitor.repo_graph_port.resources.git_mirror.GitMirror",
+      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@connection|maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
       "is_dag": true,
       "properties": {
         "description": "The repository's mirror, fetched once",
-        "key": "GitMirror"
+        "key": "GitMirrorStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction",
-      "target_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirror",
+      "target_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@connection|maxitor.repo_graph_port.resources.github_host.GitHubHost",
+      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@connection|maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
       "is_dag": true,
       "properties": {
         "description": "The App's token for the fetch",
-        "key": "GitHubHost"
+        "key": "GitHubHostGateway"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction",
-      "target_id": "maxitor.repo_graph_port.resources.github_host.GitHubHost",
+      "target_id": "maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@connection|maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
+      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@connection|maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
       "is_dag": true,
       "properties": {
         "description": "The histories of the event's repository",
-        "key": "HistoriesConfig"
+        "key": "HistoriesConfigStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction",
-      "target_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
+      "target_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@connection|maxitor.repo_graph_port.resources.version_cache.VersionCache",
+      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@connection|maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
       "is_dag": true,
       "properties": {
         "description": "Pull requests and releases to forget",
-        "key": "VersionCache"
+        "key": "VersionCacheStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction",
-      "target_id": "maxitor.repo_graph_port.resources.version_cache.VersionCache",
+      "target_id": "maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
       "type": "@connection"
     },
     {
@@ -766,51 +748,51 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction|@connection|maxitor.repo_graph_port.resources.git_mirror.GitMirror",
+      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction|@connection|maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
       "is_dag": true,
       "properties": {
         "description": "The repositories' history, read with git",
-        "key": "GitMirror"
+        "key": "GitMirrorStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.version_action.VersionAction",
-      "target_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirror",
+      "target_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction|@connection|maxitor.repo_graph_port.resources.github_host.GitHubHost",
+      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction|@connection|maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
       "is_dag": true,
       "properties": {
         "description": "GitHub: the App's token, pull requests, releases",
-        "key": "GitHubHost"
+        "key": "GitHubHostGateway"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.version_action.VersionAction",
-      "target_id": "maxitor.repo_graph_port.resources.github_host.GitHubHost",
+      "target_id": "maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction|@connection|maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
+      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction|@connection|maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
       "is_dag": true,
       "properties": {
         "description": "The histories this server serves",
-        "key": "HistoriesConfig"
+        "key": "HistoriesConfigStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.version_action.VersionAction",
-      "target_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
+      "target_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction|@connection|maxitor.repo_graph_port.resources.version_cache.VersionCache",
+      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction|@connection|maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
       "is_dag": true,
       "properties": {
         "description": "Each version's file, read once",
-        "key": "VersionCache"
+        "key": "VersionCacheStorage"
       },
       "relationship": "Association",
       "source_id": "maxitor.repo_graph_port.actions.version_action.VersionAction",
-      "target_id": "maxitor.repo_graph_port.resources.version_cache.VersionCache",
+      "target_id": "maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
       "type": "@connection"
     },
     {
@@ -920,42 +902,6 @@
       "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
       "target_id": "aoa.action_machine.application.application.Application",
       "type": "application"
-    },
-    {
-      "id": "maxitor.repo_graph_port.resources.git_mirror.GitMirror|domain|maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.repo_graph_port.resources.git_mirror.GitMirror",
-      "target_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.repo_graph_port.resources.github_host.GitHubHost|domain|maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.repo_graph_port.resources.github_host.GitHubHost",
-      "target_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfig|domain|maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
-      "target_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.repo_graph_port.resources.version_cache.VersionCache|domain|maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.repo_graph_port.resources.version_cache.VersionCache",
-      "target_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
-      "type": "domain"
     }
   ],
   "nodes": [
@@ -987,34 +933,24 @@
       "type": "Role"
     },
     {
-      "id": "aoa.action_machine.model.params_stub.StubParams",
+      "id": "aoa.action_machine.model.stub_params.StubParams",
       "label": "StubParams",
       "properties": {},
       "type": "Params"
     },
     {
-      "id": "aoa.action_machine.model.result_stub.StubResult",
+      "id": "aoa.action_machine.model.stub_result.StubResult",
       "label": "StubResult",
       "properties": {},
       "type": "Result"
     },
     {
-      "id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "label": "SocketChannelController",
       "properties": {
         "description": "One WebSocket connection an action can send events through"
       },
       "type": "Resource"
-    },
-    {
-      "id": "aoa.fastapi.socket_channel.TransportDomain",
-      "label": "TransportDomain",
-      "properties": {
-        "description": "Resources the FastAPI adapter creates for one connection",
-        "name": "transport",
-        "typed_events": false
-      },
-      "type": "Domain"
     },
     {
       "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction",
@@ -1677,37 +1613,37 @@
       "type": "Domain"
     },
     {
-      "id": "maxitor.repo_graph_port.resources.git_mirror.GitMirror",
-      "label": "GitMirror",
+      "id": "maxitor.repo_graph_port.resources.git_mirror.GitMirrorStorage",
+      "label": "GitMirrorStorage",
       "properties": {
         "description": "The history of a repository, read with git from a local path or a partial mirror"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.repo_graph_port.resources.github_host.GitHubHost",
-      "label": "GitHubHost",
+      "id": "maxitor.repo_graph_port.resources.github_host.GitHubHostGateway",
+      "label": "GitHubHostGateway",
       "properties": {
         "description": "GitHub: the App's token, a commit's pull request, a tag's release, the webhooks' signature"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfig",
-      "label": "HistoriesConfig",
+      "id": "maxitor.repo_graph_port.resources.histories_config.HistoriesConfigStorage",
+      "label": "HistoriesConfigStorage",
       "properties": {
         "description": "The histories the port serves and their read keys, from its config file"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.repo_graph_port.resources.version_cache.VersionCache",
-      "label": "VersionCache",
+      "id": "maxitor.repo_graph_port.resources.version_cache.VersionCacheStorage",
+      "label": "VersionCacheStorage",
       "properties": {
         "description": "A version's graph and facts on disk, by commit; when each repository was fetched"
       },
       "type": "Resource"
     }
   ],
-  "schema_version": "1.8"
+  "schema_version": "2.0"
 }

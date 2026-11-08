@@ -8,7 +8,7 @@ One phase = one commit, referencing (#67). After a phase only its own tests run;
 - [x] T004 [US2] Phase 4: the physical view — copies `<entity>␟<resource>`, resource frames (empty ones too) holding domain frames, "Not stored", `×N` and the dashed "same entity" lines with hover, a relation per pair of copies dashed across databases, the Resources filter, the paint by resource, the fold and the contour hover kept; every post-pass, card and focus lookup through `copyEntity`; Vitest; the drawing check `check-erd-physical-view.ts` on the demo's graph shape
 - [x] T005 [US4] Phase 5: remove the data source screens — the Boundary switch, the left panel's block (server and client), the filter section, the paint, the contour, the address parameters, the full graph's `DataSource` icon and colour; tests that named them
 - [x] T006 [US5, US6] Phase 6: Diff by the set of resources, Side by side by copy; the room's `model` and turned-off resources, the room server's whitelist; graphs before 1.6 without the physical view; Vitest and pytest
-- [ ] T007 Phase 7: rebuild Maxitor's graph files at 2.0; raise the version of every changed level; `uv.lock`
+- [x] T007 Phase 7: rebuild Maxitor's graph files at 2.0; raise the version of every changed level; `uv.lock`
 - [ ] T008 Phase 8: the closing check run, taken to zero, the browser checks included
 - [ ] T009 Phase 9: documentation — the ERD's two views, the card, the removed data source screens, Maxitor on the new AOA
 - [ ] T010 Phase 10: one changelog article, written last

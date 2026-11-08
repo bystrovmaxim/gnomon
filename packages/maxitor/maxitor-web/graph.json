@@ -19,33 +19,6 @@
       "type": "application"
     },
     {
-      "id": "aoa.fastapi.socket_channel.SocketChannelController|domain|aoa.fastapi.socket_channel.TransportDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "aoa.fastapi.socket_channel.SocketChannelController",
-      "target_id": "aoa.fastapi.socket_channel.TransportDomain",
-      "type": "domain"
-    },
-    {
-      "id": "aoa.fastapi.socket_channel.TransportDomain|application|aoa.action_machine.application.application.Application",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "aoa.fastapi.socket_channel.TransportDomain",
-      "target_id": "aoa.action_machine.application.application.Application",
-      "type": "application"
-    },
-    {
-      "id": "maxitor.web.api.duckdb_graph_holder.DuckDBGraphHolder|domain|maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.api.duckdb_graph_holder.DuckDBGraphHolder",
-      "target_id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
-      "type": "domain"
-    },
-    {
       "id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction|@check_roles|aoa.action_machine.auth.guest_role.GuestRole",
       "is_dag": false,
       "properties": {},
@@ -55,7 +28,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction|@connection|maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource",
+      "id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction|@connection|maxitor.web.model.core.resources.static_bundle_resource.StaticBundleStorage",
       "is_dag": true,
       "properties": {
         "description": "The installed client bundle",
@@ -63,7 +36,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction",
-      "target_id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource",
+      "target_id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleStorage",
       "type": "@connection"
     },
     {
@@ -85,12 +58,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -154,19 +127,19 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStore",
+      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "is_dag": true,
       "properties": {
         "description": "Held histories, whose lists are checked too",
-        "key": "HistoryStore"
+        "key": "HistoryStoreController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction",
-      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStore",
+      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|@connection|maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
+      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|@connection|maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Tabs outside rooms",
@@ -174,7 +147,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction",
-      "target_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
+      "target_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
       "type": "@connection"
     },
     {
@@ -190,15 +163,15 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Rooms, whose participants are open tabs",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -220,12 +193,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -256,15 +229,15 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_history_action.CheckHistoryAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStore",
+      "id": "maxitor.web.model.core.actions.check_history_action.CheckHistoryAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "is_dag": true,
       "properties": {
         "description": "The histories Maxitor holds",
-        "key": "HistoryStore"
+        "key": "HistoryStoreController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.check_history_action.CheckHistoryAction",
-      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStore",
+      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "type": "@connection"
     },
     {
@@ -280,15 +253,15 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_history_action.CheckHistoryAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.core.actions.check_history_action.CheckHistoryAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Rooms on the history",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.check_history_action.CheckHistoryAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -379,15 +352,15 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_source_action.CheckSourceAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.core.actions.check_source_action.CheckSourceAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Rooms told of a rebuilt graph",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.check_source_action.CheckSourceAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -494,27 +467,27 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_version_access_action.CheckVersionAccessAction|@connection|maxitor.web.model.core.resources.history_access.HistoryAccess",
+      "id": "maxitor.web.model.core.actions.check_version_access_action.CheckVersionAccessAction|@connection|maxitor.web.model.core.resources.history_access.HistoryAccessController",
       "is_dag": true,
       "properties": {
         "description": "Keys the port accepted lately",
-        "key": "HistoryAccess"
+        "key": "HistoryAccessController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.check_version_access_action.CheckVersionAccessAction",
-      "target_id": "maxitor.web.model.core.resources.history_access.HistoryAccess",
+      "target_id": "maxitor.web.model.core.resources.history_access.HistoryAccessController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_version_access_action.CheckVersionAccessAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStore",
+      "id": "maxitor.web.model.core.actions.check_version_access_action.CheckVersionAccessAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "is_dag": true,
       "properties": {
         "description": "The histories Maxitor holds",
-        "key": "HistoryStore"
+        "key": "HistoryStoreController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.check_version_access_action.CheckVersionAccessAction",
-      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStore",
+      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "type": "@connection"
     },
     {
@@ -584,7 +557,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction|@connection|maxitor.web.model.core.resources.own_model_graph_resource.OwnModelGraphResource",
+      "id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction|@connection|maxitor.web.model.core.resources.own_model_graph_resource.OwnModelGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Maxitor's own model",
@@ -592,7 +565,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction",
-      "target_id": "maxitor.web.model.core.resources.own_model_graph_resource.OwnModelGraphResource",
+      "target_id": "maxitor.web.model.core.resources.own_model_graph_resource.OwnModelGraphStorage",
       "type": "@connection"
     },
     {
@@ -614,12 +587,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -662,7 +635,7 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.graph_fingerprint_action.GraphFingerprintAction|@connection|maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
+      "id": "maxitor.web.model.core.actions.graph_fingerprint_action.GraphFingerprintAction|@connection|maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Tabs outside rooms",
@@ -670,19 +643,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.graph_fingerprint_action.GraphFingerprintAction",
-      "target_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
+      "target_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.graph_fingerprint_action.GraphFingerprintAction|@connection|maxitor.web.model.core.resources.source_checks.SourceChecks",
+      "id": "maxitor.web.model.core.actions.graph_fingerprint_action.GraphFingerprintAction|@connection|maxitor.web.model.core.resources.source_checks.SourceChecksController",
       "is_dag": true,
       "properties": {
         "description": "Runs a check in the background",
-        "key": "SourceChecks"
+        "key": "SourceChecksController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.graph_fingerprint_action.GraphFingerprintAction",
-      "target_id": "maxitor.web.model.core.resources.source_checks.SourceChecks",
+      "target_id": "maxitor.web.model.core.resources.source_checks.SourceChecksController",
       "type": "@connection"
     },
     {
@@ -783,31 +756,31 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction|@connection|maxitor.web.model.core.resources.history_access.HistoryAccess",
+      "id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction|@connection|maxitor.web.model.core.resources.history_access.HistoryAccessController",
       "is_dag": true,
       "properties": {
         "description": "Keys the port accepted lately",
-        "key": "HistoryAccess"
+        "key": "HistoryAccessController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction",
-      "target_id": "maxitor.web.model.core.resources.history_access.HistoryAccess",
+      "target_id": "maxitor.web.model.core.resources.history_access.HistoryAccessController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStore",
+      "id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "is_dag": true,
       "properties": {
         "description": "The histories Maxitor holds",
-        "key": "HistoryStore"
+        "key": "HistoryStoreController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction",
-      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStore",
+      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction|@connection|maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
+      "id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction|@connection|maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Tabs that show a history",
@@ -815,7 +788,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.history_versions_action.HistoryVersionsAction",
-      "target_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
+      "target_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
       "type": "@connection"
     },
     {
@@ -1101,7 +1074,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB (sidebar node/edge queries)",
@@ -1109,7 +1082,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -1167,12 +1140,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -1474,31 +1447,31 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction|@connection|maxitor.web.model.core.resources.history_access.HistoryAccess",
+      "id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction|@connection|maxitor.web.model.core.resources.history_access.HistoryAccessController",
       "is_dag": true,
       "properties": {
         "description": "Keys the port accepted lately, room tickets",
-        "key": "HistoryAccess"
+        "key": "HistoryAccessController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction",
-      "target_id": "maxitor.web.model.core.resources.history_access.HistoryAccess",
+      "target_id": "maxitor.web.model.core.resources.history_access.HistoryAccessController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStore",
+      "id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "is_dag": true,
       "properties": {
         "description": "The histories Maxitor holds",
-        "key": "HistoryStore"
+        "key": "HistoryStoreController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction",
-      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStore",
+      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction|@connection|maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
+      "id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction|@connection|maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Tabs that show a history",
@@ -1506,7 +1479,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.core.actions.open_history_action.OpenHistoryAction",
-      "target_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
+      "target_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
       "type": "@connection"
     },
     {
@@ -1774,96 +1747,6 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor.web.model.core.entities.node_entity.NodeCoreEntity|entity_resource|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.entities.node_entity.NodeCoreEntity",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
-      "type": "entity_resource"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.graph_source_gateway.GraphSourceGateway|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.graph_source_gateway.GraphSourceGateway",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.graph_store_controller.GraphStoreController|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.graph_store_controller.GraphStoreController",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.history_access.HistoryAccess|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.history_access.HistoryAccess",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.history_store.HistoryStore|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.history_store.HistoryStore",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.own_model_graph_resource.OwnModelGraphResource|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.own_model_graph_resource.OwnModelGraphResource",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.repo_graph_port_gateway.RepoGraphPortGateway|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.repo_graph_port_gateway.RepoGraphPortGateway",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.source_checks.SourceChecks|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.source_checks.SourceChecks",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource|domain|maxitor.web.model.core.core_domain.CoreDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource",
-      "target_id": "maxitor.web.model.core.core_domain.CoreDomain",
-      "type": "domain"
-    },
-    {
       "id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.AllUseCasesResult|field|maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.AllUseCasesResult:domain_use_case_diagram",
       "is_dag": false,
       "properties": {},
@@ -1882,7 +1765,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB",
@@ -1890,7 +1773,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -1912,12 +1795,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -1939,7 +1822,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction|@connection|maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore",
+      "id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction|@connection|maxitor.web.model.diagrams.resources.comparison_store.ComparisonStoreController",
       "is_dag": true,
       "properties": {
         "description": "The comparisons of held versions",
@@ -1947,7 +1830,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction",
-      "target_id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore",
+      "target_id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStoreController",
       "type": "@connection"
     },
     {
@@ -1969,12 +1852,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -2005,7 +1888,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.compare_element_action.CompareElementAction|@connection|maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore",
+      "id": "maxitor.web.model.diagrams.actions.compare_element_action.CompareElementAction|@connection|maxitor.web.model.diagrams.resources.comparison_store.ComparisonStoreController",
       "is_dag": true,
       "properties": {
         "description": "The comparisons of held versions",
@@ -2013,7 +1896,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.compare_element_action.CompareElementAction",
-      "target_id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore",
+      "target_id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStoreController",
       "type": "@connection"
     },
     {
@@ -2098,7 +1981,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction|@connection|maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore",
+      "id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction|@connection|maxitor.web.model.diagrams.resources.comparison_store.ComparisonStoreController",
       "is_dag": true,
       "properties": {
         "description": "The comparisons of held versions",
@@ -2106,7 +1989,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction",
-      "target_id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore",
+      "target_id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStoreController",
       "type": "@connection"
     },
     {
@@ -2128,12 +2011,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -2218,7 +2101,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.domain_use_case_diagram_action.GetDomainUseCaseDiagramAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.domain_use_case_diagram_action.GetDomainUseCaseDiagramAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB",
@@ -2226,7 +2109,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.domain_use_case_diagram_action.GetDomainUseCaseDiagramAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -2284,7 +2167,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB",
@@ -2292,7 +2175,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -2314,12 +2197,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -2350,7 +2233,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB (nodes and edges views for full graph)",
@@ -2358,7 +2241,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -2380,12 +2263,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -2407,7 +2290,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.get_element_card_action.GetElementCardAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.get_element_card_action.GetElementCardAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB (nodes view)",
@@ -2415,7 +2298,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.get_element_card_action.GetElementCardAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -2671,7 +2554,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.get_lifecycle_finite_automaton_action.GetLifecycleFiniteAutomatonAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.get_lifecycle_finite_automaton_action.GetLifecycleFiniteAutomatonAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Shared DuckDB graph connection — queried for lifecycle/state/transition rows",
@@ -2679,7 +2562,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.get_lifecycle_finite_automaton_action.GetLifecycleFiniteAutomatonAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -2773,7 +2656,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB (domain rows for ERD discovery)",
@@ -2781,7 +2664,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -2803,12 +2686,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -2839,15 +2722,6 @@
       "type": "field"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result|field|maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:data_sources",
-      "is_dag": false,
-      "properties": {},
-      "relationship": "Composition",
-      "source_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result",
-      "target_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:data_sources",
-      "type": "field"
-    },
-    {
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result|field|maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:domain_slices",
       "is_dag": false,
       "properties": {},
@@ -2875,6 +2749,15 @@
       "type": "field"
     },
     {
+      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result|field|maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:storage_known",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result",
+      "target_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:storage_known",
+      "type": "field"
+    },
+    {
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction|@check_roles|aoa.action_machine.auth.guest_role.GuestRole",
       "is_dag": false,
       "properties": {},
@@ -2884,7 +2767,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB (entity / domain / entity_relation)",
@@ -2892,7 +2775,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -2950,7 +2833,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB (entity rows for the ERD kind filter)",
@@ -2958,7 +2841,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -2980,12 +2863,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -3016,7 +2899,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction|@connection|maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "is_dag": true,
       "properties": {
         "description": "Coordinator graph in DuckDB (nodes view for present graph-node types)",
@@ -3024,7 +2907,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction",
-      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
+      "target_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
       "type": "@connection"
     },
     {
@@ -3046,12 +2929,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -3073,7 +2956,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.map_area_action.MapAreaAction|@connection|maxitor.web.model.diagrams.resources.map_store.MapStore",
+      "id": "maxitor.web.model.diagrams.actions.map_area_action.MapAreaAction|@connection|maxitor.web.model.diagrams.resources.map_store.MapStoreController",
       "is_dag": true,
       "properties": {
         "description": "The maps of versions",
@@ -3081,7 +2964,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.map_area_action.MapAreaAction",
-      "target_id": "maxitor.web.model.diagrams.resources.map_store.MapStore",
+      "target_id": "maxitor.web.model.diagrams.resources.map_store.MapStoreController",
       "type": "@connection"
     },
     {
@@ -3175,7 +3058,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction|@connection|maxitor.web.model.diagrams.resources.map_store.MapStore",
+      "id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction|@connection|maxitor.web.model.diagrams.resources.map_store.MapStoreController",
       "is_dag": true,
       "properties": {
         "description": "The maps of versions",
@@ -3183,7 +3066,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction",
-      "target_id": "maxitor.web.model.diagrams.resources.map_store.MapStore",
+      "target_id": "maxitor.web.model.diagrams.resources.map_store.MapStoreController",
       "type": "@connection"
     },
     {
@@ -3205,12 +3088,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -3241,7 +3124,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction|@connection|maxitor.web.model.diagrams.resources.map_store.MapStore",
+      "id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction|@connection|maxitor.web.model.diagrams.resources.map_store.MapStoreController",
       "is_dag": true,
       "properties": {
         "description": "The maps of versions",
@@ -3249,7 +3132,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction",
-      "target_id": "maxitor.web.model.diagrams.resources.map_store.MapStore",
+      "target_id": "maxitor.web.model.diagrams.resources.map_store.MapStoreController",
       "type": "@connection"
     },
     {
@@ -3271,12 +3154,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
+      "id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction|generic:params|aoa.action_machine.model.stub_params.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction",
-      "target_id": "aoa.action_machine.model.params_stub.StubParams",
+      "target_id": "aoa.action_machine.model.stub_params.StubParams",
       "type": "generic:params"
     },
     {
@@ -3361,15 +3244,6 @@
       "type": "field"
     },
     {
-      "id": "maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource|application|aoa.action_machine.application.application.Application",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource",
-      "target_id": "aoa.action_machine.application.application.Application",
-      "type": "application"
-    },
-    {
       "id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain|application|aoa.action_machine.application.application.Application",
       "is_dag": true,
       "properties": {},
@@ -3379,40 +3253,13 @@
       "type": "application"
     },
     {
-      "id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore|domain|maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
+      "id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage|resource_entity|maxitor.web.model.core.entities.node_entity.NodeCoreEntity",
       "is_dag": true,
       "properties": {},
       "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore",
-      "target_id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource|domain|maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
-      "target_id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource|resource_data_source|maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
-      "target_id": "maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource",
-      "type": "resource_data_source"
-    },
-    {
-      "id": "maxitor.web.model.diagrams.resources.map_store.MapStore|domain|maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.diagrams.resources.map_store.MapStore",
-      "target_id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
-      "type": "domain"
+      "source_id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
+      "target_id": "maxitor.web.model.core.entities.node_entity.NodeCoreEntity",
+      "type": "resource_entity"
     },
     {
       "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|@check_roles|aoa.action_machine.auth.guest_role.GuestRole",
@@ -3424,7 +3271,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The tab's connection",
@@ -3432,19 +3279,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -3475,12 +3322,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -3493,15 +3340,15 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.end_room_action.EndRoomAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.end_room_action.EndRoomAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.end_room_action.EndRoomAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -3532,12 +3379,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.end_room_action.EndRoomAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.end_room_action.EndRoomAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.end_room_action.EndRoomAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -3568,15 +3415,15 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.expire_participant_action.ExpireParticipantAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.expire_participant_action.ExpireParticipantAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.expire_participant_action.ExpireParticipantAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -3607,12 +3454,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.expire_participant_action.ExpireParticipantAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.expire_participant_action.ExpireParticipantAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.expire_participant_action.ExpireParticipantAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -3652,7 +3499,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.follow_action.FollowAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.follow_action.FollowAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The follower's connection",
@@ -3660,19 +3507,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.follow_action.FollowAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.follow_action.FollowAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.follow_action.FollowAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.follow_action.FollowAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -3703,12 +3550,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.follow_action.FollowAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.follow_action.FollowAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.follow_action.FollowAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -3730,7 +3577,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The joining tab's connection",
@@ -3738,7 +3585,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -3754,31 +3601,31 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|maxitor.web.model.core.resources.history_access.HistoryAccess",
+      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|maxitor.web.model.core.resources.history_access.HistoryAccessController",
       "is_dag": true,
       "properties": {
         "description": "Room tickets of private histories",
-        "key": "HistoryAccess"
+        "key": "HistoryAccessController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction",
-      "target_id": "maxitor.web.model.core.resources.history_access.HistoryAccess",
+      "target_id": "maxitor.web.model.core.resources.history_access.HistoryAccessController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStore",
+      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "is_dag": true,
       "properties": {
         "description": "The histories Maxitor holds",
-        "key": "HistoryStore"
+        "key": "HistoryStoreController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction",
-      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStore",
+      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource",
+      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|maxitor.web.model.core.resources.static_bundle_resource.StaticBundleStorage",
       "is_dag": true,
       "properties": {
         "description": "The client build Maxitor serves",
@@ -3786,19 +3633,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction",
-      "target_id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource",
+      "target_id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -3829,12 +3676,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -3964,7 +3811,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The leaving tab's connection",
@@ -3972,19 +3819,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -4015,12 +3862,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -4033,7 +3880,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The connection that pressed Reload",
@@ -4041,7 +3888,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4069,15 +3916,15 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -4108,12 +3955,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -4126,7 +3973,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The participant's connection",
@@ -4134,19 +3981,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -4177,12 +4024,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -4204,7 +4051,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The reporting tab's connection",
@@ -4212,7 +4059,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4228,7 +4075,7 @@
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|@connection|maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource",
+      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|@connection|maxitor.web.model.core.resources.static_bundle_resource.StaticBundleStorage",
       "is_dag": true,
       "properties": {
         "description": "The client build Maxitor serves",
@@ -4236,19 +4083,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction",
-      "target_id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource",
+      "target_id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleStorage",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -4279,12 +4126,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -4360,7 +4207,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The opener's connection",
@@ -4368,19 +4215,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -4411,12 +4258,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -4447,7 +4294,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The participant's connection",
@@ -4455,19 +4302,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -4498,12 +4345,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -4543,7 +4390,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The participant's connection",
@@ -4551,31 +4398,31 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStore",
+      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|@connection|maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "is_dag": true,
       "properties": {
         "description": "The histories Maxitor holds",
-        "key": "HistoryStore"
+        "key": "HistoryStoreController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction",
-      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStore",
+      "target_id": "maxitor.web.model.core.resources.history_store.HistoryStoreController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -4606,12 +4453,12 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
     },
     {
@@ -4651,7 +4498,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction|@connection|aoa.fastapi.socket_channel_controller.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The follower's connection",
@@ -4659,19 +4506,19 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "target_id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "type": "@connection"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction|@connection|maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "is_dag": true,
       "properties": {
         "description": "Every open room",
-        "key": "RoomRegistry"
+        "key": "RoomRegistryController"
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction",
-      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
+      "target_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
       "type": "@connection"
     },
     {
@@ -4702,22 +4549,13 @@
       "type": "generic:params"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction|generic:result|maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction",
-      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
+      "target_id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
       "type": "generic:result"
-    },
-    {
-      "id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry|domain|maxitor.web.model.rooms.rooms_domain.RoomsDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
-      "target_id": "maxitor.web.model.rooms.rooms_domain.RoomsDomain",
-      "type": "domain"
     },
     {
       "id": "maxitor.web.model.rooms.rooms_domain.RoomsDomain|application|aoa.action_machine.application.application.Application",
@@ -4758,19 +4596,19 @@
       "type": "Role"
     },
     {
-      "id": "aoa.action_machine.model.params_stub.StubParams",
+      "id": "aoa.action_machine.model.stub_params.StubParams",
       "label": "StubParams",
       "properties": {},
       "type": "Params"
     },
     {
-      "id": "aoa.action_machine.model.result_stub.StubResult",
+      "id": "aoa.action_machine.model.stub_result.StubResult",
       "label": "StubResult",
       "properties": {},
       "type": "Result"
     },
     {
-      "id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "id": "aoa.fastapi.socket_channel_controller.SocketChannelController",
       "label": "SocketChannelController",
       "properties": {
         "description": "One WebSocket connection an action can send events through"
@@ -4778,18 +4616,8 @@
       "type": "Resource"
     },
     {
-      "id": "aoa.fastapi.socket_channel.TransportDomain",
-      "label": "TransportDomain",
-      "properties": {
-        "description": "Resources the FastAPI adapter creates for one connection",
-        "name": "transport",
-        "typed_events": false
-      },
-      "type": "Domain"
-    },
-    {
-      "id": "maxitor.web.api.duckdb_graph_holder.DuckDBGraphHolder",
-      "label": "DuckDBGraphHolder",
+      "id": "maxitor.web.api.duckdb_graph_holder.RequestGraphStorage",
+      "label": "RequestGraphStorage",
       "properties": {
         "description": "Request-scoped holder for the graph the current read named"
       },
@@ -6034,32 +5862,32 @@
       "type": "Resource"
     },
     {
-      "id": "maxitor.web.model.core.resources.history_access.HistoryAccess",
-      "label": "HistoryAccess",
+      "id": "maxitor.web.model.core.resources.history_access.HistoryAccessController",
+      "label": "HistoryAccessController",
       "properties": {
         "description": "Which keys a port accepted lately, and room tickets"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.web.model.core.resources.history_store.HistoryStore",
-      "label": "HistoryStore",
+      "id": "maxitor.web.model.core.resources.history_store.HistoryStoreController",
+      "label": "HistoryStoreController",
       "properties": {
         "description": "The histories Maxitor holds, one per name"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistry",
-      "label": "OpenTabsRegistry",
+      "id": "maxitor.web.model.core.resources.open_tabs_registry.OpenTabsRegistryController",
+      "label": "OpenTabsRegistryController",
       "properties": {
         "description": "When a tab outside a room last asked about each source"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.web.model.core.resources.own_model_graph_resource.OwnModelGraphResource",
-      "label": "OwnModelGraphResource",
+      "id": "maxitor.web.model.core.resources.own_model_graph_resource.OwnModelGraphStorage",
+      "label": "OwnModelGraphStorage",
       "properties": {
         "description": "Maxitor's own model as interchange graph JSON"
       },
@@ -6074,16 +5902,16 @@
       "type": "Resource"
     },
     {
-      "id": "maxitor.web.model.core.resources.source_checks.SourceChecks",
-      "label": "SourceChecks",
+      "id": "maxitor.web.model.core.resources.source_checks.SourceChecksController",
+      "label": "SourceChecksController",
       "properties": {
         "description": "Runs the freshness checks of held graphs on a clock and in the background"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleResource",
-      "label": "StaticBundleResource",
+      "id": "maxitor.web.model.core.resources.static_bundle_resource.StaticBundleStorage",
+      "label": "StaticBundleStorage",
       "properties": {
         "description": "The installed client bundle and the id of its build"
       },
@@ -7453,44 +7281,6 @@
       "type": "Result"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:data_sources",
-      "label": "data_sources",
-      "properties": {
-        "description": "Empty: the store knows no data source, so no listed resource names one.",
-        "entity_schema": false,
-        "json_schema": {
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "color": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "id": {
-                "minLength": 1,
-                "type": "string"
-              },
-              "label": {
-                "minLength": 1,
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "label",
-              "color"
-            ],
-            "type": "object"
-          },
-          "type": "array"
-        },
-        "json_schema_name": "ListEntitiesDataSourcesJson",
-        "json_schema_value": true,
-        "required": false
-      },
-      "type": "Field"
-    },
-    {
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:domain_slices",
       "label": "domain_slices",
       "properties": {
@@ -7592,19 +7382,12 @@
                         "label": {
                           "type": "string"
                         },
-                        "resource_id": {
-                          "description": "The resource that stores the entity (protocol 1.6), or null.",
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "resource_label": {
-                          "description": "That resource's name, or null.",
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "resource_ids": {
+                          "description": "Every resource that keeps the entity, sorted by id; empty when none does.",
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
                         },
                         "values": {
                           "description": "The values a closed dictionary declares, each one its reference object; empty for every other kind.",
@@ -7653,6 +7436,7 @@
                         "id",
                         "label",
                         "domain_qualname",
+                        "resource_ids",
                         "entity_kind",
                         "values",
                         "fields"
@@ -7878,7 +7662,7 @@
       "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:resources",
       "label": "resources",
       "properties": {
-        "description": "Every resource of the graph that keeps an entity, sorted by id, with its colour and no data source; the same for every request on one graph, whatever domains it asks for.",
+        "description": "Every resource of the graph, one that keeps no entity too, sorted by id, with its colour; the same for every request on one graph, whatever domains it asks for.",
         "entity_schema": false,
         "json_schema": {
           "items": {
@@ -7887,12 +7671,6 @@
               "color": {
                 "minLength": 1,
                 "type": "string"
-              },
-              "data_source_id": {
-                "type": [
-                  "string",
-                  "null"
-                ]
               },
               "id": {
                 "minLength": 1,
@@ -7906,8 +7684,7 @@
             "required": [
               "id",
               "label",
-              "color",
-              "data_source_id"
+              "color"
             ],
             "type": "object"
           },
@@ -7915,6 +7692,17 @@
         },
         "json_schema_name": "ListEntitiesResourcesJson",
         "json_schema_value": true,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.web.model.diagrams.actions.list_entities_action.ListEntitiesAction.Result:storage_known",
+      "label": "storage_known",
+      "properties": {
+        "description": "Whether the graph says where any entity lies: false before protocol 1.6, so no physical view.",
+        "entity_schema": false,
+        "json_schema_value": false,
         "required": false
       },
       "type": "Field"
@@ -8264,14 +8052,6 @@
       "type": "Field"
     },
     {
-      "id": "maxitor.web.model.diagrams.data_sources.graph_data_source.GraphDataSource",
-      "label": "GraphDataSource",
-      "properties": {
-        "description": "The in-process DuckDB store the graphs are loaded into"
-      },
-      "type": "DataSource"
-    },
-    {
       "id": "maxitor.web.model.diagrams.diagrams_domain.DiagramsDomain",
       "label": "DiagramsDomain",
       "properties": {
@@ -8282,24 +8062,24 @@
       "type": "Domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStore",
-      "label": "ComparisonStore",
+      "id": "maxitor.web.model.diagrams.resources.comparison_store.ComparisonStoreController",
+      "label": "ComparisonStoreController",
       "properties": {
         "description": "The comparison of two held versions, computed once per pair"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.web.model.diagrams.resources.duckdb_graph_resource.DuckDBGraphResource",
-      "label": "DuckDBGraphResource",
+      "id": "maxitor.web.model.diagrams.resources.duckdb_graph_storage.DuckDBGraphStorage",
+      "label": "DuckDBGraphStorage",
       "properties": {
         "description": "DuckDB in-memory store for coordinator graph JSON (HTTP + entity/domain helpers)"
       },
       "type": "Resource"
     },
     {
-      "id": "maxitor.web.model.diagrams.resources.map_store.MapStore",
-      "label": "MapStore",
+      "id": "maxitor.web.model.diagrams.resources.map_store.MapStoreController",
+      "label": "MapStoreController",
       "properties": {
         "description": "The map of a version, laid out once and kept on disk"
       },
@@ -8801,8 +8581,8 @@
       "type": "Field"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswer",
-      "label": "RoomAnswer",
+      "id": "maxitor.web.model.rooms.actions.room_action_support.RoomAnswerResult",
+      "label": "RoomAnswerResult",
       "properties": {},
       "type": "Result"
     },
@@ -8983,8 +8763,8 @@
       "type": "Params"
     },
     {
-      "id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistry",
-      "label": "RoomRegistry",
+      "id": "maxitor.web.model.rooms.resources.room_registry.RoomRegistryController",
+      "label": "RoomRegistryController",
       "properties": {
         "description": "Every open room of the process: participants, tabs, shared settings"
       },
@@ -9001,5 +8781,5 @@
       "type": "Domain"
     }
   ],
-  "schema_version": "1.8"
+  "schema_version": "2.0"
 }
