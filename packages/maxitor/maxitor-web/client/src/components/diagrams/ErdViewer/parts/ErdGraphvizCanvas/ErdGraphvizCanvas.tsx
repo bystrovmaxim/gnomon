@@ -40,7 +40,7 @@ import {
 import { containNodeFills } from "@/lib/containNodeFills";
 import { enrichErdDataForViewer } from "@/lib/enrichErdData";
 import { filterGraphByKinds, kindsOnDiagram, pruneGraphToEntities } from "@/lib/erdKindFilter";
-import { resourcesOnDiagram } from "@/lib/erdResourceFilter";
+import { resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
 import { useErdResourceSettings } from "@/lib/erdResourceSettings";
 import { copyEntity, physicalDrawing, viewLayout } from "@/lib/erdViews";
 import { ErdModelPill } from "./ErdModelPill";
@@ -297,7 +297,8 @@ export function ErdGraphvizCanvas({
   }, [beforeKinds, disabledKinds, offChanges, includeOneHop, baseGraph, qualsOn, fallbackQual]);
   // Every resource of the graph frames in the physical view, an empty one too (spec 070, FR-003): the Resources
   // section's rows and the paint point are theirs.
-  const baseResources = bundle.resource_ids;
+  // On the ERD of one domain only the resources of its tables; on the ERD of all domains every one (#78).
+  const baseResources = useMemo(() => resourcesOfDiagram(bundle.resource_ids, baseEntities, multiTab), [bundle.resource_ids, baseEntities, multiTab]);
   const framedResources = useMemo(() => baseResources.filter((resource) => !disabledResources.has(resource)), [baseResources, disabledResources]);
 
   const erdEmptyOverlay =
