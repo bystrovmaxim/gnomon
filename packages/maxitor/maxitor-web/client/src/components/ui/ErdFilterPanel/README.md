@@ -14,7 +14,7 @@
 - **Height:** the panel ends above the zoom toolbar and scrolls inside itself; wheel events stop at the panel, so scrolling it never zooms or pans the canvas.
 - **A page's own sections:** given `sections` (`{ id, title, rows, paints }`) and `onToggleRow(section, row)`, the panel shows those instead of Domains, Kinds and Changes, in their order, and the gear shift has a point for each one that paints. The events explorer uses this: its sections come and go with what is on its screen (spec 055).
 - **Kinds:** the section is rendered only when the graph has more than one kind. Rows come from `GET /api/v1/list-entity-kinds`, labelled with the kind's display name.
-- **Resources** (spec 061, spec 070): in the physical view, one row per resource of the graph, an empty one too; switching one off drops its frame. It paints, so the gear shift has a point for it, after Kinds. A row's `hint` — the resource's full id — is its tooltip, whether or not the name was cut.
+- **Resources** (spec 061, spec 070): in the physical view, one row per resource the diagram frames — every one of the model on the ERD of all domains, those of its tables on the ERD of one domain; switching one off drops its frame. It paints, so the gear shift has a point for it, after Kinds. A row's `hint` — the resource's full id — is its tooltip, whether or not the name was cut.
 - **Narrow screens:** the panel starts as a "Filter" pill; opened, it shows the sections straight away — the word "Filter" does not appear inside — with the close button at the end of the Domains header.
 
 ## Props

@@ -1,7 +1,7 @@
 // src/lib/erdResourceFilter.test.ts
 import { describe, expect, it } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { resourcesOnDiagram } from "@/lib/erdResourceFilter";
+import { resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
 
 const table = (id: string, ...resource_ids: string[]): ErdEntity => ({ id, label: id, fields: [], resource_ids });
 
@@ -13,5 +13,22 @@ describe("the Resources section of the physical view (spec 061, spec 070)", () =
 
   it("lists nothing for a graph that does not say where tables lie", () => {
     expect(resourcesOnDiagram([{ id: "Lot", fields: [] }, table("Offer")])).toEqual([]);
+  });
+});
+
+describe("the resources a diagram frames (#78)", () => {
+  const all = ["shop.ArchiveDatabase", "shop.BillingDatabase", "shop.StorefrontDatabase"];
+  const entities = [table("Order", "shop.StorefrontDatabase"), table("Legacy")];
+
+  it("frames every resource of the model on the ERD of all domains, an empty one too", () => {
+    expect(resourcesOfDiagram(all, entities, true)).toEqual(all);
+  });
+
+  it("frames only the resources of its tables on the ERD of one domain", () => {
+    expect(resourcesOfDiagram(all, entities, false)).toEqual(["shop.StorefrontDatabase"]);
+  });
+
+  it("keeps the model's order", () => {
+    expect(resourcesOfDiagram(all, [table("Invoice", "shop.StorefrontDatabase", "shop.ArchiveDatabase")], false)).toEqual(["shop.ArchiveDatabase", "shop.StorefrontDatabase"]);
   });
 });
