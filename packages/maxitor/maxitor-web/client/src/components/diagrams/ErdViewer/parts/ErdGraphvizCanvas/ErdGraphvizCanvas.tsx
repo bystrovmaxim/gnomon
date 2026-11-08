@@ -178,8 +178,12 @@ const LAYOUT_TOOLS: {
 ];
 
 
-/** The room a fit keeps round the tables for the frames of domains and resources and their names, in screen pixels. */
-const RESOURCE_CONTOUR_FIT_MARGIN_PX = 48;
+/**
+ * How a framed drawing fits: Graphviz's own box, which holds the frames and their names by Graphviz's own estimate and is
+ * the same in every browser — a fit that measured the drawn text would differ by a few pixels between two screens, and a
+ * follower would glide after each new picture (spec 038, spec 070). A drawing without frames fits its tables and lines.
+ */
+const FRAMED_FIT = { fitToViewBox: true, fitMarginPx: 8 };
 
 export function ErdGraphvizCanvas({
   bundle,
@@ -240,9 +244,7 @@ export function ErdGraphvizCanvas({
   const disabledKinds = useMemo(() => new Set(disabledKindList), [disabledKindList]);
 
   const side = useHalf()?.side ?? null;
-  // A fit measures the tables and lines, whose boxes every engine draws alike; the frames of both views stand outside
-  // them, so the fit keeps a fixed margin for them instead of measuring their text (spec 061, spec 070).
-  const panZoom = useSvgPanZoom({ fitMarginPx: RESOURCE_CONTOUR_FIT_MARGIN_PX });
+  const panZoom = useSvgPanZoom(framed ? FRAMED_FIT : undefined);
   const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform } = panZoom;
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);
