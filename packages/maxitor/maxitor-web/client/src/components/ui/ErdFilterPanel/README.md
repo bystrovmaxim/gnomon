@@ -8,14 +8,13 @@
   <a href="../../../../README.md"><img src="https://img.shields.io/badge/docs-Maxitor%20client-blue" alt="Maxitor client"></a>
 </p>
 
-**Role:** The ERD's one filter panel. Its sections — **Domains**, **Kinds**, **Resources** and, in Diff, **Changes** — behave as a strict accordion: exactly one is open at a time (the section that paints when the diagram mounts, else Domains), opening one folds the others, and clicking the open header folds it. Moving the gear shift opens the section it paints by and folds the others; opening a section by hand leaves the paint alone. Rows use the same chrome as `DomainLegend` (shared `floatingLegend*` styles from `@/lib/ui`): a 20 px disk and a label, dimmed when switched off.
+**Role:** The ERD's one filter panel. Its sections — **Domains**, **Kinds**, **Resources** in the physical view and, in Diff, **Changes** — behave as a strict accordion: exactly one is open at a time (the section that paints when the diagram mounts, else Domains), opening one folds the others, and clicking the open header folds it. Moving the gear shift opens the section it paints by and folds the others; opening a section by hand leaves the paint alone. Rows use the same chrome as `DomainLegend` (shared `floatingLegend*` styles from `@/lib/ui`): a 20 px disk and a label, dimmed when switched off.
 
 - **Width:** fixed at 148 px (`ERD_FILTER_PANEL_WIDTH`, the width the production Domains legend had); the panel never widens. A label that does not fit is cut with an ellipsis and shows its full text in a tooltip — only when it was actually cut.
 - **Height:** the panel ends above the zoom toolbar and scrolls inside itself; wheel events stop at the panel, so scrolling it never zooms or pans the canvas.
 - **A page's own sections:** given `sections` (`{ id, title, rows, paints }`) and `onToggleRow(section, row)`, the panel shows those instead of Domains, Kinds and Changes, in their order, and the gear shift has a point for each one that paints. The events explorer uses this: its sections come and go with what is on its screen (spec 055).
 - **Kinds:** the section is rendered only when the graph has more than one kind. Rows come from `GET /api/v1/list-entity-kinds`, labelled with the kind's display name.
-- **Resources** (spec 061): one row per resource that stores a table of the diagram, rendered even for one and absent on a graph older than protocol 1.6. It paints, so the gear shift has a point for it, after Kinds. A row's `hint` — the resource's full id — is its tooltip, whether or not the name was cut.
-- **Data sources** (spec 063): one row per data source the diagram's resources share, then one **No data source** row for the resources that name none; rendered only when the diagram has a data source. It paints, after Resources.
+- **Resources** (spec 061, spec 070): in the physical view, one row per resource of the graph, an empty one too; switching one off drops its frame. It paints, so the gear shift has a point for it, after Kinds. A row's `hint` — the resource's full id — is its tooltip, whether or not the name was cut.
 - **Narrow screens:** the panel starts as a "Filter" pill; opened, it shows the sections straight away — the word "Filter" does not appear inside — with the close button at the end of the Domains header.
 
 ## Props

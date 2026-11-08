@@ -10,7 +10,7 @@ One phase = one commit, referencing (#67). After a phase only its own tests run;
 - [x] T006 [US5, US6] Phase 6: Diff by the set of resources, Side by side by copy; the room's `model` and turned-off resources, the room server's whitelist; graphs before 1.6 without the physical view; Vitest and pytest
 - [x] T007 Phase 7: rebuild Maxitor's graph files at 2.0; raise the version of every changed level; `uv.lock`
 - [ ] T008 Phase 8: the closing check run, taken to zero, the browser checks included
-- [ ] T009 Phase 9: documentation — the ERD's two views, the card, the removed data source screens, Maxitor on the new AOA
+- [x] T009 Phase 9: documentation — the ERD's two views, the card, the removed data source screens, Maxitor on the new AOA
 - [ ] T010 Phase 10: one changelog article, written last
 
 ## Traceability
