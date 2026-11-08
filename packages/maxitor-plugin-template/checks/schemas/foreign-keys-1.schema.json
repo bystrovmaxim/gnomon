@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-template/checks/schemas/foreign-keys-1.schema.json",
+  "title": "Maxitor cross-plugin foreign keys, format 1",
+  "description": "foreign-keys.yaml: identifiers only. No constraint name, no delete rule, no SQL, no source schema: the installer builds the statement from checked names.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["foreign_keys"],
+  "properties": {
+    "foreign_keys": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/key" } }
+  },
+  "$defs": {
+    "identifier": { "type": "string", "pattern": "^[a-z_][a-z0-9_]{0,62}$" },
+    "table": { "$ref": "#/$defs/identifier", "not": { "pattern": "_versions$" }, "description": "A current table, never a version table." },
+    "columns": { "type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": { "$ref": "#/$defs/identifier" } },
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["table", "columns"],
+          "properties": { "table": { "$ref": "#/$defs/table" }, "columns": { "$ref": "#/$defs/columns" } }
+        },
+        "to": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "table", "columns"],
+          "properties": {
+            "schema": { "$ref": "#/$defs/identifier" },
+            "table": { "$ref": "#/$defs/table" },
+            "columns": { "$ref": "#/$defs/columns" }
+          }
+        }
+      }
+    }
+  }
+}

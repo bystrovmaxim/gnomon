@@ -256,6 +256,7 @@ STEPS: tuple[Step, ...] = (
             "maxitor/tools/graph-builder",
             "maxitor/core/graph_compare",
             "maxitor/core/graph_map",
+            "maxitor-plugin-template",
         )
     ),
     Step(

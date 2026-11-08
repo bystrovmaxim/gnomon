@@ -1,0 +1,5 @@
+# The built frontend is made by `npm run build` before a release and travels in the wheel, not in git.
+src/maxitor_notes/_web/
+web/node_modules/
+web/.next/
+web/next-env.d.ts

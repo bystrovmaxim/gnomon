@@ -1,0 +1,10 @@
+# foreign-keys.yaml — foreign keys from the plugin's tables to tables of Maxitor or of a direct dependency.
+# Identifiers only: no constraint name, no delete rule (always RESTRICT), no SQL. The source schema is always the
+# plugin's own. Maxitor's installer checks every name against the database catalog and creates the keys itself.
+foreign_keys:
+  # A note is about a catalog item of the core.
+  - from: { table: note, columns: [item_id] }
+    to:   { schema: core, table: items, columns: [id] }
+  # A note's writer is a member of the note's organization.
+  - from: { table: note, columns: [organization_id, writer_id] }
+    to:   { schema: core, table: members, columns: [organization_id, user_id] }

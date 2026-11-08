@@ -1,0 +1,43 @@
+# navigation.yaml — the plugin's nodes in Maxitor's left tree.
+# The plugin only adds nodes: it attaches them to the root, to a node of Maxitor or to a node of a direct dependency.
+# Maxitor's installer builds the whole tree and refuses the installation if an attachment does not hold.
+navigation: 1
+nodes:
+  # Under every catalog item: core:item is a list node of Maxitor, one instance per item, which puts item_id
+  # into the scope of everything beneath it.
+  - id: item-notes
+    attach: core:item
+    title: Notes
+    icon: note
+    order: 300
+    # The page's path inside the plugin; Maxitor opens it in the right panel at /w/notes/items/<item_id>.
+    page: /items/{item_id}
+    roles: [reader]
+    # The page's controls. Maxitor draws them over the right panel, in the same places for every plugin; each is
+    # an address parameter, which the page reads like any other.
+    controls:
+      views:
+        param: view
+        default: list
+        options:
+          - { value: list, label: List }
+          - { value: table, label: Table }
+      filters:
+        - title: Author
+          param: author
+          # The options come from data: a reading action of the plugin, read at the panel's moment.
+          source: list_note_authors
+    room:
+      # Address parameters the whole room shares on this page: one participant switches the view, all see it.
+      shared: [view]
+      # Pointers travel as an anchor and a fraction inside it; the page marks its notes with data-room-anchor.
+      surface: document
+
+  # A section of its own in the root of the tree.
+  - id: notes
+    attach: root
+    title: Notes
+    icon: note
+    order: 500
+    page: /
+    roles: [reader]

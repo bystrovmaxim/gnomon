@@ -11,3 +11,8 @@ file = "packages/maxitor/maxitor-web/graph.json"
 name = "repo-graph-port"
 build = "uv run --extra dev python -m maxitor.repo_graph_port.build_graph"
 file = "packages/maxitor/tools/repo-graph-port/graph.json"
+
+[[graph]]
+name = "maxitor-plugin-template"
+build = "uv run --extra dev python -m maxitor_notes.build_graph"
+file = "packages/maxitor-plugin-template/graph.json"
