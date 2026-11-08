@@ -6,6 +6,11 @@ A Maxitor plugin is an independent application that installs into Maxitor: a pip
 
 Maxitor cannot host plugins yet: the installer, the frame on Next.js, `maxitor-plugin-sdk` and `@maxitor/panel` are still to be built. Until then this package is a skeleton — its files have the shape a plugin must have, and they do not run against Maxitor.
 
+## Documentation
+
+- [docs/plugins.md](docs/plugins.md) — the plugin concept: the passport, the core as a node of the dependency graph and the one compatibility check, delivery, database roles and schemas, cross-plugin foreign keys, one sign-in, the frame with its tree, panel, canvas and controls, rooms, the lifecycle, the rules, and a tutorial on this template.
+- [docs/versioned-storage.md](docs/versioned-storage.md) — how tables, versions and time are kept so that any past moment reads by the same actions as the present.
+
 ## Files
 
 | File | What it is |
@@ -17,6 +22,7 @@ Maxitor cannot host plugins yet: the installer, the frame on Next.js, `maxitor-p
 | `src/maxitor_notes/migrations/0001_note.sql` | The current table `note` and its version table `note_versions`. |
 | `web/` | The frontend: a Next.js application under `/p/notes` whose pages keep every view setting in their address. |
 | `web/scripts/copy-build.mjs` | Puts the standalone build into `src/maxitor_notes/_web`, where the wheel carries it. |
+| `checks/` | What Maxitor's installer checks in a plugin's own files: the JSON schemas of the passport, `navigation.yaml` and `foreign-keys.yaml`, and `plugin_check.py` for the rules across fields. They move into `maxitor-plugin-sdk` when it exists. |
 
 ## Building a release
 

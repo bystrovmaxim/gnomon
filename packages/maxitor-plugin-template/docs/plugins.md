@@ -1,0 +1,1115 @@
+# Maxitor plugins: passport, database, site, and how to write your own
+
+What a Maxitor plugin is, what it is made of, how it is installed, where its data lies, how it becomes part of one site with the core, and the rules it is written by. This is about **Maxitor** plugins — independent applications on top of the Maxitor core — not about extensions of the AOA framework.
+
+The document is a concept. The commands `maxitor plugin ...` and the packages `maxitor-plugin-sdk` and `@maxitor/panel` are described as they will work; they do not exist yet. Versioned storage, on which a plugin's data stands, is described in [versioned-storage](versioned-storage.md) and not repeated here.
+
+In short: a plugin is a Python package (pip or a ready wheel) that carries a passport, its own AOA backend and its own built Next.js frontend. The core's installer installs it: reads the passport, checks the dependencies and that there is no cycle, gives the plugin a role and a schema in the shared database, lets it build its schema, creates the cross-plugin foreign keys from a declaration in a file, and puts the plugin into the site. A person sees one site with one sign-in: the core's gateway accepts the session and passes each plugin a short signed token meant for it alone. The frame of the screen — the tree on the left, the row at the top and the right panel — belongs to the core: a plugin adds its nodes to the tree by a YAML declaration and gets the right panel when its node is open. Everything a person sees is written in the address, so Back, a link and a room work the same for every plugin.
+
+## Vocabulary
+
+| Word | Meaning |
+|---|---|
+| **core** | Maxitor without plugins: sign-in, users, organizations, the frame, rooms, the gateway, the installer, the plugin registry; its `id` is `maxitor`, its version is the version of the `maxitor` package; its data is the schema `core` |
+| **core passport** | the file `maxitor-core.yaml` in the `maxitor` package: the core's version and the formats of a plugin's files it reads |
+| **core contract** | everything a plugin relies on in the core: tree nodes, the panel and room protocols, controls, style tokens, the sign-in token, the core's tables |
+| **plugin** | a package that installs into the core and adds data, actions and pages |
+| **passport** | the file `maxitor-plugin.yaml` in a plugin's package: who it is and what it needs |
+| **installer** | the part of the core that installs, upgrades and removes plugins |
+| **master role** | the database role `maxitor_admin`, used by the installer alone |
+| **plugin role** | the database role `plg_<name>`, used by the plugin and by it alone |
+| **gateway** | the site's entrance: it takes every request and hands it to the core or a plugin |
+| **frame** | what is always on screen: the navigation tree on the left, the core's row at the top, the right panel; only the core draws it |
+| **tree** | the navigation tree on the left; built from the `navigation.yaml` files of the core and the plugins |
+| **attachment node** | a node of the core's or a dependency's tree under which a plugin places its nodes |
+| **list node** | a node that multiplies by records at run time: one instance per product, per catalog item and so on |
+| **tree builder** | the part of the installer that builds the tree and checks the attachments |
+| **right panel** | the grey field with dots on the right; a plugin's page opens in it |
+| **canvas** | `<MaxitorCanvas>`: one field for all of Maxitor with moving, zooming and a camera; a plugin puts only its content into it |
+| **controls** | the mode pill, the view switch, filters and the legend over the panel; a plugin declares them in `controls`, the core draws them |
+| **panel address** | the page's address in the browser's address bar: `/w/<owner>/<path>?<parameters>`; the only source of the panel's state |
+| **room** | looking together: several people see each other, one moment, and can follow each other |
+
+## 1. What a plugin is
+
+A plugin is an independent application with three parts:
+
+- **backend** — an AOA service: actions, the resource of its database, roles; runs as a process of its own;
+- **frontend** — a Next.js site with its own `basePath`, whose pages are shown in the frame's right panel; runs as a Node process of its own;
+- **database schema** — its own PostgreSQL schema in the core's shared database, built by the rules of versioned storage; a plugin that keeps no state has none (section 5).
+
+A plugin depends on the core and possibly on other plugins. The core and the plugins it depends on know nothing of it. A plugin does not import another plugin's code: it reads its tables and calls its actions through the gateway. So plugins are installed, upgraded and removed one by one.
+
+Separate processes are not a convenience but a condition of isolation. If all plugins lived in one Python process, any of them would read the database passwords of all the others from memory, and separate database roles would mean nothing.
+
+## 2. The passport
+
+The passport is YAML, because a person reads it in review and the installer reads it before installing. The file `maxitor-plugin.yaml` lies at the root of the Python package and travels in the wheel. The installer finds it by the entry point `maxitor.plugins` in the wheel's `entry_points.txt` — without unpacking or installing the package.
+
+```yaml
+passport: 1                          # the format of the passport
+id: io.github.acme.notes             # the global id, never changes
+name: notes                          # the name in an installation: schema, role, path
+title: Notes
+description: >
+  Notes on any catalog item: who wrote what, when, and what changed.
+version: 1.2.0
+
+requires:
+  maxitor: ">=4.0,<5"                # the core versions it works with
+  node: ">=22"
+
+dependencies:
+  - id: io.github.acme.tags
+    version: ">=2.1,<3"
+    source:
+      pip: acme-maxitor-tags         # a package on PyPI or an inner index
+  - id: io.github.acme.people
+    version: ">=1.4,<2"
+    source:
+      wheel: https://github.com/acme/maxitor-people/releases/download/v1.4.0/acme_maxitor_people-1.4.0-py3-none-any.whl
+      sha256: 3f5a0c...e91
+
+roles:
+  - name: reader
+    description: Reads notes.
+  - name: editor
+    description: Writes and deletes notes.
+
+backend:
+  app: acme_notes.app:create_app     # the AOA application factory
+  migrate: acme_notes.migrate:upgrade
+
+frontend:
+  build: acme_notes/_web             # the built Next.js (standalone) inside the package
+  navigation: acme_notes/navigation.yaml   # the plugin's nodes in the tree (section 7)
+
+database:
+  mechanics: [migration_ledger]      # tables of mechanics, without versions
+  foreign_keys: acme_notes/foreign-keys.yaml
+```
+
+| Field | Rule |
+|---|---|
+| `id` | reverse domain notation, `^[a-z0-9-]+(\.[a-z0-9-]+)+$`; the author's domain makes it unique; never changes in the plugin's life |
+| `name` | `^[a-z][a-z0-9_]{1,30}$`, does not start with `pg_`, not on the reserved list (`core`, `public`, `information_schema`, `maxitor`, `api`, `p`, `w`, `auth`, `static`, `admin`, `root`); unique in an installation; it is the schema's name, the suffix of the role `plg_<name>` and the path `/p/<name>`; does not change after the first release |
+| `title`, `description` | for people: the page of plugins, the installation plan |
+| `version` | strictly `x.y.z` (SemVer); equal to the version in the package's `pyproject.toml` |
+| `requires.maxitor` | the range of core versions — an edge to the node `maxitor` of the dependency graph (section 3.1) |
+| `dependencies` | the plugins this one cannot work without: `id`, a `version` range and a `source` — a pip package or a wheel at an address with a mandatory `sha256` |
+| `roles` | the plugin's roles; the core's administrator assigns them to people |
+| `frontend.navigation` | the file with the plugin's tree nodes, pages, controls and behaviour in a room |
+
+Why both `id` and `name`. `id` is unique in the world and stands in other plugins' dependencies. `name` is short and fits a schema name; two authors may both call a plugin `notes`, and then only one of them gets into one installation — the installer refuses the second and names the conflict.
+
+Version ranges are written as pip writes them (`>=2.1,<3`, `~=2.1`), and what "breaking" means is defined the same for the core and for plugins (section 3.4).
+
+The passport is checked by a JSON schema (`plugin-passport-1.schema.json`): an unknown field is an error, YAML is read by a safe loader without tags, the size is limited.
+
+## 3. The core, dependencies and compatibility
+
+### 3.1. The core is a node of the graph too
+
+The core is Maxitor without plugins. Its `id` is `maxitor`, its version is the version of the `maxitor` package. The core describes itself by the passport `maxitor-core.yaml` in its package:
+
+```yaml
+core: 1
+id: maxitor
+version: 4.0.0                       # equal to the version of the maxitor package
+reads:                               # the formats of a plugin's files this core understands
+  passport: [1]
+  navigation: [1]
+  foreign_keys: [1]
+navigation: maxitor/web/navigation.yaml   # the core's tree (section 7.1)
+```
+
+For the compatibility check the core is **a node of the dependency graph** that is always installed and depends on nothing. `requires.maxitor` in a plugin's passport is an edge to that node, checked by the same code and by the same rules as an edge to another plugin. There is no separate "core check".
+
+Today the Maxitor application is both the core and the graph viewer. When the graph viewer becomes a plugin, the core releases version 4.0.0: what people relied on leaves it, and that is a breaking change.
+
+### 3.2. Dependencies live in the passport only
+
+In `pyproject.toml` a plugin lists its Python libraries, never other plugins. Otherwise pip would install plugins itself, bypassing the installer's checks, and incompatible library versions of two plugins would break each other in one environment.
+
+Every edge of the graph is **an identifier and a version range**, as a pip requirement is:
+
+| Edge | Where it is written | Against which version |
+|---|---|---|
+| plugin → core | `requires.maxitor` | the core's version |
+| plugin → plugin | `dependencies[].version` | the version of the installed or incoming plugin |
+| plugin → Python SDK | `maxitor-plugin-sdk>=4.2,<5` in `pyproject.toml` | the SDK version in the plugin's environment |
+| plugin → frontend SDK | `@maxitor/panel` in `package.json` | the version the page reports in `panel.ready` |
+| plugin → Node | `requires.node` | the Node version on the server |
+
+A range is read by the rules of PEP 440 by one library — `packaging.specifiers`, the one pip uses. Nothing parses ranges by hand.
+
+**The SDKs move with the core.** `maxitor-plugin-sdk`, `@maxitor/panel` and `@maxitor/tokens` are released with the core's major version: SDK 4.x works with core 4.x. A plugin built with SDK 4.2 requires the core `>=4.2,<5`.
+
+### 3.3. One compatibility check
+
+The compatibility check is one function in `maxitor-plugin-sdk` (`maxitor_plugin_sdk.compat`). Everyone who needs to know "will it work here" calls it:
+
+- `maxitor plugin check` — when a plugin is built, against the core version the developer names, and in the plugin's CI against the lowest and the highest bound of `requires.maxitor`;
+- the installer — on installing, upgrading, enabling and removing a plugin;
+- the core's upgrade — against every installed plugin;
+- the page of plugins in administration — to show what is compatible with what.
+
+The check runs in one order, and the first refusal stops it:
+
+1. **formats** — the plugin's `passport`, `navigation`, `foreign_keys` are in the `reads` of the core passport;
+2. **the core** — the core's version is in every plugin's `requires.maxitor` range;
+3. **dependencies** — for each plugin in the installation there is a version that falls into every range pointing at it; there is one of each plugin;
+4. **cycles** — the graph has none (section 3.5);
+5. **SDK** — the major version of the SDK in a plugin's environment equals the core's;
+6. **dependents** — on an upgrade or a removal no remaining plugin loses compatibility.
+
+A refusal names every side of the conflict, not only the first:
+
+```text
+Cannot install reports 0.4.0:
+  tags: notes 1.2.0 needs >=2.1,<3, reports 0.4.0 needs <2 — no version satisfies both
+```
+
+If everything holds, the check returns the plan: which versions are installed, in what order, what is upgraded.
+
+### 3.4. What "breaking" means
+
+The major version grows when anything others rely on changes incompatibly. For the core that is its **contract**:
+
+| Part of the contract | Breaking (major) | Compatible (minor) |
+|---|---|---|
+| the core's tree nodes | a node removed or renamed, a list node's `key` changed | a new node |
+| the panel and room protocols | a message removed, a field removed or its meaning changed | a new message, a new optional field |
+| controls | a kind of control removed, a field removed | a new kind, a new optional field |
+| style tokens and palette | a token or colour removed | a new token or colour |
+| the sign-in token | a claim removed or its meaning changed | a new claim |
+| the core's tables | a table or column removed, renamed, its type changed | a new table, a new column |
+| formats of a plugin's files | a format gone from `reads` | a new format in `reads` |
+
+For a plugin the same holds for its parts: the tables of its schema (other plugins read them all), the inputs and outputs of its actions, its roles, the tree nodes its dependents attach to.
+
+Tables are in the contract because reading every schema is a rule (section 5.1): a removed column breaks someone else's query just as a removed message does. Readers read version tables, and a current table and its versions have the same columns, so one rule covers both.
+
+### 3.5. Installation order and cycles
+
+**Without its dependencies a plugin is not installed.** The installer builds the full closure: the plugin's dependencies, their dependencies and so on, together with the plugins already installed. If some dependency cannot be fetched, a `sha256` does not match or the check of 3.3 refuses — nothing is installed. If everything resolves, the installer shows the plan and installs the whole closure in dependency order as one operation.
+
+**One version of each plugin in an installation.** For a pip source the highest version that falls into every range is taken — of the new plugins and of the installed ones that depend on it. For a wheel source the version is fixed by the file, and it must fall into the range.
+
+**A dependency cycle is forbidden.** The graph "plugin → dependency" is checked on the union of the installed and the planned plugins; a cycle is named round: `a → b → c → a`. Depending on oneself is a cycle too.
+
+The ban on cycles also gives the order in the database: a foreign key between schemas is allowed only towards a dependency (section 5), so the graph of keys is part of the dependency graph and has no cycles either.
+
+## 4. Delivery
+
+A plugin is published as a pip package (PyPI or an index of one's own) or as a ready wheel, for example attached to a release on GitHub. Inside the wheel:
+
+```text
+acme_notes/
+    __init__.py
+    maxitor-plugin.yaml
+    app.py               # the AOA application factory
+    migrate.py           # the migrations' entry point
+    migrations/          # migration files in the format the plugin chose
+    foreign-keys.yaml    # cross-plugin foreign keys
+    navigation.yaml      # tree nodes, pages, controls, behaviour in a room
+    actions/ ...
+    resources/ ...
+    _web/                # .next/standalone + .next/static + public, built beforehand
+acme_maxitor_notes-1.2.0.dist-info/
+    entry_points.txt     # [maxitor.plugins] notes = acme_notes
+```
+
+The author builds the frontend before the release; Next.js is not built on the server. The build holds no binary Node modules, otherwise the wheel would stop being `py3-none-any`; a plugin that needs them releases a wheel per platform.
+
+Each plugin is installed into **its own virtual environment** — `<maxitor data>/plugins/<name>/<version>/venv`. Two versions of one library in two plugins do not get in each other's way. There is one Node on the server — the one the core declared; a plugin's `requires.node` must match it.
+
+## 5. The database
+
+**A plugin without a database.** The passport may have no `database` section: then the plugin has neither a schema nor a role, and the installer creates none. Such a plugin keeps its state where its resources go — an outside service, the process's memory — or keeps none. The graph viewer works this way: it reads graphs from their sources and their history, not from Maxitor's database.
+
+### 5.1. Schemas and roles
+
+All data is in one PostgreSQL database (16 or newer). The core is in the schema `core`, each plugin in a schema named after its `name`. There are four kinds of roles:
+
+| Role | Who uses it | What it can do |
+|---|---|---|
+| `maxitor_admin` | the installer only | creates roles and schemas, grants rights, creates cross-plugin keys, drops schemas; a member of every plugin role with the `SET` right |
+| `maxitor_core` | the core's backend | owns the schema `core`, writes to it; reads every schema |
+| `plg_<name>` | the plugin's backend and its migrations | owns its schema: builds it itself and writes only to it; reads every other schema |
+| `maxitor_read` | nobody directly — a group | `USAGE` on every schema and `SELECT` on all their tables; `maxitor_core` and every plugin role are its members |
+
+The installer creates a plugin's role and schema:
+
+```sql
+CREATE ROLE plg_notes LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT
+    CONNECTION LIMIT 20 PASSWORD :generated;
+GRANT plg_notes TO maxitor_admin WITH SET TRUE, INHERIT FALSE;
+GRANT maxitor_read TO plg_notes;
+CREATE SCHEMA notes AUTHORIZATION plg_notes;
+GRANT USAGE ON SCHEMA notes TO maxitor_read;
+ALTER ROLE plg_notes SET search_path = notes;
+```
+
+The installer generates the role's password and puts it into the environment file of this plugin's process, readable by it alone. The plugin gets no other password.
+
+Writing into someone else's schema is impossible by the database's own means: the plugin role owns nothing but its schema and has no rights but `SELECT`. After every migration of any plugin **the installer syncs the read rights**: it grants `SELECT ON ALL TABLES IN SCHEMA <name> TO maxitor_read` and revokes every right on the schema's tables granted to anyone else. The owner of the tables could grant rights on them itself — the sync undoes that.
+
+Reading every schema is a rule, not a loosening: other plugins read any of a plugin's tables, and under the organization's lock the writer computes the watermark over the version tables of **every** schema ([versioned-storage, sections 3–4](versioned-storage.md)).
+
+The core installs the database extensions (`btree_gist` for `EXCLUDE`) once; a plugin installs no extensions of its own.
+
+### 5.2. A plugin builds its own schema
+
+Migrations are the plugin's business: it chooses the file format, the installer only calls `backend.migrate` **in a separate process connected as `plg_<name>`**. Never in the master role's connection through `SET ROLE`: the plugin's SQL could run `RESET ROLE` and get the installer's rights. For the same reason the whole installation is not one transaction but a sequence of steps with undo (section 10).
+
+After a migration the installer checks the schema against the rules of versioned storage, by reading the `pg_catalog` only:
+
+1. every table, except those listed in `database.mechanics`, has a pair `<table>_versions`;
+2. the columns of the version table are the current table's columns plus the service fields of the right types;
+3. the primary key of the versions is `(organization_id, id, valid_from_at)` (for a pure link — the pair of keys);
+4. there is an `EXCLUDE` constraint on overlapping periods and a partial index on `valid_to_at`;
+5. every foreign key of the current tables is `ON DELETE RESTRICT`; version tables have no foreign keys;
+6. every cross-plugin key of `foreign-keys.yaml` is in place (section 5.3).
+
+If the check fails, the migration counts as failed, and the installation or upgrade is undone.
+
+`maxitor-plugin-sdk` helps a plugin write by the rules of versioned storage: the organization's lock, the issuing of time, the functions that write a row and its version — the same as the core's. A plugin writes no versioning of its own.
+
+### 5.3. Cross-plugin foreign keys
+
+A plugin **does not create** a key from its table into a table of the core or of a dependency itself. For that it would need the `REFERENCES` right on others' tables forever, and could at any moment hang a `RESTRICT` on any of them and forbid deleting there. Instead the keys are declared in a file, and the installer creates them:
+
+```yaml
+# acme_notes/foreign-keys.yaml
+foreign_keys:
+  - from: { table: note, columns: [item_id] }
+    to:   { schema: core, table: items, columns: [id] }
+  - from: { table: note, columns: [author_id] }
+    to:   { schema: people, table: person, columns: [id] }
+```
+
+The file has no constraint name, no delete rule, no SQL — identifiers only. The protection against injection is not escaping but the fact that a string from the file has nowhere to become code:
+
+1. **Shape.** The file is read by a safe YAML loader and checked by a JSON schema: an unknown field is an error; every identifier is `^[a-z_][a-z0-9_]{0,62}$`; from 1 to 8 columns, lists of equal length. A quote, a dot, a space, a semicolon do not get past this step.
+2. **From.** There is no source schema in the file at all: it is always the plugin's own.
+3. **To.** `to.schema` is `core` or the `name` of a direct dependency from the passport; `to.table` is a current table of that dependency or of the core. A key against the direction of the dependency cannot be declared.
+4. **Catalog.** By parameterized queries to `pg_catalog`: both tables exist and are current tables, not `_versions`; the columns exist; their types are equal pairwise; the target columns, exactly this set, carry a primary key or a uniqueness.
+5. **Building.** The SQL is built from checked names only, through `psycopg.sql.Identifier`, with no string formatting. The installer computes the constraint name itself: `xfk_` and the first 16 characters of the declaration's hash.
+6. **Running** — one transaction of the master role, holding only the installer's SQL:
+
+```sql
+GRANT REFERENCES (id) ON core.items TO plg_notes;
+SET ROLE plg_notes;                       -- only a table's owner may alter it
+ALTER TABLE notes.note ADD CONSTRAINT xfk_5c1e09a7b3d24f60
+    FOREIGN KEY (item_id) REFERENCES core.items (id)
+    ON DELETE RESTRICT ON UPDATE RESTRICT NOT VALID;
+ALTER TABLE notes.note VALIDATE CONSTRAINT xfk_5c1e09a7b3d24f60;
+RESET ROLE;
+REVOKE REFERENCES (id) ON core.items FROM plg_notes;
+```
+
+The `REFERENCES` right lives for exactly one transaction: the database runs the checks of an existing key as the owner of the target table, and they need no right of the plugin.
+
+On an upgrade the installer compares the declarations by their names `xfk_…`: removes those that disappeared, creates the new ones. A plugin can drop its cross-plugin key itself — it owns the table — but the check after a migration finds it and restores the key.
+
+A key into a core table means a core row cannot be deleted while a plugin refers to it. The installer shows this in the installation plan ("`notes` forbids deleting `core.items` that have notes"), and the core asks the plugins through an extension point "may this be deleted" instead of catching a database error. How extension points work is a document of its own.
+
+### 5.4. Its own resource and the bounds of a transaction
+
+A plugin's backend works with the database through **its own resource** — a `PostgresResource` connected as `plg_<name>`. That is one physical boundary: one connection per call, writing only into its own schema, reading from any schema.
+
+Hence a rule easy to miss: **a transaction does not cross schemas of different owners.** One transaction — one connection — one role — writing into one schema. An action that needs to change both the core's data and the plugin's makes two changes with two times: its own through its resource, the core's through the core's action over HTTP. This is what rule 24 of the constitution says about two resources: an action glues them, not a shared transaction. The organization's lock does not suffer: PostgreSQL advisory locks are shared by every role of one database, and all of an organization's writers in all schemas still line up in one row.
+
+### 5.5. The plugin registry
+
+The core keeps installed plugins in the mechanics table `core.plugin`: `id`, `name`, version, state (`installing`, `enabled`, `disabled`, `failed`), installation time. The core does not list a plugin's version tables separately: the watermark and list-of-changes queries are assembled from the database catalog for the schemas in the registry. After a plugin is removed, no row about it remains in the core.
+
+## 6. One site
+
+### 6.1. Routes
+
+The site is one origin. The core's gateway takes every request and hands it on by prefix:
+
+| Path | Where |
+|---|---|
+| `/api/**` | the core's backend |
+| `/p/<name>/api/**` | a plugin's backend |
+| `/p/<name>/**` | a plugin's frontend (Next.js) — only inside the right panel |
+| `/**`, including `/w/**` | the core's frontend (Next.js): the frame and the core's pages |
+
+The processes of the core and the plugins listen only on an inner address the core assigns them; from outside only the gateway is reachable.
+
+Each plugin has its own Next.js application with its own `basePath`, its own Next.js version and its own build. The browser's address bar always holds a core address `/w/...`; a plugin's page lives in the right panel (section 7). Today the core's frontend is built with Vite; moving it to Next.js is separate work that comes before the first plugin.
+
+```ts
+// web/next.config.ts of the plugin notes
+export default {
+  basePath: "/p/notes",
+  output: "standalone",
+};
+```
+
+### 6.2. One sign-in
+
+1. A person signs in at the core. The core sets the session cookie `__Host-maxitor_session` — `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`.
+2. A request to `/p/notes/**` comes to the gateway with that cookie. The gateway checks the session, **removes** the core's cookie from the request and adds `Authorization: Bearer <token>`.
+3. The token is a JWT signed with **the core's private key** (Ed25519, `EdDSA`) and lives 60 seconds:
+
+```json
+{
+  "iss": "maxitor",
+  "aud": "io.github.acme.notes",
+  "sub": "user:7f3c…",
+  "sid": "…",
+  "org": "a1b2…",
+  "roles": ["reader", "editor"],
+  "iat": 1794211200,
+  "exp": 1794211260
+}
+```
+
+4. The plugin's backend checks the token with the standard `JwtAuthCoordinator` against the core's public key, with `EdDSA` in the list of algorithms and its own `id` in `aud`. It does not go to the database for the session.
+
+What this gives:
+
+- **a plugin cannot forge a token** — it has only the public key; that is why the signature is asymmetric and not a shared `HS256` secret;
+- **a plugin cannot use someone else's token** — a token for `notes` does not pass `aud` in `tags`;
+- **a plugin does not see the session** — the cookie never reaches it, and a person's sign-in cannot be stolen from a request;
+- **the organization comes from the token** (`org`), as versioned storage requires; the client does not pass it;
+- **roles are its own** — a token for a plugin carries only that plugin's roles assigned to the person in this organization;
+- **sign-out** — the core deletes the session; issued tokens expire within a minute.
+
+The gateway lets changing requests through only with its own site's `Origin` header — protection against request forgery together with `SameSite=Lax`.
+
+### 6.3. A plugin's frontend and its backend
+
+- A Next.js **server component** takes the `authorization` header of the incoming request and goes with it to its own backend at the inner address from the environment (`MAXITOR_PLUGIN_API`). The token is issued for this plugin; the backend accepts it.
+- A **client component** calls `/p/notes/api/...` by a relative path: the page in the panel is opened from the same origin, the browser sends the cookie, and the gateway replaces it with a token.
+
+A plugin's frontend keeps and receives no secrets.
+
+### 6.4. A plugin calls another plugin or the core
+
+On a person's behalf: a plugin's backend calls `/p/<dependency>/api/...` or `/api/...` through the gateway's inner address and passes on its incoming token. The gateway checks that the callee is the core or a direct dependency of the caller and issues a token for the callee with the same person and organization. Without a person (background work) a plugin presents its service key, issued on installation, and gets a token with `sub: "plugin:<id>"` and service roles.
+
+## 7. The frame: the tree and the right panel
+
+The Maxitor screen is always one: on the left the navigation tree, at the top the core's row (organization, moment, the path to the open node, room, user), on the right the right panel, a grey field with dots. The frame belongs wholly to the core. A plugin is given one thing — the content of the right panel while its node is open. A plugin does not draw and cannot change the tree, the row or the panel's look. Into the tree it only **adds its nodes** by a YAML declaration, and the core builds the tree.
+
+```text
+┌────────────────┬──────────────────────────────────────────────┐
+│ tree           │ core row: organization · moment · path · …   │
+│  Catalog       ├──────────────────────────────────────────────┤
+│   ▾ Item 17    │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
+│      Overview  │ ·  ·   a plugin's page in the right panel ·  │
+│      Notes   ◀ │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
+│  Products      │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
+└────────────────┴──────────────────────────────────────────────┘
+```
+
+### 7.1. The core's tree
+
+The core's file `navigation.yaml` describes the structure of the core's tree. Every node with an `id` is an attachment node: plugins' nodes may stand under it.
+
+```yaml
+navigation: 1
+nodes:
+  - id: catalog
+    title: Catalog
+    icon: catalog
+    order: 100
+    page: /catalog
+    children:
+      - id: item                       # a list node: one instance per catalog item
+        each:
+          source: list_items           # a reading action of the node's owner
+          key: item_id                 # the parameter each instance adds to the scope
+        page: /items/{item_id}
+        children:
+          - id: item.overview
+            title: Overview
+            order: 100
+            page: /items/{item_id}/overview
+
+  - id: products
+    title: Products
+    icon: product
+    order: 200
+    page: /products
+    children:
+      - id: product
+        each:
+          source: list_products
+          key: product_id
+        page: /products/{product_id}
+```
+
+| Field | Rule |
+|---|---|
+| `id` | `^[a-z][a-z0-9_.-]{0,62}$`, unique within its owner; a node's full name is `<owner>:<id>`: `core:item`, `notes:item-notes` |
+| `title` | text for an ordinary node; a list node's instances get their titles from `source` |
+| `icon` | a name from the core's icon set; there are no pictures of one's own in the tree — the tree looks the same everywhere |
+| `order` | the order among the children of one parent; the core steps by 100 so plugins have room to stand |
+| `page` | the template of the page's path inside the owner; `{name}` is a parameter of the scope; a node without `page` only groups |
+| `each` | makes the node a list: `source` is a reading action of the owner, `key` the name of the instance's parameter |
+| `roles` | the owner's roles needed to see the node |
+| `controls` | the page's controls: mode, view, filters, legend (7.8) |
+| `room` | the page's behaviour in a room (section 8) |
+| `children` | children |
+
+**The scope of parameters.** Each instance of a list node adds its key to the scope (`item_id`, `product_id`). Every descendant sees the parameters of all list nodes above it and puts them into `page` and into the parameters of its own lists. That is how contextual items come about: "Containers" under every product knows its `product_id`.
+
+The full names of the core's nodes are its contract with plugins: renaming or removing a node is a change of the core's major version, and the plugins' `requires.maxitor` catches it.
+
+### 7.2. A plugin's nodes
+
+A plugin describes its nodes in its own `navigation.yaml` and attaches each of its top nodes: to a node of the core, to a node of a direct dependency, or to the root of the tree.
+
+```yaml
+# acme_notes/navigation.yaml
+navigation: 1
+nodes:
+  - id: item-notes
+    attach: core:item                  # under every catalog item
+    title: Notes
+    icon: note
+    order: 300
+    page: /items/{item_id}
+    roles: [reader]
+    room:
+      shared: [view]
+      surface: document
+
+  - id: notes
+    attach: root                       # a section of its own in the root of the tree
+    title: Notes
+    icon: note
+    order: 500
+    page: /
+    children:
+      - id: author
+        each:
+          source: list_authors
+          key: author_id
+        page: /authors/{author_id}
+```
+
+A plugin `containers` that depends on the core inserts its list of containers into every product the same way: `attach: core:product`, `page: /products/{product_id}/containers`. A plugin that depends on `containers` may stand under its nodes — it knows them from its dependency's package.
+
+The rules of attachment:
+
+- `attach` is `root` or a full node name `core:<id>` or `<name of a direct dependency>:<id>`. Attaching to a node of a plugin that is not a dependency is impossible: it may not be there.
+- **A plugin only adds.** Hiding, renaming, moving or removing someone else's node, or putting anything into the core's row, is impossible — the file has no such fields.
+- `order` works among the children of one parent; on a tie the core comes first, then plugins in dependency order, then by `id`.
+- A plugin node's `page` is a path inside the plugin itself; the core builds the address (7.5).
+- A list's `source` is a reading action of **the node's owner**: a plugin lists records only with its own actions.
+
+### 7.3. The tree builder
+
+The tree is built neither in the browser nor on every request, but by the installer — on installing, upgrading, enabling, disabling and removing a plugin and on the core's upgrade, in the same operation. A build error cancels the whole operation.
+
+The input is the `navigation.yaml` of the core and of every enabled plugin, in dependency order. The output is the built tree in the mechanics table `core.navigation_tree`: every node with its full name, owner, scope of parameters, page template, roles, controls and behaviour in a room. At run time nobody reads YAML.
+
+The builder refuses when:
+
+1. a file fails the JSON schema (`navigation-1.schema.json`): an unknown field, a wrong `id`, an unknown icon;
+2. `attach` points at a node that does not exist, or at a plugin that is not a direct dependency;
+3. an `id` repeats within one owner;
+4. a `{name}` in `page` or in a list's parameters is not defined in the scope at the node's place;
+5. two list nodes with the same `key` stand one under the other;
+6. two nodes of one owner have the same `page` template — an address must point at one node;
+7. a name in `room.shared` or a control's parameter is reserved (`at` or starts with `_`), equals a parameter of the path, or is taken by another control of the same page;
+8. a control's `default` is not one of its options, or a filter has neither `options` nor `source`, or both;
+9. a `source` action (of a list or a control) or `counts` is not declared by the owner's backend with the needed contract; this is checked after the backend starts, before the routes are switched on.
+
+### 7.4. List nodes at run time
+
+Ordinary nodes come to the browser from the built tree, filtered by roles, in one action of the core. A list node's instances load when its parent opens: the core calls the owner's `source` through the gateway with the person's token, the scope's parameters and the moment.
+
+```json
+// the input of a list action
+{ "params": { "product_id": "42" }, "at": "2026-11-08T10:15:00.123456Z", "limit": 50, "after": null }
+// the output
+{ "items": [ { "key": "c-17", "title": "billing-api", "icon": "container" } ], "next": "c-17" }
+```
+
+- Titles are plain text; the tree has no markup.
+- A list is read **at the panel's moment**: at a past moment the tree holds the records that existed then.
+- A long list comes in parts; its last node is "More…".
+- A parent with no visible children and no `page` is hidden.
+- If a plugin's list does not answer, only its branch shows the error; the rest of the tree works.
+
+### 7.5. The panel address
+
+Every page in the right panel has one address in the browser's address bar:
+
+```text
+/w/<owner>/<page path>?<page parameters>&at=<moment>
+
+/w/core/items/4f1c/overview
+/w/notes/items/4f1c?author=me&view=table&at=2026-11-08T10:15:00.123456Z
+/w/containers/products/42/containers?state=running&view=grid
+```
+
+- **The path** is `page` with the scope's parameters put in; each value is encoded as a path segment.
+- **Page parameters** are filters, the view mode, sorting, the open record, the tab. The rule: **if a person opening the address again must see the same thing, it is in the address.** Outside the address there is only the fleeting: hover, scrolling, an open drop-down, unsaved input.
+- **Reserved** are `at` (the moment) and every name starting with `_`; the rest belong to the page.
+- No `at` means "now": the page reads at the watermark and rereads itself when it moves ([versioned-storage, section 4](versioned-storage.md)). The moment's string is opaque and never passes through `Date`.
+- From the address the core finds the node by matching the templates backwards, opens the path to it in the tree, highlights it and loads the titles of the instances on the way.
+- The address is **the only source of the panel's state**: a reload, a link to a colleague, Back and Forward give exactly what was there.
+
+**History entries.** A discrete change is a new entry (`push`): the mode changed, a filter was applied, a record opened, a tab chosen. A continuous one replaces the entry as it goes (`replace`) and adds one new entry at the end: typing a search, zooming, dragging.
+
+### 7.6. How a plugin gets the panel
+
+The core draws the grey field with dots and lays a transparent `iframe` over it with the address `/p/<name>/<path>?<parameters>&at=…`. The plugin's page draws only its content on the field — with the components of `@maxitor/panel`, so that cards, tables and toolbars look as everywhere else in Maxitor. `@maxitor/panel` makes the document's background transparent; a plugin sets no background of its own.
+
+Why an `iframe`, and not shared components in one application, nor separate sites with a header of their own:
+
+- the frame does not depend on a plugin's code: the styles and scripts of a plugin's page do not reach the tree and the row by layout (this is not a security boundary, see section 9);
+- a plugin stays a full Next.js application with its own version and build;
+- moving between nodes of different plugins does not reload the frame: the tree keeps its open nodes, its scroll and the room's connection.
+
+The core and the plugin's page exchange `postMessage` messages. Each side accepts a message only if `event.origin` is its own origin and `event.source` the expected window; a message of an unknown shape is dropped.
+
+| Message | Direction | Meaning |
+|---|---|---|
+| `panel.ready {build, surface}` | plugin → core | the page is ready; `build` is the plugin's version, `surface` the kind of surface (section 8) |
+| `panel.navigate {path, query, mode}` | plugin → core | a person changed the page's state; `mode` is `push` or `replace` |
+| `panel.title {text}` | plugin → core | the page's title for the path in the core's row and the browser tab |
+| `panel.open {owner, path, query}` | plugin → core | go to a page of the core or of a direct dependency |
+| `panel.location {path, query, at}` | core → plugin | the address changed not by this page's action: Back, a tree node of the same plugin, a change of moment, following in a room, a control |
+| `panel.watermark {at}` | core → plugin | the watermark moved; a page without `at` rereads its data |
+
+Rules:
+
+- **Inside the `iframe` a plugin creates no history entries.** The router of `@maxitor/panel` (`usePanelRouter`) changes the `iframe`'s address only by replacing, and the core creates the history entry in the window's address. Otherwise each action would give two entries, and Back would have to be pressed twice.
+- **A page does not answer `panel.location` with `panel.navigate`.** It rebuilds its view from the new address silently; `panel.navigate` is sent only on a person's action.
+- A tree node of the same plugin — `panel.location` without a reload; a node of another owner — a new `iframe` address.
+- A page builds its view **from its address only**: on the server from `searchParams`, after `panel.location` from the new address.
+- `/p/<name>/...` opened outside the panel (the gateway sees `Sec-Fetch-Dest: document`) is redirected to `/w/<name>/...`. Responses of `/p/**` carry `Content-Security-Policy: frame-ancestors 'self'`.
+- The core draws its own pages in the panel itself, without an `iframe`, by the same rules of the address.
+
+```tsx
+"use client";
+import { usePanelRouter, usePanelQuery } from "@maxitor/panel";
+
+export function NoteRow({ note }) {
+  const router = usePanelRouter();
+  const { open } = usePanelQuery();
+  // one history entry per opened note; the core changes the window's address
+  return <li aria-selected={open === note.id} onClick={() => router.push({ query: { open: note.id } })}>{note.body}</li>;
+}
+```
+
+### 7.7. The canvas
+
+A plugin has no canvas of its own. There is one canvas for all of Maxitor — the component `<MaxitorCanvas>` of `@maxitor/panel`, released by the core. Its first user is the graph viewer: the ERD, the map, the events explorer and the lifecycle, which today each draw their own field, move onto it when they become a plugin. So all plugins behave alike not by agreement but because it is one piece of code.
+
+The core's canvas gives everything that belongs to the canvas itself:
+
+- **moving and zooming** — dragging, the wheel, pinching, keys, zoom limits, inertia; a plugin writes no gestures of its own and cannot change them;
+- **fit** and the zoom bar at the bottom right;
+- **the field of dots**, moving with the canvas;
+- **the camera**: converting screen coordinates into canvas coordinates and back;
+- **the room**: others' pointers, clicks, selections and the viewport for a follower (section 8) — with no code in the plugin.
+
+A plugin puts only its **content** into the canvas, in canvas coordinates — nodes, lines, labels — and may ask the canvas to show a place:
+
+```tsx
+<MaxitorCanvas bounds={scene.bounds}>
+  {scene.nodes.map((node) => <ServiceNode key={node.id} node={node} />)}
+</MaxitorCanvas>
+
+const canvas = useCanvas();
+canvas.fit(scene.boundsOf(selected));   // show the selection; the gestures stay shared
+```
+
+The viewport — position and zoom — **is not written into the address**: everyone has their own screen. In a room, following carries it.
+
+**The way out.** A plugin with its own rendering engine (WebGL, its own graph library) draws inside `<MaxitorCanvas engine={adapter}>`: the adapter gets the camera from the canvas and draws by it. The gestures, the field, the zoom bar and the room stay shared.
+
+A document page — lists, cards, forms — takes no canvas: it lies on the still field the core draws.
+
+### 7.8. Controls: mode, view, filters, legend
+
+The controls over the right panel work like the tree: **a plugin declares, the core draws.** A plugin describes them in the `controls` block of a node in `navigation.yaml`; the core draws them over the `iframe` in fixed places, the same for every plugin and for the core itself.
+
+| Control | Place | What it does |
+|---|---|---|
+| `mode` — the pill | top centre | what the screen starts from; each option has an icon and, if declared, a number |
+| `views` — the view | top right | how to show the same thing: a list or a table, a logical or a physical view |
+| `filters` — filters | left | sections as an accordion, one open; a row is a colour disk, a label, "off" |
+| `legend` — the legend | bottom left | what the colours mean |
+| zoom | bottom right | comes with the canvas (7.7) |
+
+```yaml
+- id: product-containers
+  attach: core:product
+  title: Containers
+  page: /products/{product_id}/containers
+  controls:
+    mode:
+      param: mode
+      default: services
+      options:
+        - { value: services, label: Services, icon: service }
+        - { value: jobs, label: Jobs, icon: job }
+      counts: count_by_mode              # a reading action of the plugin: a number per option
+    views:
+      param: view
+      default: graph
+      options:
+        - { value: graph, label: Graph }
+        - { value: table, label: Table }
+    filters:
+      - title: State
+        param: state
+        options:
+          - { value: running, label: Running, colour: green }
+          - { value: stopped, label: Stopped, colour: grey }
+      - title: Team
+        param: team
+        source: list_teams               # options from data, at the panel's moment
+    legend:
+      title: State
+      source: list_state_colours
+  room:
+    shared: [mode, view, state, team]
+    surface: canvas
+```
+
+The rules of controls:
+
+- **Each control is an address parameter.** The pill is `?mode=jobs`, the view `?view=table`, a filter `?state=running,stopped` (the options switched on are listed; no parameter — everything is on). So Back, a link and a room work for controls by themselves (7.5, section 8), and a parameter in `room.shared` switches for every participant at once. The default value (`default`) is not written into the address.
+- **A page does not draw controls.** It reads their parameters from its address like any others and builds its view by them; on a change of a control it gets `panel.location`.
+- **Options are in the YAML or come from data.** Fixed ones as an `options` list; data-dependent ones by a reading action `source` with the same contract as the tree's lists (7.4), at the panel's moment. The pill's numbers come from the action `counts`.
+- **The set of controls is closed.** A plugin does not move a control, does not recolour it, does not put up a second pill and does not invent a new kind. A control many need is added to the core — and appears for everyone at once; one a single screen needs is the page's content, not a control.
+- **Colours come from the core's palette** (`colour: green`), not as codes: shades, contrast and the dark theme are one for all of Maxitor.
+- **On a phone** controls fold the same way for everyone: filters into a button, the view into a menu; the core decides.
+
+**Styles come from one place.** The package `@maxitor/tokens` holds colours, radii, shadows, blur, type sizes and spacing; the core's controls and the components of `@maxitor/panel`, with which a plugin draws its content (cards, tables, nodes on the canvas), draw with them. Neither the core nor a plugin writes colour or size numbers in code.
+
+If a filter row must highlight something on the canvas on hover, a message `panel.control.hover` from the core to the page will be needed; it is introduced when the first plugin needs it.
+
+## 8. The room
+
+A room is looking at Maxitor together: participants see each other as circles, one moment for all, can follow each other, see each other's pointers and selections. **A room works on every page of every plugin** — a plugin can neither turn it off nor "not support" it. This comes not from room code in the plugin but from rules the plugin keeps anyway: the state in the address and the view from the address only.
+
+### 8.1. Who does what
+
+**The core** keeps everything that belongs to the room:
+
+- one room connection per tab — in the frame's window; a plugin has no connection and no room server of its own;
+- participants, circles, invitations, names, colours, the participant card;
+- the room's common moment and its change;
+- following: who follows whom, the ban on circles, the frame in the leader's colour around the right panel and the "Following …" pill;
+- relaying pointers, clicks, the viewport and selections between participants on one page, with limits of rate and size;
+- the version check: a participant with an old build of a plugin is offered a reload.
+
+**The plugin** answers only for what one of its pages knows: how it is built from its address and how a point on the screen becomes a point of the content.
+
+### 8.2. Level 1: always and with no code
+
+Works on every page that keeps the rules of section 7:
+
+| Room feature | Why it works by itself |
+|---|---|
+| **controls** | mode, view and filters are address parameters (7.8); those in `room.shared` are common to all |
+| **who is where** | the core knows each participant's panel address; the page key is the owner and the path |
+| **the common moment** | the moment is the address parameter `at`; changing the room's moment sends `panel.location` to all |
+| **following** | the follower gets the leader's panel address; the core replaces the window's address (piling up no history entries) and sends `panel.location` or opens a new `iframe` |
+| **shared page parameters** | a node's `room.shared` parameters (for example `view`) are common to all participants on that page: one changes it — the core sends the new address to the others; the last value wins |
+| **the version check** | `panel.ready {build}` gives the core each participant's plugin version |
+
+What a page must do:
+
+1. keep everything visible in the address (7.5);
+2. rebuild on `panel.location` without a reload and **without** `panel.navigate` in answer — otherwise the follower would "take over" and following would break;
+3. send `panel.navigate` only on a person's action; a follower's own action ends following — the core decides that, the plugin need not think about it.
+
+### 8.3. Level 2: pointers, viewport, selection
+
+Seeing another person's pointer makes sense only if both sides understand alike where it is: screens differ, zoom and scroll differ. So a pointer travels not in pixels but in **surface coordinates**, common to all participants. A plugin declares the page's surface in the node's `room.surface`:
+
+| `surface` | Coordinate | Viewport for a follower | What the plugin does |
+|---|---|---|---|
+| `none` (default) | — | — | nothing; the page has level 1 only |
+| `document` | an anchor and a fraction inside it: `{anchor: "note:7f3c", fx: 0.42, fy: 0.10}` | the top visible anchor and an offset | marks elements with stable keys `data-room-anchor`; `@maxitor/panel` does the rest |
+| `canvas` | a point in canvas units: `{x, y}` | `{cx, cy, w, h}` in the same units | nothing: the core's canvas knows its camera (7.7); an own engine gives a camera adapter |
+
+An anchor's key is what is the same for every participant: a record's `id`, not a row number and not a position on the screen. Two records with one key on a page is an error `@maxitor/panel` writes to the developer's console.
+
+```tsx
+// surface: document — mark the elements
+<li data-room-anchor={`note:${note.id}`}>{note.body}</li>
+
+// surface: document — the layer that draws others' pointers, clicks and selections
+<RoomLayer />
+
+// surface: canvas — nothing: <MaxitorCanvas> converts the coordinates and draws the room's layer itself
+```
+
+`<RoomLayer>` (on a canvas — the canvas itself) draws others' pointers **inside the plugin's page**: so they scroll and clip with the content and need no recalculation between windows on every frame. They look the same across Maxitor, because the component is shared.
+
+**A selection** is a shared pointer at an element: `room.focus {anchor}` for `document`, `{x, y, w, h}` for `canvas`. Participants see a frame in the colour of whoever selected.
+
+Level 2 messages between a page and the core:
+
+| Message | Direction | Rate |
+|---|---|---|
+| `room.state {you, participants, following}` | core → plugin | on every change of the participants or of following |
+| `room.pointer {kind, at}` | plugin → core → plugin | at most 20 a second, only when moved |
+| `room.click {at}` | plugin → core → plugin | on a click |
+| `room.viewport {view}` | plugin → core → plugin | on a change, at most 10 a second |
+| `room.focus {target}` | plugin → core → plugin | on a selection; the last value wins |
+
+Here `at` is a surface coordinate, `view` the viewport in its units. The core adds the participant to a relayed message itself: a page cannot pose as another person. The core relays level 2 messages only to participants on the same page (the same page key and the same shared parameters), drops a message over 4 KB and thins out ones that come too often — just as Maxitor's rooms work today.
+
+### 8.4. What the core checks
+
+- A page that answered `panel.location` with `panel.navigate` breaks following — a test of `@maxitor/panel` and the plugin check in `maxitor dev` catch it (a warning in the developer's console).
+- A page that declared `document` and marked no anchor, or declared `canvas` and put up no `<MaxitorCanvas>`, works at level 1 five seconds after `panel.ready`, and the core writes a warning.
+- A participant with another version of a plugin sees pointers only from participants with the same version: coordinates of different builds may not match.
+
+## 9. The trust model
+
+What isolation gives:
+
+- a plugin with a bug, or broken into on the server, **writes only into its own schema** and does not touch the data of the core or of other plugins;
+- it has no passwords of other roles, no token signing key and no sessions of people;
+- its Python dependencies do not break anyone else's;
+- removing it does not change a single row of the core.
+
+What isolation does not give — and this must be known when installing a plugin:
+
+- **A plugin's server reads everything.** The read right covers every schema, and organizations are separated by a condition in the query, not by the database. A plugin broken into reads the data of every organization. If that becomes unacceptable, the next step is row-level security (RLS) by `organization_id`.
+- **A plugin's frontend acts on the person's behalf on the whole site.** One origin means a plugin's script in the browser can call any action of the core and of any plugin with the person's rights. That is the price of one sign-in without redirects. The right panel's `iframe` is from the same origin too and does not change this: it separates the frame's layout from the plugin, not rights.
+- **A plugin can load the database.** Its role's connection limit restrains this but does not rule it out.
+
+The conclusion: **a plugin is installed only if its author is trusted.** Isolation protects against bugs and limits writing, not against bad intent. That is why the installer's plan shows the source and `sha256` of each package, the roles, the cross-plugin keys and what exactly the plugin reads.
+
+## 10. The lifecycle
+
+Every scenario is a command of the installer (`maxitor plugin ...`) and the same page of plugins in administration; both call the same actions of the core.
+
+### Installation
+
+```text
+$ maxitor plugin install acme-maxitor-notes
+Installation plan:
+  1. io.github.acme.tags    2.3.1   pip acme-maxitor-tags        sha256 9ab1…
+  2. io.github.acme.people  1.4.0   wheel github.com/acme/…      sha256 3f5a…
+  3. io.github.acme.notes   1.2.0   pip acme-maxitor-notes       sha256 c07d…
+notes reads: core.items, tags.tag, people.person
+notes forbids deleting: core.items, people.person while they have notes
+Roles: notes.reader, notes.editor
+Continue? [y/N]
+```
+
+1. Download the packages without installing (`pip download --no-deps --require-hashes` or a wheel by its address), check `sha256`.
+2. Read the passports from the wheels, check them by the schema, compare `version` with the package metadata, check `name`.
+3. Ask the compatibility check (section 3.3) for the plan on the union with the installed plugins.
+4. Show the plan and wait for consent.
+5. For each plugin in order:
+   1. create the environment and install the wheel into it;
+   2. with the master role — the role, the schema, the rights (section 5.1);
+   3. as the plugin's role, in a separate process — the migrations;
+   4. with the master role — check the schema, sync the rights, create the cross-plugin keys;
+   5. write the plugin into `core.plugin`;
+   6. start the backend and the frontend, wait for the health check to answer, switch on the routes; then rebuild the tree (section 7.3).
+6. If any step of any plugin fails — undo **everything this command installed**, in reverse order: stop the processes, drop the schemas and roles, the environments, the registry rows. Installation is whole or nothing.
+
+### Upgrade
+
+1. New versions and their passports — as on installation.
+2. The compatibility check: the upgrade must not take any installed dependent plugin out of its range; otherwise a refusal with the list, or upgrading them together in one command.
+3. Migrations forward as the plugin's role, the schema check, syncing rights and cross-plugin keys.
+4. Restarting the plugin's processes; for those seconds its pages are unavailable, the rest of the site works.
+
+There is no way back — as in rule 12 of the constitution: undoing an upgrade is restoring from a backup.
+
+### Disabling and enabling
+
+Disabling stops the processes and removes the routes and the nodes from the tree (the tree is rebuilt); the schema and the data stay. A plugin cannot be disabled while a plugin depending on it is enabled; the core names such plugins.
+
+### Removal
+
+1. Refused if any installed plugin depends on this one.
+2. Offer to export the data (`pg_dump -n <name>`): with the schema goes the whole history of the plugin's data, and at past moments its data is no more.
+3. Stop the processes, remove the routes.
+4. With the master role: `DROP SCHEMA <name> CASCADE` (the plugin's cross-plugin keys lie in its tables and go with them), `DROP ROLE plg_<name>`.
+5. Remove the environment and the `core.plugin` row.
+
+The core's upgrade passes the same compatibility check (section 3.3) against every installed plugin and refuses if one of them is incompatible with the new version.
+
+## 11. The layout of a plugin's repository
+
+```text
+acme-maxitor-notes/
+    pyproject.toml              # package name, version, Python libraries, the entry point maxitor.plugins
+    src/acme_notes/
+        maxitor-plugin.yaml
+        app.py
+        migrate.py
+        migrations/
+            0001_note.sql
+        foreign-keys.yaml
+        navigation.yaml
+        roles.py
+        resources/notes_resource.py
+        actions/add_note_action.py
+        actions/list_notes_action.py
+        actions/list_note_authors_action.py
+        _web/                   # the build of web/, not in git
+    web/                        # the Next.js sources
+        package.json            # depends on @maxitor/panel
+        next.config.ts
+        app/
+            layout.tsx
+            page.tsx
+            items/[item_id]/page.tsx
+    tests/
+    CHANGELOG.md
+```
+
+## 12. Example: the plugin "Notes"
+
+The plugin adds notes to the core's catalog items. The table `core.items` is the example of versioned storage. The plugin template in this package is this example.
+
+**1. The skeleton.**
+
+```bash
+maxitor plugin new notes --id io.github.acme.notes --package acme-maxitor-notes
+```
+
+Creates the tree of files of section 11, a passport with no dependencies, a `navigation.yaml` with one node, and `web/` with `@maxitor/panel` wired in.
+
+**2. The passport.** Fill in `title`, `description`, `roles`, `frontend.navigation`. There are no dependencies — only `requires.maxitor`.
+
+**3. The schema.** The current table and its version table, by the rules of versioned storage:
+
+```sql
+-- migrations/0001_note.sql
+CREATE TABLE note (
+    id              uuid PRIMARY KEY,
+    organization_id uuid NOT NULL,
+    item_id         uuid NOT NULL,
+    body            text NOT NULL,
+    created_at      timestamptz NOT NULL,
+    updated_at      timestamptz NOT NULL
+);
+
+CREATE TABLE note_versions (
+    organization_id  uuid NOT NULL,
+    id               uuid NOT NULL,
+    valid_from_at    timestamptz NOT NULL,
+    valid_to_at      timestamptz NULL,
+    valid_during     tstzrange GENERATED ALWAYS AS (tstzrange(valid_from_at, valid_to_at)) STORED,
+    author_id        uuid NULL,
+    operation        text NOT NULL,
+    closed_by        uuid NULL,
+    closed_operation text NULL,
+    item_id          uuid NOT NULL,
+    body             text NOT NULL,
+    created_at       timestamptz NOT NULL,
+    updated_at       timestamptz NOT NULL,
+    PRIMARY KEY (organization_id, id, valid_from_at),
+    EXCLUDE USING gist (organization_id WITH =, id WITH =, valid_during WITH &&)
+);
+
+CREATE INDEX note_versions_item ON note_versions (organization_id, item_id, valid_to_at);
+CREATE INDEX note_versions_from ON note_versions (organization_id, valid_from_at);
+CREATE INDEX note_versions_to   ON note_versions (organization_id, valid_to_at)
+    WHERE valid_to_at IS NOT NULL;
+```
+
+The key to `core.items` is not in the migration — it is in `foreign-keys.yaml`:
+
+```yaml
+foreign_keys:
+  - from: { table: note, columns: [item_id] }
+    to:   { schema: core, table: items, columns: [id] }
+```
+
+**4. The resource and the actions.** The resource writes a row and its version with the functions of `maxitor-plugin-sdk`; the actions call the resource. A sketch:
+
+```python
+@meta("Notes of catalog items, in the plugin's own schema.")
+@entities(Note)
+class NotesResource(PostgresResource):
+    async def add(self, change: Change, note: Note) -> None:
+        await versioning.insert_row(self, change, "note", note)
+
+    async def list_for_item(self, org: str, item_id: str, moment: str) -> list[Note]:
+        return await versioning.select_at(
+            self, Note, "note_versions", org=org, moment=moment, where={"item_id": item_id}
+        )
+```
+
+```python
+@meta("Adds a note to a catalog item.", domain=NotesDomain)
+@check_roles(NotesEditor)
+class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
+    @summary_aspect("Writes the note and returns the change time.")
+    async def write_summary(self, params, state, box, connections):
+        async with versioning.change(connections.notes, box.context.org, box.context.user) as change:
+            await change.resource.add(change, Note.new(params.item_id, params.body))
+        return ChangeResult(changed_at=change.changed_at)
+```
+
+`versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
+
+**5. Tree nodes and controls.** In `navigation.yaml` — the node "Notes" under every catalog item (`attach: core:item`, `page: /items/{item_id}`) with `room: {shared: [view], surface: document}`, as in section 7.2, and controls: the view `list`/`table` and an author filter whose options come from the action `list_note_authors` (section 7.8). `maxitor plugin check` builds the tree together with the core's tree and shows where the node stands.
+
+**6. The page.** It opens in the right panel at `/w/notes/items/<id>?view=…&author=…&at=…`; everything that changes the view is in the address.
+
+```tsx
+// web/app/items/[item_id]/page.tsx — a server component
+import { headers } from "next/headers";
+import { PanelPage, momentFrom } from "@maxitor/panel";
+import { NotesView } from "./NotesView";
+
+export default async function ItemNotesPage({ params, searchParams }) {
+  const { item_id } = await params;
+  const query = await searchParams;                       // view, author, at
+  const auth = (await headers()).get("authorization") ?? "";
+  const url = new URL(`${process.env.MAXITOR_PLUGIN_API}/items/${item_id}/notes`);
+  url.searchParams.set("at", momentFrom(query));
+  if (query.author) url.searchParams.set("author", query.author);
+  const notes = await fetch(url, { headers: { authorization: auth } }).then((r) => r.json());
+
+  return (
+    <PanelPage title="Notes">
+      <NotesView notes={notes} />
+    </PanelPage>
+  );
+}
+```
+
+```tsx
+// web/app/items/[item_id]/NotesView.tsx — a client component
+"use client";
+import { usePanelQuery, RoomLayer, NoteCard, DataTable } from "@maxitor/panel";
+
+export function NotesView({ notes }) {
+  // the core draws the view and author controls from `controls`; the page only reads their parameters
+  const { view = "list" } = usePanelQuery();
+  return (
+    <>
+      {view === "table"
+        ? <DataTable rows={notes} columns={["author_name", "body"]} anchor={(n) => `note:${n.id}`} />
+        : notes.map((n) => <NoteCard key={n.id} data-room-anchor={`note:${n.id}`} note={n} />)}
+      <RoomLayer />
+    </>
+  );
+}
+```
+
+The view switch and the author filter are the core's controls: they write `?view=` and `?author=` into the address, and the page rebuilds on `panel.location`. In a room `view` is common to everyone on this page, and participants' pointers land on notes by their anchors.
+
+**7. Running it locally.**
+
+```bash
+maxitor dev --plugin .
+```
+
+Starts the core with an empty database, installs the plugin from its sources by the same steps as the installer (role, schema, migrations, check, keys), runs the backend and `next dev` behind the gateway inside the core's frame. Sign in as the core's test user; a second tab with another user checks the room.
+
+**8. Checking and building.**
+
+```bash
+npm --prefix web run build
+uv build
+maxitor plugin check dist/acme_maxitor_notes-1.0.0-py3-none-any.whl
+```
+
+`check` does everything the installer does before installing: the passport, the version, compatibility, cycles, the shape of `navigation.yaml` and `foreign-keys.yaml`, the presence of `_web`, the absence of binary modules.
+
+**9. Releasing.** To PyPI (`uv publish`) or attached to a GitHub release; in the second case the file's `sha256` goes into the dependency declarations of those who depend on the plugin.
+
+**10. Installing** — `maxitor plugin install acme-maxitor-notes`, as in section 10.
+
+## 13. Rules
+
+1. A plugin is a Python package with the passport `maxitor-plugin.yaml` and the entry point `maxitor.plugins`.
+2. `id` is unique in the world and never changes; `name` is unique in an installation, fits a schema name and does not change after the first release.
+3. The version is `x.y.z` and equals the package's; the major version grows on a breaking change of tables, actions, roles or tree nodes.
+4. Dependencies on plugins live in the passport only, with a version range and a source; a wheel needs a `sha256`; ranges follow PEP 440.
+5. The core is a node of the dependency graph with the `id` `maxitor`; an edge to it is checked the same way as an edge to a plugin.
+6. One function, `maxitor_plugin_sdk.compat`, checks compatibility — on building, installing, upgrading, removing a plugin and on upgrading the core.
+7. The SDKs move with the core: their major version equals the core's.
+8. Tables, tree nodes, actions and roles are a contract: a breaking change of them raises the major version.
+9. Without all its dependencies a plugin is not installed; the whole closure is installed whole or not at all.
+10. A dependency cycle is forbidden and is checked on building and on installing.
+11. A plugin does not import another plugin's code: it only reads its tables and calls its actions through the gateway.
+12. A plugin's backend and frontend are processes of their own; Python runs in its own environment.
+13. A plugin's data is in the schema `<name>` of the shared database, under the role `plg_<name>`, which writes only to its own schema; a plugin without a `database` section gets neither a schema nor a role.
+14. Every table except the mechanics is kept by versioned storage; the installer checks this after every migration.
+15. A plugin reads any schema and writes only its own.
+16. A plugin's SQL never runs in the master role's connection.
+17. A cross-plugin foreign key goes only towards a dependency, only `RESTRICT`, only by a declaration in `foreign-keys.yaml`; the installer creates it.
+18. A transaction does not cross schemas of different owners; a change in two schemas is two changes glued by an action.
+19. A plugin works with the database through its own resource and with the outside world through AOA actions.
+20. A plugin's frontend is a Next.js application with `basePath: /p/<name>` on `@maxitor/panel`; its pages are shown only in the right panel.
+21. A plugin accepts only the core's token with `EdDSA` and its own `id` in `aud`; it does not see the person's session.
+22. Only the core draws the frame — the tree, the row, the panel's look; a plugin only adds nodes to the tree by a declaration in `navigation.yaml`.
+23. A plugin's node attaches to the root, to a node of the core or to a node of a direct dependency; the installer builds the tree, and a build error cancels the operation.
+24. Everything a person sees on a page is in the panel address; a page builds its view from its address only.
+25. Inside the panel a plugin creates no history entries and does not answer `panel.location` with `panel.navigate`.
+26. The moment is the address parameter `at`; it never passes through `Date`.
+27. A room works on every page; pointers travel in the coordinates of the surface declared in `room.surface`; a plugin has no room connection of its own.
+28. A plugin has no canvas of its own: moving, zooming, the field and the camera come from the core's `<MaxitorCanvas>`, one for every plugin.
+29. Controls — mode, view, filters, legend — are declared by a plugin in `controls` and drawn by the core; each control is an address parameter; the set of controls is closed.
+30. Colours and sizes come from `@maxitor/tokens` and the core's palette; no code has numbers of its own.
+
+## 14. What the tests check
+
+Code breaks — a test catches it, each of these:
+
+1. a passport with an unknown field, a wrong `name` or a version other than the package's fails the check;
+2. a closure with an unavailable dependency or a version conflict installs no plugin at all;
+3. a cycle `a → b → a` and depending on oneself are refused, and the cycle is named;
+4. a plugin role cannot `INSERT`, `UPDATE`, `DELETE`, `CREATE` in someone else's schema or in `core`;
+5. a right a plugin granted on its table to another role disappears after the sync;
+6. a table without a version pair or with `ON DELETE CASCADE` fails the installation, and the installation is undone whole;
+7. a `foreign-keys.yaml` with a quote, a dot or a `;` in a name, with a schema that is not a dependency, with a `_versions` table or with mismatched types is refused before any SQL;
+8. after a cross-plugin key is created the plugin role has no `REFERENCES` right; a key the plugin dropped comes back after a migration;
+9. the plugin's backend refuses a token with someone else's `aud`, with `HS256`, or expired;
+10. the session cookie does not reach the plugin's process;
+11. a call through the gateway into a plugin that is not a direct dependency is refused;
+12. removing a plugin is refused while plugins depend on it, and otherwise changes not a single row of the core;
+13. a `navigation.yaml` with `attach` to a plugin that is not a dependency, an undefined `{parameter}`, a repeated `key` in a scope or equal `page` templates fails the tree build, and the operation is undone;
+14. a plugin's node cannot hide, rename or move a node of the core: the schema lets no such field through;
+15. a list that does not answer in one plugin does not break the rest of the tree;
+16. a `/w/...` address opened again gives the same view, the same node in the tree and the same moment;
+17. ten switches of the mode give exactly ten history entries, and Back returns them one by one;
+18. `/p/<name>/...` opened outside the panel is redirected to `/w/<name>/...`;
+19. a follower in a room gets the leader's address and does not end following by itself; a page that answers `panel.location` with `panel.navigate` is caught by a test of `@maxitor/panel`;
+20. a change of a `room.shared` parameter reaches every participant on the page, and of a parameter not on the list — none;
+21. the core relays a pointer from a plugin's page with the participant it assigned itself, and only to participants on the same page;
+22. a `postMessage` from another origin or of an unknown shape is dropped;
+23. a control with the parameter `at`, with a parameter taken by another control or by the path, with a `default` that is not an option, or with a field of position or a colour code fails the tree build;
+24. a change of a control writes its parameter into the address and one history entry, and the default value does not get into the address;
+25. a gesture on the canvas of two different plugins moves and zooms them alike: the handler is one;
+26. a plugin whose `navigation` format is not in the core's `reads`, or whose `requires.maxitor` does not include the core's version, is not installed, and the refusal names both versions;
+27. two plugins that need incompatible ranges of a third are not installed together, and the refusal names both requirements;
+28. an upgrade of the core or of a plugin after which a dependent plugin falls out of its range is refused; removing a plugin others depend on is refused;
+29. a plugin with an SDK of another major version than the core's is not enabled;
+30. the installer, `maxitor plugin check` and the core's upgrade give the same answer on the same set: the function is one.
+
+## 15. What changes in the constitution
+
+Proposals to the maintainer, not edits:
+
+- rule 56 — signing a token with a shared `HS256` secret does not work when plugins check the token: each of them could issue any token. Tokens plugins see get an asymmetric signature (`EdDSA`) with the core's private key;
+- a new section "Maxitor plugins" — the rules of section 13 of this document, including the core's contract and the rule of the major version (section 3.4);
+- rule 24 does not change but gains an example: a plugin's schema is a resource of its own, and a transaction between resources is impossible by the way roles are set up.
+
+## Open questions
+
+- The extension point "may this be deleted" and the other points through which the core asks plugins.
+- Row-level security (RLS) by `organization_id`, if reading every schema by every plugin turns out to be too much.
+- Running plugins as separate containers instead of processes under the core.
+- A plugin catalog: where to find plugins and who signs their releases.
