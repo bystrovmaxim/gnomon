@@ -1,0 +1,27 @@
+# packages/maxitor-plugin-template/pyproject.toml — the plugin template: the Maxitor plugin `notes`, as a pip package.
+# A real plugin is a package like this one: its passport, navigation, foreign keys and migrations travel inside the
+# Python package, and its built Next.js frontend travels as package data under maxitor_notes/_web.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "maxitor-plugin-template"
+version = "0.1.0"
+description = "The Maxitor plugin template: a small complete plugin, notes on catalog items."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [{ name = "@Bystrov.Maxim" }]
+# The template is copied, not installed from an index.
+classifiers = ["Private :: Do Not Upload"]
+# The plugin's own Python libraries. Other Maxitor plugins are never listed here: they are dependencies of the
+# passport, and Maxitor's installer resolves them.
+dependencies = []
+
+# Maxitor's installer finds the passport through this entry point, reading the wheel without installing it.
+[project.entry-points."maxitor.plugins"]
+notes = "maxitor_notes"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/maxitor_notes"]

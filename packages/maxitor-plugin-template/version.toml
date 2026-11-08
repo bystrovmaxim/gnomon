@@ -1,0 +1,3 @@
+# version.toml — the plugin template is a level of its own: its version is the one in pyproject.toml.
+kind = "package"
+driver = "python"
