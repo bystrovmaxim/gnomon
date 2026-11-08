@@ -13,7 +13,7 @@ message. The mirror reads them; the history adds what the host knows.
 ARCHITECTURE / DATA FLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
-``GitMirror.versions`` ──► ``Commit`` (date already in UTC) ──► a version of the history.
+``GitMirrorStorage.versions`` ──► ``Commit`` (date already in UTC) ──► a version of the history.
 """
 
 from __future__ import annotations

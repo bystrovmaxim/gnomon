@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 from maxitor.web.api.app import create_app
 from maxitor.web.api.graph_store import GraphEntry, GraphStore
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _SOURCE = "https://duplicate.test/graph-json"
 _EMPTY_SIDEBAR = SimpleNamespace(level1_nodes=[], level2_diagrams=[], level2_nodes=[], level3_diagrams=[])
@@ -41,7 +41,7 @@ def test_one_node_twice_in_one_table_is_refused_with_its_id() -> None:
     payload = _payload(_domain("d.dup.Dom"), _domain("d.dup.Dom"))
 
     with pytest.raises(ValueError) as error:
-        DuckDBGraphResource.build_from_json(payload)
+        DuckDBGraphStorage.build_from_json(payload)
 
     assert str(error.value) == 'Graph has a duplicate node id "d.dup.Dom" in table "domain".'
 
@@ -56,21 +56,21 @@ def test_the_first_duplicate_in_table_then_id_order_is_named() -> None:
     )
 
     with pytest.raises(ValueError) as error:
-        DuckDBGraphResource.build_from_json(payload)
+        DuckDBGraphStorage.build_from_json(payload)
 
     assert str(error.value) == 'Graph has a duplicate node id "a.dup.Act" in table "action".'
 
 
 def test_the_same_id_in_two_tables_is_accepted() -> None:
     """A repeat across tables is not a duplicate: the check keeps the primary key's per-table scope."""
-    resource = DuckDBGraphResource.build_from_json(_payload(_domain("shared.id"), _lifecycle("shared.id")))
+    resource = DuckDBGraphStorage.build_from_json(_payload(_domain("shared.id"), _lifecycle("shared.id")))
 
     assert len(resource.execute_fetch_dicts("SELECT id FROM nodes")) == 2
 
 
 def test_a_graph_without_duplicates_builds() -> None:
     """A payload with no duplicate id builds as before."""
-    resource = DuckDBGraphResource.build_from_json(_payload(_domain("d.one.Dom"), _action("a.one.Act")))
+    resource = DuckDBGraphStorage.build_from_json(_payload(_domain("d.one.Dom"), _action("a.one.Act")))
 
     assert len(resource.execute_fetch_dicts("SELECT id FROM nodes")) == 2
 
@@ -80,14 +80,14 @@ def test_the_smallest_duplicated_id_in_one_table_is_named() -> None:
     payload = _payload(_domain("z.dup.Dom"), _domain("z.dup.Dom"), _domain("a.dup.Dom"), _domain("a.dup.Dom"))
 
     with pytest.raises(ValueError) as error:
-        DuckDBGraphResource.build_from_json(payload)
+        DuckDBGraphStorage.build_from_json(payload)
 
     assert str(error.value) == 'Graph has a duplicate node id "a.dup.Dom" in table "domain".'
 
 
 def test_an_empty_graph_builds() -> None:
     """A graph with no nodes and no edges builds and answers with empty views."""
-    resource = DuckDBGraphResource.build_from_json({"schema_version": "1.0", "nodes": [], "edges": []})
+    resource = DuckDBGraphStorage.build_from_json({"schema_version": "1.0", "nodes": [], "edges": []})
 
     assert resource.execute_fetch_dicts("SELECT id FROM nodes") == []
 
@@ -109,7 +109,7 @@ def test_a_duplicated_edge_is_not_refused() -> None:
         "is_dag": False,
         "properties": {"state_key": "draft"},
     }
-    resource = DuckDBGraphResource.build_from_json(
+    resource = DuckDBGraphStorage.build_from_json(
         _payload(_lifecycle(lifecycle_id), state, edges=(edge, edge)),
     )
 
@@ -121,7 +121,7 @@ def test_the_refusal_reaches_the_application_and_stores_nothing() -> None:
     duplicate = _payload(_domain("d.app.Dom"), _domain("d.app.Dom"))
 
     async def builder(source: str) -> GraphEntry:
-        graph = DuckDBGraphResource.build_from_json(duplicate)
+        graph = DuckDBGraphStorage.build_from_json(duplicate)
         return GraphEntry(source=source, graph=graph, sidebar=_EMPTY_SIDEBAR, last_read=0.0)
 
     app = create_app()

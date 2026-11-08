@@ -16,7 +16,7 @@ ARCHITECTURE / DATA FLOW
 
 ::
 
-    TestClient ──GET /examples/model/graph-json──► GetOwnGraphJsonAction ──► OwnModelGraphResource
+    TestClient ──GET /examples/model/graph-json──► GetOwnGraphJsonAction ──► OwnModelGraphStorage
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from collections.abc import Iterator
 import pytest
 from fastapi.testclient import TestClient
 from maxitor.web.api.app import create_app
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 
 @pytest.fixture(scope="module")
@@ -55,18 +55,17 @@ def test_a_repeated_read_naming_the_tag_gets_304_and_no_body(client: TestClient)
 def test_the_answer_is_a_graph_maxitor_can_build(client: TestClient) -> None:
     """What Maxitor serves about itself, Maxitor reads like any service's graph-json."""
     payload = json.loads(client.get("/examples/model/graph-json").json()["coordinator_json"])
-    graph = DuckDBGraphResource.build_from_json(payload)
+    graph = DuckDBGraphStorage.build_from_json(payload)
     domains = {row["label"] for row in graph.execute_fetch_dicts("SELECT label FROM domain")}
     assert {"RoomsDomain", "CoreDomain"} <= domains
 
 
-def test_maxitor_s_own_entity_is_stored_by_the_duckdb_graph(client: TestClient) -> None:
-    """Protocol 1.8: ``NodeCoreEntity`` has one ``entity_resource`` edge, to ``DuckDBGraphResource``, which names ``GraphDataSource`` (spec 061, FR-015; spec 067)."""
+def test_maxitor_s_own_entity_is_listed_by_the_duckdb_graph(client: TestClient) -> None:
+    """Protocol 2.0: ``DuckDBGraphStorage`` lists ``NodeCoreEntity`` with one ``resource_entity`` edge; no data source exists."""
     payload = json.loads(client.get("/examples/model/graph-json").json()["coordinator_json"])
     entity = next(node["id"] for node in payload["nodes"] if node["type"] == "Entity" and node["label"] == "NodeCoreEntity")
-    targets = [edge["target_id"] for edge in payload["edges"] if edge["type"] == "entity_resource" and edge["source_id"] == entity]
+    sources = [edge["source_id"] for edge in payload["edges"] if edge["type"] == "resource_entity" and edge["target_id"] == entity]
     labels = {node["id"]: node["label"] for node in payload["nodes"]}
-    assert payload["schema_version"] == "1.8"
-    assert [labels[target] for target in targets] == ["DuckDBGraphResource"]
-    sources = [edge["target_id"] for edge in payload["edges"] if edge["type"] == "resource_data_source" and edge["source_id"] == targets[0]]
-    assert [labels[source] for source in sources] == ["GraphDataSource"]
+    assert payload["schema_version"] == "2.0"
+    assert [labels[source] for source in sources] == ["DuckDBGraphStorage"]
+    assert not [node for node in payload["nodes"] if node["type"] == "DataSource"]

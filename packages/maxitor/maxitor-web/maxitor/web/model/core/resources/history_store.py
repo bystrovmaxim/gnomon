@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/core/resources/history_store.py
 """
-HistoryStore — the histories Maxitor holds, one per name, as a resource actions are given.
+HistoryStoreController — the histories Maxitor holds, one per name, as a resource actions are given.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -18,7 +18,7 @@ ARCHITECTURE / DATA FLOW
 
 ::
 
-    action aspect ──connections["HistoryStore"]──► HistoryStore
+    action aspect ──connections["HistoryStoreController"]──► HistoryStoreController
                         get / put / names / now / mark_checked / set_checking
 """
 
@@ -27,18 +27,17 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 
-from maxitor.web.model.core.core_domain import CoreDomain
 from maxitor.web.model.core.history_entry import HistoryEntry
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_controller import BaseController
 
 #: Connection key under which actions receive the store.
-HISTORY_STORE_CONNECTION_KEY = "HistoryStore"
+HISTORY_STORE_CONNECTION_KEY = "HistoryStoreController"
 
 
-@meta(description="The histories Maxitor holds, one per name", domain=CoreDomain)
-class HistoryStore(BaseController):
+@meta(description="The histories Maxitor holds, one per name")
+class HistoryStoreController(BaseController):
     """
     AI-CORE-BEGIN
     ROLE: The one place that knows which histories this process holds.
@@ -54,9 +53,10 @@ class HistoryStore(BaseController):
 
     def __repr__(self) -> str:
         """Count the histories held, never name them."""
-        return f"HistoryStore(held={len(self._entries)})"
+        return f"HistoryStoreController(held={len(self._entries)})"
 
-    def get_wrapper_class(self) -> type[BaseController] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseController] | None:
         """Return ``None``: nested actions use this same store."""
         return None
 

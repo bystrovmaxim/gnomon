@@ -7,7 +7,7 @@ import jsonschema
 import pytest
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
 from maxitor.web.model.diagrams.actions.list_entities_action_schema import ListEntitiesDomainSlicesJson
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _DOMAIN = "shop.ShopDomain"
 _CURRENCY = "shop.CurrencyEnumEntity"
@@ -135,7 +135,7 @@ def diagram() -> dict[str, Any]:
             },
         ],
     }
-    store = DuckDBGraphResource.build_from_json(graph)
+    store = DuckDBGraphStorage.build_from_json(graph)
     return ListEntitiesAction._slice_payload(store, _DOMAIN, include_neighbors=False)
 
 
@@ -217,7 +217,7 @@ def rich_diagram() -> dict[str, Any]:
             },
         ],
     }
-    store = DuckDBGraphResource.build_from_json(graph)
+    store = DuckDBGraphStorage.build_from_json(graph)
     return ListEntitiesAction._slice_payload(store, _RICH_DOMAIN, include_neighbors=False)
 
 
@@ -305,7 +305,7 @@ _OTHER_HOST = "shop.SecondHostCoreEntity"
 
 
 @pytest.fixture(scope="module")
-def cross_domain() -> DuckDBGraphResource:
+def cross_domain() -> DuckDBGraphStorage:
     """Build a graph whose host references a dictionary that lives in another domain."""
     graph = {
         "schema_version": "1.0",
@@ -384,10 +384,10 @@ def cross_domain() -> DuckDBGraphResource:
             },
         ],
     }
-    return DuckDBGraphResource.build_from_json(graph)
+    return DuckDBGraphStorage.build_from_json(graph)
 
 
-def test_a_dictionary_in_another_domain_joins_the_slice_with_neighbours(cross_domain: DuckDBGraphResource) -> None:
+def test_a_dictionary_in_another_domain_joins_the_slice_with_neighbours(cross_domain: DuckDBGraphStorage) -> None:
     """A one-hop slice pulls the referenced dictionary in, so the arrow resolves."""
     diagram = ListEntitiesAction._slice_payload(cross_domain, _OTHER_DOMAIN, include_neighbors=True)
 
@@ -398,7 +398,7 @@ def test_a_dictionary_in_another_domain_joins_the_slice_with_neighbours(cross_do
     )
 
 
-def test_the_same_slice_without_neighbours_leaves_the_dictionary_out(cross_domain: DuckDBGraphResource) -> None:
+def test_the_same_slice_without_neighbours_leaves_the_dictionary_out(cross_domain: DuckDBGraphStorage) -> None:
     """Without neighbours the slice must not invent a card it did not include."""
     diagram = ListEntitiesAction._slice_payload(cross_domain, _OTHER_DOMAIN, include_neighbors=False)
 
@@ -442,7 +442,7 @@ def _card_fields(entity_kind: str, *, declares_values: bool) -> list[str]:
             ),
         ],
     }
-    payload = ListEntitiesAction._slice_payload(DuckDBGraphResource.build_from_json(graph), _DOMAIN, include_neighbors=False)
+    payload = ListEntitiesAction._slice_payload(DuckDBGraphStorage.build_from_json(graph), _DOMAIN, include_neighbors=False)
     return [field["name"] for field in payload["entities"][0]["fields"]]
 
 

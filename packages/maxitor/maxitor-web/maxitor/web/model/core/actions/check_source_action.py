@@ -43,7 +43,7 @@ from maxitor.web.model.core.resources.graph_source_gateway import (
 )
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
 from maxitor.web.model.core.source_label import label
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -77,7 +77,7 @@ class CheckSourceResult(BaseResult):
 @check_roles(GuestRole)
 @connection(GraphStoreController, key=GRAPH_STORE_CONNECTION_KEY, description="Built graphs")
 @connection(GraphSourceGateway, key=GRAPH_SOURCE_CONNECTION_KEY, description="Downloads graph-json")
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Rooms told of a rebuilt graph")
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Rooms told of a rebuilt graph")
 class CheckSourceAction(BaseAction[CheckSourceParams, CheckSourceResult]):
     """
     AI-CORE-BEGIN
@@ -100,7 +100,7 @@ class CheckSourceAction(BaseAction[CheckSourceParams, CheckSourceResult]):
         """Check ``params.source`` once."""
         store = cast(GraphStoreController, connections[GRAPH_STORE_CONNECTION_KEY])
         gateway = cast(GraphSourceGateway, connections[GRAPH_SOURCE_CONNECTION_KEY])
-        rooms = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
+        rooms = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
         held = store.entry(params.source)
         if held is None:
             return CheckSourceResult(status="not_held")
@@ -121,7 +121,7 @@ async def _check(
     held: GraphEntry,
     store: GraphStoreController,
     gateway: GraphSourceGateway,
-    rooms: RoomRegistry,
+    rooms: RoomRegistryController,
     box: ToolsBox,
 ) -> CheckStatus:
     """Ask (unless forced), rebuild when changed, and say what happened."""

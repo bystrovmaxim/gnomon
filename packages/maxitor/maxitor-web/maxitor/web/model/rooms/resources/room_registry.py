@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/rooms/resources/room_registry.py
 """
-RoomRegistry — every open room of the process, as the resource room actions are given.
+RoomRegistryController — every open room of the process, as the resource room actions are given.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -8,14 +8,14 @@ PURPOSE
 
 A room is state the process owns: who is in it, which tabs each person has open, the
 shared settings of every page, who follows whom. That state lives here and nowhere
-else, and actions reach it only through ``connections["RoomRegistry"]`` (spec 028,
+else, and actions reach it only through ``connections["RoomRegistryController"]`` (spec 028,
 research R1). The registry holds the state, delivers events, and starts timers; it
 decides nothing. Whether a room is full, whether a name is valid, whether a follow
 closes a circle, when a participant's return window ends — every such rule is an
 aspect of a room action, which logs what it decided.
 
 Two kinds of delivery exist. Events (someone joined, a setting changed) go to every
-tab in order, through each tab's ``SocketChannel``. Pointers and screen positions are
+tab in order, through each tab's ``SocketChannelController``. Pointers and screen positions are
 relayed without an action, twenty times a second, only to the tabs on the same page,
 and only the newest one counts (``send_volatile``). What a person is looking at — the
 hovered element, the tooltip, the selection, the open panels (``focus``) — is relayed
@@ -27,8 +27,8 @@ ARCHITECTURE / DATA FLOW
 
 ::
 
-    room action ──connections["RoomRegistry"]──► RoomRegistry
-                     │ rooms: id → Room (participants → tabs → SocketChannel)
+    room action ──connections["RoomRegistryController"]──► RoomRegistryController
+                     │ rooms: id → Room (participants → tabs → SocketChannelController)
                      │ broadcast(room, event)          ──► every tab, in order
                      │ schedule(delay, Action, params) ──► machine.run(Action) later
     adapter relay ──► relay(channel, pointer|viewport) ──► tabs on the same page, newest only
@@ -46,7 +46,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from maxitor.web.model.rooms.follow_circle import chain_head, leads_to
-from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 
 from aoa.action_machine.context import Context
 from aoa.action_machine.intents.meta import meta
@@ -54,10 +53,10 @@ from aoa.action_machine.model.base_action import BaseAction
 from aoa.action_machine.model.base_params import BaseParams
 from aoa.action_machine.resources.base_controller import BaseController
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
-from aoa.fastapi import SocketChannel
+from aoa.fastapi import SocketChannelController
 
 #: Connection key under which room actions receive the registry.
-ROOM_REGISTRY_KEY = "RoomRegistry"
+ROOM_REGISTRY_KEY = "RoomRegistryController"
 
 #: Participant colours, told apart on light and dark backgrounds; a participant gets the first free one.
 PALETTE: tuple[str, ...] = (
@@ -97,7 +96,7 @@ class Tab:
     """One browser tab of a participant: its connection, its page, and what it last reported."""
 
     id: str
-    channel: SocketChannel
+    channel: SocketChannelController
     page: str
     last_activity: float
     visible: bool = True
@@ -334,8 +333,8 @@ def _tabs_on_page(room: Room, page: str, *, except_participant: str) -> list[Tab
     ]
 
 
-@meta(description="Every open room of the process: participants, tabs, shared settings", domain=RoomsDomain)
-class RoomRegistry(BaseController):
+@meta(description="Every open room of the process: participants, tabs, shared settings")
+class RoomRegistryController(BaseController):
     """
     AI-CORE-BEGIN
     ROLE: The resource that holds every open room and delivers its events to the tabs in it.
@@ -364,7 +363,8 @@ class RoomRegistry(BaseController):
         self._machine: ActionProductMachine | None = None
         self._timers: set[asyncio.Task[None]] = set()
 
-    def get_wrapper_class(self) -> type[BaseController] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseController] | None:
         """Return ``None``: nested actions use this same registry."""
         return None
 
@@ -440,7 +440,7 @@ class RoomRegistry(BaseController):
         participant.tabs.clear()
         return participant
 
-    def add_tab(self, room: Room, participant: Participant, tab_id: str, channel: SocketChannel, page: str) -> Tab:
+    def add_tab(self, room: Room, participant: Participant, tab_id: str, channel: SocketChannelController, page: str) -> Tab:
         """Attach a tab (a connection) to ``participant``."""
         tab = Tab(id=tab_id, channel=channel, page=page, last_activity=self.clock())
         participant.tabs[tab_id] = tab
@@ -454,7 +454,7 @@ class RoomRegistry(BaseController):
             self._by_channel.pop(tab.channel.id, None)
         return tab
 
-    def locate(self, channel: SocketChannel) -> tuple[Room, Participant, Tab] | None:
+    def locate(self, channel: SocketChannelController) -> tuple[Room, Participant, Tab] | None:
         """The room, participant and tab a connection belongs to."""
         found = self._by_channel.get(channel.id)
         if found is None:
@@ -476,7 +476,7 @@ class RoomRegistry(BaseController):
             for tab in participant.tabs.values():
                 tab.channel.send(event)
 
-    def relay(self, channel: SocketChannel, message: dict[str, Any]) -> None:
+    def relay(self, channel: SocketChannelController, message: dict[str, Any]) -> None:
         """Pass a pointer or screen position on to the other participants' tabs on the sender's page."""
         if message.get("type") == "focus":
             self._relay_focus(channel, message)
@@ -512,7 +512,7 @@ class RoomRegistry(BaseController):
         for other in _tabs_on_page(room, tab.page, except_participant=sender.id):
             other.channel.send_volatile(f"{kind}:{sender.id}", event)
 
-    def _relay_focus(self, channel: SocketChannel, message: dict[str, Any]) -> None:
+    def _relay_focus(self, channel: SocketChannelController, message: dict[str, Any]) -> None:
         """Keep what the sender is looking at and pass it on to the tabs of the people who follow them."""
         found = self.locate(channel)
         values = focus_values(message)
@@ -569,7 +569,7 @@ class RoomRegistry(BaseController):
         """Run ``action_class`` with ``params`` through the machine after ``delay`` seconds."""
         machine = self._machine
         if machine is None:
-            raise RuntimeError("RoomRegistry.bind(machine) was not called")
+            raise RuntimeError("RoomRegistryController.bind(machine) was not called")
 
         async def later() -> None:
             await asyncio.sleep(delay)

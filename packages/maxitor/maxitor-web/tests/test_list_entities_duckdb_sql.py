@@ -6,10 +6,10 @@ from __future__ import annotations
 import json
 
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 
-def _slice(duck: DuckDBGraphResource, qual: str) -> dict:
+def _slice(duck: DuckDBGraphStorage, qual: str) -> dict:
     return ListEntitiesAction._slice_payload(duck, qual, include_neighbors=False)
 
 
@@ -30,7 +30,7 @@ def test_slice_payload_empty_fields_list_when_entity_has_no_scalar_rows() -> Non
             },
         ],
     }
-    duck = DuckDBGraphResource.build_from_json(payload)
+    duck = DuckDBGraphStorage.build_from_json(payload)
     out = _slice(duck, "d1")
     assert out["entities"] == [
         {"id": "e1", "label": "E", "domain_qualname": "d1", "entity_kind": "core", "resource_id": None, "resource_label": None, "values": [], "fields": []},
@@ -68,7 +68,7 @@ def test_slice_payload_includes_scalar_field_from_entity_field_tables() -> None:
             },
         ],
     }
-    duck = DuckDBGraphResource.build_from_json(payload)
+    duck = DuckDBGraphStorage.build_from_json(payload)
     out = _slice(duck, "d1")
     assert out["entities"][0]["fields"] == [
         {
@@ -111,7 +111,7 @@ def test_a_field_row_carries_its_clean_type_and_its_full_annotation() -> None:
             },
         ],
     }
-    row = _slice(DuckDBGraphResource.build_from_json(payload), "d1")["entities"][0]["fields"][0]
+    row = _slice(DuckDBGraphStorage.build_from_json(payload), "d1")["entities"][0]["fields"][0]
     assert (row["type"], row["annotation"]) == ("str | None", "UnionType[str, NoneType]")
 
 
@@ -127,7 +127,7 @@ def test_the_kind_the_wire_carries_is_the_kind_the_store_returns() -> None:
             {"source_id": "e1", "target_id": "d1", "type": "domain", "relationship": "Composition", "is_dag": False},
         ],
     }
-    duck = DuckDBGraphResource.build_from_json(payload)
+    duck = DuckDBGraphStorage.build_from_json(payload)
 
     stored = duck.execute_fetch_dicts("SELECT payload FROM nodes WHERE id = ?", ["e1"])[0]["payload"]
 
@@ -163,7 +163,7 @@ def test_an_optional_relation_end_is_zero_or_one_and_a_mandatory_one_is_one() ->
             _relation("order", "currency", "legacy", optional=None),
         ],
     }
-    relations = _slice(DuckDBGraphResource.build_from_json(payload), "d1")["relations"]
+    relations = _slice(DuckDBGraphStorage.build_from_json(payload), "d1")["relations"]
     ends = {r["source_field"]: (r["source_cardinality"], r["target_cardinality"]) for r in relations}
     assert ends == {"billed_in": ("zero_many", "zero_one"), "priced_in": ("zero_many", "one"), "legacy": ("zero_many", "one")}
 
@@ -182,7 +182,7 @@ def test_a_table_lists_every_relation_field_whether_or_not_its_target_is_on_scre
             _relation("order", "currency", "billed_in", optional=False),
         ],
     }
-    duck = DuckDBGraphResource.build_from_json(payload)
+    duck = DuckDBGraphStorage.build_from_json(payload)
 
     for include_neighbors in (False, True):
         out = ListEntitiesAction._slice_payload(duck, "d1", include_neighbors=include_neighbors)
@@ -199,7 +199,7 @@ def test_a_table_lists_every_relation_field_whether_or_not_its_target_is_on_scre
 def test_a_lifecycle_row_names_its_lifecycle() -> None:
     """(043) A row is a lifecycle when the graph holds that entity's lifecycle under its name, and only then."""
     entity = "my.Entity"
-    graph = DuckDBGraphResource.build_from_json(
+    graph = DuckDBGraphStorage.build_from_json(
         {
             "nodes": [
                 {"id": entity, "type": "Entity", "label": "Entity", "properties": {"description": "d", "entity_kind": "core", "entity_kind_label": "Core"}},
@@ -224,7 +224,7 @@ def test_a_lifecycle_row_names_its_lifecycle() -> None:
 
 def test_a_relation_row_has_its_relation_description_with_the_other_table_off_the_slice() -> None:
     """(043) A table lists every relation field it declares, so its row says what the relation is for wherever the line ends."""
-    graph = DuckDBGraphResource.build_from_json(
+    graph = DuckDBGraphStorage.build_from_json(
         {
             "nodes": [
                 {"id": "my.Lot", "type": "Entity", "label": "Lot", "properties": {"description": "d", "entity_kind": "core", "entity_kind_label": "Core"}},

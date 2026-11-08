@@ -30,7 +30,7 @@ from typing import cast
 from maxitor.web.model.core.core_domain import CoreDomain
 from maxitor.web.model.core.resources.static_bundle_resource import (
     STATIC_BUNDLE_CONNECTION_KEY,
-    StaticBundleResource,
+    StaticBundleStorage,
 )
 from pydantic import Field
 
@@ -39,7 +39,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -53,8 +53,8 @@ class AppInfoResult(BaseResult):
 
 @meta(description="Report the running Maxitor version and client build", domain=CoreDomain)
 @check_roles(GuestRole)
-@connection(StaticBundleResource, key=STATIC_BUNDLE_CONNECTION_KEY, description="The installed client bundle")
-class AppInfoAction(BaseAction[ParamsStub, AppInfoResult]):
+@connection(StaticBundleStorage, key=STATIC_BUNDLE_CONNECTION_KEY, description="The installed client bundle")
+class AppInfoAction(BaseAction[StubParams, AppInfoResult]):
     """
     AI-CORE-BEGIN
     ROLE: Answer which Maxitor is running — the package version and the client build it serves.
@@ -67,7 +67,7 @@ class AppInfoAction(BaseAction[ParamsStub, AppInfoResult]):
     @summary_aspect("Read the package version and the bundle's build id")
     async def app_info_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
@@ -77,5 +77,5 @@ class AppInfoAction(BaseAction[ParamsStub, AppInfoResult]):
             installed = version("maxitor")
         except PackageNotFoundError:
             installed = "0+unknown"
-        bundle = cast(StaticBundleResource, connections[STATIC_BUNDLE_CONNECTION_KEY])
+        bundle = cast(StaticBundleStorage, connections[STATIC_BUNDLE_CONNECTION_KEY])
         return AppInfoResult(version=installed, build=bundle.build())

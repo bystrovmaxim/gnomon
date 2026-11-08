@@ -19,11 +19,11 @@
       "type": "application"
     },
     {
-      "id": "aoa.fastapi.socket_channel.SocketChannel|domain|aoa.fastapi.socket_channel.TransportDomain",
+      "id": "aoa.fastapi.socket_channel.SocketChannelController|domain|aoa.fastapi.socket_channel.TransportDomain",
       "is_dag": true,
       "properties": {},
       "relationship": "Aggregation",
-      "source_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "source_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "target_id": "aoa.fastapi.socket_channel.TransportDomain",
       "type": "domain"
     },
@@ -987,20 +987,20 @@
       "type": "Role"
     },
     {
-      "id": "aoa.action_machine.model.params_stub.ParamsStub",
-      "label": "ParamsStub",
+      "id": "aoa.action_machine.model.params_stub.StubParams",
+      "label": "StubParams",
       "properties": {},
       "type": "Params"
     },
     {
-      "id": "aoa.action_machine.model.result_stub.ResultStub",
-      "label": "ResultStub",
+      "id": "aoa.action_machine.model.result_stub.StubResult",
+      "label": "StubResult",
       "properties": {},
       "type": "Result"
     },
     {
-      "id": "aoa.fastapi.socket_channel.SocketChannel",
-      "label": "SocketChannel",
+      "id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "label": "SocketChannelController",
       "properties": {
         "description": "One WebSocket connection an action can send events through"
       },

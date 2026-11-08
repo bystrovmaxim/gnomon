@@ -42,10 +42,10 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from maxitor.web.model.diagrams.resources import duckdb_graph_resource as resource_module
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources import duckdb_graph_storage as resource_module
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     _EDGE_TABLE_NAMES,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 SPECIALIZATION = "entity_specialization"
@@ -99,14 +99,14 @@ def _graph_with(*edge_types: str) -> dict[str, Any]:
 class TestTheKindsAreKnown:
     def test_a_graph_carrying_both_kinds_is_accepted(self) -> None:
         """Both kinds in one graph, because a half-registered pair is the failure being guarded."""
-        duck = DuckDBGraphResource.build_from_json(_graph_with(SPECIALIZATION, GENERALIZATION))
+        duck = DuckDBGraphStorage.build_from_json(_graph_with(SPECIALIZATION, GENERALIZATION))
 
         assert duck is not None
 
     def test_each_kind_lands_in_its_own_table(self) -> None:
-        duck = DuckDBGraphResource.build_from_json(_graph_with(SPECIALIZATION, GENERALIZATION))
+        duck = DuckDBGraphStorage.build_from_json(_graph_with(SPECIALIZATION, GENERALIZATION))
         counts = {
-            table: int(duck.service.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])  # type: ignore[union-attr]
+            table: int(duck.connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])  # type: ignore[union-attr]
             for table in (_SPECIALIZATION_TABLE, _GENERALIZATION_TABLE)
         }
 
@@ -114,7 +114,7 @@ class TestTheKindsAreKnown:
 
     def test_the_properties_survive_the_table(self) -> None:
         """A column the table forgets is a property the diagram loses, so the values are read back."""
-        duck = DuckDBGraphResource.build_from_json(_graph_with(SPECIALIZATION, GENERALIZATION))
+        duck = DuckDBGraphStorage.build_from_json(_graph_with(SPECIALIZATION, GENERALIZATION))
 
         specialization = duck.execute_fetch_dicts(
             f"SELECT field_name, classifier_field, classifier_value, labels FROM {_SPECIALIZATION_TABLE}",
@@ -142,7 +142,7 @@ class TestTheKindsAreKnown:
         assert columns["head_entity_id"] == "NO"
 
     def test_both_kinds_appear_in_the_view_the_viewer_reads(self) -> None:
-        duck = DuckDBGraphResource.build_from_json(_graph_with(SPECIALIZATION, GENERALIZATION))
+        duck = DuckDBGraphStorage.build_from_json(_graph_with(SPECIALIZATION, GENERALIZATION))
 
         types = {row["type"] for row in duck.execute_fetch_dicts("SELECT DISTINCT type FROM edges")}
 
@@ -159,14 +159,14 @@ class TestTheGuardStillRefuses:
         graph["edges"][0]["type"] = "not_declared_at_all"
 
         with pytest.raises(KeyError, match="Unknown edge graph type"):
-            DuckDBGraphResource.build_from_json(graph)
+            DuckDBGraphStorage.build_from_json(graph)
 
     def test_the_guard_names_every_kind_it_did_not_recognise(self) -> None:
         graph = _graph_with(SPECIALIZATION)
         graph["edges"][0]["type"] = "not_declared_at_all"
 
         with pytest.raises(KeyError) as caught:
-            DuckDBGraphResource.build_from_json(graph)
+            DuckDBGraphStorage.build_from_json(graph)
 
         assert "not_declared_at_all" in str(caught.value)
 
@@ -202,6 +202,6 @@ class TestARegistryEntryIsRequired:
         monkeypatch.setattr(resource_module, "_assert_no_unknown_graph_types", _guard_that_never_learned_this_kind)
 
         with pytest.raises(KeyError, match="Unknown edge graph type") as caught:
-            DuckDBGraphResource.build_from_json(_graph_with(kind))
+            DuckDBGraphStorage.build_from_json(_graph_with(kind))
 
         assert kind in str(caught.value), "the refusal names the kind it did not recognise"

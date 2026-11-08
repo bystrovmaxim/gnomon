@@ -30,8 +30,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from maxitor.web.model.core.core_domain import CoreDomain
-
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_controller import BaseController
 
@@ -42,7 +40,7 @@ if TYPE_CHECKING:
 GRAPH_STORE_CONNECTION_KEY = "GraphStore"
 
 
-@meta(description="The store of built graphs, one per source", domain=CoreDomain)
+@meta(description="The store of built graphs, one per source")
 class GraphStoreController(BaseController):
     """
     AI-CORE-BEGIN
@@ -56,7 +54,8 @@ class GraphStoreController(BaseController):
     def __init__(self, store: GraphStore) -> None:
         self._store = store
 
-    def get_wrapper_class(self) -> type[BaseController] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseController] | None:
         """Return ``None``: nested actions use this same controller."""
         return None
 

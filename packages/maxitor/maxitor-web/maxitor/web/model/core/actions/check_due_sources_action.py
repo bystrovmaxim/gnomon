@@ -6,7 +6,7 @@ CheckDueSourcesAction — check every held source someone is looking at and that
 PURPOSE
 ═══════════════════════════════════════════════════════════════════════════════
 
-Run every ten seconds by the ``SourceChecks`` clock (spec 028, FR-071, FR-073). A held source is
+Run every ten seconds by the ``SourceChecksController`` clock (spec 028, FR-071, FR-073). A held source is
 picked when someone looks at it — a room of that source has a connected participant, or a tab
 outside a room asked for its fingerprint in the last 75 seconds — and its last check is older
 than its interval (30 s with validators, 2 min without). Each picked source gets one
@@ -34,13 +34,13 @@ from maxitor.web.model.core.core_domain import CoreDomain
 from maxitor.web.model.core.freshness import CHECK_WITH_VALIDATORS_SECONDS, is_due, tab_is_open
 from maxitor.web.model.core.resources.graph_source_gateway import GRAPH_SOURCE_CONNECTION_KEY, GraphSourceGateway
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
-from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStore
-from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistry
+from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
+from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistryController
 from maxitor.web.model.core.resources.repo_graph_port_gateway import (
     REPO_GRAPH_PORT_CONNECTION_KEY,
     RepoGraphPortGateway,
 )
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -48,7 +48,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -59,13 +59,13 @@ class CheckDueSourcesResult(BaseResult):
     checked: list[str] = Field(description="Sources and histories a check was run for")
 
 
-def _history_watched(name: str, rooms: RoomRegistry, tabs: OpenTabsRegistry, now: float) -> bool:
+def _history_watched(name: str, rooms: RoomRegistryController, tabs: OpenTabsRegistryController, now: float) -> bool:
     """Whether someone looks at the history ``name``: a connected participant in one of its rooms, or a recent tab."""
     in_room = any(participant.tabs for room in rooms.rooms_of_history(name) for participant in room.participants.values())
     return in_room or tab_is_open(tabs.last_seen(name), now)
 
 
-def _watched(source: str, rooms: RoomRegistry, tabs: OpenTabsRegistry, now: float) -> bool:
+def _watched(source: str, rooms: RoomRegistryController, tabs: OpenTabsRegistryController, now: float) -> bool:
     """Whether someone looks at ``source``: a connected participant in one of its rooms, or a recent tab."""
     in_room = any(participant.tabs for room in rooms.rooms_of_source(source) for participant in room.participants.values())
     return in_room or tab_is_open(tabs.last_seen(source), now)
@@ -75,11 +75,11 @@ def _watched(source: str, rooms: RoomRegistry, tabs: OpenTabsRegistry, now: floa
 @check_roles(GuestRole)
 @connection(GraphStoreController, key=GRAPH_STORE_CONNECTION_KEY, description="Built graphs")
 @connection(GraphSourceGateway, key=GRAPH_SOURCE_CONNECTION_KEY, description="Downloads graph-json")
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Rooms, whose participants are open tabs")
-@connection(OpenTabsRegistry, key=OPEN_TABS_CONNECTION_KEY, description="Tabs outside rooms")
-@connection(HistoryStore, key=HISTORY_STORE_CONNECTION_KEY, description="Held histories, whose lists are checked too")
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Rooms, whose participants are open tabs")
+@connection(OpenTabsRegistryController, key=OPEN_TABS_CONNECTION_KEY, description="Tabs outside rooms")
+@connection(HistoryStoreController, key=HISTORY_STORE_CONNECTION_KEY, description="Held histories, whose lists are checked too")
 @connection(RepoGraphPortGateway, key=REPO_GRAPH_PORT_CONNECTION_KEY, description="Reads a history from its port")
-class CheckDueSourcesAction(BaseAction[ParamsStub, CheckDueSourcesResult]):
+class CheckDueSourcesAction(BaseAction[StubParams, CheckDueSourcesResult]):
     """
     AI-CORE-BEGIN
     ROLE: Pick the held sources that are watched and due, and check each once.
@@ -92,15 +92,15 @@ class CheckDueSourcesAction(BaseAction[ParamsStub, CheckDueSourcesResult]):
     @summary_aspect("Pick watched, due sources and check them")
     async def check_due_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> CheckDueSourcesResult:
         """Check every watched source whose check is due."""
         store = cast(GraphStoreController, connections[GRAPH_STORE_CONNECTION_KEY])
-        rooms = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        tabs = cast(OpenTabsRegistry, connections[OPEN_TABS_CONNECTION_KEY])
+        rooms = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        tabs = cast(OpenTabsRegistryController, connections[OPEN_TABS_CONNECTION_KEY])
         now = store.now()
         due = []
         for source in store.held_sources():
@@ -112,7 +112,7 @@ class CheckDueSourcesAction(BaseAction[ParamsStub, CheckDueSourcesResult]):
             GRAPH_SOURCE_CONNECTION_KEY: connections[GRAPH_SOURCE_CONNECTION_KEY],
             ROOM_REGISTRY_KEY: rooms,
         }
-        histories = cast(HistoryStore, connections[HISTORY_STORE_CONNECTION_KEY])
+        histories = cast(HistoryStoreController, connections[HISTORY_STORE_CONNECTION_KEY])
         due_histories = [
             name
             for name in histories.names()

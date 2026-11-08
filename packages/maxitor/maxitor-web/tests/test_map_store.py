@@ -13,7 +13,7 @@ from typing import Any
 
 import pytest
 from maxitor.graph_compare import KNOWN_VERSIONS
-from maxitor.web.model.diagrams.resources.map_store import MapRefusedError, MapStore, run_sfdp
+from maxitor.web.model.diagrams.resources.map_store import MapRefusedError, MapStoreController, run_sfdp
 
 
 @dataclass
@@ -61,12 +61,12 @@ class Sfdp:
         return json.dumps({"bb": f"0,0,{max(len(names) * 50, 1)},10", "objects": objects})
 
 
-def store(root: Path, held: list[Held], run: Any) -> MapStore:
+def store(root: Path, held: list[Held], run: Any) -> MapStoreController:
     """A store over the graph in ``held``, every source of one history."""
-    return MapStore(root, lambda: held[0], lambda _source: "history", ("#111111", "#222222"), run=run)
+    return MapStoreController(root, lambda: held[0], lambda _source: "history", ("#111111", "#222222"), run=run)
 
 
-def overview(maps: MapStore) -> dict[str, Any]:
+def overview(maps: MapStoreController) -> dict[str, Any]:
     """Ask for the overview until it is ready."""
 
     async def ready() -> dict[str, Any]:
@@ -164,10 +164,10 @@ def versioned(document: dict[str, Any], name: str) -> Held:
     return Held(f"https://port/history/{name}", name, json.dumps({**document, "schema_version": max(KNOWN_VERSIONS)}))
 
 
-def pair_store(root: Path, older: Held, newer: Held) -> tuple[MapStore, list[tuple[Held, Held]]]:
+def pair_store(root: Path, older: Held, newer: Held) -> tuple[MapStoreController, list[tuple[Held, Held]]]:
     """A store over ``newer``, and the list that binds the read to the pair once it holds it."""
     bound: list[tuple[Held, Held]] = []
-    return MapStore(root, lambda: newer, lambda _source: "history", ("#111111", "#222222"), pair=lambda: (older, newer) if bound else None, run=Sfdp()), bound
+    return MapStoreController(root, lambda: newer, lambda _source: "history", ("#111111", "#222222"), pair=lambda: (older, newer) if bound else None, run=Sfdp()), bound
 
 
 def test_a_pair_moves_no_area_however_much_only_a_held(tmp_path: Path) -> None:

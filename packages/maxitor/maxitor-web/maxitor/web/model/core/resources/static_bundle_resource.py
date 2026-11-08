@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/core/resources/static_bundle_resource.py
 """
-StaticBundleResource — the installed client bundle, read through a resource.
+StaticBundleStorage — the installed client bundle, read through a resource.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -31,8 +31,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from maxitor.web.model.core.core_domain import CoreDomain
-
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_storage import BaseStorage
 
@@ -40,8 +38,8 @@ from aoa.action_machine.resources.base_storage import BaseStorage
 STATIC_BUNDLE_CONNECTION_KEY = "StaticBundle"
 
 
-@meta(description="The installed client bundle and the id of its build", domain=CoreDomain)
-class StaticBundleResource(BaseStorage):
+@meta(description="The installed client bundle and the id of its build")
+class StaticBundleStorage(BaseStorage):
     """
     AI-CORE-BEGIN
     ROLE: The resource through which actions learn which client build Maxitor serves.
@@ -54,7 +52,8 @@ class StaticBundleResource(BaseStorage):
     def __init__(self, directory: Path) -> None:
         self._directory = directory
 
-    def get_wrapper_class(self) -> type[BaseStorage] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseStorage] | None:
         """Return ``None``: nested actions read through this same resource."""
         return None
 

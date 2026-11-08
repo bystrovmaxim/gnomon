@@ -13,5 +13,5 @@ PURPOSE
 ARCHITECTURE / DATA FLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
-route ──► action ──connections──► HistoriesConfig, GitMirror, VersionCache.
+route ──► action ──connections──► HistoriesConfigStorage, GitMirrorStorage, VersionCacheStorage.
 """

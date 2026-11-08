@@ -1,4 +1,4 @@
-# packages/maxitor/maxitor-web/maxitor/web/model/diagrams/resources/duckdb_graph_resource.py
+# packages/maxitor/maxitor-web/maxitor/web/model/diagrams/resources/duckdb_graph_storage.py
 """
 DuckDB-backed coordinator graph resource — in-memory SQL over coordinator graph JSON.
 
@@ -6,13 +6,14 @@ DuckDB-backed coordinator graph resource — in-memory SQL over coordinator grap
 PURPOSE
 ═══════════════════════════════════════════════════════════════════════════════
 
-``connections["DuckDBGraph"]`` is the :class:`DuckDBGraphResource`; :attr:`~ExternalServiceResource.service`
-is the in-memory ``duckdb.DuckDBPyConnection``. The Maxitor FastAPI lifespan builds DuckDB from the same
-coordinator JSON as the sidebar via :meth:`DuckDBGraphResource.build_from_json`; :meth:`create_from_http`
+``connections["DuckDBGraph"]`` is the :class:`DuckDBGraphStorage`; :attr:`~DuckDBGraphStorage.connection`
+is the in-memory ``duckdb.DuckDBPyConnection`` it holds. It is a storage, and it lists the entity it builds rows
+of, ``NodeCoreEntity``. The Maxitor FastAPI lifespan builds DuckDB from the same
+coordinator JSON as the sidebar via :meth:`DuckDBGraphStorage.build_from_json`; :meth:`create_from_http`
 fetches an envelope from a separate ``graph-json`` URL (helpers only). Tests typically call
 :meth:`build_from_json` directly.
-:meth:`DuckDBGraphResource._install_database` runs explicit ``CREATE TABLE`` for the physical node and edge
-tables; :meth:`DuckDBGraphResource._install_post_load_objects` adds ``CREATE VIEW nodes`` / ``edges``, then
+:meth:`DuckDBGraphStorage._install_database` runs explicit ``CREATE TABLE`` for the physical node and edge
+tables; :meth:`DuckDBGraphStorage._install_post_load_objects` adds ``CREATE VIEW nodes`` / ``edges``, then
 ``nodes_type_counts`` / ``edge_type_counts`` over those views, after the rows are loaded (aligned with
 :data:`~aoa.action_machine.graph.graph_json_schema.GRAPH_JSON_SCHEMA`). The build creates no index and no
 primary key: the diagram queries read through neither (``specs/025-graph-index-memory/index-usage.md``), and
@@ -43,12 +44,11 @@ from typing import Any, cast
 
 import duckdb
 import httpx
-from maxitor.web.model.diagrams.data_sources.graph_data_source import GraphDataSource
-from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
+from maxitor.web.model.core.entities.node_entity import NodeCoreEntity
 
+from aoa.action_machine.intents.entities import entities
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.resources import BaseController, BaseResource
-from aoa.action_machine.resources.external_service.external_service_resource import ExternalServiceResource
+from aoa.action_machine.resources import BaseResource, BaseStorage
 
 DEFAULT_EXAMPLE_GRAPH_JSON_URL = "http://127.0.0.1:8001/examples/model/graph-json"
 ENV_EXAMPLE_GRAPH_JSON_URL = "MAXITOR_EXAMPLE_GRAPH_JSON_URL"
@@ -56,23 +56,29 @@ ENV_EXAMPLE_GRAPH_JSON_URL = "MAXITOR_EXAMPLE_GRAPH_JSON_URL"
 DUCKDB_GRAPH_CONNECTION_KEY = "DuckDBGraph"
 
 
-@meta(
-    description="DuckDB in-memory store for coordinator graph JSON (HTTP + entity/domain helpers)",
-    domain=DiagramsDomain,
-)
-class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection], BaseController[GraphDataSource]):
+@meta(description="DuckDB in-memory store for coordinator graph JSON (HTTP + entity/domain helpers)")
+@entities(NodeCoreEntity)
+class DuckDBGraphStorage(BaseStorage):
     """
     AI-CORE-BEGIN
-    ROLE: Load coordinator graph JSON into DuckDB; :attr:`.service` is the DuckDB connection.
+    ROLE: Load coordinator graph JSON into DuckDB; :attr:`.connection` is the DuckDB connection.
     CONTRACT: The bundled Maxitor API loads from :meth:`build_from_json` in the lifespan (same graph as
     the sidebar). :meth:`create_from_http` is for tools that fetch from a remote ``graph-json`` envelope.
     INVARIANTS: A node id is unique within its node table; the build refuses a duplicate.
     AI-CORE-END
     """
 
-    def get_wrapper_class(self) -> type[BaseResource] | None:
-        """The external service's wrapper, as ``ExternalServiceResource`` gives it; the data source base adds none."""
-        return ExternalServiceResource.get_wrapper_class(self)
+    _connection: duckdb.DuckDBPyConnection
+
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseResource] | None:
+        """No wrapper: the graph is read-only, and a nested action reads the same connection."""
+        return None
+
+    @property
+    def connection(self) -> duckdb.DuckDBPyConnection:
+        """The in-memory DuckDB connection the graph was loaded into."""
+        return self._connection
 
     @classmethod
     def graph_json_url(cls) -> str:
@@ -94,35 +100,35 @@ class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection], Ba
             envelope = response.json()
         if not isinstance(envelope, dict):
             raise TypeError("Expected JSON object envelope from graph-json endpoint")
-        return DuckDBGraphResource._coordinator_from_envelope(cast(Mapping[str, Any], envelope))
+        return DuckDBGraphStorage._coordinator_from_envelope(cast(Mapping[str, Any], envelope))
 
     @classmethod
-    async def create_from_http(cls) -> DuckDBGraphResource:
+    async def create_from_http(cls) -> DuckDBGraphStorage:
         json_data = await cls._load_graph_json_http()
         return cls.build_from_json(json_data)
 
     @classmethod
-    def build_from_json(cls, json_data: Mapping[str, Any]) -> DuckDBGraphResource:
+    def build_from_json(cls, json_data: Mapping[str, Any]) -> DuckDBGraphStorage:
         instance = object.__new__(cls)
         con = duckdb.connect(database=":memory:")
         instance._install_database(con)
         _fill_database(con, cast(dict[str, Any], json_data))
         _refuse_duplicate_node_ids(con)
         instance._install_post_load_objects(con)
-        ExternalServiceResource.__init__(instance, con)
+        instance._connection = con
         return instance
 
     @staticmethod
     def load_graph_json_http() -> dict[str, Any]:
         """Synchronous HTTP GET ``graph-json`` and parse the inner ``coordinator_json`` payload (non-production helpers)."""
-        url = DuckDBGraphResource.graph_json_url()
+        url = DuckDBGraphStorage.graph_json_url()
         with httpx.Client() as client:
             response = client.get(url, timeout=30.0)
             response.raise_for_status()
             envelope = response.json()
         if not isinstance(envelope, dict):
             raise TypeError("Expected JSON object envelope from graph-json endpoint")
-        return DuckDBGraphResource._coordinator_from_envelope(cast(Mapping[str, Any], envelope))
+        return DuckDBGraphStorage._coordinator_from_envelope(cast(Mapping[str, Any], envelope))
 
     def _install_database(self, con: duckdb.DuckDBPyConnection) -> None:
         """Create the DuckDB tables (DDL only; no row inserts, no views)."""
@@ -572,7 +578,7 @@ class DuckDBGraphResource(ExternalServiceResource[duckdb.DuckDBPyConnection], Ba
         parameters: list[Any] | tuple[Any, ...] | None = None,
     ) -> list[dict[str, Any]]:
         """Execute ``sql`` and return every result row as a column-name → value dict."""
-        con = self.service
+        con = self.connection
         params = list(parameters) if parameters is not None else []
         cols = [str(c[0]) for c in con.execute(sql, params).description]
         return [dict(zip(cols, row, strict=True)) for row in con.fetchall()]

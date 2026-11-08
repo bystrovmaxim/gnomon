@@ -25,9 +25,9 @@ from typing import cast
 from maxitor.web.model.diagrams.actions.domain_use_case_diagram_action import use_case_diagram
 from maxitor.web.model.diagrams.actions.domain_use_case_diagram_action_schema import DomainUseCaseDiagramJson
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -36,7 +36,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -49,8 +49,8 @@ class AllUseCasesResult(BaseResult):
 
 @meta(description="Return the use-case diagram of every domain together", domain=DiagramsDomain)
 @check_roles(GuestRole)
-@connection(DuckDBGraphResource, key=DUCKDB_GRAPH_CONNECTION_KEY, description="Coordinator graph in DuckDB")
-class GetAllUseCasesDiagramAction(BaseAction[ParamsStub, AllUseCasesResult]):
+@connection(DuckDBGraphStorage, key=DUCKDB_GRAPH_CONNECTION_KEY, description="Coordinator graph in DuckDB")
+class GetAllUseCasesDiagramAction(BaseAction[StubParams, AllUseCasesResult]):
     """
     AI-CORE-BEGIN
     ROLE: Materialize the whole application's use-case graph for SPA / Graphviz.
@@ -61,12 +61,12 @@ class GetAllUseCasesDiagramAction(BaseAction[ParamsStub, AllUseCasesResult]):
     @summary_aspect("Build the use-case diagram of every domain")
     async def all_use_cases_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> AllUseCasesResult:
         """Build the diagram with no domain to narrow it."""
         _ = (params, state, box)
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         return AllUseCasesResult(domain_use_case_diagram=use_case_diagram(duck, None))

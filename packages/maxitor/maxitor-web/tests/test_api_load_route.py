@@ -9,7 +9,7 @@ from typing import Any
 from fastapi.testclient import TestClient
 from maxitor.web.api.app import create_app
 from maxitor.web.api.graph_store import BUSY_DETAIL, GraphBuildError, GraphEntry, GraphStore, GraphStoreBusyError
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _SIDEBAR = SimpleNamespace(level1_nodes=[], level2_diagrams=[], level2_nodes=[], level3_diagrams=[])
 _SOURCE_X = "https://x.aoa.run/graph-json"
@@ -18,9 +18,9 @@ _DOMAIN_X = "d.x.Dom"
 _DOMAIN_Y = "d.y.Dom"
 
 
-def _graph(domain: str) -> DuckDBGraphResource:
+def _graph(domain: str) -> DuckDBGraphStorage:
     """Return a real graph holding one domain."""
-    return DuckDBGraphResource.build_from_json(
+    return DuckDBGraphStorage.build_from_json(
         {
             "schema_version": "1.0",
             "nodes": [

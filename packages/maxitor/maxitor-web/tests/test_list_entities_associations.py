@@ -23,7 +23,7 @@ from typing import Any
 
 import pytest
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _REFERENCE_GRAPH = Path(__file__).resolve().parents[4] / "specs/025-graph-index-memory/data/ref-graph-2026-10-26.json.gz"
 _PAIRED = ("association", "composition", "aggregation")
@@ -35,12 +35,12 @@ def _short(identifier: str) -> str:
 
 
 @pytest.fixture(scope="module")
-def reference() -> tuple[DuckDBGraphResource, list[str]]:
+def reference() -> tuple[DuckDBGraphStorage, list[str]]:
     """The frozen reference graph in the store, and its domain ids."""
     data = json.loads(gzip.decompress(_REFERENCE_GRAPH.read_bytes()))
     data = data.get("coordinator_json", data)
     graph = json.loads(data) if isinstance(data, str) else data
-    return DuckDBGraphResource.build_from_json(graph), [n["id"] for n in graph["nodes"] if n["type"] == "Domain"]
+    return DuckDBGraphStorage.build_from_json(graph), [n["id"] for n in graph["nodes"] if n["type"] == "Domain"]
 
 
 def _associations(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -48,7 +48,7 @@ def _associations(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [r for r in rows if r["relationship_kind"] not in ("reference", "generalization", "specialization")]
 
 
-def test_a_field_and_its_inverse_are_one_row(reference: tuple[DuckDBGraphResource, list[str]]) -> None:
+def test_a_field_and_its_inverse_are_one_row(reference: tuple[DuckDBGraphStorage, list[str]]) -> None:
     """``showcase`` / ``players`` give one row from the table that holds the ``one`` side."""
     duck, domains = reference
     rows = [r for r in _associations(ListEntitiesAction.request_relations(duck, domains, True))
@@ -59,7 +59,7 @@ def test_a_field_and_its_inverse_are_one_row(reference: tuple[DuckDBGraphResourc
     ]
 
 
-def test_a_relation_without_an_inverse_is_its_own_row(reference: tuple[DuckDBGraphResource, list[str]]) -> None:
+def test_a_relation_without_an_inverse_is_its_own_row(reference: tuple[DuckDBGraphStorage, list[str]]) -> None:
     """``chosen_offer`` has no inverse, so it is a second association beside ``offers`` / ``offer_request``."""
     duck, domains = reference
     rows = [r for r in _associations(ListEntitiesAction.request_relations(duck, domains, True))
@@ -71,7 +71,7 @@ def test_a_relation_without_an_inverse_is_its_own_row(reference: tuple[DuckDBGra
     ]
 
 
-def test_the_reference_graph_has_34_associations(reference: tuple[DuckDBGraphResource, list[str]]) -> None:
+def test_the_reference_graph_has_34_associations(reference: tuple[DuckDBGraphStorage, list[str]]) -> None:
     """46 relation fields, 34 associations, and only one pair of tables keeps two."""
     duck, domains = reference
     rows = _associations(ListEntitiesAction.request_relations(duck, domains, True))
@@ -83,7 +83,7 @@ def test_the_reference_graph_has_34_associations(reference: tuple[DuckDBGraphRes
     ]
 
 
-def test_a_slice_pairs_the_same_way(reference: tuple[DuckDBGraphResource, list[str]]) -> None:
+def test_a_slice_pairs_the_same_way(reference: tuple[DuckDBGraphStorage, list[str]]) -> None:
     """Each domain slice draws one line for the pair too."""
     duck, domains = reference
     events = next(d for d in domains if d.endswith("EventsDomain"))
@@ -122,7 +122,7 @@ def _one_to_one(first: str, second: str) -> dict[str, Any]:
 @pytest.mark.parametrize(("first", "second"), [("shop.AEntity", "shop.BEntity"), ("shop.BEntity", "shop.AEntity")])
 def test_a_one_to_one_pair_always_comes_out_from_the_smaller_id(first: str, second: str) -> None:
     """With both sides ``one``, the table with the smaller id is the source, whatever order the graph lists them in."""
-    duck = DuckDBGraphResource.build_from_json(_one_to_one(first, second))
+    duck = DuckDBGraphStorage.build_from_json(_one_to_one(first, second))
     rows = _associations(ListEntitiesAction.request_relations(duck, ["shop.ShopDomain"], False))
 
     assert [(r["source"], r["source_field"], r["target_field"], r["source_cardinality"], r["target_cardinality"]) for r in rows] == [
@@ -131,7 +131,7 @@ def test_a_one_to_one_pair_always_comes_out_from_the_smaller_id(first: str, seco
     ]
 
 
-def test_generalizations_are_never_paired(reference: tuple[DuckDBGraphResource, list[str]]) -> None:
+def test_generalizations_are_never_paired(reference: tuple[DuckDBGraphStorage, list[str]]) -> None:
     """An extension's line to its head stays a generalization of its own."""
     duck, domains = reference
     rows = [r for r in ListEntitiesAction.request_relations(duck, domains, True) if r["relationship_kind"] == "generalization"]
@@ -167,6 +167,6 @@ def test_a_field_is_paired_only_with_its_declared_inverse() -> None:
             relation("shop.BEntity", "shop.AEntity", "owner", "one", None),
         ],
     }
-    rows = _associations(ListEntitiesAction.request_relations(DuckDBGraphResource.build_from_json(graph), [domain], False))
+    rows = _associations(ListEntitiesAction.request_relations(DuckDBGraphStorage.build_from_json(graph), [domain], False))
 
     assert sorted((r["source_field"], r["target_field"]) for r in rows) == [("b", "a_list"), ("owner", None)]

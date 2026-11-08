@@ -23,7 +23,7 @@ from maxitor.web.model.diagrams.actions.list_node_types_action import (
     NODE_TYPE_FILL_COLORS,
     interchange_node_type_from_duck,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _ICONS = Path(__file__).resolve().parents[1] / "client" / "src" / "lib" / "icons" / "graph_node_disk_icons.ts"
 
@@ -60,13 +60,13 @@ def _graph() -> dict[str, Any]:
     return {"schema_version": "1.5", "nodes": nodes, "edges": edges}
 
 
-def _rows(duck: DuckDBGraphResource, sql: str) -> list[tuple[Any, ...]]:
-    return [tuple(row) for row in duck.service.execute(sql).fetchall()]
+def _rows(duck: DuckDBGraphStorage, sql: str) -> list[tuple[Any, ...]]:
+    return [tuple(row) for row in duck.connection.execute(sql).fetchall()]
 
 
 def test_the_cache_nodes_land_in_their_table() -> None:
     """Each declaration is a row with its kind and description."""
-    duck = DuckDBGraphResource.build_from_json(_graph())
+    duck = DuckDBGraphStorage.build_from_json(_graph())
     assert _rows(duck, "SELECT label, kind, description FROM cache ORDER BY label") == [
         ("order_cache_entity_key", "entity_key", "Entity_Key"),
         ("order_cache_invalidate", "invalidate", "Invalidate"),
@@ -79,14 +79,14 @@ def test_the_cache_nodes_land_in_their_table() -> None:
 @pytest.mark.parametrize(("edge_type", "table"), sorted(_EDGE_TABLES.items()))
 def test_each_new_edge_lands_in_its_own_table(edge_type: str, table: str) -> None:
     """Every new edge type has its table and its place in the edges view."""
-    duck = DuckDBGraphResource.build_from_json(_graph())
+    duck = DuckDBGraphStorage.build_from_json(_graph())
     assert _rows(duck, f"SELECT COUNT(*) FROM {table}") == [(1,)]
     assert table in {row[0] for row in _rows(duck, "SELECT DISTINCT type FROM edges")}
 
 
 def test_the_node_view_carries_the_cache_kind() -> None:
     """The union view reports the slug and the payload the client reads."""
-    duck = DuckDBGraphResource.build_from_json(_graph())
+    duck = DuckDBGraphStorage.build_from_json(_graph())
     payloads = _rows(duck, "SELECT payload FROM nodes WHERE type = 'cache' ORDER BY id")
     assert len(payloads) == 5
     assert '"kind":"write"' in str(payloads).replace(" ", "")

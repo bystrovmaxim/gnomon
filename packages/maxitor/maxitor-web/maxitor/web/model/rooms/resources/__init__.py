@@ -9,6 +9,6 @@ PURPOSE
 Expose the room registry room actions use for ``@connection`` wiring.
 """
 
-from .room_registry import PALETTE, ROOM_REGISTRY_KEY, Participant, Room, RoomRegistry, Tab
+from .room_registry import PALETTE, ROOM_REGISTRY_KEY, Participant, Room, RoomRegistryController, Tab
 
-__all__ = ["PALETTE", "ROOM_REGISTRY_KEY", "Participant", "Room", "RoomRegistry", "Tab"]
+__all__ = ["PALETTE", "ROOM_REGISTRY_KEY", "Participant", "Room", "RoomRegistryController", "Tab"]

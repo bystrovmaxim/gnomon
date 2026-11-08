@@ -15,9 +15,9 @@ from typing import Any, Literal, cast
 from maxitor.web.model.diagrams.actions.domain_use_case_diagram_action_schema import DomainUseCaseDiagramJson
 from maxitor.web.model.diagrams.actions.list_domains_action import ListDomainsAction
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -39,7 +39,7 @@ def _short_qualname(raw: str) -> str:
     return value.rsplit(".", 1)[-1] if "." in value else value
 
 
-def _transitive_action_parents(duck: DuckDBGraphResource, seeds: set[str]) -> set[str]:
+def _transitive_action_parents(duck: DuckDBGraphStorage, seeds: set[str]) -> set[str]:
     """Union ``seeds`` with all targets reachable via ``parent_action_edges`` (child → parent)."""
     out = set(seeds)
     rows = duck.execute_fetch_dicts("SELECT source_id, target_id FROM parent_action_edges")
@@ -60,7 +60,7 @@ def _transitive_action_parents(duck: DuckDBGraphResource, seeds: set[str]) -> se
     return out
 
 
-def _transitive_role_parents(duck: DuckDBGraphResource, seeds: set[str]) -> set[str]:
+def _transitive_role_parents(duck: DuckDBGraphStorage, seeds: set[str]) -> set[str]:
     out = set(seeds)
     rows = duck.execute_fetch_dicts("SELECT source_id, target_id FROM parent_role_edges")
     by_child: dict[str, list[str]] = {}
@@ -85,7 +85,7 @@ def _comma_question_placeholders(length: int) -> str:
 
 
 def _fetch_id_labels(
-    duck: DuckDBGraphResource,
+    duck: DuckDBGraphStorage,
     table: Literal["role", "action"],
     entity_ids: set[str],
 ) -> dict[str, str]:
@@ -98,7 +98,7 @@ def _fetch_id_labels(
 
 
 def _action_generalizations_within_actions(
-    duck: DuckDBGraphResource,
+    duck: DuckDBGraphStorage,
     action_ids: set[str],
 ) -> list[dict[str, Any]]:
     if not action_ids:
@@ -110,7 +110,7 @@ def _action_generalizations_within_actions(
 
 
 def _role_generalizations_within_roles(
-    duck: DuckDBGraphResource,
+    duck: DuckDBGraphStorage,
     role_ids: set[str],
 ) -> list[dict[str, Any]]:
     if not role_ids:
@@ -122,7 +122,7 @@ def _role_generalizations_within_roles(
 
 
 def _depends_rows_for_action_closure(
-    duck: DuckDBGraphResource,
+    duck: DuckDBGraphStorage,
     action_ids: set[str],
 ) -> list[dict[str, Any]]:
     if not action_ids:
@@ -158,7 +158,7 @@ def _append_depends_edges(edges_out: list[dict[str, Any]], drows: list[dict[str,
 
 
 def _depends_targets_in_actions(
-    duck: DuckDBGraphResource,
+    duck: DuckDBGraphStorage,
     seed_actions: set[str],
     action_ids_all: set[str],
 ) -> set[str]:
@@ -176,7 +176,7 @@ def _depends_targets_in_actions(
 
 
 def _group_check_roles_targets_by_action(
-    duck: DuckDBGraphResource,
+    duck: DuckDBGraphStorage,
     actions_final: set[str],
 ) -> dict[str, list[str]]:
     role_edges_by_action: dict[str, list[str]] = defaultdict(list)
@@ -193,12 +193,12 @@ def _group_check_roles_targets_by_action(
     return role_edges_by_action
 
 
-def _action_domain_map(duck: DuckDBGraphResource) -> dict[str, str]:
+def _action_domain_map(duck: DuckDBGraphStorage) -> dict[str, str]:
     rows = duck.execute_fetch_dicts("SELECT source_id, target_id FROM domain_edges")
     return {str(r["source_id"]): str(r["target_id"]) for r in rows}
 
 
-def _accent_by_domain(duck: DuckDBGraphResource) -> dict[str, str]:
+def _accent_by_domain(duck: DuckDBGraphStorage) -> dict[str, str]:
     out: dict[str, str] = {}
     for row in ListDomainsAction.domain_accent_rows(duck):
         out[str(row["qualname"])] = str(row["color"])
@@ -209,7 +209,7 @@ def _accent_by_domain(duck: DuckDBGraphResource) -> dict[str, str]:
 ALL_DOMAINS = {"id": "all", "label": "All domains", "short_label": "All domains", "accent_color": "#64748b"}
 
 
-def use_case_diagram(duck: DuckDBGraphResource, domain_row: dict[str, Any] | None) -> dict[str, Any]:
+def use_case_diagram(duck: DuckDBGraphStorage, domain_row: dict[str, Any] | None) -> dict[str, Any]:
     """
     AI-CORE-BEGIN
     ROLE: Build the use-case diagram of one domain, or of every domain when ``domain_row`` is ``None``.
@@ -305,7 +305,7 @@ def use_case_diagram(duck: DuckDBGraphResource, domain_row: dict[str, Any] | Non
 )
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Coordinator graph in DuckDB",
 )
@@ -328,7 +328,7 @@ class GetDomainUseCaseDiagramAction(
         )
 
     @staticmethod
-    def _domain_row(duck: DuckDBGraphResource, domain_id: str) -> dict[str, Any] | None:
+    def _domain_row(duck: DuckDBGraphStorage, domain_id: str) -> dict[str, Any] | None:
         rows = duck.execute_fetch_dicts(
             "SELECT id, label, name FROM domain WHERE id = ? LIMIT 1",
             [domain_id],
@@ -346,7 +346,7 @@ class GetDomainUseCaseDiagramAction(
         connections: Connections,
     ) -> GetDomainUseCaseDiagramAction.Result:
         _ = (state, box)
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         domain_id = params.domain_id.strip()
         domain_row = GetDomainUseCaseDiagramAction._domain_row(duck, domain_id)
         if domain_row is None:

@@ -16,7 +16,7 @@ author made it. The size is the commit's diff against its first parent.
 ARCHITECTURE / DATA FLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
-``GitMirror.contribution`` ──► ``Contribution`` ──► kept by ``VersionCache`` ──► ``VersionRecord``.
+``GitMirrorStorage.contribution`` ──► ``Contribution`` ──► kept by ``VersionCacheStorage`` ──► ``VersionRecord``.
 """
 
 from __future__ import annotations

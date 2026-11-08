@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 
@@ -36,7 +36,7 @@ def slice_payload() -> dict[str, Any]:
     """One real domain slice, built by the action from the worked example's graph."""
     example = _load_example()
     qualname = f"{example.MusicDomain.__module__}.{example.MusicDomain.__qualname__}"
-    duck = DuckDBGraphResource.build_from_json(
+    duck = DuckDBGraphStorage.build_from_json(
         json.loads(ActionProductMachine().graph_coordinator.to_json())
     )
     return ListEntitiesAction._slice_payload(duck, qualname, False)

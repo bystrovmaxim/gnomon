@@ -9,16 +9,16 @@ PURPOSE
 Expose resource types used by diagram actions for ``@connection`` wiring.
 """
 
-from .duckdb_graph_resource import (
+from .duckdb_graph_storage import (
     DEFAULT_EXAMPLE_GRAPH_JSON_URL,
     DUCKDB_GRAPH_CONNECTION_KEY,
     ENV_EXAMPLE_GRAPH_JSON_URL,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 __all__ = [
     "DEFAULT_EXAMPLE_GRAPH_JSON_URL",
     "DUCKDB_GRAPH_CONNECTION_KEY",
     "ENV_EXAMPLE_GRAPH_JSON_URL",
-    "DuckDBGraphResource",
+    "DuckDBGraphStorage",
 ]

@@ -21,8 +21,8 @@ ARCHITECTURE / DATA FLOW
     MAXITOR_HISTORIES (or --config) ──► the TOML text
         key new    ──► a [[history.keys]] block after that history's last block ──► checked ──► written
         key revoke ──► that block removed ──► checked ──► written
-        key list   ──► HistoriesConfig.keys
-        check      ──► load_histories + each graph file on its branch, through GitMirror —
+        key list   ──► HistoriesConfigStorage.keys
+        check      ──► load_histories + each graph file on its branch, through GitMirrorStorage —
                        a GitHub one with the App's token, as the port reads it
 
 The file is edited as text, so its comments and order survive; every edit is checked
@@ -47,9 +47,9 @@ from pathlib import Path
 import httpx
 from maxitor.repo_graph_port.git_error import GitError
 from maxitor.repo_graph_port.history import History
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig, load_histories
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage, load_histories
 
 
 def main(argv: list[str]) -> int:
@@ -72,7 +72,7 @@ def main(argv: list[str]) -> int:
     arguments = parser.parse_args(argv)
     path = arguments.config or Path(os.environ.get("MAXITOR_HISTORIES", ""))
     try:
-        config = HistoriesConfig(path)
+        config = HistoriesConfigStorage(path)
     except (OSError, ValueError) as refused:
         print(f"refused: {refused}", file=sys.stderr)
         return 2
@@ -90,7 +90,7 @@ def main(argv: list[str]) -> int:
     return _revoke(config, path, arguments.history, arguments.name)
 
 
-def _new(config: HistoriesConfig, path: Path, history_id: str, name: str, expires: date | None) -> int:
+def _new(config: HistoriesConfigStorage, path: Path, history_id: str, name: str, expires: date | None) -> int:
     """Add a key for ``name`` to ``history_id``; print the key, once."""
     if any(entry[:2] == (history_id, name) for entry in config.keys(history_id)):
         print(f"refused: history {history_id!r} already has a key named {name!r}", file=sys.stderr)
@@ -107,7 +107,7 @@ def _new(config: HistoriesConfig, path: Path, history_id: str, name: str, expire
     return 0
 
 
-def _revoke(config: HistoriesConfig, path: Path, history_id: str, name: str) -> int:
+def _revoke(config: HistoriesConfigStorage, path: Path, history_id: str, name: str) -> int:
     """Remove the key named ``name`` from ``history_id``."""
     blocks = _blocks(path.read_text(encoding="utf-8"))
     kept = [b for b in blocks if not (b[0] == history_id and b[1] == "key" and _name(b[2]) == name)]
@@ -123,10 +123,10 @@ def _check(path: Path) -> int:
     loaded = load_histories(path)
     histories = sorted(loaded.histories.items())
     github = {history.repository for _, history in histories if history.host == "github"}
-    tokens = asyncio.run(_tokens(GitHubHost.from_settings(loaded.github), github))
+    tokens = asyncio.run(_tokens(GitHubHostGateway.from_settings(loaded.github), github))
     failed = 0
     with tempfile.TemporaryDirectory() as cache:
-        mirror = GitMirror(Path(cache))
+        mirror = GitMirrorStorage(Path(cache))
         for history_id, history in histories:
             present, said = _check_one(mirror, tokens, history)
             failed += not present
@@ -134,7 +134,7 @@ def _check(path: Path) -> int:
     return 1 if failed else 0
 
 
-async def _tokens(host: GitHubHost, repositories: set[str]) -> dict[str, str | httpx.HTTPError | None]:
+async def _tokens(host: GitHubHostGateway, repositories: set[str]) -> dict[str, str | httpx.HTTPError | None]:
     """
     Each repository's installation token, or the error GitHub answered with. All are read in one event loop:
     the host keeps one HTTP client, and a client opened in a loop that has closed cannot be used again.
@@ -148,7 +148,7 @@ async def _tokens(host: GitHubHost, repositories: set[str]) -> dict[str, str | h
     return tokens
 
 
-def _check_one(mirror: GitMirror, tokens: dict[str, str | httpx.HTTPError | None], history: History) -> tuple[bool, str]:
+def _check_one(mirror: GitMirrorStorage, tokens: dict[str, str | httpx.HTTPError | None], history: History) -> tuple[bool, str]:
     """Whether one history's graph file is on its branch, and what to say about it."""
     auth: dict[str, str] = {}
     url = None
@@ -159,7 +159,7 @@ def _check_one(mirror: GitMirror, tokens: dict[str, str | httpx.HTTPError | None
             return False, f"the App is not installed on {history.repository}"
         if token is None:
             return False, "no [github] App to read a private repository with"
-        auth = GitHubHost.git_auth(token)
+        auth = GitHubHostGateway.git_auth(token)
     try:
         mirror.open(history.repository, url, auth)
         present = mirror.file_at(history.repository, history.branch, history.graph_file, auth) is not None

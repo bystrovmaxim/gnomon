@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
 from maxitor.repo_graph_port.server import create_app
 
 from tests.repo_builder import GRAPH_FILE, BuiltRepository, build_repository, graph
@@ -42,7 +42,7 @@ def world(tmp_path: Path, github_in: Path, capsys: pytest.CaptureFixture[str]) -
         encoding="utf-8",
     )
     keys = {name: issue(config, capsys, name, "anna") for name in ("orders", "billing")}
-    host = GitHubHost(APP_ID, pem, SECRET, transport=hub.transport())
+    host = GitHubHostGateway(APP_ID, pem, SECRET, transport=hub.transport())
     client = TestClient(create_app(config, tmp_path / "cache", host))
     return {"built": built, "hub": hub, "host": host, "client": client, "keys": keys, "cache": tmp_path / "cache"}
 
@@ -171,7 +171,7 @@ def test_a_public_link_reads_the_api_with_the_apps_token(tmp_path: Path, github_
     hub.pulls[public.sha["m1"]] = [{"number": 9, "title": "Public PR", "body": "", "html_url": "u", "merge_commit_sha": public.sha["m1"]}]
     config = tmp_path / "histories.toml"
     config.write_text(f'[github]\napp_id = {APP_ID}\nprivate_key_env = "APP_KEY"\nwebhook_secret_env = "HOOK_SECRET"\n', encoding="utf-8")
-    client = TestClient(create_app(config, tmp_path / "cache", GitHubHost(APP_ID, pem, SECRET, transport=hub.transport())))
+    client = TestClient(create_app(config, tmp_path / "cache", GitHubHostGateway(APP_ID, pem, SECRET, transport=hub.transport())))
     listed = client.get(f"{BASE}/public/versions", params={"link": "https://github.com/other/open/blob/main/graph.json"}).json()["versions"]
     assert {v["sha"]: v for v in listed}[public.sha["m1"]]["pr"]["title"] == "Public PR"
     assert hub.authorized[f"/repos/other/open/commits/{public.sha['m1']}/pulls"] == f"Bearer {TOKEN}"
@@ -181,7 +181,7 @@ def test_without_an_app_a_public_link_reads_the_api_anonymously(tmp_path: Path, 
     """With no App, the same reads carry no token at all."""
     public = build_repository(github_in / "other" / "open.git")
     hub = StandInGitHub(None)
-    client = TestClient(create_app(config_file(tmp_path), tmp_path / "cache", GitHubHost(transport=hub.transport())))
+    client = TestClient(create_app(config_file(tmp_path), tmp_path / "cache", GitHubHostGateway(transport=hub.transport())))
     client.get(f"{BASE}/public/versions", params={"link": "https://github.com/other/open/blob/main/graph.json"})
     assert hub.authorized[f"/repos/other/open/commits/{public.sha['m1']}/pulls"] == ""
 

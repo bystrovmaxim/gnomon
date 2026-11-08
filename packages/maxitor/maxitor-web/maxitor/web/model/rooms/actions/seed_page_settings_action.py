@@ -28,9 +28,9 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from maxitor.web.model.rooms.actions.room_action_support import RoomAnswer, located
+from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
 from maxitor.web.model.rooms.pages import setting_error
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -43,7 +43,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import SocketChannel
+from aoa.fastapi import SocketChannelController
 
 
 class SeedPageSettingsParams(BaseParams):
@@ -55,9 +55,9 @@ class SeedPageSettingsParams(BaseParams):
 
 @meta(description="Bring the opener's own page settings into the room they opened", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The opener's connection")
-class SeedPageSettingsAction(BaseAction[SeedPageSettingsParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The opener's connection")
+class SeedPageSettingsAction(BaseAction[SeedPageSettingsParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Make the room creator's own values of a page's settings the room's, where the room has none.
@@ -73,10 +73,10 @@ class SeedPageSettingsAction(BaseAction[SeedPageSettingsParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Store each missing, valid value and announce it."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        room, participant, _ = located(registry, cast(SocketChannel, connections["socket"]))
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        room, participant, _ = located(registry, cast(SocketChannelController, connections["socket"]))
         if participant.id != room.created_by:
             await box.warning(
                 Channel.security,
@@ -84,7 +84,7 @@ class SeedPageSettingsAction(BaseAction[SeedPageSettingsParams, RoomAnswer]):
                 room=room.id,
                 participant=participant.id,
             )
-            return RoomAnswer()
+            return RoomAnswerResult()
         applied = 0
         async with room.lock:
             held = room.page_settings.setdefault(params.page, {})
@@ -103,4 +103,4 @@ class SeedPageSettingsAction(BaseAction[SeedPageSettingsParams, RoomAnswer]):
             room=room.id,
             count=applied,
         )
-        return RoomAnswer()
+        return RoomAnswerResult()

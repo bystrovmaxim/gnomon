@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/api/duckdb_graph_holder.py
 """
-DuckDBGraphHolder — the graph read bound to the current request, as one ready resource.
+RequestGraphStorage — the graph read bound to the current request, as one ready resource.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -9,7 +9,7 @@ PURPOSE
 Maxitor's six diagram routes all query an in-process DuckDB snapshot. Since #214 that
 snapshot is not one slot shared by every caller: each read names its source
 (``?source=<graph-json URL>``), ``GraphSourceMiddleware`` asks the ``GraphStore`` for that
-source's entry, and binds it to the request. The holder below is the ``BaseResource`` the
+source's entry, and binds it to the request. The holder below is the storage the
 adapters hand to the diagram actions: a ready resource, mode 1, that resolves the entry
 bound to the request it is serving.
 
@@ -31,14 +31,14 @@ ARCHITECTURE / DATA FLOW
                              ContextVar (this request) ──► GraphEntry
                                                                  │
                                                                  ▼
-                                                     DuckDBGraphHolder._resolve()
+                                                     RequestGraphStorage._resolve()
                                                                  │
                                     ┌────────────────────────────┴────────────────────────────┐
                                     ▼                                                         ▼
-                              .service                                            .execute_fetch_dicts()
+                              .connection                                            .execute_fetch_dicts()
                                     │                                                         │
                                     ▼                                                         ▼
-                      DuckDBGraphResource.service                   DuckDBGraphResource.execute_fetch_dicts()
+                      DuckDBGraphStorage.connection                   DuckDBGraphStorage.execute_fetch_dicts()
 
 Only the two operations the diagram routes actually use are delegated, and they are
 delegated explicitly: nothing is forwarded to the resolved graph, so the holder cannot
@@ -55,19 +55,15 @@ from typing import Any
 
 import duckdb
 from maxitor.web.api.graph_source_middleware import current_graph_entry
-from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 from aoa.action_machine.exceptions import HandleError
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.resources.base_resource import BaseResource
+from aoa.action_machine.resources import BaseResource, BaseStorage
 
 
-@meta(
-    description="Request-scoped holder for the graph the current read named",
-    domain=DiagramsDomain,
-)
-class DuckDBGraphHolder(BaseResource):
+@meta(description="Request-scoped holder for the graph the current read named")
+class RequestGraphStorage(BaseStorage):
     """
     AI-CORE-BEGIN
     ROLE: The ready resource standing for the graph the current request named with ``?source=``.
@@ -77,7 +73,8 @@ class DuckDBGraphHolder(BaseResource):
     AI-CORE-END
     """
 
-    def get_wrapper_class(self) -> type[BaseResource] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseResource] | None:
         """Return ``None``: there is no lifecycle to protect, so nested actions see this object itself."""
         return None
 
@@ -86,9 +83,9 @@ class DuckDBGraphHolder(BaseResource):
         return False
 
     @property
-    def service(self) -> duckdb.DuckDBPyConnection:
+    def connection(self) -> duckdb.DuckDBPyConnection:
         """Return the request's graph connection, read at the moment of the call."""
-        return self._resolve().service
+        return self._resolve().connection
 
     def execute_fetch_dicts(
         self,
@@ -98,7 +95,7 @@ class DuckDBGraphHolder(BaseResource):
         """Run ``sql`` against the request's graph and return every row as a column-name to value dictionary."""
         return self._resolve().execute_fetch_dicts(sql, parameters)
 
-    def _resolve(self) -> DuckDBGraphResource:
+    def _resolve(self) -> DuckDBGraphStorage:
         """Return the graph bound to this request, or refuse by naming the missing binding."""
         entry = current_graph_entry()
         if entry is None:

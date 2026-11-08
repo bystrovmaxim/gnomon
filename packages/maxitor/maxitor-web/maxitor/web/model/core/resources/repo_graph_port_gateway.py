@@ -35,7 +35,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
-from maxitor.web.model.core.core_domain import CoreDomain
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_gateway import BaseGateway
@@ -84,7 +83,7 @@ class PortUnreachable:
     reason: str
 
 
-@meta(description="Asks a repo-graph-port about a history", domain=CoreDomain)
+@meta(description="Asks a repo-graph-port about a history")
 class RepoGraphPortGateway(BaseGateway):
     """
     AI-CORE-BEGIN
@@ -104,7 +103,8 @@ class RepoGraphPortGateway(BaseGateway):
         """Name the gateway only: never a port's address or a key."""
         return "RepoGraphPortGateway()"
 
-    def get_wrapper_class(self) -> type[BaseGateway] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseGateway] | None:
         """Return ``None``: nested actions read through this same gateway."""
         return None
 

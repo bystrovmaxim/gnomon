@@ -14,7 +14,7 @@ import pytest
 from maxitor.repo_graph_port.auth.history_key_auth_coordinator import HistoryKeyAuthCoordinator
 from maxitor.repo_graph_port.cli import main as cli
 from maxitor.repo_graph_port.history_reader_info import HistoryReaderInfo
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
 from maxitor.repo_graph_port.too_many_wrong_keys_error import TooManyWrongKeysError
 
 TWO_HISTORIES = """# two histories of one repository
@@ -67,7 +67,7 @@ def test_a_key_opens_its_history_and_no_other(tmp_path: Path, capsys: pytest.Cap
     """A key to ``orders`` reads as anna on ``orders``; it is not a key to ``billing`` of the same repository."""
     path = config_file(tmp_path)
     key = issue(path, capsys, "orders", "anna")
-    config = HistoriesConfig(path)
+    config = HistoriesConfigStorage(path)
     digest = hashlib.sha256(key.encode()).hexdigest()
     assert config.reader_of(digest, date(2026, 10, 29)) == ("orders", "anna")
     assert [entry for entry in config.keys("billing")] == []
@@ -80,7 +80,7 @@ async def test_expired_revoked_and_unknown_keys_read_as_a_guest(tmp_path: Path, 
     revoked = issue(path, capsys, "orders", "gone")
     good = issue(path, capsys, "orders", "anna")
     assert cli(["--config", str(path), "key", "revoke", "--history", "orders", "--name", "gone"]) == 0
-    coordinator = HistoryKeyAuthCoordinator(HistoriesConfig(path))
+    coordinator = HistoryKeyAuthCoordinator(HistoriesConfigStorage(path))
     readers = [(await coordinator.process(request(key))).user for key in (expired, revoked, "x" * 43, None)]
     assert all(isinstance(r, HistoryReaderInfo) and r.history == "" and r.user_id is None for r in readers)
     opened = (await coordinator.process(request(good))).user
@@ -89,7 +89,7 @@ async def test_expired_revoked_and_unknown_keys_read_as_a_guest(tmp_path: Path, 
 
 async def test_wrong_keys_from_one_client_are_limited(tmp_path: Path) -> None:
     """The eleventh wrong key from one address within a minute is refused; another address is not."""
-    coordinator = HistoryKeyAuthCoordinator(HistoriesConfig(config_file(tmp_path)))
+    coordinator = HistoryKeyAuthCoordinator(HistoriesConfigStorage(config_file(tmp_path)))
     for _ in range(10):
         await coordinator.process(request("wrong"))
     with pytest.raises(TooManyWrongKeysError):
@@ -100,7 +100,7 @@ async def test_wrong_keys_from_one_client_are_limited(tmp_path: Path) -> None:
 def test_the_config_is_reread_when_it_changes(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """A key issued while the port runs opens at once; a revoked one stops at once."""
     path = config_file(tmp_path)
-    config = HistoriesConfig(path)
+    config = HistoriesConfigStorage(path)
     key = issue(path, capsys, "orders", "anna")
     digest = hashlib.sha256(key.encode()).hexdigest()
     assert config.reader_of(digest, date(2026, 10, 29)) == ("orders", "anna")
@@ -147,8 +147,8 @@ def test_nothing_shows_a_key(tmp_path: Path, capsys: pytest.CaptureFixture[str])
     """The config's, the coordinator's and the authenticator's ``repr`` name the file, never a key or its hash."""
     path = config_file(tmp_path)
     key = issue(path, capsys, "orders", "anna")
-    coordinator = HistoryKeyAuthCoordinator(HistoriesConfig(path))
-    shown = repr(coordinator) + repr(coordinator.authenticator) + repr(HistoriesConfig(path))
+    coordinator = HistoryKeyAuthCoordinator(HistoriesConfigStorage(path))
+    shown = repr(coordinator) + repr(coordinator.authenticator) + repr(HistoriesConfigStorage(path))
     assert str(path) in shown
     assert key not in shown and hashlib.sha256(key.encode()).hexdigest() not in shown
 
@@ -180,13 +180,13 @@ def test_check_reads_github_in_one_event_loop(tmp_path: Path, capsys: pytest.Cap
     The host keeps one HTTP client; a second event loop would reuse it after the first had closed, and the check
     would stop with ``Event loop is closed`` on the second history.
     """
-    from maxitor.repo_graph_port.resources.github_host import GitHubHost
+    from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
 
     from tests.stand_in_github import APP_ID, app_key
 
     github = _InstalledNowhere()
     pem, _ = app_key()
-    monkeypatch.setattr(GitHubHost, "from_settings", classmethod(lambda cls, _settings: cls(APP_ID, pem, transport=github)))
+    monkeypatch.setattr(GitHubHostGateway, "from_settings", classmethod(lambda cls, _settings: cls(APP_ID, pem, transport=github)))
     path = tmp_path / "histories.toml"
     path.write_text(
         "".join(

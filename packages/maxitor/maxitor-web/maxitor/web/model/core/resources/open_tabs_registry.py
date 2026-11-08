@@ -1,6 +1,6 @@
 # packages/maxitor/maxitor-web/maxitor/web/model/core/resources/open_tabs_registry.py
 """
-OpenTabsRegistry — when a tab outside a room last asked about a source.
+OpenTabsRegistryController — when a tab outside a room last asked about a source.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -17,13 +17,11 @@ ARCHITECTURE / DATA FLOW
 
 ::
 
-    GraphFingerprintAction ──seen(source, now)──► OpenTabsRegistry
-    CheckDueSourcesAction  ──last_seen(source)──► OpenTabsRegistry
+    GraphFingerprintAction ──seen(source, now)──► OpenTabsRegistryController
+    CheckDueSourcesAction  ──last_seen(source)──► OpenTabsRegistryController
 """
 
 from __future__ import annotations
-
-from maxitor.web.model.core.core_domain import CoreDomain
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_controller import BaseController
@@ -32,8 +30,8 @@ from aoa.action_machine.resources.base_controller import BaseController
 OPEN_TABS_CONNECTION_KEY = "OpenTabs"
 
 
-@meta(description="When a tab outside a room last asked about each source", domain=CoreDomain)
-class OpenTabsRegistry(BaseController):
+@meta(description="When a tab outside a room last asked about each source")
+class OpenTabsRegistryController(BaseController):
     """
     AI-CORE-BEGIN
     ROLE: Remember, per source, the last time a tab outside a room asked for its fingerprint.
@@ -45,7 +43,8 @@ class OpenTabsRegistry(BaseController):
     def __init__(self) -> None:
         self._seen: dict[str, float] = {}
 
-    def get_wrapper_class(self) -> type[BaseController] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseController] | None:
         """Return ``None``: nested actions use this same registry."""
         return None
 

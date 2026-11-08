@@ -25,8 +25,8 @@ from __future__ import annotations
 
 from typing import cast
 
-from maxitor.web.model.rooms.actions.room_action_support import RoomAnswer
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, Room, RoomRegistry
+from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, Room, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -50,8 +50,8 @@ class EndRoomParams(BaseParams):
 
 @meta(description="End a room that stayed empty", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-class EndRoomAction(BaseAction[EndRoomParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+class EndRoomAction(BaseAction[EndRoomParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: End a room whose last participant left two minutes ago and nobody came since.
@@ -67,21 +67,21 @@ class EndRoomAction(BaseAction[EndRoomParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """End the room when it stayed empty since ``params.since``."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
         room = registry.room(params.room_id)
         if room is None:
-            return RoomAnswer()
+            return RoomAnswerResult()
         async with room.lock:
             if room.participants or room.empty_since != params.since:
-                return RoomAnswer()
+                return RoomAnswerResult()
             registry.end_room(room)
         await box.info(Channel.business, "Room {%var.room} ended", room=room.id)
-        return RoomAnswer()
+        return RoomAnswerResult()
 
 
-def schedule_end_if_empty(registry: RoomRegistry, room: Room) -> None:
+def schedule_end_if_empty(registry: RoomRegistryController, room: Room) -> None:
     """Start the countdown of an empty room; the caller holds the room's lock."""
     if room.participants:
         return

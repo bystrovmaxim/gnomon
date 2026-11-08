@@ -31,9 +31,9 @@ from maxitor.web.model.diagrams.actions.domain_use_case_diagram_action import (
 )
 from maxitor.web.model.diagrams.actions.events_explorer_action_schema import EventsExplorerJson
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -42,7 +42,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -56,7 +56,7 @@ METHOD_KINDS = (
 )
 
 
-def _methods(duck: DuckDBGraphResource) -> dict[str, dict[str, str]]:
+def _methods(duck: DuckDBGraphStorage) -> dict[str, dict[str, str]]:
     """Every method of every kind by id, with its label, kind and action."""
     out: dict[str, dict[str, str]] = {}
     for kind, table, edges in METHOD_KINDS:
@@ -65,7 +65,7 @@ def _methods(duck: DuckDBGraphResource) -> dict[str, dict[str, str]]:
     return out
 
 
-def _event_fields(duck: DuckDBGraphResource) -> dict[str, list[dict[str, str]]]:
+def _event_fields(duck: DuckDBGraphStorage) -> dict[str, list[dict[str, str]]]:
     """Each event's fields, sorted by name; the type is the JSON schema's, when the document gives one."""
     rows = duck.execute_fetch_dicts(
         """
@@ -80,12 +80,12 @@ def _event_fields(duck: DuckDBGraphResource) -> dict[str, list[dict[str, str]]]:
     return out
 
 
-def _pairs(duck: DuckDBGraphResource, table: str) -> list[tuple[str, str]]:
+def _pairs(duck: DuckDBGraphStorage, table: str) -> list[tuple[str, str]]:
     """An edge table's (source, target) pairs, sorted."""
     return sorted((str(r["source_id"]), str(r["target_id"])) for r in duck.execute_fetch_dicts(f"SELECT source_id, target_id FROM {table}"))
 
 
-def events_explorer(duck: DuckDBGraphResource) -> dict[str, Any]:
+def events_explorer(duck: DuckDBGraphStorage) -> dict[str, Any]:
     """
     AI-CORE-BEGIN
     ROLE: Read the whole events graph the explorer opens: domains, actions, events, vocabularies and emitting methods.
@@ -134,8 +134,8 @@ class EventsExplorerResult(BaseResult):
 
 @meta(description="Return the whole events graph for the explorer", domain=DiagramsDomain)
 @check_roles(GuestRole)
-@connection(DuckDBGraphResource, key=DUCKDB_GRAPH_CONNECTION_KEY, description="Coordinator graph in DuckDB")
-class GetEventsExplorerAction(BaseAction[ParamsStub, EventsExplorerResult]):
+@connection(DuckDBGraphStorage, key=DUCKDB_GRAPH_CONNECTION_KEY, description="Coordinator graph in DuckDB")
+class GetEventsExplorerAction(BaseAction[StubParams, EventsExplorerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Materialize the events graph the SPA's explorer opens through ports.
@@ -146,12 +146,12 @@ class GetEventsExplorerAction(BaseAction[ParamsStub, EventsExplorerResult]):
     @summary_aspect("Build the events graph of the explorer")
     async def events_explorer_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> EventsExplorerResult:
         """Read the whole events graph."""
         _ = (params, state, box)
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         return EventsExplorerResult(events_explorer=events_explorer(duck))

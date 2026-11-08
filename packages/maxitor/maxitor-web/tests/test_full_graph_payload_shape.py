@@ -33,7 +33,7 @@ _FORBIDDEN_EDGE_DATA = frozenset(
 
 
 class _RowsDuck:
-    """Minimal stand-in for ``DuckDBGraphResource`` returning prebuilt SQL row dicts."""
+    """Minimal stand-in for ``DuckDBGraphStorage`` returning prebuilt SQL row dicts."""
 
     def __init__(self, rows: list[dict[str, Any]]) -> None:
         self._rows = rows

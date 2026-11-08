@@ -1,6 +1,6 @@
 # packages/maxitor/tools/repo-graph-port/maxitor/repo_graph_port/resources/version_cache.py
 """
-VersionCache — what never changes for a commit, kept on disk; when a repository was last fetched.
+VersionCacheStorage — what never changes for a commit, kept on disk; when a repository was last fetched.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -46,7 +46,6 @@ import tempfile
 from pathlib import Path
 
 from maxitor.repo_graph_port.graph_facts import GraphFacts
-from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
 from maxitor.repo_graph_port.version_source import NumberRead
 
 from aoa.action_machine.intents.meta import meta
@@ -56,8 +55,8 @@ from aoa.action_machine.resources.base_storage import BaseStorage
 HOST_FILE = "host.json"
 
 
-@meta(description="A version's graph and facts on disk, by commit; when each repository was fetched", domain=RepoGraphDomain)
-class VersionCache(BaseStorage):
+@meta(description="A version's graph and facts on disk, by commit; when each repository was fetched")
+class VersionCacheStorage(BaseStorage):
     """
     AI-CORE-BEGIN
     ROLE: Keep what never changes for a commit, and when each repository was last fetched.
@@ -75,7 +74,8 @@ class VersionCache(BaseStorage):
         self._open: dict[tuple[str, str], tuple[list[dict[str, str | int]], float]] = {}
         self._load()
 
-    def get_wrapper_class(self) -> type[BaseStorage] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseStorage] | None:
         """Return ``None``: nested actions read through this same cache."""
         return None
 

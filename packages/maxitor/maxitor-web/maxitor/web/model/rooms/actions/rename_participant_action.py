@@ -23,9 +23,9 @@ from __future__ import annotations
 
 from typing import cast
 
-from maxitor.web.model.rooms.actions.room_action_support import INVALID_VALUE, RoomAnswer, located
+from maxitor.web.model.rooms.actions.room_action_support import INVALID_VALUE, RoomAnswerResult, located
 from maxitor.web.model.rooms.pages import name_error
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -38,7 +38,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import ConnectionRefusalError, SocketChannel
+from aoa.fastapi import ConnectionRefusalError, SocketChannelController
 
 
 class RenameParticipantParams(BaseParams):
@@ -49,9 +49,9 @@ class RenameParticipantParams(BaseParams):
 
 @meta(description="Change a participant's name", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The participant's connection")
-class RenameParticipantAction(BaseAction[RenameParticipantParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The participant's connection")
+class RenameParticipantAction(BaseAction[RenameParticipantParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Rename a participant, keeping their colour.
@@ -67,10 +67,10 @@ class RenameParticipantAction(BaseAction[RenameParticipantParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Set the new name and announce it."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        room, participant, _ = located(registry, cast(SocketChannel, connections["socket"]))
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        room, participant, _ = located(registry, cast(SocketChannelController, connections["socket"]))
         if name_error(params.name):
             raise ConnectionRefusalError(INVALID_VALUE, "invalid name")
         async with room.lock:
@@ -82,4 +82,4 @@ class RenameParticipantAction(BaseAction[RenameParticipantParams, RoomAnswer]):
             participant=participant.id,
             room=room.id,
         )
-        return RoomAnswer()
+        return RoomAnswerResult()

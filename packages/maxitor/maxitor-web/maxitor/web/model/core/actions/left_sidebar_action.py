@@ -30,9 +30,9 @@ from typing import Any, cast
 
 from maxitor.web.model.core.entities.node_entity import NodeCoreEntity
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 from aoa.action_machine.auth import GuestRole
@@ -41,7 +41,7 @@ from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.checkers import result_instance
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -54,11 +54,11 @@ _ROOT_SECTIONS: tuple[tuple[str, str, str], ...] = (
 @meta(description="Build left-menu sidebar NodeCoreEntity lists from DuckDB graph.", domain=DiagramsDomain)
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Coordinator graph in DuckDB (sidebar node/edge queries)",
 )
-class GetLeftMenuSidebarDataAction(BaseAction[ParamsStub, "GetLeftMenuSidebarDataAction.Result"]):
+class GetLeftMenuSidebarDataAction(BaseAction[StubParams, "GetLeftMenuSidebarDataAction.Result"]):
     class Result(BaseResult):
         level1_nodes: list[NodeCoreEntity]
         level2_diagrams: list[NodeCoreEntity]
@@ -74,7 +74,7 @@ class GetLeftMenuSidebarDataAction(BaseAction[ParamsStub, "GetLeftMenuSidebarDat
         return base if base.endswith(" view") else f"{base} view"
 
     @staticmethod
-    def _domains_holding(duck: DuckDBGraphResource, table: str) -> set[str]:
+    def _domains_holding(duck: DuckDBGraphStorage, table: str) -> set[str]:
         """The domains with at least one member in ``table``, a fixed name of this module."""
         rows = duck.execute_fetch_dicts(f"SELECT DISTINCT de.target_id AS domain_id FROM domain_edges de JOIN {table} m ON m.id = de.source_id")
         return {str(r["domain_id"]) for r in rows}
@@ -85,7 +85,7 @@ class GetLeftMenuSidebarDataAction(BaseAction[ParamsStub, "GetLeftMenuSidebarDat
     @regular_aspect("Level-1 root bucket nodes (Applications, Domains).")
     async def build_level1_aspect(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
@@ -105,7 +105,7 @@ class GetLeftMenuSidebarDataAction(BaseAction[ParamsStub, "GetLeftMenuSidebarDat
     @regular_aspect("Level-2 fixed diagram rows of the whole application.")
     async def build_level2_diagrams_aspect(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
@@ -153,14 +153,14 @@ class GetLeftMenuSidebarDataAction(BaseAction[ParamsStub, "GetLeftMenuSidebarDat
     @regular_aspect("Level-2 domain nodes from DuckDB.")
     async def build_level2_nodes_aspect(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> dict[str, Any]:
         _ = box
         level1 = cast(list[NodeCoreEntity], state["level1_nodes"])
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         rows = [
             NodeCoreEntity(id=str(r["id"]), parent_id="domains_root", label=str(r["label"]), type="Domain")
             for r in duck.execute_fetch_dicts("SELECT id, label FROM domain ORDER BY lower(label), id")
@@ -180,13 +180,13 @@ class GetLeftMenuSidebarDataAction(BaseAction[ParamsStub, "GetLeftMenuSidebarDat
     @regular_aspect("Level-3 per-domain ERD and use-case rows, and one row per lifecycle, from DuckDB.")
     async def build_level3_diagrams_aspect(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> dict[str, Any]:
         _ = box
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         rows: list[NodeCoreEntity] = []
 
         # A diagram with nothing to draw has no row; a domain left with no rows shows dim in the panel.
@@ -229,7 +229,7 @@ class GetLeftMenuSidebarDataAction(BaseAction[ParamsStub, "GetLeftMenuSidebarDat
     @summary_aspect("Assemble sidebar Result from accumulated state.")
     async def build_result_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,

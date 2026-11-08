@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 from tests.fixtures.protocol_2_0 import as_2_0
 from tests.fixtures.resource_model import (
@@ -28,7 +28,7 @@ KEPT = [(BILLING, INVOICE), (STOREFRONT, ORDER), (STOREFRONT, ORDER_LINE)]
 
 
 def _kept(graph: dict[str, Any]) -> list[tuple[str, str]]:
-    duck = DuckDBGraphResource.build_from_json(graph)
+    duck = DuckDBGraphStorage.build_from_json(graph)
     rows = duck.execute_fetch_dicts("SELECT source_id, target_id FROM resource_entity_edges ORDER BY source_id, target_id")
     return [(str(r["source_id"]), str(r["target_id"])) for r in rows]
 
@@ -48,7 +48,7 @@ def test_an_entity_may_lie_in_two_resources_at_2_0() -> None:
 
 
 def test_the_entity_keeps_its_domain_edge_beside_its_resource() -> None:
-    duck = DuckDBGraphResource.build_from_json(as_2_0(resource_model_graph()))
+    duck = DuckDBGraphStorage.build_from_json(as_2_0(resource_model_graph()))
     assert len(duck.execute_fetch_dicts("SELECT source_id FROM domain_edges WHERE source_id = ?", [INVOICE])) == 1
 
 
@@ -57,5 +57,5 @@ def test_a_graph_of_1_5_loads_with_no_resource_edges() -> None:
 
 
 def test_the_edges_view_shows_the_resource_edges() -> None:
-    duck = DuckDBGraphResource.build_from_json(as_2_0(resource_model_graph()))
+    duck = DuckDBGraphStorage.build_from_json(as_2_0(resource_model_graph()))
     assert duck.execute_fetch_dicts("SELECT count(*) AS n FROM edges WHERE type = 'resource_entity_edges'") == [{"n": 3}]

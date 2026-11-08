@@ -10,7 +10,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 from maxitor.repo_graph_port.cli import main as cli
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
 from maxitor.repo_graph_port.server import create_app
 
 from tests.repo_builder import BuiltRepository, build_repository, graph
@@ -85,7 +85,7 @@ def test_a_public_link_opens_with_no_key(tmp_path: Path, github_in: Path, capsys
     """A link to a public repository's graph file opens its history and a version, with no key and no config entry."""
     public = build_repository(github_in / "owner" / "service.git")
     hub = StandInGitHub(None)
-    client = TestClient(create_app(config_file(tmp_path), tmp_path / "cache", GitHubHost(transport=hub.transport())))
+    client = TestClient(create_app(config_file(tmp_path), tmp_path / "cache", GitHubHostGateway(transport=hub.transport())))
     link = "https://github.com/owner/service/blob/main/graph.json"
     versions = client.get(f"{BASE}/public/versions", params={"link": link}).json()["versions"]
     assert [v["sha"] for v in versions] == public.versions
@@ -125,7 +125,7 @@ def test_a_history_answers_when_github_does_not(tmp_path: Path, github_in: Path)
     def down(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("unreachable", request=request)
 
-    client = TestClient(create_app(config_file(tmp_path), tmp_path / "cache", GitHubHost(transport=httpx.MockTransport(down))))
+    client = TestClient(create_app(config_file(tmp_path), tmp_path / "cache", GitHubHostGateway(transport=httpx.MockTransport(down))))
     answer = client.get(f"{BASE}/public/versions", params={"link": "https://github.com/owner/service/blob/main/graph.json"})
     assert answer.status_code == 200
     listed = answer.json()["versions"]

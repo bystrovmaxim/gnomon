@@ -35,9 +35,9 @@ from maxitor.web.model.diagrams.actions.list_entities_action_schema import (
     ListEntitiesResourcesJson,
 )
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -61,7 +61,7 @@ _KIND_FIELDS = frozenset({"code", "display_name"})
 )
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Coordinator graph in DuckDB (entity / domain / entity_relation)",
 )
@@ -184,9 +184,9 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         )
 
     @staticmethod
-    def _domain_label(duck: DuckDBGraphResource, qual: str) -> str:
+    def _domain_label(duck: DuckDBGraphStorage, qual: str) -> str:
         """Return ``domain`` label from DuckDB, or ``qual`` when the row is missing."""
-        row = duck.service.execute(
+        row = duck.connection.execute(
             "SELECT COALESCE(NULLIF(name, ''), label, id) FROM domain WHERE id = ?",
             [qual],
         ).fetchone()
@@ -219,7 +219,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         )"""
 
     @staticmethod
-    def _association_rows(duck: DuckDBGraphResource, quals: list[str], include_neighbors: bool) -> list[dict[str, Any]]:
+    def _association_rows(duck: DuckDBGraphStorage, quals: list[str], include_neighbors: bool) -> list[dict[str, Any]]:
         """Relations, dictionary references and axis dictionaries whose two ends are both among the selected entities.
 
         Why a table is on screen — its own domain or a 1-hop neighbour — never decides whether its lines are drawn.
@@ -292,7 +292,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
 
     @staticmethod
     def _generalization_rows(
-        duck: DuckDBGraphResource, quals: list[str], include_neighbors: bool
+        duck: DuckDBGraphStorage, quals: list[str], include_neighbors: bool
     ) -> list[dict[str, Any]]:
         """Extension → head lines whose two ends are both among the selected entities."""
         sql = ListEntitiesAction._selection_cte(len(quals), include_neighbors) + """
@@ -313,7 +313,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         return duck.execute_fetch_dicts(sql, quals)
 
     @staticmethod
-    def request_relations(duck: DuckDBGraphResource, quals: list[str], include_neighbors: bool) -> list[dict[str, Any]]:
+    def request_relations(duck: DuckDBGraphStorage, quals: list[str], include_neighbors: bool) -> list[dict[str, Any]]:
         """Every line between two tables of the whole request, so a line whose ends come from two slices exists."""
         if not quals:
             return []
@@ -322,7 +322,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         return rows
 
     @staticmethod
-    def _slice_payload(duck: DuckDBGraphResource, qual: str, include_neighbors: bool) -> dict[str, Any]:
+    def _slice_payload(duck: DuckDBGraphStorage, qual: str, include_neighbors: bool) -> dict[str, Any]:
         """Run DuckDB SQL for one domain slice and return ``entities`` + ``relations`` lists."""
         neighbor_clause = (
             """
@@ -538,7 +538,7 @@ class ListEntitiesAction(BaseAction["ListEntitiesAction.Params", "ListEntitiesAc
         box: ToolsBox,
         connections: Connections,
     ) -> ListEntitiesAction.Result:
-        duck = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        duck = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         # The resources of the whole graph, never only of the domains asked for: a colour then depends on
         # the graph alone, and one resource looks the same on every diagram and to every reader.
         stored = duck.execute_fetch_dicts(

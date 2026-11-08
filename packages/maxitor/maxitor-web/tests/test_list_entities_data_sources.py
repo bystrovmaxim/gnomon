@@ -17,7 +17,7 @@ from maxitor.web.model.diagrams.actions.list_entities_action_schema import (
     ListEntitiesDataSourcesJson,
     ListEntitiesResourcesJson,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DUCKDB_GRAPH_CONNECTION_KEY, DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DUCKDB_GRAPH_CONNECTION_KEY, DuckDBGraphStorage
 
 from aoa.action_machine.model import BaseState
 from tests.fixtures.data_source_model import (
@@ -32,7 +32,7 @@ from tests.fixtures.protocol_2_0 import as_2_0
 
 
 async def _answer(graph: dict[str, Any], domains: list[str]) -> ListEntitiesAction.Result:
-    connections = {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphResource.build_from_json(graph)}
+    connections = {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphStorage.build_from_json(graph)}
     params = ListEntitiesAction.Params(domain_qualnames=domains, include_one_hop_neighbors=True)
     return await ListEntitiesAction().build_domain_payload_summary(params, BaseState(), None, connections)  # type: ignore[arg-type]
 

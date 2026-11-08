@@ -16,7 +16,7 @@ ARCHITECTURE / DATA FLOW
 
 ::
 
-    GET /api/v1/map/area?source=<version>&id=<area>&level=<2|3> ──► MapStore.area(id) ──► up to that level
+    GET /api/v1/map/area?source=<version>&id=<area>&level=<2|3> ──► MapStoreController.area(id) ──► up to that level
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.map_store import MAP_STORE_CONNECTION_KEY, MapStore
+from maxitor.web.model.diagrams.resources.map_store import MAP_STORE_CONNECTION_KEY, MapStoreController
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -58,13 +58,13 @@ class MapAreaResult(BaseResult):
 
 @meta(description="Read one area of a version's map", domain=DiagramsDomain)
 @check_roles(GuestRole)
-@connection(MapStore, key=MAP_STORE_CONNECTION_KEY, description="The maps of versions")
+@connection(MapStoreController, key=MAP_STORE_CONNECTION_KEY, description="The maps of versions")
 class MapAreaAction(BaseAction[MapAreaParams, MapAreaResult]):
     """
     AI-CORE-BEGIN
     ROLE: Answer one area of a version's map, as far as a level shows it.
     CONTRACT: Nodes and links of that area up to ``level``; an unknown area raises ``MapAreaNotFoundError``.
-    INVARIANTS: Reads what ``MapStore`` keeps; computes nothing of its own.
+    INVARIANTS: Reads what ``MapStoreController`` keeps; computes nothing of its own.
     AI-CORE-END
     """
 
@@ -78,7 +78,7 @@ class MapAreaAction(BaseAction[MapAreaParams, MapAreaResult]):
     ) -> MapAreaResult:
         """Read the area and keep what the level shows."""
         _ = (state, box)
-        detail = await cast(MapStore, connections[MAP_STORE_CONNECTION_KEY]).area(params.id)
+        detail = await cast(MapStoreController, connections[MAP_STORE_CONNECTION_KEY]).area(params.id)
         if detail is None:
             raise MapAreaNotFoundError("not found")
         return MapAreaResult(

@@ -21,7 +21,7 @@ from maxitor.web.model.diagrams.actions.list_node_types_action import (
     NODE_TYPE_FILL_COLORS,
     interchange_node_type_from_duck,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _DOMAIN = "shop.ShopDomain"
 _ASPECT = "shop.PlaceAction:finish_aspect"
@@ -65,7 +65,7 @@ def _rows(con: Any, table: str) -> list[tuple[Any, ...]]:
 
 
 def test_events_reach_the_views_of_the_full_graph() -> None:
-    con = DuckDBGraphResource.build_from_json(_graph("1.3", events=True)).service
+    con = DuckDBGraphStorage.build_from_json(_graph("1.3", events=True)).connection
 
     assert con.execute("SELECT id, label FROM event").fetchall() == [(_EVENT, "PlacedEvent")]
     assert con.execute("SELECT id FROM nodes WHERE type = 'event'").fetchall() == [(_EVENT,)]
@@ -83,8 +83,8 @@ def test_the_event_type_has_a_name_and_no_styling() -> None:
 
 
 def test_the_tables_of_the_other_diagrams_do_not_change() -> None:
-    plain = DuckDBGraphResource.build_from_json(_graph("1.3", events=False)).service
-    with_events = DuckDBGraphResource.build_from_json(_graph("1.3", events=True)).service
+    plain = DuckDBGraphStorage.build_from_json(_graph("1.3", events=False)).connection
+    with_events = DuckDBGraphStorage.build_from_json(_graph("1.3", events=True)).connection
 
     for table in _DIAGRAM_TABLES:
         if table != "domain":
@@ -95,7 +95,7 @@ def test_the_tables_of_the_other_diagrams_do_not_change() -> None:
 
 
 def test_a_1_2_graph_still_loads() -> None:
-    con = DuckDBGraphResource.build_from_json(_graph("1.2", events=False)).service
+    con = DuckDBGraphStorage.build_from_json(_graph("1.2", events=False)).connection
 
     assert con.execute("SELECT id FROM domain").fetchall() == [(_DOMAIN,)]
     assert con.execute("SELECT COUNT(*) FROM event").fetchone() == (0,)

@@ -14,7 +14,7 @@ followed to its commit.
 ARCHITECTURE / DATA FLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
-``GitMirror.tags`` ──► ``Tag`` ──► ``place_tags`` ──► the version it lands on.
+``GitMirrorStorage.tags`` ──► ``Tag`` ──► ``place_tags`` ──► the version it lands on.
 """
 
 from __future__ import annotations

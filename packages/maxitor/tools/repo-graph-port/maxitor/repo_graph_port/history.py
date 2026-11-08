@@ -14,7 +14,7 @@ through ``public_history``.
 ARCHITECTURE / DATA FLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
-``HistoriesConfig.history(id)`` or ``public_history(link)`` ──► ``History`` ──► the actions open its repository in the mirror.
+``HistoriesConfigStorage.history(id)`` or ``public_history(link)`` ──► ``History`` ──► the actions open its repository in the mirror.
 """
 
 from __future__ import annotations

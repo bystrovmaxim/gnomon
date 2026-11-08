@@ -10,9 +10,9 @@ from maxitor.web.model.diagrams.actions.get_element_card_action import (
     GetElementCardAction,
     GetElementCardParams,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 from aoa.action_machine.model import BaseState
@@ -29,7 +29,7 @@ _GRAPH: dict[str, Any] = {
 
 
 async def _card(node_id: str) -> Any:
-    connections: Any = {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphResource.build_from_json(_GRAPH)}
+    connections: Any = {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphStorage.build_from_json(_GRAPH)}
     return await GetElementCardAction().card_summary(GetElementCardParams(id=node_id), BaseState(), None, connections)  # type: ignore[arg-type]
 
 

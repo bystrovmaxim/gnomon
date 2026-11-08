@@ -44,19 +44,19 @@ from maxitor.web.model.core.actions.check_source_action import CheckSourceAction
 from maxitor.web.model.core.actions.graph_fingerprint_action import GraphFingerprintAction, GraphFingerprintParams
 from maxitor.web.model.core.resources.graph_source_gateway import GRAPH_SOURCE_CONNECTION_KEY, GraphSourceGateway
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
-from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStore
-from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistry
+from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
+from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistryController
 from maxitor.web.model.core.resources.repo_graph_port_gateway import (
     REPO_GRAPH_PORT_CONNECTION_KEY,
     RepoGraphPortGateway,
 )
-from maxitor.web.model.core.resources.source_checks import SOURCE_CHECKS_CONNECTION_KEY, SourceChecks
+from maxitor.web.model.core.resources.source_checks import SOURCE_CHECKS_CONNECTION_KEY, SourceChecksController
 from maxitor.web.model.core.source_label import label
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 
 from aoa.action_machine.context import Context
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
-from aoa.action_machine.model import ParamsStub
+from aoa.action_machine.model import StubParams
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "ref-graph-2026-10-26.json.gz"
@@ -124,9 +124,9 @@ class Maxitor:
     store: GraphStore
     graphs: GraphStoreController
     gateway: GraphSourceGateway
-    rooms: RoomRegistry
-    tabs: OpenTabsRegistry
-    checks: SourceChecks
+    rooms: RoomRegistryController
+    tabs: OpenTabsRegistryController
+    checks: SourceChecksController
 
     def check_connections(self) -> dict[str, Any]:
         """The connections ``CheckSourceAction`` runs with."""
@@ -144,12 +144,12 @@ def _maxitor() -> Maxitor:
     gateway = GraphSourceGateway()
     store = GraphStore(partial(build_graph_entry, machine, gateway))
     graphs = GraphStoreController(store)
-    rooms = RoomRegistry()
+    rooms = RoomRegistryController()
     rooms.bind(machine)
-    checks = SourceChecks()
+    checks = SourceChecksController()
     connections = {GRAPH_STORE_CONNECTION_KEY: graphs, GRAPH_SOURCE_CONNECTION_KEY: gateway, ROOM_REGISTRY_KEY: rooms}
     checks.bind(machine, {CheckSourceAction: connections})
-    return Maxitor(machine, store, graphs, gateway, rooms, OpenTabsRegistry(), checks)
+    return Maxitor(machine, store, graphs, gateway, rooms, OpenTabsRegistryController(), checks)
 
 
 async def test_an_unchanged_service_with_an_etag_answers_304_and_nothing_is_rebuilt(service: tuple[Service, str]) -> None:
@@ -231,10 +231,10 @@ async def test_an_unwatched_source_waits_for_its_next_read(service: tuple[Servic
     due_connections = {
         **maxitor.check_connections(),
         OPEN_TABS_CONNECTION_KEY: maxitor.tabs,
-        HISTORY_STORE_CONNECTION_KEY: HistoryStore(),
+        HISTORY_STORE_CONNECTION_KEY: HistoryStoreController(),
         REPO_GRAPH_PORT_CONNECTION_KEY: RepoGraphPortGateway(),
     }
-    picked = await maxitor.machine.run(Context(), CheckDueSourcesAction(), ParamsStub(), due_connections)
+    picked = await maxitor.machine.run(Context(), CheckDueSourcesAction(), StubParams(), due_connections)
     assert picked.checked == []
     before = state.requests
     answer = await maxitor.machine.run(
@@ -251,7 +251,7 @@ async def test_an_unwatched_source_waits_for_its_next_read(service: tuple[Servic
     assert state.requests == before + 1
     # Asked about a moment ago, the source is now watched: the clock picks it once it is due again.
     entry.last_checked -= 1000
-    picked = await maxitor.machine.run(Context(), CheckDueSourcesAction(), ParamsStub(), due_connections)
+    picked = await maxitor.machine.run(Context(), CheckDueSourcesAction(), StubParams(), due_connections)
     assert picked.checked == [source]
     await maxitor.checks.close()
 

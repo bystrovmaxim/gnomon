@@ -17,8 +17,8 @@ ARCHITECTURE / DATA FLOW
 
 ::
 
-    MAXITOR_HISTORIES ──► HistoriesConfig ─┐
-    MAXITOR_HISTORY_CACHE ──► GitMirror, VersionCache ─┼─► FastApiAdapter(HistoryKeyAuthCoordinator)
+    MAXITOR_HISTORIES ──► HistoriesConfigStorage ─┐
+    MAXITOR_HISTORY_CACHE ──► GitMirrorStorage, VersionCacheStorage ─┼─► FastApiAdapter(HistoryKeyAuthCoordinator)
                                                         │      /api/v1/history/public…?link=   (no key)
                                                         │      /api/v1/history/{history}…       (its key)
                                                         │      POST /api/v1/history/events/github (GitHub's webhook)
@@ -46,10 +46,10 @@ from maxitor.repo_graph_port.actions.version_action import VersionAction
 from maxitor.repo_graph_port.auth.history_key_auth_coordinator import HistoryKeyAuthCoordinator
 from maxitor.repo_graph_port.github_event import GitHubEvent
 from maxitor.repo_graph_port.history_not_found_error import HistoryNotFoundError
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
-from maxitor.repo_graph_port.resources.version_cache import VersionCache
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
+from maxitor.repo_graph_port.resources.version_cache import VersionCacheStorage
 from maxitor.repo_graph_port.security_reporter import SecurityReporter
 from maxitor.repo_graph_port.too_many_wrong_keys_error import TooManyWrongKeysError
 from maxitor.repo_graph_port.version_file_middleware import VersionFileMiddleware
@@ -60,7 +60,7 @@ from aoa.action_machine.runtime.action_product_machine import ActionProductMachi
 from aoa.fastapi import FastApiAdapter
 
 
-def create_app(histories: Path | None = None, cache: Path | None = None, host: GitHubHost | None = None) -> FastAPI:
+def create_app(histories: Path | None = None, cache: Path | None = None, host: GitHubHostGateway | None = None) -> FastAPI:
     """
     AI-CORE-BEGIN
     ROLE: Build the port's server.
@@ -70,11 +70,11 @@ def create_app(histories: Path | None = None, cache: Path | None = None, host: G
     """
     config_path = histories or Path(os.environ["MAXITOR_HISTORIES"])
     folder = cache or Path(os.environ.get("MAXITOR_HISTORY_CACHE") or Path.home() / ".cache" / "maxitor" / "history")
-    config = HistoriesConfig(config_path)
+    config = HistoriesConfigStorage(config_path)
     github = config.github()
     if host is None:
-        host = GitHubHost.from_settings(github)
-    connections = {"HistoriesConfig": config, "GitMirror": GitMirror(folder), "VersionCache": VersionCache(folder), "GitHubHost": host}
+        host = GitHubHostGateway.from_settings(github)
+    connections = {"HistoriesConfigStorage": config, "GitMirrorStorage": GitMirrorStorage(folder), "VersionCacheStorage": VersionCacheStorage(folder), "GitHubHostGateway": host}
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     reporter = SecurityReporter(machine)
     adapter = FastApiAdapter(

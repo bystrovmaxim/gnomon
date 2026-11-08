@@ -40,7 +40,7 @@ from typing import Any
 
 import pytest
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 HEAD = "demo.HeadEntity"
 FIRST = "demo.FirstEntity"
@@ -129,13 +129,13 @@ def _payload() -> dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def duck() -> DuckDBGraphResource:
+def duck() -> DuckDBGraphStorage:
     """Return the store built from the hand-written payload."""
-    return DuckDBGraphResource.build_from_json(_payload())
+    return DuckDBGraphStorage.build_from_json(_payload())
 
 
 @pytest.fixture(scope="module")
-def slice_payload(duck: DuckDBGraphResource) -> dict[str, Any]:
+def slice_payload(duck: DuckDBGraphStorage) -> dict[str, Any]:
     """Return the ERD slice of the demo domain."""
     return ListEntitiesAction._slice_payload(duck, DOMAIN, include_neighbors=False)
 
@@ -145,7 +145,7 @@ def slice_payload(duck: DuckDBGraphResource) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def test_the_specialization_table_holds_one_row_per_alternative(duck: DuckDBGraphResource) -> None:
+def test_the_specialization_table_holds_one_row_per_alternative(duck: DuckDBGraphStorage) -> None:
     rows = duck.execute_fetch_dicts(
         "SELECT target_id, classifier_value, alternative_index, labels "
         "FROM entity_specialization_edges ORDER BY alternative_index",
@@ -156,7 +156,7 @@ def test_the_specialization_table_holds_one_row_per_alternative(duck: DuckDBGrap
     assert [row["alternative_index"] for row in rows] == [0, 1, 2]
 
 
-def test_the_generalization_table_holds_one_row_per_alternative(duck: DuckDBGraphResource) -> None:
+def test_the_generalization_table_holds_one_row_per_alternative(duck: DuckDBGraphStorage) -> None:
     rows = duck.execute_fetch_dicts(
         "SELECT source_id, target_id, classifier_value, inverse_field "
         "FROM parent_entity_edges ORDER BY classifier_value",
@@ -192,7 +192,7 @@ def test_the_generalization_table_holds_one_row_per_alternative(duck: DuckDBGrap
     ],
 )
 def test_the_properties_round_trip_through_the_edges_view(
-    duck: DuckDBGraphResource,
+    duck: DuckDBGraphStorage,
     kind: str,
     keys: set[str],
 ) -> None:
@@ -207,7 +207,7 @@ def test_the_properties_round_trip_through_the_edges_view(
         assert set(payload) == keys, f"{kind} exports exactly its own properties"
 
 
-def test_every_edge_of_the_axis_carries_the_whole_declaration(duck: DuckDBGraphResource) -> None:
+def test_every_edge_of_the_axis_carries_the_whole_declaration(duck: DuckDBGraphStorage) -> None:
     """One row in hand is enough to read the cluster, which is why the list is repeated."""
     rows = duck.execute_fetch_dicts("SELECT labels FROM entity_specialization_edges")
 
@@ -218,7 +218,7 @@ def test_every_edge_of_the_axis_carries_the_whole_declaration(duck: DuckDBGraphR
         assert labels == LABELS
 
 
-def test_the_generalization_stays_out_of_the_full_graph(duck: DuckDBGraphResource) -> None:
+def test_the_generalization_stays_out_of_the_full_graph(duck: DuckDBGraphStorage) -> None:
     """
     The full graph is a system view and strips generalization, so the axis is drawn in the ERD only.
 
@@ -257,7 +257,7 @@ def test_the_axis_is_one_row_naming_every_alternative(slice_payload: dict[str, A
 
 def test_the_scalar_field_beside_the_axis_is_one_row_and_not_displaced() -> None:
     """The axis row replaces its own field only: the scalar next to it stays exactly as it was."""
-    duck = DuckDBGraphResource.build_from_json(_payload())
+    duck = DuckDBGraphStorage.build_from_json(_payload())
     fields = _head_fields(ListEntitiesAction._slice_payload(duck, DOMAIN, include_neighbors=False))
     titles = [row for row in fields if row["name"] == "title"]
 
@@ -294,7 +294,7 @@ def test_a_single_alternative_is_not_grouped() -> None:
         for edge in payload["edges"]
         if not (edge["type"] == "entity_specialization" and edge["target_id"] != FIRST)
     ]
-    duck = DuckDBGraphResource.build_from_json(payload)
+    duck = DuckDBGraphStorage.build_from_json(payload)
     slice_data = ListEntitiesAction._slice_payload(duck, DOMAIN, include_neighbors=False)
 
     assert slice_data["groups"] == []

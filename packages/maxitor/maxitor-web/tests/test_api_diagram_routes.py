@@ -20,14 +20,14 @@ from maxitor.web.model.diagrams.actions.get_lifecycle_finite_automaton_action im
 from maxitor.web.model.diagrams.actions.list_domains_action import ListDomainsAction
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
 from maxitor.web.model.diagrams.actions.list_node_types_action import ListNodeTypesAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 from aoa.action_machine.context import Context
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
-from aoa.action_machine.model import ParamsStub
+from aoa.action_machine.model import StubParams
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 
 # ─── Fixture ─────────────────────────────────────────────────────────────────
@@ -93,18 +93,18 @@ def _payload(domain_id: str) -> dict[str, Any]:
     }
 
 
-def _graph(domain_id: str = _DEFAULT_DOMAIN_ID) -> DuckDBGraphResource:
+def _graph(domain_id: str = _DEFAULT_DOMAIN_ID) -> DuckDBGraphStorage:
     """Return a freshly built graph for ``domain_id``."""
-    return DuckDBGraphResource.build_from_json(_payload(domain_id))
+    return DuckDBGraphStorage.build_from_json(_payload(domain_id))
 
 
 def _route_cases(domain_id: str) -> tuple[tuple[str, dict[str, str], Any, Any], ...]:
     """Return ``(path, query, action class, params)`` for the seven diagram routes against ``domain_id``."""
     return (
-        ("/api/v1/list-domains", {}, ListDomainsAction, ParamsStub()),
+        ("/api/v1/list-domains", {}, ListDomainsAction, StubParams()),
         ("/api/v1/list-entities", {}, ListEntitiesAction, ListEntitiesAction.Params()),
-        ("/api/v1/list-node-types", {}, ListNodeTypesAction, ParamsStub()),
-        ("/api/v1/full-graph", {}, FullGraphAction, ParamsStub()),
+        ("/api/v1/list-node-types", {}, ListNodeTypesAction, StubParams()),
+        ("/api/v1/full-graph", {}, FullGraphAction, StubParams()),
         (
             "/api/v1/lifecycle-finite-automaton",
             {"lifecycle_graph_node_id": _LIFECYCLE_ID},
@@ -117,7 +117,7 @@ def _route_cases(domain_id: str) -> tuple[tuple[str, dict[str, str], Any, Any], 
             GetDomainUseCaseDiagramAction,
             GetDomainUseCaseDiagramAction.Params(domain_id=domain_id),
         ),
-        ("/api/v1/events-explorer", {}, GetEventsExplorerAction, ParamsStub()),
+        ("/api/v1/events-explorer", {}, GetEventsExplorerAction, StubParams()),
     )
 
 
@@ -130,7 +130,7 @@ def _direct_body(action_cls: Any, params: Any, graph: Any) -> dict[str, Any]:
     return result.model_dump()
 
 
-def _store(graphs: dict[str, DuckDBGraphResource], calls: list[str]) -> GraphStore:
+def _store(graphs: dict[str, DuckDBGraphStorage], calls: list[str]) -> GraphStore:
     """Return a store that serves ``graphs`` by source and records every build."""
 
     async def builder(source: str) -> GraphEntry:
@@ -140,7 +140,7 @@ def _store(graphs: dict[str, DuckDBGraphResource], calls: list[str]) -> GraphSto
     return GraphStore(builder)
 
 
-def _client(graphs: dict[str, DuckDBGraphResource]) -> tuple[TestClient, GraphStore, list[str]]:
+def _client(graphs: dict[str, DuckDBGraphStorage]) -> tuple[TestClient, GraphStore, list[str]]:
     """Return a client over an application whose store serves ``graphs``, the store, and its build log."""
     app = create_app()
     calls: list[str] = []

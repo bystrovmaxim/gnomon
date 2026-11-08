@@ -21,9 +21,9 @@ from maxitor.repo_graph_port.history_versions import (
     place_tags,
     pull_request_in_message,
 )
-from maxitor.repo_graph_port.resources.git_mirror import GitMirror
-from maxitor.repo_graph_port.resources.github_host import GitHubHost
-from maxitor.repo_graph_port.resources.version_cache import VersionCache
+from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
+from maxitor.repo_graph_port.resources.github_host import GitHubHostGateway
+from maxitor.repo_graph_port.resources.version_cache import VersionCacheStorage
 
 from tests.repo_builder import GRAPH_FILE, BuiltRepository, add_version, build_repository, graph
 
@@ -34,9 +34,9 @@ def built(tmp_path_factory: pytest.TempPathFactory) -> BuiltRepository:
     return build_repository(tmp_path_factory.mktemp("history") / "service")
 
 
-def _local(built: BuiltRepository, tmp_path: Path) -> tuple[GitMirror, str]:
+def _local(built: BuiltRepository, tmp_path: Path) -> tuple[GitMirrorStorage, str]:
     """A mirror reading the built repository as a local path."""
-    mirror = GitMirror(tmp_path / "cache")
+    mirror = GitMirrorStorage(tmp_path / "cache")
     mirror.open(str(built.path))
     return mirror, str(built.path)
 
@@ -94,7 +94,7 @@ def test_facts_count_a_graph_and_name_a_refusal(built: BuiltRepository, tmp_path
 def test_a_mirror_reads_the_same_history_and_fetches_what_is_new(tmp_path: Path) -> None:
     """A bare partial mirror of the repository's URL lists the same versions, and ``fetch`` brings a new one."""
     built = build_repository(tmp_path / "origin")
-    mirror = GitMirror(tmp_path / "cache")
+    mirror = GitMirrorStorage(tmp_path / "cache")
     mirror.open("owner/service", url=built.path.as_uri())
     assert [c.sha for c in mirror.versions("owner/service", "main", GRAPH_FILE)] == built.versions
     assert mirror.file_at("owner/service", built.sha["d1"], GRAPH_FILE) == graph(edges=25).encode("utf-8")
@@ -117,7 +117,7 @@ def test_git_failures_are_named_and_unopened_repositories_refused(built: BuiltRe
 
 def test_a_failed_clone_leaves_no_mirror_behind(tmp_path: Path) -> None:
     """A clone that fails leaves nothing in the cache, so the next open clones again instead of reading half a mirror."""
-    mirror = GitMirror(tmp_path / "cache")
+    mirror = GitMirrorStorage(tmp_path / "cache")
     with pytest.raises(GitError):
         mirror.open("owner/missing", url=(tmp_path / "nowhere").as_uri())
     assert list((tmp_path / "cache" / "mirrors").iterdir()) == []
@@ -126,7 +126,7 @@ def test_a_failed_clone_leaves_no_mirror_behind(tmp_path: Path) -> None:
     assert [c.sha for c in mirror.versions("owner/missing", "main", GRAPH_FILE)] == built.versions
 
 
-class _TimingOutMirror(GitMirror):
+class _TimingOutMirrorStorage(GitMirrorStorage):
     """A mirror whose clone starts writing its folder, then runs out of time — what a stalled network does."""
 
     def _git(self, place: Path | None, arguments: list[str], auth: Mapping[str, str] | None = None) -> bytes:
@@ -139,7 +139,7 @@ class _TimingOutMirror(GitMirror):
 
 def test_a_clone_that_times_out_leaves_no_mirror_behind(tmp_path: Path) -> None:
     """A clone cut off by its timeout leaves no folder that a later open would take for a whole mirror."""
-    mirror = _TimingOutMirror(tmp_path / "cache")
+    mirror = _TimingOutMirrorStorage(tmp_path / "cache")
     with pytest.raises(GitError, match="no answer"):
         mirror.open("owner/slow", url="https://example.invalid/owner/slow.git")
     assert list((tmp_path / "cache" / "mirrors").iterdir()) == []
@@ -200,11 +200,11 @@ def test_two_graphs_at_one_commit_stay_apart_cold_and_warm(tmp_path: Path, order
     """Each history gets its own bytes and facts, whichever is read first, and again from the cache."""
     repository = tmp_path / "service"
     first, second, sha = _two_graphs(repository)
-    mirror = GitMirror(tmp_path / "cache")
+    mirror = GitMirrorStorage(tmp_path / "cache")
     mirror.open(str(repository))
-    cache = VersionCache(tmp_path / "cache")
+    cache = VersionCacheStorage(tmp_path / "cache")
     histories = {name: History(id=name, host="local", repository=str(repository), branch="main", graph_file=name) for name in (first, second)}
-    host = cast(GitHubHost, None)
+    host = cast(GitHubHostGateway, None)
     for _ in ("cold", "warm"):
         for name in order:
             read = asyncio.run(graph_of(mirror, cache, host, histories[name], sha))
@@ -217,27 +217,27 @@ def test_a_cache_of_the_old_layout_is_removed_and_never_served(tmp_path: Path) -
     old = tmp_path / "versions" / "0123456789abcdef"
     old.mkdir(parents=True)
     (old / "abc.graph").write_bytes(b"old")
-    cache = VersionCache(tmp_path)
+    cache = VersionCacheStorage(tmp_path)
     assert not (tmp_path / "versions").exists()
     assert cache.graph("o/r", "graph.json", "abc") is None
 
 
 def test_what_the_host_said_survives_a_restart(tmp_path: Path) -> None:
     """Fetch times, pull requests, releases and the open pull requests come back from disk in a new cache."""
-    first = VersionCache(tmp_path)
+    first = VersionCacheStorage(tmp_path)
     first.mark_fetched("o/r", 100.0)
     first.keep_pull_request("o/r", "abc", {"number": 7, "title": "Seven"}, 101.0)
     first.keep_release("o/r", "v1.0.0", {"title": "One", "url": "https://r"}, 102.0)
     first.keep_release("o/r", "v1.1.0", None, 103.0)
     first.keep_open_pull_requests("o/r", "main", [{"number": 8, "head": "def"}], 104.0)
-    second = VersionCache(tmp_path)
+    second = VersionCacheStorage(tmp_path)
     assert second.fetched_at("o/r") == 100.0
     assert second.pull_request("o/r", "abc") == ({"number": 7, "title": "Seven"}, 101.0)
     assert second.release("o/r", "v1.0.0") == ({"title": "One", "url": "https://r"}, 102.0)
     assert second.release("o/r", "v1.1.0") == (None, 103.0)
     assert second.open_pull_requests("o/r", "main") == ([{"number": 8, "head": "def"}], 104.0)
     second.forget_releases("o/r")
-    assert VersionCache(tmp_path).release("o/r", "v1.0.0") is None
+    assert VersionCacheStorage(tmp_path).release("o/r", "v1.0.0") is None
 
 
 def test_a_found_pull_request_and_release_are_kept_and_a_missing_one_asked_again(tmp_path: Path) -> None:
@@ -257,12 +257,12 @@ def test_a_found_pull_request_and_release_are_kept_and_a_missing_one_asked_again
             self.asked.append(f"release {tag}")
             return {"title": "T", "url": "u"} if tag == "found" else None
 
-    cache, host = VersionCache(tmp_path), Host()
+    cache, host = VersionCacheStorage(tmp_path), Host()
     history = History(id="h", host="github", repository="o/r", branch="main", graph_file="g.json", public=True)
     for _ in range(2):
         for name in ("found", "none"):
-            asyncio.run(pull_request_of(cache, cast(GitHubHost, host), history, name, 0))
-            asyncio.run(release_of(cache, cast(GitHubHost, host), history, name, 0))
+            asyncio.run(pull_request_of(cache, cast(GitHubHostGateway, host), history, name, 0))
+            asyncio.run(release_of(cache, cast(GitHubHostGateway, host), history, name, 0))
     assert host.asked == ["pull found", "release found", "pull none", "release none", "pull none", "release none"]
 
 
@@ -279,7 +279,7 @@ def test_a_tag_names_a_version_by_its_end(tag: str, version: str, named: bool) -
 def test_a_port_with_no_app_reads_public_repositories_with_its_read_token(monkeypatch: pytest.MonkeyPatch) -> None:
     """``MAXITOR_GITHUB_TOKEN`` is the public token of a port with no App; with neither, reads are anonymous."""
     monkeypatch.setenv("MAXITOR_GITHUB_TOKEN", "read-me")
-    assert asyncio.run(GitHubHost.from_settings(None).public_token()) == "read-me"
-    assert "read-me" not in repr(GitHubHost.from_settings(None))
+    assert asyncio.run(GitHubHostGateway.from_settings(None).public_token()) == "read-me"
+    assert "read-me" not in repr(GitHubHostGateway.from_settings(None))
     monkeypatch.delenv("MAXITOR_GITHUB_TOKEN")
-    assert asyncio.run(GitHubHost.from_settings(None).public_token()) is None
+    assert asyncio.run(GitHubHostGateway.from_settings(None).public_token()) is None

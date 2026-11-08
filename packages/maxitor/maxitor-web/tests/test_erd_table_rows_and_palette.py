@@ -19,7 +19,7 @@ from pathlib import Path
 
 from maxitor.web.model.diagrams.actions.list_domains_action import DOMAIN_PALETTE
 from maxitor.web.model.diagrams.actions.list_entities_action import ListEntitiesAction
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DuckDBGraphResource
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DuckDBGraphStorage
 
 _REFERENCE_GRAPH = Path(__file__).resolve().parents[4] / "specs/025-graph-index-memory/data/ref-graph-2026-10-26.json.gz"
 
@@ -31,7 +31,7 @@ def test_an_fk_row_names_its_target_table_alone() -> None:
     graph = json.loads(data) if isinstance(data, str) else data
     events = next(n["id"] for n in graph["nodes"] if n["type"] == "Domain" and n["id"].endswith("EventsDomain"))
 
-    payload = ListEntitiesAction._slice_payload(DuckDBGraphResource.build_from_json(graph), events, include_neighbors=True)
+    payload = ListEntitiesAction._slice_payload(DuckDBGraphStorage.build_from_json(graph), events, include_neighbors=True)
     core = next(e for e in payload["entities"] if e["id"].endswith("UserEventCoreEntity"))
     fk_rows = [f for f in core["fields"] if f["foreign_key"]]
 

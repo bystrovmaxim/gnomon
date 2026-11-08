@@ -19,11 +19,11 @@
       "type": "application"
     },
     {
-      "id": "aoa.fastapi.socket_channel.SocketChannel|domain|aoa.fastapi.socket_channel.TransportDomain",
+      "id": "aoa.fastapi.socket_channel.SocketChannelController|domain|aoa.fastapi.socket_channel.TransportDomain",
       "is_dag": true,
       "properties": {},
       "relationship": "Aggregation",
-      "source_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "source_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "target_id": "aoa.fastapi.socket_channel.TransportDomain",
       "type": "domain"
     },
@@ -85,12 +85,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.core.actions.app_info_action.AppInfoAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -220,12 +220,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.core.actions.check_due_sources_action.CheckDueSourcesAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -614,12 +614,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.core.actions.get_own_graph_json_action.GetOwnGraphJsonAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -1167,12 +1167,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.core.actions.left_sidebar_action.GetLeftMenuSidebarDataAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -1912,12 +1912,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.all_use_cases_diagram_action.GetAllUseCasesDiagramAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -1969,12 +1969,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.changed_inside_action.ChangedInsideAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -2128,12 +2128,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.compare_versions_action.CompareVersionsAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -2314,12 +2314,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.events_explorer_action.GetEventsExplorerAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -2380,12 +2380,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.full_graph_action.FullGraphAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -2803,12 +2803,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.list_domains_action.ListDomainsAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -2980,12 +2980,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.list_entity_kinds_action.ListEntityKindsAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -3046,12 +3046,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.list_node_types_action.ListNodeTypesAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -3205,12 +3205,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.map_changes_action.MapChangesAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -3271,12 +3271,12 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction|generic:params|aoa.action_machine.model.params_stub.ParamsStub",
+      "id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction|generic:params|aoa.action_machine.model.params_stub.StubParams",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.web.model.diagrams.actions.map_overview_action.MapOverviewAction",
-      "target_id": "aoa.action_machine.model.params_stub.ParamsStub",
+      "target_id": "aoa.action_machine.model.params_stub.StubParams",
       "type": "generic:params"
     },
     {
@@ -3424,7 +3424,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The tab's connection",
@@ -3432,7 +3432,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.disconnect_tab_action.DisconnectTabAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -3652,7 +3652,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.follow_action.FollowAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.follow_action.FollowAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The follower's connection",
@@ -3660,7 +3660,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.follow_action.FollowAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -3730,7 +3730,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The joining tab's connection",
@@ -3738,7 +3738,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.join_room_action.JoinRoomAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -3964,7 +3964,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The leaving tab's connection",
@@ -3972,7 +3972,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.leave_room_action.LeaveRoomAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4033,7 +4033,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The connection that pressed Reload",
@@ -4041,7 +4041,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.reload_source_for_room_action.ReloadSourceForRoomAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4126,7 +4126,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The participant's connection",
@@ -4134,7 +4134,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.rename_participant_action.RenameParticipantAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4204,7 +4204,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The reporting tab's connection",
@@ -4212,7 +4212,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.report_page_action.ReportPageAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4360,7 +4360,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The opener's connection",
@@ -4368,7 +4368,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.seed_page_settings_action.SeedPageSettingsAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4447,7 +4447,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The participant's connection",
@@ -4455,7 +4455,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.set_page_setting_action.SetPageSettingAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4543,7 +4543,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The participant's connection",
@@ -4551,7 +4551,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.set_room_version_action.SetRoomVersionAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4651,7 +4651,7 @@
       "type": "@check_roles"
     },
     {
-      "id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction|@connection|aoa.fastapi.socket_channel.SocketChannel",
+      "id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction|@connection|aoa.fastapi.socket_channel.SocketChannelController",
       "is_dag": true,
       "properties": {
         "description": "The follower's connection",
@@ -4659,7 +4659,7 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.web.model.rooms.actions.stop_following_action.StopFollowingAction",
-      "target_id": "aoa.fastapi.socket_channel.SocketChannel",
+      "target_id": "aoa.fastapi.socket_channel.SocketChannelController",
       "type": "@connection"
     },
     {
@@ -4758,20 +4758,20 @@
       "type": "Role"
     },
     {
-      "id": "aoa.action_machine.model.params_stub.ParamsStub",
-      "label": "ParamsStub",
+      "id": "aoa.action_machine.model.params_stub.StubParams",
+      "label": "StubParams",
       "properties": {},
       "type": "Params"
     },
     {
-      "id": "aoa.action_machine.model.result_stub.ResultStub",
-      "label": "ResultStub",
+      "id": "aoa.action_machine.model.result_stub.StubResult",
+      "label": "StubResult",
       "properties": {},
       "type": "Result"
     },
     {
-      "id": "aoa.fastapi.socket_channel.SocketChannel",
-      "label": "SocketChannel",
+      "id": "aoa.fastapi.socket_channel.SocketChannelController",
+      "label": "SocketChannelController",
       "properties": {
         "description": "One WebSocket connection an action can send events through"
       },

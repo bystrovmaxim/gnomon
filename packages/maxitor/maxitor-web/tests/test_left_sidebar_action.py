@@ -8,9 +8,9 @@ from maxitor.web.model.core.actions.left_sidebar_action import (
     _ROOT_SECTIONS,
     GetLeftMenuSidebarDataAction,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 
 from aoa.action_machine.model import BaseState
@@ -69,7 +69,7 @@ _FULL_GRAPH = {
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _duck(coordinator: dict) -> dict:
-    return {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphResource.build_from_json(coordinator)}
+    return {DUCKDB_GRAPH_CONNECTION_KEY: DuckDBGraphStorage.build_from_json(coordinator)}
 
 
 # ─── Aspect 1: build_level1_aspect ───────────────────────────────────────────

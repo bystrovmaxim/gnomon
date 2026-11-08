@@ -39,7 +39,7 @@ from urllib.parse import urlencode
 import pytest
 from fastapi.testclient import TestClient
 from maxitor.web.api.app import create_app
-from maxitor.web.model.rooms.resources.room_registry import RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import RoomRegistryController
 from starlette.testclient import WebSocketTestSession
 from starlette.websockets import WebSocketDisconnect
 
@@ -81,9 +81,9 @@ def client() -> Iterator[TestClient]:
         yield test_client
 
 
-def _rooms(client: TestClient) -> RoomRegistry:
+def _rooms(client: TestClient) -> RoomRegistryController:
     """The application's room registry."""
-    rooms: RoomRegistry = client.app.state.rooms  # type: ignore[attr-defined]
+    rooms: RoomRegistryController = client.app.state.rooms  # type: ignore[attr-defined]
     return rooms
 
 

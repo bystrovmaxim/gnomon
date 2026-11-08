@@ -1,6 +1,6 @@
 # packages/maxitor/tools/repo-graph-port/maxitor/repo_graph_port/resources/github_host.py
 """
-GitHubHost — what only GitHub knows about a repository, and the right to read a private one.
+GitHubHostGateway — what only GitHub knows about a repository, and the right to read a private one.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
@@ -44,14 +44,13 @@ from typing import Any
 
 import httpx
 import jwt
-from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.base_gateway import BaseGateway
 
 
-@meta(description="GitHub: the App's token, a commit's pull request, a tag's release, the webhooks' signature", domain=RepoGraphDomain)
-class GitHubHost(BaseGateway):
+@meta(description="GitHub: the App's token, a commit's pull request, a tag's release, the webhooks' signature")
+class GitHubHostGateway(BaseGateway):
     """
     AI-CORE-BEGIN
     ROLE: Read from GitHub what git does not hold, and authenticate the port to it.
@@ -78,7 +77,7 @@ class GitHubHost(BaseGateway):
         self._client: httpx.AsyncClient | None = None
 
     @classmethod
-    def from_settings(cls, settings: tuple[int, str, str] | None) -> GitHubHost:
+    def from_settings(cls, settings: tuple[int, str, str] | None) -> GitHubHostGateway:
         """
         The host as the config's ``[github]`` names it: the App's id, and its private key and webhook secret read
         from the environment variables the config names. A key kept on one line has its newlines written ``\\n``.
@@ -93,9 +92,10 @@ class GitHubHost(BaseGateway):
 
     def __repr__(self) -> str:
         """Say whether an App is set, never its secrets."""
-        return f"GitHubHost(app_id={self._app_id!r}, private_key={'set' if self._private_key else 'none'}, read_token={'set' if self._read_token else 'none'})"
+        return f"GitHubHostGateway(app_id={self._app_id!r}, private_key={'set' if self._private_key else 'none'}, read_token={'set' if self._read_token else 'none'})"
 
-    def get_wrapper_class(self) -> type[BaseGateway] | None:
+    @classmethod
+    def get_wrapper_class(cls) -> type[BaseGateway] | None:
         """Return ``None``: nested actions use this same host."""
         return None
 

@@ -17,7 +17,7 @@ ARCHITECTURE / DATA FLOW
 ::
 
     GET /api/v1/compare-element?source=<B>&a=<A>&kind=node|edge&id=<id>
-        ──► ComparisonStore.current() ──► nodes|edges[id] ──► {status, differences}
+        ──► ComparisonStoreController.current() ──► nodes|edges[id] ──► {status, differences}
                                                └─ absent ──► ElementNotComparedError (404)
 """
 
@@ -27,7 +27,10 @@ from typing import Any, Literal, cast
 
 from maxitor.graph_compare import Change, Difference
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.comparison_store import COMPARISON_STORE_CONNECTION_KEY, ComparisonStore
+from maxitor.web.model.diagrams.resources.comparison_store import (
+    COMPARISON_STORE_CONNECTION_KEY,
+    ComparisonStoreController,
+)
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -62,13 +65,13 @@ class CompareElementResult(BaseResult):
 
 @meta(description="Compare one element of two versions of a history, property by property", domain=DiagramsDomain)
 @check_roles(GuestRole)
-@connection(ComparisonStore, key=COMPARISON_STORE_CONNECTION_KEY, description="The comparisons of held versions")
+@connection(ComparisonStoreController, key=COMPARISON_STORE_CONNECTION_KEY, description="The comparisons of held versions")
 class CompareElementAction(BaseAction[CompareElementParams, CompareElementResult]):
     """
     AI-CORE-BEGIN
     ROLE: Answer how one element changed between the two versions the read names.
     CONTRACT: Its status and every difference by path, with ``before`` absent for an added property and ``after`` absent for a removed one; an id in neither version raises ``ElementNotComparedError``.
-    INVARIANTS: Reads the comparison ``ComparisonStore`` holds for the pair; computes nothing of its own.
+    INVARIANTS: Reads the comparison ``ComparisonStoreController`` holds for the pair; computes nothing of its own.
     AI-CORE-END
     """
 
@@ -82,7 +85,7 @@ class CompareElementAction(BaseAction[CompareElementParams, CompareElementResult
     ) -> CompareElementResult:
         """Look the element up in the pair's comparison."""
         _ = (state, box)
-        comparison = await cast(ComparisonStore, connections[COMPARISON_STORE_CONNECTION_KEY]).current()
+        comparison = await cast(ComparisonStoreController, connections[COMPARISON_STORE_CONNECTION_KEY]).current()
         item = (comparison.nodes if params.kind == "node" else comparison.edges).get(params.id)
         if item is None:
             raise ElementNotComparedError("not found")

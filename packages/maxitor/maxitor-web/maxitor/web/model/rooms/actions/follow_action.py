@@ -28,10 +28,10 @@ from __future__ import annotations
 
 from typing import cast
 
-from maxitor.web.model.rooms.actions.room_action_support import RoomAnswer, located
+from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
 from maxitor.web.model.rooms.follow_circle import would_close_circle
 from maxitor.web.model.rooms.layout_authority import recheck_layouts
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
 
@@ -44,7 +44,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import SocketChannel
+from aoa.fastapi import SocketChannelController
 
 
 class FollowParams(BaseParams):
@@ -55,9 +55,9 @@ class FollowParams(BaseParams):
 
 @meta(description="Start following another participant", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The follower's connection")
-class FollowAction(BaseAction[FollowParams, RoomAnswer]):
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The follower's connection")
+class FollowAction(BaseAction[FollowParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Link a follower to the person they follow, never closing a circle.
@@ -73,10 +73,10 @@ class FollowAction(BaseAction[FollowParams, RoomAnswer]):
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Link the follower or tell them why not."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        socket = cast(SocketChannel, connections["socket"])
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        socket = cast(SocketChannelController, connections["socket"])
         room, participant, _ = located(registry, socket)
         async with room.lock:
             reason = None
@@ -98,7 +98,7 @@ class FollowAction(BaseAction[FollowParams, RoomAnswer]):
                 participant=participant.id,
                 target=params.target,
             )
-            return RoomAnswer()
+            return RoomAnswerResult()
         await box.info(
             Channel.business,
             "Participant {%var.participant} follows {%var.target} in room {%var.room}",
@@ -106,4 +106,4 @@ class FollowAction(BaseAction[FollowParams, RoomAnswer]):
             target=params.target,
             room=room.id,
         )
-        return RoomAnswer()
+        return RoomAnswerResult()

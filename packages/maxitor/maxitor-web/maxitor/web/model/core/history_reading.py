@@ -36,8 +36,8 @@ from maxitor.web.model.core.history_address import PrivateHistory, PublicHistory
 from maxitor.web.model.core.history_entry import HistoryEntry, short_sha
 from maxitor.web.model.core.history_errors import HistoryNotFoundError, HistoryUnreachableError, TooManyWrongKeysError
 from maxitor.web.model.core.resources.graph_source_gateway import Document, GraphSourceGateway
-from maxitor.web.model.core.resources.history_access import HistoryAccess
-from maxitor.web.model.core.resources.history_store import HistoryStore
+from maxitor.web.model.core.resources.history_access import HistoryAccessController
+from maxitor.web.model.core.resources.history_store import HistoryStoreController
 from maxitor.web.model.core.resources.repo_graph_port_gateway import (
     Described,
     Listed,
@@ -98,8 +98,8 @@ def text_or_none(value: object) -> str | None:
 async def open_history(
     box: ToolsBox,
     gateway: RepoGraphPortGateway,
-    store: HistoryStore,
-    access: HistoryAccess,
+    store: HistoryStoreController,
+    access: HistoryAccessController,
     name: str,
     key: str,
     client: str,

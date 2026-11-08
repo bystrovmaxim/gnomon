@@ -25,7 +25,7 @@ One process therefore holds one graph per source, not one graph for every user (
 
 Rooms (#271) run over one WebSocket route of the same adapter,
 ``/api/v1/rooms/{room_id}/live``: every message is an action over the process-wide
-``RoomRegistry``. ``/api/meta/app-info`` answers the running version and client build
+``RoomRegistryController``. ``/api/meta/app-info`` answers the running version and client build
 from a second adapter app, outside the paths ``GraphSourceMiddleware`` guards.
 ``MAXITOR_ROOM_ORIGINS`` lists extra browser origins allowed to join a room (comma
 separated), for a client served from another address, such as the Vite dev server.
@@ -59,7 +59,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from maxitor.web.api.access_log import install as install_access_log
 from maxitor.web.api.cached_static_files import CachedStaticFiles
-from maxitor.web.api.duckdb_graph_holder import DuckDBGraphHolder
+from maxitor.web.api.duckdb_graph_holder import RequestGraphStorage
 from maxitor.web.api.graph_source_middleware import GraphSourceMiddleware, current_mapped, current_pair
 from maxitor.web.api.graph_store import GraphStore, build_graph_entry
 from maxitor.web.api.history_key_auth_coordinator import HistoryKeyAuthCoordinator
@@ -81,21 +81,21 @@ from maxitor.web.model.core.history_address import (
 from maxitor.web.model.core.history_errors import HistoryNotFoundError, HistoryUnreachableError, TooManyWrongKeysError
 from maxitor.web.model.core.resources.graph_source_gateway import GRAPH_SOURCE_CONNECTION_KEY, GraphSourceGateway
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
-from maxitor.web.model.core.resources.history_access import HISTORY_ACCESS_CONNECTION_KEY, HistoryAccess
-from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStore
-from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistry
+from maxitor.web.model.core.resources.history_access import HISTORY_ACCESS_CONNECTION_KEY, HistoryAccessController
+from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
+from maxitor.web.model.core.resources.open_tabs_registry import OPEN_TABS_CONNECTION_KEY, OpenTabsRegistryController
 from maxitor.web.model.core.resources.own_model_graph_resource import (
     OWN_MODEL_GRAPH_CONNECTION_KEY,
-    OwnModelGraphResource,
+    OwnModelGraphStorage,
 )
 from maxitor.web.model.core.resources.repo_graph_port_gateway import (
     REPO_GRAPH_PORT_CONNECTION_KEY,
     RepoGraphPortGateway,
 )
-from maxitor.web.model.core.resources.source_checks import SOURCE_CHECKS_CONNECTION_KEY, SourceChecks
+from maxitor.web.model.core.resources.source_checks import SOURCE_CHECKS_CONNECTION_KEY, SourceChecksController
 from maxitor.web.model.core.resources.static_bundle_resource import (
     STATIC_BUNDLE_CONNECTION_KEY,
-    StaticBundleResource,
+    StaticBundleStorage,
 )
 from maxitor.web.model.diagrams.actions.all_use_cases_diagram_action import GetAllUseCasesDiagramAction
 from maxitor.web.model.diagrams.actions.changed_inside_action import ChangedInsideAction
@@ -118,14 +118,14 @@ from maxitor.web.model.diagrams.actions.map_overview_action import MapOverviewAc
 from maxitor.web.model.diagrams.resources.comparison_store import (
     COMPARISON_STORE_CONNECTION_KEY,
     ComparisonRefusedError,
-    ComparisonStore,
+    ComparisonStoreController,
     NotComparingError,
 )
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import DUCKDB_GRAPH_CONNECTION_KEY
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import DUCKDB_GRAPH_CONNECTION_KEY
 from maxitor.web.model.diagrams.resources.map_store import (
     MAP_STORE_CONNECTION_KEY,
     MapRefusedError,
-    MapStore,
+    MapStoreController,
     NoGraphError,
 )
 from maxitor.web.model.rooms.actions import (
@@ -141,13 +141,13 @@ from maxitor.web.model.rooms.actions import (
     SetRoomVersionAction,
     StopFollowingAction,
 )
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from starlette.middleware.gzip import GZipMiddleware
 
 from aoa.action_machine.auth import NoAuthCoordinator
 from aoa.action_machine.context import Context
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
-from aoa.action_machine.model import ParamsStub
+from aoa.action_machine.model import StubParams
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 from aoa.fastapi import FastApiAdapter
 
@@ -179,9 +179,9 @@ def _map_scope(source: str) -> str:
     return version[0] if version else source
 
 
-def _map_store(fastapi_app: FastAPI) -> MapStore:
+def _map_store(fastapi_app: FastAPI) -> MapStoreController:
     """The maps of versions, laid out once and kept on disk (spec 040)."""
-    maps = MapStore(
+    maps = MapStoreController(
         Path(os.environ.get("MAXITOR_MAP_CACHE") or Path.home() / ".cache" / "maxitor" / "map"),
         graph=current_mapped,
         scope=_map_scope,
@@ -206,15 +206,15 @@ def create_app() -> FastAPI:
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     auth = NoAuthCoordinator(context=Context())
     graph_source = GraphSourceGateway()
-    rooms = RoomRegistry(allowed_origins=_origins_env("MAXITOR_ROOM_ORIGINS"))
+    rooms = RoomRegistryController(allowed_origins=_origins_env("MAXITOR_ROOM_ORIGINS"))
     rooms.bind(machine)
-    bundle = StaticBundleResource(_STATIC_DIR)
-    open_tabs = OpenTabsRegistry()
-    source_checks = SourceChecks()
+    bundle = StaticBundleStorage(_STATIC_DIR)
+    open_tabs = OpenTabsRegistryController()
+    source_checks = SourceChecksController()
     # Maxitor's own port, for public GitHub links only (spec 037, FR-003b); read here, never in an action.
     port_gateway = RepoGraphPortGateway(os.environ.get("MAXITOR_PUBLIC_PORT", "").strip() or None)
-    histories = HistoryStore(max_histories=_positive_int_env("MAXITOR_MAX_HISTORIES", 50))
-    history_access = HistoryAccess()
+    histories = HistoryStoreController(max_histories=_positive_int_env("MAXITOR_MAX_HISTORIES", 50))
+    history_access = HistoryAccessController()
     install_access_log()
 
     @asynccontextmanager
@@ -222,7 +222,7 @@ def create_app() -> FastAPI:
         application.state.machine = machine
         application.state.graph_store = store
         # The clock only runs the action that decides which sources are due (spec 028, FR-071).
-        source_checks.start(CheckDueSourcesAction, ParamsStub())
+        source_checks.start(CheckDueSourcesAction, StubParams())
         yield
         await source_checks.close()
         await rooms.close()
@@ -267,10 +267,10 @@ def create_app() -> FastAPI:
         HISTORY_ACCESS_CONNECTION_KEY: history_access,
     }
 
-    duckdb_graph = DuckDBGraphHolder()
+    duckdb_graph = RequestGraphStorage()
     maps = _map_store(fastapi_app)
     # Two versions compared once per pair, whoever reads them (spec 038, research R9).
-    comparisons = ComparisonStore(pair=current_pair)
+    comparisons = ComparisonStoreController(pair=current_pair)
     fastapi_app.state.comparisons = comparisons
 
     _install_middleware(fastapi_app)
@@ -283,7 +283,7 @@ def create_app() -> FastAPI:
             version="1.0.0",
             description=(
                 "JSON endpoints generated from diagrams actions. "
-                "Each diagram route declares its shared ``DuckDBGraphResource`` connection."
+                "Each diagram route declares its shared ``DuckDBGraphStorage`` connection."
             ),
         )
         .get(
@@ -427,7 +427,7 @@ def create_app() -> FastAPI:
     fastapi_app.mount("/api/history", history_subapp)
 
     # Maxitor's own model, at the path Maxitor adds to a bare service address (spec 029, FR-060).
-    own_model = OwnModelGraphResource(machine.graph_coordinator)
+    own_model = OwnModelGraphStorage(machine.graph_coordinator)
     own_model_subapp = (
         FastApiAdapter(machine=machine, auth_coordinator=auth, title="Maxitor model", version="1.0.0")
         .get("/graph-json", GetOwnGraphJsonAction, connections={OWN_MODEL_GRAPH_CONNECTION_KEY: own_model})

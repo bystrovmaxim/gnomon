@@ -26,9 +26,9 @@ from maxitor.web.model.diagrams.actions.get_lifecycle_finite_automaton_action_sc
     LifecycleFiniteAutomatonJson,
 )
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.duckdb_graph_resource import (
+from maxitor.web.model.diagrams.resources.duckdb_graph_storage import (
     DUCKDB_GRAPH_CONNECTION_KEY,
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
 )
 from pydantic import Field
 
@@ -83,7 +83,7 @@ def _transition_id(row: dict[str, Any]) -> str:
 )
 @check_roles(GuestRole)
 @connection(
-    DuckDBGraphResource,
+    DuckDBGraphStorage,
     key=DUCKDB_GRAPH_CONNECTION_KEY,
     description="Shared DuckDB graph connection — queried for lifecycle/state/transition rows",
 )
@@ -151,7 +151,7 @@ class GetLifecycleFiniteAutomatonAction(
         connections: Connections,
     ) -> dict[str, Any]:
         _ = (params, box)
-        graph = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        graph = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         node_id = cast(str, state["lifecycle_graph_node_id"])
 
         rows = graph.execute_fetch_dicts("SELECT field_name FROM lifecycle WHERE id = ?", [node_id])
@@ -182,7 +182,7 @@ class GetLifecycleFiniteAutomatonAction(
         connections: Connections,
     ) -> dict[str, Any]:
         _ = (params, box)
-        graph = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        graph = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         node_id = cast(str, state["lifecycle_graph_node_id"])
 
         state_rows = graph.execute_fetch_dicts(
@@ -220,7 +220,7 @@ class GetLifecycleFiniteAutomatonAction(
         connections: Connections,
     ) -> dict[str, Any]:
         _ = (params, box)
-        graph = cast(DuckDBGraphResource, connections[DUCKDB_GRAPH_CONNECTION_KEY])
+        graph = cast(DuckDBGraphStorage, connections[DUCKDB_GRAPH_CONNECTION_KEY])
         node_id = cast(str, state["lifecycle_graph_node_id"])
 
         transition_rows = graph.execute_fetch_dicts(

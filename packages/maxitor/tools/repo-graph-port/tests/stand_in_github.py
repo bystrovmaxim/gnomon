@@ -36,7 +36,7 @@ class StandInGitHub:
     authorized: dict[str, str] = field(default_factory=dict)
 
     def transport(self) -> httpx.MockTransport:
-        """The transport a ``GitHubHost`` is built with."""
+        """The transport a ``GitHubHostGateway`` is built with."""
         return httpx.MockTransport(self._answer)
 
     def _answer(self, request: httpx.Request) -> httpx.Response:

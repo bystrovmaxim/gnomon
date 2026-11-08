@@ -33,8 +33,8 @@ from maxitor.web.model.core.core_domain import CoreDomain
 from maxitor.web.model.core.history_address import PrivateHistory, history_from_name, parse_version_source
 from maxitor.web.model.core.history_errors import HistoryNotFoundError
 from maxitor.web.model.core.history_reading import refuse
-from maxitor.web.model.core.resources.history_access import HISTORY_ACCESS_CONNECTION_KEY, HistoryAccess
-from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStore
+from maxitor.web.model.core.resources.history_access import HISTORY_ACCESS_CONNECTION_KEY, HistoryAccessController
+from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
 from maxitor.web.model.core.resources.repo_graph_port_gateway import (
     REPO_GRAPH_PORT_CONNECTION_KEY,
     Listed,
@@ -72,8 +72,8 @@ class CheckVersionAccessResult(BaseResult):
 @meta(description="Decide whether a reader may read a version's graph", domain=CoreDomain)
 @check_roles(GuestRole)
 @connection(RepoGraphPortGateway, key=REPO_GRAPH_PORT_CONNECTION_KEY, description="Asks the port whether a key still opens the history")
-@connection(HistoryStore, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
-@connection(HistoryAccess, key=HISTORY_ACCESS_CONNECTION_KEY, description="Keys the port accepted lately")
+@connection(HistoryStoreController, key=HISTORY_STORE_CONNECTION_KEY, description="The histories Maxitor holds")
+@connection(HistoryAccessController, key=HISTORY_ACCESS_CONNECTION_KEY, description="Keys the port accepted lately")
 class CheckVersionAccessAction(BaseAction[CheckVersionAccessParams, CheckVersionAccessResult]):
     """
     AI-CORE-BEGIN
@@ -96,12 +96,12 @@ class CheckVersionAccessAction(BaseAction[CheckVersionAccessParams, CheckVersion
         """Check the key, then the version."""
         _ = state
         named = parse_version_source(params.source)
-        store = cast(HistoryStore, connections[HISTORY_STORE_CONNECTION_KEY])
+        store = cast(HistoryStoreController, connections[HISTORY_STORE_CONNECTION_KEY])
         entry = store.peek(named[0]) if named is not None else None
         if named is None or entry is None:
             raise HistoryNotFoundError()
         key = str(ctx.get("user.history_key") or "")
-        access = cast(HistoryAccess, connections[HISTORY_ACCESS_CONNECTION_KEY])
+        access = cast(HistoryAccessController, connections[HISTORY_ACCESS_CONNECTION_KEY])
         if not entry.public and not access.accepted(entry.name, key):
             history = history_from_name(entry.name, key)
             gateway = cast(RepoGraphPortGateway, connections[REPO_GRAPH_PORT_CONNECTION_KEY])

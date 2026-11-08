@@ -14,7 +14,7 @@ name — with ``HistoryReaderRole`` and the one history the key opens.
 ARCHITECTURE / DATA FLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
-``{"key": …}`` ──sha256──► ``HistoriesConfig.reader_of(hash, today)`` ──► ``HistoryReaderInfo`` | ``None``.
+``{"key": …}`` ──sha256──► ``HistoriesConfigStorage.reader_of(hash, today)`` ──► ``HistoryReaderInfo`` | ``None``.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from typing import Any
 
 from maxitor.repo_graph_port.history_reader_info import HistoryReaderInfo
 from maxitor.repo_graph_port.history_reader_role import HistoryReaderRole
-from maxitor.repo_graph_port.resources.histories_config import HistoriesConfig
+from maxitor.repo_graph_port.resources.histories_config import HistoriesConfigStorage
 
 from aoa.action_machine.auth.authenticator import Authenticator
 
@@ -39,7 +39,7 @@ class HistoryKeyAuthenticator(Authenticator):
     AI-CORE-END
     """
 
-    def __init__(self, config: HistoriesConfig) -> None:
+    def __init__(self, config: HistoriesConfigStorage) -> None:
         self._config = config
 
     def __repr__(self) -> str:

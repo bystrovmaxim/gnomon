@@ -33,8 +33,8 @@ from typing import cast
 from maxitor.web.model.core.actions.check_source_action import CheckSourceAction, CheckSourceParams
 from maxitor.web.model.core.resources.graph_source_gateway import GRAPH_SOURCE_CONNECTION_KEY, GraphSourceGateway
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
-from maxitor.web.model.rooms.actions.room_action_support import SOURCE_UNAVAILABLE, RoomAnswer, located
-from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistry
+from maxitor.web.model.rooms.actions.room_action_support import SOURCE_UNAVAILABLE, RoomAnswerResult, located
+from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 
 from aoa.action_machine.auth import GuestRole
@@ -46,7 +46,7 @@ from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from aoa.fastapi import ConnectionRefusalError, SocketChannel
+from aoa.fastapi import ConnectionRefusalError, SocketChannelController
 
 
 class ReloadSourceForRoomParams(BaseParams):
@@ -55,11 +55,11 @@ class ReloadSourceForRoomParams(BaseParams):
 
 @meta(description="Rebuild a room's graph for everyone in it", domain=RoomsDomain)
 @check_roles(GuestRole)
-@connection(RoomRegistry, key=ROOM_REGISTRY_KEY, description="Every open room")
-@connection(SocketChannel, key="socket", description="The connection that pressed Reload")
+@connection(RoomRegistryController, key=ROOM_REGISTRY_KEY, description="Every open room")
+@connection(SocketChannelController, key="socket", description="The connection that pressed Reload")
 @connection(GraphStoreController, key=GRAPH_STORE_CONNECTION_KEY, description="Built graphs")
 @connection(GraphSourceGateway, key=GRAPH_SOURCE_CONNECTION_KEY, description="Downloads graph-json")
-class ReloadSourceForRoomAction(BaseAction[ReloadSourceForRoomParams, RoomAnswer]):
+class ReloadSourceForRoomAction(BaseAction[ReloadSourceForRoomParams, RoomAnswerResult]):
     """
     AI-CORE-BEGIN
     ROLE: Rebuild the room's source once and tell every room of that source the new fingerprint.
@@ -75,10 +75,10 @@ class ReloadSourceForRoomAction(BaseAction[ReloadSourceForRoomParams, RoomAnswer
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
-    ) -> RoomAnswer:
+    ) -> RoomAnswerResult:
         """Rebuild, then tell every room of the source when the graph changed."""
-        registry = cast(RoomRegistry, connections[ROOM_REGISTRY_KEY])
-        room, participant, _ = located(registry, cast(SocketChannel, connections["socket"]))
+        registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
+        room, participant, _ = located(registry, cast(SocketChannelController, connections["socket"]))
         result = await box.run(
             CheckSourceAction,
             CheckSourceParams(source=room.source, force=True),
@@ -97,4 +97,4 @@ class ReloadSourceForRoomAction(BaseAction[ReloadSourceForRoomParams, RoomAnswer
             source=room.source,
             room=room.id,
         )
-        return RoomAnswer()
+        return RoomAnswerResult()

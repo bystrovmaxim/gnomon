@@ -15,7 +15,7 @@ ARCHITECTURE / DATA FLOW
 
 ::
 
-    GET /api/v1/map/changes?source=<B>&a=<A> ──► GraphSourceMiddleware ──► MapStore.changes()
+    GET /api/v1/map/changes?source=<B>&a=<A> ──► GraphSourceMiddleware ──► MapStoreController.changes()
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
-from maxitor.web.model.diagrams.resources.map_store import MAP_STORE_CONNECTION_KEY, MapStore
+from maxitor.web.model.diagrams.resources.map_store import MAP_STORE_CONNECTION_KEY, MapStoreController
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
@@ -31,7 +31,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.model import BaseAction, BaseResult, BaseState, ParamsStub
+from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
@@ -44,24 +44,24 @@ class MapChangesResult(BaseResult):
 
 @meta(description="List the changes of two versions, in stepping order", domain=DiagramsDomain)
 @check_roles(GuestRole)
-@connection(MapStore, key=MAP_STORE_CONNECTION_KEY, description="The maps of versions")
-class MapChangesAction(BaseAction[ParamsStub, MapChangesResult]):
+@connection(MapStoreController, key=MAP_STORE_CONNECTION_KEY, description="The maps of versions")
+class MapChangesAction(BaseAction[StubParams, MapChangesResult]):
     """
     AI-CORE-BEGIN
     ROLE: Answer every changed node of the pair a read names, in the order the map steps through them.
     CONTRACT: Domains by size, largest first, then the graph's order; empty before the map is made.
-    INVARIANTS: Reads what ``MapStore`` keeps; computes nothing of its own.
+    INVARIANTS: Reads what ``MapStoreController`` keeps; computes nothing of its own.
     AI-CORE-END
     """
 
     @summary_aspect("Give the pair's changes")
     async def changes_summary(
         self,
-        params: ParamsStub,
+        params: StubParams,
         state: BaseState,
         box: ToolsBox,
         connections: Connections,
     ) -> MapChangesResult:
         """Read the bound pair's list."""
         _ = (params, state, box)
-        return MapChangesResult(changes=await cast(MapStore, connections[MAP_STORE_CONNECTION_KEY]).changes())
+        return MapChangesResult(changes=await cast(MapStoreController, connections[MAP_STORE_CONNECTION_KEY]).changes())

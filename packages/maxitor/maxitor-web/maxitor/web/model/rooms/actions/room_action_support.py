@@ -26,10 +26,10 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from maxitor.web.model.rooms.resources.room_registry import Participant, Room, RoomRegistry, Tab
+from maxitor.web.model.rooms.resources.room_registry import Participant, Room, RoomRegistryController, Tab
 
 from aoa.action_machine.model import BaseResult
-from aoa.fastapi import ConnectionRefusalError, SocketChannel
+from aoa.fastapi import ConnectionRefusalError, SocketChannelController
 
 #: Close and refusal codes of the room protocol.
 ORIGIN_NOT_ALLOWED = 4403
@@ -46,11 +46,11 @@ MAX_PARTICIPANTS = 20
 MAX_ROOMS = 100
 
 
-class RoomAnswer(BaseResult):
+class RoomAnswerResult(BaseResult):
     """Room actions answer through the connection; their result carries nothing."""
 
 
-def located(registry: RoomRegistry, channel: SocketChannel) -> tuple[Room, Participant, Tab]:
+def located(registry: RoomRegistryController, channel: SocketChannelController) -> tuple[Room, Participant, Tab]:
     """The room, participant and tab ``channel`` belongs to; refuse when it belongs to none."""
     found = registry.locate(channel)
     if found is None:
