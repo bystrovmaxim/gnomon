@@ -29,6 +29,7 @@ from maxitor.core.actions.organizations import (
     OpenOrganizationAction,
     RegisterOrganizationAction,
 )
+from maxitor.core.actions.passport import CorePassportAction
 from maxitor.core.actions.password_reset import RequestPasswordResetAction, ResetPasswordAction
 from maxitor.core.actions.provider_sign_in import FinishSignInAction, StartSignInAction
 from maxitor.core.actions.region import SignInOptionsAction
@@ -74,6 +75,7 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("get", "/api/v1/organizations/code-check", CheckAddressCodeAction),
     ("post", "/api/v1/organizations", RegisterOrganizationAction),
     ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
+    ("get", "/api/v1/core/passport", CorePassportAction),
 ]
 
 

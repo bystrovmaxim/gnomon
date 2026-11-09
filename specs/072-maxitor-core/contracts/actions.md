@@ -52,7 +52,7 @@ Every address is declared by the chain of `FastApiAdapter` in `maxitor/core/serv
 
 | Method and address | Action | Auth | Body → answer |
 |---|---|---|---|
-| `GET /api/v1/core/passport` | `CorePassportAction` | open | → the passport `maxitor-core.yaml` as JSON |
+| `GET /api/v1/core/passport` | `CorePassportAction` | open | → `{passport: 1, id: "maxitor", version, reads: {plugin-passport, navigation, foreign-keys}, sdk}`: the file `maxitor-core.yaml` with the version of the `maxitor` package |
 
 ## Gateways (connections, per call)
 
