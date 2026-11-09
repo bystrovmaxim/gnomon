@@ -56,7 +56,7 @@ show_error_codes = true
 namespace_packages = true
 explicit_package_bases = true
 exclude = "collect_python_files\\.py$"
-mypy_path = "external/aoa/packages/aoa-action-machine/src:external/aoa/packages/aoa-fastapi-adapter/src:packages/maxitor/maxitor-web:packages/maxitor/tools/repo-graph-port:packages/maxitor/tools/graph-builder:packages/maxitor/core/graph_compare:packages/maxitor/core/graph_map:packages/maxitor-plugin-template/src"
+mypy_path = "external/aoa/packages/aoa-action-machine/src:external/aoa/packages/aoa-fastapi-adapter/src:packages/maxitor/maxitor-core:packages/maxitor/maxitor-web:packages/maxitor/tools/repo-graph-port:packages/maxitor/tools/graph-builder:packages/maxitor/core/graph_compare:packages/maxitor/core/graph_map:packages/maxitor-plugin-template/src"
 
 [[tool.mypy.overrides]]
 module = "tests.*"

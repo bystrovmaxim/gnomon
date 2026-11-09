@@ -26,13 +26,16 @@ tables it joins are read at the same moment.
 THE CORE'S TABLES
 ═══════════════════════════════════════════════════════════════════════════════
 
-``core.organizations (id, code)`` and ``core.members (organization_id, user_id, name)`` with
-``core.member_versions`` are the core's tables as the hosting work lays them out
-(bystrovmaxim/gnomon#75); this storage only reads them.
+The core keeps organizations and their users in its schema ``organization`` (bystrovmaxim/gnomon#73):
+``organization (id, code)``, ``"user" (organization_id, id, account_id, name, status)`` and ``user_versions``.
+A note's writer is the person's account, the ``sub`` of the plugin's token, matched against ``"user".account_id``.
+No SQL here names that schema: its name comes from ``MAXITOR_SCHEMA_ORGANIZATION`` and enters SQL only through
+``_identifier``. This storage only reads the core's tables.
 """
 
 from __future__ import annotations
 
+import os
 from typing import Any, cast
 from uuid import uuid4
 
@@ -43,6 +46,19 @@ from aoa.action_machine.resources.postgres import PostgresStorage
 from aoa.action_machine.resources.sql import SqlStorageWrapper
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
+
+
+def _identifier(name: str) -> str:
+    """Quote ``name`` as a PostgreSQL identifier, doubling any double quote inside it."""
+    if not name or "\x00" in name:
+        raise ValueError("An identifier must be a non-empty name without NUL.")
+    return '"' + name.replace('"', '""') + '"'
+
+
+def _core(table: str) -> str:
+    """A table of the core's schema, its schema named by the environment."""
+    return f"{_identifier(os.environ.get('MAXITOR_SCHEMA_ORGANIZATION', 'organization'))}.{_identifier(table)}"
+
 
 #: Connection key under which actions receive the storage.
 NOTES_CONNECTION_KEY = "notes"
@@ -77,9 +93,9 @@ class NotesStorage(PostgresStorage):
     async def organization_of(self, code: str, user_id: str) -> str | None:
         """The id of the organization ``code`` if ``user_id`` is a member of it now, else ``None``."""
         value = await self._fetchval(
-            "SELECT o.id::text FROM core.organizations o"
-            " JOIN core.members m ON m.organization_id = o.id"
-            " WHERE o.code = $1 AND m.user_id = $2::text::uuid",
+            f"SELECT o.id::text FROM {_core('organization')} o"
+            f" JOIN {_core('user')} m ON m.organization_id = o.id"
+            " WHERE o.code = $1 AND m.account_id = $2::text::uuid AND m.status = 'active'",
             (code, user_id),
         )
         return None if value is None else str(value)
@@ -125,7 +141,7 @@ class NotesStorage(PostgresStorage):
             f"SELECT n.id::text AS id, n.item_id::text AS item_id, n.writer_id::text AS writer_id,"
             f" coalesce(m.name, '') AS writer_name, n.body AS body, {_MOMENT.format('n.updated_at')} AS updated_at"
             f" FROM note_versions n"
-            f" LEFT JOIN core.member_versions m ON m.organization_id = n.organization_id AND m.user_id = n.writer_id"
+            f" LEFT JOIN {_core('user_versions')} m ON m.organization_id = n.organization_id AND m.account_id = n.writer_id"
             f" AND {_in_force('m', when)}"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {_in_force('n', when)}"
             f" AND ($4::text IS NULL OR n.writer_id = $4::text::uuid)"
@@ -143,7 +159,7 @@ class NotesStorage(PostgresStorage):
         rows = await self._fetch(
             f"SELECT DISTINCT n.writer_id::text AS id, coalesce(m.name, '') AS name"
             f" FROM note_versions n"
-            f" LEFT JOIN core.member_versions m ON m.organization_id = n.organization_id AND m.user_id = n.writer_id"
+            f" LEFT JOIN {_core('user_versions')} m ON m.organization_id = n.organization_id AND m.account_id = n.writer_id"
             f" AND {_in_force('m', when)}"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {_in_force('n', when)}"
             f" AND ($4::text IS NULL OR n.writer_id > $4::text::uuid)"

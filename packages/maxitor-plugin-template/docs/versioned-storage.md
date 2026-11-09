@@ -137,13 +137,13 @@ The watermark is computed from the versions themselves, in one query over all ve
 
 ```sql
 SELECT max(t) FROM (
-    SELECT max(valid_from_at) AS t FROM core.item_versions WHERE organization_id = :org
+    SELECT max(valid_from_at) AS t FROM organization.item_versions WHERE organization_id = :org
     UNION ALL
-    SELECT max(valid_to_at)          FROM core.item_versions WHERE organization_id = :org
+    SELECT max(valid_to_at)          FROM organization.item_versions WHERE organization_id = :org
     UNION ALL
-    SELECT max(valid_from_at)        FROM core.part_versions WHERE organization_id = :org
+    SELECT max(valid_from_at)        FROM organization.part_versions WHERE organization_id = :org
     UNION ALL
-    SELECT max(valid_to_at)          FROM core.part_versions WHERE organization_id = :org
+    SELECT max(valid_to_at)          FROM organization.part_versions WHERE organization_id = :org
     UNION ALL
     ...                                -- so for every version table of every schema
 ) AS last_changes;

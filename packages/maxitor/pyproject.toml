@@ -38,7 +38,19 @@ web = [
     "uvicorn>=0.30",
     "websockets>=15",
 ]
-all = ["maxitor[web]", "maxitor[repo-graph-port]"]
+# Maxitor's core: accounts and their ways in, organizations, the session — on PostgreSQL.
+core = [
+    "aoa-action-machine[postgres,jwt]>=1.0.1a0",
+    "aoa-fastapi-adapter>=1.3.0",
+    "argon2-cffi>=23.1,<26",
+    "botocore>=1.34,<2",
+    "geoip2>=4.8,<6",
+    "httpx>=0.28,<1.0",
+    "packaging>=24",
+    "PyYAML>=6.0,<7",
+    "uvicorn>=0.30",
+]
+all = ["maxitor[web]", "maxitor[repo-graph-port]", "maxitor[core]"]
 
 # AOA is external code: the submodule external/aoa, fixed to one commit (update-aoa.sh moves it).
 [tool.uv.sources]
@@ -58,11 +70,12 @@ repo-graph-port = "maxitor.repo_graph_port.launch:main"
 # One package from several folders: the web part (maxitor-web/), the tools and services (tools/<name>/), the
 # code they share (core/<name>/) and the skills (skills/). ``maxitor`` is a namespace package; each part keeps its code in ``<part>/maxitor/<name>/``.
 [tool.hatch.build.targets.wheel]
-only-include = ["maxitor-web/maxitor", "tools/repo-graph-port/maxitor", "tools/graph-builder/maxitor", "core/graph_compare/maxitor", "core/graph_map/maxitor"]
+only-include = ["maxitor-core/maxitor", "maxitor-web/maxitor", "tools/repo-graph-port/maxitor", "tools/graph-builder/maxitor", "core/graph_compare/maxitor", "core/graph_map/maxitor"]
 artifacts = ["maxitor-web/maxitor/web/static/**/*"]
-dev-mode-dirs = ["maxitor-web", "tools/repo-graph-port", "tools/graph-builder", "core/graph_compare", "core/graph_map"]
+dev-mode-dirs = ["maxitor-core", "maxitor-web", "tools/repo-graph-port", "tools/graph-builder", "core/graph_compare", "core/graph_map"]
 
 [tool.hatch.build.targets.wheel.sources]
+"maxitor-core" = ""
 "maxitor-web" = ""
 "tools/repo-graph-port" = ""
 "tools/graph-builder" = ""

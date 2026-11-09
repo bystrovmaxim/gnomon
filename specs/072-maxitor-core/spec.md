@@ -320,6 +320,7 @@ An architect in the ERD's physical view moves the paint switch to Domains and se
 - **FR-031**: `/privacy` MUST say what Maxitor keeps, why, where, for how long, which cookies it sets and how to have the data deleted, and MUST carry a version and a date.
 - **FR-032**: `/data-deletion` MUST say to write to `privacy@aoa.run` from the account's email and that the account, its sign-ins and its users are deleted within thirty days.
 - **FR-033**: Both pages MUST open without signing in and be linked from the sign-in page and the letter.
+- **FR-034a**: The sign-in, sign-up, email confirmation, password reset, consent and cookie screens and the pages `/privacy` and `/data-deletion` MUST work on a screen 375 px wide and wider, with no horizontal scrolling; the organization's frame, choosing an organization and sign-in methods are for screens 1024 px wide and wider, and their adaptation comes with the frame in bystrovmaxim/gnomon#74.
 - **FR-034**: On the first visit every page MUST show a cookie banner naming the one cookie and its purpose and linking to the policy's cookies section; signing in MUST wait until it is accepted; the answer MUST be kept in the browser with the policy's version and asked again when it changes; Maxitor MUST set no analytics, advertising or third-party cookie.
 
 **How it is built**
@@ -374,6 +375,7 @@ The entities below, their fields, the two domains with their events and the stor
 - **SC-008**: Each of the six kinds of plugin conflict is refused with every side named, and the plugin template passes, checked by one test per kind.
 - **SC-009**: The sign-in page shows its form within 2 seconds of opening on the stand, measured in Chromium on the browser checks' machine.
 - **SC-010**: The screens built match the mockup's 1.1–7.4, checked screen by screen in the browser.
+- **SC-012**: Every screen of FR-034a shows no horizontal scrollbar at 375 × 812, checked by a browser check.
 - **SC-011**: In the ERD's physical view, choosing Domains paints 100% of the tables by domain and survives a reload, checked by a browser test.
 
 ## Assumptions
