@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026-11-09] — The ERD's small fixes, found on the demo's history
+
+Switching **Boundary** off no longer folds anything: the domains folded in the address used to vanish into bare ids with every line running to them, and the other tables stood in one tall column. Switching it off or on now replaces the drawing in one step, fitted to what it shows, with no frame between and no jump. The card of a frame keeps the pointed table's type and description in view at its bottom while its list scrolls, and the list no longer shakes under the pointer. Moving from a table onto its card keeps the table lit. A step through the changes lands on a change inside a folded frame too: its box lights and its card opens. A marked row's type no longer slides over its name when the drawing is zoomed in. The logical and the physical view each keep their own layout and tables' collapse, and a room carries both, and the halves of the events explorer. ([#89](https://github.com/bystrovmaxim/gnomon/issues/89))
+
 ## [2026-11-09] — The ERD of a large model stays live
 
 On a model of a thousand tables the whole system's ERD used to stop the page: Graphviz laid the model out on the page itself for some twenty seconds, and every repaint and every unfold did it again. Now the first picture comes in under three seconds, and the page answers while a model is laid out: Graphviz and the drawing of the cards run in a Web Worker, beside the page.

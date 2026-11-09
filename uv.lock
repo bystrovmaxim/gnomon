@@ -970,7 +970,7 @@ wheels = [
 
 [[package]]
 name = "maxitor"
-version = "3.28.0"
+version = "3.29.0"
 source = { editable = "packages/maxitor" }
 dependencies = [
     { name = "jsonschema" },
