@@ -15,7 +15,7 @@ ARCHITECTURE / DATA FLOW
 ═══════════════════════════════════════════════════════════════════════════════
 
 The command ``maxitor`` → ``main()`` → imports the front's server inside the
-function → runs it. A ``ModuleNotFoundError`` for a dependency the extra brings
+function → runs it; ``maxitor plugin check`` imports only the plugin check, which needs no extra. A ``ModuleNotFoundError`` for a dependency the extra brings
 becomes one line on standard error and exit code 2; any other error propagates.
 Nothing heavy is imported at module level, so this module loads without any extra.
 """
@@ -37,10 +37,15 @@ def _brought_by_front(error: ModuleNotFoundError) -> bool:
 def main() -> None:
     """
     AI-CORE-BEGIN
-    ROLE: Entry point of the ``maxitor`` command: run Maxitor's server.
-    CONTRACT: Without the ``web`` extra, writes ``WEB_HINT`` to standard error and exits 2; any other error propagates.
+    ROLE: Entry point of the ``maxitor`` command: run Maxitor's server, or ``maxitor plugin check``.
+    CONTRACT: ``maxitor plugin check <path> --core <version>`` exits with the check's code and needs no extra;
+        otherwise, without the ``web`` extra, writes ``WEB_HINT`` to standard error and exits 2; any other error
+        propagates.
     AI-CORE-END
     """
+    if sys.argv[1:3] == ["plugin", "check"]:
+        plugin_check = importlib.import_module("maxitor.web.plugin_check")
+        raise SystemExit(plugin_check.main(sys.argv[3:]))
     try:
         server = importlib.import_module("maxitor.web.api.main")
     except ModuleNotFoundError as error:

@@ -18,6 +18,9 @@ authors = [{ name = "@Bystrov.Maxim" }]
 dependencies = [
     "jsonschema>=4.17,<5",
     "jsonschema-rs>=0.60,<1",
+    # maxitor plugin check: the SDK holds the schemas of a plugin's files and the compatibility decision.
+    "maxitor-plugin-sdk>=1.0,<2",
+    "PyYAML>=6.0,<7",
 ]
 
 [project.optional-dependencies]
@@ -56,6 +59,7 @@ all = ["maxitor[web]", "maxitor[repo-graph-port]", "maxitor[core]"]
 [tool.uv.sources]
 aoa-action-machine = { path = "../../external/aoa/packages/aoa-action-machine", editable = true }
 aoa-fastapi-adapter = { path = "../../external/aoa/packages/aoa-fastapi-adapter", editable = true }
+maxitor-plugin-sdk = { workspace = true }
 
 [project.urls]
 Homepage = "https://github.com/bystrovmaxim/gnomon"
