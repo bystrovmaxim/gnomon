@@ -56,7 +56,7 @@ One phase = one commit, referencing (#80); the phases are the seven of issue #80
 
 ## Phase 5 — Speed (US7; FR-018, FR-019; SC-007–SC-009)
 
-- [ ] T039 [US7] Give `scripts/generate-large-graph.ts` a `--tables <n,…>` option that picks the number of copies so the whole system's ERD holds 1 000 and 5 000 tables
+- [x] T039 [US7] Give `scripts/generate-large-graph.ts` a `--tables <n,…>` option that picks the number of copies so the whole system's ERD holds 1 000 and 5 000 tables
 - [ ] T040 [US7] Create `scripts/measure-erd.ts` like `scripts/measure-map.ts`: first picture, hover, repaint, fold (shown and settled), filter change (shown and settled), pan and zoom frame rate, the longest Long Task, and a room follower's delay with a second page; each number beside its SC-007 threshold, in the default layout; the other layouts and frames off printed without threshold
 - [ ] T041 [US7] Run the measurement on the production build before any speed change; write the numbers in `specs/071-erd-frames-folding/measurements.md`
 - [ ] T042 [US7] Create `client/lib/erdLayoutWorker.ts`: Graphviz in a Web Worker with an LRU of layouts keyed by engine + input; `ErdGraphvizCanvas.tsx` keeps the current drawing live while a layout runs and swaps in the new one with the camera kept; `erdCompose.ts` runs in the worker too
@@ -67,7 +67,7 @@ One phase = one commit, referencing (#80); the phases are the seven of issue #80
 
 ## Phase 6 — Versions, graph files, the closing check run
 
-- [ ] T047 Raise the versions of `packages/maxitor/maxitor-web/version.toml`, `packages/maxitor/version.toml` and the root `version.toml` if a file outside the packages changed; rebuild Maxitor's graph files if they change (`graph-builder write`)
+- [x] T047 Raise the versions of `packages/maxitor/maxitor-web/version.toml`, `packages/maxitor/version.toml` and the root `version.toml` if a file outside the packages changed; rebuild Maxitor's graph files if they change (`graph-builder write`)
 - [ ] T048 The closing check run (`scripts/check_run.py`), taken to zero; commit phase 6
 
 ## Phase 7 — Documentation and the changelog
