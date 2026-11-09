@@ -211,7 +211,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
       resource: null,
       members,
       groups: groupsIn(members, data.groups, entities),
-      folded: false,
+      folded: plan.counts.has(`${DOMAIN_CONTOUR_ID_PREFIX}${qual}`),
       tooltip: qual,
     };
   });
@@ -408,7 +408,9 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
     const frameNode = frameNodes.get(frame.name) ?? { left: 0, right: 0, top: 0, bottom: 0 };
     const fc = { x: boxCx(frameNode), y: boxCy(frameNode) };
     const box = frameBox(fc, entry.size);
-    parts.push(frameCluster(frame, box, frame.resource === null && data.model === "physical"));
+    // A folded frame draws no frame at all: its tables are folded into one box, and that box is the markup placed
+    // below (spec 071). Drawing the empty frame here was the whole of the "empty container" bug.
+    if (!frame.folded) parts.push(frameCluster(frame, box, frame.resource === null && data.model === "physical"));
     drawn.push(box);
     if (frame.folded) finalBoxes.set(frame.id, box);
     for (const group of frame.groups) {
