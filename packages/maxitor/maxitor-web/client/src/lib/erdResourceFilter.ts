@@ -20,3 +20,11 @@ export function resourcesOfDiagram(all: readonly string[], entities: readonly Er
   const kept = new Set(resourcesOnDiagram(entities));
   return all.filter((resource) => kept.has(resource));
 }
+
+/**
+ * Whether the physical view is offered (spec 071): the graph says where entities lie, and at least one table of the
+ * diagram's base is kept by a resource. A base with no stored table has nothing for the view to frame.
+ */
+export function physicalViewAvailable(storageKnown: boolean, base: readonly ErdEntity[]): boolean {
+  return storageKnown && base.some((entity) => (entity.resource_ids ?? []).length > 0);
+}

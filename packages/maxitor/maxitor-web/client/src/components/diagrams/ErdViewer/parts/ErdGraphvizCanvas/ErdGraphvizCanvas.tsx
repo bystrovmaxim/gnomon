@@ -40,9 +40,10 @@ import {
 import { containNodeFills } from "@/lib/containNodeFills";
 import { enrichErdDataForViewer } from "@/lib/enrichErdData";
 import { filterGraphByKinds, kindsOnDiagram, pruneGraphToEntities } from "@/lib/erdKindFilter";
-import { resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
+import { physicalViewAvailable, resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
 import { useErdResourceSettings } from "@/lib/erdResourceSettings";
 import { copyEntity, physicalDrawing, viewLayout } from "@/lib/erdViews";
+import { erdCompose } from "@/lib/erdCompose";
 import { ErdModelPill } from "./ErdModelPill";
 import { changeDiskUri, changesOnDiagram, domainsOn, filterGraphByChanges, onScreen, tablesToDraw } from "@/lib/erdFilterPresence";
 import { mergeRelationsOnScreen } from "@/lib/mergeErdRelations";
@@ -213,6 +214,13 @@ export function ErdGraphvizCanvas({
 
   const multiTab = domainKeyList.length > 1;
 
+  // The diagram's base: every table of the drawing that is open, before any filter. The filter rows come from it,
+  // so a filter never adds or removes another filter's rows (spec 038). The physical view is offered only when the
+  // graph says where entities lie and at least one table of the base is kept by a resource (spec 071).
+  const baseGraph = useMemo(() => getMergedFromDomains(enriched, new Set(domainKeyList)), [enriched, domainKeyList]);
+  const baseEntities = baseGraph.entities ?? [];
+  const physicalAvailable = useMemo(() => physicalViewAvailable(bundle.storage_known, baseEntities), [bundle.storage_known, baseEntities]);
+
   const bundleEntityTotal = useMemo(() => {
     const d = enriched.domains as Record<string, { entities?: ErdEntity[] }> | undefined;
     if (!d) return 0;
@@ -231,9 +239,10 @@ export function ErdGraphvizCanvas({
   const [disabledKindList, setDisabledKindList] = usePageSetting<string[]>("disabled_kinds", []);
   /** The view, the resources switched off and the frames folded (spec 070): page settings, shared in a room. */
   const { model: chosenModel, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold } = useErdResourceSettings();
-  // A graph that does not say where entities lie has no physical view: a stored choice of it opens the logical one.
-  const model = bundle.storage_known ? chosenModel : "logical";
-  // Frames are drawn under Dot only, and the physical view offers Dot alone (spec 070; ``viewLayout``).
+  // A graph that does not say where entities lie, or whose base no resource keeps, has no physical view: a stored
+  // choice of it opens the logical one (spec 071).
+  const model = physicalAvailable ? chosenModel : "logical";
+  // Frames are drawn in every layout (spec 071; ``viewLayout``).
   const { layout, framed } = viewLayout(model, chosenLayout);
 
   // A domain the model no longer has stops applying (spec 028, FR-076).
@@ -283,10 +292,6 @@ export function ErdGraphvizCanvas({
   // A kind of change switched off hides its tables like any other filter (spec 038).
   const [offChangeList, setOffChangeList] = usePageSetting<string[]>("disabled_changes", []);
   const offChanges = useMemo(() => new Set(offChangeList), [offChangeList]);
-  // The diagram's base: every table of the drawing that is open, before any filter. The filter rows come from it,
-  // so a filter never adds or removes another filter's rows (spec 038).
-  const baseGraph = useMemo(() => getMergedFromDomains(enriched, new Set(domainKeyList)), [enriched, domainKeyList]);
-  const baseEntities = baseGraph.entities ?? [];
   // The own tables of the domains switched on, filtered; 1-hop then brings back the base's tables one line away from
   // those left — the neighbours from other domains, and any table a filter hid.
   const qualsOn = useMemo(() => domainsOn(bundle.domain_qualifiers, tabsOn), [bundle.domain_qualifiers, tabsOn]);
@@ -540,6 +545,7 @@ export function ErdGraphvizCanvas({
     setRenderError(null);
     setRawSvg("");
     const engine = erdGraphvizEngine(layout) as Engine;
+    const isDot = layout === "gv-dot-lr" || layout === "gv-dot-tb";
     loadGraphvizWasm()
       .then((measurer) => {
         if (cancelled) return null;
@@ -547,11 +553,14 @@ export function ErdGraphvizCanvas({
         // instance. FDP depends on what ran before it in an instance, so the drawing itself is that instance's first layout.
         applyPaint();
         const source = buildErdDot(foldedData, layout, (measureDot) => measurer.layout(measureDot, "svg", "dot"));
-        return loadGraphvizWasmFor(engine).then((gv) => ({ gv, source }));
+        return loadGraphvizWasmFor(engine).then((gv) => ({ gv, source, isDot }));
       })
       .then((prepared) => {
         if (cancelled || !prepared) return;
-        const svg = prepared.gv.layout(prepared.source, "svg", engine);
+        // Dot draws frames as clusters; Neato, FDP and Circo go through the composer (research R2).
+        const svg = prepared.isDot
+          ? prepared.gv.layout(prepared.source, "svg", engine)
+          : erdCompose(foldedData, layout, (dot, eng) => prepared.gv.layout(dot, "svg", eng as Engine));
         if (cancelled) return;
         setRawSvg(svg);
         // The renderer paints a card's band and row tints as rectangles inside a rounded outline;
@@ -850,7 +859,7 @@ export function ErdGraphvizCanvas({
             paint={choosing ? { source: paintSection, onPaint: setChosenPaint } : null}
           />
         )}
-        {half?.side !== "b" && <ErdModelPill model={model} counts={modelCounts} physicalKnown={bundle.storage_known} onModel={setModel} />}
+        {half?.side !== "b" && <ErdModelPill model={model} counts={modelCounts} physicalKnown={bundle.storage_known} physicalAvailable={physicalAvailable} onModel={setModel} />}
         {erdEmptyOverlay}
         <HalfNote text={halfNote} />
         {half && !erdEmptyOverlay && drawnData.entities.length === 0 && (
@@ -979,7 +988,7 @@ export function ErdGraphvizCanvas({
               },
             }}
           >
-            {LAYOUT_TOOLS.filter(({ value }) => model !== "physical" || value === "gv-dot-lr" || value === "gv-dot-tb").map(({ value, title, Glyph }) => (
+            {LAYOUT_TOOLS.map(({ value, title, Glyph }) => (
               <ToggleButton key={value} value={value} aria-label={title}>
                 <Tooltip title={title} placement="top">
                   <Box

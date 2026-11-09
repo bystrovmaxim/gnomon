@@ -17,25 +17,29 @@ const PILL_HEIGHT = 32;
 /**
  * The light pill at the top of the ERD (spec 070): the logical view and the physical one, each with what it frames —
  * the domains drawn, the resources drawn. The physical half is disabled, and says why, when the graph does not tell
- * where entities lie.
+ * where entities lie, or when no resource keeps a table of the base (spec 071).
  */
 export function ErdModelPill({
   model,
   counts,
   physicalKnown,
+  physicalAvailable,
   onModel,
 }: {
   model: ErdModelView;
   counts: Record<ErdModelView, number>;
   physicalKnown: boolean;
+  physicalAvailable: boolean;
   onModel: (model: ErdModelView) => void;
 }) {
   useReserveTopCentre(PILL_TOP + PILL_HEIGHT + PILL_TOP - 12);
+  const unavailableReason = (value: ErdModelView) =>
+    value !== "physical" || physicalAvailable ? null : physicalKnown ? "No resource keeps these tables" : "This graph does not say where entities lie: it is older than protocol 1.6";
   return (
     <Box role="radiogroup" aria-label="View" sx={{ position: "absolute", top: PILL_TOP, left: "50%", transform: "translateX(-50%)", zIndex: 45, display: "flex", p: "2px", gap: "1px", bgcolor: "rgba(241,245,249,0.88)", backdropFilter: "blur(8px)", borderRadius: 999, border: "1px solid rgba(15,23,42,0.07)" }}>
       {VIEWS.map(({ value, label, counted }) => {
         const on = value === model;
-        const disabled = value === "physical" && !physicalKnown;
+        const disabled = value === "physical" && !physicalAvailable;
         const pill = (
           <ButtonBase
             key={value}
@@ -53,8 +57,9 @@ export function ErdModelPill({
             </Box>
           </ButtonBase>
         );
-        return disabled ? (
-          <Tooltip key={value} title="This graph does not say where entities lie: it is older than protocol 1.6" placement="bottom">
+        const reason = unavailableReason(value);
+        return reason !== null ? (
+          <Tooltip key={value} title={reason} placement="bottom">
             <span>{pill}</span>
           </Tooltip>
         ) : (

@@ -99,13 +99,10 @@ export function physicalDrawing(
 type Layout = "gv-dot-lr" | "gv-dot-tb" | "gv-neato" | "gv-fdp" | "gv-circo";
 
 /**
- * The layout a view is drawn in, and whether its frames are drawn. Graphviz lays clusters out reliably only with Dot: FDP
- * gives one input two pictures once it has clusters, which would put a room's pointers on different spots. The physical
- * view is its frames, so it is drawn in Dot whatever was chosen; the logical view keeps the layout chosen and frames its
- * domains only under Dot.
+ * The layout a view is drawn in, and whether its frames are drawn. Both views keep the layout chosen
+ * and draw their frames in all five of them: Dot frames as Graphviz clusters, Neato, FDP and Circo
+ * through ``erdCompose`` (research R2).
  */
-export function viewLayout(model: ErdModelView, chosen: Layout): { layout: Layout; framed: boolean } {
-  const dot = chosen === "gv-dot-lr" || chosen === "gv-dot-tb";
-  const layout = model === "physical" && !dot ? "gv-dot-lr" : chosen;
-  return { layout, framed: layout === "gv-dot-lr" || layout === "gv-dot-tb" };
+export function viewLayout(_model: ErdModelView, chosen: Layout): { layout: Layout; framed: boolean } {
+  return { layout: chosen, framed: true };
 }

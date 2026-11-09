@@ -214,6 +214,8 @@ async function listTargets(front: string, source: string): Promise<Target[]> {
       targets.push({ label: "ERD, all domains", query: { view: "domain-erd" } });
       // Collapsing changes the tables' sizes, so it is laid out again and must agree too (spec 043, FR-030).
       targets.push({ label: "ERD, all domains, collapsed", query: { view: "domain-erd", collapsed: "1" } });
+      // The physical view is laid out in all five layouts too (spec 071, FR-007).
+      targets.push({ label: "ERD, all domains, physical", query: { view: "domain-erd", model: "physical" } });
     }
     else if (row.type === "erd_domain" && row.parent_id)
       targets.push({ label: `ERD ${row.parent_id}`, query: { view: "domain-erd", domain: row.parent_id } });

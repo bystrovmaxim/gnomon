@@ -5,7 +5,7 @@
  * It lays out the physical view of a shop — a storefront, a support desk and a billing database — through the WASM
  * Graphviz build the client loads, with the production passes, puts the SVG in a DOM, binds the production hover, and
  * asserts what the reader sees: each resource's frame is named by its resource and carries its full id as its hover
- * label; the domain frames and the invisible spacing are named by nothing; hovering the storefront's border lights the
+ * label; the invisible spacing is named by nothing; hovering the storefront's border lights the
  * one line that leaves it, keeps the copies at its ends bright and dims the rest; the billing frame, with no line out,
  * dims everything; leaving gives the drawing back (spec 064, spec 070).
  *
@@ -84,7 +84,7 @@ const named = contours.filter((cluster) => cluster.id.startsWith("rc:")).map((cl
 check("each resource contour is named by its resource", JSON.stringify(named) === JSON.stringify([`rc:${BILLING}`, `rc:${STOREFRONT}`, `rc:${SUPPORT}`]), named.join(", "));
 const titleOf = (cluster: Element) => cluster.querySelector("title")?.textContent ?? "";
 const others = contours.filter((cluster) => !cluster.id.startsWith("rc:")).map(titleOf);
-check("the domain frames and the spacing are named by nothing", others.some((title) => title.includes("_domain_")) && others.every((title) => title.includes("_domain_") || title.endsWith("_room")), others.join(", "));
+check("the invisible spacing is named by nothing", others.every((title) => title.endsWith("_room")), others.join(", "));
 
 const contour = (resource: string) => contours.find((cluster) => cluster.id === `rc:${resource}`)!;
 const label = contour(STOREFRONT).querySelector("a")?.getAttribute("xlink:title");

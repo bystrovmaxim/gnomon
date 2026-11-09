@@ -139,7 +139,17 @@ export function setErdPaint(source: ErdPaintSource, colours: Readonly<Record<str
 }
 /** The grey of a table that the painting section says nothing of: a kind it does not know, a table with no resource. */
 const UNPAINTED = "#64748b";
+/** The grey a frame's outline takes while no section paints it. */
+export const FRAME_GREY = "#94a3b8";
 const paintByChange = () => paintSource === "change";
+/** The colour a resource frame's outline takes (spec 064, spec 070): its resource's when resources paint, grey otherwise. */
+export function erdResourceFrameColour(resource: string): string {
+  return paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : FRAME_GREY;
+}
+/** The colour a domain frame's outline takes: its domain's when domains paint, grey otherwise. */
+export function erdDomainFrameColour(qual: string, domainColors: Readonly<Record<string, string>> | undefined): string {
+  return paintSource === "domain" ? (domainColors?.[qual] ?? FRAME_GREY) : FRAME_GREY;
+}
 /** kinds' colours when they paint — mid tones of the whole wheel, like the domains' own. */
 export const ERD_KIND_PAINT_PALETTE = ["#3b82f6", "#f97316", "#10b981", "#a855f7", "#ec4899", "#14b8a6", "#eab308", "#6366f1"];
 /** What a table says at a glance, as the Changes filter sorts it: its own status, else "changed" when a row changed. */
@@ -562,15 +572,20 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   const { entities, relations } = data;
   const groups = data.groups ?? [];
   const isLR = layout === "gv-dot-lr";
+  const isDot = layout === "gv-dot-lr" || layout === "gv-dot-tb";
   const lines: string[] = ["digraph ERD {"];
 
   if (layout === "gv-neato") {
     lines.push(
-      '  graph [fontname="Helvetica" bgcolor=transparent pad="0.5" overlap=false splines=false sep="+40"]',
+      '  graph [fontname="Helvetica" bgcolor=transparent pad="0.5" overlap=false splines=false sep="+40" start=1]',
+    );
+  } else if (layout === "gv-fdp" || layout === "gv-circo") {
+    lines.push(
+      '  graph [fontname="Helvetica" bgcolor=transparent pad="0.5" overlap=false start=1]',
     );
   } else {
     lines.push(
-      `  graph [rankdir=${isLR ? "LR" : "TB"} fontname="Helvetica" bgcolor=transparent pad="0.5" nodesep="0.8" ranksep="1.2"]`,
+      `  graph [rankdir=${isLR ? "LR" : "TB"} fontname="Helvetica" bgcolor=transparent pad="0.5" nodesep="0.8" ranksep="1.2" start=1]`,
     );
   }
   lines.push(
@@ -752,20 +767,20 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     const held = new Set(inner.flatMap((group) => group.members));
     return [...inner.flatMap(groupSource), ...members.filter((nd) => !held.has(nd.id)).map((nd) => nodeSource(nd))];
   };
-  /** A domain's frame (logical view), or a domain's frame inside a resource's (physical view). */
-  const domainFrame = (name: string, qual: string, members: readonly ErdEntity[], nested: boolean): string[] => {
-    const colour = !nested && paintSource === "domain" ? (data.domain_colors?.[qual] ?? "#94a3b8") : "#94a3b8";
+  /** A domain's frame (logical view). */
+  const domainFrame = (name: string, qual: string, members: readonly ErdEntity[]): string[] => {
+    const colour = paintSource === "domain" ? (data.domain_colors?.[qual] ?? FRAME_GREY) : FRAME_GREY;
     return [
       `  subgraph "${name}" {`,
       '    id="";',
       `    tooltip="${escDot(qual)}";`,
-      `    label=<<TABLE BORDER="0" CELLPADDING="${nested ? 6 : 10}"><TR><TD><B>${escHtml(domainName(qual))}</B></TD></TR></TABLE>>;`,
-      `    style="${nested ? "rounded,dashed" : "rounded"}";`,
+      `    label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>${escHtml(domainName(qual))}</B></TD></TR></TABLE>>;`,
+      '    style="rounded";',
       `    color="${colour}";`,
-      `    fontcolor="${nested ? "#64748b" : colour === "#94a3b8" ? "#475569" : colour}";`,
-      `    penwidth=${nested ? 1 : 2};`,
-      `    fontsize=${nested ? 12 : 15};`,
-      `    margin=${nested ? 14 : 20};`,
+      `    fontcolor="${colour === FRAME_GREY ? "#475569" : colour}";`,
+      "    penwidth=2;",
+      "    fontsize=15;",
+      "    margin=20;",
       ...frameBody(members),
       "  }",
     ];
@@ -775,20 +790,26 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     return quals.map((qual) => ({ qual, members: members.filter((nd) => domainOf(nd) === qual) }));
   };
   const framed = new Set<string>();
-  if (data.model === "logical") {
+  if (data.model === "logical" && isDot) {
     byDomain(entities ?? []).forEach(({ qual, members }, index) => {
       members.forEach((nd) => framed.add(nd.id));
-      lines.push(`  subgraph "cluster_domain_${index}_room" {`, "    style=invis;", '    label="";', '    id="";', '    tooltip="";', "    margin=36;", ...domainFrame(`cluster_domain_${index}`, qual, members, false), "  }");
+      lines.push(`  subgraph "cluster_domain_${index}_room" {`, "    style=invis;", '    label="";', '    id="";', '    tooltip="";', "    margin=36;", ...domainFrame(`cluster_domain_${index}`, qual, members), "  }");
     });
   }
   if (data.model === "physical") {
     const resourceFrame = (resource: string | null, index: number): string[] => {
       const members = (entities ?? []).filter((nd) => tableResource(nd) === resource);
-      members.forEach((nd) => framed.add(nd.id));
       const id = resource === null ? null : `${CONTOUR_ID_PREFIX}${resource}`;
-      const colour = resource !== null && paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : "#94a3b8";
+      const colour = resource !== null && paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : FRAME_GREY;
       const name = resource === null ? "Not stored" : (data.resource_labels?.[resource] ?? (resource.split(".").pop() || resource));
-      if (id && isFolded(id)) return foldNode(id, name, colour, paintSource === "resource" ? colour : "#475569");
+      if (id && isFolded(id)) {
+        members.forEach((nd) => framed.add(nd.id));
+        return foldNode(id, name, colour, paintSource === "resource" ? colour : "#475569");
+      }
+      // The three engines that cannot frame reproducibly are composed by ``erdCompose`` (research R2): here the
+      // resource frame emits no cluster, only its tables, which the composer lays out and frames itself.
+      if (!isDot) return [];
+      members.forEach((nd) => framed.add(nd.id));
       // An invisible frame round each frame keeps them apart: Graphviz spaces clusters only by nodesep.
       return [
         `  subgraph "cluster_resource_${index}_room" {`,
@@ -809,7 +830,7 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
         "    fontsize=15;",
         "    margin=20;",
         // A frame with no table still stands, with its name: nothing of the model is hidden.
-        ...(members.length ? byDomain(members).flatMap(({ qual, members: inDomain }, j) => domainFrame(`cluster_resource_${index}_domain_${j}`, qual, inDomain, true)) : [`    "rc_empty_${index}" [shape=point style=invis width=1.2]`]),
+        ...(members.length ? frameBody(members) : [`    "rc_empty_${index}" [shape=point style=invis width=1.2]`]),
         "  }",
         "  }",
       ];

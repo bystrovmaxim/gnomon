@@ -108,24 +108,19 @@ describe("the logical view (spec 070)", () => {
 });
 
 describe("the physical view (spec 070)", () => {
-  it("frames every resource — an empty one too — round a frame per domain of its copies, and gathers the unstored in Not stored", () => {
+  it("frames every resource — an empty one too — round its tables directly, and gathers the unstored in Not stored", () => {
     const dot = buildDotSource(physical(), "gv-dot-lr");
     expect(parents(dot)).toEqual({
       cluster_resource_0: null,
       cluster_resource_1: null,
-      cluster_resource_1_domain_0: "cluster_resource_1",
       cluster_resource_2: null,
-      cluster_resource_2_domain_0: "cluster_resource_2",
-      cluster_resource_2_domain_1: "cluster_resource_2",
       cluster_resource_3: null,
-      cluster_resource_3_domain_0: "cluster_resource_3",
     });
-    expect(clusters(dot)).toMatchObject({
+    expect(clusters(dot)).toEqual({
       cluster_resource_0: [],
-      cluster_resource_1_domain_0: [copyId("shop.Invoice", BILLING)],
-      cluster_resource_2_domain_0: [copyId("shop.Invoice", STOREFRONT)],
-      cluster_resource_2_domain_1: [copyId("shop.Order", STOREFRONT), copyId("shop.OrderLine", STOREFRONT)],
-      cluster_resource_3_domain_0: [copyId("shop.Legacy", null)],
+      cluster_resource_1: [copyId("shop.Invoice", BILLING)],
+      cluster_resource_2: [copyId("shop.Order", STOREFRONT), copyId("shop.OrderLine", STOREFRONT), copyId("shop.Invoice", STOREFRONT)],
+      cluster_resource_3: [copyId("shop.Legacy", null)],
     });
     expect(dot).toContain('"rc_empty_0" [shape=point style=invis');
     expect(dot).toContain("<B>ArchiveDatabase</B>");
@@ -158,10 +153,9 @@ describe("the physical view (spec 070)", () => {
     expect(buildDotSource(physical([], new Set([BILLING])), "gv-dot-lr")).not.toContain("BillingDatabase");
   });
 
-  it("gives a resource's frame the id rc:<resource> and its full id as the tooltip; the domain frames and the spacing none", () => {
+  it("gives a resource's frame the id rc:<resource> and its full id as the tooltip; the spacing none", () => {
     const dot = buildDotSource(physical(), "gv-dot-lr");
     expect(dot).toContain(`  subgraph "cluster_resource_1" {\n    id="rc:${BILLING}";\n    tooltip="${BILLING}";`);
-    expect(dot).toContain('  subgraph "cluster_resource_1_domain_0" {\n    id="";');
     expect(dot).toContain('subgraph "cluster_resource_0_room" {\n    style=invis;\n    label="";\n    id="";\n    tooltip="";');
     expect(dot).not.toContain('id="rc:";');
   });
@@ -177,7 +171,7 @@ describe("the physical view (spec 070)", () => {
     const parts = [table("shop.Invoice", MONEY, [BILLING]), table("shop.CardPayment", MONEY, [BILLING]), table("shop.BankPayment", MONEY, [BILLING])];
     const drawing = physicalDrawing(parts, [], new Set(), [{ group_id: "shop.Invoice:payment", label: "payment (by kind)", members: ["shop.BankPayment", "shop.CardPayment"] }]);
     const dot = buildDotSource({ entities: drawing.entities, relations: [], groups: drawing.groups, model: "physical", resource_ids: [BILLING], resource_labels: resourceLabels }, "gv-dot-lr");
-    expect(parents(dot)[`cluster_${copyId("shop.Invoice:payment", BILLING)}`]).toBe("cluster_resource_0_domain_0");
+    expect(parents(dot)[`cluster_${copyId("shop.Invoice:payment", BILLING)}`]).toBe("cluster_resource_0");
     expect(dot.match(new RegExp(`"${copyId("shop.CardPayment", BILLING)}" \\[label=<`, "g"))).toHaveLength(1);
   });
 });
