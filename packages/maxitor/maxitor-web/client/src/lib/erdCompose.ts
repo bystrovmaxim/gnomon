@@ -219,7 +219,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
 
 /** The padding round a frame's tables, in points: the top holds the label. */
 const FRAME_PAD = 20;
-const FRAME_TOP_PAD = 36;
+const FRAME_TOP_PAD = 72;
 /** The padding a specialization group's box keeps round its tables. */
 const GROUP_PAD = 12;
 /** Extra separation the frame-layout boxes get, so no two composed frames touch after overlap removal. */
@@ -267,7 +267,7 @@ function frameCluster(frame: Frame, box: Box, dashed: boolean): string {
     `<g id="${escHtml(frame.id)}" class="cluster">` +
     `<title>${escHtml(frame.name)}</title>` +
     `<path fill="none" stroke="${frame.colour}" stroke-width="2"${dashes} d="${roundedRectPath(box)}"/>` +
-    `<text xml:space="preserve" text-anchor="middle" x="${cx.toFixed(2)}" y="${(box.top - 12).toFixed(2)}" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="15.00" fill="${frameInk(frame.colour)}">${escHtml(frame.label)}</text>` +
+    `<text xml:space="preserve" text-anchor="middle" x="${cx.toFixed(2)}" y="${(box.bottom + 24).toFixed(2)}" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="15.00" fill="${frameInk(frame.colour)}">${escHtml(frame.label)}</text>` +
     `</g>`
   );
 }
