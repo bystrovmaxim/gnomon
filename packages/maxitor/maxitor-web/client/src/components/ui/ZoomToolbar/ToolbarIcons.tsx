@@ -37,6 +37,16 @@ export function CollapseAllButton({ collapsed, onClick }: { collapsed: boolean; 
   );
 }
 
+/** Fold every frame into one box, or unfold them again — the boundaries' switch, apart from the tables' (spec 071). */
+export function CollapseFramesButton({ collapsed, onClick }: { collapsed: boolean; onClick: () => void }) {
+  return (
+    <IconButton label={collapsed ? "Expand all boundaries" : "Collapse all boundaries"} testId="collapse-frames" onClick={onClick}>
+      <rect x="3.5" y="5" width="17" height="14" rx="3" />
+      {collapsed ? <path d="M7 12h10M14 9l3 3-3 3" /> : <path d="M7 12h10M10 9l-3 3 3 3" />}
+    </IconButton>
+  );
+}
+
 /** Switch the cards on and off; on at first. */
 export function HoverCardsButton() {
   const on = useHoverCardsOn();

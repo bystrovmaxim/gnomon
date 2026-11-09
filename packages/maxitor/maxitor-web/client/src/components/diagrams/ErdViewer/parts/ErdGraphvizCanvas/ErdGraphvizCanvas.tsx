@@ -12,7 +12,7 @@ import { useSvgDiagramSurface } from "@/rooms/diagramSurface";
 import { useGraphvizFocus } from "@/rooms/graphvizFocus";
 import { enabledKeys } from "@/lib/freshGraph";
 import { useCurrentPage, usePageSetting } from "@/lib/pageSettings";
-import { CollapseAllButton, HoverCardsButton, ZoomToolbar } from "@/components/ui/ZoomToolbar";
+import { CollapseAllButton, CollapseFramesButton, HoverCardsButton, ZoomToolbar } from "@/components/ui/ZoomToolbar";
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
 import { defaultPaint, paintSettingName, paintSource, type PaintSection } from "@/lib/erdPaint";
 import { OneHopToggle } from "@/components/ui/OneHopToggle";
@@ -21,6 +21,8 @@ import { useSvgPanZoom } from "../../hooks/useSvgPanZoom";
 import {
   buildDotSource,
   buildErdDot,
+  CONTOUR_ID_PREFIX,
+  DOMAIN_CONTOUR_ID_PREFIX,
   ERD_CARD_RADIUS,
   ERD_CARD_STROKE,
   ERD_KIND_PAINT_PALETTE,
@@ -247,7 +249,7 @@ export function ErdGraphvizCanvas({
   /** Entity kinds switched off; a kind the graph gains later starts on. */
   const [disabledKindList, setDisabledKindList] = usePageSetting<string[]>("disabled_kinds", []);
   /** The view, the resources switched off and the frames folded (spec 070): page settings, shared in a room. */
-  const { model: chosenModel, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold } = useErdResourceSettings();
+  const { model: chosenModel, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold, foldAll, unfoldAll } = useErdResourceSettings();
   // A graph that does not say where entities lie, or whose base no resource keeps, has no physical view: a stored
   // choice of it opens the logical one (spec 071).
   const model = physicalAvailable ? chosenModel : "logical";
@@ -459,6 +461,14 @@ export function ErdGraphvizCanvas({
   const bundles = useMemo(() => foldPlan(foldedData).bundles, [foldedData]);
   const bundlesRef = useRef(bundles);
   bundlesRef.current = bundles;
+  // The frames this drawing shows: a resource's in the physical view, a domain's in the logical one. The boundaries'
+  // switch folds every one of them into its box, apart from the tables' own collapse (spec 071).
+  const drawnFrameIds = useMemo(() => {
+    if (!framesDrawn) return [] as string[];
+    if (model === "physical") return framedResources.map((resource) => `${CONTOUR_ID_PREFIX}${resource}`);
+    return [...new Set(drawnData.entities.map((entity) => entity.domain_qualname ?? "").filter((qual) => qual !== ""))].map((qual) => `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`);
+  }, [framesDrawn, model, framedResources, drawnData]);
+  const allFramesFolded = drawnFrameIds.length > 0 && drawnFrameIds.every((frame) => foldedContours.has(frame));
   const toggleContourRef = useRef(toggleFold);
   toggleContourRef.current = toggleFold;
   const unfoldContoursRef = useRef(unfold);
@@ -1032,6 +1042,7 @@ export function ErdGraphvizCanvas({
           />
           {model === "logical" && <OneHopToggle checked={framesOn} onChange={setFramesOn} label="Boundary" />}
           {oneHopAvailable && <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />}
+          {drawnFrameIds.length > 0 && <CollapseFramesButton collapsed={allFramesFolded} onClick={() => (allFramesFolded ? unfoldAll() : foldAll(drawnFrameIds))} />}
           {canCollapse && (
             <CollapseAllButton
               collapsed={allCollapsed}

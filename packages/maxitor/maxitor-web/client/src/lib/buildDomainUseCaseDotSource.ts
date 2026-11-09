@@ -146,6 +146,8 @@ export type DomainUseCaseDotLayoutOptions = {
   layoutEngine?: DomainUseCaseLayoutEngine;
   /** In Diff, what colours the actions: their status (default) or their domain, the outline still saying the status. */
   paint?: "changes" | "domains";
+  /** The boundaries folded into one box each: the use cases hidden, only the links between the domains drawn (spec 071). */
+  foldedAll?: boolean;
 };
 
 /** The class Graphviz writes on what a comparison leaves unchanged; the viewer fades it. */
@@ -241,6 +243,33 @@ export function buildDomainUseCaseDotBundle(
       );
     }
   };
+
+  // The boundaries folded into one box each: the use cases inside them are hidden, and only the links between the
+  // domains are drawn. The containers' own switch, apart from the tables' collapse on the ERD (spec 071).
+  if (layout?.foldedAll) {
+    const home = new Map(actions.map((action) => [action.id, action.domain_id]));
+    const domains = [...new Set(actions.map((action) => action.domain_id))];
+    const labelOf = (domainId: string) => actions.find((action) => action.domain_id === domainId)?.domain_short_label ?? domainId;
+    domains.forEach((domainId, at) => {
+      lines.push(`  domain_${at} [shape=box style="rounded,filled" label="${dotEscLabel(labelOf(domainId))}" color="#64748b" fontcolor="#0f172a" fillcolor="#ffffff" penwidth=1.2];`);
+    });
+    const pairs = new Map<string, { from: number; to: number; count: number }>();
+    for (const edge of edges) {
+      const from = domains.indexOf(home.get(edge.source_id) ?? "");
+      const to = domains.indexOf(home.get(edge.target_id) ?? "");
+      if (from < 0 || to < 0 || from === to) continue;
+      const [a, b] = from < to ? [from, to] : [to, from];
+      const key = `${a}-${b}`;
+      const pair = pairs.get(key) ?? { from: a, to: b, count: 0 };
+      pair.count += 1;
+      pairs.set(key, pair);
+    }
+    for (const pair of pairs.values()) {
+      lines.push(`  domain_${pair.from} -> domain_${pair.to} [dir=none penwidth=1 color="#94a3b8"${pair.count > 1 ? ` label="×${pair.count}" fontsize=9` : ""}];`);
+    }
+    lines.push("}");
+    return { dot: lines.join("\n"), files, actionImages };
+  }
 
   if (boundary) {
     const domains = [...new Set(actions.map((action) => action.domain_id))];

@@ -25,6 +25,7 @@ import {
 } from "@/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/layoutEngineGlyphs";
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
 import { OneHopToggle } from "@/components/ui/OneHopToggle";
+import { CollapseFramesButton } from "@/components/ui/ZoomToolbar";
 import { ZoomToolbar } from "@/components/ui/ZoomToolbar";
 import useCaseRoleActorUrl from "@/assets/useCaseRoleActor.svg?url";
 import {
@@ -119,6 +120,8 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
   const [layoutPreset, setLayoutPreset] = usePageSetting<UseCaseDiagramLayoutPreset>("layout", "dot_lr");
   /** LR/TB + Neato/FDP when Boundary is off; Boundary on keeps the preset for when it goes off again. */
   const [boundary, setBoundary] = usePageSetting("boundary", true);
+  /** The boundaries folded into one box each: the use cases hidden, only the links between the domains drawn. */
+  const [boundariesFolded, setBoundariesFolded] = usePageSetting<boolean>("boundaries_folded", false);
 
   /** Boundary on forces hierarchical dot ranks; preserve neato/fdp in ``layoutPreset`` for when Boundary turns off. */
   const layoutForBundler = useMemo((): UseCaseDiagramLayoutPreset => {
@@ -207,10 +210,10 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
             drawn,
             presetToRankdir(layoutForBundler),
             { roleActorImageUrl: useCaseRoleActorUrl },
-            { boundary, layoutEngine: presetToLayoutEngine(layoutForBundler), paint: paintSection === "domains" ? "domains" : "changes" },
+            { boundary, foldedAll: boundariesFolded, layoutEngine: presetToLayoutEngine(layoutForBundler), paint: paintSection === "domains" ? "domains" : "changes" },
           )
         : null,
-    [drawn, layoutForBundler, boundary, paintSection],
+    [drawn, layoutForBundler, boundary, boundariesFolded, paintSection],
   );
 
   const graphvizEngineForBundle = useMemo(
@@ -538,6 +541,7 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
                 sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
               />
               <OneHopToggle checked={boundary} onChange={setBoundary} label="Boundary" />
+              {boundary && <CollapseFramesButton collapsed={boundariesFolded} onClick={() => setBoundariesFolded(!boundariesFolded)} />}
               {domainId !== null && <OneHopToggle checked={includeOneHop} onChange={setIncludeOneHop} />}
             </ZoomToolbar>
           </Box>
