@@ -65,6 +65,7 @@ Issues = "https://github.com/bystrovmaxim/gnomon/issues"
 [project.scripts]
 graph-builder = "maxitor.graph_builder.cli:main"
 maxitor = "maxitor.web.launch:main"
+maxitor-core = "maxitor.core.launch:main"
 repo-graph-port = "maxitor.repo_graph_port.launch:main"
 
 # One package from several folders: the web part (maxitor-web/), the tools and services (tools/<name>/), the

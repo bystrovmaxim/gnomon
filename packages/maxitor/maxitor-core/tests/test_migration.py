@@ -62,7 +62,11 @@ def test_every_column_states_its_nullability(path: Path) -> None:
     for match in re.finditer(r"CREATE TABLE \"?\w+\"? \((.*?)\n\);", sql, re.S):
         for line in match.group(1).splitlines():
             word = line.strip().split(" ")[0]
-            if not word or word.upper() in {"PRIMARY", "CONSTRAINT", "FOREIGN", "EXCLUDE", "UNIQUE", "CHECK"} or line.strip().startswith(("EXCLUDE", "id WITH")):
+            if (
+                not word
+                or word.upper() in {"PRIMARY", "CONSTRAINT", "FOREIGN", "EXCLUDE", "UNIQUE", "CHECK"}
+                or line.strip().startswith(("EXCLUDE", "id WITH"))
+            ):
                 continue
             if "GENERATED ALWAYS" in line:
                 continue

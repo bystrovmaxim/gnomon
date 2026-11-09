@@ -110,7 +110,9 @@ class SignInCoreEntity(BaseCoreEntity):
         Inverse(AccountCoreEntity, "sign_ins"),
     ] = Field(description="The account this way in belongs to")
 
-    added_country: str | None = Field(default=None, description="The country of the IP it was added from, ISO 3166-1 alpha-2; empty if unknown")
+    added_country: str | None = Field(
+        default=None, description="The country of the IP it was added from, ISO 3166-1 alpha-2; empty if unknown"
+    )
     added_ip: str = Field(description="The IP address it was added from")
     added_at: datetime = Field(description="When it was added")
     last_used_at: datetime | None = Field(default=None, description="When it last signed the account in")
@@ -146,7 +148,9 @@ class SignInCodeCoreEntity(BaseCoreEntity):
         description="For confirm_email: the hash of the password chosen at sign-up, moved to the sign-in on consent",
     )
     wrong_tries: int = Field(default=0, description="How many wrong codes were entered; the fifth deletes it")
-    requested_country: str | None = Field(default=None, description="The country of the IP that asked for it; empty if unknown")
+    requested_country: str | None = Field(
+        default=None, description="The country of the IP that asked for it; empty if unknown"
+    )
     requested_ip: str = Field(description="The IP address that asked for it")
     created_at: datetime = Field(description="When it was sent")
     expires_at: datetime = Field(description="When it stops working: ten minutes after sending")
@@ -269,7 +273,10 @@ class UserCoreEntity(BaseCoreEntity):
     updated_at: datetime | None = Field(default=None, description="When the user last changed; empty if never")
 
 
-@entity(description="All of ours that serves one end-to-end business process; spec 059's enterprise", domain=OrganizationDomain)
+@entity(
+    description="All of ours that serves one end-to-end business process; spec 059's enterprise",
+    domain=OrganizationDomain,
+)
 class BoundaryCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN

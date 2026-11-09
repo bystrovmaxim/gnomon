@@ -18,9 +18,19 @@ def _storage() -> tuple[CoreStorage, Any]:
         if query.startswith("SELECT greatest") or query.startswith("SELECT clock_timestamp"):
             return MOMENT
         if query.startswith("SELECT * FROM sign_in"):
-            return {"id": "s1", "account_id": "a1", "provider": "email", "provider_subject": "a@b.c", "email": "a@b.c",
-                    "password_hash": "$argon2id$secret", "password_changed_at": MOMENT, "added_country": None,
-                    "added_ip": "127.0.0.1", "added_at": MOMENT, "last_used_at": None}
+            return {
+                "id": "s1",
+                "account_id": "a1",
+                "provider": "email",
+                "provider_subject": "a@b.c",
+                "email": "a@b.c",
+                "password_hash": "$argon2id$secret",
+                "password_changed_at": MOMENT,
+                "added_country": None,
+                "added_ip": "127.0.0.1",
+                "added_at": MOMENT,
+                "last_used_at": None,
+            }
         return None
 
     pool, connection = recording_pool(answer)
@@ -30,7 +40,9 @@ def _storage() -> tuple[CoreStorage, Any]:
 async def test_lock_takes_the_lock_then_the_change_time() -> None:
     storage, connection = _storage()
     await storage.open()
-    changed_at = await storage.lock("account:a1", [("account_versions", "id", "a1"), ("sign_in_versions", "account_id", "a1")])
+    changed_at = await storage.lock(
+        "account:a1", [("account_versions", "id", "a1"), ("sign_in_versions", "account_id", "a1")]
+    )
     assert changed_at == MOMENT
     queries = connection.queries()
     assert queries[0] == "SELECT pg_advisory_xact_lock(hashtext($1))"
@@ -41,8 +53,16 @@ async def test_lock_takes_the_lock_then_the_change_time() -> None:
 async def test_insert_opens_the_first_version() -> None:
     storage, connection = _storage()
     await storage.open()
-    row = {"id": "a1", "name": "Anna", "email": "a@b.c", "policy_version": 1, "policy_accepted_at": MOMENT,
-           "policy_accepted_ip": "127.0.0.1", "created_at": MOMENT, "updated_at": None}
+    row = {
+        "id": "a1",
+        "name": "Anna",
+        "email": "a@b.c",
+        "policy_version": 1,
+        "policy_accepted_at": MOMENT,
+        "policy_accepted_ip": "127.0.0.1",
+        "created_at": MOMENT,
+        "updated_at": None,
+    }
     await storage.insert("account", row, MOMENT, "a1", "CreateAccountAction")
     q = connection.queries()
     assert q[0].startswith("INSERT INTO account (id, name")
@@ -52,11 +72,23 @@ async def test_insert_opens_the_first_version() -> None:
 async def test_the_password_hash_never_reaches_a_version() -> None:
     storage, connection = _storage()
     await storage.open()
-    row = {"id": "s1", "account_id": "a1", "provider": "email", "provider_subject": "a@b.c", "email": "a@b.c",
-           "password_hash": "$argon2id$secret", "password_changed_at": MOMENT, "added_country": None,
-           "added_ip": "127.0.0.1", "added_at": MOMENT, "last_used_at": None}
+    row = {
+        "id": "s1",
+        "account_id": "a1",
+        "provider": "email",
+        "provider_subject": "a@b.c",
+        "email": "a@b.c",
+        "password_hash": "$argon2id$secret",
+        "password_changed_at": MOMENT,
+        "added_country": None,
+        "added_ip": "127.0.0.1",
+        "added_at": MOMENT,
+        "last_used_at": None,
+    }
     await storage.insert("sign_in", row, MOMENT, "a1", "CreateAccountAction")
-    await storage.update("sign_in", {"id": "s1"}, {"password_hash": "$argon2id$new"}, MOMENT, "a1", "ResetPasswordAction")
+    await storage.update(
+        "sign_in", {"id": "s1"}, {"password_hash": "$argon2id$new"}, MOMENT, "a1", "ResetPasswordAction"
+    )
     for query, params in connection.statements:
         if "sign_in_versions" in query:
             assert "password_hash" not in query
@@ -76,8 +108,16 @@ async def test_update_closes_then_opens() -> None:
 async def test_organization_rows_are_keyed_by_organization() -> None:
     storage, connection = _storage()
     await storage.open()
-    row = {"organization_id": "o1", "id": "u1", "account_id": "a1", "name": "Anna", "is_admin": True,
-           "status": "active", "created_at": MOMENT, "updated_at": None}
+    row = {
+        "organization_id": "o1",
+        "id": "u1",
+        "account_id": "a1",
+        "name": "Anna",
+        "is_admin": True,
+        "status": "active",
+        "created_at": MOMENT,
+        "updated_at": None,
+    }
     await storage.insert('"user"', row, MOMENT, "u1", "RegisterOrganizationAction")
     q = connection.queries()
     assert q[1].startswith("INSERT INTO user_versions (organization_id, id, valid_from_at")
