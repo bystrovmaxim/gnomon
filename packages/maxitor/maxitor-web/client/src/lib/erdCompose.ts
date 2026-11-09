@@ -27,6 +27,9 @@ import {
   erdGraphvizEngine,
   erdResourceFrameColour,
   foldPlan,
+  specializationId,
+  frameInk,
+  frameTitleLabel,
   FRAME_GREY,
   tableResource,
   type ErdEntity,
@@ -35,7 +38,10 @@ import {
   type ErdGroup,
 } from "./buildDotSource.ts";
 
-/** A box in the drawing's units, y growing upward: ``top`` is the larger y, ``bottom`` the smaller. */
+/**
+ * A box in the drawing's units, as Graphviz writes them: ``top`` is the larger y, ``bottom`` the smaller. The SVG's y
+ * grows downward, so on screen ``bottom`` is the box's upper edge and ``top`` its lower one.
+ */
 export type Box = { left: number; right: number; top: number; bottom: number };
 
 const boxW = (box: Box) => box.right - box.left;
@@ -46,6 +52,8 @@ const boxCy = (box: Box) => (box.top + box.bottom) / 2;
 /** A frame the composer draws. */
 type Frame = {
   name: string;
+  /** The frame's place in its view's order: its disk slot's number, as ``buildDotSource`` numbers it. */
+  index: number;
   id: string;
   label: string;
   colour: string;
@@ -93,58 +101,57 @@ function unionBox(boxes: readonly Box[]): Box | null {
 }
 
 const NODE_START = /<g id="node\d+" class="node"[^>]*>/g;
-const GROUP_START = /<g id="[^"]+" class="(?:node|edge|cluster)"/g;
-const EDGE_START = /<g id="([^"]+)" class="edge">/g;
+/** An edge's group: its id, and its classes after ``edge`` (a "same entity" line is ``edge erd-same``). */
+const EDGE_START = /<g id="([^"]+)" class="edge([^"]*)">/g;
 
 /** The box of every shape in ``body``, united. */
 function bodyBox(body: string): Box | null {
   return unionBox([...body.matchAll(/\b(?:d|points)="([^"]+)"/g)].map((match) => boxOf(match[1]!)).filter((box): box is Box => box !== null));
 }
 
-/** The box of every node, by its ``<title>`` (the node's id). */
-function nodeBoxes(svg: string): Map<string, Box> {
-  const starts = [...svg.matchAll(NODE_START)].map((match) => match.index ?? 0);
-  const found = new Map<string, Box>();
-  starts.forEach((start, i) => {
-    const next = starts[i + 1] ?? svg.length;
-    GROUP_START.lastIndex = start + 1;
-    const following = GROUP_START.exec(svg)?.index ?? svg.length;
-    const body = svg.slice(start, Math.min(following, next));
-    const title = /<title>([^<]*)<\/title>/.exec(body)?.[1];
-    if (!title) return;
-    const box = bodyBox(body);
-    if (box) found.set(title, box);
-  });
-  return found;
+/** Where the ``<g>`` opened at ``start`` closes: the index just past its own ``</g>``, nested groups counted. */
+function groupEnd(svg: string, start: number): number {
+  const tag = /<(\/?)g\b[^>]*?(\/?)>/g;
+  tag.lastIndex = start;
+  let depth = 0;
+  for (let match = tag.exec(svg); match; match = tag.exec(svg)) {
+    if (match[2] === "/") continue;
+    depth += match[1] === "/" ? -1 : 1;
+    if (depth === 0) return match.index + match[0].length;
+  }
+  return svg.length;
 }
 
-/** The full markup of every node and its box, by its ``<title>``. */
+/** The full markup of every node and its box, by its ``<title>`` (the node's id): the node's group and nothing after it. */
 function nodeMarkups(svg: string): Map<string, { markup: string; box: Box }> {
-  const starts = [...svg.matchAll(NODE_START)].map((match) => match.index ?? 0);
   const found = new Map<string, { markup: string; box: Box }>();
-  starts.forEach((start, i) => {
-    const next = starts[i + 1] ?? svg.length;
-    GROUP_START.lastIndex = start + 1;
-    const following = GROUP_START.exec(svg)?.index ?? svg.length;
-    const markup = svg.slice(start, Math.min(following, next));
+  for (const match of svg.matchAll(NODE_START)) {
+    const start = match.index ?? 0;
+    const markup = svg.slice(start, groupEnd(svg, start));
     const title = /<title>([^<]*)<\/title>/.exec(markup)?.[1];
-    if (!title) return;
+    if (!title) continue;
     const box = bodyBox(markup);
     if (box) found.set(title, { markup, box });
-  });
+  }
   return found;
 }
 
-/** Every edge's stroke and dash, by its ``id``. */
-function edgeStyles(svg: string): Map<string, { stroke: string; dash: string | null }> {
-  const found = new Map<string, { stroke: string; dash: string | null }>();
+/** The box of every node, by its ``<title>`` (the node's id). */
+function nodeBoxes(svg: string): Map<string, Box> {
+  return new Map([...nodeMarkups(svg)].map(([title, { box }]) => [title, box]));
+}
+
+/** Every edge's stroke, dash and classes, by its ``id``: read from its whole group, a tooltip's link inside it too. */
+function edgeStyles(svg: string): Map<string, { stroke: string; dash: string | null; classes: string }> {
+  const found = new Map<string, { stroke: string; dash: string | null; classes: string }>();
   for (const match of svg.matchAll(EDGE_START)) {
     const id = match[1]!;
-    const body = svg.slice(match.index ?? 0, svg.indexOf("</g>", (match.index ?? 0) + 1) + 4);
-    const stroke = /stroke="([^"]+)"/.exec(body)?.[1];
+    const start = match.index ?? 0;
+    const body = svg.slice(start, groupEnd(svg, start));
+    const stroke = /<path[^>]*stroke="([^"]+)"/.exec(body)?.[1];
     if (!stroke) continue;
-    const dash = /stroke-dasharray="([^"]+)"/.exec(body)?.[1] ?? null;
-    found.set(id, { stroke, dash });
+    const dash = /<path[^>]*stroke-dasharray="([^"]+)"/.exec(body)?.[1] ?? null;
+    found.set(id, { stroke, dash, classes: match[2]!.replace(/&#45;/g, "-") });
   }
   return found;
 }
@@ -174,6 +181,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
       const id = `${CONTOUR_ID_PREFIX}${resource}`;
       frames.push({
         name: `cluster_resource_${index}`,
+        index,
         id,
         label: data.resource_labels?.[resource] ?? (resource.split(".").pop() || resource),
         colour: erdResourceFrameColour(resource),
@@ -188,6 +196,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
     if (unstored.length) {
       frames.push({
         name: `cluster_resource_${resources.length}`,
+        index: resources.length,
         id: `cluster_resource_${resources.length}`,
         label: "Not stored",
         colour: FRAME_GREY,
@@ -205,6 +214,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
     const members = entities.filter((entity) => domainOf(entity) === qual);
     return {
       name: `cluster_domain_${index}`,
+      index,
       id: `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`,
       label: data.domain_labels?.[qual] ?? (qual.split(".").pop() || qual),
       colour: erdDomainFrameColour(qual, data.domain_colors),
@@ -217,11 +227,13 @@ function framesOf(data: ErdGraphPayload): Frame[] {
   });
 }
 
-/** The padding round a frame's tables, in points: the top holds the label. */
+/** The padding round a frame's tables, in points, as a Dot frame's ``margin``; the title stands above them. */
 const FRAME_PAD = 20;
-const FRAME_TOP_PAD = 72;
-/** The padding a specialization group's box keeps round its tables. */
+/** The space between a frame's outline and its title, above and below the title. */
+const TITLE_GAP = 8;
+/** The padding a specialization block's box keeps round its tables, and the room above them for its label. */
 const GROUP_PAD = 12;
+const GROUP_LABEL = 14;
 /** Extra separation the frame-layout boxes get, so no two composed frames touch after overlap removal. */
 const FRAME_LAYOUT_GAP = 64;
 /** A frame with no table still stands, this size. */
@@ -231,11 +243,6 @@ const EMPTY_HEIGHT = 60;
 const FRAME_RADIUS = 12;
 /** The padding round the whole drawing in the viewBox. */
 const VIEW_PAD = 8;
-
-/** The outline's font colour: the frame's own when it paints, the dark grey otherwise. */
-function frameInk(colour: string): string {
-  return colour === FRAME_GREY ? "#475569" : colour;
-}
 
 /** The rounded-rectangle path Graphviz writes for a ``style="rounded"`` frame. */
 function roundedRectPath(box: Box): string {
@@ -253,34 +260,69 @@ function roundedRectPath(box: Box): string {
     `${right},${yr0} ${right},${yr1} ${right},${yr1} ` +
     `${right},${yr1 - h} ${xr1 + h},${bottom} ${xr1},${bottom} ` +
     `${xr1},${bottom} ${xr0},${bottom} ${xr0},${bottom} ` +
-    `${xr0 - h},${bottom} ${left},${yr1 + h} ${left},${yr1} ` +
+    `${xr0 - h},${bottom} ${left},${yr1 - h} ${left},${yr1} ` +
     `${left},${yr1} ${left},${yr0} ${left},${yr0} ` +
     `${left},${yr0 + h} ${xr0 - h},${top} ${xr0},${top}`
   );
 }
 
-/** The ``g.cluster`` markup of one frame, as Graphviz writes it, in the drawing's own units. */
-function frameCluster(frame: Frame, box: Box, dashed: boolean): string {
-  const cx = boxCx(box);
+/** A frame's title as Graphviz lays it out: its markup, the box it spans, and that box's size. */
+type Title = { markup: string; box: Box };
+
+/** The HTML label of a frame's title — the very label a Dot frame carries, so both draw the same disk and name. */
+function titleLabel(frame: Frame): string {
+  const ink = frameInk(frame.colour);
+  if (frame.resource === null && frame.id.startsWith("cluster_")) return `<TABLE BORDER="0" CELLPADDING="0"><TR><TD><FONT POINT-SIZE="15" COLOR="${ink}"><B>${escHtml(frame.label)}</B></FONT></TD></TR></TABLE>`;
+  const kind = frame.id.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? "domain" : "resource";
+  return frameTitleLabel({ kind, slot: frame.index, name: frame.label, disk: ink, ink, tooltip: frame.tooltip });
+}
+
+/**
+ * Every frame's title laid out once, by Graphviz itself: a box node per title, its outline transparent. The composer
+ * moves each title onto its frame, so the disk and the name keep the places and sizes Graphviz gives a Dot frame's.
+ */
+function layOutTitles(frames: readonly Frame[], layoutFn: ErdComposeLayout): Map<string, Title> {
+  const lines = ["digraph TITLES {", '  node [shape=box margin=0 color=transparent fontname="Helvetica" fontsize=15];'];
+  for (const frame of frames) lines.push(`  "${escDot(frame.name)}" [label=<${titleLabel(frame)}>];`);
+  lines.push("}");
+  const titles = new Map<string, Title>();
+  for (const [name, { markup, box }] of nodeMarkups(layoutFn(lines.join("\n"), "dot"))) {
+    // The node's own group, title and transparent outline go; what is left is the title's disk slot and text.
+    const inner = markup
+      .replace(/^<g id="node\d+" class="node"[^>]*>/, "")
+      .replace(/<title>[^<]*<\/title>/, "")
+      .replace(/<polygon fill="none" stroke="(?:none|transparent)"[^>]*\/>/, "")
+      .replace(/<\/g>\s*$/, "")
+      .trim();
+    titles.set(name, { markup: inner, box });
+  }
+  return titles;
+}
+
+/** The ``g.cluster`` markup of one frame, as Graphviz writes it, in the drawing's own units: the title centred on top. */
+function frameCluster(frame: Frame, box: Box, title: Title | undefined, dashed: boolean): string {
   const dashes = dashed ? ' stroke-dasharray="5,2"' : "";
+  const dx = title ? boxCx(box) - boxCx(title.box) : 0;
+  const dy = title ? box.bottom + TITLE_GAP - title.box.bottom : 0;
   return (
     `<g id="${escHtml(frame.id)}" class="cluster">` +
     `<title>${escHtml(frame.name)}</title>` +
     `<path fill="none" stroke="${frame.colour}" stroke-width="2"${dashes} d="${roundedRectPath(box)}"/>` +
-    // The mark and the name stand together, centred: the frame says what kind of container it is, folded or not.
-    `<text xml:space="preserve" text-anchor="middle" x="${cx.toFixed(2)}" y="${(box.bottom + 24).toFixed(2)}" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="15.00" fill="${frameInk(frame.colour)}">${escHtml(frame.label)}</text>` +
+    (title ? `<g transform="translate(${dx.toFixed(2)},${dy.toFixed(2)})">${title.markup}</g>` : "") +
     `</g>`
   );
 }
 
-/** The ``g.cluster`` markup of a specialization group inside a frame. */
-function groupCluster(name: string, label: string, box: Box): string {
-  const cx = boxCx(box);
+/**
+ * The ``g.cluster`` markup of a specialization block inside a frame, as Dot draws it: dashed, faintly filled outside
+ * Diff, its label at its top over the room kept for it.
+ */
+function groupCluster(id: string, name: string, label: string, box: Box, inDiff: boolean): string {
   return (
-    `<g id="${escHtml(name)}" class="cluster">` +
+    `<g id="${escHtml(id)}" class="cluster">` +
     `<title>${escHtml(name)}</title>` +
-    `<path fill="none" stroke="${FRAME_GREY}" stroke-width="2" stroke-dasharray="5,2" d="${roundedRectPath(box)}"/>` +
-    `<text xml:space="preserve" text-anchor="middle" x="${cx.toFixed(2)}" y="${(box.top - 10).toFixed(2)}" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#64748b">${escHtml(label)}</text>` +
+    `<path fill="${inDiff ? "none" : "#0f172a0d"}" stroke="${FRAME_GREY}" stroke-width="${inDiff ? 3 : 2}" stroke-dasharray="5,2" d="${roundedRectPath(box)}"/>` +
+    `<text xml:space="preserve" text-anchor="middle" x="${boxCx(box).toFixed(2)}" y="${(box.bottom + GROUP_PAD + 4).toFixed(2)}" font-family="Helvetica,sans-Serif" font-size="10.00" fill="#64748b">${escHtml(label)}</text>` +
     `</g>`
   );
 }
@@ -333,6 +375,84 @@ function place(inner: Box, fromCentre: Box, toCentre: Box): Box {
   return { left: inner.left + dx, right: inner.right + dx, top: inner.top + dy, bottom: inner.bottom + dy };
 }
 
+/** Lay out fixed-size boxes and the lines between them with ``engine``, without overlap: each box's centre, by name. */
+function packBoxes(
+  boxes: ReadonlyArray<{ name: string; width: number; height: number }>,
+  links: ReadonlyArray<readonly [string, string]>,
+  engine: string,
+  layoutFn: ErdComposeLayout,
+): Map<string, { x: number; y: number }> {
+  const lines = ["digraph PACK {", '  graph [bgcolor=transparent overlap=false sep="+28" start=1];', '  node [shape=box fixedsize=true label=""];'];
+  for (const box of boxes) lines.push(`  "${escDot(box.name)}" [width="${(box.width / 72).toFixed(3)}" height="${(box.height / 72).toFixed(3)}"];`);
+  for (const [from, to] of links) lines.push(`  "${escDot(from)}" -> "${escDot(to)}" [arrowhead=none];`);
+  lines.push("}");
+  return new Map([...nodeBoxes(layoutFn(lines.join("\n"), engine))].map(([name, box]) => [name, { x: boxCx(box), y: boxCy(box) }]));
+}
+
+/** Move ``box`` by ``dx``, ``dy``. */
+function shifted(box: Box, dx: number, dy: number): Box {
+  return { left: box.left + dx, right: box.right + dx, top: box.top + dy, bottom: box.bottom + dy };
+}
+
+/**
+ * The places of one unfolded frame's tables and specialization blocks, in one coordinate system. A frame with no block
+ * is laid out at once. With blocks, each block's tables are laid out alone, which gives the block its size, and then
+ * the frame is laid out with each block as one box among its other tables: a block holds its own tables and no other,
+ * as a Dot cluster does (spec 071).
+ */
+function layOutFrame(
+  frame: Frame,
+  data: ErdGraphPayload,
+  layout: ErdGraphvizLayout,
+  engine: string,
+  blockWidths: ReadonlyMap<string, number> | undefined,
+  layoutFn: ErdComposeLayout,
+): { nodes: Map<string, Box>; groupBoxes: Map<string, Box> } {
+  const alone = (members: readonly ErdEntity[]) =>
+    nodeBoxes(layoutFn(buildDotSource({ ...data, entities: [...members], relations: [], groups: [], same: [], folded_contours: new Set() }, layout, blockWidths), engine));
+  const all = alone(frame.members);
+  const blocks = frame.groups.filter((group) => group.members.filter((id) => all.has(id)).length > 1);
+  if (!blocks.length) return { nodes: all, groupBoxes: new Map() };
+
+  // Each block alone: its tables' places inside it, and its outline round them with the room for its label on top.
+  const inBlock = new Map<string, string>();
+  const blockLayouts = blocks.map((group) => {
+    const name = `cluster_${group.group_id}`;
+    const tables = alone(frame.members.filter((member) => group.members.includes(member.id)));
+    const content = unionBox([...tables.values()])!;
+    const outline = { left: content.left - GROUP_PAD, right: content.right + GROUP_PAD, top: content.top + GROUP_PAD, bottom: content.bottom - GROUP_PAD - GROUP_LABEL };
+    for (const id of tables.keys()) inBlock.set(id, name);
+    return { name, tables, outline };
+  });
+  // The frame: its free tables at their own sizes, each block as one box; a relation inside the frame is a link.
+  const unit = (id: string) => inBlock.get(id) ?? id;
+  const items = [
+    ...[...all].filter(([id]) => !inBlock.has(id)).map(([id, box]) => ({ name: id, width: boxW(box), height: boxH(box) })),
+    ...blockLayouts.map((block) => ({ name: block.name, width: boxW(block.outline), height: boxH(block.outline) })),
+  ];
+  const links = new Set<string>();
+  for (const relation of data.relations ?? []) {
+    if (!all.has(relation.source) || !all.has(relation.target)) continue;
+    const [from, to] = [unit(relation.source), unit(relation.target)];
+    if (from !== to) links.add([from, to].sort().join("\u0000"));
+  }
+  const centres = packBoxes(items, [...links].map((pair) => pair.split("\u0000") as [string, string]), engine, layoutFn);
+  const nodes = new Map<string, Box>();
+  const groupBoxes = new Map<string, Box>();
+  for (const [id, box] of all) {
+    if (inBlock.has(id)) continue;
+    const at = centres.get(id) ?? { x: boxCx(box), y: boxCy(box) };
+    nodes.set(id, shifted(box, at.x - boxCx(box), at.y - boxCy(box)));
+  }
+  for (const block of blockLayouts) {
+    const at = centres.get(block.name) ?? { x: boxCx(block.outline), y: boxCy(block.outline) };
+    const [dx, dy] = [at.x - boxCx(block.outline), at.y - boxCy(block.outline)];
+    groupBoxes.set(block.name, shifted(block.outline, dx, dy));
+    for (const [id, box] of block.tables) nodes.set(id, shifted(box, dx, dy));
+  }
+  return { nodes, groupBoxes };
+}
+
 /**
  * The composed SVG of ``data`` in a non-Dot layout (research R2). ``layoutFn`` lays a DOT string out
  * through ``@hpcc-js/wasm-graphviz``.
@@ -343,30 +463,33 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
   const needsWidths = (data.groups ?? []).some((group) => group.members.length > 1) || [...(data.folds?.values() ?? [])].some((fold) => fold.collapsed);
   const blockWidths = needsWidths ? erdBlockWidths(data, layoutFn(buildBlockMeasureDot(data), "dot")) : undefined;
 
+  // 0. The titles, laid out once: a frame is at least as wide as its title and keeps the title's height above its tables.
+  const titles = layOutTitles(frames, layoutFn);
+  const titleRoom = (frame: Frame) => {
+    const title = titles.get(frame.name);
+    return { width: title ? boxW(title.box) + FRAME_PAD * 2 : 0, height: title ? boxH(title.box) + TITLE_GAP * 2 : TITLE_GAP };
+  };
+
   // 1. Each frame's tables alone: their places inside the frame, and the frame's size.
-  const inner = new Map<string, { nodes: Map<string, Box>; groups: Map<string, Box>; centre: Box; size: { width: number; height: number } }>();
+  const inner = new Map<string, { nodes: Map<string, Box>; groups: Map<string, Box>; centre: Box; size: { width: number; height: number }; shift: number }>();
   for (const frame of frames) {
     if (frame.folded) {
-      const resource = frame.resource ?? frame.id.slice(CONTOUR_ID_PREFIX.length);
-      const foldData: ErdGraphPayload = { ...data, entities: frame.members, relations: [], groups: [], same: [], resource_ids: [resource], model: "physical" };
+      // The box alone, in its own view: a resource's box among that resource's copies, a domain's among its entities.
+      const foldData: ErdGraphPayload = { ...data, entities: frame.members, relations: [], groups: [], same: [], ...(frame.resource !== null ? { resource_ids: [frame.resource] } : {}) };
       const foldSvg = layoutFn(buildDotSource(foldData, layout, blockWidths), engine);
       const box = nodeBoxes(foldSvg).get(frame.id);
-      const size = box ? { width: boxW(box) + FRAME_PAD * 2, height: boxH(box) + FRAME_TOP_PAD + FRAME_PAD } : { width: EMPTY_WIDTH, height: EMPTY_HEIGHT };
-      inner.set(frame.name, { nodes: new Map(), groups: new Map(), centre: box ?? { left: 0, right: size.width, top: 0, bottom: -size.height }, size });
+      // A folded frame draws no outline of its own: its box is the frame, so it keeps only the spacing round it.
+      const size = box ? { width: boxW(box) + FRAME_PAD * 2, height: boxH(box) + FRAME_PAD * 2 } : { width: EMPTY_WIDTH, height: EMPTY_HEIGHT };
+      inner.set(frame.name, { nodes: new Map(), groups: new Map(), centre: box ?? { left: 0, right: size.width, top: 0, bottom: -size.height }, size, shift: 0 });
       continue;
     }
-    const subData: ErdGraphPayload = { ...data, entities: frame.members, relations: [], groups: [], same: [], folded_contours: new Set() };
-    const subSvg = layoutFn(buildDotSource(subData, layout, blockWidths), engine);
-    const nodes = nodeBoxes(subSvg);
-    const groupBoxes = new Map<string, Box>();
-    for (const group of frame.groups) {
-      const box = unionBox(group.members.map((id) => nodes.get(id)).filter((box): box is Box => box !== undefined));
-      if (box) groupBoxes.set(`cluster_${group.group_id}`, { left: box.left - GROUP_PAD, right: box.right + GROUP_PAD, top: box.top + GROUP_PAD, bottom: box.bottom - GROUP_PAD });
-    }
+    const { nodes, groupBoxes } = layOutFrame(frame, data, layout, engine, blockWidths, layoutFn);
     const content = unionBox([...nodes.values(), ...groupBoxes.values()]) ?? { left: 0, right: EMPTY_WIDTH, top: 0, bottom: -EMPTY_HEIGHT };
-    const width = boxW(content) + FRAME_PAD * 2;
-    const height = boxH(content) + FRAME_TOP_PAD + FRAME_PAD;
-    inner.set(frame.name, { nodes, groups: groupBoxes, centre: content, size: { width, height } });
+    const room = titleRoom(frame);
+    const width = Math.max(boxW(content) + FRAME_PAD * 2, room.width);
+    const height = boxH(content) + room.height + FRAME_PAD;
+    // The tables stand under the title: their centre is below the frame's by half the title's room less the bottom pad.
+    inner.set(frame.name, { nodes, groups: groupBoxes, centre: content, size: { width, height }, shift: (room.height - FRAME_PAD) / 2 });
   }
 
   // 2. The frames as boxes.
@@ -374,9 +497,11 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
   const frameSvg = layoutFn(frameLayoutDot(frames, sizes, data), engine);
   const frameNodes = nodeBoxes(frameSvg);
 
-  // 3. One full layout, for every table's card and every edge's style.
+  // 3. One full layout, for every table's card and every edge's style — never for a place: the composer moves every
+  // card to its own. It is laid out by Dot, which gives the same markup every time; FDP gave each load its own raw
+  // coordinates, which the moves made up for, so one picture came with a different markup and layout hash (spec 071).
   const fullDot = buildDotSource({ ...data, groups: [] }, layout, blockWidths).replace("splines=false", "splines=true");
-  const fullSvg = layoutFn(fullDot, engine);
+  const fullSvg = layoutFn(fullDot, "dot");
   const markups = nodeMarkups(fullSvg);
   const styles = edgeStyles(fullSvg);
 
@@ -393,7 +518,7 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
     for (const member of frame.members) {
       const node = entry.nodes.get(member.id);
       if (!node) continue;
-      const moved = place(node, entry.centre, { left: fc.x, right: fc.x, top: fc.y, bottom: fc.y });
+      const moved = place(node, entry.centre, { left: fc.x, right: fc.x, top: fc.y + entry.shift, bottom: fc.y + entry.shift });
       centres.set(member.id, { x: boxCx(moved), y: boxCy(moved) });
     }
   }
@@ -409,17 +534,16 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
     const frameNode = frameNodes.get(frame.name) ?? { left: 0, right: 0, top: 0, bottom: 0 };
     const fc = { x: boxCx(frameNode), y: boxCy(frameNode) };
     const box = frameBox(fc, entry.size);
-    // A folded frame draws no frame at all: its tables are folded into one box, and that box is the markup placed
-    // below (spec 071). Drawing the empty frame here was the whole of the "empty container" bug.
-    if (!frame.folded) parts.push(frameCluster(frame, box, frame.resource === null && data.model === "physical"));
+    // A folded frame draws no outline of its own: its tables are folded into one box, the markup placed below.
+    if (!frame.folded) parts.push(frameCluster(frame, box, titles.get(frame.name), frame.resource === null && data.model === "physical"));
     drawn.push(box);
     if (frame.folded) finalBoxes.set(frame.id, box);
     for (const group of frame.groups) {
       const groupName = `cluster_${group.group_id}`;
       const groupBox = entry.groups.get(groupName);
       if (!groupBox) continue;
-      const moved = place(groupBox, entry.centre, { left: fc.x, right: fc.x, top: fc.y, bottom: fc.y });
-      parts.push(groupCluster(groupName, group.label, moved));
+      const moved = place(groupBox, entry.centre, { left: fc.x, right: fc.x, top: fc.y + entry.shift, bottom: fc.y + entry.shift });
+      parts.push(groupCluster(specializationId(group.group_id, frame.resource === null && data.model === "physical" ? null : frame.id), groupName, group.label, moved, (data.entities ?? []).some((entity) => entity.diff !== undefined)));
       drawn.push(moved);
     }
   }
@@ -444,8 +568,8 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
     const toBox = finalBoxes.get(target);
     const start = fromBox ? borderPoint(fromBox, from, to) : from;
     const end = toBox ? borderPoint(toBox, to, from) : to;
-    const style = styles.get(id) ?? { stroke: "#94a3b8", dash: null };
-    parts.push(`<g id="${id}" class="edge"><title>${escHtml(`${source}->${target}`)}</title><path fill="none" stroke="${style.stroke}"${style.dash ? ` stroke-dasharray="${style.dash}"` : ""} d="M ${start.x.toFixed(2)},${start.y.toFixed(2)} L ${end.x.toFixed(2)},${end.y.toFixed(2)}"/></g>`);
+    const style = styles.get(id) ?? { stroke: "#94a3b8", dash: null, classes: "" };
+    parts.push(`<g id="${id}" class="edge${style.classes}"><title>${escHtml(`${source}->${target}`)}</title><path fill="none" stroke="${style.stroke}"${style.dash ? ` stroke-dasharray="${style.dash}"` : ""} d="M ${start.x.toFixed(2)},${start.y.toFixed(2)} L ${end.x.toFixed(2)},${end.y.toFixed(2)}"/></g>`);
   };
   (data.relations ?? []).forEach((relation, k) => {
     if (relation.relationship_kind === "specialization") return;

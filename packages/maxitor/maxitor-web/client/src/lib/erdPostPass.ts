@@ -15,7 +15,7 @@
  */
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
-import { CONTOUR_ID_PREFIX, DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdGlance, erdHeadInk, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX, DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, FRAME_DISK_SLOT_PREFIX, frameOfCluster, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
 import { svgDataUriForGraphNodeIcon } from "./icons/graph_node_disk_icons.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
@@ -152,6 +152,20 @@ export type ErdLineInfo = {
 /** How long a hover waits before acting: a pointer passing over the drawing changes nothing. */
 export const HOVER_INTENT_MS = 100;
 
+/** How low a row may stand on screen and still be read or aimed at, in CSS px; a finger needs more than a pointer. */
+export const ROW_READABLE_PX = 10;
+export const ROW_TAPPABLE_PX = 20;
+
+/**
+ * Whether a table is seen from afar: its rows stand lower on screen than a pointer can aim at. Then the table is one
+ * thing — its card is the table's (spec 043, FR-001a), and a hover anywhere on it lights all its lines (spec 071).
+ */
+export function seenFromAfar(node: Element, touch = false): boolean {
+  const row = node.querySelector('g[id^="a_fn"]') ?? node.querySelector('g[id^="a_hd"]');
+  const height = row?.getBoundingClientRect().height ?? Infinity;
+  return height > 0 && height < (touch ? ROW_TAPPABLE_PX : ROW_READABLE_PX);
+}
+
 /** The class the hovered look hangs on. */
 export const EDGE_HOVER_CLASS = "is-hovered";
 const MARK_NAME_FILL = "#0f172a";
@@ -173,48 +187,18 @@ export function addEdgeHitAreas(root: ParentNode): void {
   });
 }
 
-/** An attribute value as the markup writes it. */
-function escAttribute(value: string): string {
-  return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+/** The resource a cluster group names — a resource contour (spec 064) — or ``null`` for any other group. */
+export function contourResource(group: Element): string | null {
+  const frame = contourId(group);
+  return frame?.startsWith(CONTOUR_ID_PREFIX) ? frame.slice(CONTOUR_ID_PREFIX.length) : null;
 }
 
 /**
- * Tag every table and frame with what paints it (spec 071): ``data-domain``, ``data-kind`` and — in the physical view
- * — ``data-resource`` on a table, ``data-change`` in Diff; ``data-domain`` or ``data-resource`` on a frame. A table is
- * found by the header cell Graphviz writes for it, so the tags follow the same order the DOT was built from.
+ * The frame a cluster group stands for — a resource's (``rc:``) or a domain's (``dc:``), or the frame a specialization
+ * block lies in — or ``null`` for any other group.
  */
-export function tagErdPaint(markup: string, entities: readonly ErdEntity[], model?: "logical" | "physical"): string {
-  const edits: Array<{ at: number; text: string }> = [];
-  entities.forEach((entity, table) => {
-    const headerAt = markup.indexOf(`<g id="a_hd${table}">`);
-    if (headerAt < 0) return;
-    const open = markup.lastIndexOf('<g id="node', headerAt);
-    if (open < 0) return;
-    const tagEnd = markup.indexOf(">", open);
-    if (tagEnd < 0) return;
-    const qual = entity.domain_qualname?.trim() ?? "";
-    const resource = model === "physical" ? (tableResource(entity) ?? "") : null;
-    const data = ` data-domain="${escAttribute(qual)}" data-kind="${escAttribute(entity.entity_kind?.trim() || "unknown")}" data-change="${erdGlance(entity)}"` + (resource !== null ? ` data-resource="${escAttribute(resource)}"` : "");
-    edits.push({ at: tagEnd, text: data });
-  });
-  for (const match of markup.matchAll(/<g id="(rc|dc):([^"]+)" class="cluster">/g)) {
-    const at = (match.index ?? 0) + match[0].length - 1;
-    const attr = match[1] === "rc" ? "data-resource" : "data-domain";
-    edits.push({ at, text: ` ${attr}="${escAttribute(match[2]!)}"` });
-  }
-  let out = markup;
-  for (const { at, text } of edits.sort((one, other) => other.at - one.at)) out = out.slice(0, at) + text + out.slice(at);
-  return out;
-}
-
-/** The resource a cluster group names — a resource contour (spec 064) — or ``null`` for any other group. */
-export function contourResource(group: Element): string | null {
-  return group.classList.contains("cluster") && group.id.startsWith(CONTOUR_ID_PREFIX) ? group.id.slice(CONTOUR_ID_PREFIX.length) : null;
-}
-
-/** The frame a cluster group names — a resource's (``rc:``) or a domain's (``dc:``) — or ``null`` for any other group. */
 export function contourId(group: Element): string | null {
-  return group.classList.contains("cluster") && isContourId(group.id) ? group.id : null;
+  return group.classList.contains("cluster") ? frameOfCluster(group.id) : null;
 }
 
 /**
@@ -379,6 +363,72 @@ export const erdContourHoverSx = {
 /** The canvas's style for a bundle's count (spec 065): on its plate at all times, not only while hovered. */
 export const erdBundleSx = {
   [`& g.edge[id^='rb'] text, & g.edge[id^='rb'] rect.${END_LABEL_CLASS}`]: { visibility: "visible" },
+} as const;
+
+/**
+ * The level of detail, as a map has (spec 071): below these zooms a row's text, then a table's name, stands a pixel or
+ * two high on screen — a smear no one reads, and still the most costly thing to paint, glyph by glyph. There each text
+ * is drawn as a bar of its own length, place and colour instead ("greeking"), so a pan or a zoom repaints one shape
+ * per text and the picture from afar looks the same: the tables keep their lines of text, never turn blank.
+ */
+export const FAR_ROWS_SCALE = 0.15;
+export const FAR_NAMES_SCALE = 0.08;
+export const FAR_ROWS_CLASS = "erd-far-rows";
+export const FAR_NAMES_CLASS = "erd-far-names";
+/** The class of a text's bar, and of the bar of a table's name. */
+export const GREEK_CLASS = "erd-greek";
+export const GREEK_NAME_CLASS = "erd-greek-name";
+/** Helvetica's mean advance and the height a bar takes, in ems of the text's size. */
+const GREEK_ADVANCE_EM = 0.55;
+const GREEK_HEIGHT_EM = 0.42;
+
+/**
+ * A bar for every text of every table in ``svg``, once per drawing, hidden until the drawing is seen from afar. The bar
+ * is measured from the text's own attributes — its length from its characters, its place from its anchor and baseline
+ * — so making them lays nothing out.
+ */
+export function addGreekText(svg: Element): void {
+  if (svg.querySelector(`.${GREEK_CLASS}`)) return;
+  for (const text of svg.querySelectorAll("g.node text")) {
+    const size = Number(text.getAttribute("font-size") ?? 14);
+    const x = Number(text.getAttribute("x"));
+    const y = Number(text.getAttribute("y"));
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    const width = (text.textContent ?? "").length * size * GREEK_ADVANCE_EM;
+    const anchor = text.getAttribute("text-anchor");
+    const left = anchor === "middle" ? x - width / 2 : anchor === "end" ? x - width : x;
+    const height = size * GREEK_HEIGHT_EM;
+    const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    const isName = text.closest("g[id^='a_hn']") !== null;
+    bar.setAttribute("class", `${GREEK_CLASS}${isName ? ` ${GREEK_NAME_CLASS}` : ""}`);
+    bar.setAttribute("x", left.toFixed(2));
+    bar.setAttribute("y", (y - size * 0.36 - height / 2).toFixed(2));
+    bar.setAttribute("width", width.toFixed(2));
+    bar.setAttribute("height", height.toFixed(2));
+    bar.setAttribute("rx", (height / 2).toFixed(2));
+    bar.setAttribute("fill", text.getAttribute("fill") ?? "#0f172a");
+    bar.setAttribute("opacity", "0.55");
+    text.parentNode?.insertBefore(bar, text);
+  }
+}
+
+/** Mark ``svg`` with the detail its ``scale`` shows; only a crossing of a threshold changes a class. */
+export function setErdDetail(svg: Element, scale: number): void {
+  const far = scale < FAR_ROWS_SCALE;
+  if (far) addGreekText(svg);
+  svg.classList.toggle(FAR_ROWS_CLASS, far);
+  svg.classList.toggle(FAR_NAMES_CLASS, scale < FAR_NAMES_SCALE);
+}
+
+/** The canvas's style for the level of detail: from afar a row's text is its bar, then a table's name is too. */
+export const erdDetailSx = {
+  [`& .${GREEK_CLASS}`]: { display: "none" },
+  [`& svg.${FAR_ROWS_CLASS} g.node text`]: { display: "none" },
+  [`& svg.${FAR_ROWS_CLASS} .${GREEK_CLASS}`]: { display: "inline" },
+  [`& svg.${FAR_ROWS_CLASS} g.node g[id^='a_hn'] text`]: { display: "inline" },
+  [`& svg.${FAR_ROWS_CLASS} .${GREEK_NAME_CLASS}`]: { display: "none" },
+  [`& svg.${FAR_ROWS_CLASS}.${FAR_NAMES_CLASS} g.node g[id^='a_hn'] text`]: { display: "none" },
+  [`& svg.${FAR_ROWS_CLASS}.${FAR_NAMES_CLASS} .${GREEK_NAME_CLASS}`]: { display: "inline" },
 } as const;
 
 /** The canvas's style for line labels: hidden, and shown on their plates while the line is hovered. */
@@ -554,12 +604,40 @@ export function bindLineHover(
       rowLines.set(row, [...(rowLines.get(row) ?? []), k]);
     }
   });
+  // A table seen from afar is one thing: a hover anywhere on it lights every line it has, bold, and every table they join
+  // — as a key row lights its own lines close up (spec 071).
+  const lightTable = (own: string) => {
+    const edges = [...touching(own)];
+    show(edges, true);
+    focusTables(root, new Set([own, ...joined(edges)]), new Set(edges));
+    return edges;
+  };
+  root.querySelectorAll("g.node").forEach((node) => {
+    const own = tableOf(node);
+    if (!own || isContourId(own) || !relations.some((line) => line.source === own || line.target === own)) return;
+    let lit: Element[] = [];
+    node.addEventListener("mouseenter", (event: Event) => {
+      if (!seenFromAfar(node)) return;
+      later(() => (lit = lightTable(own)), event.isTrusted);
+    }, { signal });
+    node.addEventListener("mouseleave", (event: Event) => {
+      if (!lit.length && !seenFromAfar(node)) return;
+      later(() => {
+        show(lit, false);
+        lit = [];
+        clearTableFocus(root);
+      }, event.isTrusted);
+    }, { signal });
+  });
+
   root.querySelectorAll('g[id^="a_fn"], g[id^="a_ft"]').forEach((cell) => {
     const lines = rowLines.get(cell.id.slice(4)) ?? [];
     if (!lines.length) return;
     // The row's own table stays the hovered one; its lines and every table they join are lit with it.
     const own = tableOf(cell.closest("g.node") ?? cell);
     cell.addEventListener("mouseenter", (event: Event) => later(() => {
+      // From afar the row is too small to aim at: the table's hover lights all its lines instead.
+      if (seenFromAfar(cell.closest("g.node") ?? cell)) return void lightTable(own);
       const edges = edgesById(lines);
       // Scenario 2 (maintainer, 2026-10-27): the field's lines go bold (``show``); the tables they join
       // stay bright; the hovered table's other lines stay as they are; every other line and table dims.
@@ -567,6 +645,7 @@ export function bindLineHover(
       focusTables(root, new Set([own, ...joined(edges)]), touching(own));
     }, event.isTrusted), { signal });
     cell.addEventListener("mouseleave", (event: Event) => later(() => {
+      if (seenFromAfar(cell.closest("g.node") ?? cell)) return;
       show(edgesById(lines), false);
       focusTables(root, new Set([own]));
     }, event.isTrusted), { signal });
@@ -645,35 +724,35 @@ export function bindLineHover(
   });
 }
 
+/** The middle of Helvetica's capitals above the baseline, in ems: half its cap height (0.718). */
+const FRAME_CAP_MIDDLE = 0.359;
+
 /**
- * The disk before every frame's name — a domain's or a resource's, the same folded and unfolded (spec 071). Graphviz
- * drops an ``<IMG>`` inside an HTML label, so the disk is drawn into the SVG after the layout, and the name moves
- * right by its width; the rest of the drawing is untouched.
+ * The disk before every frame's name — a domain's or a resource's, the same folded and unfolded, on the ERD and on the
+ * use cases (spec 071). Graphviz drops an ``<IMG>`` inside an HTML label, so ``frameTitleLabel`` keeps a slot for the
+ * disk: Graphviz writes it as ``<g id="a_fdd<n>">`` (a domain's) or ``<g id="a_fdr<n>">`` (a resource's) round a
+ * polygon filled with the disk's colour. Each slot becomes the disk, drawn in that colour over the slot's box; nothing
+ * else of the drawing moves.
  */
 export function addFrameIcons(markup: string): string {
-  const edits: { at: number; end: number; text: string }[] = [];
-  const add = (id: string, open: number) => {
-    const textAt = markup.indexOf("<text", open);
-    if (textAt < 0) return;
-    // The disk takes the frame's own colour, read from the outline it already drew.
-    const stroke = /stroke="(#[0-9a-fA-F]{3,8})"/.exec(markup.slice(open, textAt))?.[1];
-    const icon = svgDataUriForGraphNodeIcon(stroke ?? (id.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? "#3b82f6" : "#7570B3"), id.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? "Domain" : "Resource");
-    const tag = /^<text\b[^>]*>/.exec(markup.slice(textAt))?.[0];
-    if (!tag) return;
-    const xm = /\bx="([^"]+)"/.exec(tag);
-    const ym = /\by="([^"]+)"/.exec(tag);
-    const x = Number(xm?.[1]);
-    const y = Number(ym?.[1]);
-    if (!Number.isFinite(x) || !Number.isFinite(y) || xm === null) return;
-    edits.push({ at: textAt, end: textAt, text: `<image href="${icon}" x="${(x - 18).toFixed(2)}" y="${(y - 11).toFixed(2)}" width="14" height="14"/>` });
-    const xAt = textAt + tag.indexOf(xm[0]);
-    edits.push({ at: xAt, end: xAt + xm[0].length, text: `x="${(x + 2).toFixed(2)}"` });
-  };
-  for (const match of markup.matchAll(/<g id="((?:rc|dc):[^"]+)" class="cluster">/g)) add(match[1]!, (match.index ?? 0) + match[0].length);
-  for (const match of markup.matchAll(/<g id="node[^"]*" class="node">\s*<title>((?:rc|dc):[^<]+)<\/title>/g)) add(match[1]!, (match.index ?? 0) + match[0].length);
-  let out = markup;
-  for (const edit of edits.sort((a, b) => b.at - a.at)) out = out.slice(0, edit.at) + edit.text + out.slice(edit.end);
-  return out;
+  const slot = new RegExp(`<g id="a_${FRAME_DISK_SLOT_PREFIX}([dr])\\d+">\\s*<a\\b[^>]*>\\s*<polygon fill="([^"]+)"[^>]*points="([^"]+)"[^>]*/>\\s*</a>\\s*</g>`, "g");
+  return markup.replace(slot, (whole, kind: string, fill: string, points: string, at: number) => {
+    const values = (points.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+    const xs = values.filter((_, i) => i % 2 === 0);
+    const ys = values.filter((_, i) => i % 2 === 1);
+    if (!xs.length || !ys.length) return whole;
+    const left = Math.min(...xs);
+    const top = Math.min(...ys);
+    const width = Math.max(...xs) - left;
+    const height = Math.max(...ys) - top;
+    const size = Math.min(width, height);
+    // The disk's middle stands on the middle of the name's capitals, where the eye reads the line's axis — not on the
+    // middle of the row, which the descenders pull down. Without a name after it, the row's middle.
+    const name = /<text\b[^>]*\by="(-?[\d.]+)"[^>]*font-size="([\d.]+)"/.exec(markup.slice(at + whole.length, at + whole.length + 600));
+    const middle = name ? Number(name[1]) - Number(name[2]) * FRAME_CAP_MIDDLE : top + height / 2;
+    const icon = svgDataUriForGraphNodeIcon(fill, kind === "d" ? "Domain" : "Resource");
+    return `<image class="frame-disk" href="${icon}" x="${(left + (width - size) / 2).toFixed(2)}" y="${(middle - size / 2).toFixed(2)}" width="${size.toFixed(2)}" height="${size.toFixed(2)}"/>`;
+  });
 }
 
 // ── The card as designed ─────────────────────────────────────────────────

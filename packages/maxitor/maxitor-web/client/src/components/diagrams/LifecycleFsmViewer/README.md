@@ -20,6 +20,10 @@
 |------|----------------|
 | `LifecycleFsmViewer.tsx` | Load automaton JSON, build DOT, layout SVG, fit/center viewport, rankdir toggle, error surface. |
 
+## Its filters
+
+A lifecycle is its own scope and its own base — the whole automaton — so it has no 1-hop switch: what the panel switches off is hidden (spec 071). The kinds of state and of change switched off and the paint are page settings a room shares.
+
 ## Comparing two versions
 
 In Diff the diagram is the union of A and B (`@/lib/lifecycleDiff`): states and transitions marked by the comparison, unchanged ones grey and dim, the entry and exit dots following their arrows but never counted. A click opens the change card, the stepper walks the changes, and the filter panel has Elements and Changes, with no Domains section and no gear shift. A lifecycle one version lacks opens from the other; absent from both, the page says so.

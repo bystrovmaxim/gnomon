@@ -1,8 +1,7 @@
 // src/lib/buildDomainUseCaseDotSource.ts
 import type { DiffStatus } from "@/api/compare";
-import { ERD_DIFF_COLOUR, ERD_DIFF_SIGN } from "./buildDotSource.ts";
+import { DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, ERD_DIFF_SIGN, frameTitleLabel } from "./buildDotSource.ts";
 import type { DomainUseCaseDiagramPayload } from "@/model/domainUseCaseDiagram";
-import { DOMAIN_CONTOUR_ID_PREFIX } from "./buildDotSource.ts";
 
 export type DomainUseCaseRankdir = "LR" | "TB";
 
@@ -248,100 +247,54 @@ export function buildDomainUseCaseDotBundle(
     }
   };
 
-  // The boundaries folded into one box each: the use cases inside them are hidden, and only the links between the
-  // domains are drawn. The containers' own switch, apart from the tables' collapse on the ERD (spec 071).
-  if (layout?.foldedAll) {
-    const home = new Map(actions.map((action) => [action.id, action.domain_id]));
-    const domains = [...new Set(actions.map((action) => action.domain_id))];
-    const first = (domainId: string) => actions.find((action) => action.domain_id === domainId);
-    const labelOf = (domainId: string) => first(domainId)?.domain_short_label ?? domainId;
-    const colourOf = (domainId: string) => first(domainId)?.accent_color ?? "#64748b";
-    domains.forEach((domainId, at) => {
-      const colour = colourOf(domainId);
-      // The box keeps its domain's name and colour and carries the domain frame's id, so the disk is added to it as
-      // to a frame (spec 071).
-      lines.push(`  domain_${at} [id="${dotEscAttr(`${DOMAIN_CONTOUR_ID_PREFIX}${domainId}`)}" shape=box style="rounded,filled" label="${dotEscLabel(labelOf(domainId))}" color="${colour}" fontcolor="${colour}" fillcolor="#ffffff" penwidth=1.4];`);
-    });
-    // The roles stay as they are, standing outside every boundary.
-    const imgUrl = dotEscAttr(imageOptions.roleActorImageUrl);
-    for (const r of roles) {
-      const nid = domainUseCaseDotNodeId("r", r.id);
-      const rl = htmlEsc(r.short_label || r.label);
-      const actor = buildRoleActorDataUrl(r.diff);
-      if (actor) actionImages.push({ path: actor, width: "52px", height: "74px" });
-      const img = actor ? dotEscAttr(actor) : imgUrl;
-      const text = r.diff && r.diff !== "unchanged" ? `<FONT POINT-SIZE="10" COLOR="${ERD_DIFF_COLOUR[r.diff]}">${rl}</FONT>` : `<FONT POINT-SIZE="10">${rl}</FONT>`;
-      lines.push(
-        `  ${nid} [shape=plaintext margin=0 label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="-8" CELLPADDING="0"><TR><TD FIXEDSIZE="TRUE" WIDTH="52" HEIGHT="74"><IMG SRC="${img}" WIDTH="52" HEIGHT="74"/></TD></TR><TR><TD HEIGHT="12">${text}</TD></TR></TABLE>>${nodeMark(r.diff, r.short_label || r.label, r.id)}];`,
-      );
-    }
-    // The links: a role to the domains of its use cases, and a domain to another.
-    const roleDomains = new Map<string, Set<string>>();
-    const pairs = new Map<string, { from: string; to: string; count: number }>();
-    for (const edge of edges) {
-      if (edge.edge_kind === "association") {
-        const domainId = home.get(edge.source_id);
-        if (!domainId) continue;
-        const set = roleDomains.get(edge.target_id) ?? new Set<string>();
-        set.add(domainId);
-        roleDomains.set(edge.target_id, set);
-        continue;
-      }
-      const from = home.get(edge.source_id);
-      const to = home.get(edge.target_id);
-      if (!from || !to || from === to) continue;
-      const key = [from, to].sort().join("\u0000");
-      const pair = pairs.get(key) ?? { from, to, count: 0 };
-      pair.count += 1;
-      pairs.set(key, pair);
-    }
-    for (const [roleId, domainIds] of roleDomains) {
-      const rol = domainUseCaseDotNodeId("r", roleId);
-      for (const domainId of domainIds) {
-        const at = domains.indexOf(domainId);
-        if (at >= 0) lines.push(`  ${rol} -> domain_${at} [style=solid penwidth=1 arrowhead=vee];`);
-      }
-    }
-    for (const pair of pairs.values()) {
-      const [a, b] = [domains.indexOf(pair.from), domains.indexOf(pair.to)].sort((x, y) => x - y);
-      if (a === undefined || b === undefined || a < 0 || b < 0) continue;
-      lines.push(`  domain_${a} -> domain_${b} [dir=none penwidth=1 color="#94a3b8"${pair.count > 1 ? ` label="×${pair.count}" fontsize=9` : ""}];`);
-    }
-    lines.push("}");
-    return { dot: lines.join("\n"), files, actionImages };
-  }
+  // One boundary per domain on the all-domains use case (spec 071): each titled with its domain's disk and name, in its
+  // domain's colour, as the ERD titles its domain frames. Folded, a boundary is one box: its use cases are hidden and
+  // the links that leave it are drawn from the box. Folding needs boundaries: with Boundary off nothing is folded.
+  const domains = [...new Set(actions.map((action) => action.domain_id))];
+  const folded = boundary && layout?.foldedAll === true;
+  const firstOf = (domainId: string) => actions.find((action) => action.domain_id === domainId);
+  const domainColour = (domainId: string) => firstOf(domainId)?.accent_color ?? "#64748b";
+  const domainTitle = (domainId: string, at: number, below?: string[]) =>
+    frameTitleLabel({ kind: "domain", slot: at, name: firstOf(domainId)?.domain_short_label ?? domainId, disk: domainColour(domainId), ink: domainColour(domainId), tooltip: domainId, fontSize: 13, below, pad: below ? 0 : 4 });
+  const domainNode = (domainId: string) => `domain_${domains.indexOf(domainId)}`;
 
-  if (boundary) {
-    const domains = [...new Set(actions.map((action) => action.domain_id))];
-    if (domains.length > 1) {
-      // The all-domains use case: one boundary per domain, each named, its own use cases inside (spec 071).
-      domains.forEach((domainId, at) => {
-        const mine = actions.filter((action) => action.domain_id === domainId);
-        const label = mine[0]?.domain_short_label ?? domainId;
-        lines.push(`  subgraph cluster_scope_${at} {`);
-        // The frame's id says which domain it stands for, so its disk is added to it as to an ERD frame (spec 071).
-        lines.push(`    id="${dotEscAttr(`${DOMAIN_CONTOUR_ID_PREFIX}${domainId}`)}";`);
-        lines.push(`    label="${dotEscLabel(label)}";`);
-        lines.push(`    style="rounded,filled";`);
-        lines.push(`    color="#64748b";`);
-        lines.push(`    fontcolor="#0f172a";`);
-        lines.push(`    fillcolor="#ffffff";`);
-        lines.push(`    penwidth=1.2;`);
-        pushActionNodes("    ", mine);
-        lines.push(`  }`);
-      });
-    } else {
-      // One domain: the neutral contour around its use cases, as before.
-      lines.push(`  subgraph cluster_scope {`);
-      lines.push(`    label="";`);
+  if (folded) {
+    domains.forEach((domainId, at) => {
+      const mine = actions.filter((action) => action.domain_id === domainId);
+      const changed = mine.filter((action) => action.diff !== undefined && action.diff !== "unchanged").length;
+      const below = [`<FONT POINT-SIZE="9" COLOR="#64748b">${mine.length} use case${mine.length === 1 ? "" : "s"}</FONT>`];
+      if (changed > 0) below.push(`<FONT POINT-SIZE="9" COLOR="${ERD_DIFF_COLOUR.changed}"><B>${ERD_DIFF_SIGN.changed} ${changed} changed</B></FONT>`);
+      // The box carries the domain frame's id, so hover, rooms and checks read it as the boundary it stands for.
+      lines.push(
+        `  ${domainNode(domainId)} [id="${dotEscAttr(`${DOMAIN_CONTOUR_ID_PREFIX}${domainId}`)}" shape=box style="rounded,filled" fillcolor="#ffffff" color="${domainColour(domainId)}" penwidth=1.4 margin="0.18,0.12" tooltip="${dotEscAttr(domainId)}" label=<${domainTitle(domainId, at, below)}>];`,
+      );
+    });
+  } else if (boundary && domains.length > 1) {
+    domains.forEach((domainId, at) => {
+      lines.push(`  subgraph cluster_scope_${at} {`);
+      // The frame's id says which domain it stands for, so the room and the checks read it as an ERD frame (spec 071).
+      lines.push(`    id="${dotEscAttr(`${DOMAIN_CONTOUR_ID_PREFIX}${domainId}`)}";`);
+      lines.push(`    tooltip="${dotEscAttr(domainId)}";`);
+      lines.push(`    label=<${domainTitle(domainId, at)}>;`);
       lines.push(`    style="rounded,filled";`);
-      lines.push(`    color="#64748b";`);
-      lines.push(`    fontcolor="#0f172a";`);
+      lines.push(`    color="${domainColour(domainId)}";`);
       lines.push(`    fillcolor="#ffffff";`);
-      lines.push(`    penwidth=1.2;`);
-      pushActionNodes("    ");
+      lines.push(`    penwidth=1.4;`);
+      lines.push(`    margin=16;`);
+      pushActionNodes("    ", actions.filter((action) => action.domain_id === domainId));
       lines.push(`  }`);
-    }
+    });
+  } else if (boundary) {
+    // One domain: the neutral contour around its use cases; the page already names the domain.
+    lines.push(`  subgraph cluster_scope {`);
+    lines.push(`    label="";`);
+    lines.push(`    style="rounded,filled";`);
+    lines.push(`    color="#64748b";`);
+    lines.push(`    fontcolor="#0f172a";`);
+    lines.push(`    fillcolor="#ffffff";`);
+    lines.push(`    penwidth=1.2;`);
+    pushActionNodes("    ");
+    lines.push(`  }`);
   } else {
     pushActionNodes("  ");
   }
@@ -360,8 +313,28 @@ export function buildDomainUseCaseDotBundle(
   }
 
   const nameOf = new Map([...actions, ...roles].map((element) => [element.id, element.short_label || element.label]));
+  const home = new Map(actions.map((action) => [action.id, action.domain_id]));
+  // Folded, a role's links go to the boxes of its use cases' domains, one per domain; the links between use cases of
+  // two domains become one line between their boxes, counted; a link inside one box is hidden with the box's use cases.
+  const roleToBox = new Set<string>();
+  const between = new Map<string, { from: string; to: string; count: number }>();
   for (const e of edges) {
     const ek = e.edge_kind;
+    if (folded && ek !== "role_generalization") {
+      if (ek === "association") {
+        const domainId = home.get(e.source_id);
+        if (domainId !== undefined) roleToBox.add(`${domainUseCaseDotNodeId("r", e.target_id)} -> ${domainNode(domainId)}`);
+        continue;
+      }
+      const from = home.get(e.source_id);
+      const to = home.get(e.target_id);
+      if (from === undefined || to === undefined || from === to) continue;
+      const key = [from, to].sort().join("\u0000");
+      const pair = between.get(key) ?? { from, to, count: 0 };
+      pair.count += 1;
+      between.set(key, pair);
+      continue;
+    }
     const ends = `${nameOf.get(e.source_id) ?? e.source_id} → ${nameOf.get(e.target_id) ?? e.target_id}`;
     if (ek === "action_generalization") {
       const s = domainUseCaseDotNodeId("a", e.source_id);
@@ -385,6 +358,11 @@ export function buildDomainUseCaseDotBundle(
       const t = domainUseCaseDotNodeId("a", e.target_id);
       lines.push(`  ${s} -> ${t} [style=dashed arrowhead=open penwidth=0.8${edgeMark(e.diff, e.id, ends)}];`);
     }
+  }
+
+  for (const link of roleToBox) lines.push(`  ${link} [style=solid penwidth=1 arrowhead=vee];`);
+  for (const pair of between.values()) {
+    lines.push(`  ${domainNode(pair.from)} -> ${domainNode(pair.to)} [dir=none penwidth=1 color="#94a3b8"${pair.count > 1 ? ` label="×${pair.count}" fontsize=9 fontcolor="#334155"` : ""}];`);
   }
 
   lines.push("}");

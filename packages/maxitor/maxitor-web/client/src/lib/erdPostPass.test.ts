@@ -1,7 +1,7 @@
 // src/lib/erdPostPass.test.ts
 import { afterEach, describe, expect, it } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, erdBundleSx, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, erdBundleSx, erdDetailSx, FAR_NAMES_CLASS, FAR_NAMES_SCALE, FAR_ROWS_CLASS, FAR_ROWS_SCALE, GREEK_CLASS, GREEK_NAME_CLASS, setErdDetail, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
 
 // Markup shaped like Graphviz's: Player (0) has id, gender and an FK row named showcase twice
 // (own row and FK row); Showcase (1) has id and players; Gender (2) has id.
@@ -188,6 +188,29 @@ describe("which tables stay bright on hover (spec 029, FR-040, FR-041)", () => {
     hover(root.querySelector('g[id="a_fn0_2"]')!, false);
     expect(bright(root)).toEqual(["Player"]);
     expect(brightLines(root)).toEqual(["re0", "re1"]);
+  });
+
+  it("a table seen from afar: a hover anywhere on it lights all its lines, bold, and every table they join (spec 071)", () => {
+    const { root } = mount();
+    // Its rows stand 6 px high on screen: too low to aim at one.
+    const player = [...root.querySelectorAll("g.node")].find((node) => node.querySelector("title")!.textContent === "Player")!;
+    for (const cell of player.querySelectorAll("g")) (cell as Element).getBoundingClientRect = () => ({ height: 6 }) as DOMRect;
+    hover(player, true);
+    expect(bright(root)).toEqual(["Gender", "Player", "Showcase"]);
+    expect([...root.querySelectorAll("g.edge.is-hovered")].map((e) => e.id).sort()).toEqual(["re0", "re1"]);
+    // A key row under the pointer lights the same: from afar there is no row to aim at.
+    hover(player.querySelector('g[id="a_fn0_2"]')!, true);
+    expect([...root.querySelectorAll("g.edge.is-hovered")].map((e) => e.id).sort()).toEqual(["re0", "re1"]);
+    hover(player, false);
+    expect(root.querySelectorAll("g.edge.is-hovered")).toHaveLength(0);
+    expect(bright(root)).toEqual(["Gender", "Player", "Showcase"]);
+  });
+
+  it("close up, a hover on a table's plain row lights none of its lines bold", () => {
+    const { root } = mount();
+    const player = [...root.querySelectorAll("g.node")].find((node) => node.querySelector("title")!.textContent === "Player")!;
+    hover(player, true);
+    expect(root.querySelectorAll("g.edge.is-hovered")).toHaveLength(0);
   });
 
   it("a PK row: every table whose lines point at it", () => {
@@ -493,5 +516,37 @@ describe("folded contours and their bundles (spec 065)", () => {
 
   it("keeps a bundle's count on view at all times", () => {
     expect(erdBundleSx["& g.edge[id^='rb'] text, & g.edge[id^='rb'] rect.erd-end-label"]).toEqual({ visibility: "visible" });
+  });
+});
+
+describe("the level of detail (spec 071)", () => {
+  it("takes the rows' text out from afar, then the names', and puts them back close up", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    setErdDetail(svg, 1);
+    expect([...svg.classList]).toEqual([]);
+    setErdDetail(svg, FAR_ROWS_SCALE - 0.01);
+    expect([...svg.classList]).toEqual([FAR_ROWS_CLASS]);
+    setErdDetail(svg, FAR_NAMES_SCALE - 0.01);
+    expect([...svg.classList].sort()).toEqual([FAR_NAMES_CLASS, FAR_ROWS_CLASS].sort());
+    setErdDetail(svg, 0.5);
+    expect([...svg.classList]).toEqual([]);
+  });
+
+  it("from afar draws every text of a table as a bar of its length, place and colour — a table never turns blank", () => {
+    document.body.innerHTML = `<svg><g class="node"><g id="a_hn0"><a><text x="10" y="20" font-size="12" text-anchor="start" fill="#ffffff">Order</text></a></g><g id="a_fn0_0"><a><text x="100" y="40" font-size="10" text-anchor="end" fill="#64748b">str</text></a></g></g></svg>`;
+    const svg = document.querySelector("svg")!;
+    setErdDetail(svg, FAR_ROWS_SCALE - 0.01);
+    const bars = [...svg.querySelectorAll(`.${GREEK_CLASS}`)];
+    expect(bars).toHaveLength(2);
+    expect(bars.map((bar) => bar.getAttribute("fill"))).toEqual(["#ffffff", "#64748b"]);
+    // The name's bar starts where its text starts; the type's ends where its right-anchored text ends.
+    expect(Number(bars[0]!.getAttribute("x"))).toBe(10);
+    expect(Number(bars[1]!.getAttribute("x")) + Number(bars[1]!.getAttribute("width"))).toBeCloseTo(100, 5);
+    expect(bars[0]!.classList.contains(GREEK_NAME_CLASS)).toBe(true);
+    // Made once per drawing.
+    setErdDetail(svg, 0.01);
+    expect(svg.querySelectorAll(`.${GREEK_CLASS}`)).toHaveLength(2);
+    // Every text hidden from afar has its bar shown in its place.
+    expect(erdDetailSx[`& svg.${FAR_ROWS_CLASS} .${GREEK_CLASS}` as keyof typeof erdDetailSx]).toEqual({ display: "inline" });
   });
 });

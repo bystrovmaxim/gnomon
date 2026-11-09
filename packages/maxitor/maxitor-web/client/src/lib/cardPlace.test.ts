@@ -63,6 +63,19 @@ describe("placeCard", () => {
     expect(place.y).toBeLessThanOrEqual(92);
   });
 
+  it("puts a card taller than the stage beside the table, not over it: it scrolls inside (spec 071)", () => {
+    const place = placeCard(stage, { width: 300, height: 2000 }, { beside: table, level, avoid: [] });
+    const card = { left: place.x + stage.left, right: place.x + stage.left + 300 };
+    expect(card.left >= table.right || card.right <= table.left).toBe(true);
+  });
+
+  it("where nothing fits, covers as little of the table as it can", () => {
+    // A table nearly as wide as the stage: the card cannot stand beside it, so it stands where it covers least of it.
+    const broad = { left: 150, top: 200, right: 1050, bottom: 700 };
+    const place = placeCard(stage, { width: 300, height: 2000 }, { beside: broad, level: broad, avoid: [] });
+    expect(place.x <= 150 - 8 - stage.left || place.x + stage.left >= 1050 - 300).toBe(true);
+  });
+
   it("lifts a card that would run past the foot, keeping it beside the table", () => {
     const low = { left: 500, top: 700, right: 700, bottom: 840 };
     expect(placeCard(stage, size, { beside: low, level: { ...low, top: 820 }, avoid: [] })).toEqual({ x: 608, y: 642 });

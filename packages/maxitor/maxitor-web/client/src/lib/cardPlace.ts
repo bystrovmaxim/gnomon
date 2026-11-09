@@ -35,25 +35,35 @@ function clamp(value: number, low: number, high: number): number {
 
 /**
  * The card's place in ``stage``'s pixels, once its size is known: right of what it describes, left, under or above, whichever
- * first fits and leaves ``avoid`` in sight; if none does, the fitting side that covers least; if none fits, under, on the stage.
+ * first fits and leaves ``avoid`` in sight; if none does, the fitting side that covers least. A card taller than the stage
+ * scrolls inside, so it is placed by the height it shows. Where no side fits at all, the card goes where it covers least
+ * of what it describes — never over it while anywhere else is open (spec 071).
  */
 export function placeCard(stage: Box, size: { width: number; height: number }, { beside, level, avoid }: CardAround): { x: number; y: number } {
-  const { width, height } = size;
+  const width = size.width;
+  const height = Math.min(size.height, stage.bottom - stage.top - 2 * GAP_PX);
   const [minX, maxX] = [stage.left + GAP_PX, Math.max(stage.left + GAP_PX, stage.right - width - GAP_PX)];
   const [minY, maxY] = [stage.top + GAP_PX, Math.max(stage.top + GAP_PX, stage.bottom - height - GAP_PX)];
   const alongside = clamp(level.top, minY, maxY);
   const across = clamp(level.left, minX, maxX);
-  const sides = [
+  const all = [
     { left: beside.right + GAP_PX, top: alongside },
     { left: beside.left - GAP_PX - width, top: alongside },
     { left: across, top: beside.bottom + GAP_PX },
     { left: across, top: beside.top - GAP_PX - height },
-  ].filter((side) => side.left >= minX && side.left <= maxX && side.top >= minY && side.top <= maxY);
-  const covered = (side: { left: number; top: number }) => {
-    const box = { left: side.left, top: side.top, right: side.left + width, bottom: side.top + height };
-    return avoid.reduce((sum, each) => sum + overlap(box, each), 0);
-  };
-  let best = sides[0] ?? { left: across, top: clamp(beside.bottom + GAP_PX, minY, maxY) };
+  ];
+  const fits = (side: { left: number; top: number }) => side.left >= minX && side.left <= maxX && side.top >= minY && side.top <= maxY;
+  const boxOf = (side: { left: number; top: number }) => ({ left: side.left, top: side.top, right: side.left + width, bottom: side.top + height });
+  const covered = (side: { left: number; top: number }) => avoid.reduce((sum, each) => sum + overlap(boxOf(side), each), 0);
+  const sides = all.filter(fits);
+  if (sides.length === 0) {
+    // Nowhere fits whole: each side pushed onto the stage, the one that covers least of the element itself, then of the rest.
+    const pushed = all.map((side) => ({ left: clamp(side.left, minX, maxX), top: clamp(side.top, minY, maxY) }));
+    const cost = (side: { left: number; top: number }) => overlap(boxOf(side), beside) * 1000 + covered(side);
+    const best = pushed.reduce((one, other) => (cost(other) < cost(one) ? other : one));
+    return { x: best.left - stage.left, y: best.top - stage.top };
+  }
+  let best = sides[0]!;
   let least = covered(best);
   for (const side of sides) {
     const area = covered(side);

@@ -5,6 +5,7 @@
  */
 
 import type { ChangedPart } from "../api/compare";
+import { COLUMN_STRETCH, dotParts, wrapParts } from "./dotWrap.ts";
 
 /** What happened to a table, a row or a line between two versions (spec 038); absent while one version is drawn. */
 /** A table in the drawing: the rows a collapse hides, and whether it is collapsed. */
@@ -101,15 +102,86 @@ export type ErdRelation = {
 export const erdEdgeId = (k: number) => `re${k}`;
 
 /**
- * Prefix of the id Graphviz writes on a resource frame's group: ``rc:<resource id>`` (spec 064). Only a resource frame
- * has one, so the post-pass and the room tell it from a domain frame and from the invisible spacing.
+ * Prefix of the id Graphviz writes on a resource frame's group: ``rc:<resource id>`` (spec 064), so the post-pass and
+ * the room tell it from a domain frame and from the invisible spacing.
  */
-/** The disk beside a frame's name: a domain's or a resource's, the same folded and unfolded (spec 071). */
-
-
 export const CONTOUR_ID_PREFIX = "rc:";
+/**
+ * Prefix of a specialization block's id: ``sg:<group id>`` and, inside a frame, ``@<frame id>`` after it (spec 071).
+ * Graphviz would pass the frame's id down to the block; the block says its own, and which frame it lies in.
+ */
+export const SPECIALIZATION_ID_PREFIX = "sg:";
+
+/** The id of the specialization block ``groupId``, lying in the frame ``frameId`` or in none. */
+export function specializationId(groupId: string, frameId: string | null): string {
+  return `${SPECIALIZATION_ID_PREFIX}${groupId}${frameId ? `@${frameId}` : ""}`;
+}
+
+/**
+ * The frame a drawn cluster stands for: a frame's own id, or the frame a specialization block lies in — the block's
+ * empty space is the frame's, for a click, a hover and a room alike. ``null`` for anything else.
+ */
+export function frameOfCluster(id: string): string | null {
+  if (isContourId(id)) return id;
+  if (!id.startsWith(SPECIALIZATION_ID_PREFIX)) return null;
+  const frame = /@((?:rc|dc):.+)$/.exec(id)?.[1];
+  return frame ?? null;
+}
 /** Prefix of a domain frame's id in the logical view: ``dc:<domain qualname>`` (spec 071). */
 export const DOMAIN_CONTOUR_ID_PREFIX = "dc:";
+
+/** The side of the disk before a frame's name, in points: the slot Graphviz keeps for it (spec 071). */
+export const FRAME_DISK_PT = 16;
+/** The face of every frame title: the one Graphviz measures and the browser draws alike. */
+const FRAME_TITLE_FACE = "Helvetica";
+/** The gap between the disk and the name, in points. */
+const FRAME_DISK_GAP_PT = 6;
+/**
+ * Prefix of the id of a frame's disk slot: ``fdd<n>`` a domain's, ``fdr<n>`` a resource's. Graphviz writes the slot as
+ * ``<g id="a_fdd<n>">`` round a polygon filled with the disk's colour, and the post-pass draws the disk there.
+ */
+export const FRAME_DISK_SLOT_PREFIX = "fd";
+
+/** What a frame's title says: its kind, name and colours, and the line of counts a folded box adds. */
+export type FrameTitle = {
+  /** ``domain`` draws the domain's disk, ``resource`` the resource's. */
+  kind: "domain" | "resource";
+  /** Unique within one drawing: the slot's id is built from it. */
+  slot: number;
+  name: string;
+  /** The disk's colour and the name's ink. */
+  disk: string;
+  ink: string;
+  /** What the pointer shows over the disk. */
+  tooltip: string;
+  fontSize?: number;
+  /** Lines under the name, already HTML (the folded box's counts), aligned with the name, not the disk. */
+  below?: readonly string[];
+  /** Space above and below, in points: a frame's title keeps some from the outline. */
+  pad?: number;
+};
+
+/**
+ * The HTML label of a frame's title (spec 071): a fixed slot for the disk, a gap, the name; the lines below start under
+ * the name. Graphviz centres the whole title and lays the slot out, so the disk and the name stand on one line and keep
+ * the same distance on every frame, in every layout, folded or not.
+ */
+export function frameTitleLabel(title: FrameTitle): string {
+  const pad = title.pad ?? 0;
+  const spacer = pad > 0 ? `<TR><TD COLSPAN="3" HEIGHT="${pad}"></TD></TR>` : "";
+  const slotId = `${FRAME_DISK_SLOT_PREFIX}${title.kind === "domain" ? "d" : "r"}${title.slot}`;
+  // The title is set in Helvetica whatever the drawing's font: Graphviz sizes the frame by Helvetica's widths, and the
+  // browser must draw the very font that was measured, or a bold name runs over the outline.
+  const below = (title.below ?? []).map((line) => `<TR><TD COLSPAN="2"></TD><TD ALIGN="LEFT"><FONT FACE="${FRAME_TITLE_FACE}">${line}</FONT></TD></TR>`).join("");
+  return (
+    `<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">${spacer}` +
+    `<TR><TD ID="${slotId}" TOOLTIP="${escHtml(title.tooltip)}" BGCOLOR="${title.disk}" WIDTH="${FRAME_DISK_PT}" HEIGHT="${FRAME_DISK_PT}" FIXEDSIZE="TRUE"></TD>` +
+    `<TD WIDTH="${FRAME_DISK_GAP_PT}"></TD>` +
+    `<TD ALIGN="LEFT"><FONT FACE="${FRAME_TITLE_FACE}" POINT-SIZE="${title.fontSize ?? 15}" COLOR="${title.ink}"><B>${escHtml(title.name)}</B></FONT></TD></TR>` +
+    (below ? `<TR><TD COLSPAN="3" HEIGHT="3"></TD></TR>${below}` : "") +
+    `${spacer}</TABLE>`
+  );
+}
 
 /** Id of the ``i``-th "same entity" line of the ``k``-th entity drawn more than once (spec 070). */
 export const erdSameId = (k: number, i: number) => `se${k}_${i}`;
@@ -146,6 +218,10 @@ export function setErdPaint(source: ErdPaintSource, colours: Readonly<Record<str
 const UNPAINTED = "#64748b";
 /** The grey a frame's outline takes while no section paints it. */
 export const FRAME_GREY = "#94a3b8";
+/** The ink of a frame's name and disk: the frame's own colour when it paints, a darker grey than the outline otherwise. */
+export function frameInk(colour: string): string {
+  return colour === FRAME_GREY ? "#475569" : colour;
+}
 const paintByChange = () => paintSource === "change";
 /** The colour a resource frame's outline takes (spec 064, spec 070): its resource's when resources paint, grey otherwise. */
 export function erdResourceFrameColour(resource: string): string {
@@ -583,6 +659,58 @@ export function buildErdDot(data: ErdGraphPayload, layout: ErdGraphvizLayout, me
   return buildDotSource(data, layout, measured ? erdBlockWidths(data, measure(buildBlockMeasureDot(data))) : undefined);
 }
 
+/**
+ * The invisible lines that wrap the parts of a Dot drawing no line joins into columns (``dotWrap``): a table, a folded box,
+ * a frame with its tables or a specialization block with its tables is one part with whatever its lines join it to.
+ */
+function wrapUnlinkedParts(data: ErdGraphPayload, plan: ErdFoldPlan, stretch: number): string[] {
+  const entities = data.entities ?? [];
+  const drawn = (id: string) => plan.holder.get(id) ?? id;
+  const name = (id: string) => escDot(drawn(id));
+  const known = new Set(entities.map((entity) => entity.id));
+  const links: Array<[string, string]> = [];
+  for (const relation of data.relations ?? []) {
+    if (relation.relationship_kind === "specialization" || !known.has(relation.source) || !known.has(relation.target)) continue;
+    if (name(relation.source) !== name(relation.target)) links.push([name(relation.source), name(relation.target)]);
+  }
+  for (const ids of data.same ?? []) for (let i = 1; i < ids.length; i += 1) if (known.has(ids[i - 1]!) && known.has(ids[i]!)) links.push([name(ids[i - 1]!), name(ids[i]!)]);
+  for (const bundle of plan.bundles) links.push([escDot(bundle.source), escDot(bundle.target)]);
+  const blocks = (data.groups ?? []).map((group) => group.members.filter((id) => known.has(id)).map(name));
+
+  // The drawn frames, each with the cluster Dot draws it as: a domain's in the logical view, a resource's in the physical.
+  const quals = [...new Set(entities.map((entity) => entity.domain_qualname?.trim() || ""))].sort();
+  const resources = data.resource_ids ?? [];
+  const clusterOf = (entity: ErdEntity): string | null => {
+    if (plan.holder.has(entity.id)) return null;
+    if (data.model === "logical") return `cluster_domain_${quals.indexOf(entity.domain_qualname?.trim() || "")}`;
+    if (data.model === "physical") {
+      const resource = tableResource(entity);
+      return `cluster_resource_${resource === null ? resources.length : resources.indexOf(resource)}`;
+    }
+    return null;
+  };
+  const frames = new Map<string, string[]>();
+  for (const entity of entities) {
+    const cluster = clusterOf(entity);
+    if (cluster === null) continue;
+    if (!frames.has(cluster)) frames.set(cluster, []);
+    frames.get(cluster)!.push(name(entity.id));
+  }
+  const lines: string[] = [];
+  // Inside each frame: its tables that no line of the frame joins, wrapped into columns within the frame.
+  [...frames].forEach(([cluster, members], at) => {
+    const here = new Set(members);
+    const inner = links.filter(([from, to]) => here.has(from) && here.has(to));
+    const innerBlocks = blocks.filter((block) => block.length > 0 && block.every((node) => here.has(node)));
+    lines.push(...wrapParts(dotParts(members, inner, innerBlocks), inner, { clusters: [`${cluster}_room`, cluster], prefix: `f${at}_` }, stretch));
+  });
+  // Across the drawing: a frame is one part with its tables, a folded box one node standing for its tables.
+  const nodes = [...new Set([...entities.map((entity) => name(entity.id)), ...[...plan.counts.keys()].map(escDot)])];
+  const weight = new Map<string, number>([...plan.counts].map(([id, count]) => [escDot(id), Math.max(1, Math.round(Math.sqrt(count.tables)))]));
+  lines.push(...wrapParts(dotParts(nodes, links, [...frames.values(), ...blocks], (node) => weight.get(node) ?? 1), links, undefined, stretch));
+  return lines;
+}
+
 export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout, blockWidths?: ReadonlyMap<string, number>): string {
   const { entities, relations } = data;
   const groups = data.groups ?? [];
@@ -738,13 +866,17 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   };
 
   const inDiffDrawing = (entities ?? []).some((entity) => entity.diff !== undefined);
-  const groupSource = (group: ErdGroup): string[] => {
+  const groupSource = (group: ErdGroup, frameId: string | null = null): string[] => {
     const members = group.members
       .map((id) => entityById.get(id))
       .filter((nd): nd is ErdEntity => nd !== undefined);
     if (members.length < 2) return [];
     return [
       `  subgraph "cluster_${group.group_id}" {`,
+      // Graphviz passes a frame's id and tooltip down to the clusters inside it: the block says its own, so it is never
+      // taken for the domain's or the resource's frame round it.
+      `    id="${escDot(specializationId(group.group_id, frameId))}";`,
+      '    tooltip="";',
       `    label="${escHtml(group.label)}";`,
       // See-through but half a tone darker than the canvas, with an outline one point wider than before.
       // In Diff no fill at all and an outline a point wider, so the container does not stand out among the faded tables.
@@ -761,42 +893,44 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   // tables; a table is declared once, in its innermost cluster.
   const plan = foldPlan(data);
   const isFolded = (id: string) => plan.counts.has(id);
-  /** A folded resource frame (spec 065): one box in the frame's style, its name, what it stands for, and in Diff what changed. */
-  const foldNode = (id: string, name: string, colour: string, nameInk: string): string[] => {
+  /**
+   * A folded frame (spec 065, spec 071): one box in the frame's style — the frame's disk and name, what it stands for,
+   * and in Diff what changed.
+   */
+  const foldNode = (id: string, name: string, colour: string, nameInk: string, kind: FrameTitle["kind"], slot: number): string[] => {
     const box = plan.counts.get(id) ?? { tables: 0, inside: 0, resources: 1, changed: 0 };
     const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
     const what = `${plural(box.tables, "table")} · ${plural(box.inside, "relation")} inside`;
-    const changed = box.changed > 0 ? `<TR><TD ALIGN="LEFT" COLSPAN="2"><FONT POINT-SIZE="10" COLOR="${ERD_DIFF_COLOUR.changed}"><B>${ERD_DIFF_SIGN.changed} ${box.changed} changed</B></FONT></TD></TR>` : "";
-    return [
-      `  "${escDot(id)}" [shape=box style="rounded,filled" fillcolor="white" color="${colour}" penwidth=2 margin="0.28,0.14" tooltip="${escDot(id.slice(3))}" ` +
-        `label=<<TABLE BORDER="0" CELLPADDING="2" CELLSPACING="0"><TR><TD ALIGN="LEFT"><FONT POINT-SIZE="15" COLOR="${nameInk}"><B>${escHtml(name)}</B></FONT></TD><TD WIDTH="20"></TD></TR>` +
-        `<TR><TD ALIGN="LEFT" COLSPAN="2"><FONT POINT-SIZE="10" COLOR="#64748b">${escHtml(what)}</FONT></TD></TR>${changed}</TABLE>>]`,
-    ];
+    const below = [`<FONT POINT-SIZE="10" COLOR="#64748b">${escHtml(what)}</FONT>`];
+    if (box.changed > 0) below.push(`<FONT POINT-SIZE="10" COLOR="${ERD_DIFF_COLOUR.changed}"><B>${ERD_DIFF_SIGN.changed} ${box.changed} changed</B></FONT>`);
+    const label = frameTitleLabel({ kind, slot, name, disk: nameInk, ink: nameInk, tooltip: id.slice(3), below });
+    return [`  "${escDot(id)}" [shape=box style="rounded,filled" fillcolor="white" color="${colour}" penwidth=2 margin="0.22,0.14" tooltip="${escDot(id.slice(3))}" label=<${label}>]`];
   };
   const domainOf = (nd: ErdEntity) => nd.domain_qualname?.trim() || "";
   const domainName = (qual: string) => data.domain_labels?.[qual] ?? (qual.split(".").pop() || qual);
   /** The tables of ``members`` that one frame holds, its containers inside it, as DOT lines. */
-  const frameBody = (members: readonly ErdEntity[]): string[] => {
+  const frameBody = (members: readonly ErdEntity[], frameId: string | null): string[] => {
     const here = new Set(members.map((nd) => nd.id));
     const inner = groups.filter((group) => group.members.filter((id) => entityById.has(id)).every((id) => here.has(id)) && group.members.some((id) => here.has(id)));
     const held = new Set(inner.flatMap((group) => group.members));
-    return [...inner.flatMap(groupSource), ...members.filter((nd) => !held.has(nd.id)).map((nd) => nodeSource(nd))];
+    return [...inner.flatMap((group) => groupSource(group, frameId)), ...members.filter((nd) => !held.has(nd.id)).map((nd) => nodeSource(nd))];
   };
   /** A domain's frame (logical view). */
-  const domainFrame = (name: string, qual: string, members: readonly ErdEntity[]): string[] => {
-    const colour = paintSource === "domain" ? (data.domain_colors?.[qual] ?? FRAME_GREY) : FRAME_GREY;
+  const domainFrame = (name: string, index: number, qual: string, members: readonly ErdEntity[]): string[] => {
+    const colour = erdDomainFrameColour(qual, data.domain_colors);
+    const ink = frameInk(colour);
     return [
       `  subgraph "${name}" {`,
       `    id="${escDot(`${DOMAIN_CONTOUR_ID_PREFIX}${qual}`)}";`,
       `    tooltip="${escDot(qual)}";`,
-      `    label=<<TABLE BORDER="0" CELLPADDING="6"><TR><TD><B>${escHtml(domainName(qual))}</B></TD></TR></TABLE>>;`,
+      `    label=<${frameTitleLabel({ kind: "domain", slot: index, name: domainName(qual), disk: ink, ink, tooltip: qual, pad: 6 })}>;`,
       '    style="rounded";',
       `    color="${colour}";`,
-      `    fontcolor="${colour === FRAME_GREY ? "#475569" : colour}";`,
+      `    fontcolor="${ink}";`,
       "    penwidth=2;",
       "    fontsize=15;",
       "    margin=20;",
-      ...frameBody(members),
+      ...frameBody(members, `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`),
       "  }",
     ];
   };
@@ -808,28 +942,28 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   if (data.model === "logical") {
     byDomain(entities ?? []).forEach(({ qual, members }, index) => {
       const id = `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`;
-      const name = domainName(qual);
-      const colour = paintSource === "domain" ? (data.domain_colors?.[qual] ?? FRAME_GREY) : FRAME_GREY;
+      const colour = erdDomainFrameColour(qual, data.domain_colors);
       if (isFolded(id)) {
         members.forEach((nd) => framed.add(nd.id));
-        lines.push(...foldNode(id, name, colour, colour === FRAME_GREY ? "#475569" : colour));
+        lines.push(...foldNode(id, domainName(qual), colour, frameInk(colour), "domain", index));
         return;
       }
       // The three engines that cannot frame reproducibly are composed by ``erdCompose`` (research R2).
       if (!isDot) return;
       members.forEach((nd) => framed.add(nd.id));
-      lines.push(`  subgraph "cluster_domain_${index}_room" {`, "    style=invis;", '    label="";', '    id="";', '    tooltip="";', "    margin=36;", ...domainFrame(`cluster_domain_${index}`, qual, members), "  }");
+      lines.push(`  subgraph "cluster_domain_${index}_room" {`, "    style=invis;", '    label="";', '    id="";', '    tooltip="";', "    margin=36;", ...domainFrame(`cluster_domain_${index}`, index, qual, members), "  }");
     });
   }
   if (data.model === "physical") {
     const resourceFrame = (resource: string | null, index: number): string[] => {
       const members = (entities ?? []).filter((nd) => tableResource(nd) === resource);
       const id = resource === null ? null : `${CONTOUR_ID_PREFIX}${resource}`;
-      const colour = resource !== null && paintSource === "resource" ? (paintColours[resource] ?? UNPAINTED) : FRAME_GREY;
+      const colour = resource !== null ? erdResourceFrameColour(resource) : FRAME_GREY;
+      const ink = frameInk(colour);
       const name = resource === null ? "Not stored" : (data.resource_labels?.[resource] ?? (resource.split(".").pop() || resource));
       if (id && isFolded(id)) {
         members.forEach((nd) => framed.add(nd.id));
-        return foldNode(id, name, colour, paintSource === "resource" ? colour : "#475569");
+        return foldNode(id, name, colour, ink, "resource", index);
       }
       // The three engines that cannot frame reproducibly are composed by ``erdCompose`` (research R2): here the
       // resource frame emits no cluster, only its tables, which the composer lays out and frames itself.
@@ -847,15 +981,18 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
         `  subgraph "cluster_resource_${index}" {`,
         // Spec 064: a resource's frame is named by its resource, so a hover on its border knows whose links to light.
         ...(id ? [`    id="${escDot(id)}";`, `    tooltip="${escDot(resource!)}";`] : ['    id="";', '    tooltip="Entities no resource keeps";']),
-        `    label=<<TABLE BORDER="0" CELLPADDING="6"><TR><TD><B>${escHtml(name)}</B></TD></TR></TABLE>>;`,
+        // "Not stored" is no resource: it has no disk, only its name.
+        resource === null
+          ? `    label=<<TABLE BORDER="0" CELLPADDING="6"><TR><TD><B>${escHtml(name)}</B></TD></TR></TABLE>>;`
+          : `    label=<${frameTitleLabel({ kind: "resource", slot: index, name, disk: ink, ink, tooltip: resource, pad: 6 })}>;`,
         `    style="${resource === null ? "rounded,dashed" : "rounded"}";`,
         `    color="${colour}";`,
-        `    fontcolor="${resource !== null && paintSource === "resource" ? colour : "#475569"}";`,
+        `    fontcolor="${ink}";`,
         "    penwidth=2;",
         "    fontsize=15;",
         "    margin=20;",
         // A frame with no table still stands, with its name: nothing of the model is hidden.
-        ...(members.length ? frameBody(members) : [`    "rc_empty_${index}" [shape=point style=invis width=1.2]`]),
+        ...(members.length ? frameBody(members, id) : [`    "rc_empty_${index}" [shape=point style=invis width=1.2]`]),
         "  }",
         "  }",
       ];
@@ -865,7 +1002,7 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   }
   for (const group of groups) {
     if (group.members.some((id) => framed.has(id))) continue;
-    lines.push(...groupSource(group));
+    lines.push(...groupSource(group, null));
   }
 
   for (const nd of entities ?? []) {
@@ -932,6 +1069,8 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     const plate = size > 1 ? ` label="×${size}" fontsize=10 fontcolor="#334155"` : "";
     lines.push(`  "${escDot(bundle.source)}" -> "${escDot(bundle.target)}" [id="${bundle.id}" arrowhead=none penwidth=${bundleWidth(size, widest)}${plate}]`);
   }
+  // Dot stacks every part no line joins on the same ranks, one column; those parts are wrapped into columns instead.
+  if (isDot) lines.push(...wrapUnlinkedParts(data, plan, isLR ? COLUMN_STRETCH.LR : COLUMN_STRETCH.TB));
   lines.push("}");
   return lines.join("\n");
 }

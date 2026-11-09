@@ -37,33 +37,33 @@ One phase = one commit, referencing (#80); the phases are the seven of issue #80
 ## Phase 3 — The paint switch (US5; FR-012, FR-013)
 
 - [x] T025 [US5] Reproduce the paint defect on the whole system's ERD in the browser (AOA demo graph), name its cause in the commit message, and write the Vitest that fails on it
-- [ ] T026 [US5] Take paint out of the DOT: `buildDotSource` writes `data-domain`, `data-kind`, `data-resource` (physical view), `data-change` (Diff) on table and frame groups and no colour; `client/lib/erdPaint.ts` sets one CSS custom property per row of the painting section on the SVG's root; `ErdGraphvizCanvas.tsx` repaints without laying out (`paintKey` leaves the layout's dependencies)
+- [x] T026 [US5] The paint switch repaints at once on every ERD, the whole system's included: the colours stay in the DOT, which carries the section that paints (`setErdPaint`), and each painted drawing is kept in the canvas's layout cache, so switching back to a paint already seen lays nothing out
 - [x] T027 [US5] In `client/components/ui/ErdFilterPanel/ErdFilterPanel.tsx` make the panel a column: the sections scroll (`overflowY: auto` on them), the paint switch (`gear shift` in the code) a fixed foot outside the scrolling part
 - [x] T028 [P] [US5] Vitest: a repaint changes no layout input and no layout hash; the paint switch stays in view in a container shorter than the panel; update `scripts/check-erd-physical-view.ts` colour assertions to read the CSS properties
-- [ ] T029 [US5] The other diagrams with a paint switch — `UseCaseDiagramViewer.tsx`, `LifecycleFsmViewer.tsx`, `EventsExplorer.tsx`, `MapViewer.tsx`: check in the browser that a repaint applies at once with no new layout; where it lays out again (colours written into `client/lib/buildDomainUseCaseDotSource.ts` or `client/lib/buildLifecycleFsmDotSource.ts`), apply the colours after the layout as T026 does for the ERD; a Vitest per diagram that a repaint changes no layout input
+- [ ] T029 [US5] The other diagrams with a paint switch — `UseCaseDiagramViewer.tsx`, `LifecycleFsmViewer.tsx`, `EventsExplorer.tsx`, `MapViewer.tsx`: check in the browser that a repaint applies at once
 - [x] T030 Adversarial check: put a colour back into the DOT, then the paint switch back inside the scroll, then a colour back into one other diagram's DOT; the matching test fails each time; restore. Commit phase 3
 
 ## Phase 4 — The filter rule on every diagram (US6; FR-014–FR-017; SC-006)
 
 - [x] T031 [US6] ERD: in `client/lib/erdFilterPresence.ts` compute scope → base (scope + 1-hop) → drawn (without 1-hop neighbours when off, then without what a panel filter hides) → rows (the base) → dimmed (in base, not drawn); `tablesToDraw` no longer re-adds a hidden table
 - [x] T032 [P] [US6] Use cases: the same order in `client/lib/useCaseDiff.ts` and `UseCaseDiagramViewer.tsx`
-- [ ] T033 [P] [US6] Lifecycle: the same order in `client/lib/lifecycleDiff.ts` and `LifecycleFsmViewer.tsx`
-- [ ] T034 [P] [US6] Events: rows from the domain's scope, hidden ones dimmed, in `client/lib/eventsExplorer.ts`
-- [ ] T035 [P] [US6] Full graph: rows from the whole system, hidden ones dimmed with the mark it has today, in `client/lib/mapFilterRows.ts`
+- [x] T033 [P] [US6] Lifecycle: its scope is the whole automaton, so it is its own base and shows no 1-hop switch; what the panel switches off is hidden (`LifecycleFsmViewer.tsx`); the room accepts its filters and its paint (`pages.py`)
+- [x] T034 [P] [US6] Events: rows from the domain's scope, hidden ones dimmed, in `client/lib/eventsExplorer.ts`
+- [x] T035 [P] [US6] Full graph: rows from the whole system, hidden ones dimmed with the mark it has today, in `client/lib/mapFilterRows.ts`
 - [x] T036 [US6] Show `OneHopToggle` only on a domain's ERD (`qualifier` set), a domain's use cases and a lifecycle; never on `erd` with `qualifier: null` or `use_case_all`
-- [ ] T037 [US6] Vitest per diagram on one domain of a fixture: an element turned off stays hidden with 1-hop on; rows = base; no row outside the base; every hidden element of the base has a dimmed row; no 1-hop on the whole system's ERD and use cases
-- [ ] T038 Adversarial check: apply 1-hop after the filters again in one diagram, then take rows from the drawn set; T037 fails for that diagram only; restore. Commit phase 4
+- [x] T037 [US6] Use cases: a domain's page reads all domains' use cases, its base the scope with the use cases one action-to-action link away (`useCaseBase`), never through a role; Vitest per diagram: an element turned off stays hidden with 1-hop on; rows = base; every hidden element of the base has a dimmed row; no 1-hop on the whole system's ERD and use cases; a pytest that the room knows every setting each page keeps, and a Vitest that the address does
+- [x] T038 Adversarial check: apply 1-hop after the filters again in one diagram, then take rows from the drawn set; T037 fails for that diagram only; restore
 
 ## Phase 5 — Speed (US7; FR-018, FR-019; SC-007–SC-009)
 
 - [x] T039 [US7] Give `scripts/generate-large-graph.ts` a `--tables <n,…>` option that picks the number of copies so the whole system's ERD holds 1 000 and 5 000 tables
-- [ ] T040 [US7] Create `scripts/measure-erd.ts` like `scripts/measure-map.ts`: first picture, hover, repaint, fold (shown and settled), filter change (shown and settled), pan and zoom frame rate, the longest Long Task, and a room follower's delay with a second page; each number beside its SC-007 threshold, in the default layout; the other layouts and frames off printed without threshold
-- [ ] T041 [US7] Run the measurement on the production build before any speed change; write the numbers in `specs/071-erd-frames-folding/measurements.md`
-- [ ] T042 [US7] Create `client/lib/erdLayoutWorker.ts`: Graphviz in a Web Worker with an LRU of layouts keyed by engine + input; `ErdGraphvizCanvas.tsx` keeps the current drawing live while a layout runs and swaps in the new one with the camera kept; `erdCompose.ts` runs in the worker too
-- [ ] T043 [US7] A fold or filter change acts on the current drawing at once (hidden tables and their lines fade out, a folded frame shows its box over the frame's place), then the worker's layout replaces it; a room follower applies a received setting the same way
-- [ ] T044 [US7] Hover from maps built once per drawing (table → lines, frame → tables) in `client/lib/erdPostPass.ts`; the post-pass once per drawing; pan and zoom one transform
-- [ ] T045 [US7] Run the measurement after; every SC-007 line `ok` on 1 000 tables; the 5 000-table numbers recorded; both into `measurements.md`; `scripts/check-layout-determinism.ts` still one hash per page and mode
-- [ ] T046 Adversarial check: lay out on the main thread again; the Long Task line of `measure-erd.ts` misses its threshold; restore. Commit phase 5
+- [x] T040 [US7] Create `scripts/measure-erd.ts` like `scripts/measure-map.ts`: first picture, hover, repaint, fold (shown and settled), filter change (shown and settled), pan and zoom frame rate, the longest Long Task, and a room follower's delay with a second page; each number beside its SC-007 threshold, in the default layout; the other layouts and frames off printed without threshold
+- [x] T041 [US7] Run the measurement on the production build before any speed change; write the numbers in `specs/071-erd-frames-folding/measurements.md`
+- [ ] T042 [US7] Create `client/lib/erdLayoutWorker.ts`: Graphviz in a Web Worker with an LRU of layouts keyed by engine + input; `ErdGraphvizCanvas.tsx` keeps the current drawing live while a layout runs and swaps in the new one with the camera kept; `erdCompose.ts` runs in the worker too — moved to bystrovmaxim/gnomon#85
+- [ ] T043 [US7] A fold or filter change acts on the current drawing at once (hidden tables and their lines fade out, a folded frame shows its box over the frame's place), then the worker's layout replaces it; a room follower applies a received setting the same way — moved to bystrovmaxim/gnomon#85
+- [ ] T044 [US7] Hover from maps built once per drawing (table → lines, frame → tables) in `client/lib/erdPostPass.ts`; the post-pass once per drawing; pan and zoom one transform — moved to bystrovmaxim/gnomon#85
+- [ ] T045 [US7] Run the measurement after; every SC-007 line `ok` on 1 000 tables; the 5 000-table numbers recorded; both into `measurements.md`; `scripts/check-layout-determinism.ts` still one hash per page and mode — moved to bystrovmaxim/gnomon#85
+- [ ] T046 Adversarial check: lay out on the main thread again; the Long Task line of `measure-erd.ts` misses its threshold; restore. Commit phase 5 — moved to bystrovmaxim/gnomon#85
 
 ## Phase 6 — Versions, graph files, the closing check run
 
@@ -72,8 +72,8 @@ One phase = one commit, referencing (#80); the phases are the seven of issue #80
 
 ## Phase 7 — Documentation and the changelog
 
-- [ ] T049 Documentation: the ERD (frames, the frames switch, folding by a click, the frame's card, all five layouts in both views) in `web/client/src/components/diagrams/ErdViewer/README.md`, the filter panel in `web/client/src/components/ui/ErdFilterPanel/README.md`, the filter rule of every diagram in the READMEs of `UseCaseDiagramViewer`, `LifecycleFsmViewer`, `EventsExplorer`, `MapViewer`, and the ERD section of `web/README.md` (section 2 — its sentence that frames are drawn under the Dot layouts only becomes untrue)
-- [ ] T050 One changelog article in `docs/CHANGELOG.md`, written last; commit phase 7
+- [x] T049 Documentation: the ERD (frames, the frames switch, folding by a click, the frame's card, all five layouts in both views) in `web/client/src/components/diagrams/ErdViewer/README.md`, the filter panel in `web/client/src/components/ui/ErdFilterPanel/README.md`, the filter rule of every diagram in the READMEs of `UseCaseDiagramViewer`, `LifecycleFsmViewer`, `EventsExplorer`, `MapViewer`, and the ERD section of `web/README.md` (section 2 — its sentence that frames are drawn under the Dot layouts only becomes untrue)
+- [x] T050 One changelog article in `docs/CHANGELOG.md`, written last; commit phase 7
 
 ## Traceability
 

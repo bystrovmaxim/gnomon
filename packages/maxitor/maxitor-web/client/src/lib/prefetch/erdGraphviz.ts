@@ -21,16 +21,20 @@ export function loadGraphvizWasm(): Promise<Graphviz> {
 }
 
 /**
- * The instance to lay out with ``engine``: a fresh one for FDP, the shared one for every other.
+ * The instance to lay out with ``engine``: a fresh one of its own for FDP, the shared one for every other.
  *
  * FDP in this WebAssembly build reads state that earlier layouts leave in the instance, so the
  * same DOT laid out after a Neato or Dot run in the same page gives a different picture than in a
  * fresh page — and pointers in a room would land on different spots (spec 028, FR-006). Starting
- * FDP from a newly instantiated module gives the same picture every time.
+ * FDP from a newly instantiated module gives the same picture every time — so long as nothing else
+ * lays out on it first. The fresh instance is therefore FDP's alone: it is taken out of the library's
+ * cache at once and never becomes the shared one, so a Dot layout still waiting for its instance on
+ * the same page can never run on it before FDP does (spec 071).
  */
 export function loadGraphvizWasmFor(engine: string): Promise<Graphviz> {
   if (engine !== "fdp") return loadGraphvizWasm();
   Graphviz.unload();
-  graphvizModule = Graphviz.load();
-  return graphvizModule;
+  const own = Graphviz.load();
+  Graphviz.unload();
+  return own;
 }

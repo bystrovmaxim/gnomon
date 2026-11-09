@@ -170,6 +170,42 @@ describe("ElementCard", () => {
     expect(screen.getByTestId("card-detail").textContent).toBe("int");
   });
 
+  it("draws a relation as a table's card is drawn: its name, what it is, its description, then its two ends labelled (spec 071)", () => {
+    show({
+      nodeId: null,
+      title: "Lot.offer → Offer",
+      detail: "",
+      description: "Upstream outbox linkage",
+      relation: {
+        name: "outbox_row",
+        kind: "Association",
+        shape: "many to one",
+        kindIcon: "data:kind",
+        from: { table: "MsgOutboxWebhookCorrelateCoreEntity", field: "outbox_row", count: "zero or more (0..*)", icon: "data:many" },
+        to: { table: "OutboxMessageCoreEntity", count: "exactly one (1)", icon: "data:one" },
+      },
+    });
+    expect(screen.getByTestId("card-icon").getAttribute("src")).toBe("data:kind");
+    expect(screen.getByTestId("element-card").textContent).toMatch(/^outbox_rowAssociation · many to oneUpstream outbox linkageFrom/);
+    expect(screen.getByTestId("card-detail").textContent).toBe("Association · many to one");
+    const ends = screen.getAllByTestId("card-relation-end");
+    expect(ends).toHaveLength(2);
+    expect(ends[0]!.textContent).toBe("FromMsgOutboxWebhookCorrelateCoreEntityoutbox_row · zero or more (0..*)");
+    expect(ends[1]!.textContent).toBe("ToOutboxMessageCoreEntityexactly one (1)");
+    expect([...ends[0]!.querySelectorAll("img")].map((img) => img.getAttribute("src"))).toEqual(["data:many"]);
+    // A long name breaks between its words, never inside one.
+    expect(ends[0]!.querySelectorAll("wbr")).toHaveLength(5 + 1);
+  });
+
+  it("reads the description of the table a frame's row points at, and shows it at the card's foot (spec 071)", async () => {
+    fetchElementCard.mockImplementation(async (id: string) => ({ id, type: id === "shop.Store" ? "domain" : "entity", label: id, description: id === "shop.Store" ? "Where orders are taken" : `About ${id}`, lifecycle_id: null }));
+    show({ nodeId: "shop.Store", title: "StoreDomain", detail: "Domain", fieldNoun: "table", fields: [{ name: "Order", type: "core", nodeId: "shop.Order" }, { name: "Line", type: "detail", nodeId: "shop.Line" }] });
+    expect((await screen.findByTestId("card-description")).textContent).toBe("Where orders are taken");
+    fireEvent.mouseEnter(screen.getAllByTestId("card-field")[1]!);
+    expect((await screen.findByTestId("card-field-description")).textContent).toBe("About shop.Line");
+    expect(fetchElementCard).toHaveBeenCalledWith("shop.Line");
+  });
+
   it("asks nothing for a line and shows a lifecycle named by the row", () => {
     show({ nodeId: null, lifecycleIds: ["a:lifecycle:s"] });
     expect(fetchElementCard).not.toHaveBeenCalled();

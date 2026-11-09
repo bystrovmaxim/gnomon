@@ -11,7 +11,7 @@
  * element's tooltip text in a small label beside it — and so does everyone over their own diagram: the native tooltip
  * is taken off, its text kept as ``data-tooltip``, so the two always look alike (spec 038).
  */
-import { isContourId } from "@/lib/buildDotSource";
+import { frameOfCluster } from "@/lib/buildDotSource";
 import { dimUnpaired, hoverAcross, reportHalfHover, subscribeHalfHover, type Portable } from "@/lib/halfPicking";
 import { useHalf } from "@/lib/half";
 import { useEffect, useRef } from "react";
@@ -40,7 +40,8 @@ export function elementRefOf(target: Element, nodeKind: "node" | "table"): Eleme
   if (title) return { kind: nodeKind, id: title };
   // A frame is named by its id — a resource's (spec 064) or a domain's (spec 071); anything else names nothing.
   const contour = target.closest("g.cluster");
-  return contour && isContourId(contour.id) ? { kind: "contour", id: contour.id } : null;
+  const frame = contour ? frameOfCluster(contour.id) : null;
+  return frame ? { kind: "contour", id: frame } : null;
 }
 
 /** The elements a hover of ``ref`` enters, outermost first; the last one carries its tooltip. */

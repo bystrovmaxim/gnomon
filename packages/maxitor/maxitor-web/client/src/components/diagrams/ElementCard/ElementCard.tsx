@@ -10,6 +10,7 @@ import { DiffBody, StatusIcon } from "@/components/history/DiffCard";
 import { cardFieldsOpen, rememberCardFieldsOpen } from "@/lib/cardFieldsOpen";
 import { placeCard, type CardAround } from "@/lib/cardPlace";
 import { MARK_LOOK, type CardTarget } from "@/lib/erdDiffCard";
+import { wordPieces } from "@/lib/relationGlyphs";
 import { isFollowing, reportPanels, useShownPanel, type CardPanel, type ElementRef } from "@/rooms/focusStore";
 import { LifecycleMiniature } from "./LifecycleMiniature";
 
@@ -27,7 +28,19 @@ export type CardField = {
   previousType?: string;
   /** The lifecycle it is, when it is one. */
   lifecycleId?: string | null;
+  /** The node it is, when it is one of its own — a frame's table: its description is read when it is pointed at. */
+  nodeId?: string;
 };
+
+/** One end of a relation as its card shows it: the table, the field on it, and how many of it the end stands for. */
+export type CardRelationEnd = { table: string; field?: string | null; count: string; icon: string };
+
+/**
+ * A relation as its card shows it (spec 071), built as a table's card is: its name — the field that holds it — with the
+ * mark of its kind, a grey line saying what it is (``Association · many to one``), and under a rule its two ends, each
+ * labelled, with the line's own mark for it.
+ */
+export type CardRelation = { name: string; kind: string; shape: string; kindIcon: string; from: CardRelationEnd; to: CardRelationEnd };
 
 /** One row that leads on to another page. */
 export type CardLink = { group: string; label: string; onOpen: () => void };
@@ -54,6 +67,8 @@ export type CardSubject = {
   links?: readonly CardLink[];
   /** The icon of its kind, as the full graph draws it, beside the title (a ``data:`` URL). */
   icon?: string;
+  /** A relation's kind and ends, drawn in place of its title line (spec 071). */
+  relation?: CardRelation;
   /** A name to copy; a phone has no click on it. */
   copy?: string;
   at: { x: number; y: number };
@@ -102,6 +117,8 @@ type Point = { x: number; y: number };
 const MINIATURE_FULL_WIDTH = 420;
 /** The gap a card keeps from the stage's edge. */
 const CARD_EDGE_PX = 8;
+/** How much of a followed card must show on a follower's screen, across and down, in CSS px. */
+const FOLLOWED_CARD_SHOWN_PX = 120;
 
 /**
  * A table's fields by name, what a table is made of; the type and description of the one under the pointer or finger stand
@@ -116,6 +133,20 @@ function FieldList({ fields, open, pointed, onOpen, onPoint, noun = "field" }: {
     return count > 0 && count < fields.length ? [{ status, count }] : [];
   });
   const shown = pointed === null ? undefined : fields[pointed];
+  // A row that is a node of its own — a frame's table — has its description read when it is pointed at.
+  const [read, setRead] = useState<{ id: string; description: string | null } | null>(null);
+  useEffect(() => {
+    const id = shown?.nodeId;
+    if (!id || shown.description) return;
+    let live = true;
+    fetchElementCard(id)
+      .then((answer) => live && setRead({ id, description: answer?.description ?? null }))
+      .catch(() => live && setRead({ id, description: null }));
+    return () => {
+      live = false;
+    };
+  }, [shown?.nodeId, shown?.description]);
+  const description = shown?.description ?? (shown?.nodeId && read?.id === shown.nodeId ? read.description : null);
   return (
     <Box sx={{ mt: "6px", borderTop: "1px solid rgba(15, 23, 42, 0.06)", pt: "4px" }}>
       <ButtonBase
@@ -139,9 +170,9 @@ function FieldList({ fields, open, pointed, onOpen, onPoint, noun = "field" }: {
         {rows.map(({ field, row }) => (
           <Box key={row} data-testid="card-field" onMouseEnter={() => onPoint(row)} onClick={() => onPoint(row)} sx={{ display: "grid", gridTemplateColumns: "20px minmax(0, 1fr)", gap: "6px" }}>
             <Box sx={{ color: "#94a3b8", fontSize: 10, fontWeight: 700, lineHeight: "17px" }}>{field.key}</Box>
-            <Box data-testid="card-field-name" sx={{ overflowWrap: "anywhere", ...(pointed === row && { fontWeight: 600, color: POINTED_COLOUR }) }}>
+            <Box data-testid="card-field-name" sx={{ overflowWrap: "break-word", ...(pointed === row && { fontWeight: 600, color: POINTED_COLOUR }) }}>
               {field.status && <span style={{ color: MARK_LOOK[field.status].colour }}>{MARK_LOOK[field.status].sign} </span>}
-              {field.name}
+              <Breakable text={field.name} />
             </Box>
           </Box>
         ))}
@@ -158,13 +189,58 @@ function FieldList({ fields, open, pointed, onOpen, onPoint, noun = "field" }: {
                 )}
                 {shown.type}
               </Box>
-              <Box>{shown.description}</Box>
+              <Box data-testid="card-field-description">{description}</Box>
             </>
           ) : (
             <Box sx={{ color: UNCHANGED_COLOUR }}>{onTouchScreen() ? `Tap a ${noun}` : `Hover a ${noun}`}</Box>
           )}
         </Box>
       )}
+    </Box>
+  );
+}
+
+/** ``text`` with a place to break between its words — a long CamelCase name wraps between them, not inside one. */
+function Breakable({ text }: { text: string }) {
+  const pieces = wordPieces(text);
+  return (
+    <>
+      {pieces.map((piece, at) => (
+        <span key={at}>
+          {at > 0 && <wbr />}
+          {piece}
+        </span>
+      ))}
+    </>
+  );
+}
+
+/** A relation's two ends, one per row: the line's own mark for the end, the table, then the field and how many. */
+function RelationEnds({ relation }: { relation: CardRelation }) {
+  return (
+    <Box data-testid="card-relation" sx={{ mt: "6px", pt: "6px", borderTop: "1px solid rgba(15, 23, 42, 0.06)", display: "grid", gridTemplateColumns: "34px 26px minmax(0, 1fr)", columnGap: "6px", rowGap: "6px", alignItems: "start" }}>
+      {([["From", relation.from], ["To", relation.to]] as const).map(([side, end]) => (
+        <Box key={side} data-testid="card-relation-end" sx={{ display: "contents" }}>
+          <Box sx={{ color: "#94a3b8", fontSize: 10, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", lineHeight: "18px" }}>{side}</Box>
+          <img src={end.icon} alt={end.count} width={26} height={14} style={{ marginTop: 2 }} />
+          <Box sx={{ minWidth: 0 }}>
+            <Box sx={{ fontWeight: 600, color: "#0f172a", overflowWrap: "break-word" }}>
+              <Breakable text={end.table} />
+            </Box>
+            <Box sx={{ color: "#64748b", overflowWrap: "break-word" }}>
+              {end.field && (
+                <>
+                  <Box component="span" sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11, color: "#334155" }}>
+                    <Breakable text={end.field} />
+                  </Box>
+                  {" · "}
+                </>
+              )}
+              {end.count}
+            </Box>
+          </Box>
+        </Box>
+      ))}
     </Box>
   );
 }
@@ -254,7 +330,13 @@ export function ElementCard({ subject, newer, onEnter, onLeave, onClose }: Eleme
       x: Math.max(CARD_EDGE_PX, Math.min(point.x, stage.clientWidth - size.width - CARD_EDGE_PX)),
       y: Math.max(CARD_EDGE_PX, Math.min(point.y, stage.clientHeight - size.height - CARD_EDGE_PX)),
     });
-    const place = said && project ? onStage(project.toStage(said)) : around ? placeCard(stage.getBoundingClientRect(), size, around) : onStage(at);
+    // A follower's card stands on the leader's spot of the diagram: on a smaller screen it may run past the right or the
+    // foot edge, as the leader's picture does, so long as enough of it shows to be read; only the left and top keep in.
+    const following = (point: Point) => ({
+      x: Math.max(CARD_EDGE_PX, Math.min(point.x, stage.clientWidth - Math.min(size.width, FOLLOWED_CARD_SHOWN_PX))),
+      y: Math.max(CARD_EDGE_PX, Math.min(point.y, stage.clientHeight - Math.min(size.height, FOLLOWED_CARD_SHOWN_PX))),
+    });
+    const place = said && project ? following(project.toStage(said)) : around ? placeCard(stage.getBoundingClientRect(), size, around) : onStage(at);
     card.style.left = `${place.x}px`;
     card.style.top = `${place.y}px`;
     card.style.maxHeight = `${stage.clientHeight - place.y - CARD_EDGE_PX}px`;
@@ -308,12 +390,17 @@ export function ElementCard({ subject, newer, onEnter, onLeave, onClose }: Eleme
     >
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, fontWeight: 600, color: "#0f172a" }}>
         <Box component="span" sx={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
-          {subject.icon && <img data-testid="card-icon" src={subject.icon} alt="" width={18} height={18} style={{ flexShrink: 0 }} />}
-          <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{title}</span>
+          {(subject.relation?.kindIcon ?? subject.icon) && <img data-testid="card-icon" src={subject.relation?.kindIcon ?? subject.icon} alt="" width={18} height={18} style={{ flexShrink: 0 }} />}
+          <span style={{ minWidth: 0, overflowWrap: "break-word" }}><Breakable text={subject.relation ? subject.relation.name : title} /></span>
         </Box>
         {change && <StatusIcon status={change.status} />}
         {unchanged && <StatusIcon status="unchanged" />}
       </Box>
+      {subject.relation && (
+        <Box data-testid="card-detail" sx={{ color: "#64748b" }}>
+          {subject.relation.kind} · {subject.relation.shape}
+        </Box>
+      )}
       {detail && (
         <Box data-testid="card-detail" sx={{ color: "#64748b", whiteSpace: "pre-line", wordBreak: "break-word" }}>
           {detail}
@@ -324,6 +411,7 @@ export function ElementCard({ subject, newer, onEnter, onLeave, onClose }: Eleme
           {subject.description ?? read?.description}
         </Box>
       )}
+      {subject.relation && <RelationEnds relation={subject.relation} />}
       {typeof read?.vocabulary === "boolean" && (
         <Box data-testid="card-vocabulary" sx={{ mt: "4px", color: "#64748b" }}>
           {read.vocabulary ? "Vocabulary" : "No vocabulary"}

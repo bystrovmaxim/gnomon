@@ -47,7 +47,7 @@ import { filterUseCaseDiagramByDomains } from "@/lib/filterUseCaseDiagramByDomai
 import { loadGraphvizWasmFor } from "@/lib/prefetch/erdGraphviz";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
-import { filterUseCaseByChanges, filterUseCaseByElements, loadUseCaseDiff, USE_CASE_ELEMENTS, unmarkedUseCase, withUseCaseOneHop, keepUseCaseElements, useCaseCard, useCaseChangeKinds, useCaseChanges, useCaseCounts, useCaseIdAt } from "@/lib/useCaseDiff";
+import { filterUseCaseByChanges, filterUseCaseByElements, loadUseCaseDiff, USE_CASE_ELEMENTS, unmarkedUseCase, useCaseBase, keepUseCaseElements, useCaseCard, useCaseChangeKinds, useCaseChanges, useCaseCounts, useCaseIdAt } from "@/lib/useCaseDiff";
 import { bindUseCaseHover } from "@/lib/useCaseHover";
 import { cardPlace, useGraphvizChangeStepping } from "@/lib/useGraphvizChangeStepping";
 
@@ -113,8 +113,14 @@ export type UseCaseDiagramViewerProps = {
 
 export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
   const diffing = getActiveBase() !== null;
-  const load = useCallback(() => (diffing ? loadUseCaseDiff(domainId) : fetchDomainUseCaseDiagram(domainId)), [diffing, domainId]);
-  const { data, loading, error } = useDiagramLoader(load, { keepPreviousData: true });
+  // Every page reads the use cases of all domains: a domain's page takes its scope from them, and its 1-hop neighbours,
+  // which lie in other domains (spec 071).
+  const load = useCallback(() => (diffing ? loadUseCaseDiff(null) : fetchDomainUseCaseDiagram(null)), [diffing]);
+  const { data: all, loading, error } = useDiagramLoader(load, { keepPreviousData: true });
+  // The scope — a domain's actions and their roles, or everything — and the base: the scope with its 1-hop neighbours.
+  // The panel lists the base; the diagram draws it less what 1-hop off and the panel's filters hide.
+  const scope = useMemo(() => (all && domainId !== null ? filterUseCaseDiagramByDomains(all, new Set([domainId])) : all), [all, domainId]);
+  const data = useMemo(() => (all && scope && domainId !== null ? useCaseBase(all, scope) : all), [all, scope, domainId]);
 
   // Page settings: the person's own outside a room, the room's inside one (spec 028, FR-030). The
   // direction is part of the layout preset (``dot_lr`` / ``dot_tb``), so it needs no setting of its own.
@@ -174,14 +180,13 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
   const [offElementList, setOffElementList] = usePageSetting<string[]>("disabled_kinds", []);
   const offElements = useMemo(() => new Set(offElementList), [offElementList]);
   const filtered = useMemo(() => {
-    if (data == null) return null;
+    if (data == null || scope == null) return null;
     // The one rule (spec 071): scope, then base (the scope with its 1-hop neighbours), then drawn — the base without
     // the neighbours when 1-hop is off, and without what a panel filter hides.
-    const scope = filterUseCaseDiagramByDomains(data, effectiveEnabled);
-    const full = withUseCaseOneHop(scope, data);
-    const kept = filterUseCaseByElements(filterUseCaseByChanges(full, diffing ? offChanges : new Set<string>()), offElements);
+    const shown = filterUseCaseDiagramByDomains(data, effectiveEnabled);
+    const kept = filterUseCaseByElements(filterUseCaseByChanges(shown, diffing ? offChanges : new Set<string>()), offElements);
     return includeOneHop ? kept : keepUseCaseElements(kept, new Set([...scope.actions, ...scope.roles].map((element) => element.id)));
-  }, [data, effectiveEnabled, diffing, offChanges, includeOneHop, offElements]);
+  }, [data, scope, effectiveEnabled, diffing, offChanges, includeOneHop, offElements]);
 
   // What paints the actions is a page setting, One's and Diff's apart; a room shares it, the address carries it (spec 041, FR-022, FR-023).
   const baseChanges = useMemo(() => (diffing && data ? useCaseChangeKinds(data) : []), [diffing, data]);
@@ -315,17 +320,18 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
   useGraphvizFocus(pannerRef.current, svgMarkup, useCurrentPage(), "node");
   const ownData = useMemo(() => (half && data ? useCaseOfSide(data, half.side) : null), [half, data]);
   const halfNote = useHalfPicking({ pannerRef, viewportRef, centreOnClient: panZoom.centreOnClient, drawing: svgMarkup, nodeKind: "node", holds: (ref) => (ownData ? useCaseHolds(ownData, ref) : false) });
-  // A new graph and another layout mode fit again; a filter, a boundary switch or new colours keep the camera where
-  // the person put it (spec 071, FR-018).
-  const prevDrawingRef = useRef<{ data: unknown; layout: unknown } | null>(null);
+  // A new graph, another layout mode, Boundary switched or every boundary folded or unfolded make another picture: it
+  // fits again. A filter or new colours keep the camera where the person put it (spec 071, FR-018).
+  const shape = `${layoutForBundler}|${boundary}|${boundary && boundariesFolded}`;
+  const prevDrawingRef = useRef<{ data: unknown; shape: string } | null>(null);
   useLayoutEffect(() => {
     const previous = prevDrawingRef.current;
-    if (!previous || previous.data !== data || previous.layout !== layoutForBundler) {
-      prevDrawingRef.current = { data, layout: layoutForBundler };
+    if (!previous || previous.data !== data || previous.shape !== shape) {
+      prevDrawingRef.current = { data, shape };
       resetFitFlag();
     }
     // The previous drawing stays until the new one is placed and fitted in one frame (spec 038): no blank frame.
-  }, [data, layoutForBundler, resetFitFlag]);
+  }, [data, shape, resetFitFlag]);
 
   useEffect(() => {
     if (!bundle) {

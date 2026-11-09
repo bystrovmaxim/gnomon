@@ -128,3 +128,19 @@ describe("Side by side in the address", () => {
     expect(paramsToView(new URLSearchParams("layout_a=gv-neato")).settings).toEqual({ layout_a: "gv-neato" });
   });
 });
+
+describe("every page setting travels in the address (spec 038, spec 071)", () => {
+  // Every client source that keeps a page setting, read as text: a setting the address does not know is lost on reload.
+  const sources = import.meta.glob(["../**/*.ts", "../**/*.tsx", "!../**/*.test.ts", "!../**/*.test.tsx"], { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+  const names = new Set(Object.values(sources).flatMap((source) => [...source.matchAll(/usePageSetting(?:<[^>]*>)?\(\s*"([a-z_]+)"/g)].map((match) => match[1]!)));
+
+  it("finds the settings of every diagram", () => {
+    for (const name of ["layout", "boundary", "boundaries_folded", "folded_contours", "disabled_kinds", "rankdir", "opened"]) expect(names).toContain(name);
+  });
+
+  // The selection is shared in a room as a pointer is, and is not part of the picture a link opens.
+  it.each([...names].filter((name) => name !== "selected").sort())("%s has a parameter of its own", (name) => {
+    const written = [true, ["x"], "x"].map((value) => viewToParams({ [name]: value })).find((params) => Object.keys(params).length > 0);
+    expect(written, `${name} is not written to the address`).toBeDefined();
+  });
+});

@@ -18,13 +18,12 @@ import { svgOfHalf, useHalf, writesForPair } from "@/lib/half";
 import { useHalfPicking } from "@/lib/halfPicking";
 import { cardPlace, useGraphvizChangeStepping } from "@/lib/useGraphvizChangeStepping";
 import { nothingChanged } from "@/lib/erdDiff";
-import { filterLifecycleByChanges, filterLifecycleByKinds, LIFECYCLE_KINDS, lifecycleCard, lifecycleChangeKinds, lifecycleChanges, lifecycleCounts, lifecycleIdAt, loadLifecycle, loadLifecycleDiff, unmarkedLifecycle, withLifecycleOneHop } from "@/lib/lifecycleDiff";
+import { filterLifecycleByChanges, filterLifecycleByKinds, LIFECYCLE_KINDS, lifecycleCard, lifecycleChangeKinds, lifecycleChanges, lifecycleCounts, lifecycleIdAt, loadLifecycle, loadLifecycleDiff, unmarkedLifecycle } from "@/lib/lifecycleDiff";
 import { changeDiskUri } from "@/lib/erdFilterPresence";
 import { defaultPaint, paintSettingName, paintSource, type PaintSection } from "@/lib/erdPaint";
 import { svgDataUriForGraphNodeIcon } from "@/lib/icons";
 import { bindUseCaseHover } from "@/lib/useCaseHover";
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
-import { OneHopToggle } from "@/components/ui/OneHopToggle";
 import { DiagramShell, useDiagramLoader } from "@/components/diagrams/DiagramShell";
 import { useSvgPanZoom } from "@/components/diagrams/ErdViewer/hooks/useSvgPanZoom";
 import { LayoutGlyphDotLR, LayoutGlyphDotTB } from "@/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/layoutEngineGlyphs";
@@ -66,14 +65,14 @@ export function LifecycleFsmViewer({ lifecycleGraphNodeId }: LifecycleFsmViewerP
   // Page settings like the direction: a room shares them, the address carries them (spec 042, FR-024).
   const [offChangeList, setOffChangeList] = usePageSetting<string[]>("disabled_changes", []);
   const [offKindList, setOffKindList] = usePageSetting<string[]>("disabled_kinds", []);
-  const [includeOneHop, setIncludeOneHop] = usePageSetting("one_hop", true);
   const offChanges = useMemo(() => new Set(offChangeList), [offChangeList]);
   const offKinds = useMemo(() => new Set(offKindList), [offKindList]);
+  // The one rule (spec 071): a lifecycle's scope is the whole automaton, so it is its own base and has no 1-hop; what the
+  // panel switches off is hidden.
   const filtered = useMemo(() => {
     if (data == null) return null;
-    const kept = filterLifecycleByKinds(filterLifecycleByChanges(data, diffing ? offChanges : new Set<string>()), offKinds);
-    return includeOneHop ? withLifecycleOneHop(kept, data) : kept;
-  }, [data, diffing, offChanges, offKinds, includeOneHop]);
+    return filterLifecycleByKinds(filterLifecycleByChanges(data, diffing ? offChanges : new Set<string>()), offKinds);
+  }, [data, diffing, offChanges, offKinds]);
   const baseChanges = useMemo(() => (diffing && data ? lifecycleChangeKinds(data) : []), [diffing, data]);
   // What paints is a page setting, One's and Diff's apart: in Diff the changes at first, unchanged grey and dim (spec 042, FR-023).
   const [chosenPaint, setChosenPaint] = usePageSetting<PaintSection>(paintSettingName(diffing), defaultPaint(diffing));
@@ -362,12 +361,6 @@ export function LifecycleFsmViewer({ lifecycleGraphNodeId }: LifecycleFsmViewerP
                   </Tooltip>
                 </ToggleButton>
               </ToggleButtonGroup>
-              <Box
-                component="span"
-                aria-hidden
-                sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
-              />
-              <OneHopToggle checked={includeOneHop} onChange={setIncludeOneHop} />
             </ZoomToolbar>
           </Box>
         </Box>

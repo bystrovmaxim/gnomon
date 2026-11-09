@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from maxitor.web.model.rooms.pages import page_key, page_keys, setting_error
+from maxitor.web.model.rooms.pages import SETTINGS, page_key, page_keys, setting_error
 
 
 @pytest.mark.parametrize(
@@ -37,6 +39,12 @@ from maxitor.web.model.rooms.pages import page_key, page_keys, setting_error
         (page_key("use-case-all"), "domains", ["players"]),
         (page_key("use-case-all"), "paint", "domains"),
         (page_key("lifecycle-fsm", node="n", host="h"), "rankdir", "TB"),
+        (page_key("lifecycle-fsm", node="n", host="h"), "disabled_kinds", ["final"]),
+        (page_key("lifecycle-fsm", node="n", host="h"), "disabled_changes", ["unchanged"]),
+        (page_key("lifecycle-fsm", node="n", host="h"), "paint", "kinds"),
+        (page_key("lifecycle-fsm", node="n", host="h"), "paint_diff", "changes"),
+        (page_key("use-case-all"), "boundaries_folded", True),
+        (page_key("use-case", domain="players"), "boundaries_folded", False),
         (page_key("events-all"), "mode", "actions"),
         (page_key("events-all"), "layout", "dot_tb"),
         (page_key("events", domain="players"), "opened", ["domain:players>events"]),
@@ -65,6 +73,9 @@ def test_every_setting_a_viewer_sends_is_accepted(page: str, name: str, value: o
         (page_key("domain-erd"), "disabled_data_sources", ["no_data_source"]),
         (page_key("domain-erd"), "paint", "data_sources"),
         (page_key("domain-erd"), "model", "boundary"),
+        # Spec 071: a lifecycle is its own base, with no 1-hop.
+        (page_key("lifecycle-fsm", node="n", host="h"), "one_hop", True),
+        (page_key("use-case-all"), "boundaries_folded", "yes"),
     ],
 )
 def test_names_and_values_the_viewers_do_not_send_are_refused(page: str, name: str, value: object) -> None:
@@ -119,3 +130,34 @@ def test_no_row_of_the_left_panel_names_an_erd_of_a_data_source_or_a_resource() 
     )
     assert page_keys(sidebar) == set()
     assert page_key("domain-erd", data_source="shop.ShopDataSource", resource="shop.Orders") == "view=domain-erd"
+
+
+#: The client's source, and the files whose page settings each page shares (spec 028, FR-030).
+_CLIENT = Path(__file__).resolve().parents[1] / "client" / "src"
+_EVERY_PAGE = ("lib/useGraphvizChangeStepping.ts", "lib/halfPicking.ts")
+_VIEWERS = {
+    "domain-erd": ("components/diagrams/ErdViewer/ErdViewer.tsx", "components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/ErdGraphvizCanvas.tsx", "lib/erdResourceSettings.ts"),
+    "use-case": ("components/diagrams/UseCaseDiagramViewer/UseCaseDiagramViewer.tsx",),
+    "use-case-all": ("components/diagrams/UseCaseDiagramViewer/UseCaseDiagramViewer.tsx",),
+    "lifecycle-fsm": ("components/diagrams/LifecycleFsmViewer/LifecycleFsmViewer.tsx",),
+    "events": ("components/diagrams/EventsExplorer/EventsExplorer.tsx",),
+    "events-all": ("components/diagrams/EventsExplorer/EventsExplorer.tsx",),
+    "full-graph": ("components/diagrams/MapViewer/MapViewer.tsx",),
+}
+
+
+def _settings_named_in(relative: str) -> set[str]:
+    """Every page setting a client file names: ``usePageSetting("<name>", …)``, and both paints where it picks one."""
+    source = (_CLIENT / relative).read_text(encoding="utf-8")
+    names = set(re.findall(r'usePageSetting(?:<[^>]*>)?\(\s*"([a-z_]+)"', source))
+    if "paintSettingName(" in source or '"paint_diff"' in source:
+        names |= {"paint", "paint_diff"}
+    return names
+
+
+@pytest.mark.parametrize("page", sorted(_VIEWERS))
+def test_a_room_knows_every_setting_its_page_keeps(page: str) -> None:
+    """A setting a viewer keeps and the room does not know is refused, so no follower would see it change."""
+    named = set().union(*(_settings_named_in(each) for each in (*_VIEWERS[page], *_EVERY_PAGE)))
+    assert named, page
+    assert named - set(SETTINGS[page]) == set()

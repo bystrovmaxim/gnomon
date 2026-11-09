@@ -67,7 +67,7 @@ import { DiffCard } from "@/components/history/DiffCard";
 import { COPY_CLICK_SLOP_PX } from "@/lib/erdCopy";
 import type { ErdDomainsBundle } from "@/lib/loadErdDomainsBundle";
 import { bindNameCopy } from "@/lib/erdCopy";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFrameIcons, bindLineHover, clearTableFocus, clickFolds, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFrameIcons, bindLineHover, erdDetailSx, seenFromAfar, setErdDetail, clearTableFocus, clickFolds, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons } from "@/lib/erdPostPass";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { kindGlyphSvg, kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
@@ -269,7 +269,7 @@ export function ErdGraphvizCanvas({
 
   const side = useHalf()?.side ?? null;
   const panZoom = useSvgPanZoom(framesDrawn ? FRAMED_FIT : undefined);
-  const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform } = panZoom;
+  const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform, getScale } = panZoom;
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);
   useSvgDiagramSurface(viewportRef, panZoom, Boolean(svgMarkup) && panZoom.fitted);
@@ -390,7 +390,7 @@ export function ErdGraphvizCanvas({
       const stage = viewportRef.current?.getBoundingClientRect();
       const { entities, relations } = drawnTables();
       const named = fromAfar(ref, elements.at(-1), entities, touch);
-      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known) : null;
+      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known, bundle.domain_qualifier_colors) : null;
       const [outer, inner] = [elements[0], named === ref ? elements.at(-1) : elements[0]];
       if (!facts || !stage || !outer || !inner) return null;
       // A line's box can span the screen: the card stands by its middle.
@@ -413,7 +413,7 @@ export function ErdGraphvizCanvas({
     () => ({
       has: (ref) =>
         pannerRef.current !== null &&
-        erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known) !== null,
+        erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known, bundle.domain_qualifier_colors) !== null,
       show: (ref, elements) => wantCard(ref ? subjectOf(ref, elements) : null),
       open: (ref, elements) => {
         const subject = subjectOf(ref, elements);
@@ -539,18 +539,21 @@ export function ErdGraphvizCanvas({
   }, [foldedData, layout, applyPaint]);
   // The picture's hash and the text Graphviz was given, hashed with it as one pair: the settings digest a room
   // compares layouts under (FR-093).
-  const layoutPair = useSvgLayoutPair(rawSvg, `${erdGraphvizEngine(layout)}\n${dot}`);
+  // The view goes in too: with frames on or off, Neato, FDP and Circo are given the same DOT and draw two pictures.
+  const layoutPair = useSvgLayoutPair(rawSvg, `${erdGraphvizEngine(layout)}\n${foldedData.model ?? "plain"}\n${dot}`);
 
-  // A new graph and another layout mode fit again; a filter, a fold or new colours keep the camera where the person
-  // put it (spec 071, FR-018) — the drawing they toggled a filter on must not jump under them.
-  const prevDrawingRef = useRef<{ bundle: unknown; layout: unknown } | null>(null);
+  // A new graph, another layout mode, the other view, the frames switched on or off, or every frame folded or unfolded
+  // at once make another picture: it fits again. A filter, one fold or new colours keep the camera where the person put
+  // it (spec 071, FR-018) — the drawing they toggled a filter on must not jump under them.
+  const shape = `${layout}|${model}|${framesDrawn}|${allFramesFolded}`;
+  const prevDrawingRef = useRef<{ bundle: unknown; shape: string } | null>(null);
   useLayoutEffect(() => {
     const previous = prevDrawingRef.current;
-    if (!previous || previous.bundle !== bundleVersion || previous.layout !== layout) {
-      prevDrawingRef.current = { bundle: bundleVersion, layout };
+    if (!previous || previous.bundle !== bundleVersion || previous.shape !== shape) {
+      prevDrawingRef.current = { bundle: bundleVersion, shape };
       resetFitFlag();
     }
-  }, [bundleVersion, layout, resetFitFlag]);
+  }, [bundleVersion, shape, resetFitFlag]);
 
   useEffect(() => {
     let cancelled = false;
@@ -588,7 +591,7 @@ export function ErdGraphvizCanvas({
         // The renderer paints a card's band and row tints as rectangles inside a rounded outline;
         // this trims every fill to the contour before the markup reaches the page.
         markupDataRef.current = drawnData;
-        setSvgMarkup(addFrameIcons(placeKindIcons(drawErdCards(containNodeFills(svg), ERD_CARD_RADIUS, ERD_CARD_STROKE, erdDiffMarks(drawnData.entities)), drawnData.entities, kindGlyphSvg, folds)));
+        setSvgMarkup(placeKindIcons(drawErdCards(containNodeFills(addFrameIcons(svg)), ERD_CARD_RADIUS, ERD_CARD_STROKE, erdDiffMarks(drawnData.entities)), drawnData.entities, kindGlyphSvg, folds));
         setSvgRenderVersion((v) => v + 1);
       })
       .catch((e) => {
@@ -601,7 +604,9 @@ export function ErdGraphvizCanvas({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dot, drawnData, layout, bundleVersion, resetFitFlag, paintKey]);
+    // ``frames``: Neato, FDP and Circo get the same DOT with frames and without, the composer drawing the frames; the
+    // switch must lay out again all the same (spec 071).
+  }, [dot, drawnData, layout, bundleVersion, resetFitFlag, paintKey, foldedData.model]);
 
   useLayoutEffect(() => {
     if (!svgMarkup) return;
@@ -630,6 +635,9 @@ export function ErdGraphvizCanvas({
       }
 
       postProcessGraphvizSvgDom(svg);
+      // The level of detail follows the zoom: a pan never crosses a threshold, so only a zoom changes a class.
+      setErdDetail(svg, getScale());
+      ac.signal.addEventListener("abort", onTransform(() => setErdDetail(svg, getScale())));
       addEdgeHitAreas(svg);
       addContourHitAreas(svg);
       addEndLabelBadges(svg);
@@ -692,9 +700,12 @@ export function ErdGraphvizCanvas({
       hoverTimer = setTimeout(act, HOVER_INTENT_MS);
     };
     const onEnter = (evt: Event) => {
+      // From afar the line hover lights the table with all its lines and the tables they join (``bindLineHover``).
+      if (seenFromAfar(evt.currentTarget as Element) && relationsOf((evt.currentTarget as Element).querySelector("title")?.textContent?.trim() || "")) return;
       const id = (evt.currentTarget as Element).querySelector("title")?.textContent?.trim() || "";
       later(() => focusTables(panner, new Set(drawnData.entities.filter((entity) => copyEntity(entity.id) === copyEntity(id)).map((entity) => entity.id).concat(id))), evt.isTrusted);
     };
+    const relationsOf = (id: string) => drawnData.relations.some((line) => line.source === id || line.target === id);
     const onLeave = (evt: Event) => later(() => clearTableFocus(panner), evt.isTrusted);
 
     panner.querySelectorAll("g.node").forEach((node) => {
@@ -942,6 +953,7 @@ export function ErdGraphvizCanvas({
               ...erdContourHoverSx,
               // A line's end labels show only on hover, on a white plate (spec 029, FR-042).
               ...erdEndLabelSx,
+              ...erdDetailSx,
               // A bundle's count on its plate (spec 065).
               ...erdBundleSx,
               "@media (prefers-reduced-motion: reduce)": { "& g.edge path": { transition: "none" } },

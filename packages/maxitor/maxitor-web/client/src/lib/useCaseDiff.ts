@@ -88,19 +88,28 @@ export function filterUseCaseByElements(diagram: DomainUseCaseDiagramPayload, of
   return { ...diagram, actions, roles, edges: diagram.edges.filter((edge) => ids.has(edge.source_id) && ids.has(edge.target_id)) };
 }
 
-/** 1-hop over the filters: what they left, and everything of the base one link away from it, even what a filter hid. */
-export function withUseCaseOneHop(kept: DomainUseCaseDiagramPayload, base: DomainUseCaseDiagramPayload): DomainUseCaseDiagramPayload {
-  const ids = new Set([...kept.actions, ...kept.roles].map((element) => element.id));
-  const reach = new Set(ids);
-  for (const edge of base.edges) {
-    if (ids.has(edge.source_id)) reach.add(edge.target_id);
-    if (ids.has(edge.target_id)) reach.add(edge.source_id);
+
+/**
+ * A domain's use cases with their 1-hop neighbours (spec 071): its own scope — its actions and their roles — and every
+ * action of another domain one action-to-action link away (include, extend, depends, a generalization). A role is not a
+ * way across: every domain's actions share the guest, so 1-hop through roles would bring in the whole system. Every
+ * link between what is kept is drawn.
+ */
+export function useCaseBase(all: DomainUseCaseDiagramPayload, scope: DomainUseCaseDiagramPayload): DomainUseCaseDiagramPayload {
+  const own = new Set(scope.actions.map((action) => action.id));
+  const reach = new Set(own);
+  for (const edge of all.edges) {
+    if (edge.edge_kind === "association" || edge.edge_kind === "role_generalization") continue;
+    if (own.has(edge.source_id)) reach.add(edge.target_id);
+    if (own.has(edge.target_id)) reach.add(edge.source_id);
   }
+  const roles = new Set(scope.roles.map((role) => role.id));
+  const kept = new Set([...reach, ...roles]);
   return {
-    ...base,
-    actions: base.actions.filter((action) => reach.has(action.id)),
-    roles: base.roles.filter((role) => reach.has(role.id)),
-    edges: base.edges.filter((edge) => reach.has(edge.source_id) && reach.has(edge.target_id)),
+    ...all,
+    actions: all.actions.filter((action) => reach.has(action.id)),
+    roles: all.roles.filter((role) => roles.has(role.id)),
+    edges: all.edges.filter((edge) => kept.has(edge.source_id) && kept.has(edge.target_id)),
   };
 }
 

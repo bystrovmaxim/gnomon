@@ -85,8 +85,11 @@ function boxOfPoints(points: string): Box {
 /** Each frame of the SVG by its title: its outline's box, its stroke and dash, its id and its label's text. */
 function clustersOf(svg: string): Map<string, { box: Box; stroke: string; dashed: boolean; id: string; label: string }> {
   const found = new Map<string, { box: Box; stroke: string; dashed: boolean; id: string; label: string }>();
-  for (const match of svg.matchAll(/<g id="([^"]+)" class="cluster">\s*<title>([^<]+)<\/title>([\s\S]*?)<\/g>/g)) {
-    const body = match[3]!;
+  for (const match of svg.matchAll(/<g id="([^"]+)" class="cluster">\s*<title>([^<]+)<\/title>/g)) {
+    // A frame runs to the next group of the drawing: its title holds a group of its own, the disk's slot.
+    const from = (match.index ?? 0) + match[0].length;
+    const next = /<g id="[^"]+" class="(?:cluster|node|edge)"/.exec(svg.slice(from));
+    const body = svg.slice(from, next ? from + next.index : svg.length);
     const path = /<(?:polygon|path)[^>]*stroke="([^"]+)"[^>]*(?:points="([^"]+)"|d="([^"]+)")/.exec(body);
     const coords = path?.[2] ?? (path?.[3] ?? "").replace(/[MCLZ]/g, " ").trim().replace(/\s+/g, " ");
     const label = [...body.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((text) => text[1]).join(" ");

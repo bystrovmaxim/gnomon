@@ -141,7 +141,9 @@ const leftX = typeX(gv.layout(buildDotSource(gender, "gv-dot-lr").replaceAll('AL
 check("type cells are aligned to the right edge", rightX.length > 0 && rightX.every((x, i) => x > leftX[i]! + 20), `right ${rightX.join(",")} / left ${leftX.join(",")}`);
 
 // ── Specialization container ─────────────────────────────────────────────────
-const cluster = svg.slice(svg.indexOf('<g id="clust1"'), svg.indexOf("</g>", svg.indexOf('<g id="clust1"')));
+// The specialization block is named by its own id, ``sg:<group>`` (spec 071).
+const clusterAt = svg.indexOf('<g id="sg:');
+const cluster = svg.slice(clusterAt, svg.indexOf("</g>", clusterAt));
 // Spec 029: every table of a block is as wide as its widest table.
 const cardWidth = (id: string) => {
   const node = svg.slice(svg.indexOf(`<title>${id}</title>`));
