@@ -23,7 +23,7 @@ Maxitor cannot host plugins yet: the installer, the frame on Next.js, `maxitor-p
 | `src/maxitor_notes/migrate.py` | The passport's `backend.migrate`: runs each migration once, in its own transaction, recorded in `migration_ledger`. |
 | `src/maxitor_notes/app.py` | The passport's `backend.app`: the backend Maxitor runs behind its gateway; every route lies under `/p/notes/api/{organization}` and is an action. |
 | `src/maxitor_notes/organization_auth_coordinator.py` | Checks the core's EdDSA token for this plugin and puts the address's organization into the context beside the person. |
-| `src/maxitor_notes/membership.py` | The second lock: an action touches an organization's data only for a member of it. |
+| `src/maxitor_notes/membership.py` | The second lock: each action's `@access_decide` lets only a member of the organization of the address in, and its main step finds the organization's id again. |
 | `src/maxitor_notes/storage/notes_storage.py` | The plugin's own schema: a write is one transaction under the organization's lock; a read is bound to one organization and one moment. |
 | `src/maxitor_notes/actions/` | Add a note; list an item's notes at a moment; list the writers for the page's author filter (Maxitor's list contract). |
 | `graph.json` | The plugin's graph, built by `graph-builder write` from its code. |

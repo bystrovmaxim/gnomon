@@ -402,10 +402,28 @@ An address comes from the client, so it is checked, never trusted:
 
 1. **The gateway checks membership.** The session gives the person's `id`; the core's membership table says which organizations that person belongs to. A request whose organization the person does not belong to is refused with `404` by the gateway and reaches neither the core's actions nor a plugin — it does not even reveal whether the organization exists.
 2. **The token names it.** The token the gateway issues for the plugin carries `org` — the organization it has checked — and the person's roles in that organization only.
-3. **The plugin checks again.** An action that reads or writes an organization's data takes the organization as a parameter of its path and declares the membership check of `maxitor-plugin-sdk`: an aspect that reads the core's membership table by the person's `id` from the token. The gateway is the guard, the aspect a second lock — a call from another plugin, a bug in the gateway or a test without it never yields another organization's data.
+3. **The plugin checks again.** An action that reads or writes an organization's data takes the organization as a parameter of its path and checks membership in its `@access_decide` (6.6): it reads the core's membership table by the person's `id` from the token. The gateway is the guard, the action's decision a second lock — a call from another plugin, a bug in the gateway or a test without it never yields another organization's data.
 4. **Every query is bound to it.** `organization_id` stands in every condition of every query, as versioned storage requires; its value is the checked organization, never a field of the request body.
 
 The core's row has an organization switch: it goes to the same page of another organization, or to its root when that page does not exist there. The tree, the moment and the room belong to one organization: a room is a room of one organization, and its page key starts with it.
+
+### 6.6. Who may call an action
+
+An action of a plugin answers three questions in three places, in this order:
+
+| Question | Where | What it answers with |
+|---|---|---|
+| Does the person hold a role that may do this? | `@check_roles` on the class | a refusal naming `check_roles` |
+| May the person touch this organization and this object? | one `@access_decide` method | `Allowed()`, `Refused("REASON")` or `FORBIDDEN_OBJECT` |
+| What does the action do? | aspects | the result |
+
+`@access_decide` is AOA's step for the object a call is about. An action has at most one, it is never inherited, and the graph shows it beside the role check. It runs after `@check_roles` and before every aspect, so no aspect runs for a person who may not touch the object.
+
+The step checks the organization first: the organization of the address must be one the person of the token belongs to. Then it checks the object's own rule, where there is one — "only the writer may edit the note", "a closed note is not changed". A stranger to the organization and a stranger to the object get `FORBIDDEN_OBJECT`: one answer for "there is no such thing" and "it is not yours", so the refusal does not tell whether someone else's organization or object exists. `Refused("REASON")` is for a rule whose reason the person may know, such as `NOTE_CLOSED`.
+
+AOA turns a refusal into `AccessDenied`, which carries the verdict: the step that refused and the reason, when there is one. HTTP answers it with `403`. The same decision answers a question without a call: `check_access_decide` tells the page whether to show a button, and runs no aspect.
+
+The step gets no state of the action, so an aspect that needs the organization's `id` looks it up again — one light query. If the membership ended between the decision and the aspect, the aspect refuses with the same `FORBIDDEN_OBJECT` and touches nothing.
 
 ## 7. The frame: the tree and the right panel
 
@@ -976,19 +994,21 @@ class NotesStorage(PostgresStorage):
 @meta("Adds a note to a catalog item.", domain=NotesDomain)
 @check_roles(NotesEditor)
 class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
-    @regular_aspect("Check that the person belongs to the organization of the address.")
-    async def member_aspect(self, params, state, box, connections):
-        await membership.require(connections.notes, ctx.get("user.organization"), ctx.get("user.user_id"))
-        return {}
+    @access_decide("Refuse a person who is not a member of the organization of the address.")
+    @context_requires("user.user_id", "user.organization")
+    async def organization_access_decide(self, params, box, connections, ctx) -> Verdict:
+        return await membership.organization_access(connections.notes, ctx.get("user.organization"), ctx.get("user.user_id"))
 
     @summary_aspect("Writes the note and returns the change time.")
-    async def write_summary(self, params, state, box, connections):
-        async with versioning.change(connections.notes, state["organization_id"], ctx.get("user.user_id")) as change:
+    @context_requires("user.user_id", "user.organization")
+    async def write_summary(self, params, state, box, connections, ctx):
+        organization_id = await membership.member_organization_id(connections.notes, ctx.get("user.organization"), ctx.get("user.user_id"))
+        async with versioning.change(connections.notes, organization_id, ctx.get("user.user_id")) as change:
             await change.resource.add(change, Note.new(params.item_id, params.body))
         return ChangeResult(changed_at=change.changed_at)
 ```
 
-`user.organization` is the organization of the address (`/p/notes/api/<organization>/notes`): the plugin's auth coordinator takes it from the path the gateway has already checked and puts it into the context beside the token's person, so a write and a read are bound to it alike; `membership.require` checks it again. `versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
+`user.organization` is the organization of the address (`/p/notes/api/<organization>/notes`): the plugin's auth coordinator takes it from the path the gateway has already checked and puts it into the context beside the token's person, so a write and a read are bound to it alike. `organization_access_decide` checks it again and answers `Allowed()` or `FORBIDDEN_OBJECT` (6.6); the role is already checked by `@check_roles`, so the step decides only about the organization. The summary looks the organization's `id` up again, because the decision passes no state on. `versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
 
 **5. Tree nodes and controls.** In `navigation.yaml` — the node "Notes" under every catalog item (`attach: core:item`, `page: /items/{item_id}`) with `room: {shared: [view], surface: document}`, as in section 7.2, and controls: the view `list`/`table` and an author filter whose options come from the action `list_note_authors` (section 7.8). `maxitor plugin check` builds the tree together with the core's tree and shows where the node stands.
 
@@ -1088,11 +1108,12 @@ maxitor plugin check dist/acme_maxitor_notes-1.0.0-py3-none-any.whl
 24. Everything a person sees on a page is in the panel address; a page builds its view from its address only.
 25. Inside the panel a plugin creates no history entries and does not answer `panel.location` with `panel.navigate`.
 26. The moment is the address parameter `at`; it never passes through `Date`.
-27. The organization is the first segment of every address; the gateway checks the person's membership in it, an organization-scoped action checks it again, and every query is bound to it.
-28. A room works on every page; pointers travel in the coordinates of the surface declared in `room.surface`; a plugin has no room connection of its own.
-29. A plugin has no canvas of its own: moving, zooming, the field and the camera come from the core's `<MaxitorCanvas>`, one for every plugin.
-30. Controls — mode, view, filters, legend — are declared by a plugin in `controls` and drawn by the core; each control is an address parameter; the set of controls is closed.
-31. Colours and sizes come from `@maxitor/tokens` and the core's palette; no code has numbers of its own.
+27. The organization is the first segment of every address; the gateway checks the person's membership in it, an organization-scoped action checks it again in its `@access_decide`, and every query is bound to it.
+28. Access is split three ways: the role in `@check_roles`, the organization and the object in one `@access_decide`, the work in aspects.
+29. A room works on every page; pointers travel in the coordinates of the surface declared in `room.surface`; a plugin has no room connection of its own.
+30. A plugin has no canvas of its own: moving, zooming, the field and the camera come from the core's `<MaxitorCanvas>`, one for every plugin.
+31. Controls — mode, view, filters, legend — are declared by a plugin in `controls` and drawn by the core; each control is an address parameter; the set of controls is closed.
+32. Colours and sizes come from `@maxitor/tokens` and the core's palette; no code has numbers of its own.
 
 ## 14. What the tests check
 
@@ -1128,7 +1149,7 @@ Code breaks — a test catches it, each of these:
 28. an upgrade of the core or of a plugin after which a dependent plugin falls out of its range is refused; removing a plugin others depend on is refused;
 29. a plugin with an SDK of another major version than the core's is not enabled;
 30. the installer, `maxitor plugin check` and the core's upgrade give the same answer on the same set: the function is one;
-31. a request to an organization the person does not belong to is answered `404` by the gateway and reaches no action; the same call made straight to a plugin's backend is refused by its membership check;
+31. a request to an organization the person does not belong to is answered `404` by the gateway and reaches no action; the same call made straight to a plugin's backend is refused by its `@access_decide` with `FORBIDDEN_OBJECT`, and no aspect runs;
 32. an organization in a request body never replaces the organization of the address.
 
 ## 15. What changes in the constitution

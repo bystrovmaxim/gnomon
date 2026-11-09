@@ -10,7 +10,7 @@ title: Notes
 description: >
   Notes on catalog items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.1.0
+version: 0.2.0
 
 requires:
   maxitor: ">=4.0,<5"
