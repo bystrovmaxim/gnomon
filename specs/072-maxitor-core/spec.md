@@ -320,7 +320,7 @@ An architect in the ERD's physical view moves the paint switch to Domains and se
 - **FR-031**: `/privacy` MUST say what Maxitor keeps, why, where, for how long, which cookies it sets and how to have the data deleted, and MUST carry a version and a date.
 - **FR-032**: `/data-deletion` MUST say to write to `privacy@aoa.run` from the account's email and that the account, its sign-ins and its users are deleted within thirty days.
 - **FR-033**: Both pages MUST open without signing in and be linked from the sign-in page and the letter.
-- **FR-034a**: The sign-in, sign-up, email confirmation, password reset, consent and cookie screens and the pages `/privacy` and `/data-deletion` MUST work on a screen 375 px wide and wider, with no horizontal scrolling; the organization's frame, choosing an organization and sign-in methods are for screens 1024 px wide and wider, and their adaptation comes with the frame in bystrovmaxim/gnomon#74.
+- **FR-034a**: As the mockup's phone versions M1–M12 draw them, the sign-in, sign-up, email confirmation, password reset, consent and cookie screens and the pages `/privacy` and `/data-deletion` MUST work on a screen 375 px wide and wider, with no horizontal scrolling; the organization's frame, choosing an organization and sign-in methods are for screens 1024 px wide and wider, and their adaptation comes with the frame in bystrovmaxim/gnomon#74.
 - **FR-034**: On the first visit every page MUST show a cookie banner naming the one cookie and its purpose and linking to the policy's cookies section; signing in MUST wait until it is accepted; the answer MUST be kept in the browser with the policy's version and asked again when it changes; Maxitor MUST set no analytics, advertising or third-party cookie.
 
 **How it is built**

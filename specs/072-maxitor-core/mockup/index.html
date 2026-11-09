@@ -221,6 +221,24 @@
   .lab a { font-weight: 500; color: var(--ink); text-decoration: underline; cursor: pointer; }
   .switch-line { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 12px; }
   .switch-line a { color: var(--ink); text-decoration: underline; cursor: pointer; font-weight: 500; }
+  /* ---------- the phone: 375 × 812, one column, no horizontal scrolling ---------- */
+  .device.phone { width: 375px; height: 812px; border-radius: 34px; }
+  .device.phone .urlbar { height: 44px; padding: 0 14px; border-radius: 34px 34px 0 0; }
+  .device.phone .urlbar .u { max-width: none; font-size: 12px; }
+  .device.phone .auth { align-items: flex-start; padding: 14px 0 24px; overflow-y: auto; }
+  .device.phone .card, .device.phone .card.wide { width: auto; margin: 0 12px; padding: 22px 18px 20px; border-radius: 16px; box-shadow: none; }
+  .device.phone .card h2 { font-size: 21px; }
+  .device.phone .inp, .device.phone .btn { height: 44px; font-size: 15px; }
+  .device.phone .otp { gap: 6px; }
+  .device.phone .otp span { width: 44px; height: 52px; font-size: 22px; }
+  .device.phone .otp .gap { width: 2px; }
+  .device.phone .icons button { height: 48px; }
+  .device.phone .cookie { width: auto; left: 10px; right: 10px; transform: none; bottom: 12px; flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
+  .device.phone .cookie .btn2 { margin-left: 0; width: 100%; justify-content: center; height: 40px; }
+  .device.phone .doc { padding: 0; }
+  .device.phone .doc .paper { width: auto; border: 0; border-radius: 0; padding: 22px 18px 26px; font-size: 14.5px; }
+  .device.phone .doc h1 { font-size: 22px; }
+  .device.phone .legal-links { flex-wrap: wrap; }
   .legal-links { display: flex; justify-content: center; gap: 14px; margin-top: 18px; font-size: 11.5px; }
   .legal-links a { color: var(--muted); text-decoration: underline; cursor: pointer; }
   .legal-links a:hover { color: var(--ink); }
@@ -290,7 +308,7 @@ const I = {
 const pvMark = (k, t) => `<span class="pv ${k}">${k === "gh" ? I.gh : t}</span>`;
 
 /* ======================= state ======================= */
-const DEF = { region: "russia", screen: "signin", email: "", codeState: "typing", pop: null, regState: "free", tip: false, refused: null, orgs: 1, linkState: null, next: null, consent: false, cookies: true, pwState: "ok", codeFor: "confirm", resetState: "request", letter: "confirm", signupState: "ok" };
+const DEF = { region: "russia", screen: "signin", email: "", codeState: "typing", pop: null, regState: "free", tip: false, refused: null, orgs: 1, linkState: null, next: null, consent: false, cookies: true, pwState: "ok", codeFor: "confirm", resetState: "request", letter: "confirm", signupState: "ok", phone: false };
 const S = Object.assign({}, DEF);
 function go(patch) { Object.assign(S, patch); render(); }
 function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
@@ -651,6 +669,7 @@ function render() {
   if (S.pop === "me") html += menuMe();
   else if (S.pop === "orgs") html += menuOrgs();
   else if (S.pop === "methods") html += dlgMethods();
+  app.classList.toggle("phone", !!S.phone);
   app.innerHTML = html;
   renderNav(); renderNotes(); fit();
 }
@@ -702,6 +721,20 @@ const SCREENS = [
     ["5.4", "An email linked", { screen: "org", region: "russia", pop: "methods", linkState: "done" }],
     ["5.5", "The email has another account", { screen: "org", region: "russia", pop: "methods", linkState: "taken" }],
   ]],
+  ["On a phone", [
+    ["M1", "Sign in, from Russia", { screen: "signin", region: "russia", phone: true }],
+    ["M2", "Sign in, outside Russia", { screen: "signin", region: "abroad", phone: true }],
+    ["M3", "The cookie banner", { screen: "signin", cookies: false, phone: true }],
+    ["M4", "Creating an account", { screen: "signup", signupState: "ok", phone: true }],
+    ["M5", "Confirming the email", { screen: "code", codeState: "typing", phone: true }],
+    ["M6", "A wrong code", { screen: "code", codeState: "wrong", phone: true }],
+    ["M7", "Consent", { screen: "consent", consent: false, phone: true }],
+    ["M8", "Wrong email or password", { screen: "signin", pwState: "wrong", phone: true }],
+    ["M9", "Reset: the code and a new password", { screen: "reset", resetState: "code", phone: true }],
+    ["M10", "Refused by region", { screen: "refused", region: "russia", phone: true }],
+    ["M11", "Privacy", { screen: "privacy", phone: true }],
+    ["M12", "Delete my data", { screen: "deletion", phone: true }],
+  ]],
   ["Public pages", [
     ["6.1", "Privacy", { screen: "privacy" }],
     ["6.2", "Delete my data", { screen: "deletion" }],
@@ -709,11 +742,27 @@ const SCREENS = [
 ];
 const PATHS = [
   ["First time, by email", "An email and password to an empty organization", [["Cookies", "1.12"], ["Sign in", "1.1"], ["Create", "1.13"], ["Confirm", "1.3"], ["Consent", "1.11"], ["Register", "2.1"], ["Empty frame", "4.1"]]],
+  ["On a phone, first time", "Sign-up by email on a phone", [["Sign in", "M1"], ["Create", "M4"], ["Confirm", "M5"], ["Consent", "M7"]]],
   ["Forgot the password", "A code by email and a new password", [["Sign in", "1.15"], ["Reset", "7.1"], ["New password", "7.2"], ["Done", "7.3"]]],
   ["First time, abroad", "A provider to an empty organization", [["Sign in", "1.2"], ["Consent", "1.11"], ["Register", "2.1"], ["Empty frame", "4.1"]]],
   ["Before a trip", "Link an email that works everywhere", [["Menu", "4.3"], ["Methods", "5.1"], ["Link", "5.3"], ["Linked", "5.4"]]],
 ];
 const NOTES = {
+  "M1": ["Sign in on a phone", [
+    "The same page as 1.1 in one column 375 px wide: the card fills the width with 12 px on each side, fields and buttons 44 px high for a finger, nothing scrolls sideways.",
+    "The providers stay one row of icons; with five of them abroad (M2) each is still 48 px high and wide enough to tap.",
+  ]],
+  "M2": ["Sign in on a phone, outside Russia", ["Five provider icons share the row; the note under them wraps."]],
+  "M3": ["The cookie banner on a phone", ["The banner spans the screen's width at the bottom and its “Accept” takes a full row, so it cannot be missed; the form above stays greyed until it is pressed."]],
+  "M4": ["Creating an account on a phone", ["One column; the password's rule shows under its field."]],
+  "M5": ["Confirming the email on a phone", ["The six boxes shrink to 44 px and keep the gap between the groups of three; pasting the code from the letter fills them all, which matters most on a phone."]],
+  "M6": ["A wrong code on a phone", ["The red boxes and the message fit the width without wrapping a box."]],
+  "M7": ["Consent on a phone", ["The tick box and its text wrap; the button stays grey until it is ticked."]],
+  "M8": ["Wrong email or password on a phone", ["The message wraps above the fields."]],
+  "M9": ["Reset on a phone", ["The code and the new password on one screen, one column."]],
+  "M10": ["Refused by region on a phone", ["The reason wraps; the way back — email and password — is the first button."]],
+  "M11": ["Privacy on a phone", ["The page loses its card and fills the screen; headings and lists read at 14.5 px."]],
+  "M12": ["Delete my data on a phone", ["The numbered steps keep their circles; the address wraps as a whole."]],
   "1.1": ["Signing in from Russia", [
     "The page asks <code>SignInOptionsAction</code> what to show. It runs <code>DetectRegionAction</code>, which reads <code>Ctx.Request.client_ip</code> and asks <code>GeoIpGateway</code> for the country. The page itself never says which region it decided.",
     "From Russia: email and password, Yandex ID and Mail.ru ID — nothing else. Google, GitHub and Facebook are not hidden behind a link: they are not on the page at all.",
@@ -866,8 +915,9 @@ function renderNotes() {
 }
 function fit() {
   const stage = document.getElementById("stage"), sc = document.getElementById("scale"), box = document.getElementById("box");
-  const k = Math.min(1, (stage.clientWidth - 48) / 1360);
-  sc.style.transform = `scale(${k})`; box.style.height = 840 * k + "px";
+  const w = S.phone ? 375 : 1360, h = S.phone ? 812 : 840;
+  const k = Math.min(1, (stage.clientWidth - 48) / w);
+  sc.style.transform = `scale(${k})`; box.style.height = h * k + "px";
 }
 window.addEventListener("resize", fit);
 document.addEventListener("keydown", e => { if (e.key === "Escape") go({ pop: null, linkState: null }); });
