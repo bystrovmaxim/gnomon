@@ -11,8 +11,9 @@ import { DIRECT_LOOK, LIVE_LOOK, MERGED_LOOK, PROPOSAL_LOOK } from "./proposalLo
 import { VersionTip } from "./VersionTip";
 import { thinLabels } from "./thinLabels";
 
-/** Where the axis runs, where names stand under it, and the drawing's height — the mockup's. */
-const AXIS_Y = 26;
+/** Where the axis runs, where names stand under it, and the drawing's height. The axis sits exactly in the middle
+ *  of the strip; the name hangs as far under it as a Diff chip stands above it. */
+const AXIS_Y = 32;
 const LABEL_Y = 52;
 const HEIGHT = 64;
 /** In Diff A's chip stands above the axis as far as B's stands under it, so the two never meet. */
