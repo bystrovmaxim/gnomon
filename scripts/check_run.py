@@ -197,6 +197,14 @@ STEPS: tuple[Step, ...] = (
     # Do not chase it; the steps below stay green with it in the log.
     Step(CLIENT_BUILD, f"({CLIENT} && npm ci && npm run build)", "client", after=(AUTO_FIX,)),
     _client("Maxitor client: unit tests", "npm test"),
+    # The core's Next.js application: its pages and server code compile and typecheck. Its browser check needs
+    # the local stand (scripts/core-stand.sh) and runs by hand: web/scripts/check-core.mjs.
+    Step(
+        "Maxitor core: the Next.js application builds",
+        "(cd packages/maxitor/maxitor-core/web && npm ci --no-audit --no-fund && npm run build)",
+        "client",
+        after=(AUTO_FIX,),
+    ),
     # Every diagram must be laid out to the same bits in Chromium, Firefox and WebKit, on a phone and a
     # desktop screen, or pointers in a room land on the wrong nodes (spec 028, FR-006). The same step
     # then opens a room in each engine and proves a pointer lands within 2 px of its node (SC-003).
