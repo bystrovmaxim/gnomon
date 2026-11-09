@@ -11,9 +11,8 @@ import { DIRECT_LOOK, LIVE_LOOK, MERGED_LOOK, PROPOSAL_LOOK } from "./proposalLo
 import { VersionTip } from "./VersionTip";
 import { thinLabels } from "./thinLabels";
 
-/** Where the axis runs, where names stand under it, and the drawing's height. The axis sits exactly in the middle
- *  of the strip; the name hangs as far under it as a Diff chip stands above it. */
-const AXIS_Y = 32;
+/** Where the axis runs, where names stand under it, and the drawing's height — the mockup's. */
+const AXIS_Y = 26;
 const LABEL_Y = 52;
 const HEIGHT = 64;
 /** In Diff A's chip stands above the axis as far as B's stands under it, so the two never meet. */
@@ -103,14 +102,11 @@ export function layOut(
   const versions = hideSmall ? held.filter(({ version }) => version.graph_changed !== false || kept.has(shortSha(version))) : held;
   const slots = Math.max(versions.length - 1, 0) + (live ? LIVE_GAP_STEPS : 0) + (proposals.length ? LIVE_GAP_STEPS + proposals.length - 1 : 0);
   const step = slots > 0 ? Math.max(minStep, (width - 2 * PAD) / slots) : 0;
-  // A short history leaves room to spare: its points are centred, the same margin before the oldest and after the
-  // last, instead of hugging the left with an empty right side.
-  const start = slots > 0 ? Math.max(PAD, (width - slots * step) / 2) : PAD;
   const lone = versions.length === 1 && !live && !proposals.length;
   const carried = flagsOfHidden(held, versions);
   const points: Point[] = versions.map(({ version, place }, index) => ({
     b: shortSha(version),
-    x: lone ? width / 2 : start + index * step,
+    x: lone ? width / 2 : PAD + index * step,
     name: names[place],
     large: version.graph_changed !== false,
     named: versionFile ? Boolean(version.version_changed && version.version) : releaseOf(version) !== null,
@@ -122,15 +118,15 @@ export function layOut(
     date: version.date,
   }));
   if (live) {
-    const x = points.length ? (points.at(-1)?.x ?? start) + LIVE_GAP_STEPS * step : proposals.length ? start : width / 2;
+    const x = points.length ? (points.at(-1)?.x ?? PAD) + LIVE_GAP_STEPS * step : proposals.length ? PAD : width / 2;
     points.push({ b: "live", x, name: "Live", large: true, named: false, refused: false, flags: merged ? flagsOf(merged) : [], carried: [], version: merged, date: null, number: merged ? numbers[all.length - 1] : null });
   }
   // Pull requests still open stand last, past a gap, the oldest first: work ahead of what runs, not yet part of it.
-  const after = (points.at(-1)?.x ?? start - LIVE_GAP_STEPS * step) + LIVE_GAP_STEPS * step;
+  const start = (points.at(-1)?.x ?? PAD - LIVE_GAP_STEPS * step) + LIVE_GAP_STEPS * step;
   proposalsByDate(proposals).forEach((proposal, at) =>
     points.push({
       b: shortSha(proposal),
-      x: after + at * step,
+      x: start + at * step,
       name: `#${proposal.pr?.number ?? at + 1}`,
       // One that raises only the version, not the graph, is small, as a merged one would be.
       large: proposal.graph_changed !== false,

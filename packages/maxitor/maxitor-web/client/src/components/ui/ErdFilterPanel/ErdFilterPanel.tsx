@@ -372,6 +372,7 @@ export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleK
         flexDirection: "column",
         overflow: "hidden",
         gap: 0,
+        pb: 0,
         boxSizing: "border-box",
       }}
     >
@@ -392,7 +393,7 @@ export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleK
       </Box>
       {paint && paintSections.length > 1 && (
         // the gear shift, the panel's fixed foot, centred: one point per section above, in their order.
-        <Box sx={{ borderTop: "1px solid rgba(0,0,0,0.07)", display: "flex", justifyContent: "center", pt: 0.75, pb: 0.25, flexShrink: 0 }}>
+        <Box sx={{ borderTop: "1px solid rgba(0,0,0,0.07)", display: "flex", justifyContent: "center", pt: 0.75, pb: 0.75, flexShrink: 0 }}>
           <GearShift sections={paintSections} source={paint.source} onPaint={shiftPaint} />
         </Box>
       )}
