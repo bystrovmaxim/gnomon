@@ -267,6 +267,7 @@ function frameCluster(frame: Frame, box: Box, dashed: boolean): string {
     `<g id="${escHtml(frame.id)}" class="cluster">` +
     `<title>${escHtml(frame.name)}</title>` +
     `<path fill="none" stroke="${frame.colour}" stroke-width="2"${dashes} d="${roundedRectPath(box)}"/>` +
+    // The mark and the name stand together, centred: the frame says what kind of container it is, folded or not.
     `<text xml:space="preserve" text-anchor="middle" x="${cx.toFixed(2)}" y="${(box.bottom + 24).toFixed(2)}" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="15.00" fill="${frameInk(frame.colour)}">${escHtml(frame.label)}</text>` +
     `</g>`
   );

@@ -104,6 +104,9 @@ export const erdEdgeId = (k: number) => `re${k}`;
  * Prefix of the id Graphviz writes on a resource frame's group: ``rc:<resource id>`` (spec 064). Only a resource frame
  * has one, so the post-pass and the room tell it from a domain frame and from the invisible spacing.
  */
+/** The disk beside a frame's name: a domain's or a resource's, the same folded and unfolded (spec 071). */
+
+
 export const CONTOUR_ID_PREFIX = "rc:";
 /** Prefix of a domain frame's id in the logical view: ``dc:<domain qualname>`` (spec 071). */
 export const DOMAIN_CONTOUR_ID_PREFIX = "dc:";
@@ -786,7 +789,7 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
       `  subgraph "${name}" {`,
       `    id="${escDot(`${DOMAIN_CONTOUR_ID_PREFIX}${qual}`)}";`,
       `    tooltip="${escDot(qual)}";`,
-      `    label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>${escHtml(domainName(qual))}</B></TD></TR></TABLE>>;`,
+      `    label=<<TABLE BORDER="0" CELLPADDING="6"><TR><TD><B>${escHtml(domainName(qual))}</B></TD></TR></TABLE>>;`,
       '    style="rounded";',
       `    color="${colour}";`,
       `    fontcolor="${colour === FRAME_GREY ? "#475569" : colour}";`,
@@ -844,7 +847,7 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
         `  subgraph "cluster_resource_${index}" {`,
         // Spec 064: a resource's frame is named by its resource, so a hover on its border knows whose links to light.
         ...(id ? [`    id="${escDot(id)}";`, `    tooltip="${escDot(resource!)}";`] : ['    id="";', '    tooltip="Entities no resource keeps";']),
-        `    label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>${escHtml(name)}</B></TD></TR></TABLE>>;`,
+        `    label=<<TABLE BORDER="0" CELLPADDING="6"><TR><TD><B>${escHtml(name)}</B></TD></TR></TABLE>>;`,
         `    style="${resource === null ? "rounded,dashed" : "rounded"}";`,
         `    color="${colour}";`,
         `    fontcolor="${resource !== null && paintSource === "resource" ? colour : "#475569"}";`,

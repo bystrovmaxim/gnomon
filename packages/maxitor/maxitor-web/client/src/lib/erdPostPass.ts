@@ -16,6 +16,7 @@
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
 import { CONTOUR_ID_PREFIX, DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdGlance, erdHeadInk, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { svgDataUriForGraphNodeIcon } from "./icons/graph_node_disk_icons.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
 export type KindGlyphDrawer = (word: string, ink: string, strokeWidth: number) => string;
@@ -642,6 +643,36 @@ export function bindLineHover(
       clearTableFocus(root);
     }, event.isTrusted), { signal });
   });
+}
+
+/**
+ * The disk before every frame's name — a domain's or a resource's, the same folded and unfolded (spec 071). Graphviz
+ * drops an ``<IMG>`` inside an HTML label, so the disk is drawn into the SVG after the layout, and the name moves
+ * right by its width; the rest of the drawing is untouched.
+ */
+export function addFrameIcons(markup: string): string {
+  const icon = (id: string) =>
+    id.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? svgDataUriForGraphNodeIcon("#3b82f6", "Domain") : svgDataUriForGraphNodeIcon("#7570B3", "Resource");
+  const edits: { at: number; end: number; text: string }[] = [];
+  const add = (id: string, open: number) => {
+    const textAt = markup.indexOf("<text", open);
+    if (textAt < 0) return;
+    const tag = /^<text\b[^>]*>/.exec(markup.slice(textAt))?.[0];
+    if (!tag) return;
+    const xm = /\bx="([^"]+)"/.exec(tag);
+    const ym = /\by="([^"]+)"/.exec(tag);
+    const x = Number(xm?.[1]);
+    const y = Number(ym?.[1]);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || xm === null) return;
+    edits.push({ at: textAt, end: textAt, text: `<image href="${icon(id)}" x="${(x - 18).toFixed(2)}" y="${(y - 11).toFixed(2)}" width="14" height="14"/>` });
+    const xAt = textAt + tag.indexOf(xm[0]);
+    edits.push({ at: xAt, end: xAt + xm[0].length, text: `x="${(x + 2).toFixed(2)}"` });
+  };
+  for (const match of markup.matchAll(/<g id="((?:rc|dc):[^"]+)" class="cluster">/g)) add(match[1]!, (match.index ?? 0) + match[0].length);
+  for (const match of markup.matchAll(/<g id="node[^"]*" class="node">\s*<title>((?:rc|dc):[^<]+)<\/title>/g)) add(match[1]!, (match.index ?? 0) + match[0].length);
+  let out = markup;
+  for (const edit of edits.sort((a, b) => b.at - a.at)) out = out.slice(0, edit.at) + edit.text + out.slice(edit.end);
+  return out;
 }
 
 // ── The card as designed ─────────────────────────────────────────────────
