@@ -45,12 +45,12 @@ One phase = one commit, referencing (#80); the phases are the seven of issue #80
 
 ## Phase 4 — The filter rule on every diagram (US6; FR-014–FR-017; SC-006)
 
-- [ ] T031 [US6] ERD: in `client/lib/erdFilterPresence.ts` compute scope → base (scope + 1-hop) → drawn (without 1-hop neighbours when off, then without what a panel filter hides) → rows (the base) → dimmed (in base, not drawn); `tablesToDraw` no longer re-adds a hidden table
+- [x] T031 [US6] ERD: in `client/lib/erdFilterPresence.ts` compute scope → base (scope + 1-hop) → drawn (without 1-hop neighbours when off, then without what a panel filter hides) → rows (the base) → dimmed (in base, not drawn); `tablesToDraw` no longer re-adds a hidden table
 - [ ] T032 [P] [US6] Use cases: the same order in `client/lib/useCaseDiff.ts` and `UseCaseDiagramViewer.tsx`
 - [ ] T033 [P] [US6] Lifecycle: the same order in `client/lib/lifecycleDiff.ts` and `LifecycleFsmViewer.tsx`
 - [ ] T034 [P] [US6] Events: rows from the domain's scope, hidden ones dimmed, in `client/lib/eventsExplorer.ts`
 - [ ] T035 [P] [US6] Full graph: rows from the whole system, hidden ones dimmed with the mark it has today, in `client/lib/mapFilterRows.ts`
-- [ ] T036 [US6] Show `OneHopToggle` only on a domain's ERD (`qualifier` set), a domain's use cases and a lifecycle; never on `erd` with `qualifier: null` or `use_case_all`
+- [x] T036 [US6] Show `OneHopToggle` only on a domain's ERD (`qualifier` set), a domain's use cases and a lifecycle; never on `erd` with `qualifier: null` or `use_case_all`
 - [ ] T037 [US6] Vitest per diagram on one domain of a fixture: an element turned off stays hidden with 1-hop on; rows = base; no row outside the base; every hidden element of the base has a dimmed row; no 1-hop on the whole system's ERD and use cases
 - [ ] T038 Adversarial check: apply 1-hop after the filters again in one diagram, then take rows from the drawn set; T037 fails for that diagram only; restore. Commit phase 4
 

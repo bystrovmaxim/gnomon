@@ -532,7 +532,7 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
                 sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
               />
               <OneHopToggle checked={boundary} onChange={setBoundary} label="Boundary" />
-              <OneHopToggle checked={includeOneHop} onChange={setIncludeOneHop} />
+              {domainId !== null && <OneHopToggle checked={includeOneHop} onChange={setIncludeOneHop} />}
             </ZoomToolbar>
           </Box>
         </Box>

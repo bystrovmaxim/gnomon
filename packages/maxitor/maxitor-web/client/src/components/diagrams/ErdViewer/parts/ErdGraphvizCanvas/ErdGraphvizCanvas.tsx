@@ -163,6 +163,8 @@ export type ErdGraphvizCanvasProps = {
   bundleVersion: number;
   includeOneHop: boolean;
   onIncludeOneHopChange: (next: boolean) => void;
+  /** One-hop is offered on a domain's ERD only, never on the ERD of all domains (spec 071, FR-017). */
+  oneHopAvailable: boolean;
 };
 
 const LAYOUT_TOOLS: {
@@ -190,6 +192,7 @@ export function ErdGraphvizCanvas({
   bundleVersion,
   includeOneHop,
   onIncludeOneHopChange,
+  oneHopAvailable,
 }: ErdGraphvizCanvasProps) {
   // Page settings: the person's own outside a room, the room's inside one (spec 028, FR-030).
   const [chosenLayout, setLayout] = usePageSetting<ErdGraphvizLayout>("layout", "gv-dot-lr");
@@ -1008,7 +1011,7 @@ export function ErdGraphvizCanvas({
             sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
           />
           {model === "logical" && <OneHopToggle checked={framesOn} onChange={setFramesOn} label="Boundary" />}
-          <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />
+          {oneHopAvailable && <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />}
           {canCollapse && (
             <CollapseAllButton
               collapsed={allCollapsed}
