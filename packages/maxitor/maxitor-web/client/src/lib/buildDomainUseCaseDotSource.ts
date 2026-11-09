@@ -204,8 +204,11 @@ export function buildDomainUseCaseDotBundle(
 
   let graphAttrs: string;
   let edgeDefaultAttrs: string;
+  // One boundary per domain is a cluster each: only with more than one are their frames spaced apart.
+  const framed = boundary && new Set(actions.map((action) => action.domain_id)).size > 1;
   if (layoutEngine === "dot") {
-    graphAttrs = `rankdir=${rankdir}, bgcolor=transparent, fontname="Inter, Helvetica, sans-serif"`;
+    // One boundary per domain: a wider gap between the use cases, so the frames around them keep their distance.
+    graphAttrs = `rankdir=${rankdir}, bgcolor=transparent, fontname="Inter, Helvetica, sans-serif"${framed ? ", nodesep=0.6, ranksep=1.2" : ""}`;
     edgeDefaultAttrs = 'fontname="Inter, Helvetica, sans-serif"';
   } else if (layoutEngine === "neato") {
     // ``sep`` only nudges overlap removal; ``len`` on edges actually stretches Neato/KK springs.

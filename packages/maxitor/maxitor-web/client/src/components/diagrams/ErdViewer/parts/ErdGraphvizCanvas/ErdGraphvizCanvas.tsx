@@ -1042,7 +1042,7 @@ export function ErdGraphvizCanvas({
           />
           {model === "logical" && <OneHopToggle checked={framesOn} onChange={setFramesOn} label="Boundary" />}
           {oneHopAvailable && <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />}
-          {drawnFrameIds.length > 0 && <CollapseFramesButton collapsed={allFramesFolded} onClick={() => (allFramesFolded ? unfoldAll() : foldAll(drawnFrameIds))} />}
+          {drawnFrameIds.length > 0 && <CollapseFramesButton collapsed={allFramesFolded} onClick={() => (allFramesFolded ? unfoldAll(drawnFrameIds) : foldAll(drawnFrameIds))} />}
           {canCollapse && (
             <CollapseAllButton
               collapsed={allCollapsed}
