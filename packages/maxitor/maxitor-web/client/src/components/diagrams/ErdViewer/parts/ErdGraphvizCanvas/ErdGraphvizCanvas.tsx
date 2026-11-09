@@ -855,11 +855,6 @@ export function ErdGraphvizCanvas({
           />
         )}
         {half?.side !== "b" && <ErdModelPill model={model} counts={modelCounts} physicalKnown={bundle.storage_known} physicalAvailable={physicalAvailable} onModel={setModel} />}
-        {half?.side !== "b" && model === "logical" && (
-          <Box sx={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-142px)", zIndex: 45, height: 32, display: "flex", alignItems: "center" }}>
-            <OneHopToggle checked={framesOn} onChange={setFramesOn} label="Frames" />
-          </Box>
-        )}
         {erdEmptyOverlay}
         <HalfNote text={halfNote} />
         {half && !erdEmptyOverlay && drawnData.entities.length === 0 && (
@@ -1011,6 +1006,7 @@ export function ErdGraphvizCanvas({
             aria-hidden
             sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
           />
+          {model === "logical" && <OneHopToggle checked={framesOn} onChange={setFramesOn} label="Frames" />}
           <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />
           {canCollapse && (
             <CollapseAllButton
