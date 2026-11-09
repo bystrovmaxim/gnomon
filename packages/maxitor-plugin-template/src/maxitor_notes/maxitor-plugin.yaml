@@ -11,6 +11,8 @@ description: >
   Notes on catalog items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
 version: 0.2.0
+# The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
+sdk: 1
 
 requires:
   maxitor: ">=4.0,<5"

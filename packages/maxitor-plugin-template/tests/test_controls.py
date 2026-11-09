@@ -2,7 +2,7 @@
 """The page's controls: a closed set, each an address parameter of its own, coloured from Maxitor's palette only."""
 
 import pytest
-from plugin_check import check_plugin
+from maxitor_plugin_sdk.checks import check_plugin
 
 
 def _item_notes(doc):

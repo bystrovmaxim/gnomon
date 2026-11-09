@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-template/checks/schemas/plugin-passport-1.schema.json",
+  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/plugin-passport-1.schema.json",
   "title": "Maxitor plugin passport, format 1",
   "description": "maxitor-plugin.yaml: who a plugin is and what it needs. Every object is closed: an unknown field is an error.",
   "type": "object",
@@ -23,6 +23,7 @@
     "title": { "type": "string", "minLength": 1, "maxLength": 80 },
     "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
     "version": { "$ref": "#/$defs/version" },
+    "sdk": { "type": "integer", "minimum": 1, "description": "The major version of maxitor-plugin-sdk the plugin is built with; the core must be built with the same." },
     "requires": {
       "type": "object",
       "additionalProperties": false,

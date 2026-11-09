@@ -113,7 +113,7 @@ STOP_GRACE_SECONDS = 5.0
 POLL_SECONDS = 0.05
 CLIENT_BUILD = "Maxitor client: npm ci and Vite build"
 GRAPH_WRITE = "Graph files (graph-builder write)"
-PACKAGES = ("packages/maxitor",)
+PACKAGES = ("packages/maxitor", "packages/maxitor-plugin-sdk")
 LOCAL = "local"
 CI = "ci"
 BOTH = "both"
@@ -251,11 +251,13 @@ STEPS: tuple[Step, ...] = (
             ci_command=f'uv run --extra dev pytest packages/{package}/tests/ -v -m "not benchmark"',
         )
         for package in (
+            "maxitor/maxitor-core",
             "maxitor/maxitor-web",
             "maxitor/tools/repo-graph-port",
             "maxitor/tools/graph-builder",
             "maxitor/core/graph_compare",
             "maxitor/core/graph_map",
+            "maxitor-plugin-sdk",
             "maxitor-plugin-template",
         )
     ),

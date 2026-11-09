@@ -4,7 +4,7 @@
 from pathlib import Path
 
 import pytest
-from plugin_check import check_plugin
+from maxitor_plugin_sdk.checks import check_plugin
 
 
 def test_the_template_passes_every_check() -> None:

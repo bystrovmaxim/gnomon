@@ -42,7 +42,7 @@ py/                          domains.py events/ entities/ storage/ gateways/ act
                              migrations/*.sql maxitor-core.yaml letters/ common-passwords.txt
 core/tests/                  recording_database.py test_*.py
 web/                         app/ (page per screen) lib/ components/ scripts/check-core.mjs next.config.ts package.json
-sdk/                         src/maxitor_plugin_sdk/{compat.py,schemas/,checks/} tests/
+sdk/                         src/maxitor_plugin_sdk/{compat.py,checks.py,schemas/} tests/
 viewer/client/src/           components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/ErdGraphvizCanvas.tsx lib/erdPaint.ts
 scripts/                     core-stand.sh package_boundaries.toml
 specs/059-maxitor-concept/   model/enterprise_model.py model/graph.json *.md mockup/

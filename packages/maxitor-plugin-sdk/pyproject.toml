@@ -1,0 +1,26 @@
+# packages/maxitor-plugin-sdk/pyproject.toml — what a Maxitor plugin and Maxitor itself share: the schemas of a
+# plugin's files, the checks of one plugin, and the one decision whether plugins fit a core.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "maxitor-plugin-sdk"
+version = "1.0.0"
+description = "The Maxitor plugin SDK: the schemas of a plugin's files, its checks, and the compatibility decision."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12"
+authors = [{ name = "@Bystrov.Maxim" }]
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+    "jsonschema>=4.17,<5",
+    "packaging>=24",
+    "PyYAML>=6.0,<7",
+]
+
+[project.scripts]
+maxitor-plugin-check = "maxitor_plugin_sdk.checks:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/maxitor_plugin_sdk"]

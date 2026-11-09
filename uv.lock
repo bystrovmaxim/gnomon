@@ -11,6 +11,7 @@ resolution-markers = [
 members = [
     "gnomon",
     "maxitor",
+    "maxitor-plugin-sdk",
     "maxitor-plugin-template",
 ]
 
@@ -911,6 +912,7 @@ version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "maxitor", extra = ["all"] },
+    { name = "maxitor-plugin-sdk" },
     { name = "maxitor-plugin-template" },
 ]
 
@@ -936,6 +938,7 @@ requires-dist = [
     { name = "detect-secrets", marker = "extra == 'dev'", specifier = ">=1.5,<2.0" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27,<1.0" },
     { name = "maxitor", extras = ["all"], editable = "packages/maxitor" },
+    { name = "maxitor-plugin-sdk", editable = "packages/maxitor-plugin-sdk" },
     { name = "maxitor-plugin-template", editable = "packages/maxitor-plugin-template" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10,<2.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=4.0,<5.0" },
@@ -1408,12 +1411,30 @@ dev = [
 ]
 
 [[package]]
+name = "maxitor-plugin-sdk"
+version = "1.0.0"
+source = { editable = "packages/maxitor-plugin-sdk" }
+dependencies = [
+    { name = "jsonschema" },
+    { name = "packaging" },
+    { name = "pyyaml" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "jsonschema", specifier = ">=4.17,<5" },
+    { name = "packaging", specifier = ">=24" },
+    { name = "pyyaml", specifier = ">=6.0,<7" },
+]
+
+[[package]]
 name = "maxitor-plugin-template"
 version = "0.2.0"
 source = { editable = "packages/maxitor-plugin-template" }
 dependencies = [
     { name = "aoa-action-machine", extra = ["jwt", "postgres"] },
     { name = "aoa-fastapi-adapter" },
+    { name = "maxitor-plugin-sdk" },
     { name = "pyyaml" },
     { name = "uvicorn" },
 ]
@@ -1422,6 +1443,7 @@ dependencies = [
 requires-dist = [
     { name = "aoa-action-machine", extras = ["postgres", "jwt"], editable = "external/aoa/packages/aoa-action-machine" },
     { name = "aoa-fastapi-adapter", editable = "external/aoa/packages/aoa-fastapi-adapter" },
+    { name = "maxitor-plugin-sdk", editable = "packages/maxitor-plugin-sdk" },
     { name = "pyyaml", specifier = ">=6.0,<7" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]

@@ -1,7 +1,7 @@
 # packages/maxitor-plugin-template/tests/test_dependencies.py
 """A dependency cycle is found and named round; a graph without one passes."""
 
-from plugin_check import find_cycle
+from maxitor_plugin_sdk.checks import find_cycle
 
 
 def test_a_cycle_is_named_round() -> None:

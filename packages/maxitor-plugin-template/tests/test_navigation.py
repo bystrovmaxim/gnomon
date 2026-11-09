@@ -2,7 +2,7 @@
 """navigation.yaml: a plugin only adds nodes, and every address it declares can be built and told apart."""
 
 import pytest
-from plugin_check import check_plugin
+from maxitor_plugin_sdk.checks import check_plugin
 
 
 def _root_section(doc):

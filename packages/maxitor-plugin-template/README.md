@@ -4,7 +4,7 @@ A small but complete Maxitor plugin, `notes`: notes on catalog items. It holds e
 
 A Maxitor plugin is an independent application that installs into Maxitor: a pip package or a ready wheel carrying a passport, an AOA backend, a built Next.js frontend and the migrations of its own database schema. Maxitor's installer reads the passport, checks the dependencies, gives the plugin its own role and schema in the shared database, builds the left tree with the plugin's nodes in it, and shows the plugin's pages in the right panel of its frame.
 
-Maxitor cannot host plugins yet: the installer, the frame on Next.js, `maxitor-plugin-sdk` and `@maxitor/panel` are still to be built. Until then this package runs only in its tests: its files have the shape a plugin must have, its backend is built and checked without a database, and it does not run against Maxitor.
+Maxitor cannot host plugins yet: the installer, the frame's place for a plugin's pages and `@maxitor/panel` are still to be built. Until then this package runs only in its tests: its files have the shape a plugin must have, its backend is built and checked without a database, and it does not run against Maxitor. Its files are checked by `maxitor-plugin-sdk`, the same code Maxitor checks a plugin with: `maxitor-plugin-check .` from this folder, and `maxitor plugin check . --core <version>` for whether it fits a core.
 
 ## Documentation
 
@@ -29,7 +29,6 @@ Maxitor cannot host plugins yet: the installer, the frame on Next.js, `maxitor-p
 | `graph.json` | The plugin's graph, built by `graph-builder write` from its code. |
 | `web/` | The frontend: a Next.js application under `/p/notes` whose pages keep every view setting in their address. |
 | `web/scripts/copy-build.mjs` | Puts the standalone build into `src/maxitor_notes/_web`, where the wheel carries it. |
-| `checks/` | What Maxitor's installer checks in a plugin's own files: the JSON schemas of the passport, `navigation.yaml` and `foreign-keys.yaml`, and `plugin_check.py` for the rules across fields. They move into `maxitor-plugin-sdk` when it exists. |
 
 ## Building a release
 
