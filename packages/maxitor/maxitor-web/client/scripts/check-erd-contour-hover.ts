@@ -74,6 +74,9 @@ setErdPaint("domain", {});
 const markup = drawErdCards(containNodeFills(gv.layout(buildDotSource(shop, "gv-dot-lr"), "svg", "dot")), ERD_CARD_RADIUS, ERD_CARD_STROKE);
 const dom = new JSDOM(`<div id="root">${markup.slice(markup.indexOf("<svg"))}</div>`);
 const { document, MouseEvent, AbortController: DomAbortController } = dom.window;
+// jsdom lays nothing out: every element is a box of one size, as a lit line's label plate asks for one (#85).
+(globalThis as { document?: unknown }).document = document;
+Object.defineProperty(dom.window.SVGElement.prototype, "getBBox", { configurable: true, value: () => ({ x: 0, y: 0, width: 40, height: 9 }) });
 const root = document.getElementById("root")!;
 addEdgeHitAreas(root);
 addContourHitAreas(root);
