@@ -305,15 +305,17 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
   useGraphvizFocus(pannerRef.current, svgMarkup, useCurrentPage(), "node");
   const ownData = useMemo(() => (half && data ? useCaseOfSide(data, half.side) : null), [half, data]);
   const halfNote = useHalfPicking({ pannerRef, viewportRef, centreOnClient: panZoom.centreOnClient, drawing: svgMarkup, nodeKind: "node", holds: (ref) => (ownData ? useCaseHolds(ownData, ref) : false) });
-  const prevDotRef = useRef<string | null>(null);
-
+  // A new graph and another layout mode fit again; a filter, a boundary switch or new colours keep the camera where
+  // the person put it (spec 071, FR-018).
+  const prevDrawingRef = useRef<{ data: unknown; layout: unknown } | null>(null);
   useLayoutEffect(() => {
-    const d = bundle?.dot ?? "";
-    if (d === prevDotRef.current) return;
-    prevDotRef.current = d;
-    resetFitFlag();
+    const previous = prevDrawingRef.current;
+    if (!previous || previous.data !== data || previous.layout !== layoutForBundler) {
+      prevDrawingRef.current = { data, layout: layoutForBundler };
+      resetFitFlag();
+    }
     // The previous drawing stays until the new one is placed and fitted in one frame (spec 038): no blank frame.
-  }, [dot, resetFitFlag]);
+  }, [data, layoutForBundler, resetFitFlag]);
 
   useEffect(() => {
     if (!bundle) {

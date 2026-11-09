@@ -221,6 +221,8 @@ function ExplorerCanvas({ payload: merged, domainId, onOpen, diffing }: { payloa
   const { want, close, hold, release } = hoverCard;
   /** What the next layout keeps: the clicked node still on the screen, or a fit of the whole. */
   const anchorRef = useRef<{ node: string; client: { x: number; y: number }; before: ReadonlySet<string> } | "fit">("fit");
+  /** The graph and the layout mode the last fit belonged to: a filter change keeps the camera where it is. */
+  const prevFitRef = useRef<{ graph: unknown; layout: unknown } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -250,6 +252,10 @@ function ExplorerCanvas({ payload: merged, domainId, onOpen, diffing }: { payloa
     if (!placed) return;
     const anchor = anchorRef.current;
     anchorRef.current = "fit";
+    // A filter keeps the view: only a new graph or another layout mode fits again (spec 071, FR-018).
+    const previous = prevFitRef.current;
+    if (anchor === "fit" && previous && previous.graph === graph && previous.layout === layout) return;
+    prevFitRef.current = { graph, layout };
     const stage = viewportRef.current?.getBoundingClientRect();
     if (anchor === "fit" || !stage) {
       setAnimate(false);
@@ -289,7 +295,7 @@ function ExplorerCanvas({ payload: merged, domainId, onOpen, diffing }: { payloa
     // It does not fit: zoom out to it, centred.
     setScale(Math.min(k, (room.right - room.left) / (x1 - x0), (room.bottom - room.top) / (y1 - y0)));
     placeAt((room.left + room.right) / 2, (room.top + room.bottom) / 2, (x0 + x1) / 2, (y0 + y1) / 2);
-  }, [placed, fitToContainer, getScale, setScale, placeAt, viewportRef]);
+  }, [placed, graph, layout, fitToContainer, getScale, setScale, placeAt, viewportRef]);
 
   const holdStill = (node: string) => {
     const element = pannerRef.current?.querySelector(`[data-box="${CSS.escape(node)}"]`);

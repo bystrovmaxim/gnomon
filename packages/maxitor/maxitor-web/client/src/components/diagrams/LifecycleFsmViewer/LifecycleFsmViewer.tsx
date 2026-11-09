@@ -140,14 +140,17 @@ export function LifecycleFsmViewer({ lifecycleGraphNodeId }: LifecycleFsmViewerP
   useGraphvizFocus(pannerRef.current, svgMarkup, useCurrentPage(), "node");
   const ownData = useMemo(() => (half && data ? lifecycleOfSide(data, half.side) : null), [half, data]);
   const halfNote = useHalfPicking({ pannerRef, viewportRef, centreOnClient: panZoom.centreOnClient, drawing: svgMarkup, nodeKind: "node", holds: (ref) => (ownData ? lifecycleHolds(ownData, ref) : false) });
-  const prevDotRef = useRef<string | null>(null);
-
+  // A new graph and another rank direction fit again; a filter, a fold or new colours keep the camera where the person
+  // put it (spec 071, FR-018) — the drawing must not jump under them.
+  const prevDrawingRef = useRef<{ data: unknown; layout: unknown } | null>(null);
   useLayoutEffect(() => {
-    if (dot === prevDotRef.current) return;
-    prevDotRef.current = dot;
-    resetFitFlag();
+    const previous = prevDrawingRef.current;
+    if (!previous || previous.data !== data || previous.layout !== rankdir) {
+      prevDrawingRef.current = { data, layout: rankdir };
+      resetFitFlag();
+    }
     // The previous drawing stays until the new one is placed and fitted in one frame (spec 038): no blank frame.
-  }, [dot, resetFitFlag]);
+  }, [data, rankdir, resetFitFlag]);
 
   useEffect(() => {
     if (!dot) {
