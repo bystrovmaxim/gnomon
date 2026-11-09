@@ -1324,8 +1324,6 @@ source = { editable = "packages/maxitor" }
 dependencies = [
     { name = "jsonschema" },
     { name = "jsonschema-rs" },
-    { name = "maxitor-plugin-sdk" },
-    { name = "pyyaml" },
 ]
 
 [package.optional-dependencies]
@@ -1353,6 +1351,10 @@ core = [
     { name = "packaging" },
     { name = "pyyaml" },
     { name = "uvicorn" },
+]
+plugins = [
+    { name = "maxitor-plugin-sdk" },
+    { name = "pyyaml" },
 ]
 repo-graph-port = [
     { name = "aoa-action-machine" },
@@ -1396,17 +1398,17 @@ requires-dist = [
     { name = "maxitor", extras = ["core"], marker = "extra == 'all'", editable = "packages/maxitor" },
     { name = "maxitor", extras = ["repo-graph-port"], marker = "extra == 'all'", editable = "packages/maxitor" },
     { name = "maxitor", extras = ["web"], marker = "extra == 'all'", editable = "packages/maxitor" },
-    { name = "maxitor-plugin-sdk", editable = "packages/maxitor-plugin-sdk" },
+    { name = "maxitor-plugin-sdk", marker = "extra == 'plugins'", editable = "packages/maxitor-plugin-sdk" },
     { name = "packaging", marker = "extra == 'core'", specifier = ">=24" },
     { name = "pyjwt", extras = ["crypto"], marker = "extra == 'repo-graph-port'", specifier = ">=2.8,<3" },
-    { name = "pyyaml", specifier = ">=6.0,<7" },
     { name = "pyyaml", marker = "extra == 'core'", specifier = ">=6.0,<7" },
+    { name = "pyyaml", marker = "extra == 'plugins'", specifier = ">=6.0,<7" },
     { name = "uvicorn", marker = "extra == 'core'", specifier = ">=0.30" },
     { name = "uvicorn", marker = "extra == 'repo-graph-port'", specifier = ">=0.30" },
     { name = "uvicorn", marker = "extra == 'web'", specifier = ">=0.30" },
     { name = "websockets", marker = "extra == 'web'", specifier = ">=15" },
 ]
-provides-extras = ["repo-graph-port", "web", "core", "all"]
+provides-extras = ["repo-graph-port", "web", "core", "plugins", "all"]
 
 [package.metadata.requires-dev]
 dev = [

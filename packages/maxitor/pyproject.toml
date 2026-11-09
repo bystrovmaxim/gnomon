@@ -18,9 +18,6 @@ authors = [{ name = "@Bystrov.Maxim" }]
 dependencies = [
     "jsonschema>=4.17,<5",
     "jsonschema-rs>=0.60,<1",
-    # maxitor plugin check: the SDK holds the schemas of a plugin's files and the compatibility decision.
-    "maxitor-plugin-sdk>=1.0,<2",
-    "PyYAML>=6.0,<7",
 ]
 
 [project.optional-dependencies]
@@ -52,6 +49,12 @@ core = [
     "packaging>=24",
     "PyYAML>=6.0,<7",
     "uvicorn>=0.30",
+]
+# maxitor plugin check: the SDK holds the schemas of a plugin's files and the compatibility decision. It joins
+# ``all`` once maxitor-plugin-sdk is published, so that installing ``all`` never asks for what an index lacks.
+plugins = [
+    "maxitor-plugin-sdk>=1.0,<2",
+    "PyYAML>=6.0,<7",
 ]
 all = ["maxitor[web]", "maxitor[repo-graph-port]", "maxitor[core]"]
 

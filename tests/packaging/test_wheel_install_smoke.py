@@ -128,6 +128,19 @@ def test_clean_install_maxitor_front_names_its_extra(tmp_path: Path) -> None:
     assert started.stderr == 'maxitor needs its web part: pip install "maxitor[web]"\n'
 
 
+def test_clean_install_maxitor_plugin_check_names_its_extra(tmp_path: Path) -> None:
+    """Without the ``plugins`` extra, ``maxitor plugin check`` names the extra instead of failing on an import."""
+    venv = tmp_path / "venv"
+    subprocess.run([_which_uv(), "venv", str(venv)], check=True, cwd=str(REPO_ROOT))
+    vpy = _venv_python(venv)
+    _uv_pip_install(vpy, [_latest_wheel("maxitor")])
+    started = subprocess.run(
+        [str(venv / "bin" / "maxitor"), "plugin", "check", ".", "--core", "4.0.0"], check=False, capture_output=True, text=True, cwd=str(tmp_path)
+    )
+    assert started.returncode == 2
+    assert started.stderr == 'maxitor plugin check needs its extra: pip install "maxitor[plugins]"\n'
+
+
 def test_clean_install_repo_graph_port_names_its_extra(tmp_path: Path) -> None:
     """Without the ``repo-graph-port`` extra, ``repo-graph-port`` names the extra instead of failing on an import."""
     venv = tmp_path / "venv"
