@@ -241,8 +241,9 @@ export function ErdGraphvizCanvas({
   // A graph that does not say where entities lie, or whose base no resource keeps, has no physical view: a stored
   // choice of it opens the logical one (spec 071).
   const model = physicalAvailable ? chosenModel : "logical";
-  // The logical view's domain frames, on or off; the physical view always frames its resources (spec 071).
-  const [framesOn, setFramesOn] = usePageSetting<boolean>("frames", true);
+  // The logical view's boundaries (its domain frames), on or off; the physical view always frames its resources
+  // (spec 071). The term is Boundary, as on the use-case.
+  const [framesOn, setFramesOn] = usePageSetting<boolean>("boundary", true);
   const framesDrawn = model === "physical" || framesOn;
   // Frames are drawn in every layout (spec 071; ``viewLayout``).
   const { layout } = viewLayout(model, chosenLayout);
@@ -1006,7 +1007,7 @@ export function ErdGraphvizCanvas({
             aria-hidden
             sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
           />
-          {model === "logical" && <OneHopToggle checked={framesOn} onChange={setFramesOn} label="Frames" />}
+          {model === "logical" && <OneHopToggle checked={framesOn} onChange={setFramesOn} label="Boundary" />}
           <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />
           {canCollapse && (
             <CollapseAllButton

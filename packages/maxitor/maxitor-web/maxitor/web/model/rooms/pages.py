@@ -146,7 +146,7 @@ SETTINGS: dict[str, dict[str, Callable[[Any], bool]]] = {
         "model": _one_of("logical", "physical"),
         "disabled_resources": _strings,
         "folded_contours": _strings,
-        "frames": _boolean,
+        "boundary": _boolean,
         "paint": _one_of("domains", "kinds", "resources", "changes"),
         "paint_diff": _one_of("domains", "kinds", "resources", "changes"),
     },

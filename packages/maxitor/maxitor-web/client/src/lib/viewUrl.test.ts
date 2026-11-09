@@ -31,11 +31,11 @@ describe("the view in the address (spec 038)", () => {
     expect(paramsToView(new URLSearchParams("paint=domains")).settings).not.toHaveProperty("disabled_resources");
   });
 
-  it("round-trips the logical view's frames switch (spec 071)", () => {
-    expect(viewToParams({ frames: false })).toEqual({ frames: "0" });
-    expect(viewToParams({ frames: true })).toEqual({ frames: "1" });
-    expect(paramsToView(new URLSearchParams("frames=1")).settings).toEqual({ frames: true });
-    expect(paramsToView(new URLSearchParams("frames=0")).settings).toEqual({ frames: false });
+  it("round-trips the logical view's Boundary switch (spec 071)", () => {
+    expect(viewToParams({ boundary: false })).toEqual({ boundary: "0" });
+    expect(viewToParams({ boundary: true })).toEqual({ boundary: "1" });
+    expect(paramsToView(new URLSearchParams("boundary=1")).settings).toEqual({ boundary: true });
+    expect(paramsToView(new URLSearchParams("boundary=0")).settings).toEqual({ boundary: false });
   });
 
   it("carries the map's filters", () => {

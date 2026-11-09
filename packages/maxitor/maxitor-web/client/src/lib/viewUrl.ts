@@ -29,8 +29,6 @@ const SETTINGS: Readonly<Record<string, { param: string; kind: Kind }>> = {
   boundary: { param: "boundary", kind: "switch" },
   model: { param: "model", kind: "choice" },
   folded_contours: { param: "folded", kind: "list" },
-  // The logical view's domain frames, on or off (spec 071).
-  frames: { param: "frames", kind: "switch" },
   rankdir: { param: "rankdir", kind: "choice" },
   rankdir_a: { param: "rankdir_a", kind: "choice" },
   rankdir_b: { param: "rankdir_b", kind: "choice" },

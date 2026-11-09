@@ -11,8 +11,8 @@ describe("a half", () => {
     expect(settingOfHalf("domains", half("a"))).toBe("domains");
     expect(settingOfHalf("layout", null)).toBe("layout");
     // The two halves share the frames switch, the view, the folds and the paint (spec 071).
-    expect(settingOfHalf("frames", half("a"))).toBe("frames");
-    expect(settingOfHalf("frames", half("b"))).toBe("frames");
+    expect(settingOfHalf("boundary", half("a"))).toBe("boundary");
+    expect(settingOfHalf("boundary", half("b"))).toBe("boundary");
     expect(settingOfHalf("model", half("b"))).toBe("model");
     expect(settingOfHalf("folded_contours", half("b"))).toBe("folded_contours");
     expect(settingOfHalf("paint", half("a"))).toBe("paint");
