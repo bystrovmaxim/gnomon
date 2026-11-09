@@ -201,6 +201,9 @@ export function buildDomainUseCaseDotBundle(
 
   let graphAttrs: string;
   let edgeDefaultAttrs: string;
+  // One boundary per domain: the nodes must be spread far enough that the frames around them do not overlap
+  // (Graphviz spreads nodes, never clusters), so spring layouts get a much larger separation while boundaries are on.
+  const framed = boundary && new Set(actions.map((action) => action.domain_id)).size > 1;
   if (layoutEngine === "dot") {
     graphAttrs = `rankdir=${rankdir}, bgcolor=transparent, fontname="Inter, Helvetica, sans-serif"`;
     edgeDefaultAttrs = 'fontname="Inter, Helvetica, sans-serif"';
@@ -208,13 +211,13 @@ export function buildDomainUseCaseDotBundle(
     // ``sep`` only nudges overlap removal; ``len`` on edges actually stretches Neato/KK springs.
     graphAttrs =
       `bgcolor=transparent, fontname="Inter, Helvetica, sans-serif", ` +
-      `overlap=false, splines=spline, sep="+55,+45", pad=0.44`;
+      `overlap=${framed ? "prism" : "false"}, splines=spline, sep="${framed ? "+700,+560" : "+55,+45"}", pad=${framed ? "0.8" : "0.44"}`;
     edgeDefaultAttrs = 'fontname="Inter, Helvetica, sans-serif", len=1.45';
   } else {
     // Tighter pack: ~30 % less sep/pad/len vs previous FDP line.
     graphAttrs =
       `bgcolor=transparent, fontname="Inter, Helvetica, sans-serif", ` +
-      `overlap=scale, splines=spline, sep="+25,+22", pad=0.19`;
+      `overlap=${framed ? "false" : "scale"}, splines=spline, sep="${framed ? "+700,+560" : "+25,+22"}", pad=${framed ? "0.8" : "0.19"}`;
     edgeDefaultAttrs = 'fontname="Inter, Helvetica, sans-serif", len=0.43';
   }
 
@@ -256,6 +259,10 @@ export function buildDomainUseCaseDotBundle(
         lines.push(`    fillcolor="#ffffff";`);
         lines.push(`    penwidth=1.2;`);
         pushActionNodes("    ", mine);
+        // The domain's use cases are pulled together by invisible edges, so its boundary is a tight box and not a
+        // frame around a hole (Graphviz spreads nodes, never clusters).
+        const ids = mine.map((action) => domainUseCaseDotNodeId("a", action.id));
+        for (let i = 1; i < ids.length; i += 1) lines.push(`    ${ids[0]} -> ${ids[i]} [style=invis weight=60 len=0.5];`);
         lines.push(`  }`);
       });
     } else {
