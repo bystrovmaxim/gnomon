@@ -1,5 +1,5 @@
 # packages/maxitor-plugin-template/tests/test_notes_actions.py
-"""The actions: a person outside the organization gets nothing; a member reads and writes in the organization of the address."""
+"""The actions: a person outside the organization is refused by @access_decide and gets nothing; a member reads and writes in the organization of the address."""
 
 import pytest
 from maxitor_notes.actions.add_note_action import AddNoteAction, AddNoteParams
@@ -7,15 +7,16 @@ from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction, Li
 from maxitor_notes.actions.list_note_authors_action import ListNoteAuthorsAction, ListNoteAuthorsParams
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
+from maxitor_notes.membership import organization_access
 from maxitor_notes.notes_editor_role import NotesEditorRole
 from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.organization_member import OrganizationMember
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 from aoa.action_machine.context import Context
-from aoa.action_machine.exceptions import AuthorizationError
 from aoa.action_machine.exceptions.access_denied import AccessDenied
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
+from aoa.action_machine.intents.access_control import FORBIDDEN_OBJECT, Allowed, Gate
 from aoa.action_machine.intents.entities import entities
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
@@ -31,12 +32,16 @@ MOMENT = "2026-11-08T10:15:00.123456Z"
 class ScriptedNotesStorage(NotesStorage):
     """The storage's methods answered from memory; every call recorded."""
 
-    def __init__(self) -> None:
+    def __init__(self, membership_lasts: int | None = None) -> None:
         super().__init__(connection_params="postgresql://scripted.invalid/notes")
         self.calls: list[tuple] = []
+        self._membership_lasts = membership_lasts
 
     async def organization_of(self, code, user_id):
         self.calls.append(("organization_of", code, user_id))
+        asked = sum(1 for call in self.calls if call[0] == "organization_of")
+        if self._membership_lasts is not None and asked > self._membership_lasts:
+            return None
         return ACME if (code, user_id) == ("acme", ANN) else None
 
     async def add_note(self, organization_id, item_id, writer_id, body, operation):
@@ -56,11 +61,19 @@ def _context(organization: str, roles: tuple) -> Context:
     return Context(user=OrganizationMember(user_id=ANN, session_id="s1", roles=roles, organization=organization))
 
 
-async def _run(action, params, organization="acme", roles=(NotesReaderRole, NotesEditorRole)):
-    storage = ScriptedNotesStorage()
+async def _run(action, params, organization="acme", roles=(NotesReaderRole, NotesEditorRole), storage=None):
+    storage = storage or ScriptedNotesStorage()
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     result = await machine.run(_context(organization, roles), action, params, {NOTES_CONNECTION_KEY: storage})
     return result, storage
+
+
+#: Each action of the plugin with a valid call of it.
+ACTION_CALLS = [
+    (AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check the limits")),
+    (ListItemNotesAction(), ListItemNotesParams(item_id=ITEM)),
+    (ListNoteAuthorsAction(), ListNoteAuthorsParams(item_id=ITEM)),
+]
 
 
 async def test_a_member_writes_a_note_in_the_organization_of_the_address_as_herself() -> None:
@@ -69,22 +82,49 @@ async def test_a_member_writes_a_note_in_the_organization_of_the_address_as_hers
     assert storage.calls[-1] == ("add_note", ACME, ITEM, ANN, "Check the limits", "AddNoteAction")
 
 
-@pytest.mark.parametrize(
-    ("action", "params"),
-    [
-        (AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check the limits")),
-        (ListItemNotesAction(), ListItemNotesParams(item_id=ITEM)),
-        (ListNoteAuthorsAction(), ListNoteAuthorsParams(item_id=ITEM)),
-    ],
-)
-async def test_a_person_outside_the_organization_gets_a_refusal_and_no_data(action, params) -> None:
-    with pytest.raises(AuthorizationError):
-        await _run(action, params, organization="globex")
+@pytest.mark.parametrize(("action", "params"), ACTION_CALLS)
+async def test_each_action_declares_its_access_check_in_the_graph(action, params) -> None:
+    _ = params
+    coordinator = create_node_graph_coordinator()
+    action_ids = [node.node_id for node in coordinator.get_all_nodes() if node.node_type == "Action" and node.node_id.endswith(f".{type(action).__name__}")]
+    decisions = [source_id for source_id, _target_id, _edge in coordinator.get_edges_by_type("@access_decide") if source_id in action_ids]
+    assert len(action_ids) == 1
+    assert decisions == action_ids
+
+
+@pytest.mark.parametrize(("action", "params"), ACTION_CALLS)
+async def test_a_person_outside_the_organization_is_refused_by_access_decide_and_gets_no_data(action, params) -> None:
+    storage = ScriptedNotesStorage()
+    with pytest.raises(AccessDenied) as refusal:
+        await _run(action, params, organization="globex", storage=storage)
+    assert refusal.value.verdict == FORBIDDEN_OBJECT
+    assert refusal.value.verdict.gate is Gate.ACCESS_DECIDE
+    assert storage.calls == [("organization_of", "globex", ANN)]
+
+
+@pytest.mark.parametrize(("action", "params"), ACTION_CALLS)
+async def test_a_membership_ended_after_the_decision_is_refused_the_same_way_and_touches_nothing(action, params) -> None:
+    storage = ScriptedNotesStorage(membership_lasts=1)
+    with pytest.raises(AccessDenied) as refusal:
+        await _run(action, params, storage=storage)
+    assert refusal.value.verdict == FORBIDDEN_OBJECT
+    assert storage.calls == [("organization_of", "acme", ANN), ("organization_of", "acme", ANN)]
+
+
+@pytest.mark.parametrize(("action", "params"), ACTION_CALLS)
+@pytest.mark.parametrize(("organization", "answer"), [("acme", Allowed()), ("globex", FORBIDDEN_OBJECT)])
+async def test_access_is_answered_without_running_the_action(action, params, organization, answer) -> None:
+    storage = ScriptedNotesStorage()
+    machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
+    verdict = await machine.check_access_decide(_context(organization, (NotesReaderRole, NotesEditorRole)), type(action), params, connections={NOTES_CONNECTION_KEY: storage})
+    assert verdict == answer
+    assert storage.calls == [("organization_of", organization, ANN)]
 
 
 async def test_a_reader_cannot_write() -> None:
-    with pytest.raises(AccessDenied):
+    with pytest.raises(AccessDenied) as refusal:
         await _run(AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check"), roles=(NotesReaderRole,))
+    assert refusal.value.verdict.gate is Gate.CHECK_ROLES
 
 
 async def test_the_notes_are_read_at_the_moment_of_the_address() -> None:
@@ -103,3 +143,10 @@ async def test_the_author_list_keeps_maxitors_list_contract() -> None:
     assert [(entry.key, entry.title) for entry in result.entries] == [("p0", "Person 0"), ("p1", "Person 1")]
     assert result.next == "p1"
     assert storage.calls[-1] == ("note_authors", ACME, ITEM, None, 2, None)
+
+
+@pytest.mark.parametrize(("code", "user_id"), [(None, ANN), ("", ANN), ("acme", None), ("acme", "")])
+async def test_an_address_or_a_token_without_an_organization_or_a_person_is_refused_without_a_query(code, user_id) -> None:
+    storage = ScriptedNotesStorage()
+    assert await organization_access(storage, code, user_id) == FORBIDDEN_OBJECT
+    assert storage.calls == []
