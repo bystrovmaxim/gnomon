@@ -65,6 +65,11 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
 [[tool.mypy.overrides]]
+# The core's drivers ship no types: asyncpg for its storage's errors, botocore for signing Postbox's requests.
+module = ["asyncpg", "asyncpg.*", "botocore", "botocore.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "maxitor_notes.actions.*"
 # AOA's state checkers (@result_string) are untyped decorators; an aspect under one is still checked by its own signature.
 disable_error_code = ["untyped-decorator"]

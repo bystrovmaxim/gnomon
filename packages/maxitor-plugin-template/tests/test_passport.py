@@ -30,7 +30,7 @@ def test_a_version_other_than_x_y_z_is_refused(plugin, edit, version) -> None:
 
 def test_a_version_other_than_the_package_version_is_refused(plugin, edit) -> None:
     edit("maxitor-plugin.yaml", lambda doc: doc.update(version="9.9.9"))
-    assert check_plugin(plugin) == ["maxitor-plugin.yaml: version 9.9.9 differs from pyproject.toml's 0.2.0"]
+    assert check_plugin(plugin) == ["maxitor-plugin.yaml: version 9.9.9 differs from pyproject.toml's 0.3.0"]
 
 
 def test_a_wheel_without_its_sha256_is_refused(plugin, edit) -> None:

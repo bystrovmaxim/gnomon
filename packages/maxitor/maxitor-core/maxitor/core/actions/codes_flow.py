@@ -36,14 +36,17 @@ async def check_code_limits(box: ToolsBox, store: CoreStorage, email: str, ip: s
     """Refuse a code past the limits: one a minute and ten an hour per address, thirty an hour per IP."""
     await store.prune(at, at - KEPT_FOR_COUNTING, at - PASSWORD_WINDOW)
     minute, hour, per_ip = await store.code_counts(email, ip, at - timedelta(minutes=1), at - KEPT_FOR_COUNTING)
-    limit = None
-    if minute >= PER_ADDRESS_MINUTE:
-        limit, until = "address per minute", at + timedelta(minutes=1)
-    elif hour >= PER_ADDRESS_HOUR:
-        limit, until = "address per hour", at + KEPT_FOR_COUNTING
-    elif per_ip >= PER_IP_HOUR:
-        limit, until = "IP per hour", at + KEPT_FOR_COUNTING
-    if limit is not None:
+    reached = [
+        (count >= most, limit, until)
+        for count, most, limit, until in (
+            (minute, PER_ADDRESS_MINUTE, "address per minute", at + timedelta(minutes=1)),
+            (hour, PER_ADDRESS_HOUR, "address per hour", at + KEPT_FOR_COUNTING),
+            (per_ip, PER_IP_HOUR, "IP per hour", at + KEPT_FOR_COUNTING),
+        )
+    ]
+    for over, limit, until in reached:
+        if not over:
+            continue
         await box.warning(
             Channel.security,
             "Codes limit {%var.limit} for {%var.email_masked}",

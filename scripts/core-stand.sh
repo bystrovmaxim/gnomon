@@ -8,7 +8,8 @@
 #   ./scripts/core-stand.sh reset   removes the database and everything in it
 #
 # Letters go to .core-stand/outbox/ as .eml files; the session secret is made once in .core-stand/secret.
-# MAXITOR_GEOIP_DATABASE, if set, is passed to the backend; without it every address counts as Russia.
+# MAXITOR_GEOIP_DATABASE, if set, is passed to the backend; else .private/geoip/country.mmdb of the main checkout is used
+# when it exists; without a country database every address counts as Russia.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -53,6 +54,13 @@ up() {
   MAXITOR_SESSION_SECRET="$(cat "$STAND/secret")"
   export MAXITOR_MAIL_OUTBOX="$STAND/outbox"
   export MAXITOR_PUBLIC_URL="http://localhost:$WEB_PORT"
+  # The country database lives outside git: its licence and its monthly size keep it out of the repository.
+  local main_checkout
+  main_checkout="$(cd "$(git -C "$ROOT" rev-parse --git-common-dir)/.." && pwd)"
+  if [ -z "${MAXITOR_GEOIP_DATABASE:-}" ] && [ -f "$main_checkout/.private/geoip/country.mmdb" ]; then
+    export MAXITOR_GEOIP_DATABASE="$main_checkout/.private/geoip/country.mmdb"
+  fi
+  say "Country database: ${MAXITOR_GEOIP_DATABASE:-none, every address counts as Russia}"
   say "Running the core's migrations as maxitor_core"
   (cd "$ROOT" && uv run --all-extras --all-packages maxitor-core migrate)
   [ -d "$WEB/node_modules" ] || (cd "$WEB" && npm ci --no-audit --no-fund)

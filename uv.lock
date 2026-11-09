@@ -1319,7 +1319,7 @@ wheels = [
 
 [[package]]
 name = "maxitor"
-version = "3.29.0"
+version = "4.0.0"
 source = { editable = "packages/maxitor" }
 dependencies = [
     { name = "jsonschema" },
@@ -1435,7 +1435,7 @@ requires-dist = [
 
 [[package]]
 name = "maxitor-plugin-template"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "packages/maxitor-plugin-template" }
 dependencies = [
     { name = "aoa-action-machine", extra = ["jwt", "postgres"] },

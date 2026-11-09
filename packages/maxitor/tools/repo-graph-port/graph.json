@@ -19,6 +19,15 @@
       "type": "application"
     },
     {
+      "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction:describe_summary|@emits|maxitor.repo_graph_port.events.HistoryDescribedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction:describe_summary",
+      "target_id": "maxitor.repo_graph_port.events.HistoryDescribedEvent",
+      "type": "@emits"
+    },
+    {
       "id": "maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction:describe_summary|@required_context|maxitor.repo_graph_port.actions.describe_history_action.DescribeHistoryAction:describe_summary:reqctx:env.history_refresh_seconds",
       "is_dag": false,
       "properties": {
@@ -271,6 +280,15 @@
       "type": "field"
     },
     {
+      "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction:history_summary|@emits|maxitor.repo_graph_port.events.HistoryListedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor.repo_graph_port.actions.history_action.HistoryAction:history_summary",
+      "target_id": "maxitor.repo_graph_port.events.HistoryListedEvent",
+      "type": "@emits"
+    },
+    {
       "id": "maxitor.repo_graph_port.actions.history_action.HistoryAction:history_summary|@required_context|maxitor.repo_graph_port.actions.history_action.HistoryAction:history_summary:reqctx:env.history_refresh_seconds",
       "is_dag": false,
       "properties": {
@@ -469,6 +487,15 @@
       "type": "field"
     },
     {
+      "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction:receive_summary|@emits|maxitor.repo_graph_port.events.HostEventReceivedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction:receive_summary",
+      "target_id": "maxitor.repo_graph_port.events.HostEventReceivedEvent",
+      "type": "@emits"
+    },
+    {
       "id": "maxitor.repo_graph_port.actions.receive_host_event_action.ReceiveHostEventAction|@check_roles|aoa.action_machine.auth.guest_role.GuestRole",
       "is_dag": false,
       "properties": {},
@@ -625,6 +652,33 @@
       "type": "field"
     },
     {
+      "id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventAction:report_summary|@emits|maxitor.repo_graph_port.events.BadWebhookSignatureEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventAction:report_summary",
+      "target_id": "maxitor.repo_graph_port.events.BadWebhookSignatureEvent",
+      "type": "@emits"
+    },
+    {
+      "id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventAction:report_summary|@emits|maxitor.repo_graph_port.events.ClientBlockedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventAction:report_summary",
+      "target_id": "maxitor.repo_graph_port.events.ClientBlockedEvent",
+      "type": "@emits"
+    },
+    {
+      "id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventAction:report_summary|@emits|maxitor.repo_graph_port.events.WrongHistoryKeyEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventAction:report_summary",
+      "target_id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent",
+      "type": "@emits"
+    },
+    {
       "id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventAction|@check_roles|aoa.action_machine.auth.guest_role.GuestRole",
       "is_dag": false,
       "properties": {},
@@ -704,6 +758,15 @@
       "source_id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventParams",
       "target_id": "maxitor.repo_graph_port.actions.report_security_event_action.ReportSecurityEventParams:kind",
       "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.actions.version_action.VersionAction:version_summary|@emits|maxitor.repo_graph_port.events.HistoryVersionReadEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor.repo_graph_port.actions.version_action.VersionAction:version_summary",
+      "target_id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent",
+      "type": "@emits"
     },
     {
       "id": "maxitor.repo_graph_port.actions.version_action.VersionAction:version_summary|@required_context|maxitor.repo_graph_port.actions.version_action.VersionAction:version_summary:reqctx:env.history_refresh_seconds",
@@ -886,6 +949,132 @@
       "type": "field"
     },
     {
+      "id": "maxitor.repo_graph_port.events.BadWebhookSignatureEvent|field|maxitor.repo_graph_port.events.BadWebhookSignatureEvent:client",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.BadWebhookSignatureEvent",
+      "target_id": "maxitor.repo_graph_port.events.BadWebhookSignatureEvent:client",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.ClientBlockedEvent|field|maxitor.repo_graph_port.events.ClientBlockedEvent:client",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.ClientBlockedEvent",
+      "target_id": "maxitor.repo_graph_port.events.ClientBlockedEvent:client",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.ClientBlockedEvent|field|maxitor.repo_graph_port.events.ClientBlockedEvent:count",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.ClientBlockedEvent",
+      "target_id": "maxitor.repo_graph_port.events.ClientBlockedEvent:count",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryDescribedEvent|field|maxitor.repo_graph_port.events.HistoryDescribedEvent:history",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HistoryDescribedEvent",
+      "target_id": "maxitor.repo_graph_port.events.HistoryDescribedEvent:history",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryDescribedEvent|field|maxitor.repo_graph_port.events.HistoryDescribedEvent:reader",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HistoryDescribedEvent",
+      "target_id": "maxitor.repo_graph_port.events.HistoryDescribedEvent:reader",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryListedEvent|field|maxitor.repo_graph_port.events.HistoryListedEvent:history",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HistoryListedEvent",
+      "target_id": "maxitor.repo_graph_port.events.HistoryListedEvent:history",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryListedEvent|field|maxitor.repo_graph_port.events.HistoryListedEvent:reader",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HistoryListedEvent",
+      "target_id": "maxitor.repo_graph_port.events.HistoryListedEvent:reader",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent|field|maxitor.repo_graph_port.events.HistoryVersionReadEvent:history",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent",
+      "target_id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent:history",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent|field|maxitor.repo_graph_port.events.HistoryVersionReadEvent:reader",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent",
+      "target_id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent:reader",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HostEventReceivedEvent|field|maxitor.repo_graph_port.events.HostEventReceivedEvent:changed",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HostEventReceivedEvent",
+      "target_id": "maxitor.repo_graph_port.events.HostEventReceivedEvent:changed",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HostEventReceivedEvent|field|maxitor.repo_graph_port.events.HostEventReceivedEvent:kind",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HostEventReceivedEvent",
+      "target_id": "maxitor.repo_graph_port.events.HostEventReceivedEvent:kind",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HostEventReceivedEvent|field|maxitor.repo_graph_port.events.HostEventReceivedEvent:repository",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.HostEventReceivedEvent",
+      "target_id": "maxitor.repo_graph_port.events.HostEventReceivedEvent:repository",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent|field|maxitor.repo_graph_port.events.WrongHistoryKeyEvent:client",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent",
+      "target_id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent:client",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent|field|maxitor.repo_graph_port.events.WrongHistoryKeyEvent:history",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent",
+      "target_id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent:history",
+      "type": "field"
+    },
+    {
       "id": "maxitor.repo_graph_port.history_reader_role.HistoryReaderRole|application|aoa.action_machine.application.application.Application",
       "is_dag": true,
       "properties": {},
@@ -902,6 +1091,69 @@
       "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
       "target_id": "aoa.action_machine.application.application.Application",
       "type": "application"
+    },
+    {
+      "id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain|domain_event|maxitor.repo_graph_port.events.BadWebhookSignatureEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
+      "target_id": "maxitor.repo_graph_port.events.BadWebhookSignatureEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain|domain_event|maxitor.repo_graph_port.events.ClientBlockedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
+      "target_id": "maxitor.repo_graph_port.events.ClientBlockedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain|domain_event|maxitor.repo_graph_port.events.HistoryDescribedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
+      "target_id": "maxitor.repo_graph_port.events.HistoryDescribedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain|domain_event|maxitor.repo_graph_port.events.HistoryListedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
+      "target_id": "maxitor.repo_graph_port.events.HistoryListedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain|domain_event|maxitor.repo_graph_port.events.HistoryVersionReadEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
+      "target_id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain|domain_event|maxitor.repo_graph_port.events.HostEventReceivedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
+      "target_id": "maxitor.repo_graph_port.events.HostEventReceivedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain|domain_event|maxitor.repo_graph_port.events.WrongHistoryKeyEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.repo_graph_port.repo_graph_domain.RepoGraphDomain",
+      "target_id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent",
+      "type": "domain_event"
     }
   ],
   "nodes": [
@@ -1594,6 +1846,202 @@
       "type": "Field"
     },
     {
+      "id": "maxitor.repo_graph_port.events.BadWebhookSignatureEvent",
+      "label": "BadWebhookSignatureEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.BadWebhookSignatureEvent:client",
+      "label": "client",
+      "properties": {
+        "description": "The line's client",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.ClientBlockedEvent",
+      "label": "ClientBlockedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.ClientBlockedEvent:client",
+      "label": "client",
+      "properties": {
+        "description": "The line's client",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.ClientBlockedEvent:count",
+      "label": "count",
+      "properties": {
+        "description": "The line's count",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryDescribedEvent",
+      "label": "HistoryDescribedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryDescribedEvent:history",
+      "label": "history",
+      "properties": {
+        "description": "The line's history",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryDescribedEvent:reader",
+      "label": "reader",
+      "properties": {
+        "description": "The line's reader",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryListedEvent",
+      "label": "HistoryListedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryListedEvent:history",
+      "label": "history",
+      "properties": {
+        "description": "The line's history",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryListedEvent:reader",
+      "label": "reader",
+      "properties": {
+        "description": "The line's reader",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent",
+      "label": "HistoryVersionReadEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent:history",
+      "label": "history",
+      "properties": {
+        "description": "The line's history",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HistoryVersionReadEvent:reader",
+      "label": "reader",
+      "properties": {
+        "description": "The line's reader",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HostEventReceivedEvent",
+      "label": "HostEventReceivedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HostEventReceivedEvent:changed",
+      "label": "changed",
+      "properties": {
+        "description": "The line's changed",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HostEventReceivedEvent:kind",
+      "label": "kind",
+      "properties": {
+        "description": "The line's kind",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.HostEventReceivedEvent:repository",
+      "label": "repository",
+      "properties": {
+        "description": "The line's repository",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent",
+      "label": "WrongHistoryKeyEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent:client",
+      "label": "client",
+      "properties": {
+        "description": "The line's client",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.repo_graph_port.events.WrongHistoryKeyEvent:history",
+      "label": "history",
+      "properties": {
+        "description": "The line's history",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor.repo_graph_port.history_reader_role.HistoryReaderRole",
       "label": "HistoryReaderRole",
       "properties": {
@@ -1608,7 +2056,7 @@
       "properties": {
         "description": "A graph's history read from the repository that keeps its file: versions, tags, graphs",
         "name": "repo_graph",
-        "typed_events": false
+        "typed_events": true
       },
       "type": "Domain"
     },

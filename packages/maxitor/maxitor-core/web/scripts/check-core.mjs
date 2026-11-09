@@ -99,6 +99,12 @@ await scenario("from an unknown address only email, Yandex ID and Mail.ru ID are
   expect(JSON.stringify(offered) === JSON.stringify(["Yandex ID", "Mail.ru ID"]), `offered ${offered}`);
 });
 
+await scenario("Google from an unknown address leads to the refusal, not to Google", async () => {
+  await page.goto(`${BASE}/api/v1/sign-in/google/start`);
+  await page.waitForURL("**/sign-in/refused?provider=google");
+  await page.getByText("Google does not work from Russia.").waitFor();
+});
+
 await scenario("sign up by email, confirm with the letter's code, consent, register an organization", async () => {
   await page.goto(`${BASE}/sign-up`);
   const sent = Date.now() - 1000;

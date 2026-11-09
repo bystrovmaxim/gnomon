@@ -23,7 +23,7 @@ export default function PrivacyPage() {
         <li>To follow Russian law on how a person in Russia may sign in: that is what the country by IP is for.</li>
       </ul>
       <h3>Where and who else</h3>
-      <p>Your data lives in Maxitor’s database on a server in Russia. Letters with codes are sent through Yandex Cloud Postbox. When you sign in with a service, it sees that you sign in to Maxitor. We do not sell your data and do not show it to anyone else.</p>
+      <p>Your data lives in Maxitor’s database on a server in Russia. Letters with codes are sent through Yandex Cloud Postbox. The country of an IP address is looked up in <a className="lnk" href="https://db-ip.com">IP Geolocation by DB-IP</a>, a file on Maxitor’s own server; your address is not sent anywhere for it. When you sign in with a service, it sees that you sign in to Maxitor. We do not sell your data and do not show it to anyone else.</p>
       <h3 id="cookies">Cookies</h3>
       <p>Maxitor sets one cookie, <code>__Host-maxitor_session</code>, that keeps you signed in; it is deleted when you sign out. While you sign in, two short cookies hold the step you are on and are deleted when it ends. Your answer to the cookie banner is kept in your browser. There are no analytics, advertising or third-party cookies.</p>
       <h3>How long</h3>
