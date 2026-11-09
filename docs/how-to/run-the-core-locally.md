@@ -12,6 +12,8 @@ The first time it starts PostgreSQL 16 in Docker on `127.0.0.1:55432`, creates t
 
 Open `http://localhost:3000`. A letter with a code is a file in `.core-stand/outbox/`; its subject begins with the code.
 
+To send the letters for real, through Yandex Cloud Postbox from `no-reply@maxitor.aoa.run`, put the Postbox key at `.private/postbox/postbox-key.json` of the main checkout and start with `MAXITOR_STAND_MAIL=postbox ./scripts/core-stand.sh up`.
+
 ## What you can try
 
 - **Create an account**: "Create one", an email and a password of at least 10 characters, the code from the newest letter, the consent box, then register an organization. You land in its empty frame at `/w/<code>`.

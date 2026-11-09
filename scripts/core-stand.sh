@@ -7,7 +7,9 @@
 #   ./scripts/core-stand.sh down    stops the database
 #   ./scripts/core-stand.sh reset   removes the database and everything in it
 #
-# Letters go to .core-stand/outbox/ as .eml files; the session secret is made once in .core-stand/secret.
+# Letters go to .core-stand/outbox/ as .eml files; with MAXITOR_STAND_MAIL=postbox they are sent for real through
+# Yandex Cloud Postbox with the key .private/postbox/postbox-key.json of the main checkout.
+# The session secret is made once in .core-stand/secret.
 # MAXITOR_GEOIP_DATABASE, if set, is passed to the backend; else .private/geoip/country.mmdb of the main checkout is used
 # when it exists; without a country database every address counts as Russia.
 set -euo pipefail
@@ -52,11 +54,19 @@ up() {
   export MAXITOR_CORE_DSN="postgresql://maxitor_core:$CORE_PASSWORD@127.0.0.1:$DB_PORT/maxitor"
   export MAXITOR_SESSION_SECRET
   MAXITOR_SESSION_SECRET="$(cat "$STAND/secret")"
-  export MAXITOR_MAIL_OUTBOX="$STAND/outbox"
   export MAXITOR_PUBLIC_URL="http://localhost:$WEB_PORT"
-  # The country database lives outside git: its licence and its monthly size keep it out of the repository.
+  # The country database and the Postbox key live outside git, in .private of the main checkout.
   local main_checkout
   main_checkout="$(cd "$(git -C "$ROOT" rev-parse --git-common-dir)/.." && pwd)"
+  if [ "${MAXITOR_STAND_MAIL:-outbox}" = "postbox" ]; then
+    export MAXITOR_POSTBOX_KEY_FILE="${MAXITOR_POSTBOX_KEY_FILE:-$main_checkout/.private/postbox/postbox-key.json}"
+    [ -f "$MAXITOR_POSTBOX_KEY_FILE" ] || { echo "no Postbox key at $MAXITOR_POSTBOX_KEY_FILE" >&2; exit 1; }
+    unset MAXITOR_MAIL_OUTBOX
+    say "Letters: sent through Yandex Cloud Postbox"
+  else
+    export MAXITOR_MAIL_OUTBOX="$STAND/outbox"
+    say "Letters: written to $MAXITOR_MAIL_OUTBOX"
+  fi
   if [ -z "${MAXITOR_GEOIP_DATABASE:-}" ] && [ -f "$main_checkout/.private/geoip/country.mmdb" ]; then
     export MAXITOR_GEOIP_DATABASE="$main_checkout/.private/geoip/country.mmdb"
   fi
