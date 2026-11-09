@@ -30,3 +30,17 @@ export function hideWhatLeaves(svg: Element, staying: ReadonlySet<string>): numb
   }
   return left;
 }
+
+/**
+ * The folded box of ``svg`` that holds one of ``owners`` — the tables a change belongs to — by ``holder`` (a table's id to
+ * the frame folded over it): what a step to a change inside a folded frame lights and centres (#89).
+ */
+export function foldedBoxOf(svg: ParentNode, holder: ReadonlyMap<string, string>, owners: readonly string[]): SVGElement | null {
+  for (const owner of owners) {
+    const box = holder.get(owner);
+    if (!box) continue;
+    const node = [...svg.querySelectorAll<SVGElement>("g.node")].find((each) => each.querySelector(":scope > title")?.textContent?.trim() === box);
+    if (node) return node;
+  }
+  return null;
+}

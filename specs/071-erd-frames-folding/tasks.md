@@ -103,3 +103,20 @@ One phase = one commit, referencing (#80); the phases are the seven of issue #80
 ## Order
 
 Phase 1 → 2 → 3 → 4 → 5 → 6 → 7. Phase 2 builds on the frames of phase 1; phase 5 moves the layouts of phases 1–2 into the worker and measures after phases 3–4 have changed what a paint and a filter do. Inside a phase, tasks marked [P] touch different files and may run side by side.
+
+## Phase 8: Convergence
+
+Found by bystrovmaxim/gnomon#89 on the demo's history at maxitor.aoa.run.
+
+- [x] T051 With Boundary off the logical view folds nothing: `ErdGraphvizCanvas.tsx` hands `foldPlan` no folded frame while the frames are not drawn, every table is drawn and every line is its own, and the folds stay in the address for when the frames come back; a test that a model with folded frames, drawn with Boundary off, has no `dc:` or `rc:` node and no bundle, in Dot, Neato, FDP and Circo per Edge case "The logical view with frames off" (contradicts)
+- [x] T052 No dimming outlives what lit it: find which dimming stays on in the side-by-side view of #89 section 4 — a hover's, a change step's, a picked element's — end it with what lit it, and make a step to a change the drawing does not show dim nothing; a test that repeats those steps and checks the drawing after each per Assumption "hover highlight reused" (contradicts)
+- [x] T053 A hover on any table dims the others, near and from afar, in every layout: find why `InterchangeAssessmentSliceCoreEntity` in Circo with frames off dims nothing (#89 section 5) and fix it; a test that hovers every table of that view per US4/AC2 (partial)
+- [x] T054 With frames off, Dot wraps the drawing's unlinked parts into columns (`dotWrap`), the drawing about as wide as tall, as with frames on; a test on the demo with Boundary off per FR-006 (partial)
+- [x] T055 The frame's card keeps its head at the top and the pointed table's block at the bottom, only the list of tables scrolling; the bottom block's height fixed when the card opens, to fit its longest name and description; tests that the block stays in view on a domain of 45 tables and keeps one height while the pointer moves over descriptions of one and of three lines per US4/AC1 (partial)
+- [x] T056 A step through changes shows every change: a change inside a folded frame lights and centres the folded box, and its card names the change; a change the drawing does not hold is said so; a test over every change of the side-by-side view of #89 section 3 per FR-005 and Assumption "Diff reused" (partial)
+- [x] T057 Versions, documentation of the ERD card, the change steps and Boundary, and one changelog article, written last per FR-020 (missing)
+- [x] T058 The card's foot keeps the last row when the pointer leaves the list, its height following what it says, so a foot that grows over the pointer never shakes the list per FR-021 (contradicts)
+- [x] T059 Switching Boundary replaces the old drawing by the new one in one step, fitted: no frame with the leaving tables hidden, no fit of the old drawing; the resize observer set up once; the ERD's steps of the layout determinism check switch Boundary off and on per FR-008 (contradicts)
+- [x] T060 A marked row's type ends at its cell's right edge when its text is hidden from afar and measures nothing per US4/AC2 (contradicts)
+- [x] T061 The highlight is held while the pointer is on the card of what is lit, and let go when the card closes per US4/AC2 (partial)
+- [x] T062 The logical and the physical view each keep their own layout and tables' collapse; the room knows the physical view's settings and the events explorer's halves per FR-004 (missing)

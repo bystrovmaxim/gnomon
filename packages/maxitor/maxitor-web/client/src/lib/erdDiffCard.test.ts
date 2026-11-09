@@ -69,3 +69,18 @@ describe("a lifecycle's row", () => {
     expect(erdChanges(marked.entities!, []).map((change) => change.title)).toEqual(["lifecycle"]);
   });
 });
+
+describe("the tables a change belongs to (#89)", () => {
+  it("are the table itself, the table of a row, and both ends of a line", () => {
+    const entities = [
+      { id: "shop.Order", label: "Order", diff: "added" as const, fields: [{ name: "total", type: "int", diff: "changed" as const }] },
+      { id: "shop.Line", label: "Line", fields: [] },
+    ];
+    const relations = [{ source: "shop.Line", target: "shop.Order", relationship_kind: "association", diff: "removed" as const }];
+    const owners = Object.fromEntries(erdChanges(entities, relations).map((change) => [change.key, change.owners]));
+    expect(owners["shop.Order"]).toEqual(["shop.Order"]);
+    expect(owners["shop.Order:total"]).toEqual(["shop.Order"]);
+    expect(Object.values(owners)).toContainEqual(["shop.Line", "shop.Order"]);
+  });
+});
+

@@ -839,6 +839,10 @@ const ERD_CHANGES: VisualChange[] = [
   // The two views of spec 070: the physical one frames each database round its copies, the logical one each domain.
   { label: "physical view", act: click('[data-testid="erd-model-physical"]') },
   { label: "logical view", act: click('[data-testid="erd-model-logical"]') },
+  // The frames switched off and on again: the old drawing stays as it is until the new one replaces it, fitted, with no
+  // frame between and no jump of the old one (#89).
+  { label: "boundary off", act: async (tab) => void (await waitInPage(tab, clickLabelInPage, "Boundary", HASH_TIMEOUT_MS, "Boundary")) },
+  { label: "boundary on", act: async (tab) => void (await waitInPage(tab, clickLabelInPage, "Boundary", HASH_TIMEOUT_MS, "Boundary")) },
 ];
 const ONE_DOMAIN_CHANGES: VisualChange[] = [
   { label: "1-hop off", act: async (tab) => void (await waitInPage(tab, clickLabelInPage, "1-hop", HASH_TIMEOUT_MS, "1-hop")) },

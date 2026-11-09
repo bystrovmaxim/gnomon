@@ -16,7 +16,11 @@ import { MARK_LOOK, type CardTarget } from "@/lib/erdDiffCard";
 import { isFollowing } from "@/rooms/focusStore";
 
 /** One change a Graphviz diagram draws: what it steps to, and its card where it has one. */
-export type GraphvizChange = ChangeEntry & { cell: string; card: CardTarget | null };
+/**
+ * A change of a Graphviz diagram: the element it lights, its card, and the nodes it belongs to — a table, the table of a
+ * row, the two ends of a line — so a change inside a folded frame can stand on the frame's box (#89).
+ */
+export type GraphvizChange = ChangeEntry & { cell: string; card: CardTarget | null; owners?: readonly string[] };
 
 /** An open card and where it stands, in the stage's pixels. */
 export type OpenCard = { target: CardTarget; at: { x: number; y: number } };
@@ -43,10 +47,12 @@ export type GraphvizChangeSteppingOptions = {
   /** What names a node on this drawing, and the refs across a pair; for Side by side. */
   nodeKind?: "node" | "table";
   portable?: Portable | null;
+  /** What stands on the drawing for a change whose own element is not drawn — the folded box that holds it. */
+  standIn?: (change: GraphvizChange) => SVGElement | null;
 };
 
 /** The card and the position of a Graphviz diagram's steps, and ``openCard`` for a click that opens one. */
-export function useGraphvizChangeStepping({ changes, pannerRef, viewportRef, panZoom, svgMarkup, nodeKind = "node", portable }: GraphvizChangeSteppingOptions) {
+export function useGraphvizChangeStepping({ changes, pannerRef, viewportRef, panZoom, svgMarkup, nodeKind = "node", portable, standIn }: GraphvizChangeSteppingOptions) {
   const half = useHalf();
   const writesPair = writesForPair(half);
   const [, setSelected] = usePageSetting<ElementRef | null>("selected", null);
@@ -55,7 +61,14 @@ export function useGraphvizChangeStepping({ changes, pannerRef, viewportRef, pan
   changesRef.current = changes;
   const [position, setPosition] = useState<number | null>(null);
   useEffect(() => setPosition(null), [changes]);
-  const cellOf = useCallback((index: number) => pannerRef.current?.querySelector<SVGElement>(`[id="${changesRef.current[index]?.cell}"]`) ?? null, [pannerRef]);
+  const standInRef = useRef(standIn);
+  standInRef.current = standIn;
+  // A change's own element; for one the drawing does not show — inside a folded frame — what stands for it.
+  const cellOf = useCallback((index: number) => {
+    const change = changesRef.current[index];
+    if (!change) return null;
+    return pannerRef.current?.querySelector<SVGElement>(`[id="${change.cell}"]`) ?? standInRef.current?.(change) ?? null;
+  }, [pannerRef]);
   const showCard = useCallback(
     (index: number) => {
       const target = changesRef.current[index]?.card;

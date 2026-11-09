@@ -182,6 +182,8 @@ An architect of a large company opens the whole system's ERD of a model of 1 000
 - **FR-018**: The whole system's ERD keeps its layout, look and interactions on a model of up to 5 000 tables; on a model of 1 000 tables it meets the targets of SC-007.
 - **FR-019**: A generator of large models and a measurement on models of 1 000 and 5 000 tables are kept with the checks; the measurement records the time to the first picture and to each interaction, before and after this work.
 - **FR-020**: Every changed level raises its version; the graph files are rebuilt if they change; the documentation of the ERD, the filter panel and the filters of every diagram is updated; the changelog says what this work made.
+- **FR-021**: A frame's card keeps its head — the frame's name, kind and description — at its top and the block of the table under the pointer at its bottom; only the list of its tables scrolls. The bottom block has one height for the whole card, set when the card opens to fit the longest name and description among its tables, so pointing from table to table never moves the list under the pointer.
+- **FR-022**: A step through the changes shows each change on the drawing: a change inside a folded frame lights and centres the folded box, whose card names the change; a change the drawing does not show says so, and dims nothing.
 
 ### Key Entities
 

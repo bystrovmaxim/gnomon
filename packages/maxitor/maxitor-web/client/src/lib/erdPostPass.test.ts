@@ -1,7 +1,7 @@
 // src/lib/erdPostPass.test.ts
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addEndLabelBadgesLazily, bindLineHover, erdBundleSx, erdDetailSx, FAR_NAMES_CLASS, FAR_NAMES_SCALE, FAR_ROWS_CLASS, FAR_ROWS_SCALE, GREEK_CLASS, GREEK_NAME_CLASS, seenFromAfar, setErdDetail, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addEndLabelBadgesLazily, bindLineHover, clearTableFocus, holdTableFocus, erdBundleSx, erdDetailSx, FAR_NAMES_CLASS, FAR_NAMES_SCALE, FAR_ROWS_CLASS, FAR_ROWS_SCALE, GREEK_CLASS, GREEK_NAME_CLASS, seenFromAfar, setErdDetail, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
 
 // Markup shaped like Graphviz's: Player (0) has id, gender and an FK row named showcase twice
 // (own row and FK row); Showcase (1) has id and players; Gender (2) has id.
@@ -604,5 +604,49 @@ describe("the level of detail (spec 071)", () => {
     expect(svg.querySelectorAll(`.${GREEK_CLASS}`)).toHaveLength(2);
     // Every text hidden from afar has its bar shown in its place.
     expect(erdDetailSx[`& svg.${FAR_ROWS_CLASS} .${GREEK_CLASS}` as keyof typeof erdDetailSx]).toEqual({ display: "inline" });
+  });
+});
+
+describe("a marked row's type, seen from afar (#89)", () => {
+  it("ends at its cell's right edge when its text is hidden and measures nothing, never over the field's name", () => {
+    document.body.innerHTML =
+      `<svg><g class="node"><g id="a_ft0_1"><a><polygon fill="#ffffff" points="100,10 300,10 300,30 100,30 100,10"/>` +
+      `<text x="180" y="24" font-size="10">IdentityEmailFactorCoreEntity</text></a></g></g></svg>`;
+    const text = document.querySelector("text")!;
+    // From afar the rows' text is hidden: the browser measures it as 0.
+    Object.defineProperty(text, "getComputedTextLength", { value: () => 0 });
+    markRows(document, ["ft0_1"], true);
+    expect(text.getAttribute("text-anchor")).toBe("end");
+    expect(Number(text.getAttribute("x"))).toBe(296);
+    // Unmarked, the text is as it was drawn.
+    markRows(document, ["ft0_1"], false);
+    expect(text.getAttribute("x")).toBe("180");
+    expect(text.hasAttribute("text-anchor")).toBe(false);
+  });
+
+  it("ends where its measured text ends when it is shown", () => {
+    document.body.innerHTML = `<svg><g class="node"><g id="a_ft0_1"><a><polygon points="100,10 300,10 300,30 100,30"/><text x="180" y="24">str</text></a></g></g></svg>`;
+    const text = document.querySelector("text")!;
+    Object.defineProperty(text, "getComputedTextLength", { value: () => 20 });
+    markRows(document, ["ft0_1"], true);
+    expect(Number(text.getAttribute("x"))).toBe(200);
+  });
+});
+
+describe("the highlight held while the pointer is on the card (#89)", () => {
+  it("stays while held, whatever leaves the table, and goes when released", () => {
+    const { root } = mount();
+    focusTables(root, new Set(["Player"]));
+    const dimmed = () => [...root.querySelectorAll<SVGElement>("g.node")].filter((node) => node.style.opacity === "0.35").length;
+    expect(dimmed()).toBe(2);
+    holdTableFocus(root, true);
+    clearTableFocus(root);
+    expect(dimmed()).toBe(2);
+    holdTableFocus(root, false);
+    expect(dimmed()).toBe(0);
+    // Released, a clear clears again.
+    focusTables(root, new Set(["Player"]));
+    clearTableFocus(root);
+    expect(dimmed()).toBe(0);
   });
 });

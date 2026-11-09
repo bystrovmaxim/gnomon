@@ -1,6 +1,7 @@
 // src/lib/erdViews.test.ts
 import { describe, expect, it } from "vitest";
-import { copyEntity, copyId, copyResource, viewLayout } from "@/lib/erdViews";
+import { copyEntity, copyId, copyResource, viewLayout, erdViewSetting } from "@/lib/erdViews";
+import { settingOfHalf } from "@/lib/half";
 
 describe("a copy's id (spec 070)", () => {
   it("names the entity and the resource, and the Not stored copy with no resource", () => {
@@ -25,5 +26,19 @@ describe("the layout of a view (spec 070)", () => {
   it("keeps another engine in the physical view too", () => {
     expect(viewLayout("physical", "gv-fdp")).toEqual({ layout: "gv-fdp", framed: true });
     expect(viewLayout("physical", "gv-circo")).toEqual({ layout: "gv-circo", framed: true });
+  });
+});
+
+describe("each view keeps its own layout and collapse (#89)", () => {
+  it("names the logical view's settings plainly and the physical view's apart", () => {
+    expect(erdViewSetting("logical", "layout")).toBe("layout");
+    expect(erdViewSetting("physical", "layout")).toBe("physical_layout");
+    expect(erdViewSetting("physical", "fields_collapsed")).toBe("physical_fields_collapsed");
+    expect(erdViewSetting("physical", "fields_except")).toBe("physical_fields_except");
+  });
+
+  it("gives the physical layout a half of its own in Side by side, and an address", () => {
+    expect(settingOfHalf("physical_layout", { side: "a" } as never)).toBe("physical_layout_a");
+    expect(settingOfHalf("physical_fields_collapsed", { side: "a" } as never)).toBe("physical_fields_collapsed");
   });
 });

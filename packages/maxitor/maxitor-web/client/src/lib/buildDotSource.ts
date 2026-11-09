@@ -515,7 +515,9 @@ export function tableResource(entity: ErdEntity): string | null {
  * drawn.
  */
 export function foldPlan(data: ErdGraphPayload): ErdFoldPlan {
-  const folded = data.folded_contours ?? new Set<string>();
+  // A drawing without frames — the logical view with Boundary off — has nothing to fold: every table is drawn and every
+  // line is its own, and the folds wait in the address for the frames to come back (spec 071, edge cases).
+  const folded = data.model ? (data.folded_contours ?? new Set<string>()) : new Set<string>();
   const holder = new Map<string, string>();
   const counts = new Map<string, ErdFoldCount>();
   const count = (id: string) => {

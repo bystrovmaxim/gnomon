@@ -150,8 +150,13 @@ def _settings_named_in(relative: str) -> set[str]:
     """Every page setting a client file names: ``usePageSetting("<name>", …)``, and both paints where it picks one."""
     source = (_CLIENT / relative).read_text(encoding="utf-8")
     names = set(re.findall(r'usePageSetting(?:<[^>]*>)?\(\s*"([a-z_]+)"', source))
+    # A setting the ERD keeps per view (#89): the logical view's plain name, the physical view's own.
+    for name in re.findall(r'ofView\(\s*"([a-z_]+)"\s*\)', source):
+        names |= {name, f"physical_{name}"}
     if "paintSettingName(" in source or '"paint_diff"' in source:
         names |= {"paint", "paint_diff"}
+    # A layout setting has a half of its own in Side by side (spec 044).
+    names |= {f"{name}_{side}" for name in names & {"layout", "physical_layout", "rankdir"} for side in ("a", "b")}
     return names
 
 
