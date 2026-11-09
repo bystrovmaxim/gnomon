@@ -529,17 +529,16 @@ export function ErdGraphvizCanvas({
   // compares layouts under (FR-093).
   const layoutPair = useSvgLayoutPair(rawSvg, `${erdGraphvizEngine(layout)}\n${dot}`);
 
-  // Reset fit flag whenever the DOT source changes (new diagram, layout mode, or 1-hop toggle)
-  // so the next SVG insertion always re-fits
-  // A new drawing — other tables, another layout mode — fits again; new colours alone keep the view.
-  const prevDrawingRef = useRef<{ data: unknown; layout: unknown } | null>(null);
+  // A new graph and another layout mode fit again; a filter, a fold or new colours keep the camera where the person
+  // put it (spec 071, FR-018) — the drawing they toggled a filter on must not jump under them.
+  const prevDrawingRef = useRef<{ bundle: unknown; layout: unknown } | null>(null);
   useLayoutEffect(() => {
     const previous = prevDrawingRef.current;
-    if (!previous || previous.data !== drawnData || previous.layout !== layout) {
-      prevDrawingRef.current = { data: drawnData, layout };
+    if (!previous || previous.bundle !== bundleVersion || previous.layout !== layout) {
+      prevDrawingRef.current = { bundle: bundleVersion, layout };
       resetFitFlag();
     }
-  }, [drawnData, layout, resetFitFlag]);
+  }, [bundleVersion, layout, resetFitFlag]);
 
   useEffect(() => {
     let cancelled = false;
