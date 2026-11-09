@@ -23,3 +23,13 @@ export function defaultPaint(diff: boolean): PaintSection {
 export function paintSource(sections: readonly PaintSection[], chosen: PaintSection): PaintSection {
   return sections.includes(chosen) ? chosen : (sections[0] ?? "domains");
 }
+
+/**
+ * The section that paints an ERD. A section the reader chose paints whenever the diagram offers it, in either view;
+ * with no choice yet (``null``) the physical view of One paints by resource and every other view by its default
+ * (spec 070, issue 73). "No choice" is kept apart from "Domains" so that choosing Domains in the physical view sticks.
+ */
+export function erdPaintSource(sections: readonly PaintSection[], chosen: PaintSection | null, physical: boolean, diff: boolean): PaintSection {
+  if (chosen !== null) return paintSource(sections, chosen);
+  return paintSource(sections, physical && !diff ? "resources" : defaultPaint(diff));
+}

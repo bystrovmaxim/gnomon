@@ -1,7 +1,7 @@
 // src/lib/erdPaint.test.ts
 import { afterEach, describe, expect, it } from "vitest";
 import { buildDotSource, ERD_DIFF_COLOUR, erdDiffMarks, setErdPaint, type ErdDiff, type ErdEntity } from "@/lib/buildDotSource";
-import { defaultPaint, paintSettingName, paintSource } from "@/lib/erdPaint";
+import { defaultPaint, erdPaintSource, paintSettingName, paintSource } from "@/lib/erdPaint";
 
 const DOMAIN = "#e11d48";
 const KIND = "#3b82f6";
@@ -107,5 +107,30 @@ describe("the paint by resource (spec 061)", () => {
 
   it("does not change what a page starts with", () => {
     expect([defaultPaint(false), defaultPaint(true)]).toEqual(["domains", "changes"]);
+  });
+});
+
+describe("the ERD's paint switch in the physical view (issue 73)", () => {
+  const physical = ["domains", "kinds", "resources"] as const;
+
+  it("paints by domain when the reader chooses Domains", () => {
+    expect(erdPaintSource(physical, "domains", true, false)).toBe("domains");
+  });
+
+  it("paints by resource while the switch is left alone", () => {
+    expect(erdPaintSource(physical, null, true, false)).toBe("resources");
+  });
+
+  it("paints the logical view by domain with no choice, and by the chosen section with one", () => {
+    expect(erdPaintSource(["domains", "kinds"], null, false, false)).toBe("domains");
+    expect(erdPaintSource(["domains", "kinds"], "kinds", false, false)).toBe("kinds");
+  });
+
+  it("paints Diff by its changes with no choice, in either view", () => {
+    expect(erdPaintSource(["domains", "resources", "changes"], null, true, true)).toBe("changes");
+  });
+
+  it("falls back to Domains in the physical view of a diagram without resources", () => {
+    expect(erdPaintSource(["domains", "kinds"], null, true, false)).toBe("domains");
   });
 });
