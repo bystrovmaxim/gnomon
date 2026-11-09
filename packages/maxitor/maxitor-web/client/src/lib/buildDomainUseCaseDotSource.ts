@@ -2,6 +2,7 @@
 import type { DiffStatus } from "@/api/compare";
 import { ERD_DIFF_COLOUR, ERD_DIFF_SIGN } from "./buildDotSource.ts";
 import type { DomainUseCaseDiagramPayload } from "@/model/domainUseCaseDiagram";
+import { DOMAIN_CONTOUR_ID_PREFIX } from "./buildDotSource.ts";
 
 export type DomainUseCaseRankdir = "LR" | "TB";
 
@@ -252,23 +253,59 @@ export function buildDomainUseCaseDotBundle(
   if (layout?.foldedAll) {
     const home = new Map(actions.map((action) => [action.id, action.domain_id]));
     const domains = [...new Set(actions.map((action) => action.domain_id))];
-    const labelOf = (domainId: string) => actions.find((action) => action.domain_id === domainId)?.domain_short_label ?? domainId;
+    const first = (domainId: string) => actions.find((action) => action.domain_id === domainId);
+    const labelOf = (domainId: string) => first(domainId)?.domain_short_label ?? domainId;
+    const colourOf = (domainId: string) => first(domainId)?.accent_color ?? "#64748b";
     domains.forEach((domainId, at) => {
-      lines.push(`  domain_${at} [shape=box style="rounded,filled" label="${dotEscLabel(labelOf(domainId))}" color="#64748b" fontcolor="#0f172a" fillcolor="#ffffff" penwidth=1.2];`);
+      const colour = colourOf(domainId);
+      // The box keeps its domain's name and colour and carries the domain frame's id, so the disk is added to it as
+      // to a frame (spec 071).
+      lines.push(`  domain_${at} [id="${dotEscAttr(`${DOMAIN_CONTOUR_ID_PREFIX}${domainId}`)}" shape=box style="rounded,filled" label="${dotEscLabel(labelOf(domainId))}" color="${colour}" fontcolor="${colour}" fillcolor="#ffffff" penwidth=1.4];`);
     });
-    const pairs = new Map<string, { from: number; to: number; count: number }>();
+    // The roles stay as they are, standing outside every boundary.
+    const imgUrl = dotEscAttr(imageOptions.roleActorImageUrl);
+    for (const r of roles) {
+      const nid = domainUseCaseDotNodeId("r", r.id);
+      const rl = htmlEsc(r.short_label || r.label);
+      const actor = buildRoleActorDataUrl(r.diff);
+      if (actor) actionImages.push({ path: actor, width: "52px", height: "74px" });
+      const img = actor ? dotEscAttr(actor) : imgUrl;
+      const text = r.diff && r.diff !== "unchanged" ? `<FONT POINT-SIZE="10" COLOR="${ERD_DIFF_COLOUR[r.diff]}">${rl}</FONT>` : `<FONT POINT-SIZE="10">${rl}</FONT>`;
+      lines.push(
+        `  ${nid} [shape=plaintext margin=0 label=<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="-8" CELLPADDING="0"><TR><TD FIXEDSIZE="TRUE" WIDTH="52" HEIGHT="74"><IMG SRC="${img}" WIDTH="52" HEIGHT="74"/></TD></TR><TR><TD HEIGHT="12">${text}</TD></TR></TABLE>>${nodeMark(r.diff, r.short_label || r.label, r.id)}];`,
+      );
+    }
+    // The links: a role to the domains of its use cases, and a domain to another.
+    const roleDomains = new Map<string, Set<string>>();
+    const pairs = new Map<string, { from: string; to: string; count: number }>();
     for (const edge of edges) {
-      const from = domains.indexOf(home.get(edge.source_id) ?? "");
-      const to = domains.indexOf(home.get(edge.target_id) ?? "");
-      if (from < 0 || to < 0 || from === to) continue;
-      const [a, b] = from < to ? [from, to] : [to, from];
-      const key = `${a}-${b}`;
-      const pair = pairs.get(key) ?? { from: a, to: b, count: 0 };
+      if (edge.edge_kind === "association") {
+        const domainId = home.get(edge.source_id);
+        if (!domainId) continue;
+        const set = roleDomains.get(edge.target_id) ?? new Set<string>();
+        set.add(domainId);
+        roleDomains.set(edge.target_id, set);
+        continue;
+      }
+      const from = home.get(edge.source_id);
+      const to = home.get(edge.target_id);
+      if (!from || !to || from === to) continue;
+      const key = [from, to].sort().join("\u0000");
+      const pair = pairs.get(key) ?? { from, to, count: 0 };
       pair.count += 1;
       pairs.set(key, pair);
     }
+    for (const [roleId, domainIds] of roleDomains) {
+      const rol = domainUseCaseDotNodeId("r", roleId);
+      for (const domainId of domainIds) {
+        const at = domains.indexOf(domainId);
+        if (at >= 0) lines.push(`  ${rol} -> domain_${at} [style=solid penwidth=1 arrowhead=vee];`);
+      }
+    }
     for (const pair of pairs.values()) {
-      lines.push(`  domain_${pair.from} -> domain_${pair.to} [dir=none penwidth=1 color="#94a3b8"${pair.count > 1 ? ` label="×${pair.count}" fontsize=9` : ""}];`);
+      const [a, b] = [domains.indexOf(pair.from), domains.indexOf(pair.to)].sort((x, y) => x - y);
+      if (a === undefined || b === undefined || a < 0 || b < 0) continue;
+      lines.push(`  domain_${a} -> domain_${b} [dir=none penwidth=1 color="#94a3b8"${pair.count > 1 ? ` label="×${pair.count}" fontsize=9` : ""}];`);
     }
     lines.push("}");
     return { dot: lines.join("\n"), files, actionImages };
@@ -282,6 +319,8 @@ export function buildDomainUseCaseDotBundle(
         const mine = actions.filter((action) => action.domain_id === domainId);
         const label = mine[0]?.domain_short_label ?? domainId;
         lines.push(`  subgraph cluster_scope_${at} {`);
+        // The frame's id says which domain it stands for, so its disk is added to it as to an ERD frame (spec 071).
+        lines.push(`    id="${dotEscAttr(`${DOMAIN_CONTOUR_ID_PREFIX}${domainId}`)}";`);
         lines.push(`    label="${dotEscLabel(label)}";`);
         lines.push(`    style="rounded,filled";`);
         lines.push(`    color="#64748b";`);

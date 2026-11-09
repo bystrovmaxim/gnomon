@@ -25,6 +25,7 @@ import {
 } from "@/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/layoutEngineGlyphs";
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
 import { OneHopToggle } from "@/components/ui/OneHopToggle";
+import { addFrameIcons } from "@/lib/erdPostPass";
 import { CollapseFramesButton } from "@/components/ui/ZoomToolbar";
 import { ZoomToolbar } from "@/components/ui/ZoomToolbar";
 import useCaseRoleActorUrl from "@/assets/useCaseRoleActor.svg?url";
@@ -347,7 +348,7 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
           images,
         });
         if (cancelled) return;
-        setSvgMarkup(svg);
+        setSvgMarkup(addFrameIcons(svg));
         setSvgRenderVersion((v) => v + 1);
       })
       .catch((e) => {

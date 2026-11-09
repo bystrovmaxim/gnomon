@@ -651,12 +651,13 @@ export function bindLineHover(
  * right by its width; the rest of the drawing is untouched.
  */
 export function addFrameIcons(markup: string): string {
-  const icon = (id: string) =>
-    id.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? svgDataUriForGraphNodeIcon("#3b82f6", "Domain") : svgDataUriForGraphNodeIcon("#7570B3", "Resource");
   const edits: { at: number; end: number; text: string }[] = [];
   const add = (id: string, open: number) => {
     const textAt = markup.indexOf("<text", open);
     if (textAt < 0) return;
+    // The disk takes the frame's own colour, read from the outline it already drew.
+    const stroke = /stroke="(#[0-9a-fA-F]{3,8})"/.exec(markup.slice(open, textAt))?.[1];
+    const icon = svgDataUriForGraphNodeIcon(stroke ?? (id.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? "#3b82f6" : "#7570B3"), id.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? "Domain" : "Resource");
     const tag = /^<text\b[^>]*>/.exec(markup.slice(textAt))?.[0];
     if (!tag) return;
     const xm = /\bx="([^"]+)"/.exec(tag);
@@ -664,7 +665,7 @@ export function addFrameIcons(markup: string): string {
     const x = Number(xm?.[1]);
     const y = Number(ym?.[1]);
     if (!Number.isFinite(x) || !Number.isFinite(y) || xm === null) return;
-    edits.push({ at: textAt, end: textAt, text: `<image href="${icon(id)}" x="${(x - 18).toFixed(2)}" y="${(y - 11).toFixed(2)}" width="14" height="14"/>` });
+    edits.push({ at: textAt, end: textAt, text: `<image href="${icon}" x="${(x - 18).toFixed(2)}" y="${(y - 11).toFixed(2)}" width="14" height="14"/>` });
     const xAt = textAt + tag.indexOf(xm[0]);
     edits.push({ at: xAt, end: xAt + xm[0].length, text: `x="${(x + 2).toFixed(2)}"` });
   };
