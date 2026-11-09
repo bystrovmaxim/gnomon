@@ -54,7 +54,7 @@ Paths: `core` = `packages/maxitor/maxitor-core`, `py` = `core/maxitor/core`, `we
 - [ ] T032 [US2] Actions `StartSignInAction`, `FinishSignInAction` in `py/actions/provider_sign_in.py` — the region rule at start and finish, `state` checked
 - [ ] T033 [US1] Actions `CreateAccountAction`, `AcceptPolicyAction`, `RenewSessionAction`, `SignOutAction`, `CurrentUserAction` in `py/actions/account.py`
 - [ ] T034 [US5] Actions `ListSignInsAction`, `LinkSignInAction`, `LinkEmailAction`, `UnlinkSignInAction` in `py/actions/sign_ins.py` — the last sign-in kept, a taken sign-in refused
-- [ ] T035 `py/server.py` — `FastApiAdapter` chain of contracts/actions.md, `JwtAuthCoordinator` with `CookieCredentialExtractor("__Host-maxitor_session")` for session routes, `NoAuthCoordinator` for open ones, every gateway a `PerCallConnection`; `py/launch.py` runs uvicorn with proxy headers
+- [ ] T035 `py/server.py` — `FastApiAdapter` chain of contracts/actions.md, one `CoreAuthCoordinator` for every route (`CookieCredentialExtractor("__Host-maxitor_session")` and `JwtAuthenticator`; a guest without a valid session), every gateway a `PerCallConnection`; `py/launch.py` runs uvicorn with proxy headers
 - [ ] T036 Tests `core/tests/test_sign_in_*.py` with fake gateways on the recording connection: region (unknown → Russia, foreign refused from Russia at start and finish even for a known sign-in), codes (limits, tries, expiry), passwords (rules, limits, one message), identical answers for known and unknown addresses, consent token, renewal refused after a password change, unlink of the last refused, a taken link refused, and SC-005a — a known password found in no event, log line, error or answer
 
 ## Phase 6: Registering an organization on the server (issue phase 6)

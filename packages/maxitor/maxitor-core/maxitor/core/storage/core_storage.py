@@ -20,6 +20,7 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
+import asyncpg
 from maxitor.core.entities import (
     AccountCoreEntity,
     BoundaryCoreEntity,
@@ -32,12 +33,22 @@ from maxitor.core.entities import (
     UserCoreEntity,
 )
 
+from aoa.action_machine.exceptions.handle_error import HandleError
 from aoa.action_machine.intents.entities import entities
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.postgres import PostgresStorage
 
 #: Connection key under which actions receive the storage.
 CORE_CONNECTION_KEY = "core"
+
+
+class UniqueRowError(Exception):
+    """An insert met a row with the same unique value; ``constraint`` names the database's rule."""
+
+    def __init__(self, constraint: str) -> None:
+        super().__init__(constraint)
+        self.constraint = constraint
+
 
 #: Columns a table keeps that its version table does not.
 _UNVERSIONED: Mapping[str, frozenset[str]] = {"sign_in": frozenset({"password_hash", "last_used_at"})}
@@ -111,12 +122,21 @@ class CoreStorage(PostgresStorage):
     async def insert(
         self, table: str, row: Mapping[str, Any], changed_at: datetime, author: str | None, operation: str
     ) -> None:
-        """Insert ``row`` into ``table`` and open its first version at ``changed_at``."""
+        """
+        Insert ``row`` into ``table`` and open its first version at ``changed_at``.
+
+        A unique rule of the database that refuses the row is raised as ``UniqueRowError`` with the rule's name.
+        """
         columns = list(row)
-        await self._execute(
-            f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({_placeholders(1, len(columns))})",
-            tuple(row.values()),
-        )
+        try:
+            await self._execute(
+                f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({_placeholders(1, len(columns))})",
+                tuple(row.values()),
+            )
+        except HandleError as error:
+            if isinstance(error.__cause__, asyncpg.UniqueViolationError):
+                raise UniqueRowError(str(error.__cause__.constraint_name)) from error
+            raise
         await self._open_version(table, row, changed_at, author, operation)
 
     async def update(

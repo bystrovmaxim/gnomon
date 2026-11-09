@@ -24,6 +24,11 @@ from maxitor.core.actions.account import (
     SignOutAction,
 )
 from maxitor.core.actions.email_sign_in import ConfirmEmailAction, SignInWithPasswordAction, StartSignUpAction
+from maxitor.core.actions.organizations import (
+    CheckAddressCodeAction,
+    OpenOrganizationAction,
+    RegisterOrganizationAction,
+)
 from maxitor.core.actions.password_reset import RequestPasswordResetAction, ResetPasswordAction
 from maxitor.core.actions.provider_sign_in import FinishSignInAction, StartSignInAction
 from maxitor.core.actions.region import SignInOptionsAction
@@ -40,6 +45,7 @@ from maxitor.core.tokens import TOKENS_CONNECTION_KEY, SessionTokensController
 from aoa.action_machine.exceptions import AuthorizationError
 from aoa.action_machine.exceptions.access_denied import AccessDenied
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
+from aoa.action_machine.intents.access_control import Gate
 from aoa.action_machine.model import BaseAction
 from aoa.action_machine.resources import BaseResource, PerCallConnection
 from aoa.action_machine.resources.postgres import PostgresPool
@@ -65,6 +71,9 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/sign-ins/link", LinkSignInAction),
     ("post", "/api/v1/sign-ins/email", LinkEmailAction),
     ("post", "/api/v1/sign-ins/unlink", UnlinkSignInAction),
+    ("get", "/api/v1/organizations/code-check", CheckAddressCodeAction),
+    ("post", "/api/v1/organizations", RegisterOrganizationAction),
+    ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
 ]
 
 
@@ -143,11 +152,14 @@ def create_app(
     async def refused(_request: Request, error: CoreRefusalError) -> JSONResponse:
         return JSONResponse(status_code=error.status, content=error.body)
 
-    # The core's only gate is the account role, so a refusal at the gate means "not signed in": 401, not 403.
-    async def unauthorized(_request: Request, _error: Exception) -> JSONResponse:
+    # A refusal by an action's own access decision is "no such organization": 404, the same as a code that does
+    # not exist. The core's only role is the account, so any other refusal means "not signed in": 401.
+    async def refused_access(_request: Request, error: Exception) -> JSONResponse:
+        if isinstance(error, AccessDenied) and error.verdict.gate == Gate.ACCESS_DECIDE:
+            return JSONResponse(status_code=404, content={"error": "not_found"})
         return JSONResponse(status_code=401, content={"error": "unauthorized"})
 
-    app.add_exception_handler(AccessDenied, unauthorized)
-    app.add_exception_handler(AuthorizationError, unauthorized)
+    app.add_exception_handler(AccessDenied, refused_access)
+    app.add_exception_handler(AuthorizationError, refused_access)
 
     return app

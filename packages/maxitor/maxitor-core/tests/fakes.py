@@ -16,7 +16,7 @@ from maxitor.core.gateways.mail import MailGateway
 from maxitor.core.gateways.providers import GATEWAYS, ProviderPerson, ProviderRefusedError
 from maxitor.core.server import create_app
 from maxitor.core.settings import CoreSettings
-from maxitor.core.storage.core_storage import _ROW_KEY, VERSIONED, CoreStorage
+from maxitor.core.storage.core_storage import VERSIONED, CoreStorage, UniqueRowError
 from maxitor.core.tokens import SESSION_COOKIE
 
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
@@ -49,6 +49,8 @@ class MemoryCoreStorage(CoreStorage):
         }
         self.versions: dict[str, list[dict[str, Any]]] = {v: [] for v, _k in VERSIONED.values()}
         self.clock = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
+        #: Codes another registration holds but has not committed yet: the check sees them free, the insert does not.
+        self.uncommitted_codes: set[str] = set()
 
     async def open(self) -> None:
         return None
@@ -64,6 +66,8 @@ class MemoryCoreStorage(CoreStorage):
         return max(self.clock, datetime.now(UTC))
 
     async def insert(self, table: str, row: Any, changed_at: datetime, author: str | None, operation: str) -> None:
+        if table == "organization" and any(o["code"] == row["code"] for o in self.tables["organization"]):
+            raise UniqueRowError("organization_code_unique")
         self.tables[table].append(dict(row))
         self._version(table, dict(row), changed_at, operation)
 
@@ -80,7 +84,6 @@ class MemoryCoreStorage(CoreStorage):
 
     def _version(self, table: str, row: dict[str, Any], changed_at: datetime, operation: str) -> None:
         versions, _keys = VERSIONED[table]
-        _ = _ROW_KEY
         kept = {k: v for k, v in row.items() if not (table == "sign_in" and k in {"password_hash", "last_used_at"})}
         self.versions[versions].append({**kept, "valid_from_at": changed_at, "operation": operation})
 
@@ -200,6 +203,8 @@ class MemoryCoreStorage(CoreStorage):
         return None
 
     async def code_taken(self, code: str) -> bool:
+        if code in self.uncommitted_codes:
+            return False
         return any(o["code"] == code for o in self.tables["organization"])
 
     async def organizations_created(self, account_id: str) -> int:
