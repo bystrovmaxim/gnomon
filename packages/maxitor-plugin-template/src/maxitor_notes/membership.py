@@ -6,22 +6,44 @@ Maxitor's gateway has checked membership before a request reaches the plugin. An
 organization's data checks it again, so that a call from another plugin, a bug in the gateway or a test
 without it never yields another organization's data. The check moves into ``maxitor-plugin-sdk`` once it
 exists (bystrovmaxim/gnomon#73).
+
+::
+
+    @access_decide ──► organization_access ──► Allowed | FORBIDDEN_OBJECT
+    summary aspect ──► member_organization_id ──► the organization's id
+                                                  (AccessDenied(FORBIDDEN_OBJECT) if the membership ended meanwhile)
+
+The decision gets no state, so the main step looks the organization's id up again: one light query.
+Both answer a stranger with ``FORBIDDEN_OBJECT``, which does not tell whether the organization exists.
 """
 
 from __future__ import annotations
 
-from aoa.action_machine.exceptions import AuthorizationError
+from aoa.action_machine.exceptions.access_denied import AccessDenied
+from aoa.action_machine.intents.access_control import FORBIDDEN_OBJECT, Allowed, Verdict
 from maxitor_notes.storage.notes_storage import NotesStorage, NotesStorageWrapper
 
-#: The refusal says no more than this: it does not tell whether the organization exists.
-_REFUSAL = "No access to this organization"
 
-
-async def organization_id_or_refuse(storage: NotesStorage | NotesStorageWrapper, code: object, user_id: object) -> str:
-    """The id of the organization ``code`` when ``user_id`` belongs to it; ``AuthorizationError`` otherwise."""
+async def _organization_id(storage: NotesStorage | NotesStorageWrapper, code: object, user_id: object) -> str | None:
+    """The id of the organization ``code`` when ``user_id`` belongs to it now; ``None`` otherwise."""
     if not isinstance(code, str) or not code or not isinstance(user_id, str) or not user_id:
-        raise AuthorizationError(_REFUSAL)
-    organization_id = await storage.organization_of(code, user_id)
+        return None
+    return await storage.organization_of(code, user_id)
+
+
+async def organization_access(storage: NotesStorage | NotesStorageWrapper, code: object, user_id: object) -> Verdict:
+    """``Allowed`` when ``user_id`` is a member of the organization ``code``; ``FORBIDDEN_OBJECT`` otherwise."""
+    return FORBIDDEN_OBJECT if await _organization_id(storage, code, user_id) is None else Allowed()
+
+
+async def member_organization_id(storage: NotesStorage | NotesStorageWrapper, code: object, user_id: object) -> str:
+    """
+    The id of the organization ``code`` for the main step of an action whose decision has allowed ``user_id``.
+
+    The membership may end between the decision and the main step; then the step refuses the same way the
+    decision would, with ``AccessDenied`` carrying ``FORBIDDEN_OBJECT``, and touches nothing.
+    """
+    organization_id = await _organization_id(storage, code, user_id)
     if organization_id is None:
-        raise AuthorizationError(_REFUSAL)
+        raise AccessDenied(FORBIDDEN_OBJECT)
     return organization_id

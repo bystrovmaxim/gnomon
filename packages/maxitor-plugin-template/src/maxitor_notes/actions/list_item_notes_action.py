@@ -5,21 +5,22 @@ ListItemNotesAction — the notes of a catalog item at one moment, for the item'
 ::
 
     GET /p/notes/api/{organization}/items/{item_id}/notes?at=…&author=… ──► ListItemNotesAction
-        ├─ organization_aspect: the person is a member of {organization}
-        └─ list_summary: note_versions at the moment (the watermark without one)
+        ├─ organization_access_decide: the person is a member of {organization}
+        └─ list_summary: the organization's id again; note_versions at the moment (the watermark without one)
 """
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import cast
 
 from pydantic import Field
 
 from aoa.action_machine.context.context_view import ContextView
 from aoa.action_machine.context.ctx_constants import Ctx
-from aoa.action_machine.intents.aspects import regular_aspect, summary_aspect
+from aoa.action_machine.intents.access_control import Verdict
+from aoa.action_machine.intents.access_decide import access_decide
+from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
-from aoa.action_machine.intents.checkers import result_string
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.context_requires import context_requires
 from aoa.action_machine.intents.meta import meta
@@ -27,7 +28,7 @@ from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseSta
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 from maxitor_notes.entities.note_entity import NoteCoreEntity
-from maxitor_notes.membership import organization_id_or_refuse
+from maxitor_notes.membership import member_organization_id, organization_access
 from maxitor_notes.notes_domain import NotesDomain
 from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
@@ -62,19 +63,20 @@ class ListItemNotesAction(BaseAction[ListItemNotesParams, ListItemNotesResult]):
     AI-CORE-END
     """
 
-    @result_string("organization_id", required=True, not_empty=True)
-    @regular_aspect("Check that the person belongs to the organization of the address")
+    @access_decide("Refuse a person who is not a member of the organization of the address")
     @context_requires(Ctx.User.user_id, "user.organization")
-    async def organization_aspect(self, params: ListItemNotesParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView) -> dict[str, Any]:
-        """Turn the organization's code into its id, refusing a person who is not a member."""
-        _ = (params, state, box)
+    async def organization_access_decide(self, params: ListItemNotesParams, box: ToolsBox, connections: Connections, ctx: ContextView) -> Verdict:
+        """The organization of the address must be one the person of the token belongs to."""
+        _ = (params, box)
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
-        return {"organization_id": await organization_id_or_refuse(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))}
+        return await organization_access(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
 
     @summary_aspect("Read the item's notes at the moment")
-    async def list_summary(self, params: ListItemNotesParams, state: BaseState, box: ToolsBox, connections: Connections) -> ListItemNotesResult:
+    @context_requires(Ctx.User.user_id, "user.organization")
+    async def list_summary(self, params: ListItemNotesParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView) -> ListItemNotesResult:
         """The notes of the item at the moment, of one writer when the filter names one."""
-        _ = box
+        _ = (state, box)
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
-        notes = await storage.notes_of_item(str(state["organization_id"]), params.item_id, params.at, params.author)
+        organization_id = await member_organization_id(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
+        notes = await storage.notes_of_item(organization_id, params.item_id, params.at, params.author)
         return ListItemNotesResult(notes=notes)

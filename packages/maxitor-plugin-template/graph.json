@@ -19,35 +19,37 @@
       "type": "application"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:reqctx:user.organization",
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.organization",
       "is_dag": false,
       "properties": {
         "key": "user.organization"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:reqctx:user.organization",
+      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.organization",
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.user_id",
       "is_dag": false,
       "properties": {
         "key": "user.user_id"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:reqctx:user.user_id",
+      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.user_id",
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect|@result_checker|maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:organization_id",
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:write_summary:reqctx:user.organization",
       "is_dag": false,
-      "properties": {},
+      "properties": {
+        "key": "user.organization"
+      },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:organization_id",
-      "type": "@result_checker"
+      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary",
+      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary:reqctx:user.organization",
+      "type": "@required_context"
     },
     {
       "id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:write_summary:reqctx:user.user_id",
@@ -59,6 +61,15 @@
       "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary",
       "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary:reqctx:user.user_id",
       "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction|@access_decide|maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction",
+      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
+      "type": "@access_decide"
     },
     {
       "id": "maxitor_notes.actions.add_note_action.AddNoteAction|@check_roles|maxitor_notes.notes_editor_role.NotesEditorRole",
@@ -80,15 +91,6 @@
       "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction",
       "target_id": "maxitor_notes.storage.notes_storage.NotesStorage",
       "type": "@connection"
-    },
-    {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction|@regular_aspect|maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect",
-      "is_dag": false,
-      "properties": {},
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction",
-      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect",
-      "type": "@regular_aspect"
     },
     {
       "id": "maxitor_notes.actions.add_note_action.AddNoteAction|@summary_aspect|maxitor_notes.actions.add_note_action.AddNoteAction:write_summary",
@@ -154,35 +156,57 @@
       "type": "field"
     },
     {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect|@required_context|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:reqctx:user.organization",
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary|@required_context|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary:reqctx:user.organization",
       "is_dag": false,
       "properties": {
         "key": "user.organization"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:reqctx:user.organization",
+      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary",
+      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary:reqctx:user.organization",
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect|@required_context|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary|@required_context|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary:reqctx:user.user_id",
       "is_dag": false,
       "properties": {
         "key": "user.user_id"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:reqctx:user.user_id",
+      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary",
+      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary:reqctx:user.user_id",
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect|@result_checker|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:organization_id",
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide|@required_context|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide|@required_context|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction|@access_decide|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:organization_id",
-      "type": "@result_checker"
+      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction",
+      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide",
+      "type": "@access_decide"
     },
     {
       "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction|@check_roles|maxitor_notes.notes_reader_role.NotesReaderRole",
@@ -204,15 +228,6 @@
       "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction",
       "target_id": "maxitor_notes.storage.notes_storage.NotesStorage",
       "type": "@connection"
-    },
-    {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction|@regular_aspect|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect",
-      "is_dag": false,
-      "properties": {},
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction",
-      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect",
-      "type": "@regular_aspect"
     },
     {
       "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction|@summary_aspect|maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary",
@@ -296,35 +311,57 @@
       "type": "field"
     },
     {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect|@required_context|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:reqctx:user.organization",
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary|@required_context|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary:reqctx:user.organization",
       "is_dag": false,
       "properties": {
         "key": "user.organization"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:reqctx:user.organization",
+      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary",
+      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary:reqctx:user.organization",
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect|@required_context|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary|@required_context|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary:reqctx:user.user_id",
       "is_dag": false,
       "properties": {
         "key": "user.user_id"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:reqctx:user.user_id",
+      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary",
+      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary:reqctx:user.user_id",
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect|@result_checker|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:organization_id",
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide|@required_context|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide|@required_context|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction|@access_decide|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect",
-      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:organization_id",
-      "type": "@result_checker"
+      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction",
+      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide",
+      "type": "@access_decide"
     },
     {
       "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction|@check_roles|maxitor_notes.notes_reader_role.NotesReaderRole",
@@ -346,15 +383,6 @@
       "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction",
       "target_id": "maxitor_notes.storage.notes_storage.NotesStorage",
       "type": "@connection"
-    },
-    {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction|@regular_aspect|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect",
-      "is_dag": false,
-      "properties": {},
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction",
-      "target_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect",
-      "type": "@regular_aspect"
     },
     {
       "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction|@summary_aspect|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary",
@@ -663,28 +691,15 @@
       "type": "Action"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect",
-      "label": "organization_aspect",
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
+      "label": "organization_access_decide",
       "properties": {
-        "description": "Check that the person belongs to the organization of the address"
+        "description": "Refuse a person who is not a member of the organization of the address"
       },
-      "type": "RegularAspect"
+      "type": "AccessDecide"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:organization_id",
-      "label": "organization_id",
-      "properties": {
-        "TypeChecker": "String",
-        "max_length": null,
-        "min_length": null,
-        "not_empty": true,
-        "opaque": false,
-        "required": true
-      },
-      "type": "Checker"
-    },
-    {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:reqctx:user.organization",
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.organization",
       "label": "user.organization",
       "properties": {
         "key": "user.organization"
@@ -692,7 +707,7 @@
       "type": "RequiredContext"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_aspect:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.user_id",
       "label": "user.user_id",
       "properties": {
         "key": "user.user_id"
@@ -706,6 +721,14 @@
         "description": "Write the note and its version, and return the change time"
       },
       "type": "SummaryAspect"
+    },
+    {
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
     },
     {
       "id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary:reqctx:user.user_id",
@@ -777,28 +800,7 @@
       "type": "SummaryAspect"
     },
     {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect",
-      "label": "organization_aspect",
-      "properties": {
-        "description": "Check that the person belongs to the organization of the address"
-      },
-      "type": "RegularAspect"
-    },
-    {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:organization_id",
-      "label": "organization_id",
-      "properties": {
-        "TypeChecker": "String",
-        "max_length": null,
-        "min_length": null,
-        "not_empty": true,
-        "opaque": false,
-        "required": true
-      },
-      "type": "Checker"
-    },
-    {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:reqctx:user.organization",
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary:reqctx:user.organization",
       "label": "user.organization",
       "properties": {
         "key": "user.organization"
@@ -806,7 +808,31 @@
       "type": "RequiredContext"
     },
     {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_aspect:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:list_summary:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide",
+      "label": "organization_access_decide",
+      "properties": {
+        "description": "Refuse a person who is not a member of the organization of the address"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction:organization_access_decide:reqctx:user.user_id",
       "label": "user.user_id",
       "properties": {
         "key": "user.user_id"
@@ -886,28 +912,7 @@
       "type": "SummaryAspect"
     },
     {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect",
-      "label": "organization_aspect",
-      "properties": {
-        "description": "Check that the person belongs to the organization of the address"
-      },
-      "type": "RegularAspect"
-    },
-    {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:organization_id",
-      "label": "organization_id",
-      "properties": {
-        "TypeChecker": "String",
-        "max_length": null,
-        "min_length": null,
-        "not_empty": true,
-        "opaque": false,
-        "required": true
-      },
-      "type": "Checker"
-    },
-    {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:reqctx:user.organization",
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary:reqctx:user.organization",
       "label": "user.organization",
       "properties": {
         "key": "user.organization"
@@ -915,7 +920,31 @@
       "type": "RequiredContext"
     },
     {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_aspect:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide",
+      "label": "organization_access_decide",
+      "properties": {
+        "description": "Refuse a person who is not a member of the organization of the address"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:organization_access_decide:reqctx:user.user_id",
       "label": "user.user_id",
       "properties": {
         "key": "user.user_id"
