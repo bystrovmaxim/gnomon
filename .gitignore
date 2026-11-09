@@ -42,3 +42,6 @@ archive/
 
 !.python-version
 !uv.lock
+
+# The local core stand: its letters and its logs
+.core-stand/
