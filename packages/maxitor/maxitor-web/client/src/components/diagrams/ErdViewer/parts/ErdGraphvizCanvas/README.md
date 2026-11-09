@@ -28,6 +28,16 @@ Both views draw their frames in all five layouts. Under Dot a frame is a cluster
 - **Unlinked parts** (`dotWrap`): Dot puts every part of a drawing no line joins on the same ranks, one column. Under Dot those parts — inside each frame, and frames across the drawing — are wrapped into columns by invisible points, the drawing about as wide as tall.
 - **Physical:** `physicalDrawing` (`@/lib/erdViews`) turns the tables into **copies** before anything is drawn — one per resource that keeps a table and is switched on, id `<entity>␟<resource>`, and one in "Not stored", `<entity>␟`, for a table no resource keeps — and each relation into a line per pair of copies, marked `across` when its ends lie in two resources; specialization containers follow their tables. Every lookup that reads a drawn table's id — cards, hover, rooms, Diff marks, folds — works on copies as it works on tables, and `copyEntity` names the entity a copy stands for. `buildDotSource` gets `model: "physical"`, the resources to frame and the copies to join: each resource the diagram frames — every one of the model on the ERD of all domains, those of its tables on the ERD of one domain (`resourcesOfDiagram`, #78) — is a `cluster_resource_<n>` named `rc:<resource>` (spec 064), headed by its name, holding its copies directly — no frame inside a frame — or an invisible point when it keeps nothing; "Not stored" is the last, dashed. A copy of a table kept N times says `×N`; its copies are joined by dashed `se<k>_<i>` lines that do not rank the layout; a line `across` two databases is dashed. Hovering a copy lights every copy of its table.
 
+## A large model stays live
+
+The picture is made off the page (#85). `layOutErd` (`@/lib/erdLayout`) builds the DOT, lays it out — Dot's clusters or the composer — and runs the post-pass, all text; `erdLayout.worker.ts` (`src/workers`) runs it in a Web Worker, and `layOutErdOffPage` (`@/lib/erdLayoutClient`) asks it, so the drawing on the page stays live while a model of a thousand tables is laid out. Every colour the paint gives — a table's header, frame, zebra and name, a kind glyph, a frame's outline and disk — enters the picture as a **stand-in** (`painted(slot, colour)`, `withPaintStandIns`), the same in every paint, so one layout and one markup serve every paint and the worker keeps both. FDP is the exception: in this WebAssembly build it lays some models out two ways when their colours are stand-ins and one way in the paint's own colours, so under FDP the picture is made in those and a repaint lays it out again.
+
+- **A repaint** lays nothing out: the drawing on the page takes its new colours by slot (`erdPaintColours`, `standInColoursOf`) before the next frame, on the attributes `indexPaint` found when it was placed (`paintDrawing`, `@/lib/erdRepaint`); the worker's picture confirms them.
+- **A fold or a filter change** shows at once: what the new DOT no longer declares, and every line with an end among it, leaves the drawing on the page (`hideWhatLeaves`, `@/lib/erdLeaving`); the new picture replaces it when it is laid out. A room follower applies a received setting the same way.
+- **The drawing's own work is light:** a wheel zoom covers the drawing with a clear sheet instead of switching its pointer events, the fit reads the drawing's own box, a line's label plates are made when it is first lit or while the page is idle (`addEndLabelBadgesLazily`), a hover reads the zoom it is shown at rather than where a row is (`seenFromAfar`), and from afar the bars of a table's rows are one shape per colour.
+
+`client/scripts/measure-erd.ts` measures it; `specs/071-erd-frames-folding/measurements.md` keeps the numbers before and after.
+
 A framed drawing fits Graphviz's own box (`fitToViewBox`), which holds the frames and their names and is the same in every browser, so a follower never glides after a new picture; a drawing without frames fits its tables and lines. `scripts/check-erd-logical-view.ts` and `scripts/check-erd-physical-view.ts` check both drawings on the real WASM build.
 
 ## A card's fills follow its contour
@@ -37,7 +47,7 @@ Graphviz draws a table card as an HTML-like label: the outline is a rounded rect
 painted inside it. Their square corners therefore stand outside the rounded corners of the card —
 two tabs at the top, two more at the bottom whenever the last row is tinted.
 
-The render effect closes that gap before the markup reaches the page: the string `gv.layout(...)`
+The post-pass closes that gap before the markup reaches the page: the string `gv.layout(...)`
 returns goes through **`containNodeFills`** from **`@/lib/containNodeFills`**, which
 
 - reads each node group's contour from the backdrop path the renderer emits — its bounds, and the

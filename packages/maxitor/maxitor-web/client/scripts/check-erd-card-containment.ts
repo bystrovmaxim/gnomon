@@ -574,12 +574,12 @@ function sourceFiles(): Array<{ path: string; text: string }> {
 }
 
 // ---------------------------------------------------------------------------------------------
-// A-10 — the pass has exactly one call site, the ERD canvas. This is what keeps the other two
+// A-10 — the pass has exactly one call site, the ERD's layout (#85: it runs off the page). This is what keeps the other two
 // diagrams out of the change, and it is the guard the check cannot express geometrically.
 // ---------------------------------------------------------------------------------------------
 {
-  const importers = sourceFiles().filter((file) => /from\s+["'][^"']*containNodeFills["']/.test(file.text));
-  const expected = "components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/ErdGraphvizCanvas.tsx";
+  const importers = sourceFiles().filter((file) => /from\s+["'][^"']*containNodeFills(?:\.ts)?["']/.test(file.text));
+  const expected = "lib/erdLayout.ts";
   if (importers.length !== 1) fail("A-10 import guard", `${importers.length} files import the pass (${importers.map((f) => f.path).join(", ")}), 1 expected`);
   else if (importers[0]!.path !== expected) fail("A-10 import guard", `the pass is imported by ${importers[0]!.path}, ${expected} expected`);
   else ok("A-10 import guard", `the pass is imported by ${expected} and by nothing else`);

@@ -214,6 +214,73 @@ export function setErdPaint(source: ErdPaintSource, colours: Readonly<Record<str
   paintSource = source;
   paintColours = colours;
 }
+/**
+ * The colours of the current paint, standing in Graphviz's text by stand-ins while a layout is made: ``slot`` names
+ * what a colour paints — a table's header, its frame, a frame's outline — and its stand-in is the same in every paint,
+ * so one layout serves every paint and a repaint lays nothing out (#85). Outside ``withPaintStandIns`` a slot is its
+ * colour.
+ */
+let standInColours: Map<string, string> | null = null;
+/** The slots the running ``withPaintStandIns`` has given stand-ins, each with its stand-in. */
+let standInSlots: Map<string, string> | null = null;
+/** Each slot's stand-in, kept for the session: the same slot always stands as the same colour. */
+const standIns = new Map<string, string>();
+/** The stand-ins' range: ``#0b0000`` to ``#0bffff``, colours no paint uses. */
+const STAND_IN_BASE = 0x0b0000;
+const STAND_IN_PATTERN = /#0b[0-9a-f]{4}/g;
+
+/** ``colour`` as the paint gives it to ``slot``; its stand-in while ``withPaintStandIns`` runs. */
+export function painted(slot: string, colour: string): string {
+  if (!standInColours) return colour;
+  let standIn = standIns.get(slot);
+  if (!standIn) {
+    standIn = `#${(STAND_IN_BASE + standIns.size).toString(16).padStart(6, "0")}`;
+    standIns.set(slot, standIn);
+  }
+  standInColours.set(standIn, colour);
+  standInSlots?.set(slot, standIn);
+  return standIn;
+}
+
+/**
+ * ``build`` run with stand-ins for the paint: what each stand-in it used is in the current paint, and the slot each
+ * stands for.
+ */
+export function withPaintStandIns<T>(build: () => T): { value: T; colours: ReadonlyMap<string, string>; slots: ReadonlyMap<string, string> } {
+  const outer = standInColours;
+  const outerSlots = standInSlots;
+  const colours = new Map<string, string>();
+  const slots = new Map<string, string>();
+  standInColours = colours;
+  standInSlots = slots;
+  try {
+    return { value: build(), colours, slots };
+  } finally {
+    standInColours = outer;
+    standInSlots = outerSlots;
+  }
+}
+
+/** The colours of ``slots``' stand-ins, given by slot in ``bySlot``; a slot ``bySlot`` does not know is left out. */
+export function standInColoursOf(slots: ReadonlyMap<string, string>, bySlot: ReadonlyMap<string, string>): Map<string, string> {
+  const colours = new Map<string, string>();
+  for (const [slot, standIn] of slots) {
+    const colour = bySlot.get(slot);
+    if (colour !== undefined) colours.set(standIn, colour);
+  }
+  return colours;
+}
+
+/** Whether ``colour`` is a paint's stand-in. */
+export function isPaintStandIn(colour: string): boolean {
+  return /^#0b[0-9a-f]{4}$/.test(colour);
+}
+
+/** ``markup`` with every stand-in replaced by its colour of ``colours``. */
+export function recolour(markup: string, colours: ReadonlyMap<string, string>): string {
+  return markup.replace(STAND_IN_PATTERN, (standIn) => colours.get(standIn) ?? standIn);
+}
+
 /** The grey of a table that the painting section says nothing of: a kind it does not know, a table with no resource. */
 const UNPAINTED = "#64748b";
 /** The grey a frame's outline takes while no section paints it. */
@@ -231,6 +298,85 @@ export function erdResourceFrameColour(resource: string): string {
 export function erdDomainFrameColour(qual: string, domainColors: Readonly<Record<string, string>> | undefined): string {
   return paintSource === "domain" ? (domainColors?.[qual] ?? FRAME_GREY) : FRAME_GREY;
 }
+/** A domain frame's outline and the ink of its name and disk, as the paint gives them. */
+export function domainFramePaint(qual: string, domainColors: Readonly<Record<string, string>> | undefined): { colour: string; ink: string } {
+  const colour = erdDomainFrameColour(qual, domainColors);
+  return { colour: painted(`domain-frame:${qual}`, colour), ink: painted(`domain-ink:${qual}`, frameInk(colour)) };
+}
+/** A resource frame's outline and ink; the frame of the tables no resource keeps is grey in every paint. */
+export function resourceFramePaint(resource: string | null): { colour: string; ink: string } {
+  if (resource === null) return { colour: FRAME_GREY, ink: frameInk(FRAME_GREY) };
+  const colour = erdResourceFrameColour(resource);
+  return { colour: painted(`resource-frame:${resource}`, colour), ink: painted(`resource-ink:${resource}`, frameInk(colour)) };
+}
+/**
+ * Every frame's paint of ``data``, given its stand-ins: the composer draws frames the DOT does not hold, and a layout
+ * kept from another paint is recoloured with these (#85).
+ */
+export function paintEveryFrame(data: ErdGraphPayload): void {
+  for (const qual of new Set((data.entities ?? []).map((entity) => entity.domain_qualname?.trim() || ""))) domainFramePaint(qual, data.domain_colors);
+  for (const resource of data.resource_ids ?? []) resourceFramePaint(resource);
+}
+/** A table's header, frame, zebra and name ink, as the current paint gives them (spec 038, spec 071). */
+export function tablePaint(nd: ErdEntity): { head: string; frame: string; zebra: string; ink: string } {
+  const own = markOf(nd.diff);
+  // In Diff a table that came, went or changed itself takes its status's colour, frame and header alike.
+  const domainColour = nd.color || "#3b82f6";
+  const inDiff = nd.diff !== undefined;
+  const neutral = inDiff;
+  // painted by change, only a table that came or went whole wears its status on the header and frame;
+  // a table that changed inside keeps a quiet header and frame — its rows carry the change.
+  // painted by change, the header and frame say what happened to the table as a whole: green added,
+  // red removed, amber changed inside (its own properties or any row); grey when nothing changed.
+  const glance = inDiff ? erdGlance(nd) : "unchanged";
+  const quietHead = inDiff && paintByChange() && glance === "unchanged";
+  const changeHead = inDiff && paintByChange() && glance !== "unchanged" ? ERD_DIFF_COLOUR[glance] : null;
+  const base =
+    paintSource === "kind"
+      ? (paintColours[nd.entity_kind?.trim() || "unknown"] ?? UNPAINTED)
+      : paintSource === "resource"
+        ? (paintColours[tableResource(nd) ?? ""] ?? UNPAINTED)
+        : domainColour;
+  // the header's fill, the frame and the zebra, as the painting asks. Where the filter chooses what
+  // paints, the header takes that section's colour alone — a changed table's header too, when domains or kinds
+  // paint; its change is then told by its frame, its sign, its rows and its halo.
+  const chosenHead = inDiff && !paintByChange();
+  const headColour = chosenHead ? base : changeHead ?? (quietHead ? "#e2e8f0" : own ? ERD_DIFF_COLOUR[own] : base);
+  return {
+    head: headColour,
+    frame: changeHead ?? (quietHead ? "#cbd5e1" : own ? ERD_DIFF_COLOUR[own] : neutral ? "#cbd5e1" : headColour),
+    zebra: neutral ? "#94a3b8" : headColour,
+    ink: quietHead ? "#334155" : "white",
+  };
+}
+
+/**
+ * Every colour the current paint gives the slots of ``data``'s drawing — its tables, their kind glyphs and its frames —
+ * by slot, as ``painted`` names them: a repaint gives the drawing on the page its colours from these at once (#85).
+ */
+export function erdPaintColours(data: ErdGraphPayload): Map<string, string> {
+  const colours = new Map<string, string>();
+  for (const nd of data.entities ?? []) {
+    const paint = tablePaint(nd);
+    colours.set(`head:${nd.id}`, paint.head);
+    colours.set(`table-frame:${nd.id}`, paint.frame);
+    colours.set(`zebra:${nd.id}`, paint.zebra);
+    colours.set(`head-ink:${nd.id}`, paint.ink);
+    colours.set(`glyph-ink:${nd.id}`, erdHeadInk(nd));
+  }
+  for (const qual of new Set((data.entities ?? []).map((entity) => entity.domain_qualname?.trim() || ""))) {
+    const colour = erdDomainFrameColour(qual, data.domain_colors);
+    colours.set(`domain-frame:${qual}`, colour);
+    colours.set(`domain-ink:${qual}`, frameInk(colour));
+  }
+  for (const resource of data.resource_ids ?? []) {
+    const colour = erdResourceFrameColour(resource);
+    colours.set(`resource-frame:${resource}`, colour);
+    colours.set(`resource-ink:${resource}`, frameInk(colour));
+  }
+  return colours;
+}
+
 /** kinds' colours when they paint — mid tones of the whole wheel, like the domains' own. */
 export const ERD_KIND_PAINT_PALETTE = ["#3b82f6", "#f97316", "#10b981", "#a855f7", "#ec4899", "#14b8a6", "#eab308", "#6366f1"];
 /** What a table says at a glance, as the Changes filter sorts it: its own status, else "changed" when a row changed. */
@@ -747,32 +893,13 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   const tableIndex = new Map((entities ?? []).map((e, i) => [e.id, i]));
 
   const nodeSource = (nd: ErdEntity): string => {
-    const own = markOf(nd.diff);
-    // In Diff a table that came, went or changed itself takes its status's colour, frame and header alike.
-    const domainColour = nd.color || "#3b82f6";
     const inDiff = nd.diff !== undefined;
-    const neutral = inDiff;
-    // painted by change, only a table that came or went whole wears its status on the header and frame;
-    // a table that changed inside keeps a quiet header and frame — its rows carry the change.
-    // painted by change, the header and frame say what happened to the table as a whole: green added,
-    // red removed, amber changed inside (its own properties or any row); grey when nothing changed.
     const glance = inDiff ? erdGlance(nd) : "unchanged";
-    const quietHead = inDiff && paintByChange() && glance === "unchanged";
-    const changeHead = inDiff && paintByChange() && glance !== "unchanged" ? ERD_DIFF_COLOUR[glance] : null;
-    const base =
-      paintSource === "kind"
-        ? (paintColours[nd.entity_kind?.trim() || "unknown"] ?? UNPAINTED)
-        : paintSource === "resource"
-          ? (paintColours[tableResource(nd) ?? ""] ?? UNPAINTED)
-          : domainColour;
-    // the header's fill, the frame and the zebra, as the painting asks. Where the filter chooses what
-    // paints, the header takes that section's colour alone — a changed table's header too, when domains or kinds
-    // paint; its change is then told by its frame, its sign, its rows and its halo.
-    const chosenHead = inDiff && !paintByChange();
-    const color = chosenHead ? base : changeHead ?? (quietHead ? "#e2e8f0" : own ? ERD_DIFF_COLOUR[own] : base);
-    const frameColour = changeHead ?? (quietHead ? "#cbd5e1" : own ? ERD_DIFF_COLOUR[own] : neutral ? "#cbd5e1" : color);
-    const zebraColour = neutral ? "#94a3b8" : color;
-    const headInk = quietHead ? "#334155" : "white";
+    const paint = tablePaint(nd);
+    const color = painted(`head:${nd.id}`, paint.head);
+    const frameColour = painted(`table-frame:${nd.id}`, paint.frame);
+    const zebraColour = painted(`zebra:${nd.id}`, paint.zebra);
+    const headInk = painted(`head-ink:${nd.id}`, paint.ink);
     // The name carries what happened to the table as a whole: ``~`` for any change inside, its own properties or a row.
     const sign = glance !== "unchanged" ? ERD_DIFF_SIGN[glance] : null;
     // A copy of an entity kept in several databases says how many there are (spec 070).
@@ -917,8 +1044,7 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   };
   /** A domain's frame (logical view). */
   const domainFrame = (name: string, index: number, qual: string, members: readonly ErdEntity[]): string[] => {
-    const colour = erdDomainFrameColour(qual, data.domain_colors);
-    const ink = frameInk(colour);
+    const { colour, ink } = domainFramePaint(qual, data.domain_colors);
     return [
       `  subgraph "${name}" {`,
       `    id="${escDot(`${DOMAIN_CONTOUR_ID_PREFIX}${qual}`)}";`,
@@ -942,10 +1068,10 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
   if (data.model === "logical") {
     byDomain(entities ?? []).forEach(({ qual, members }, index) => {
       const id = `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`;
-      const colour = erdDomainFrameColour(qual, data.domain_colors);
       if (isFolded(id)) {
+        const { colour, ink } = domainFramePaint(qual, data.domain_colors);
         members.forEach((nd) => framed.add(nd.id));
-        lines.push(...foldNode(id, domainName(qual), colour, frameInk(colour), "domain", index));
+        lines.push(...foldNode(id, domainName(qual), colour, ink, "domain", index));
         return;
       }
       // The three engines that cannot frame reproducibly are composed by ``erdCompose`` (research R2).
@@ -958,8 +1084,7 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     const resourceFrame = (resource: string | null, index: number): string[] => {
       const members = (entities ?? []).filter((nd) => tableResource(nd) === resource);
       const id = resource === null ? null : `${CONTOUR_ID_PREFIX}${resource}`;
-      const colour = resource !== null ? erdResourceFrameColour(resource) : FRAME_GREY;
-      const ink = frameInk(colour);
+      const { colour, ink } = resourceFramePaint(resource);
       const name = resource === null ? "Not stored" : (data.resource_labels?.[resource] ?? (resource.split(".").pop() || resource));
       if (id && isFolded(id)) {
         members.forEach((nd) => framed.add(nd.id));

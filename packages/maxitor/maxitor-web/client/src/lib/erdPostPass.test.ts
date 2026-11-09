@@ -1,7 +1,7 @@
 // src/lib/erdPostPass.test.ts
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, erdBundleSx, erdDetailSx, FAR_NAMES_CLASS, FAR_NAMES_SCALE, FAR_ROWS_CLASS, FAR_ROWS_SCALE, GREEK_CLASS, GREEK_NAME_CLASS, setErdDetail, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addEndLabelBadgesLazily, bindLineHover, erdBundleSx, erdDetailSx, FAR_NAMES_CLASS, FAR_NAMES_SCALE, FAR_ROWS_CLASS, FAR_ROWS_SCALE, GREEK_CLASS, GREEK_NAME_CLASS, seenFromAfar, setErdDetail, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
 
 // Markup shaped like Graphviz's: Player (0) has id, gender and an FK row named showcase twice
 // (own row and FK row); Showcase (1) has id and players; Gender (2) has id.
@@ -29,7 +29,13 @@ const relations: ErdLineInfo[] = [
   { source: "Showcase", target: "Gender", relationship_kind: "reference", source_field: "gender", target_field: null },
 ];
 
+/** jsdom lays nothing out: every element is a box of one size, as a lit line's label plate asks for one. */
+function withSomeBox(): void {
+  Object.defineProperty(SVGElement.prototype, "getBBox", { configurable: true, value: () => ({ x: 10, y: 20, width: 40, height: 9 }) });
+}
+
 function mount(): { root: HTMLElement; controller: AbortController } {
+  withSomeBox();
   document.body.innerHTML = `<div id="root">${SVG}</div>`;
   const root = document.getElementById("root")!;
   const controller = new AbortController();
@@ -259,6 +265,27 @@ describe("a line's end labels (spec 029, FR-042)", () => {
     expect(plates).toHaveLength(labels.length);
     expect(plates[0]!.nextElementSibling).toBe(labels[0]);
     expect([...plates].map((p) => [p.getAttribute("x"), p.getAttribute("width"), p.getAttribute("rx")])[0]).toEqual(["7", "46", "3"]);
+  });
+
+  it("are made when needed: a line's plates when it is first lit, the rest while the page is idle (#85)", () => {
+    withBoxes();
+    vi.useFakeTimers();
+    try {
+      const { root, controller } = mount();
+      const plates = (id: string) => root.querySelectorAll(`g[id="${id}"] rect.${END_LABEL_CLASS}`).length;
+      addEndLabelBadgesLazily(root, controller.signal);
+      expect(plates("re0")).toBe(0);
+      hover(root.querySelector('g[id="re0"]')!, true);
+      expect(plates("re0")).toBe(1);
+      const unlit = [...root.querySelectorAll('g.edge:not([id="re0"])')].map((edge) => edge.id);
+      expect(unlit.length).toBeGreaterThan(0);
+      expect(unlit.every((id) => plates(id) === 0)).toBe(true);
+      vi.runAllTimers();
+      expect(unlit.every((id) => plates(id) === root.querySelectorAll(`g[id="${id}"] text`).length)).toBe(true);
+      expect(plates("re0")).toBe(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("are hidden until the line is hovered — by a mouse, a row, or a follower's replayed hover", () => {
@@ -532,6 +559,32 @@ describe("the level of detail (spec 071)", () => {
     expect([...svg.classList]).toEqual([]);
   });
 
+  it("tells a table seen from afar by the zoom it is shown at, never by asking where its row is (#85)", () => {
+    document.body.innerHTML = `<svg><g class="node"><g id="a_hd0"></g><g id="a_fn0_0"></g></g></svg>`;
+    const svg = document.querySelector("svg")!;
+    const node = svg.querySelector("g.node")!;
+    const row = svg.querySelector<SVGGElement>('g[id="a_fn0_0"]')!;
+    let measured = 0;
+    Object.defineProperty(row, "getBBox", {
+      value: () => {
+        measured += 1;
+        return { height: 20 } as DOMRect;
+      },
+    });
+    row.getBoundingClientRect = () => {
+      throw new Error("a hover must not lay the drawing out");
+    };
+    setErdDetail(svg, 1);
+    expect(seenFromAfar(node)).toBe(false);
+    // 20 units at a quarter: 5 px, lower than a pointer aims at; a finger needs 20.
+    setErdDetail(svg, 0.25);
+    expect(seenFromAfar(node)).toBe(true);
+    setErdDetail(svg, 0.6);
+    expect(seenFromAfar(node)).toBe(false);
+    expect(seenFromAfar(node, true)).toBe(true);
+    expect(measured).toBe(1);
+  });
+
   it("from afar draws every text of a table as a bar of its length, place and colour — a table never turns blank", () => {
     document.body.innerHTML = `<svg><g class="node"><g id="a_hn0"><a><text x="10" y="20" font-size="12" text-anchor="start" fill="#ffffff">Order</text></a></g><g id="a_fn0_0"><a><text x="100" y="40" font-size="10" text-anchor="end" fill="#64748b">str</text></a></g></g></svg>`;
     const svg = document.querySelector("svg")!;
@@ -539,10 +592,13 @@ describe("the level of detail (spec 071)", () => {
     const bars = [...svg.querySelectorAll(`.${GREEK_CLASS}`)];
     expect(bars).toHaveLength(2);
     expect(bars.map((bar) => bar.getAttribute("fill"))).toEqual(["#ffffff", "#64748b"]);
-    // The name's bar starts where its text starts; the type's ends where its right-anchored text ends.
+    // The name's bar starts where its text starts.
     expect(Number(bars[0]!.getAttribute("x"))).toBe(10);
-    expect(Number(bars[1]!.getAttribute("x")) + Number(bars[1]!.getAttribute("width"))).toBeCloseTo(100, 5);
     expect(bars[0]!.classList.contains(GREEK_NAME_CLASS)).toBe(true);
+    // The rows' bars are one shape per colour; the type's bar ends where its right-anchored text ends: "str" at 10 px is
+    // 16.5 wide and 4.2 tall, so its straight side runs from 85.6 to 97.9 and its ends are half circles of 2.1.
+    expect(bars[1]!.tagName).toBe("path");
+    expect(bars[1]!.getAttribute("d")).toBe("M85.60,34.30h12.30a2.10,2.10 0 0 1 0,4.20h-12.30a2.10,2.10 0 0 1 0,-4.20z");
     // Made once per drawing.
     setErdDetail(svg, 0.01);
     expect(svg.querySelectorAll(`.${GREEK_CLASS}`)).toHaveLength(2);
