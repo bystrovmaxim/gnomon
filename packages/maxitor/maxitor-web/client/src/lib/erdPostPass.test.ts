@@ -395,21 +395,21 @@ ${contour("Orders")}${contour("Support")}${contour("Billing")}
     expect(contourResource(root.querySelector("#clust1")!)).toBeNull();
   });
 
-  it("on hover lights its lines to other resources, keeps their tables bright and dims the rest", () => {
+  it("on hover lights its whole frame, every table inside it and every line they touch, inside the frame and out (spec 071)", () => {
     const root = mountShop();
     hover(cluster(root, "Orders"), true);
-    expect(lit(root)).toEqual(["re1"]);
-    expect(bright(root)).toEqual(["Order", "Ticket"]);
-    expect(root.querySelector<SVGElement>('g[id="re0"]')!.style.opacity).toBe("0.2");
+    expect(lit(root)).toEqual(["re0", "re1"]);
+    expect(bright(root)).toEqual(["Line", "Order", "Ticket"]);
+    expect(root.querySelector<SVGElement>('g[id="re0"]')!.style.opacity).toBe("1");
     expect(cluster(root, "Orders").classList.contains("is-hovered")).toBe(true);
     expect(text(root, "fn2_1").getAttribute("font-weight")).toBe("bold");
   });
 
-  it("with no line out dims every table and line, and widens only its own border", () => {
+  it("with no line out lights its own tables and dims every line (spec 071)", () => {
     const root = mountShop();
     hover(cluster(root, "Billing"), true);
     expect(lit(root)).toEqual([]);
-    expect(bright(root)).toEqual([]);
+    expect(bright(root)).toEqual(["Invoice"]);
     expect([...root.querySelectorAll<SVGElement>("g.edge")].map((e) => e.style.opacity)).toEqual(["0.2", "0.2"]);
     expect([...root.querySelectorAll("g.cluster.is-hovered")].map((c) => c.id)).toEqual(["rc:Billing"]);
   });

@@ -100,15 +100,17 @@ const dimmed = () => [...root.querySelectorAll<HTMLElement>("g.node")].filter((n
 const lit = () => [...root.querySelectorAll("g.edge.is-hovered")].map((edge) => edge.id).sort();
 
 hover(contour(STOREFRONT), true);
-check("the storefront lights only its line to the support desk", JSON.stringify(lit()) === JSON.stringify(["re1"]), lit().join(", "));
-check("the copies at that line's ends stay bright", JSON.stringify(bright()) === JSON.stringify([copyId("shop.Order", STOREFRONT), copyId("shop.Ticket", SUPPORT)]), bright().join(", "));
-check("every other copy dims", JSON.stringify(dimmed()) === JSON.stringify([copyId("shop.Invoice", BILLING), copyId("shop.OrderLine", STOREFRONT)]), dimmed().join(", "));
+// The whole frame, every table in it, and every line those tables touch — the storefront's own OrderLine→Order stays
+// lit with the line to the support desk (spec 071).
+check("the storefront lights every line its tables touch, inside the frame and out", JSON.stringify(lit()) === JSON.stringify(["re0", "re1"]), lit().join(", "));
+check("the copies inside the frame and at the lines' far ends stay bright", JSON.stringify(bright()) === JSON.stringify([copyId("shop.OrderLine", STOREFRONT), copyId("shop.Order", STOREFRONT), copyId("shop.Ticket", SUPPORT)]), bright().join(", "));
+check("every other copy dims", JSON.stringify(dimmed()) === JSON.stringify([copyId("shop.Invoice", BILLING)]), dimmed().join(", "));
 check("the hovered border widens", contour(STOREFRONT).classList.contains("is-hovered"));
 hover(contour(STOREFRONT), false);
 check("leaving gives the drawing back", lit().length === 0 && [...root.querySelectorAll<HTMLElement>("g.node, g.edge")].every((element) => element.style.opacity === "") && root.querySelectorAll(".is-hovered").length === 0);
 
 hover(contour(BILLING), true);
-check("billing, with no line out, dims every table and line", bright().length === 0 && dimmed().length === 4 && lit().length === 0 && [...root.querySelectorAll<HTMLElement>("g.edge")].every((edge) => edge.style.opacity === "0.2"));
+check("billing, with no line out, keeps its own copy bright and dims every line", JSON.stringify(bright()) === JSON.stringify([copyId("shop.Invoice", BILLING)]) && dimmed().length === 3 && lit().length === 0 && [...root.querySelectorAll<HTMLElement>("g.edge")].every((edge) => edge.style.opacity === "0.2"));
 hover(contour(BILLING), false);
 
 // A domain frame in the logical view carries the same hit area over its whole outline (spec 071).

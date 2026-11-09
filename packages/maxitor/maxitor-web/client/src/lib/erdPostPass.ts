@@ -15,7 +15,7 @@
  */
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
-import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdGlance, erdHeadInk, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX, DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdGlance, erdHeadInk, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
 export type KindGlyphDrawer = (word: string, ink: string, strokeWidth: number) => string;
@@ -597,22 +597,30 @@ export function bindLineHover(
   // A resource contour (spec 064): its lines to other resources are lit as a hovered line is, the tables at their
   // ends stay bright, its border widens, and everything else dims — everything, when it has no such line. Its
   // bundles to folded boxes are lit the same way (spec 065).
-  const homeOf = new Map(entities.map((entity) => [entity.id, tableResource(entity)]));
+  // A frame's empty space — a resource's (spec 064) or a domain's (spec 071) — lights the whole frame, every table
+  // inside it, and every line one of those tables touches, inside the frame and out. A folded frame has no tables:
+  // it lights only its lines to other frames (the bundles), so its inside stays one box.
   root.querySelectorAll("g.cluster").forEach((cluster) => {
-    const resource = contourResource(cluster);
-    if (resource === null) return;
-    const lines = crossLines(resource, relations, entities);
-    const own = bundles.filter((bundle) => homeOf.get(bundle.source) === resource || homeOf.get(bundle.target) === resource);
+    const frameId = contourId(cluster);
+    if (frameId === null) return;
+    // The frame's tables, by what it holds: a resource's copies, or a domain's entities (the markup nests them, but the
+    // data says the same and does not depend on the nesting).
+    const memberOf = (entity: ErdEntity) =>
+      frameId.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? (entity.domain_qualname ?? "") === frameId.slice(DOMAIN_CONTOUR_ID_PREFIX.length) : tableResource(entity) === frameId.slice(CONTOUR_ID_PREFIX.length);
+    const inside = new Set(entities.filter(memberOf).map((entity) => entity.id));
+    const own = bundles.filter((bundle) => bundle.source === frameId || bundle.target === frameId);
+    // Inside tables: every line they touch. Folded: the bundles stand for them, so no table line is lit.
+    const lineIds = inside.size ? relations.flatMap((line, k) => (inside.has(line.source) || inside.has(line.target) ? [k] : [])) : [];
     cluster.addEventListener("mouseenter", () => {
-      const edges = edgesById(lines);
+      const edges = edgesById(lineIds);
       cluster.classList.add(EDGE_HOVER_CLASS);
       show(edges, true);
       showBundles(own, true);
-      focusTables(root, new Set([...joined(edges), ...bundleEnds(own)]), new Set([...edges, ...bundleEdges(own)]));
+      focusTables(root, new Set([...inside, ...joined(edges), ...bundleEnds(own)]), new Set([...edges, ...bundleEdges(own)]));
     }, { signal });
     cluster.addEventListener("mouseleave", () => {
       cluster.classList.remove(EDGE_HOVER_CLASS);
-      show(edgesById(lines), false);
+      show(edgesById(lineIds), false);
       showBundles(own, false);
       clearTableFocus(root);
     }, { signal });
