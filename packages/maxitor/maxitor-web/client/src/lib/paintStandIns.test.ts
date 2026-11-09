@@ -126,4 +126,14 @@ describe("a repaint recolours the layout it has (#85)", () => {
       });
     }
   }
+
+  it("gv-fdp: the picture is laid out in the paint's own colours, with no stand-in, so FDP draws it one way", async () => {
+    const payload = data("logical");
+    for (const model of [payload, { ...payload, model: undefined }]) {
+      const picture = await layOutErd({ data: model, layout: "gv-fdp", paint: { source: "domain", colours: {} } }, async () => gv);
+      expect(picture.markup).not.toMatch(/#0b[0-9a-f]{4}/);
+      expect(picture.slots.size).toBe(0);
+      expect(picture.markup).toContain("#3b82f6");
+    }
+  });
 });

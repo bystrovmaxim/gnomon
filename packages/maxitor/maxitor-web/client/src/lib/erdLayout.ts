@@ -17,7 +17,7 @@ import {
   paintEveryFrame,
   recolour,
   setErdPaint,
-  withPaintStandIns,
+  withPaintStandIns as withStandIns,
   type ErdGraphPayload,
   type ErdGraphvizLayout,
   type ErdPaintSource,
@@ -56,10 +56,18 @@ function keep(cache: Map<string, string>, key: string, value: string): void {
 }
 
 /** The picture of ``request``, each layout and markup kept for the next request that asks for it again. */
+/** ``build`` with the paint's colours as they are: what ``withPaintStandIns`` gives, without a stand-in. */
+function inRealColours<T>(build: () => T): { value: T; colours: ReadonlyMap<string, string>; slots: ReadonlyMap<string, string> } {
+  return { value: build(), colours: new Map(), slots: new Map() };
+}
+
 export async function layOutErd(request: ErdLayoutRequest, graphvizFor: ErdGraphvizFor): Promise<ErdLayoutResult> {
   const { data, layout, paint } = request;
   const engine = erdGraphvizEngine(layout) as Engine;
   const isDot = layout === "gv-dot-lr" || layout === "gv-dot-tb";
+  // FDP in this WebAssembly build lays some models out two ways when their colours are stand-ins, and one way in the
+  // paint's own colours: its picture is made in those, so a repaint under FDP lays the model out again.
+  const withPaintStandIns = engine === "fdp" ? inRealColours : withStandIns;
   const measurer = await graphvizFor("dot");
   setErdPaint(paint.source, paint.colours);
   // Every table of a specialization block as wide as its widest table (spec 029): measured first, on the shared
