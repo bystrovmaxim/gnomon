@@ -223,7 +223,7 @@ const FRAME_TOP_PAD = 72;
 /** The padding a specialization group's box keeps round its tables. */
 const GROUP_PAD = 12;
 /** Extra separation the frame-layout boxes get, so no two composed frames touch after overlap removal. */
-const FRAME_LAYOUT_GAP = 48;
+const FRAME_LAYOUT_GAP = 64;
 /** A frame with no table still stands, this size. */
 const EMPTY_WIDTH = 140;
 const EMPTY_HEIGHT = 60;
@@ -297,7 +297,7 @@ function frameLayoutDot(frames: readonly Frame[], sizes: ReadonlyMap<string, { w
   }
   const lines = [
     "digraph FRAMES {",
-    '  graph [fontname="Helvetica" bgcolor=transparent pad="0.5" overlap=false start=1];',
+    '  graph [fontname="Helvetica" bgcolor=transparent pad="0.8" overlap=prism sep="+90,+70" start=1];',
     '  node [shape=box fixedsize=true fontname="Helvetica"];',
   ];
   for (const frame of frames) {
