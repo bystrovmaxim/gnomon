@@ -42,7 +42,7 @@ export function svgOfHalf(svg: string, half: Half | null): string {
 }
 
 /** The page settings that are the layout mode: each half keeps its own. */
-const LAYOUT_SETTINGS: ReadonlySet<string> = new Set(["layout", "rankdir"]);
+const LAYOUT_SETTINGS: ReadonlySet<string> = new Set(["layout", "physical_layout", "rankdir"]);
 
 /** The name setting ``name`` is kept under in ``half``: its own for a layout mode, the shared one for the rest. */
 export function settingOfHalf(name: string, half: Half | null): string {

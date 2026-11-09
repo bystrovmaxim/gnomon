@@ -569,6 +569,16 @@ function rowsOf(line: ErdLineInfo, tables: Map<string, { index: number; fields: 
 const MARKED_ATTRIBUTES = ["font-weight", "fill", "text-anchor", "x"] as const;
 
 /** Mark (or restore) the text of the given cells: bold and darker, the cell itself untouched. */
+/** The padding Graphviz keeps between a table cell's edge and its text (``CELLPADDING``). */
+const CELL_PADDING_PT = 4;
+
+/** Where a right-aligned text of a table cell ends: its cell's right edge less the padding, or ``null``. */
+function cellRight(text: Element): number | null {
+  const fill = text.closest('g[id^="a_"]')?.querySelector("polygon");
+  const xs = (fill?.getAttribute("points") ?? "").split(/[\s]+/).map((point) => Number(point.split(",")[0])).filter(Number.isFinite);
+  return xs.length ? Math.max(...xs) - CELL_PADDING_PT : null;
+}
+
 export function markRows(root: ParentNode, cells: readonly string[], on: boolean): void {
   for (const id of cells) {
     root.querySelectorAll(`g[id="a_${id}"] text`).forEach((text) => {
@@ -579,9 +589,14 @@ export function markRows(root: ParentNode, cells: readonly string[], on: boolean
           // instead of running out of the table.
           const measure = (text as SVGTextContentElement).getComputedTextLength;
           if (id.startsWith("ft") && typeof measure === "function") {
-            const right = Number(text.getAttribute("x")) + measure.call(text);
-            text.setAttribute("text-anchor", "end");
-            text.setAttribute("x", right.toFixed(2));
+            // A text hidden from afar measures 0: its right edge is then its cell's, less the cell's padding — never its
+            // own left edge, which laid the type over the field's name when the drawing was zoomed in (#89).
+            const length = measure.call(text);
+            const right = length > 0 ? Number(text.getAttribute("x")) + length : cellRight(text);
+            if (right !== null) {
+              text.setAttribute("text-anchor", "end");
+              text.setAttribute("x", right.toFixed(2));
+            }
           }
         }
         text.setAttribute("font-weight", "bold");
@@ -648,8 +663,33 @@ export function focusTables(root: ParentNode, tables: ReadonlySet<string>, lines
   }
 }
 
+/** The drawings whose highlight is held: the pointer is on the card of what is lit (#89). */
+const HELD_FOCUS = new WeakSet<Element>();
+
+function drawingOf(root: ParentNode): Element | null {
+  const holder = root as unknown as { matches?: (selector: string) => boolean; querySelector?: (selector: string) => Element | null };
+  return holder.matches?.("svg") ? (root as unknown as Element) : (holder.querySelector?.("svg") ?? null);
+}
+
+/**
+ * Hold the highlight of ``root``'s drawing while the pointer is on the card of what is lit: leaving a table for its card
+ * must not take the light off it while its card stays. Released, the drawing is drawn again as it was.
+ */
+export function holdTableFocus(root: ParentNode, held: boolean): void {
+  const svg = drawingOf(root);
+  if (!svg) return;
+  if (held) {
+    HELD_FOCUS.add(svg);
+    return;
+  }
+  HELD_FOCUS.delete(svg);
+  clearTableFocus(root);
+}
+
 /** Every table and line as drawn again — a table Diff fades stays faded. */
 export function clearTableFocus(root: ParentNode): void {
+  const svg = drawingOf(root);
+  if (svg && HELD_FOCUS.has(svg)) return;
   const { nodes, edges } = hoverIndex(root);
   for (const element of [...nodes, ...edges]) element.style.opacity = "";
 }

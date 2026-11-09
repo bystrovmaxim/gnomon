@@ -241,3 +241,29 @@ describe("folding a resource frame (spec 065, spec 070)", () => {
     expect([bundleWidth(1, 5), bundleWidth(3, 5), bundleWidth(5, 5), bundleWidth(2, 2)]).toEqual([1, 2.7, 4.4, 4.4]);
   });
 });
+
+describe("Boundary off folds nothing (spec 071, edge cases; #89)", () => {
+  // The logical view with its frames off draws no frame, so the folds in the address have nothing to act on.
+  const unframed = (): ErdGraphPayload => ({
+    entities,
+    relations,
+    domain_labels: domainLabels,
+    folded_contours: new Set([`dc:${STORE}`, `dc:${MONEY}`, `rc:${STOREFRONT}`]),
+  });
+
+  it("has no folded box, no bundle and no table held, whatever the address folds", () => {
+    const plan = foldPlan(unframed());
+    expect(plan.counts.size).toBe(0);
+    expect(plan.bundles).toHaveLength(0);
+  });
+
+  for (const layout of ["gv-dot-lr", "gv-dot-tb", "gv-neato", "gv-fdp", "gv-circo"] as const) {
+    it(`${layout}: draws every table and every line, and no dc: or rc: node`, () => {
+      const dot = buildDotSource(unframed(), layout);
+      for (const entity of entities) expect(dot).toContain(`"${entity.id}" [`);
+      expect(dot).not.toMatch(/"(?:dc|rc):/);
+      expect(dot).toContain('"shop.OrderLine" -> "shop.Order"');
+      expect(dot).toContain('"shop.Invoice" -> "shop.Order"');
+    });
+  }
+});

@@ -166,7 +166,9 @@ function FieldList({ fields, open, pointed, onOpen, onPoint, noun = "field" }: {
           </span>
         ))}
       </ButtonBase>
-      <Box data-testid="card-fields" onMouseLeave={() => onPoint(null)}>
+      {/* Leaving the list keeps the last row's foot: a foot that grows over the pointer must not take the row away and
+          give it back, the list shaking under the pointer (#89). */}
+      <Box data-testid="card-fields">
         {rows.map(({ field, row }) => (
           <Box key={row} data-testid="card-field" onMouseEnter={() => onPoint(row)} onClick={() => onPoint(row)} sx={{ display: "grid", gridTemplateColumns: "20px minmax(0, 1fr)", gap: "6px" }}>
             <Box sx={{ color: "#94a3b8", fontSize: 10, fontWeight: 700, lineHeight: "17px" }}>{field.key}</Box>
@@ -178,9 +180,13 @@ function FieldList({ fields, open, pointed, onOpen, onPoint, noun = "field" }: {
         ))}
       </Box>
       {rows.length > 0 && (
-        <Box data-testid="card-field-hint" sx={{ mt: "4px", pt: "4px", borderTop: "1px solid rgba(15, 23, 42, 0.06)", color: "#64748b", wordBreak: "break-word" }}>
+        // The foot stays at the card's bottom while the list scrolls, as tall as what it says (#89).
+        <Box
+          data-testid="card-field-hint"
+          sx={{ position: "sticky", bottom: "-10px", mx: "-12px", px: "12px", pb: "10px", mb: "-10px", mt: "4px", pt: "4px", bgcolor: "#fff", borderTop: "1px solid rgba(15, 23, 42, 0.06)", color: "#64748b", wordBreak: "break-word" }}
+        >
           {shown ? (
-            <>
+            <Box data-testid="card-field-shown">
               <Box sx={{ color: "#0f172a" }}>
                 {shown.previousType !== undefined && (
                   <>
@@ -190,9 +196,11 @@ function FieldList({ fields, open, pointed, onOpen, onPoint, noun = "field" }: {
                 {shown.type}
               </Box>
               <Box data-testid="card-field-description">{description}</Box>
-            </>
+            </Box>
           ) : (
-            <Box sx={{ color: UNCHANGED_COLOUR }}>{onTouchScreen() ? `Tap a ${noun}` : `Hover a ${noun}`}</Box>
+            <Box data-testid="card-field-shown" sx={{ color: UNCHANGED_COLOUR }}>
+              {onTouchScreen() ? `Tap a ${noun}` : `Hover a ${noun}`}
+            </Box>
           )}
         </Box>
       )}

@@ -120,6 +120,9 @@ _EXPLORER_PAINTS = ("domains", "coverage", "events", "methods", "actions", "chan
 _EXPLORER_SETTINGS: dict[str, Callable[[Any], bool]] = {
     "mode": _one_of("domains", "events", "actions"),
     "layout": _one_of("dot_lr", "dot_tb"),
+    # Each half of Side by side keeps its own layout (spec 044).
+    "layout_a": _one_of("dot_lr", "dot_tb"),
+    "layout_b": _one_of("dot_lr", "dot_tb"),
     "selected": _element,
     "domains": _strings,
     "opened": _strings,
@@ -143,6 +146,12 @@ SETTINGS: dict[str, dict[str, Callable[[Any], bool]]] = {
         "one_hop": _boolean,
         "fields_collapsed": _boolean,
         "fields_except": _strings,
+        # The physical view keeps a layout and a collapse of its own; the logical view keeps the plain ones (#89).
+        "physical_layout": _one_of("gv-dot-lr", "gv-dot-tb", "gv-neato", "gv-fdp", "gv-circo"),
+        "physical_layout_a": _one_of("gv-dot-lr", "gv-dot-tb", "gv-neato", "gv-fdp", "gv-circo"),
+        "physical_layout_b": _one_of("gv-dot-lr", "gv-dot-tb", "gv-neato", "gv-fdp", "gv-circo"),
+        "physical_fields_collapsed": _boolean,
+        "physical_fields_except": _strings,
         # The view drawn (spec 070), the resources switched off (spec 061) and the frames drawn folded (spec 065);
         # the logical view's domain frames on or off (spec 071).
         "model": _one_of("logical", "physical"),

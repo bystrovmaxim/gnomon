@@ -50,6 +50,16 @@ describe("a Dot ERD of unlinked tables (spec 071)", () => {
     expect(svg.match(/class="node"/g)).toHaveLength(36);
   });
 
+  it("without frames, with folds in the address, still draws every table, wrapped about as wide as tall (#89)", () => {
+    setErdPaint("domain", {});
+    const folded = { ...payload(), folded_contours: new Set(["dc:shop.D0", "dc:shop.D1", "dc:shop.D2"]) };
+    const svg = gv.layout(buildDotSource(folded, "gv-dot-lr"), "svg", "dot");
+    expect(aspect(svg)).toBeGreaterThan(0.4);
+    expect(aspect(svg)).toBeLessThan(2.5);
+    expect(svg.match(/class="node"/g)).toHaveLength(36);
+    expect(svg).not.toContain("<title>dc:");
+  });
+
   it("with frames wraps the tables inside each frame too, and keeps each table in its own frame", () => {
     setErdPaint("domain", {});
     const svg = gv.layout(buildDotSource(payload("logical"), "gv-dot-lr"), "svg", "dot");

@@ -57,11 +57,12 @@ describe("ElementCard", () => {
   it("keeps a table's list to names, and shows the pointed field's type and description below", () => {
     show({ nodeId: null, fields: [{ name: "id", type: "str", description: "Lot id" }, { name: "plain", type: "int" }] });
     expect(screen.getAllByTestId("card-field").map((each) => each.textContent)).toEqual(["id", "plain"]);
-    expect(screen.getByTestId("card-field-hint").textContent).toBe("Hover a field");
+    expect(screen.getByTestId("card-field-shown").textContent).toBe("Hover a field");
     fireEvent.mouseEnter(screen.getAllByTestId("card-field")[0]!);
-    expect(screen.getByTestId("card-field-hint").textContent).toBe("strLot id");
+    expect(screen.getByTestId("card-field-shown").textContent).toBe("strLot id");
+    // Leaving the list keeps the last row's foot (#89).
     fireEvent.mouseLeave(screen.getByTestId("card-fields"));
-    expect(screen.getByTestId("card-field-hint").textContent).toBe("Hover a field");
+    expect(screen.getByTestId("card-field-shown").textContent).toBe("strLot id");
   });
 
   it("marks the pointed name by weight and colour", () => {
@@ -75,14 +76,14 @@ describe("ElementCard", () => {
   it("shows a pointed field on a tap too", () => {
     show({ nodeId: null, fields: [{ name: "id", type: "str" }] });
     fireEvent.click(screen.getByTestId("card-field"));
-    expect(screen.getByTestId("card-field-hint").textContent).toBe("str");
+    expect(screen.getByTestId("card-field-shown").textContent).toBe("str");
   });
 
   it("shows a changed type with what it was in the same place, never in the list", () => {
     show({ nodeId: null, fields: [{ name: "id", type: "int", previousType: "str" }] });
     expect(screen.getByTestId("card-field").textContent).toBe("id");
     fireEvent.mouseEnter(screen.getByTestId("card-field"));
-    expect(screen.getByTestId("card-field-hint").textContent).toBe("str → int");
+    expect(screen.getByTestId("card-field-shown").textContent).toBe("str → int");
   });
 
   it("stays unseen until what it reads has come", async () => {
@@ -146,7 +147,7 @@ describe("ElementCard", () => {
   it("tells two rows of one name apart", () => {
     show({ nodeId: null, fields: [{ name: "currency", type: "str" }, { name: "currency", type: "Enum" }] });
     fireEvent.mouseEnter(screen.getAllByTestId("card-field")[1]!);
-    expect(screen.getByTestId("card-field-hint").textContent).toBe("Enum");
+    expect(screen.getByTestId("card-field-shown").textContent).toBe("Enum");
   });
 
   it("hides the list of a table that came whole", () => {
@@ -238,5 +239,43 @@ describe("an icon beside the title (spec 068)", () => {
     cleanup();
     show({ nodeId: null });
     expect(screen.queryByTestId("card-icon")).toBeNull();
+  });
+});
+
+describe("a frame's card keeps the pointed table's block in view, at one height (#89)", () => {
+  const tables = [
+    { name: "Short", type: "Core", nodeId: "shop.Short" },
+    { name: "Long", type: "Core", nodeId: "shop.Long" },
+    { name: "Plain", type: "Core", nodeId: "shop.Plain" },
+  ];
+  const descriptions: Record<string, string> = { "shop.Short": "One line", "shop.Long": "A description long enough to take three lines in the card's foot", "shop.Plain": "" };
+
+  beforeEach(() => {
+    localStorage.setItem("maxitor:cardFieldsOpen", "1");
+    getActiveBase.mockReset().mockReturnValue(null);
+    fetchElementCard.mockReset().mockImplementation(async (id: string) => ({ id, type: "entity", label: id, description: descriptions[id] ?? null, lifecycle_id: null }));
+  });
+
+  afterEach(cleanup);
+
+  it("keeps the foot at the card's bottom while the list scrolls", () => {
+    show({ nodeId: null, fieldNoun: "table", fields: tables });
+    expect(getComputedStyle(screen.getByTestId("card-field-hint")).position).toBe("sticky");
+  });
+
+  it("keeps the last row's foot when the pointer leaves the list, so a foot that grows over the pointer never shakes the list", async () => {
+    show({ nodeId: null, fieldNoun: "table", fields: tables });
+    const shown = () => screen.getByTestId("card-field-shown").textContent;
+    expect(shown()).toBe("Hover a table");
+    const rows = screen.getAllByTestId("card-field");
+    fireEvent.mouseEnter(rows[1]!);
+    await waitFor(() => expect(shown()).toBe(`Core${descriptions["shop.Long"]}`));
+    // The foot has grown over the pointer: the pointer is on the foot now, off the list.
+    fireEvent.mouseLeave(screen.getByTestId("card-fields"));
+    expect(shown()).toBe(`Core${descriptions["shop.Long"]}`);
+    // Only the row's own description is read, when the row is pointed at.
+    expect(fetchElementCard.mock.calls.map(([id]) => id)).toEqual(["shop.Long"]);
+    fireEvent.mouseEnter(rows[0]!);
+    await waitFor(() => expect(shown()).toBe("CoreOne line"));
   });
 });

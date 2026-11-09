@@ -106,3 +106,11 @@ type Layout = "gv-dot-lr" | "gv-dot-tb" | "gv-neato" | "gv-fdp" | "gv-circo";
 export function viewLayout(_model: ErdModelView, chosen: Layout): { layout: Layout; framed: boolean } {
   return { layout: chosen, framed: true };
 }
+
+/**
+ * The page setting that keeps ``name`` for ``model``'s view: the logical view keeps the plain one, the physical view its
+ * own, so a layout or a collapse chosen in one view never changes the other (#89).
+ */
+export function erdViewSetting(model: "logical" | "physical", name: "layout" | "fields_collapsed" | "fields_except"): string {
+  return model === "physical" ? `physical_${name}` : name;
+}

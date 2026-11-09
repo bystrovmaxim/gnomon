@@ -58,13 +58,13 @@ export function erdChanges(entities: readonly ErdEntity[], relations: readonly E
   const changes: ErdChange[] = [];
   const drawn = new Set(entities.map((entity) => entity.id));
   const line = (relation: ErdRelation, at: number, group: string) => {
-    if (!relation.source_field && marked(relation.diff)) changes.push({ key: relationKey(relation), title: `${shortName(relation.source)} → ${shortName(relation.target)}`, detail: relation.relationship_kind ?? "", status: relation.diff, group, cell: `re${at}`, card: null });
+    if (!relation.source_field && marked(relation.diff)) changes.push({ key: relationKey(relation), title: `${shortName(relation.source)} → ${shortName(relation.target)}`, detail: relation.relationship_kind ?? "", status: relation.diff, group, cell: `re${at}`, owners: [relation.source, relation.target], card: null });
   };
   entities.forEach((entity, table) => {
     const title = entity.label || entity.id;
-    if (marked(entity.diff)) changes.push({ key: entity.id, title, detail: "Table", status: entity.diff, group: title, cell: `a_hd${table}`, card: { title, status: entity.diff, elements: [{ kind: "node", id: entity.id }], ...tableInside(entity) } });
+    if (marked(entity.diff)) changes.push({ key: entity.id, title, detail: "Table", status: entity.diff, group: title, cell: `a_hd${table}`, owners: [entity.id], card: { title, status: entity.diff, elements: [{ kind: "node", id: entity.id }], ...tableInside(entity) } });
     (entity.fields ?? []).forEach((field, row) => {
-      if (marked(field.diff)) changes.push({ key: `${entity.id}:${field.name}`, title: field.name, detail: field.type ?? "", status: field.diff, group: title, cell: `a_fn${table}_${row}`, card: rowCard(entity.id, field, field.diff) });
+      if (marked(field.diff)) changes.push({ key: `${entity.id}:${field.name}`, title: field.name, detail: field.type ?? "", status: field.diff, group: title, cell: `a_fn${table}_${row}`, owners: [entity.id], card: rowCard(entity.id, field, field.diff) });
     });
     relations.forEach((relation, at) => relation.source === entity.id && line(relation, at, title));
   });

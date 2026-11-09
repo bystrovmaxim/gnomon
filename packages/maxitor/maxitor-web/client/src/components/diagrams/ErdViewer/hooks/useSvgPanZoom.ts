@@ -359,6 +359,11 @@ export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
     }
   }, [applyTransform, fitBottomInset, fitLeftInset, fitMarginPx, fitBoundsSelector, fitMaxScale, fitToViewBox]);
 
+  // The observer is set up once and calls the latest fit: set up again whenever the fit's options changed — a drawing's
+  // frames switched on or off — its first call fitted the old drawing while the new one was still being laid out, and
+  // the view jumped twice (#89).
+  const fitRef = useRef(fitToContainer);
+  fitRef.current = fitToContainer;
   useEffect(() => {
     const vp = viewportRef.current;
     if (!vp || typeof ResizeObserver === "undefined") return;
@@ -374,7 +379,7 @@ export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
           lastVpSizeRef.current = { w, h };
         }
         if (!hasFittedRef.current || sizeChanged) {
-          fitToContainer();
+          fitRef.current();
         }
       });
     });
@@ -386,7 +391,7 @@ export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
         resizeFitRafRef.current = null;
       }
     };
-  }, [fitToContainer]);
+  }, []);
 
   const fitToContainerPublic = useCallback(() => {
     fitToContainer();

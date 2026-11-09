@@ -15,6 +15,12 @@ const SETTINGS: Readonly<Record<string, { param: string; kind: Kind }>> = {
   layout: { param: "layout", kind: "choice" },
   layout_a: { param: "layout_a", kind: "choice" },
   layout_b: { param: "layout_b", kind: "choice" },
+  // The ERD's physical view keeps a layout and a collapse of its own; the logical view keeps the plain ones (#89).
+  physical_layout: { param: "physical_layout", kind: "choice" },
+  physical_layout_a: { param: "physical_layout_a", kind: "choice" },
+  physical_layout_b: { param: "physical_layout_b", kind: "choice" },
+  physical_fields_collapsed: { param: "physical_collapsed", kind: "switch" },
+  physical_fields_except: { param: "physical_except", kind: "list" },
   domains: { param: "domains", kind: "list" },
   disabled_entities: { param: "off_entities", kind: "list" },
   disabled_kinds: { param: "off_kinds", kind: "list" },
