@@ -46,9 +46,22 @@ describe("erdSubject", () => {
     expect(erdSubject({ kind: "table", id: "a.Offer" }, entities, root)?.change).toEqual({ title: "Offer", status: "changed", elements: [{ kind: "node", id: "a.Offer" }] });
   });
 
-  it("tells a line in the model's words, with no paths", () => {
-    const relations = [{ source: "a.Lot", target: "a.Offer", source_field: "offer", target_field: "lots", relationship_kind: "association", source_cardinality: "zero_many", target_cardinality: "one", description: "The offer it came from", diff: "added" }] as ErdRelation[];
-    expect(erdSubject({ kind: "edge", id: "re0" }, entities, root, relations)).toMatchObject({ title: "Lot.offer → Offer.lots", detail: "Association · 0..* → 1", description: "The offer it came from", change: { status: "added" } });
+  it("tells a line in the model's words, with no paths: its kind, then each end with its mark, table, field and count (spec 071)", () => {
+    const relations = [{ source: "a.Lot", target: "a.Offer", source_field: "offer", target_field: "lots", relationship_kind: "composition", source_cardinality: "zero_many", target_cardinality: "one", description: "The offer it came from", diff: "added" }] as ErdRelation[];
+    const subject = erdSubject({ kind: "edge", id: "re0" }, entities, root, relations)!;
+    expect(subject).toMatchObject({ title: "Lot.offer → Offer.lots", detail: "", description: "The offer it came from", change: { status: "added" } });
+    expect(subject.relation).toMatchObject({
+      name: "offer",
+      kind: "Composition",
+      shape: "many to one",
+      from: { table: "Lot", field: "offer", count: "zero or more (0..*)" },
+      to: { table: "Offer", field: "lots", count: "exactly one (1)" },
+    });
+    // The end marks are the line's own: a crow's foot and a circle for zero or more, two bars for exactly one.
+    expect(decodeURIComponent(subject.relation!.from.icon)).toContain("<circle");
+    expect(decodeURIComponent(subject.relation!.to.icon)).not.toContain("<circle");
+    // A composition's mark is a filled diamond.
+    expect(decodeURIComponent(subject.relation!.kindIcon)).toMatch(/Z" fill="#475569"/);
   });
 
   it("has nothing for a line it does not know or an unknown table", () => {
@@ -174,8 +187,8 @@ describe("a bundle's card (spec 065)", () => {
     expect(subject.title).toBe("Ticket ↔ OrdersResource");
     expect(subject.fieldNoun).toBe("relation");
     expect(subject.fields).toEqual([
-      { name: "Ticket.order → Order", type: "association · 0..* → 1", description: "The order it is about" },
-      { name: "Ticket.line → Line", type: "association", description: undefined },
+      { name: "Ticket.order → Order", type: "Association · zero or more → exactly one", description: "The order it is about" },
+      { name: "Ticket.line → Line", type: "Association", description: undefined },
     ]);
   });
 
@@ -195,22 +208,31 @@ describe("the card of a resource's frame and of its folded box (spec 068, spec 0
   const card = (ref: { kind: "contour" | "table"; id: string }) => erdSubject(ref, drawn, document.createElement("div"), [], labels);
 
   it("gives a resource's frame its icon, name and copies — their count only on the fold — and the full id to copy", () => {
-    const subject = card({ kind: "contour", id: ORDERS })!;
+    const subject = card({ kind: "contour", id: `rc:${ORDERS}` })!;
     expect([subject.title, subject.detail, subject.nodeId, subject.copy, subject.fieldNoun]).toEqual(["OrdersResource", "Resource", ORDERS, ORDERS, "table"]);
-    expect(subject.fields).toEqual([{ name: "Line", type: "detail" }, { name: "Order", type: "core" }]);
+    // Each table is a node: its description is read when its row is pointed at.
+    expect(subject.fields).toEqual([{ name: "Line", type: "detail", nodeId: "shop.Line" }, { name: "Order", type: "core", nodeId: "shop.Order" }]);
     expect(decodeURIComponent(subject.icon!)).toContain("#7570B3");
   });
 
   it("gives a folded resource box the same card as its frame", () => {
-    expect(card({ kind: "table", id: `rc:${ORDERS}` })!.fields).toEqual(card({ kind: "contour", id: ORDERS })!.fields);
+    expect(card({ kind: "table", id: `rc:${ORDERS}` })!.fields).toEqual(card({ kind: "contour", id: `rc:${ORDERS}` })!.fields);
   });
 
   it("gives an empty resource's frame a card that says it keeps nothing", () => {
-    expect(card({ kind: "contour", id: ARCHIVE })).toMatchObject({ title: "ArchiveResource", detail: "Resource · keeps no entity", fields: [] });
+    expect(card({ kind: "contour", id: `rc:${ARCHIVE}` })).toMatchObject({ title: "ArchiveResource", detail: "Resource · keeps no entity", fields: [] });
   });
 
   it("has no card for a frame of a resource the graph does not have", () => {
-    expect(card({ kind: "contour", id: "shop.Gone" })).toBeNull();
+    expect(card({ kind: "contour", id: "rc:shop.Gone" })).toBeNull();
+  });
+
+  it("gives a domain's frame its name, its colour, its description to read and its tables (spec 071)", () => {
+    const store = { id: "shop.Order", label: "Order", domain_qualname: "shop.StoreDomain", entity_kind: "core", fields: [] };
+    const subject = erdSubject({ kind: "contour", id: "dc:shop.StoreDomain" }, [store], document.createElement("div"), [], {}, [], { "shop.StoreDomain": "StoreDomain" }, true, { "shop.StoreDomain": "#ea580c" })!;
+    expect([subject.title, subject.detail, subject.fieldNoun, subject.nodeId]).toEqual(["StoreDomain", "Domain", "table", "shop.StoreDomain"]);
+    expect(subject.fields).toEqual([{ name: "Order", type: "core", nodeId: "shop.Order" }]);
+    expect(decodeURIComponent(subject.icon!)).toContain("#ea580c");
   });
 
   it("reads a copy's card as its entity's, naming the entity for the full graph", () => {

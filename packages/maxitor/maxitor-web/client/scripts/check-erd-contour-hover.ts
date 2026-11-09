@@ -5,7 +5,7 @@
  * It lays out the physical view of a shop — a storefront, a support desk and a billing database — through the WASM
  * Graphviz build the client loads, with the production passes, puts the SVG in a DOM, binds the production hover, and
  * asserts what the reader sees: each resource's frame is named by its resource and carries its full id as its hover
- * label; the domain frames and the invisible spacing are named by nothing; hovering the storefront's border lights the
+ * label; the invisible spacing is named by nothing; hovering the storefront's border lights the
  * one line that leaves it, keeps the copies at its ends bright and dims the rest; the billing frame, with no line out,
  * dims everything; leaving gives the drawing back (spec 064, spec 070).
  *
@@ -84,14 +84,14 @@ const named = contours.filter((cluster) => cluster.id.startsWith("rc:")).map((cl
 check("each resource contour is named by its resource", JSON.stringify(named) === JSON.stringify([`rc:${BILLING}`, `rc:${STOREFRONT}`, `rc:${SUPPORT}`]), named.join(", "));
 const titleOf = (cluster: Element) => cluster.querySelector("title")?.textContent ?? "";
 const others = contours.filter((cluster) => !cluster.id.startsWith("rc:")).map(titleOf);
-check("the domain frames and the spacing are named by nothing", others.some((title) => title.includes("_domain_")) && others.every((title) => title.includes("_domain_") || title.endsWith("_room")), others.join(", "));
+check("the invisible spacing is named by nothing", others.every((title) => title.endsWith("_room")), others.join(", "));
 
 const contour = (resource: string) => contours.find((cluster) => cluster.id === `rc:${resource}`)!;
 const label = contour(STOREFRONT).querySelector("a")?.getAttribute("xlink:title");
 check("the hover label is the resource's full id", label === STOREFRONT, label ?? "none");
 const hit = contour(STOREFRONT).querySelector("path.erd-hit");
 const border = contour(STOREFRONT).querySelector("path:not(.erd-hit)");
-check("the border has a 10 px hit stroke along it, catching only the stroke", hit?.getAttribute("d") === border?.getAttribute("d") && hit?.getAttribute("stroke-width") === "10" && hit?.getAttribute("pointer-events") === "stroke");
+check("the frame's whole outline — border, name and empty space — is one transparent hit area", hit?.getAttribute("d") === border?.getAttribute("d") && hit?.getAttribute("fill") === "transparent" && hit?.getAttribute("pointer-events") === "all");
 
 const hover = (element: Element, on: boolean) => element.dispatchEvent(new MouseEvent(on ? "mouseenter" : "mouseleave"));
 const tableTitle = (node: Element) => node.querySelector("title")?.textContent ?? "";
@@ -100,19 +100,31 @@ const dimmed = () => [...root.querySelectorAll<HTMLElement>("g.node")].filter((n
 const lit = () => [...root.querySelectorAll("g.edge.is-hovered")].map((edge) => edge.id).sort();
 
 hover(contour(STOREFRONT), true);
-check("the storefront lights only its line to the support desk", JSON.stringify(lit()) === JSON.stringify(["re1"]), lit().join(", "));
-check("the copies at that line's ends stay bright", JSON.stringify(bright()) === JSON.stringify([copyId("shop.Order", STOREFRONT), copyId("shop.Ticket", SUPPORT)]), bright().join(", "));
-check("every other copy dims", JSON.stringify(dimmed()) === JSON.stringify([copyId("shop.Invoice", BILLING), copyId("shop.OrderLine", STOREFRONT)]), dimmed().join(", "));
+// The whole frame, every table in it, and every line those tables touch — the storefront's own OrderLine→Order stays
+// lit with the line to the support desk (spec 071).
+check("the storefront lights every line its tables touch, inside the frame and out", JSON.stringify(lit()) === JSON.stringify(["re0", "re1"]), lit().join(", "));
+check("the copies inside the frame and at the lines' far ends stay bright", JSON.stringify(bright()) === JSON.stringify([copyId("shop.OrderLine", STOREFRONT), copyId("shop.Order", STOREFRONT), copyId("shop.Ticket", SUPPORT)]), bright().join(", "));
+check("every other copy dims", JSON.stringify(dimmed()) === JSON.stringify([copyId("shop.Invoice", BILLING)]), dimmed().join(", "));
 check("the hovered border widens", contour(STOREFRONT).classList.contains("is-hovered"));
 hover(contour(STOREFRONT), false);
 check("leaving gives the drawing back", lit().length === 0 && [...root.querySelectorAll<HTMLElement>("g.node, g.edge")].every((element) => element.style.opacity === "") && root.querySelectorAll(".is-hovered").length === 0);
 
 hover(contour(BILLING), true);
-check("billing, with no line out, dims every table and line", bright().length === 0 && dimmed().length === 4 && lit().length === 0 && [...root.querySelectorAll<HTMLElement>("g.edge")].every((edge) => edge.style.opacity === "0.2"));
+check("billing, with no line out, keeps its own copy bright and dims every line", JSON.stringify(bright()) === JSON.stringify([copyId("shop.Invoice", BILLING)]) && dimmed().length === 3 && lit().length === 0 && [...root.querySelectorAll<HTMLElement>("g.edge")].every((edge) => edge.style.opacity === "0.2"));
 hover(contour(BILLING), false);
+
+// A domain frame in the logical view carries the same hit area over its whole outline (spec 071).
+const logical = gv.layout(buildDotSource({ entities: shop.entities.map((copy) => ({ ...copy, id: copy.copy_of })), relations: [{ source: "shop.Ticket", target: "shop.Order", source_field: "order", relationship_kind: "association" }], model: "logical", domain_labels: { "shop.ShopDomain": "Shop" } }, "gv-dot-lr"), "svg", "dot");
+const logicalDom = new JSDOM(`<div id="root">${logical.slice(logical.indexOf("<svg"))}</div>`).window.document;
+const logicalRoot = logicalDom.getElementById("root")!;
+addContourHitAreas(logicalRoot);
+const domain = logicalRoot.querySelector('g[id="dc:shop.ShopDomain"]');
+const domainHit = domain?.querySelector("path.erd-hit");
+const domainBorder = domain?.querySelector("path:not(.erd-hit)");
+check("a domain frame's whole outline is one transparent hit area", domainHit?.getAttribute("d") === domainBorder?.getAttribute("d") && domainHit?.getAttribute("pointer-events") === "all");
 
 if (failures > 0) {
   console.error(`${failures} assertion(s) failed`);
   process.exit(1);
 }
-console.log("ERD contour hover: a resource contour lights its links to other resources and dims the rest");
+console.log("ERD contour hover: a frame's whole outline is one hit area, for a resource and a domain");

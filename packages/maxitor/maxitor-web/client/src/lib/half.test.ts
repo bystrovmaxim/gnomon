@@ -10,6 +10,12 @@ describe("a half", () => {
     expect(settingOfHalf("rankdir", half("b"))).toBe("rankdir_b");
     expect(settingOfHalf("domains", half("a"))).toBe("domains");
     expect(settingOfHalf("layout", null)).toBe("layout");
+    // The two halves share the frames switch, the view, the folds and the paint (spec 071).
+    expect(settingOfHalf("boundary", half("a"))).toBe("boundary");
+    expect(settingOfHalf("boundary", half("b"))).toBe("boundary");
+    expect(settingOfHalf("model", half("b"))).toBe("model");
+    expect(settingOfHalf("folded_contours", half("b"))).toBe("folded_contours");
+    expect(settingOfHalf("paint", half("a"))).toBe("paint");
   });
 
   it("keeps its clips apart from the other half's, so each drawing is cut by its own", () => {

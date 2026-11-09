@@ -214,6 +214,8 @@ async function listTargets(front: string, source: string): Promise<Target[]> {
       targets.push({ label: "ERD, all domains", query: { view: "domain-erd" } });
       // Collapsing changes the tables' sizes, so it is laid out again and must agree too (spec 043, FR-030).
       targets.push({ label: "ERD, all domains, collapsed", query: { view: "domain-erd", collapsed: "1" } });
+      // The physical view is laid out in all five layouts too (spec 071, FR-007).
+      targets.push({ label: "ERD, all domains, physical", query: { view: "domain-erd", model: "physical" } });
     }
     else if (row.type === "erd_domain" && row.parent_id)
       targets.push({ label: `ERD ${row.parent_id}`, query: { view: "domain-erd", domain: row.parent_id } });
@@ -826,9 +828,8 @@ const clickFirstFilterRowInPage = () => {
 };
 
 const click = (selector: string) => async (tab: BrowserTab) => void (await waitInPage(tab, clickInPage, selector, HASH_TIMEOUT_MS, selector));
+// The whole system's ERD holds every table already: it shows no 1-hop switch (spec 071), which ONE_DOMAIN_CHANGES checks.
 const ERD_CHANGES: VisualChange[] = [
-  // With 1-hop on, a domain switched off may come back whole as its neighbours' neighbours; off, it surely goes.
-  { label: "1-hop off", act: async (tab) => void (await waitInPage(tab, clickLabelInPage, "1-hop", HASH_TIMEOUT_MS, "1-hop")) },
   { label: "a domain off", act: async (tab) => void (await waitInPage(tab, clickFirstFilterRowInPage, null, HASH_TIMEOUT_MS, "a filter row")) },
   { label: "the domain on", act: async (tab) => void (await waitInPage(tab, clickFirstFilterRowInPage, null, HASH_TIMEOUT_MS, "a filter row")) },
   { label: "paint by kinds", act: click('[aria-label="Paint by Kinds"]') },
@@ -838,7 +839,6 @@ const ERD_CHANGES: VisualChange[] = [
   // The two views of spec 070: the physical one frames each database round its copies, the logical one each domain.
   { label: "physical view", act: click('[data-testid="erd-model-physical"]') },
   { label: "logical view", act: click('[data-testid="erd-model-logical"]') },
-  { label: "1-hop on", act: async (tab) => void (await waitInPage(tab, clickLabelInPage, "1-hop", HASH_TIMEOUT_MS, "1-hop")) },
 ];
 const ONE_DOMAIN_CHANGES: VisualChange[] = [
   { label: "1-hop off", act: async (tab) => void (await waitInPage(tab, clickLabelInPage, "1-hop", HASH_TIMEOUT_MS, "1-hop")) },

@@ -1,10 +1,12 @@
 // src/lib/erdCard.ts
 /** What a card says of a table or a row of the ERD, from what the diagram holds (spec 043, FR-004 – FR-006). */
 import type { CardField, CardSubject } from "@/components/diagrams/ElementCard";
-import { isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
+import { DOMAIN_CONTOUR_ID_PREFIX, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
 import { copyEntity } from "@/lib/erdViews";
 import { FIELDS_CHANGED, rowCard, tableInside, type CardTarget } from "@/lib/erdDiffCard";
 import { svgDataUriForGraphNodeIcon } from "@/lib/icons";
+import { ROW_READABLE_PX, ROW_TAPPABLE_PX } from "@/lib/erdPostPass";
+import { RELATION_END_COUNT, RELATION_END_WORDS, relationEndGlyph, relationKindGlyph } from "@/lib/relationGlyphs";
 import { tooltipOf } from "@/rooms/graphvizFocus";
 import type { ElementRef } from "@/rooms/focusStore";
 
@@ -29,9 +31,6 @@ function tableChange(entity: ErdEntity, title: string): CardTarget | null {
   return { title, status, elements: [{ kind: "node", id: entity.id }], ...inside };
 }
 
-/** How low a row may stand on screen and still be read or aimed at, in CSS px; a finger needs more than a pointer. */
-export const ROW_READABLE_PX = 10;
-export const ROW_TAPPABLE_PX = 20;
 
 /** The table of a row too small to read or aim at: from afar a card tells the whole table (spec 043, FR-001a). */
 export function fromAfar(ref: ElementRef, cell: Element | undefined, entities: readonly ErdEntity[], touch: boolean): ElementRef {
@@ -41,8 +40,12 @@ export function fromAfar(ref: ElementRef, cell: Element | undefined, entities: r
   return entity && height < (touch ? ROW_TAPPABLE_PX : ROW_READABLE_PX) ? { kind: "table", id: entity.id } : ref;
 }
 
-/** How many a line's end stands for. */
-const ENDS: Readonly<Record<string, string>> = { one: "1", zero_one: "0..1", one_many: "1..*", zero_many: "0..*" };
+/** How many a line's end stands for, in the drawing's notation and in words: ``0..* (zero or more)``. */
+function endCount(cardinality: string | undefined): string {
+  if (!cardinality) return "";
+  const words = RELATION_END_WORDS[cardinality];
+  return words ? `${words} (${RELATION_END_COUNT[cardinality]})` : cardinality;
+}
 
 /** A line's id: ``re<k>``, or ``rp<k>`` for where it pointed in A. */
 const LINE = /^r[ep](\d+)$/;
@@ -51,19 +54,37 @@ function titleCase(word: string): string {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-/** The card of a line (spec 043, FR-011): what joins what, of which kind and how many, in the words of the model. */
+/** A relation's shape in words, from its source's side: ``many to one``, ``one to one``, ``many to many``. */
+function relationShape(source: string | undefined, target: string | undefined): string {
+  const side = (cardinality: string | undefined) => (cardinality === "one_many" || cardinality === "zero_many" ? "many" : "one");
+  return `${side(source)} to ${side(target)}`;
+}
+
+/**
+ * The card of a line (spec 043, FR-011; spec 071): its kind with its mark, then each end on a row of its own — the
+ * line's mark for that end, the table, the field and how many of the table the end stands for, in words.
+ */
 function lineSubject(ref: ElementRef, entities: readonly ErdEntity[], relations: readonly ErdRelation[]): Omit<CardSubject, "at"> | null {
   const line = relations[Number(LINE.exec(ref.id)?.[1] ?? -1)];
   if (!line) return null;
   const name = (id: string) => entities.find((entity) => entity.id === id)?.label || id.split(".").pop() || id;
   const end = (id: string, field?: string | null) => (field ? `${name(id)}.${field}` : name(id));
   const title = `${end(line.source, line.source_field)} → ${end(line.target, line.target_field)}`;
-  const counts = line.source_cardinality && line.target_cardinality ? ` · ${ENDS[line.source_cardinality] ?? line.source_cardinality} → ${ENDS[line.target_cardinality] ?? line.target_cardinality}` : "";
+  const kind = line.relationship_kind ?? "association";
   return {
     key: `line:${ref.id}`,
     ref,
     title,
-    detail: `${titleCase(line.relationship_kind ?? "association")}${counts}`,
+    relation: {
+      // Named by the field that holds it, as a row of its table is; a line with no field by its kind.
+      name: line.source_field ?? titleCase(kind),
+      kind: titleCase(kind),
+      shape: relationShape(line.source_cardinality, line.target_cardinality),
+      kindIcon: relationKindGlyph(kind),
+      from: { table: name(line.source), field: line.source_field, count: endCount(line.source_cardinality), icon: relationEndGlyph(line.source_cardinality) },
+      to: { table: name(line.target), field: line.target_field, count: endCount(line.target_cardinality), icon: relationEndGlyph(line.target_cardinality) },
+    },
+    detail: "",
     description: line.description,
     nodeId: null,
     change: marked(line.diff) ? { title, status: line.diff, elements: line.source_field ? [{ kind: "edge", id: `${line.source}|entity_relation|${line.source_field}` }] : [] } : null,
@@ -95,8 +116,8 @@ function bundleSubject(
     fieldNoun: "relation",
     fields: lines.map((line) => {
       const side = (id: string, field?: string | null) => (field ? `${table(id)}.${field}` : table(id));
-      const counts = line.source_cardinality && line.target_cardinality ? ` · ${ENDS[line.source_cardinality] ?? line.source_cardinality} → ${ENDS[line.target_cardinality] ?? line.target_cardinality}` : "";
-      return { name: `${side(line.source, line.source_field)} → ${side(line.target, line.target_field)}`, type: `${line.relationship_kind ?? "association"}${counts}`, description: line.description };
+      const counts = line.source_cardinality && line.target_cardinality ? ` · ${RELATION_END_WORDS[line.source_cardinality] ?? line.source_cardinality} → ${RELATION_END_WORDS[line.target_cardinality] ?? line.target_cardinality}` : "";
+      return { name: `${side(line.source, line.source_field)} → ${side(line.target, line.target_field)}`, type: `${titleCase(line.relationship_kind ?? "association")}${counts}`, description: line.description };
     }),
   };
 }
@@ -105,14 +126,44 @@ function bundleSubject(
 const RESOURCE_FILL = "#7570B3";
 
 /**
- * The card of a resource's frame, or of its folded box (spec 068; spec 070): the resource's icon and name, and the
- * tables it keeps — an empty frame's card says it keeps none — folded as a table's fields are, their count on the fold.
+ * The card of a frame, or of its folded box (spec 068; spec 070; spec 071): a resource's icon and name, or a domain's,
+ * and the tables it keeps — an empty frame's card says it keeps none — folded as a table's fields are, their count on
+ * the fold.
  */
-function contourSubject(ref: ElementRef, id: string, entities: readonly ErdEntity[], resourceLabels: Readonly<Record<string, string>>): Omit<CardSubject, "at"> | null {
-  const resource = id.slice(3);
-  if (!(resource in resourceLabels) && !entities.some((entity) => tableResource(entity) === resource)) return null;
+function contourSubject(
+  ref: ElementRef,
+  id: string,
+  entities: readonly ErdEntity[],
+  resourceLabels: Readonly<Record<string, string>>,
+  domainLabels: Readonly<Record<string, string>>,
+  domainColours: Readonly<Record<string, string>>,
+): Omit<CardSubject, "at"> | null {
+  const key = id.slice(3);
+  // Each table is a node of its own: its description is read when its row is pointed at.
+  const row = (entity: ErdEntity) => ({ name: tableName(entity), type: entity.entity_kind_label ?? entity.entity_kind ?? undefined, nodeId: copyEntity(entity.id) });
   const short = (full: string) => full.split(".").pop() || full;
   const tableName = (entity: ErdEntity) => entity.label || short(copyEntity(entity.id));
+  if (id.startsWith(DOMAIN_CONTOUR_ID_PREFIX)) {
+    const tables = entities
+      .filter((entity) => (entity.domain_qualname?.trim() || "") === key)
+      .sort((one, other) => tableName(one).localeCompare(tableName(other)));
+    return {
+      key: `contour:${id}`,
+      ref,
+      title: domainLabels[key] || short(key),
+      // The domain's own colour, as its frame, its disk on the drawing and its row in the filter panel have it.
+      icon: svgDataUriForGraphNodeIcon(domainColours[key] ?? "#64748b", "Domain"),
+      detail: tables.length ? "Domain" : "Domain · no entity",
+      // The domain is a node: its description is read and stands under its name.
+      nodeId: key,
+      change: null,
+      fieldNoun: "table",
+      fields: tables.map(row),
+      copy: domainLabels[key] || short(key),
+    };
+  }
+  const resource = key;
+  if (!(resource in resourceLabels) && !entities.some((entity) => tableResource(entity) === resource)) return null;
   const tables = entities.filter((entity) => tableResource(entity) === resource).sort((one, other) => tableName(one).localeCompare(tableName(other)));
   return {
     key: `contour:${id}`,
@@ -123,7 +174,7 @@ function contourSubject(ref: ElementRef, id: string, entities: readonly ErdEntit
     nodeId: resource,
     change: null,
     fieldNoun: "table",
-    fields: tables.map((entity) => ({ name: tableName(entity), type: entity.entity_kind ?? undefined })),
+    fields: tables.map(row),
     copy: resource,
   };
 }
@@ -184,10 +235,11 @@ export function erdSubject(
   bundles: readonly ErdBundle[] = [],
   domainLabels: Readonly<Record<string, string>> = {},
   storageKnown = true,
+  domainColours: Readonly<Record<string, string>> = {},
 ): Omit<CardSubject, "at"> | null {
-  // A resource's frame, and its folded box, have a card of their own (spec 068).
-  if (ref.kind === "contour") return contourSubject(ref, `rc:${ref.id}`, entities, resourceLabels);
-  if (ref.kind === "table" && isContourId(ref.id)) return contourSubject(ref, ref.id, entities, resourceLabels);
+  // A frame — a resource's or a domain's — and its folded box, have a card of their own (spec 068, spec 071).
+  if (ref.kind === "contour") return contourSubject(ref, ref.id, entities, resourceLabels, domainLabels, domainColours);
+  if (ref.kind === "table" && isContourId(ref.id)) return contourSubject(ref, ref.id, entities, resourceLabels, domainLabels, domainColours);
   const bundle = ref.kind === "edge" ? bundles.find((each) => each.id === ref.id) : undefined;
   if (bundle) return bundleSubject(ref, bundle, entities, relations, resourceLabels);
   if (ref.kind === "edge") return lineSubject(ref, entities, relations);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CompareResult } from "@/api/compare";
-import { filterLifecycleByChanges, filterLifecycleByKinds, lifecycleCard, lifecycleChangeKinds, lifecycleChanges, lifecycleCounts, lifecycleHolds, lifecycleOfSide, markLifecycle, mergeLifecycles, unmarkedLifecycle, withLifecycleOneHop } from "@/lib/lifecycleDiff";
+import { filterLifecycleByChanges, filterLifecycleByKinds, lifecycleCard, lifecycleChangeKinds, lifecycleChanges, lifecycleCounts, lifecycleHolds, lifecycleOfSide, markLifecycle, mergeLifecycles, unmarkedLifecycle } from "@/lib/lifecycleDiff";
 import type { LifecycleFiniteAutomatonPayload, LifecycleFsmStateWire } from "@/model/lifecycleFiniteAutomaton";
 
 const life = "a.Offer:lifecycle:status";
@@ -125,12 +125,10 @@ describe("the filters", () => {
     expect(left.transitions.map((each) => each.source)).toEqual(["busy"]);
   });
 
-  it("brings back what stands one transition away, and changes nothing when nothing is off", () => {
-    const hop = withLifecycleOneHop(filterLifecycleByKinds(older, new Set(["final", "intermediate"])), older);
-    expect(hop.states.map((state) => state.key)).toEqual(["open", "busy"]);
-    expect(withLifecycleOneHop(older, older)).toEqual(older);
-    const back = withLifecycleOneHop(filterLifecycleByKinds(older, new Set(["initial", "intermediate"])), older);
-    expect(back.states.map((state) => state.key)).toEqual(["busy", "done"]);
+  it("keeps what a filter hides hidden: a lifecycle is its own base and brings nothing back (spec 071, FR-016)", () => {
+    const left = filterLifecycleByKinds(older, new Set(["final", "intermediate"]));
+    expect(left.states.map((state) => state.key)).toEqual(["open"]);
+    expect(left.transitions).toEqual([]);
   });
 });
 

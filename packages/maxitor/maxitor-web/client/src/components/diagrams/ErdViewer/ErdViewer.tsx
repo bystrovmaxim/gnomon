@@ -34,6 +34,7 @@ export function ErdViewer({ selection }: ErdViewerProps) {
           bundleVersion={dataVersion}
           includeOneHop={includeOneHop}
           onIncludeOneHopChange={setIncludeOneHop}
+          oneHopAvailable={qualifier != null}
         />
       )}
     </DiagramShell>

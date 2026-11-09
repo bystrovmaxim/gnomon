@@ -27,6 +27,8 @@ const SETTINGS: Readonly<Record<string, { param: string; kind: Kind }>> = {
   fields_except: { param: "except", kind: "list" },
   // The use-case diagram's system boundary; the ERD's two views are ``model`` (spec 070).
   boundary: { param: "boundary", kind: "switch" },
+  // The use cases' boundaries folded into one box each (spec 071).
+  boundaries_folded: { param: "boundaries_folded", kind: "switch" },
   model: { param: "model", kind: "choice" },
   folded_contours: { param: "folded", kind: "list" },
   rankdir: { param: "rankdir", kind: "choice" },

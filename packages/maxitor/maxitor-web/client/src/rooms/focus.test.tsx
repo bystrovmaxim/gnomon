@@ -251,7 +251,7 @@ describe("a resource contour's hover (spec 064)", () => {
     document.body.appendChild(root);
     return root;
   }
-  const ORDERS = { kind: "contour", id: "shop.OrdersResource" } as const;
+  const ORDERS = { kind: "contour", id: "rc:shop.OrdersResource" } as const;
 
   it("names a resource contour by its resource, from its border or its name; a data source contour names nothing", () => {
     const root = contoured();
@@ -260,7 +260,7 @@ describe("a resource contour's hover (spec 064)", () => {
     expect(elementRefOf(contour.querySelector("text")!, "table")).toEqual(ORDERS);
     expect(elementRefOf(root.querySelector("#clust1 path")!, "table")).toBeNull();
     expect(elementsOf(root, ORDERS)).toEqual([contour]);
-    expect(elementsOf(root, { kind: "contour", id: "shop.Missing" })).toEqual([]);
+    expect(elementsOf(root, { kind: "contour", id: "rc:shop.Missing" })).toEqual([]);
     expect(tooltipOf(contour)).toBe("shop.OrdersResource");
   });
 

@@ -1,6 +1,6 @@
 // src/lib/buildDomainUseCaseDotSource.ts
 import type { DiffStatus } from "@/api/compare";
-import { ERD_DIFF_COLOUR, ERD_DIFF_SIGN } from "./buildDotSource.ts";
+import { DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, ERD_DIFF_SIGN, frameTitleLabel } from "./buildDotSource.ts";
 import type { DomainUseCaseDiagramPayload } from "@/model/domainUseCaseDiagram";
 
 export type DomainUseCaseRankdir = "LR" | "TB";
@@ -146,6 +146,8 @@ export type DomainUseCaseDotLayoutOptions = {
   layoutEngine?: DomainUseCaseLayoutEngine;
   /** In Diff, what colours the actions: their status (default) or their domain, the outline still saying the status. */
   paint?: "changes" | "domains";
+  /** The boundaries folded into one box each: the use cases hidden, only the links between the domains drawn (spec 071). */
+  foldedAll?: boolean;
 };
 
 /** The class Graphviz writes on what a comparison leaves unchanged; the viewer fades it. */
@@ -202,8 +204,11 @@ export function buildDomainUseCaseDotBundle(
 
   let graphAttrs: string;
   let edgeDefaultAttrs: string;
+  // One boundary per domain is a cluster each: only with more than one are their frames spaced apart.
+  const framed = boundary && new Set(actions.map((action) => action.domain_id)).size > 1;
   if (layoutEngine === "dot") {
-    graphAttrs = `rankdir=${rankdir}, bgcolor=transparent, fontname="Inter, Helvetica, sans-serif"`;
+    // One boundary per domain: a wider gap between the use cases, so the frames around them keep their distance.
+    graphAttrs = `rankdir=${rankdir}, bgcolor=transparent, fontname="Inter, Helvetica, sans-serif"${framed ? ", nodesep=0.6, ranksep=1.2" : ""}`;
     edgeDefaultAttrs = 'fontname="Inter, Helvetica, sans-serif"';
   } else if (layoutEngine === "neato") {
     // ``sep`` only nudges overlap removal; ``len`` on edges actually stretches Neato/KK springs.
@@ -226,8 +231,8 @@ export function buildDomainUseCaseDotBundle(
     `  edge [${edgeDefaultAttrs}];`,
   ];
 
-  const pushActionNodes = (indent: string) => {
-    for (const a of actions) {
+  const pushActionNodes = (indent: string, list: DomainUseCaseDiagramPayload["actions"] = actions) => {
+    for (const a of list) {
       const nid = domainUseCaseDotNodeId("a", a.id);
       const linesCount = wrapLabel(a.short_label || a.label).length;
       const H = Math.max(60, linesCount * 14 + 20);
@@ -242,8 +247,45 @@ export function buildDomainUseCaseDotBundle(
     }
   };
 
-  if (boundary) {
-    // Neutral contour — diagram may mix actions from several domains (see per-node accent_color).
+  // One boundary per domain on the all-domains use case (spec 071): each titled with its domain's disk and name, in its
+  // domain's colour, as the ERD titles its domain frames. Folded, a boundary is one box: its use cases are hidden and
+  // the links that leave it are drawn from the box. Folding needs boundaries: with Boundary off nothing is folded.
+  const domains = [...new Set(actions.map((action) => action.domain_id))];
+  const folded = boundary && layout?.foldedAll === true;
+  const firstOf = (domainId: string) => actions.find((action) => action.domain_id === domainId);
+  const domainColour = (domainId: string) => firstOf(domainId)?.accent_color ?? "#64748b";
+  const domainTitle = (domainId: string, at: number, below?: string[]) =>
+    frameTitleLabel({ kind: "domain", slot: at, name: firstOf(domainId)?.domain_short_label ?? domainId, disk: domainColour(domainId), ink: domainColour(domainId), tooltip: domainId, fontSize: 13, below, pad: below ? 0 : 4 });
+  const domainNode = (domainId: string) => `domain_${domains.indexOf(domainId)}`;
+
+  if (folded) {
+    domains.forEach((domainId, at) => {
+      const mine = actions.filter((action) => action.domain_id === domainId);
+      const changed = mine.filter((action) => action.diff !== undefined && action.diff !== "unchanged").length;
+      const below = [`<FONT POINT-SIZE="9" COLOR="#64748b">${mine.length} use case${mine.length === 1 ? "" : "s"}</FONT>`];
+      if (changed > 0) below.push(`<FONT POINT-SIZE="9" COLOR="${ERD_DIFF_COLOUR.changed}"><B>${ERD_DIFF_SIGN.changed} ${changed} changed</B></FONT>`);
+      // The box carries the domain frame's id, so hover, rooms and checks read it as the boundary it stands for.
+      lines.push(
+        `  ${domainNode(domainId)} [id="${dotEscAttr(`${DOMAIN_CONTOUR_ID_PREFIX}${domainId}`)}" shape=box style="rounded,filled" fillcolor="#ffffff" color="${domainColour(domainId)}" penwidth=1.4 margin="0.18,0.12" tooltip="${dotEscAttr(domainId)}" label=<${domainTitle(domainId, at, below)}>];`,
+      );
+    });
+  } else if (boundary && domains.length > 1) {
+    domains.forEach((domainId, at) => {
+      lines.push(`  subgraph cluster_scope_${at} {`);
+      // The frame's id says which domain it stands for, so the room and the checks read it as an ERD frame (spec 071).
+      lines.push(`    id="${dotEscAttr(`${DOMAIN_CONTOUR_ID_PREFIX}${domainId}`)}";`);
+      lines.push(`    tooltip="${dotEscAttr(domainId)}";`);
+      lines.push(`    label=<${domainTitle(domainId, at)}>;`);
+      lines.push(`    style="rounded,filled";`);
+      lines.push(`    color="${domainColour(domainId)}";`);
+      lines.push(`    fillcolor="#ffffff";`);
+      lines.push(`    penwidth=1.4;`);
+      lines.push(`    margin=16;`);
+      pushActionNodes("    ", actions.filter((action) => action.domain_id === domainId));
+      lines.push(`  }`);
+    });
+  } else if (boundary) {
+    // One domain: the neutral contour around its use cases; the page already names the domain.
     lines.push(`  subgraph cluster_scope {`);
     lines.push(`    label="";`);
     lines.push(`    style="rounded,filled";`);
@@ -271,8 +313,28 @@ export function buildDomainUseCaseDotBundle(
   }
 
   const nameOf = new Map([...actions, ...roles].map((element) => [element.id, element.short_label || element.label]));
+  const home = new Map(actions.map((action) => [action.id, action.domain_id]));
+  // Folded, a role's links go to the boxes of its use cases' domains, one per domain; the links between use cases of
+  // two domains become one line between their boxes, counted; a link inside one box is hidden with the box's use cases.
+  const roleToBox = new Set<string>();
+  const between = new Map<string, { from: string; to: string; count: number }>();
   for (const e of edges) {
     const ek = e.edge_kind;
+    if (folded && ek !== "role_generalization") {
+      if (ek === "association") {
+        const domainId = home.get(e.source_id);
+        if (domainId !== undefined) roleToBox.add(`${domainUseCaseDotNodeId("r", e.target_id)} -> ${domainNode(domainId)}`);
+        continue;
+      }
+      const from = home.get(e.source_id);
+      const to = home.get(e.target_id);
+      if (from === undefined || to === undefined || from === to) continue;
+      const key = [from, to].sort().join("\u0000");
+      const pair = between.get(key) ?? { from, to, count: 0 };
+      pair.count += 1;
+      between.set(key, pair);
+      continue;
+    }
     const ends = `${nameOf.get(e.source_id) ?? e.source_id} → ${nameOf.get(e.target_id) ?? e.target_id}`;
     if (ek === "action_generalization") {
       const s = domainUseCaseDotNodeId("a", e.source_id);
@@ -296,6 +358,11 @@ export function buildDomainUseCaseDotBundle(
       const t = domainUseCaseDotNodeId("a", e.target_id);
       lines.push(`  ${s} -> ${t} [style=dashed arrowhead=open penwidth=0.8${edgeMark(e.diff, e.id, ends)}];`);
     }
+  }
+
+  for (const link of roleToBox) lines.push(`  ${link} [style=solid penwidth=1 arrowhead=vee];`);
+  for (const pair of between.values()) {
+    lines.push(`  ${domainNode(pair.from)} -> ${domainNode(pair.to)} [dir=none penwidth=1 color="#94a3b8"${pair.count > 1 ? ` label="×${pair.count}" fontsize=9 fontcolor="#334155"` : ""}];`);
   }
 
   lines.push("}");

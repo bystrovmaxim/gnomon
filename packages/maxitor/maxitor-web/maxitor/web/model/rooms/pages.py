@@ -106,6 +106,8 @@ _USE_CASE_SETTINGS: dict[str, Callable[[Any], bool]] = {
     "selected": _element,
     "domains": _strings,
     "boundary": _boolean,
+    # Every domain's boundary folded into one box (spec 071).
+    "boundaries_folded": _boolean,
     "disabled_kinds": _strings,
     "disabled_changes": _strings,
     "one_hop": _boolean,
@@ -141,10 +143,12 @@ SETTINGS: dict[str, dict[str, Callable[[Any], bool]]] = {
         "one_hop": _boolean,
         "fields_collapsed": _boolean,
         "fields_except": _strings,
-        # The view drawn (spec 070), the resources switched off (spec 061) and the frames drawn folded (spec 065).
+        # The view drawn (spec 070), the resources switched off (spec 061) and the frames drawn folded (spec 065);
+        # the logical view's domain frames on or off (spec 071).
         "model": _one_of("logical", "physical"),
         "disabled_resources": _strings,
         "folded_contours": _strings,
+        "boundary": _boolean,
         "paint": _one_of("domains", "kinds", "resources", "changes"),
         "paint_diff": _one_of("domains", "kinds", "resources", "changes"),
     },
@@ -157,6 +161,12 @@ SETTINGS: dict[str, dict[str, Callable[[Any], bool]]] = {
         "rankdir_a": _one_of("LR", "TB"),
         "rankdir_b": _one_of("LR", "TB"),
         "selected": _element,
+        # Its filter panel (spec 042, spec 071): the kinds of state and of change switched off, and what paints — a page
+        # starts on "domains", which a lifecycle reads as its kinds.
+        "disabled_kinds": _strings,
+        "disabled_changes": _strings,
+        "paint": _one_of("domains", "kinds", "changes"),
+        "paint_diff": _one_of("domains", "kinds", "changes"),
     },
     "full-graph": {
         "disabled_node_types": _strings,

@@ -1,7 +1,7 @@
 // src/lib/erdResourceFilter.test.ts
 import { describe, expect, it } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
+import { physicalViewAvailable, resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
 
 const table = (id: string, ...resource_ids: string[]): ErdEntity => ({ id, label: id, fields: [], resource_ids });
 
@@ -30,5 +30,21 @@ describe("the resources a diagram frames (#78)", () => {
 
   it("keeps the model's order", () => {
     expect(resourcesOfDiagram(all, [table("Invoice", "shop.StorefrontDatabase", "shop.ArchiveDatabase")], false)).toEqual(["shop.ArchiveDatabase", "shop.StorefrontDatabase"]);
+  });
+});
+
+describe("whether the physical view is offered (spec 071)", () => {
+  it("is offered when the graph says where entities lie and a base table is kept", () => {
+    expect(physicalViewAvailable(true, [table("Order", "shop.StorefrontDatabase")])).toBe(true);
+  });
+
+  it("is not offered for a graph that does not say where entities lie", () => {
+    expect(physicalViewAvailable(false, [table("Order")])).toBe(false);
+    expect(physicalViewAvailable(false, [table("Order", "shop.StorefrontDatabase")])).toBe(false);
+  });
+
+  it("is not offered when no table of the base is kept by a resource", () => {
+    expect(physicalViewAvailable(true, [table("Order"), table("Invoice")])).toBe(false);
+    expect(physicalViewAvailable(true, [])).toBe(false);
   });
 });

@@ -84,6 +84,11 @@ describe("a kind of change switched off", () => {
     expect(shown.entities.map((entity) => entity.id)).toEqual(["New", "Same"]);
     expect(shown.relations).toEqual([{ source: "New", target: "Same" }]);
   });
+
+  it("stays hidden with 1-hop on: a filter hides its table, and 1-hop does not bring it back (spec 071)", () => {
+    const shown = tablesToDraw(filterGraphByChanges(graph, new Set(["unchanged"])), graph, domainsOn({ D: "d" }, new Set(["D"])), domainOf, true);
+    expect(shown.entities.map((entity) => entity.id)).toEqual(["New"]);
+  });
 });
 
 describe("the disk of a status", () => {

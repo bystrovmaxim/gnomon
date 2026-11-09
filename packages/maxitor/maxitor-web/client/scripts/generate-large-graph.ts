@@ -15,7 +15,10 @@ type GraphNode = { id: string; type: string; label: string; properties: Record<s
 type GraphEdge = { id: string; source_id: string; target_id: string; type: string; relationship: string; properties: Record<string, unknown> };
 type GraphFile = { nodes: GraphNode[]; edges: GraphEdge[] };
 
-const [input, output, copiesText] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const tablesArg = args.find((arg) => arg.startsWith("--tables="));
+const positional = args.filter((arg) => !arg.startsWith("--"));
+const [input, output, copiesText] = positional;
 const copies = Number(copiesText ?? 30);
 const graph = JSON.parse(readFileSync(input, "utf8")) as GraphFile;
 const shared = new Set(graph.nodes.filter((node) => node.type === "Application").map((node) => node.id));
@@ -29,11 +32,12 @@ function copiedId(edge: GraphEdge, copy: number): string {
   return parts.join("|");
 }
 
-const nodes = graph.nodes.filter((node) => shared.has(node.id));
-const edges: GraphEdge[] = [];
 const dependency = graph.edges.find((edge) => edge.type === "@depends")!;
 const actions = graph.nodes.filter((node) => node.type === "Action").map((node) => node.id);
-for (let copy = 0; copy < copies; copy += 1) {
+const build = (count: number) => {
+  const nodes = graph.nodes.filter((node) => shared.has(node.id));
+  const edges: GraphEdge[] = [];
+for (let copy = 0; copy < count; copy += 1) {
   for (const node of graph.nodes) {
     if (shared.has(node.id)) continue;
     nodes.push({ ...node, id: inCopy(copy, node.id), label: node.type === "Domain" ? `${node.label}${copy}` : node.label });
@@ -41,11 +45,25 @@ for (let copy = 0; copy < copies; copy += 1) {
   for (const edge of graph.edges) edges.push({ ...edge, id: copiedId(edge, copy), source_id: inCopy(copy, edge.source_id), target_id: inCopy(copy, edge.target_id) });
   for (const action of actions) {
     const source = inCopy(copy, action);
-    const target = inCopy((copy + 1) % copies, action);
+    const target = inCopy((copy + 1) % count, action);
     edges.push({ ...dependency, id: `${source}|@depends|${target}`, source_id: source, target_id: target });
   }
 }
+  return { nodes, edges };
+};
 mkdirSync(output, { recursive: true });
+const tables = graph.nodes.filter((node) => node.type === "Entity").length;
+const tablesArgValue = tablesArg?.split("=")[1];
+if (tablesArgValue) {
+  // One drawing per target, its copies chosen so the whole system's ERD holds that many tables.
+  for (const target of tablesArgValue.split(",").map(Number).filter((n) => Number.isFinite(n) && n > 0)) {
+    const { nodes: nodesFor, edges: edgesFor } = build(Math.max(1, Math.ceil(target / Math.max(tables, 1))));
+    writeFileSync(join(output, `tables-${target}.json`), JSON.stringify({ ...graph, nodes: nodesFor, edges: edgesFor }));
+    console.log(`tables-${target}.json: ${nodesFor.filter((node) => node.type === "Entity").length} tables, ${nodesFor.length} nodes, ${edgesFor.length} edges`);
+  }
+  process.exit(0);
+}
+const { nodes, edges } = build(copies);
 writeFileSync(join(output, "a.json"), JSON.stringify({ ...graph, nodes, edges }));
 
 // The next version: one field gone and one entity described anew, in one copy.

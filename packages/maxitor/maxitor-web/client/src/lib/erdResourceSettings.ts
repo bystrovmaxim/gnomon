@@ -23,6 +23,11 @@ export type ErdResourceSettings = {
   toggleFold(contour: string): void;
   /** Unfold every frame of ``contours`` that is folded. */
   unfold(contours: readonly string[]): void;
+  /** Fold every frame this drawing shows (spec 071): the boundaries' own switch, apart from the tables'. The frames of
+   *  the other view keep their state, so folding the logical view never touches the physical one. */
+  foldAll(contours: readonly string[]): void;
+  /** Unfold every frame of ``contours``, the other view's left as they are. */
+  unfoldAll(contours: readonly string[]): void;
 };
 
 export function useErdResourceSettings(): ErdResourceSettings {
@@ -49,5 +54,7 @@ export function useErdResourceSettings(): ErdResourceSettings {
     if (!contours.some((contour) => foldedContours.has(contour))) return;
     setFoldedList([...foldedContours].filter((contour) => !contours.includes(contour)).sort());
   };
-  return { model, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold };
+  const foldAll = (contours: readonly string[]) => setFoldedList([...new Set([...foldedContours, ...contours])].sort());
+  const unfoldAll = (contours: readonly string[]) => setFoldedList([...foldedContours].filter((contour) => !contours.includes(contour)).sort());
+  return { model, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold, foldAll, unfoldAll };
 }

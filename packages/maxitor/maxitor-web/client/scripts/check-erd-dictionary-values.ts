@@ -177,7 +177,7 @@ for (const count of [0, 1, 3, 26, 93]) {
 // word in its colour, the type smaller and no longer italic.
 const PRICE_TAG_GOLDEN: string = [
   "digraph ERD {",
-  '  graph [rankdir=LR fontname="Helvetica" bgcolor=transparent pad="0.5" nodesep="0.8" ranksep="1.2"]',
+  '  graph [rankdir=LR fontname="Helvetica" bgcolor=transparent pad="0.5" nodesep="0.8" ranksep="1.2" start=1]',
   '  node  [shape=none fontname="Helvetica" fontsize=11 margin="0"]',
   '  edge  [fontname="Helvetica" fontsize=9 color="#94a3b8" arrowsize=0.7]',
   "",

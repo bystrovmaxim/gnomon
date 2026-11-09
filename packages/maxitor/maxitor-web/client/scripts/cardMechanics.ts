@@ -80,7 +80,8 @@ async function emptySpot(page: Page): Promise<Point> {
     for (let y = box.bottom - 70; y > box.top; y -= 23) {
       for (let x = box.right - 12; x > box.left; x -= 31) {
         const hit = document.elementFromPoint(x, y);
-        if (hit?.closest(".erd-svg-viewport") && !hit.closest("g.node, g.edge")) return { x, y };
+        // A frame's whole inside is the frame's, with a card of its own (spec 071): an empty spot lies outside every frame.
+        if (hit?.closest(".erd-svg-viewport") && !hit.closest("g.node, g.edge, g.cluster")) return { x, y };
       }
     }
     return { x: box.left + 2, y: box.bottom - 70 };

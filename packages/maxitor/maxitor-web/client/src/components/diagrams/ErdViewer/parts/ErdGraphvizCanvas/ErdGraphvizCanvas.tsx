@@ -12,7 +12,7 @@ import { useSvgDiagramSurface } from "@/rooms/diagramSurface";
 import { useGraphvizFocus } from "@/rooms/graphvizFocus";
 import { enabledKeys } from "@/lib/freshGraph";
 import { useCurrentPage, usePageSetting } from "@/lib/pageSettings";
-import { CollapseAllButton, HoverCardsButton, ZoomToolbar } from "@/components/ui/ZoomToolbar";
+import { CollapseAllButton, CollapseFramesButton, HoverCardsButton, ZoomToolbar } from "@/components/ui/ZoomToolbar";
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
 import { defaultPaint, paintSettingName, paintSource, type PaintSection } from "@/lib/erdPaint";
 import { OneHopToggle } from "@/components/ui/OneHopToggle";
@@ -21,12 +21,14 @@ import { useSvgPanZoom } from "../../hooks/useSvgPanZoom";
 import {
   buildDotSource,
   buildErdDot,
+  CONTOUR_ID_PREFIX,
+  DOMAIN_CONTOUR_ID_PREFIX,
   ERD_CARD_RADIUS,
   ERD_CARD_STROKE,
   ERD_KIND_PAINT_PALETTE,
-  setErdPaint,
   erdDiffMarks,
   erdGraphvizEngine,
+  setErdPaint,
   erdEdgeId,
   type ErdEntity,
   type ErdGraphPayload,
@@ -40,9 +42,10 @@ import {
 import { containNodeFills } from "@/lib/containNodeFills";
 import { enrichErdDataForViewer } from "@/lib/enrichErdData";
 import { filterGraphByKinds, kindsOnDiagram, pruneGraphToEntities } from "@/lib/erdKindFilter";
-import { resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
+import { physicalViewAvailable, resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
 import { useErdResourceSettings } from "@/lib/erdResourceSettings";
 import { copyEntity, physicalDrawing, viewLayout } from "@/lib/erdViews";
+import { erdCompose } from "@/lib/erdCompose";
 import { ErdModelPill } from "./ErdModelPill";
 import { changeDiskUri, changesOnDiagram, domainsOn, filterGraphByChanges, onScreen, tablesToDraw } from "@/lib/erdFilterPresence";
 import { mergeRelationsOnScreen } from "@/lib/mergeErdRelations";
@@ -64,7 +67,7 @@ import { DiffCard } from "@/components/history/DiffCard";
 import { COPY_CLICK_SLOP_PX } from "@/lib/erdCopy";
 import type { ErdDomainsBundle } from "@/lib/loadErdDomainsBundle";
 import { bindNameCopy } from "@/lib/erdCopy";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, clearTableFocus, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdFoldSx, erdLineHoverSx, FOLD_ATTRIBUTE, FOLD_CONTROL_CLASS, focusTables, placeKindIcons, scaleFoldControls } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFrameIcons, bindLineHover, erdDetailSx, seenFromAfar, setErdDetail, clearTableFocus, clickFolds, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons } from "@/lib/erdPostPass";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { kindGlyphSvg, kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
@@ -163,6 +166,8 @@ export type ErdGraphvizCanvasProps = {
   bundleVersion: number;
   includeOneHop: boolean;
   onIncludeOneHopChange: (next: boolean) => void;
+  /** One-hop is offered on a domain's ERD only, never on the ERD of all domains (spec 071, FR-017). */
+  oneHopAvailable: boolean;
 };
 
 const LAYOUT_TOOLS: {
@@ -184,12 +189,19 @@ const LAYOUT_TOOLS: {
  * follower would glide after each new picture (spec 038, spec 070). A drawing without frames fits its tables and lines.
  */
 const FRAMED_FIT = { fitToViewBox: true, fitMarginPx: 8 };
+/** The last layouts, by the text Graphviz was given: folding a frame and unfolding it again is instant — the second
+ *  picture comes from here, not from Graphviz. Small on purpose: a few pictures cover a person's back and forth. */
+const LAYOUT_CACHE = new Map<string, string>();
+const LAYOUT_CACHE_MAX = 24;
+/** How long a hover waits before lighting a table: a pointer passing over small tables at a distance stays quiet. */
+const HOVER_INTENT_MS = 100;
 
 export function ErdGraphvizCanvas({
   bundle,
   bundleVersion,
   includeOneHop,
   onIncludeOneHopChange,
+  oneHopAvailable,
 }: ErdGraphvizCanvasProps) {
   // Page settings: the person's own outside a room, the room's inside one (spec 028, FR-030).
   const [chosenLayout, setLayout] = usePageSetting<ErdGraphvizLayout>("layout", "gv-dot-lr");
@@ -213,6 +225,13 @@ export function ErdGraphvizCanvas({
 
   const multiTab = domainKeyList.length > 1;
 
+  // The diagram's base: every table of the drawing that is open, before any filter. The filter rows come from it,
+  // so a filter never adds or removes another filter's rows (spec 038). The physical view is offered only when the
+  // graph says where entities lie and at least one table of the base is kept by a resource (spec 071).
+  const baseGraph = useMemo(() => getMergedFromDomains(enriched, new Set(domainKeyList)), [enriched, domainKeyList]);
+  const baseEntities = baseGraph.entities ?? [];
+  const physicalAvailable = useMemo(() => physicalViewAvailable(bundle.storage_known, baseEntities), [bundle.storage_known, baseEntities]);
+
   const bundleEntityTotal = useMemo(() => {
     const d = enriched.domains as Record<string, { entities?: ErdEntity[] }> | undefined;
     if (!d) return 0;
@@ -230,11 +249,16 @@ export function ErdGraphvizCanvas({
   /** Entity kinds switched off; a kind the graph gains later starts on. */
   const [disabledKindList, setDisabledKindList] = usePageSetting<string[]>("disabled_kinds", []);
   /** The view, the resources switched off and the frames folded (spec 070): page settings, shared in a room. */
-  const { model: chosenModel, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold } = useErdResourceSettings();
-  // A graph that does not say where entities lie has no physical view: a stored choice of it opens the logical one.
-  const model = bundle.storage_known ? chosenModel : "logical";
-  // Frames are drawn under Dot only, and the physical view offers Dot alone (spec 070; ``viewLayout``).
-  const { layout, framed } = viewLayout(model, chosenLayout);
+  const { model: chosenModel, setModel, disabledResources, toggleResource, foldedContours, toggleFold, unfold, foldAll, unfoldAll } = useErdResourceSettings();
+  // A graph that does not say where entities lie, or whose base no resource keeps, has no physical view: a stored
+  // choice of it opens the logical one (spec 071).
+  const model = physicalAvailable ? chosenModel : "logical";
+  // The logical view's boundaries (its domain frames), on or off; the physical view always frames its resources
+  // (spec 071). The term is Boundary, as on the use-case.
+  const [framesOn, setFramesOn] = usePageSetting<boolean>("boundary", true);
+  const framesDrawn = model === "physical" || framesOn;
+  // Frames are drawn in every layout (spec 071; ``viewLayout``).
+  const { layout } = viewLayout(model, chosenLayout);
 
   // A domain the model no longer has stops applying (spec 028, FR-076).
   const enabledDomains = useMemo(
@@ -244,8 +268,8 @@ export function ErdGraphvizCanvas({
   const disabledKinds = useMemo(() => new Set(disabledKindList), [disabledKindList]);
 
   const side = useHalf()?.side ?? null;
-  const panZoom = useSvgPanZoom(framed ? FRAMED_FIT : undefined);
-  const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform } = panZoom;
+  const panZoom = useSvgPanZoom(framesDrawn ? FRAMED_FIT : undefined);
+  const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform, getScale } = panZoom;
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);
   useSvgDiagramSurface(viewportRef, panZoom, Boolean(svgMarkup) && panZoom.fitted);
@@ -283,10 +307,6 @@ export function ErdGraphvizCanvas({
   // A kind of change switched off hides its tables like any other filter (spec 038).
   const [offChangeList, setOffChangeList] = usePageSetting<string[]>("disabled_changes", []);
   const offChanges = useMemo(() => new Set(offChangeList), [offChangeList]);
-  // The diagram's base: every table of the drawing that is open, before any filter. The filter rows come from it,
-  // so a filter never adds or removes another filter's rows (spec 038).
-  const baseGraph = useMemo(() => getMergedFromDomains(enriched, new Set(domainKeyList)), [enriched, domainKeyList]);
-  const baseEntities = baseGraph.entities ?? [];
   // The own tables of the domains switched on, filtered; 1-hop then brings back the base's tables one line away from
   // those left — the neighbours from other domains, and any table a filter hid.
   const qualsOn = useMemo(() => domainsOn(bundle.domain_qualifiers, tabsOn), [bundle.domain_qualifiers, tabsOn]);
@@ -370,7 +390,7 @@ export function ErdGraphvizCanvas({
       const stage = viewportRef.current?.getBoundingClientRect();
       const { entities, relations } = drawnTables();
       const named = fromAfar(ref, elements.at(-1), entities, touch);
-      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known) : null;
+      const facts = panner ? erdSubject(named, entities, panner, relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known, bundle.domain_qualifier_colors) : null;
       const [outer, inner] = [elements[0], named === ref ? elements.at(-1) : elements[0]];
       if (!facts || !stage || !outer || !inner) return null;
       // A line's box can span the screen: the card stands by its middle.
@@ -393,7 +413,7 @@ export function ErdGraphvizCanvas({
     () => ({
       has: (ref) =>
         pannerRef.current !== null &&
-        erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known) !== null,
+        erdSubject(ref, drawnTables().entities, pannerRef.current, drawnTables().relations, bundle.resource_labels, bundlesRef.current, bundle.domain_qualifier_labels, bundle.storage_known, bundle.domain_qualifier_colors) !== null,
       show: (ref, elements) => wantCard(ref ? subjectOf(ref, elements) : null),
       open: (ref, elements) => {
         const subject = subjectOf(ref, elements);
@@ -415,18 +435,6 @@ export function ErdGraphvizCanvas({
     else closeCard();
   }, [closeCard, pannerRef, subjectOf, wantCardNow]);
   useEffect(() => onTransform(moveOrClose), [moveOrClose, onTransform]);
-  // A fold control keeps its size on screen (spec 068): rescaled when the zoom changes and on each new drawing — a pan
-  // alone changes nothing, so the tables and their fields move as one.
-  const foldZoomRef = useRef<number | null>(null);
-  const keepFoldControlsOnScreen = useCallback((force: boolean) => {
-    const panner = pannerRef.current;
-    const zoom = panZoom.getScale();
-    if (!panner || (!force && foldZoomRef.current === zoom)) return;
-    foldZoomRef.current = zoom;
-    scaleFoldControls(panner, zoom);
-  }, [pannerRef, panZoom.getScale]);
-  useEffect(() => onTransform(() => keepFoldControlsOnScreen(false)), [keepFoldControlsOnScreen, onTransform]);
-  useEffect(() => keepFoldControlsOnScreen(true), [keepFoldControlsOnScreen, svgMarkup]);
   useEffect(() => moveOrClose(), [moveOrClose, svgMarkup]);
   // Tables collapsed to their keys (spec 043): one switch and the tables that differ from it, both page settings.
   const [fieldsCollapsed, setFieldsCollapsed] = usePageSetting<boolean>("fields_collapsed", false);
@@ -438,20 +446,29 @@ export function ErdGraphvizCanvas({
     () => ({
       ...drawnData,
       folds,
-      model: framed ? model : undefined,
+      model: framesDrawn ? model : undefined,
       domain_labels: bundle.domain_qualifier_labels,
       domain_colors: bundle.domain_qualifier_colors,
       resource_ids: framedResources,
       resource_labels: bundle.resource_labels,
+      resource_colors: bundle.resource_colors,
       same: physical?.same ?? [],
       folded_contours: foldedContours,
     }),
-    [drawnData, folds, model, framed, bundle.domain_qualifier_labels, bundle.domain_qualifier_colors, framedResources, bundle.resource_labels, physical, foldedContours],
+    [drawnData, folds, model, framesDrawn, bundle.domain_qualifier_labels, bundle.domain_qualifier_colors, framedResources, bundle.resource_labels, bundle.resource_colors, physical, foldedContours],
   );
   // The bundles of the drawing on screen (spec 065): its lines to folded boxes, for their hover and their card.
   const bundles = useMemo(() => foldPlan(foldedData).bundles, [foldedData]);
   const bundlesRef = useRef(bundles);
   bundlesRef.current = bundles;
+  // The frames this drawing shows: a resource's in the physical view, a domain's in the logical one. The boundaries'
+  // switch folds every one of them into its box, apart from the tables' own collapse (spec 071).
+  const drawnFrameIds = useMemo(() => {
+    if (!framesDrawn) return [] as string[];
+    if (model === "physical") return framedResources.map((resource) => `${CONTOUR_ID_PREFIX}${resource}`);
+    return [...new Set(drawnData.entities.map((entity) => entity.domain_qualname ?? "").filter((qual) => qual !== ""))].map((qual) => `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`);
+  }, [framesDrawn, model, framedResources, drawnData]);
+  const allFramesFolded = drawnFrameIds.length > 0 && drawnFrameIds.every((frame) => foldedContours.has(frame));
   const toggleContourRef = useRef(toggleFold);
   toggleContourRef.current = toggleFold;
   const unfoldContoursRef = useRef(unfold);
@@ -489,6 +506,8 @@ export function ErdGraphvizCanvas({
     ...(diffDrawing && changesOnDiagram(baseEntities).length > 0 ? (["changes"] as const) : []),
   ];
   const paintSection = paintSource(paintSections, model === "physical" && chosenPaint === defaultPaint(diffDrawing) && !diffDrawing ? "resources" : chosenPaint);
+  // The paint is CSS, not the DOT (spec 071): the tables and frames carry ``data-*`` tags, and this is its stylesheet.
+  // A repaint rewrites it, laying nothing out.
   const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}|${JSON.stringify(bundle.domain_qualifier_colors)}`;
   // What the Graphviz text is painted by: a section's name, and the colours of its rows when kinds or resources paint.
   const applyPaint = useCallback(
@@ -520,19 +539,21 @@ export function ErdGraphvizCanvas({
   }, [foldedData, layout, applyPaint]);
   // The picture's hash and the text Graphviz was given, hashed with it as one pair: the settings digest a room
   // compares layouts under (FR-093).
-  const layoutPair = useSvgLayoutPair(rawSvg, `${erdGraphvizEngine(layout)}\n${dot}`);
+  // The view goes in too: with frames on or off, Neato, FDP and Circo are given the same DOT and draw two pictures.
+  const layoutPair = useSvgLayoutPair(rawSvg, `${erdGraphvizEngine(layout)}\n${foldedData.model ?? "plain"}\n${dot}`);
 
-  // Reset fit flag whenever the DOT source changes (new diagram, layout mode, or 1-hop toggle)
-  // so the next SVG insertion always re-fits
-  // A new drawing — other tables, another layout mode — fits again; new colours alone keep the view.
-  const prevDrawingRef = useRef<{ data: unknown; layout: unknown } | null>(null);
+  // A new graph, another layout mode, the other view, the frames switched on or off, or every frame folded or unfolded
+  // at once make another picture: it fits again. A filter, one fold or new colours keep the camera where the person put
+  // it (spec 071, FR-018) — the drawing they toggled a filter on must not jump under them.
+  const shape = `${layout}|${model}|${framesDrawn}|${allFramesFolded}`;
+  const prevDrawingRef = useRef<{ bundle: unknown; shape: string } | null>(null);
   useLayoutEffect(() => {
     const previous = prevDrawingRef.current;
-    if (!previous || previous.data !== drawnData || previous.layout !== layout) {
-      prevDrawingRef.current = { data: drawnData, layout };
+    if (!previous || previous.bundle !== bundleVersion || previous.shape !== shape) {
+      prevDrawingRef.current = { bundle: bundleVersion, shape };
       resetFitFlag();
     }
-  }, [drawnData, layout, resetFitFlag]);
+  }, [bundleVersion, shape, resetFitFlag]);
 
   useEffect(() => {
     let cancelled = false;
@@ -540,6 +561,7 @@ export function ErdGraphvizCanvas({
     setRenderError(null);
     setRawSvg("");
     const engine = erdGraphvizEngine(layout) as Engine;
+    const isDot = layout === "gv-dot-lr" || layout === "gv-dot-tb";
     loadGraphvizWasm()
       .then((measurer) => {
         if (cancelled) return null;
@@ -547,17 +569,29 @@ export function ErdGraphvizCanvas({
         // instance. FDP depends on what ran before it in an instance, so the drawing itself is that instance's first layout.
         applyPaint();
         const source = buildErdDot(foldedData, layout, (measureDot) => measurer.layout(measureDot, "svg", "dot"));
-        return loadGraphvizWasmFor(engine).then((gv) => ({ gv, source }));
+        return loadGraphvizWasmFor(engine).then((gv) => ({ gv, source, isDot }));
       })
       .then((prepared) => {
         if (cancelled || !prepared) return;
-        const svg = prepared.gv.layout(prepared.source, "svg", engine);
+        // Dot draws frames as clusters; Neato, FDP and Circo go through the composer (research R2). With the logical
+        // view's frames off there is no frame, so those three lay the tables out plain, as before (spec 071).
+        const cacheKey = `${layout}\n${foldedData.model ?? "plain"}\n${prepared.source}`;
+        const cached = LAYOUT_CACHE.get(cacheKey);
+        const svg = cached ?? (prepared.isDot
+          ? prepared.gv.layout(prepared.source, "svg", engine)
+          : foldedData.model
+            ? erdCompose(foldedData, layout, (dot, eng) => prepared.gv.layout(dot, "svg", eng as Engine))
+            : prepared.gv.layout(prepared.source, "svg", engine));
+        if (!cached) {
+          LAYOUT_CACHE.set(cacheKey, svg);
+          if (LAYOUT_CACHE.size > LAYOUT_CACHE_MAX) LAYOUT_CACHE.delete(LAYOUT_CACHE.keys().next().value!);
+        }
         if (cancelled) return;
         setRawSvg(svg);
         // The renderer paints a card's band and row tints as rectangles inside a rounded outline;
         // this trims every fill to the contour before the markup reaches the page.
         markupDataRef.current = drawnData;
-        setSvgMarkup(placeKindIcons(drawErdCards(containNodeFills(svg), ERD_CARD_RADIUS, ERD_CARD_STROKE, erdDiffMarks(drawnData.entities)), drawnData.entities, kindGlyphSvg, folds));
+        setSvgMarkup(placeKindIcons(drawErdCards(containNodeFills(addFrameIcons(svg)), ERD_CARD_RADIUS, ERD_CARD_STROKE, erdDiffMarks(drawnData.entities)), drawnData.entities, kindGlyphSvg, folds));
         setSvgRenderVersion((v) => v + 1);
       })
       .catch((e) => {
@@ -570,7 +604,9 @@ export function ErdGraphvizCanvas({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dot, drawnData, layout, bundleVersion, resetFitFlag, paintKey]);
+    // ``frames``: Neato, FDP and Circo get the same DOT with frames and without, the composer drawing the frames; the
+    // switch must lay out again all the same (spec 071).
+  }, [dot, drawnData, layout, bundleVersion, resetFitFlag, paintKey, foldedData.model]);
 
   useLayoutEffect(() => {
     if (!svgMarkup) return;
@@ -599,10 +635,11 @@ export function ErdGraphvizCanvas({
       }
 
       postProcessGraphvizSvgDom(svg);
+      // The level of detail follows the zoom: a pan never crosses a threshold, so only a zoom changes a class.
+      setErdDetail(svg, getScale());
+      ac.signal.addEventListener("abort", onTransform(() => setErdDetail(svg, getScale())));
       addEdgeHitAreas(svg);
       addContourHitAreas(svg);
-      addFoldControls(svg);
-      scaleFoldControls(svg, panZoom.getScale());
       addEndLabelBadges(svg);
       bindLineHover(svg, drawnData.relations, drawnData.entities, ac.signal, bundlesRef.current);
     }
@@ -611,15 +648,16 @@ export function ErdGraphvizCanvas({
     panner.addEventListener("pointerdown", (event) => void (press = { x: event.clientX, y: event.clientY }), { signal: ac.signal });
     const stayed = (event: MouseEvent) => press !== null && Math.hypot(event.clientX - press.x, event.clientY - press.y) <= COPY_CLICK_SLOP_PX;
     // On ``click``, not on the press's end: the new drawing rebinds the pan, and must not do so before ``mouseup`` has ended it.
-    // A contour's fold control folds or unfolds it; a click on a bundle unfolds the folded boxes at its ends (spec 065).
+    // A click on a frame's empty space folds it; a click on its folded box unfolds it; a click on a bundle unfolds the
+    // folded boxes at its ends (spec 065, spec 071).
     panner.addEventListener(
       "click",
       (event) => {
         const target = event.target as Element | null;
         if (!target?.closest || !stayed(event)) return;
-        const fold = target.closest(`.${FOLD_CONTROL_CLASS}`)?.getAttribute(FOLD_ATTRIBUTE);
-        if (fold) {
-          toggleContourRef.current(fold);
+        const frameId = clickFolds(target, true);
+        if (frameId) {
+          toggleContourRef.current(frameId);
           return;
         }
         const line = target.closest('g.edge[id^="rb"]');
@@ -653,12 +691,22 @@ export function ErdGraphvizCanvas({
       { signal: ac.signal },
     );
 
-    // Hovering a copy lights every copy of its entity (spec 070, FR-004).
-    const onEnter = (evt: Event) => {
-      const id = (evt.currentTarget as Element).querySelector("title")?.textContent?.trim() || "";
-      focusTables(panner, new Set(drawnData.entities.filter((entity) => copyEntity(entity.id) === copyEntity(id)).map((entity) => entity.id).concat(id)));
+    // Hovering a copy lights every copy of its entity (spec 070, FR-004). The light waits a moment, so a pointer
+    // crossing many small tables at a distance does not flash the drawing on every one (spec 071, FR-018).
+    let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+    const later = (act: () => void, trusted = true) => {
+      if (!trusted) return act();
+      if (hoverTimer !== null) clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(act, HOVER_INTENT_MS);
     };
-    const onLeave = () => clearTableFocus(panner);
+    const onEnter = (evt: Event) => {
+      // From afar the line hover lights the table with all its lines and the tables they join (``bindLineHover``).
+      if (seenFromAfar(evt.currentTarget as Element) && relationsOf((evt.currentTarget as Element).querySelector("title")?.textContent?.trim() || "")) return;
+      const id = (evt.currentTarget as Element).querySelector("title")?.textContent?.trim() || "";
+      later(() => focusTables(panner, new Set(drawnData.entities.filter((entity) => copyEntity(entity.id) === copyEntity(id)).map((entity) => entity.id).concat(id))), evt.isTrusted);
+    };
+    const relationsOf = (id: string) => drawnData.relations.some((line) => line.source === id || line.target === id);
+    const onLeave = (evt: Event) => later(() => clearTableFocus(panner), evt.isTrusted);
 
     panner.querySelectorAll("g.node").forEach((node) => {
       (node as HTMLElement).style.cursor = "pointer";
@@ -697,6 +745,7 @@ export function ErdGraphvizCanvas({
 
     return () => {
       cancelled = true;
+      if (hoverTimer !== null) clearTimeout(hoverTimer);
       ac.abort();
       unbindPan?.();
       cancelAnimationFrame(raf1);
@@ -850,7 +899,7 @@ export function ErdGraphvizCanvas({
             paint={choosing ? { source: paintSection, onPaint: setChosenPaint } : null}
           />
         )}
-        {half?.side !== "b" && <ErdModelPill model={model} counts={modelCounts} physicalKnown={bundle.storage_known} onModel={setModel} />}
+        {half?.side !== "b" && <ErdModelPill model={model} counts={modelCounts} physicalKnown={bundle.storage_known} physicalAvailable={physicalAvailable} onModel={setModel} />}
         {erdEmptyOverlay}
         <HalfNote text={halfNote} />
         {half && !erdEmptyOverlay && drawnData.entities.length === 0 && (
@@ -904,9 +953,9 @@ export function ErdGraphvizCanvas({
               ...erdContourHoverSx,
               // A line's end labels show only on hover, on a white plate (spec 029, FR-042).
               ...erdEndLabelSx,
-              // A bundle's count on its plate, and the faint fold controls of the contours (spec 065).
+              ...erdDetailSx,
+              // A bundle's count on its plate (spec 065).
               ...erdBundleSx,
-              ...erdFoldSx,
               "@media (prefers-reduced-motion: reduce)": { "& g.edge path": { transition: "none" } },
               "& g[id^='a_cl'], & g[id^='a_cl'] text": { cursor: "pointer" },
               "& svg": {
@@ -979,7 +1028,7 @@ export function ErdGraphvizCanvas({
               },
             }}
           >
-            {LAYOUT_TOOLS.filter(({ value }) => model !== "physical" || value === "gv-dot-lr" || value === "gv-dot-tb").map(({ value, title, Glyph }) => (
+            {LAYOUT_TOOLS.map(({ value, title, Glyph }) => (
               <ToggleButton key={value} value={value} aria-label={title}>
                 <Tooltip title={title} placement="top">
                   <Box
@@ -1003,7 +1052,9 @@ export function ErdGraphvizCanvas({
             aria-hidden
             sx={{ width: "1px", height: "22px", bgcolor: "rgba(15, 23, 42, 0.12)", flexShrink: 0, mx: "2px" }}
           />
-          <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />
+          {model === "logical" && <OneHopToggle checked={framesOn} onChange={setFramesOn} label="Boundary" />}
+          {oneHopAvailable && <OneHopToggle checked={includeOneHop} onChange={onIncludeOneHopChange} />}
+          {drawnFrameIds.length > 0 && <CollapseFramesButton collapsed={allFramesFolded} onClick={() => (allFramesFolded ? unfoldAll(drawnFrameIds) : foldAll(drawnFrameIds))} />}
           {canCollapse && (
             <CollapseAllButton
               collapsed={allCollapsed}

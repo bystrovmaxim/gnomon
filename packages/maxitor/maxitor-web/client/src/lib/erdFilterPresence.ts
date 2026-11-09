@@ -69,9 +69,9 @@ export function domainsOn(domainQualifiers: Record<string, string>, tabsOn: Read
 }
 
 /**
- * What a diagram draws: the tables the filters left that belong to a domain switched on — a slice also carries its
- * 1-hop neighbours, and a neighbour from a domain switched off is not that domain's way back onto the screen —, and
- * with 1-hop on, the base's tables one line away from those.
+ * What a diagram draws (spec 071, the one rule of every diagram): the scope, then the base — the scope and every table
+ * one line away from it —, then the drawn set: the base, without a 1-hop neighbour when 1-hop is off, and without what
+ * any panel filter hides. So a table a filter turned off stays off with 1-hop on.
  */
 export function tablesToDraw(
   filtered: ErdGraphPayload,
@@ -80,8 +80,24 @@ export function tablesToDraw(
   domainOf: (entity: ErdEntity) => string | null,
   includeOneHop: boolean,
 ): ErdGraphPayload {
-  const own = pruneGraphToEntities(filtered, (entity) => domains.has(domainOf(entity) ?? ""));
-  return includeOneHop ? withOneHop(own, base) : own;
+  // The scope: the tables of the domains switched on, before any panel filter.
+  const scope = pruneGraphToEntities(base, (entity) => domains.has(domainOf(entity) ?? ""));
+  const scopeIds = new Set(scope.entities.map((entity) => entity.id));
+  // The diagram's base: the scope and every table one line away from it, whatever the filters do.
+  const full = withOneHop(scope, base);
+  // Drawn: the base, without a 1-hop neighbour when 1-hop is off, and without what a panel filter hides.
+  const allowed = new Set(filtered.entities.map((entity) => entity.id));
+  return pruneGraphToEntities(full, (entity) => allowed.has(entity.id) && (includeOneHop || scopeIds.has(entity.id)));
+}
+
+/** The base of a diagram (spec 071): the scope — the tables of the domains switched on, before any filter — and every
+ * table one line away from it. The rows of the filter panel and the dimmed ones come from it. */
+export function baseOfDiagram(
+  base: ErdGraphPayload,
+  domains: ReadonlySet<string>,
+  domainOf: (entity: ErdEntity) => string | null,
+): ErdGraphPayload {
+  return withOneHop(pruneGraphToEntities(base, (entity) => domains.has(domainOf(entity) ?? "")), base);
 }
 
 /** What the screen shows of each filter. */

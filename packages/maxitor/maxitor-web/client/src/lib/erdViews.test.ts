@@ -16,12 +16,14 @@ describe("the layout of a view (spec 070)", () => {
     expect(viewLayout("physical", "gv-dot-lr")).toEqual({ layout: "gv-dot-lr", framed: true });
   });
 
-  it("keeps another engine for the logical view, with no frame", () => {
-    expect(viewLayout("logical", "gv-fdp")).toEqual({ layout: "gv-fdp", framed: false });
+  it("keeps another engine in both views, with frames", () => {
+    expect(viewLayout("logical", "gv-fdp")).toEqual({ layout: "gv-fdp", framed: true });
+    expect(viewLayout("logical", "gv-neato")).toEqual({ layout: "gv-neato", framed: true });
+    expect(viewLayout("logical", "gv-circo")).toEqual({ layout: "gv-circo", framed: true });
   });
 
-  it("draws the physical view in Dot whatever was chosen", () => {
-    expect(viewLayout("physical", "gv-fdp")).toEqual({ layout: "gv-dot-lr", framed: true });
-    expect(viewLayout("physical", "gv-circo")).toEqual({ layout: "gv-dot-lr", framed: true });
+  it("keeps another engine in the physical view too", () => {
+    expect(viewLayout("physical", "gv-fdp")).toEqual({ layout: "gv-fdp", framed: true });
+    expect(viewLayout("physical", "gv-circo")).toEqual({ layout: "gv-circo", framed: true });
   });
 });

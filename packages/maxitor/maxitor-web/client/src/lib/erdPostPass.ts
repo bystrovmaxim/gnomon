@@ -15,7 +15,8 @@
  */
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
-import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX, DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, FRAME_DISK_SLOT_PREFIX, frameOfCluster, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { svgDataUriForGraphNodeIcon } from "./icons/graph_node_disk_icons.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
 export type KindGlyphDrawer = (word: string, ink: string, strokeWidth: number) => string;
@@ -148,6 +149,23 @@ export type ErdLineInfo = {
   target_field?: string | null;
 };
 
+/** How long a hover waits before acting: a pointer passing over the drawing changes nothing. */
+export const HOVER_INTENT_MS = 100;
+
+/** How low a row may stand on screen and still be read or aimed at, in CSS px; a finger needs more than a pointer. */
+export const ROW_READABLE_PX = 10;
+export const ROW_TAPPABLE_PX = 20;
+
+/**
+ * Whether a table is seen from afar: its rows stand lower on screen than a pointer can aim at. Then the table is one
+ * thing — its card is the table's (spec 043, FR-001a), and a hover anywhere on it lights all its lines (spec 071).
+ */
+export function seenFromAfar(node: Element, touch = false): boolean {
+  const row = node.querySelector('g[id^="a_fn"]') ?? node.querySelector('g[id^="a_hd"]');
+  const height = row?.getBoundingClientRect().height ?? Infinity;
+  return height > 0 && height < (touch ? ROW_TAPPABLE_PX : ROW_READABLE_PX);
+}
+
 /** The class the hovered look hangs on. */
 export const EDGE_HOVER_CLASS = "is-hovered";
 const MARK_NAME_FILL = "#0f172a";
@@ -171,24 +189,48 @@ export function addEdgeHitAreas(root: ParentNode): void {
 
 /** The resource a cluster group names — a resource contour (spec 064) — or ``null`` for any other group. */
 export function contourResource(group: Element): string | null {
-  return group.classList.contains("cluster") && group.id.startsWith(CONTOUR_ID_PREFIX) ? group.id.slice(CONTOUR_ID_PREFIX.length) : null;
+  const frame = contourId(group);
+  return frame?.startsWith(CONTOUR_ID_PREFIX) ? frame.slice(CONTOUR_ID_PREFIX.length) : null;
 }
 
 /**
- * Give every resource contour an invisible stroke about 10 px wide along its border, so the pointer catches a 2 px
- * border; only the stroke takes the pointer, so the empty inside of a contour is not the contour's (spec 064, FR-005).
+ * The frame a cluster group stands for — a resource's (``rc:``) or a domain's (``dc:``), or the frame a specialization
+ * block lies in — or ``null`` for any other group.
+ */
+export function contourId(group: Element): string | null {
+  return group.classList.contains("cluster") ? frameOfCluster(group.id) : null;
+}
+
+/**
+ * What a click on ``target`` folds (research R4): the frame whose empty space it hit, or the folded box it landed on.
+ * ``stayed`` is whether the pointer moved less than the click slop between down and up, so a pan that starts inside a
+ * frame does not fold it. ``null`` folds nothing.
+ */
+export function clickFolds(target: Element | null, stayed: boolean): string | null {
+  if (!target?.closest || !stayed) return null;
+  const frame = target.closest("g.cluster");
+  const frameId = frame ? contourId(frame) : null;
+  if (frameId) return frameId;
+  const box = target.closest("g.node");
+  const boxTitle = box?.querySelector(":scope > title")?.textContent?.trim() ?? "";
+  return isContourId(boxTitle) ? boxTitle : null;
+}
+
+/**
+ * Give every frame — a resource's and a domain's — a hit area over its whole outline, filled transparent, so a click
+ * anywhere on its empty space folds it; tables and lines are drawn after it, so they stay on top and keep their own
+ * hover and card (research R4).
  */
 export function addContourHitAreas(root: ParentNode): void {
   root.querySelectorAll("g.cluster").forEach((cluster) => {
-    if (contourResource(cluster) === null || cluster.querySelector("path.erd-hit")) return;
+    if (contourId(cluster) === null || cluster.querySelector("path.erd-hit")) return;
     const path = cluster.querySelector("path");
     if (!path) return;
     const hit = path.cloneNode(false) as Element;
     hit.setAttribute("class", "erd-hit");
-    hit.setAttribute("fill", "none");
-    hit.setAttribute("stroke", "transparent");
-    hit.setAttribute("stroke-width", "10");
-    hit.setAttribute("pointer-events", "stroke");
+    hit.setAttribute("fill", "transparent");
+    hit.setAttribute("stroke", "none");
+    hit.setAttribute("pointer-events", "all");
     path.parentNode!.insertBefore(hit, path);
   });
 }
@@ -323,97 +365,71 @@ export const erdBundleSx = {
   [`& g.edge[id^='rb'] text, & g.edge[id^='rb'] rect.${END_LABEL_CLASS}`]: { visibility: "visible" },
 } as const;
 
-/** The class of a contour's fold control, and the attribute naming the contour it folds (spec 065). */
-export const FOLD_CONTROL_CLASS = "erd-fold-control";
-export const FOLD_ATTRIBUTE = "data-fold";
-
-/** The class of the part of a fold control that is drawn at screen size. */
-const FOLD_SCALE_CLASS = "erd-fold-scale";
+/**
+ * The level of detail, as a map has (spec 071): below these zooms a row's text, then a table's name, stands a pixel or
+ * two high on screen — a smear no one reads, and still the most costly thing to paint, glyph by glyph. There each text
+ * is drawn as a bar of its own length, place and colour instead ("greeking"), so a pan or a zoom repaints one shape
+ * per text and the picture from afar looks the same: the tables keep their lines of text, never turn blank.
+ */
+export const FAR_ROWS_SCALE = 0.15;
+export const FAR_NAMES_SCALE = 0.08;
+export const FAR_ROWS_CLASS = "erd-far-rows";
+export const FAR_NAMES_CLASS = "erd-far-names";
+/** The class of a text's bar, and of the bar of a table's name. */
+export const GREEK_CLASS = "erd-greek";
+export const GREEK_NAME_CLASS = "erd-greek-name";
+/** Helvetica's mean advance and the height a bar takes, in ems of the text's size. */
+const GREEK_ADVANCE_EM = 0.55;
+const GREEK_HEIGHT_EM = 0.42;
 
 /**
- * The canvas's style for the fold controls (spec 068): drawn at screen size whatever the zoom, plain at rest, darker
- * under the pointer, with the hand cursor.
+ * A bar for every text of every table in ``svg``, once per drawing, hidden until the drawing is seen from afar. The bar
+ * is measured from the text's own attributes — its length from its characters, its place from its anchor and baseline
+ * — so making them lays nothing out.
  */
-export const erdFoldSx = {
-  [`& .${FOLD_CONTROL_CLASS}`]: { cursor: "pointer" },
-  [`& .${FOLD_SCALE_CLASS}`]: {
-    transformBox: "view-box",
-    transformOrigin: "0 0",
-    opacity: 0.75,
-    transition: "opacity 120ms ease",
-  },
-  [`& g.cluster:hover .${FOLD_SCALE_CLASS}, & g.node:hover .${FOLD_SCALE_CLASS}`]: { opacity: 0.9 },
-  [`& .${FOLD_CONTROL_CLASS}:hover .${FOLD_SCALE_CLASS}`]: { opacity: 1 },
-  [`& .${FOLD_CONTROL_CLASS}:hover .erd-fold-face`]: { strokeWidth: 2.2 },
-} as const;
-
-/**
- * A fold control's sizes in screen pixels (spec 068): the square a reader sees, the area that takes the click, and the
- * gap between the square and its contour's top right corner. On a contour the control grows from that corner inward, so
- * it never reaches the name, which stands in the middle of the header. A folded box can be smaller on screen than the
- * control, so there it stands outside, to the right of the box's top right corner.
- */
-const FOLD_FACE = 16;
-const FOLD_HIT = 28;
-const FOLD_GAP = 6;
-
-/**
- * Put a fold control in the top right corner of every resource frame — a minus — and of every
- * folded box — a plus (spec 065). It sits inside the contour's group, so pointing at it is pointing at the contour.
- * It is drawn at screen size: the canvas scales it by one over its zoom through ``scaleFoldControls`` (spec 068).
- */
-export function addFoldControls(root: ParentNode): void {
-  const groups: Array<{ group: Element; id: string; folded: boolean }> = [];
-  root.querySelectorAll("g.cluster").forEach((cluster) => {
-    if (isContourId(cluster.id)) groups.push({ group: cluster, id: cluster.id, folded: false });
-  });
-  root.querySelectorAll("g.node").forEach((node) => {
-    const title = tableOf(node);
-    if (isContourId(title)) groups.push({ group: node, id: title, folded: true });
-  });
-  for (const { group, id, folded } of groups) {
-    if (group.querySelector(`:scope > .${FOLD_CONTROL_CLASS}`)) continue;
-    const outline = group.querySelector("path:not(.erd-hit), polygon");
-    const span = spanOf(outline?.getAttribute("d") ?? outline?.getAttribute("points") ?? "");
-    if (!outline || !span) continue;
-    const ink = outline.getAttribute("stroke") ?? "#64748b";
-    // In screen pixels, from the corner: the hit area fills the corner — inside a contour, outside a folded box — and
-    // the face sits in its middle.
-    const hitX = folded ? 0 : -FOLD_HIT;
-    const face = { x: hitX + (FOLD_HIT - FOLD_FACE) / 2, y: (FOLD_HIT - FOLD_FACE) / 2 };
-    const middle = { x: face.x + FOLD_FACE / 2, y: face.y + FOLD_FACE / 2 };
-    const arm = FOLD_FACE * 0.28;
-    const sign = `M${fixed(middle.x - arm)} ${fixed(middle.y)}H${fixed(middle.x + arm)}` + (folded ? `M${fixed(middle.x)} ${fixed(middle.y - arm)}V${fixed(middle.y + arm)}` : "");
-    const control = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    control.setAttribute("class", FOLD_CONTROL_CLASS);
-    control.setAttribute(FOLD_ATTRIBUTE, id);
-    control.setAttribute("data-folded", folded ? "1" : "0");
-    control.setAttribute("pointer-events", "all");
-    control.setAttribute("role", "button");
-    control.setAttribute("aria-label", folded ? "Unfold" : "Fold");
-    control.setAttribute("transform", `translate(${fixed(span.x1 + (folded ? FOLD_GAP / 2 : -FOLD_GAP / 2))},${fixed(span.y0 + (folded ? 0 : FOLD_GAP / 2))})`);
-    control.innerHTML =
-      `<title>${folded ? "Unfold" : "Fold"}</title>` +
-      `<g class="${FOLD_SCALE_CLASS}">` +
-      `<rect class="erd-fold-hit" x="${hitX}" y="0" width="${FOLD_HIT}" height="${FOLD_HIT}" fill="transparent"/>` +
-      `<rect class="erd-fold-face" x="${fixed(face.x)}" y="${fixed(face.y)}" width="${FOLD_FACE}" height="${FOLD_FACE}" rx="4" fill="#ffffff" stroke="${ink}" stroke-width="1.5"/>` +
-      `<path d="${sign}" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round"/>` +
-      `</g>`;
-    group.appendChild(control);
+export function addGreekText(svg: Element): void {
+  if (svg.querySelector(`.${GREEK_CLASS}`)) return;
+  for (const text of svg.querySelectorAll("g.node text")) {
+    const size = Number(text.getAttribute("font-size") ?? 14);
+    const x = Number(text.getAttribute("x"));
+    const y = Number(text.getAttribute("y"));
+    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+    const width = (text.textContent ?? "").length * size * GREEK_ADVANCE_EM;
+    const anchor = text.getAttribute("text-anchor");
+    const left = anchor === "middle" ? x - width / 2 : anchor === "end" ? x - width : x;
+    const height = size * GREEK_HEIGHT_EM;
+    const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    const isName = text.closest("g[id^='a_hn']") !== null;
+    bar.setAttribute("class", `${GREEK_CLASS}${isName ? ` ${GREEK_NAME_CLASS}` : ""}`);
+    bar.setAttribute("x", left.toFixed(2));
+    bar.setAttribute("y", (y - size * 0.36 - height / 2).toFixed(2));
+    bar.setAttribute("width", width.toFixed(2));
+    bar.setAttribute("height", height.toFixed(2));
+    bar.setAttribute("rx", (height / 2).toFixed(2));
+    bar.setAttribute("fill", text.getAttribute("fill") ?? "#0f172a");
+    bar.setAttribute("opacity", "0.55");
+    text.parentNode?.insertBefore(bar, text);
   }
 }
 
-/**
- * Draw every fold control in ``root`` at screen size for ``zoom`` (spec 068). Only the controls change: a style the whole
- * drawing inherits would make the browser restyle every table on every frame of a pan, and the fields would lag behind
- * their tables. The canvas calls it when the zoom changes and on each new drawing, never on a pan alone.
- */
-export function scaleFoldControls(root: ParentNode, zoom: number): void {
-  const transform = `scale(${(1 / Math.max(zoom, 0.01)).toFixed(4)})`;
-  root.querySelectorAll<SVGGElement>(`.${FOLD_SCALE_CLASS}`).forEach((part) => {
-    if (part.style.transform !== transform) part.style.transform = transform;
-  });
+/** Mark ``svg`` with the detail its ``scale`` shows; only a crossing of a threshold changes a class. */
+export function setErdDetail(svg: Element, scale: number): void {
+  const far = scale < FAR_ROWS_SCALE;
+  if (far) addGreekText(svg);
+  svg.classList.toggle(FAR_ROWS_CLASS, far);
+  svg.classList.toggle(FAR_NAMES_CLASS, scale < FAR_NAMES_SCALE);
 }
+
+/** The canvas's style for the level of detail: from afar a row's text is its bar, then a table's name is too. */
+export const erdDetailSx = {
+  [`& .${GREEK_CLASS}`]: { display: "none" },
+  [`& svg.${FAR_ROWS_CLASS} g.node text`]: { display: "none" },
+  [`& svg.${FAR_ROWS_CLASS} .${GREEK_CLASS}`]: { display: "inline" },
+  [`& svg.${FAR_ROWS_CLASS} g.node g[id^='a_hn'] text`]: { display: "inline" },
+  [`& svg.${FAR_ROWS_CLASS} .${GREEK_NAME_CLASS}`]: { display: "none" },
+  [`& svg.${FAR_ROWS_CLASS}.${FAR_NAMES_CLASS} g.node g[id^='a_hn'] text`]: { display: "none" },
+  [`& svg.${FAR_ROWS_CLASS}.${FAR_NAMES_CLASS} .${GREEK_NAME_CLASS}`]: { display: "inline" },
+} as const;
 
 /** The canvas's style for line labels: hidden, and shown on their plates while the line is hovered. */
 export const erdEndLabelSx = {
@@ -492,22 +508,40 @@ function tableOf(node: Element): string {
  * given, every line touching a kept table — and dim the rest. The look of a hovered table, a hovered key
  * row and a hovered line alike (spec 029, FR-040, FR-041).
  */
+type HoverIndex = { nodes: SVGElement[]; edges: SVGElement[]; titles: Map<SVGElement, string> };
+/** One index per drawing, keyed by its SVG: a new drawing gets a new SVG, so a stale index is dropped with it. */
+const HOVER_INDEXES = new WeakMap<Element, HoverIndex>();
+
+/** The drawing's tables and lines, read once — a hover must not walk the whole SVG on every mouse move (spec 071). */
+function hoverIndex(root: ParentNode): HoverIndex {
+  const holder = root as unknown as { matches?: (selector: string) => boolean; querySelector?: (selector: string) => Element | null };
+  const svg = holder.matches?.("svg") ? (root as unknown as Element) : (holder.querySelector?.("svg") ?? null);
+  if (!svg) return { nodes: [], edges: [], titles: new Map() };
+  let index = HOVER_INDEXES.get(svg);
+  if (!index) {
+    const nodes = [...svg.querySelectorAll<SVGElement>("g.node")];
+    const edges = [...svg.querySelectorAll<SVGElement>("g.edge")];
+    const titles = new Map<SVGElement, string>();
+    for (const element of [...nodes, ...edges]) titles.set(element, element.querySelector(":scope > title")?.textContent?.trim() ?? "");
+    index = { nodes, edges, titles };
+    HOVER_INDEXES.set(svg, index);
+  }
+  return index;
+}
+
 export function focusTables(root: ParentNode, tables: ReadonlySet<string>, lines?: ReadonlySet<Element>): void {
-  root.querySelectorAll<SVGElement>("g.node").forEach((node) => {
-    node.style.opacity = tables.has(tableOf(node)) ? "1" : "0.35";
-  });
-  root.querySelectorAll<SVGElement>("g.edge").forEach((edge) => {
-    const title = edge.querySelector(":scope > title")?.textContent?.trim() ?? "";
-    const kept = lines ? lines.has(edge) : [...tables].some((table) => title.includes(table));
+  const { nodes, edges, titles } = hoverIndex(root);
+  for (const node of nodes) node.style.opacity = tables.has(titles.get(node) ?? "") ? "1" : "0.35";
+  for (const edge of edges) {
+    const kept = lines ? lines.has(edge) : [...tables].some((table) => (titles.get(edge) ?? "").includes(table));
     edge.style.opacity = kept ? "1" : "0.2";
-  });
+  }
 }
 
 /** Every table and line as drawn again — a table Diff fades stays faded. */
 export function clearTableFocus(root: ParentNode): void {
-  root.querySelectorAll<SVGElement>("g.node, g.edge").forEach((element) => {
-    element.style.opacity = "";
-  });
+  const { nodes, edges } = hoverIndex(root);
+  for (const element of [...nodes, ...edges]) element.style.opacity = "";
 }
 
 export function bindLineHover(
@@ -532,20 +566,34 @@ export function bindLineHover(
   const touching = (table: string) =>
     new Set(edgesById(relations.flatMap((line, k) => (line.source === table || line.target === table ? [k] : []))));
   // The tables a set of lines joins: both ends of each.
+  // A hover that acted on every mouse move flashed the drawing and worked the main thread; the light waits
+  // ``HOVER_INTENT_MS``, and a further move resets it, so a pointer passing over the drawing changes nothing.
+  let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  const later = (action: () => void, trusted = true) => {
+    // A synthetic event (a check, a test) acts at once; the browser's own pointer waits, so a pass over the drawing
+    // never flashes it.
+    if (!trusted) return action();
+    if (hoverTimer !== null) clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(action, HOVER_INTENT_MS);
+  };
+  signal.addEventListener("abort", () => {
+    if (hoverTimer !== null) clearTimeout(hoverTimer);
+  });
+
   const joined = (edges: Element[]) => new Set(edges.flatMap((edge) => {
     const line = relations[Number(edge.id.slice(2))];
     return line ? [line.source, line.target] : [];
   }));
 
   root.querySelectorAll('g.edge[id^="re"]').forEach((edge) => {
-    edge.addEventListener("mouseenter", () => {
+    edge.addEventListener("mouseenter", (event: Event) => later(() => {
       show([edge], true);
       focusTables(root, joined([edge]), new Set([edge]));
-    }, { signal });
-    edge.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    edge.addEventListener("mouseleave", (event: Event) => later(() => {
       show([edge], false);
       clearTableFocus(root);
-    }, { signal });
+    }, event.isTrusted), { signal });
   });
 
   // A row's lines: every line one of whose ends is this row.
@@ -556,22 +604,51 @@ export function bindLineHover(
       rowLines.set(row, [...(rowLines.get(row) ?? []), k]);
     }
   });
+  // A table seen from afar is one thing: a hover anywhere on it lights every line it has, bold, and every table they join
+  // — as a key row lights its own lines close up (spec 071).
+  const lightTable = (own: string) => {
+    const edges = [...touching(own)];
+    show(edges, true);
+    focusTables(root, new Set([own, ...joined(edges)]), new Set(edges));
+    return edges;
+  };
+  root.querySelectorAll("g.node").forEach((node) => {
+    const own = tableOf(node);
+    if (!own || isContourId(own) || !relations.some((line) => line.source === own || line.target === own)) return;
+    let lit: Element[] = [];
+    node.addEventListener("mouseenter", (event: Event) => {
+      if (!seenFromAfar(node)) return;
+      later(() => (lit = lightTable(own)), event.isTrusted);
+    }, { signal });
+    node.addEventListener("mouseleave", (event: Event) => {
+      if (!lit.length && !seenFromAfar(node)) return;
+      later(() => {
+        show(lit, false);
+        lit = [];
+        clearTableFocus(root);
+      }, event.isTrusted);
+    }, { signal });
+  });
+
   root.querySelectorAll('g[id^="a_fn"], g[id^="a_ft"]').forEach((cell) => {
     const lines = rowLines.get(cell.id.slice(4)) ?? [];
     if (!lines.length) return;
     // The row's own table stays the hovered one; its lines and every table they join are lit with it.
     const own = tableOf(cell.closest("g.node") ?? cell);
-    cell.addEventListener("mouseenter", () => {
+    cell.addEventListener("mouseenter", (event: Event) => later(() => {
+      // From afar the row is too small to aim at: the table's hover lights all its lines instead.
+      if (seenFromAfar(cell.closest("g.node") ?? cell)) return void lightTable(own);
       const edges = edgesById(lines);
       // Scenario 2 (maintainer, 2026-10-27): the field's lines go bold (``show``); the tables they join
       // stay bright; the hovered table's other lines stay as they are; every other line and table dims.
       show(edges, true);
       focusTables(root, new Set([own, ...joined(edges)]), touching(own));
-    }, { signal });
-    cell.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    cell.addEventListener("mouseleave", (event: Event) => later(() => {
+      if (seenFromAfar(cell.closest("g.node") ?? cell)) return;
       show(edgesById(lines), false);
       focusTables(root, new Set([own]));
-    }, { signal });
+    }, event.isTrusted), { signal });
   });
 
   // Bundles (spec 065): a bundle is lit as a line is, every row of its relations marked; its ends stay bright.
@@ -590,52 +667,91 @@ export function bindLineHover(
   for (const bundle of bundles) {
     const edge = bundleEdge(bundle);
     if (!edge) continue;
-    edge.addEventListener("mouseenter", () => {
+    edge.addEventListener("mouseenter", (event: Event) => later(() => {
       showBundles([bundle], true);
       focusTables(root, new Set(bundleEnds([bundle])), new Set([edge]));
-    }, { signal });
-    edge.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    edge.addEventListener("mouseleave", (event: Event) => later(() => {
       showBundles([bundle], false);
       clearTableFocus(root);
-    }, { signal });
+    }, event.isTrusted), { signal });
   }
   // A folded box: its bundles are lit, the tables and boxes at their other ends stay bright, the rest dims.
   root.querySelectorAll("g.node").forEach((node) => {
     const box = tableOf(node);
     if (!isContourId(box)) return;
     const own = bundles.filter((bundle) => bundle.source === box || bundle.target === box);
-    node.addEventListener("mouseenter", () => {
+    node.addEventListener("mouseenter", (event: Event) => later(() => {
       showBundles(own, true);
       focusTables(root, new Set([box, ...bundleEnds(own)]), new Set(bundleEdges(own)));
-    }, { signal });
-    node.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    node.addEventListener("mouseleave", (event: Event) => later(() => {
       showBundles(own, false);
       clearTableFocus(root);
-    }, { signal });
+    }, event.isTrusted), { signal });
   });
 
   // A resource contour (spec 064): its lines to other resources are lit as a hovered line is, the tables at their
   // ends stay bright, its border widens, and everything else dims — everything, when it has no such line. Its
   // bundles to folded boxes are lit the same way (spec 065).
-  const homeOf = new Map(entities.map((entity) => [entity.id, tableResource(entity)]));
+  // A frame's empty space — a resource's (spec 064) or a domain's (spec 071) — lights the whole frame, every table
+  // inside it, and every line one of those tables touches, inside the frame and out. A folded frame has no tables:
+  // it lights only its lines to other frames (the bundles), so its inside stays one box.
   root.querySelectorAll("g.cluster").forEach((cluster) => {
-    const resource = contourResource(cluster);
-    if (resource === null) return;
-    const lines = crossLines(resource, relations, entities);
-    const own = bundles.filter((bundle) => homeOf.get(bundle.source) === resource || homeOf.get(bundle.target) === resource);
-    cluster.addEventListener("mouseenter", () => {
-      const edges = edgesById(lines);
+    const frameId = contourId(cluster);
+    if (frameId === null) return;
+    // The frame's tables, by what it holds: a resource's copies, or a domain's entities (the markup nests them, but the
+    // data says the same and does not depend on the nesting).
+    const memberOf = (entity: ErdEntity) =>
+      frameId.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? (entity.domain_qualname ?? "") === frameId.slice(DOMAIN_CONTOUR_ID_PREFIX.length) : tableResource(entity) === frameId.slice(CONTOUR_ID_PREFIX.length);
+    const inside = new Set(entities.filter(memberOf).map((entity) => entity.id));
+    const own = bundles.filter((bundle) => bundle.source === frameId || bundle.target === frameId);
+    // Inside tables: every line they touch. Folded: the bundles stand for them, so no table line is lit.
+    const lineIds = inside.size ? relations.flatMap((line, k) => (inside.has(line.source) || inside.has(line.target) ? [k] : [])) : [];
+    cluster.addEventListener("mouseenter", (event: Event) => later(() => {
+      const edges = edgesById(lineIds);
       cluster.classList.add(EDGE_HOVER_CLASS);
       show(edges, true);
       showBundles(own, true);
-      focusTables(root, new Set([...joined(edges), ...bundleEnds(own)]), new Set([...edges, ...bundleEdges(own)]));
-    }, { signal });
-    cluster.addEventListener("mouseleave", () => {
+      focusTables(root, new Set([...inside, ...joined(edges), ...bundleEnds(own)]), new Set([...edges, ...bundleEdges(own)]));
+    }, event.isTrusted), { signal });
+    cluster.addEventListener("mouseleave", (event: Event) => later(() => {
       cluster.classList.remove(EDGE_HOVER_CLASS);
-      show(edgesById(lines), false);
+      show(edgesById(lineIds), false);
       showBundles(own, false);
       clearTableFocus(root);
-    }, { signal });
+    }, event.isTrusted), { signal });
+  });
+}
+
+/** The middle of Helvetica's capitals above the baseline, in ems: half its cap height (0.718). */
+const FRAME_CAP_MIDDLE = 0.359;
+
+/**
+ * The disk before every frame's name — a domain's or a resource's, the same folded and unfolded, on the ERD and on the
+ * use cases (spec 071). Graphviz drops an ``<IMG>`` inside an HTML label, so ``frameTitleLabel`` keeps a slot for the
+ * disk: Graphviz writes it as ``<g id="a_fdd<n>">`` (a domain's) or ``<g id="a_fdr<n>">`` (a resource's) round a
+ * polygon filled with the disk's colour. Each slot becomes the disk, drawn in that colour over the slot's box; nothing
+ * else of the drawing moves.
+ */
+export function addFrameIcons(markup: string): string {
+  const slot = new RegExp(`<g id="a_${FRAME_DISK_SLOT_PREFIX}([dr])\\d+">\\s*<a\\b[^>]*>\\s*<polygon fill="([^"]+)"[^>]*points="([^"]+)"[^>]*/>\\s*</a>\\s*</g>`, "g");
+  return markup.replace(slot, (whole, kind: string, fill: string, points: string, at: number) => {
+    const values = (points.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
+    const xs = values.filter((_, i) => i % 2 === 0);
+    const ys = values.filter((_, i) => i % 2 === 1);
+    if (!xs.length || !ys.length) return whole;
+    const left = Math.min(...xs);
+    const top = Math.min(...ys);
+    const width = Math.max(...xs) - left;
+    const height = Math.max(...ys) - top;
+    const size = Math.min(width, height);
+    // The disk's middle stands on the middle of the name's capitals, where the eye reads the line's axis — not on the
+    // middle of the row, which the descenders pull down. Without a name after it, the row's middle.
+    const name = /<text\b[^>]*\by="(-?[\d.]+)"[^>]*font-size="([\d.]+)"/.exec(markup.slice(at + whole.length, at + whole.length + 600));
+    const middle = name ? Number(name[1]) - Number(name[2]) * FRAME_CAP_MIDDLE : top + height / 2;
+    const icon = svgDataUriForGraphNodeIcon(fill, kind === "d" ? "Domain" : "Resource");
+    return `<image class="frame-disk" href="${icon}" x="${(left + (width - size) / 2).toFixed(2)}" y="${(middle - size / 2).toFixed(2)}" width="${size.toFixed(2)}" height="${size.toFixed(2)}"/>`;
   });
 }
 

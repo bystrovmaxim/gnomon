@@ -1,7 +1,7 @@
 // src/lib/erdPostPass.test.ts
 import { afterEach, describe, expect, it } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { scaleFoldControls, addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, erdBundleSx, erdFoldSx, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, erdBundleSx, erdDetailSx, FAR_NAMES_CLASS, FAR_NAMES_SCALE, FAR_ROWS_CLASS, FAR_ROWS_SCALE, GREEK_CLASS, GREEK_NAME_CLASS, setErdDetail, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
 
 // Markup shaped like Graphviz's: Player (0) has id, gender and an FK row named showcase twice
 // (own row and FK row); Showcase (1) has id and players; Gender (2) has id.
@@ -188,6 +188,29 @@ describe("which tables stay bright on hover (spec 029, FR-040, FR-041)", () => {
     hover(root.querySelector('g[id="a_fn0_2"]')!, false);
     expect(bright(root)).toEqual(["Player"]);
     expect(brightLines(root)).toEqual(["re0", "re1"]);
+  });
+
+  it("a table seen from afar: a hover anywhere on it lights all its lines, bold, and every table they join (spec 071)", () => {
+    const { root } = mount();
+    // Its rows stand 6 px high on screen: too low to aim at one.
+    const player = [...root.querySelectorAll("g.node")].find((node) => node.querySelector("title")!.textContent === "Player")!;
+    for (const cell of player.querySelectorAll("g")) (cell as Element).getBoundingClientRect = () => ({ height: 6 }) as DOMRect;
+    hover(player, true);
+    expect(bright(root)).toEqual(["Gender", "Player", "Showcase"]);
+    expect([...root.querySelectorAll("g.edge.is-hovered")].map((e) => e.id).sort()).toEqual(["re0", "re1"]);
+    // A key row under the pointer lights the same: from afar there is no row to aim at.
+    hover(player.querySelector('g[id="a_fn0_2"]')!, true);
+    expect([...root.querySelectorAll("g.edge.is-hovered")].map((e) => e.id).sort()).toEqual(["re0", "re1"]);
+    hover(player, false);
+    expect(root.querySelectorAll("g.edge.is-hovered")).toHaveLength(0);
+    expect(bright(root)).toEqual(["Gender", "Player", "Showcase"]);
+  });
+
+  it("close up, a hover on a table's plain row lights none of its lines bold", () => {
+    const { root } = mount();
+    const player = [...root.querySelectorAll("g.node")].find((node) => node.querySelector("title")!.textContent === "Player")!;
+    hover(player, true);
+    expect(root.querySelectorAll("g.edge.is-hovered")).toHaveLength(0);
   });
 
   it("a PK row: every table whose lines point at it", () => {
@@ -385,31 +408,31 @@ ${contour("Orders")}${contour("Support")}${contour("Billing")}
     expect(crossLines("Billing", shopRelations, shopEntities)).toEqual([]);
   });
 
-  it("gives a resource contour, and only one, a 10 px hit stroke along its border", () => {
+  it("gives every frame's whole outline a transparent hit area that takes the pointer", () => {
     const root = mountShop();
-    addContourHitAreas(root);
     const hits = [...root.querySelectorAll("g.cluster path.erd-hit")];
     expect(hits.map((hit) => hit.closest("g.cluster")!.id)).toEqual(["rc:Orders", "rc:Support", "rc:Billing"]);
-    expect(hits[0]!.getAttribute("stroke-width")).toBe("10");
-    expect(hits[0]!.getAttribute("pointer-events")).toBe("stroke");
+    expect(hits[0]!.getAttribute("fill")).toBe("transparent");
+    expect(hits[0]!.getAttribute("pointer-events")).toBe("all");
+    expect(hits[0]!.getAttribute("stroke")).toBe("none");
     expect(contourResource(root.querySelector("#clust1")!)).toBeNull();
   });
 
-  it("on hover lights its lines to other resources, keeps their tables bright and dims the rest", () => {
+  it("on hover lights its whole frame, every table inside it and every line they touch, inside the frame and out (spec 071)", () => {
     const root = mountShop();
     hover(cluster(root, "Orders"), true);
-    expect(lit(root)).toEqual(["re1"]);
-    expect(bright(root)).toEqual(["Order", "Ticket"]);
-    expect(root.querySelector<SVGElement>('g[id="re0"]')!.style.opacity).toBe("0.2");
+    expect(lit(root)).toEqual(["re0", "re1"]);
+    expect(bright(root)).toEqual(["Line", "Order", "Ticket"]);
+    expect(root.querySelector<SVGElement>('g[id="re0"]')!.style.opacity).toBe("1");
     expect(cluster(root, "Orders").classList.contains("is-hovered")).toBe(true);
     expect(text(root, "fn2_1").getAttribute("font-weight")).toBe("bold");
   });
 
-  it("with no line out dims every table and line, and widens only its own border", () => {
+  it("with no line out lights its own tables and dims every line (spec 071)", () => {
     const root = mountShop();
     hover(cluster(root, "Billing"), true);
     expect(lit(root)).toEqual([]);
-    expect(bright(root)).toEqual([]);
+    expect(bright(root)).toEqual(["Invoice"]);
     expect([...root.querySelectorAll<SVGElement>("g.edge")].map((e) => e.style.opacity)).toEqual(["0.2", "0.2"]);
     expect([...root.querySelectorAll("g.cluster.is-hovered")].map((c) => c.id)).toEqual(["rc:Billing"]);
   });
@@ -463,40 +486,11 @@ describe("folded contours and their bundles (spec 065)", () => {
   const mountFold = () => {
     document.body.innerHTML = `<div id="root">${FOLD_SVG}</div>`;
     const root = document.getElementById("root")!;
-    addFoldControls(root);
     bindLineHover(root, foldRelations, foldEntities, new AbortController().signal, bundles);
     return root;
   };
   const bright = (root: ParentNode) =>
     [...root.querySelectorAll<SVGElement>("g.node")].filter((n) => n.style.opacity === "1").map((n) => n.querySelector("title")!.textContent).sort();
-
-  it("puts a minus in the top right corner of each contour and a plus on each folded box, once", () => {
-    const root = mountFold();
-    addFoldControls(root);
-    const controls = [...root.querySelectorAll(".erd-fold-control")].map((c) => [c.getAttribute("data-fold"), c.getAttribute("data-folded"), c.getAttribute("transform"), c.getAttribute("aria-label")]);
-    expect(controls).toEqual([
-      ["rc:Billing", "0", "translate(57,13)", "Fold"],
-      ["rc:Orders", "1", "translate(183,20)", "Unfold"],
-    ]);
-    expect(root.querySelector('[data-fold="rc:Orders"] path')!.getAttribute("d")).toContain("V");
-    expect(root.querySelector('[data-fold="rc:Billing"] path')!.getAttribute("d")).not.toContain("V");
-  });
-
-  it("draws a fold control at screen size: a 16-pixel face inside a 28-pixel hit area, growing inward from the corner (spec 068)", () => {
-    const root = mountFold();
-    addFoldControls(root);
-    const control = root.querySelector('[data-fold="rc:Billing"]')!;
-    const box = (selector: string) => ["x", "y", "width", "height"].map((name) => Number(control.querySelector(selector)!.getAttribute(name)));
-    expect(box(".erd-fold-hit")).toEqual([-28, 0, 28, 28]);
-    expect(box(".erd-fold-face")).toEqual([-22, 6, 16, 16]);
-    expect(control.querySelector(".erd-fold-scale")!.contains(control.querySelector(".erd-fold-face"))).toBe(true);
-    expect(control.querySelector("title")!.textContent).toBe("Fold");
-    const folded = root.querySelector('[data-fold="rc:Orders"]')!;
-    expect(["x", "width"].map((name) => Number(folded.querySelector(".erd-fold-hit")!.getAttribute(name)))).toEqual([0, 28]);
-    expect(erdFoldSx["& .erd-fold-scale"]).toMatchObject({ transformOrigin: "0 0", opacity: 0.75 });
-    scaleFoldControls(root, 0.25);
-    expect([...root.querySelectorAll<SVGGElement>(".erd-fold-scale")].map((part) => part.style.transform)).toEqual(Array(2).fill("scale(4.0000)"));
-  });
 
   it("lights a hovered bundle, marks the rows of every relation it stands for, and keeps its ends bright", () => {
     const root = mountFold();
@@ -522,5 +516,37 @@ describe("folded contours and their bundles (spec 065)", () => {
 
   it("keeps a bundle's count on view at all times", () => {
     expect(erdBundleSx["& g.edge[id^='rb'] text, & g.edge[id^='rb'] rect.erd-end-label"]).toEqual({ visibility: "visible" });
+  });
+});
+
+describe("the level of detail (spec 071)", () => {
+  it("takes the rows' text out from afar, then the names', and puts them back close up", () => {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    setErdDetail(svg, 1);
+    expect([...svg.classList]).toEqual([]);
+    setErdDetail(svg, FAR_ROWS_SCALE - 0.01);
+    expect([...svg.classList]).toEqual([FAR_ROWS_CLASS]);
+    setErdDetail(svg, FAR_NAMES_SCALE - 0.01);
+    expect([...svg.classList].sort()).toEqual([FAR_NAMES_CLASS, FAR_ROWS_CLASS].sort());
+    setErdDetail(svg, 0.5);
+    expect([...svg.classList]).toEqual([]);
+  });
+
+  it("from afar draws every text of a table as a bar of its length, place and colour — a table never turns blank", () => {
+    document.body.innerHTML = `<svg><g class="node"><g id="a_hn0"><a><text x="10" y="20" font-size="12" text-anchor="start" fill="#ffffff">Order</text></a></g><g id="a_fn0_0"><a><text x="100" y="40" font-size="10" text-anchor="end" fill="#64748b">str</text></a></g></g></svg>`;
+    const svg = document.querySelector("svg")!;
+    setErdDetail(svg, FAR_ROWS_SCALE - 0.01);
+    const bars = [...svg.querySelectorAll(`.${GREEK_CLASS}`)];
+    expect(bars).toHaveLength(2);
+    expect(bars.map((bar) => bar.getAttribute("fill"))).toEqual(["#ffffff", "#64748b"]);
+    // The name's bar starts where its text starts; the type's ends where its right-anchored text ends.
+    expect(Number(bars[0]!.getAttribute("x"))).toBe(10);
+    expect(Number(bars[1]!.getAttribute("x")) + Number(bars[1]!.getAttribute("width"))).toBeCloseTo(100, 5);
+    expect(bars[0]!.classList.contains(GREEK_NAME_CLASS)).toBe(true);
+    // Made once per drawing.
+    setErdDetail(svg, 0.01);
+    expect(svg.querySelectorAll(`.${GREEK_CLASS}`)).toHaveLength(2);
+    // Every text hidden from afar has its bar shown in its place.
+    expect(erdDetailSx[`& svg.${FAR_ROWS_CLASS} .${GREEK_CLASS}` as keyof typeof erdDetailSx]).toEqual({ display: "inline" });
   });
 });

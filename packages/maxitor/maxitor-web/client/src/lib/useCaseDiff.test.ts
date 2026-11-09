@@ -2,7 +2,8 @@
 import { describe, expect, it } from "vitest";
 import type { ChangedInside, CompareResult } from "@/api/compare";
 import { buildActionGlyphDataUrl, buildDomainUseCaseDotBundle, buildRoleActorDataUrl, domainUseCaseDotNodeId } from "@/lib/buildDomainUseCaseDotSource";
-import { filterUseCaseByChanges, filterUseCaseByElements, markUseCaseDiagram, mergeUseCaseDiagrams, unmarkedUseCase, useCaseCard, useCaseChangeKinds, useCaseChanges, useCaseCounts, useCaseHolds, useCaseIdAt, useCaseOfSide, withUseCaseOneHop } from "@/lib/useCaseDiff";
+import { filterUseCaseByChanges, filterUseCaseByElements, markUseCaseDiagram, mergeUseCaseDiagrams, unmarkedUseCase, useCaseCard, useCaseChangeKinds, useCaseChanges, useCaseCounts, useCaseHolds, useCaseIdAt, useCaseBase, useCaseOfSide } from "@/lib/useCaseDiff";
+import { filterUseCaseDiagramByDomains } from "@/lib/filterUseCaseDiagramByDomains";
 import type { DomainUseCaseDiagramPayload, DomainUseCaseEdgeWire } from "@/model/domainUseCaseDiagram";
 
 const action = (id: string, role_ids: string[] = []) => ({ id, label: id, short_label: id, domain_id: "d", domain_short_label: "d", accent_color: "#8b5cf6", role_ids });
@@ -252,12 +253,6 @@ describe("the Elements filter", () => {
     expect(left.edges).toEqual([]);
   });
 
-  it("gives way to 1-hop, which brings the roles next to the actions back, as on the ERD", () => {
-    const kept = filterUseCaseByElements(base, new Set(["roles"]));
-    expect(kept.roles).toEqual([]);
-    expect(withUseCaseOneHop(kept, base).roles.map((one) => one.id)).toEqual(["r"]);
-  });
-
   it("is followed by the steps", () => {
     const left = filterUseCaseByElements(base, new Set(["actions"]));
     expect(useCaseChanges(left)).toEqual([]);
@@ -265,24 +260,6 @@ describe("the Elements filter", () => {
 
   it("does nothing with nothing off", () => {
     expect(filterUseCaseByElements(base, new Set())).toBe(base);
-  });
-});
-
-describe("1-hop", () => {
-  const base = markUseCaseDiagram(diagram(["a", "b", "far"], ["r", "lonely"], [link("a", "r"), link("b", "r"), link("far", "lonely")]), compared({ a: "added" }), {});
-
-  it("brings back what is one link away from what the filters left, and no further", () => {
-    const kept = filterUseCaseByChanges(base, new Set(["unchanged"]));
-    expect(kept.actions.map((one) => one.id)).toEqual(["a"]);
-    const hop = withUseCaseOneHop(kept, base);
-    expect(hop.actions.map((one) => one.id)).toEqual(["a"]);
-    expect(hop.roles.map((one) => one.id)).toEqual(["r"]);
-    expect(hop.edges.map((one) => one.source_id)).toEqual(["a"]);
-  });
-
-  it("from a role reaches every action it serves", () => {
-    const kept = { ...base, actions: [], roles: base.roles.filter((one) => one.id === "r"), edges: [] };
-    expect(withUseCaseOneHop(kept, base).actions.map((one) => one.id)).toEqual(["a", "b"]);
   });
 });
 
@@ -311,5 +288,33 @@ describe("the part of a diagram one version has (spec 044)", () => {
     const a = useCaseOfSide(diagram, "a");
     expect(useCaseHolds(a, { kind: "node", id: domainUseCaseDotNodeId("a", "a.Gone") })).toBe(true);
     expect(useCaseHolds(a, { kind: "node", id: domainUseCaseDotNodeId("a", "a.Fresh") })).toBe(false);
+  });
+});
+
+describe("a domain's use cases and their 1-hop neighbours (spec 071)", () => {
+  const action = (id: string, domain: string) => ({ id, label: id, short_label: id, domain_id: domain, domain_short_label: domain, accent_color: "#000000", role_ids: [] });
+  const all = {
+    domain: { id: "all", label: "All", short_label: "All", accent_color: "#000000" },
+    actions: [action("store.Order", "store"), action("support.Ticket", "support"), action("billing.Pay", "billing")],
+    roles: [{ id: "guest", label: "Guest", short_label: "Guest" }, { id: "agent", label: "Agent", short_label: "Agent" }],
+    edges: [
+      { id: "e1", edge_kind: "association" as const, source_id: "store.Order", target_id: "guest" },
+      { id: "e2", edge_kind: "association" as const, source_id: "billing.Pay", target_id: "guest" },
+      { id: "e3", edge_kind: "association" as const, source_id: "support.Ticket", target_id: "agent" },
+      { id: "e4", edge_kind: "include" as const, source_id: "support.Ticket", target_id: "store.Order" },
+    ],
+  };
+  const scope = filterUseCaseDiagramByDomains(all, new Set(["store"]));
+
+  it("brings in an action of another domain one link away, not one that only shares a role", () => {
+    const base = useCaseBase(all, scope);
+    expect(base.actions.map((each) => each.id).sort()).toEqual(["store.Order", "support.Ticket"]);
+    expect(base.roles.map((each) => each.id)).toEqual(["guest"]);
+    expect(base.edges.map((each) => each.id).sort()).toEqual(["e1", "e4"]);
+  });
+
+  it("is the scope itself when nothing links out of it", () => {
+    const alone = { ...all, edges: all.edges.filter((edge) => edge.edge_kind === "association") };
+    expect(useCaseBase(alone, filterUseCaseDiagramByDomains(alone, new Set(["store"]))).actions.map((each) => each.id)).toEqual(["store.Order"]);
   });
 });

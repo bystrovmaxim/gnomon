@@ -120,17 +120,6 @@ export function filterLifecycleByKinds(diagram: LifecycleFiniteAutomatonPayload,
   return withStates(diagram, diagram.states.filter((state) => !off.has(state.state_type)));
 }
 
-/** 1-hop over the filters: what they left, and every state of the base one transition away from it, even what a filter hid. */
-export function withLifecycleOneHop(kept: LifecycleFiniteAutomatonPayload, base: LifecycleFiniteAutomatonPayload): LifecycleFiniteAutomatonPayload {
-  const keys = new Set(kept.states.map((state) => state.key));
-  const reach = new Set(keys);
-  for (const transition of base.transitions) {
-    if (keys.has(transition.source)) reach.add(transition.target);
-    if (keys.has(transition.target)) reach.add(transition.source);
-  }
-  return withStates(base, base.states.filter((state) => reach.has(state.key)));
-}
-
 /** A state's name, as its card and its row in a list say it. */
 function stateName(state: LifecycleFsmStateWire | undefined, key: string): string {
   return state?.display_name.trim() || key;

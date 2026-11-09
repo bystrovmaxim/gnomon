@@ -239,7 +239,7 @@ export function erdHolds(data: ErdDrawing, ref: ElementRef): boolean {
     const [table, name] = [ref.id.slice(0, at), ref.id.slice(at + 1)];
     return holdsEnd(data, table) && data.entities.some((entity) => entity.id === copyEntity(table) && (entity.fields ?? []).some((field) => field.name === name));
   }
-  if (ref.kind === "contour") return holdsEnd(data, `${CONTOUR_ID_PREFIX}${ref.id}`);
+  if (ref.kind === "contour") return holdsEnd(data, ref.id);
   return holdsEnd(data, ref.id);
 }
 

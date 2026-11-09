@@ -290,8 +290,8 @@ describe("contours and bundles in Side by side (spec 068)", () => {
 
   it("holds a frame, a folded box, a copy and a bundle when their resources are on the half", () => {
     const half = drawing([]);
-    expect(erdHolds(half, { kind: "contour", id: ORDERS })).toBe(true);
-    expect(erdHolds(half, { kind: "contour", id: "shop.Gone" })).toBe(false);
+    expect(erdHolds(half, { kind: "contour", id: `rc:${ORDERS}` })).toBe(true);
+    expect(erdHolds(half, { kind: "contour", id: "rc:shop.Gone" })).toBe(false);
     expect(erdHolds(half, { kind: "table", id: `rc:${SUPPORT}` })).toBe(true);
     expect(erdHolds(half, { kind: "table", id: copyId("shop.Order", ORDERS) })).toBe(true);
     expect(erdHolds(half, { kind: "table", id: copyId("shop.Order", SUPPORT) })).toBe(false);
