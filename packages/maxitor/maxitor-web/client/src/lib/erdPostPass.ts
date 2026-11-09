@@ -15,7 +15,7 @@
  */
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
-import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdGlance, erdHeadInk, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
 export type KindGlyphDrawer = (word: string, ink: string, strokeWidth: number) => string;
@@ -167,6 +167,40 @@ export function addEdgeHitAreas(root: ParentNode): void {
     hit.setAttribute("pointer-events", "stroke");
     path.parentNode!.insertBefore(hit, path);
   });
+}
+
+/** An attribute value as the markup writes it. */
+function escAttribute(value: string): string {
+  return String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * Tag every table and frame with what paints it (spec 071): ``data-domain``, ``data-kind`` and — in the physical view
+ * — ``data-resource`` on a table, ``data-change`` in Diff; ``data-domain`` or ``data-resource`` on a frame. A table is
+ * found by the header cell Graphviz writes for it, so the tags follow the same order the DOT was built from.
+ */
+export function tagErdPaint(markup: string, entities: readonly ErdEntity[], model?: "logical" | "physical"): string {
+  const edits: Array<{ at: number; text: string }> = [];
+  entities.forEach((entity, table) => {
+    const headerAt = markup.indexOf(`<g id="a_hd${table}">`);
+    if (headerAt < 0) return;
+    const open = markup.lastIndexOf('<g id="node', headerAt);
+    if (open < 0) return;
+    const tagEnd = markup.indexOf(">", open);
+    if (tagEnd < 0) return;
+    const qual = entity.domain_qualname?.trim() ?? "";
+    const resource = model === "physical" ? (tableResource(entity) ?? "") : null;
+    const data = ` data-domain="${escAttribute(qual)}" data-kind="${escAttribute(entity.entity_kind?.trim() || "unknown")}" data-change="${erdGlance(entity)}"` + (resource !== null ? ` data-resource="${escAttribute(resource)}"` : "");
+    edits.push({ at: tagEnd, text: data });
+  });
+  for (const match of markup.matchAll(/<g id="(rc|dc):([^"]+)" class="cluster">/g)) {
+    const at = (match.index ?? 0) + match[0].length - 1;
+    const attr = match[1] === "rc" ? "data-resource" : "data-domain";
+    edits.push({ at, text: ` ${attr}="${escAttribute(match[2]!)}"` });
+  }
+  let out = markup;
+  for (const { at, text } of edits.sort((one, other) => other.at - one.at)) out = out.slice(0, at) + text + out.slice(at);
+  return out;
 }
 
 /** The resource a cluster group names — a resource contour (spec 064) — or ``null`` for any other group. */

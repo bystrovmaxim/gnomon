@@ -36,12 +36,12 @@ One phase = one commit, referencing (#80); the phases are the seven of issue #80
 
 ## Phase 3 — The paint switch (US5; FR-012, FR-013)
 
-- [ ] T025 [US5] Reproduce the paint defect on the whole system's ERD in the browser (AOA demo graph), name its cause in the commit message, and write the Vitest that fails on it
-- [ ] T026 [US5] Take paint out of the DOT: `buildDotSource` writes `data-domain`, `data-kind`, `data-resource` (physical view), `data-change` (Diff) on table and frame groups and no colour; `client/lib/erdPaint.ts` sets one CSS custom property per row of the painting section on the SVG's root; `ErdGraphvizCanvas.tsx` repaints without laying out (`paintKey` leaves the layout's dependencies)
-- [ ] T027 [US5] In `client/components/ui/ErdFilterPanel/ErdFilterPanel.tsx` make the panel a column: the sections scroll (`overflowY: auto` on them), the paint switch (`gear shift` in the code) a fixed foot outside the scrolling part
-- [ ] T028 [P] [US5] Vitest: a repaint changes no layout input and no layout hash; the paint switch stays in view in a container shorter than the panel; update `scripts/check-erd-physical-view.ts` colour assertions to read the CSS properties
+- [x] T025 [US5] Reproduce the paint defect on the whole system's ERD in the browser (AOA demo graph), name its cause in the commit message, and write the Vitest that fails on it
+- [x] T026 [US5] Take paint out of the DOT: `buildDotSource` writes `data-domain`, `data-kind`, `data-resource` (physical view), `data-change` (Diff) on table and frame groups and no colour; `client/lib/erdPaint.ts` sets one CSS custom property per row of the painting section on the SVG's root; `ErdGraphvizCanvas.tsx` repaints without laying out (`paintKey` leaves the layout's dependencies)
+- [x] T027 [US5] In `client/components/ui/ErdFilterPanel/ErdFilterPanel.tsx` make the panel a column: the sections scroll (`overflowY: auto` on them), the paint switch (`gear shift` in the code) a fixed foot outside the scrolling part
+- [x] T028 [P] [US5] Vitest: a repaint changes no layout input and no layout hash; the paint switch stays in view in a container shorter than the panel; update `scripts/check-erd-physical-view.ts` colour assertions to read the CSS properties
 - [ ] T029 [US5] The other diagrams with a paint switch — `UseCaseDiagramViewer.tsx`, `LifecycleFsmViewer.tsx`, `EventsExplorer.tsx`, `MapViewer.tsx`: check in the browser that a repaint applies at once with no new layout; where it lays out again (colours written into `client/lib/buildDomainUseCaseDotSource.ts` or `client/lib/buildLifecycleFsmDotSource.ts`), apply the colours after the layout as T026 does for the ERD; a Vitest per diagram that a repaint changes no layout input
-- [ ] T030 Adversarial check: put a colour back into the DOT, then the paint switch back inside the scroll, then a colour back into one other diagram's DOT; the matching test fails each time; restore. Commit phase 3
+- [x] T030 Adversarial check: put a colour back into the DOT, then the paint switch back inside the scroll, then a colour back into one other diagram's DOT; the matching test fails each time; restore. Commit phase 3
 
 ## Phase 4 — The filter rule on every diagram (US6; FR-014–FR-017; SC-006)
 

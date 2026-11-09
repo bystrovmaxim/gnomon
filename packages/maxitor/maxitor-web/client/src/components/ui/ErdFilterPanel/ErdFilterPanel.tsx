@@ -368,28 +368,31 @@ export function ErdFilterPanel({ domainRows, kindRows, onToggleDomain, onToggleK
         minWidth: ERD_FILTER_PANEL_WIDTH,
         maxWidth: ERD_FILTER_PANEL_WIDTH,
         maxHeight: `calc(100% - ${isMobile ? ROOM_BELOW_TOUCH : ROOM_BELOW_DESKTOP}px)`,
-        overflowY: "auto",
-        overscrollBehavior: "contain",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
         gap: 0,
-        py: 0.5,
         boxSizing: "border-box",
       }}
     >
-      {list.map((section, index) => (
-        <Box key={section.id}>
-          <SectionHeader title={section.title} open={open === section.id} onClick={() => toggleSection(section.id)} trailing={index === 0 ? closeButton : undefined} />
-          {open === section.id && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, pb: 1 }}>
-              {section.rows.map((row) => (
-                <FilterRow key={row.key} row={row} onToggle={toggleOf(section.id)} why={why} onWhy={onWhy} />
-              ))}
-            </Box>
-          )}
-        </Box>
-      ))}
+      {/* The sections scroll; the gear shift stays at the panel's foot (spec 071). */}
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", py: 0.5 }}>
+        {list.map((section, index) => (
+          <Box key={section.id}>
+            <SectionHeader title={section.title} open={open === section.id} onClick={() => toggleSection(section.id)} trailing={index === 0 ? closeButton : undefined} />
+            {open === section.id && (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.75, pb: 1 }}>
+                {section.rows.map((row) => (
+                  <FilterRow key={row.key} row={row} onToggle={toggleOf(section.id)} why={why} onWhy={onWhy} />
+                ))}
+              </Box>
+            )}
+          </Box>
+        ))}
+      </Box>
       {paint && paintSections.length > 1 && (
-        // the gear shift, the panel's last block, centred: one point per section above, in their order.
-        <Box sx={{ borderTop: "1px solid rgba(0,0,0,0.07)", display: "flex", justifyContent: "center", pt: 0.75, pb: 0.25 }}>
+        // the gear shift, the panel's fixed foot, centred: one point per section above, in their order.
+        <Box sx={{ borderTop: "1px solid rgba(0,0,0,0.07)", display: "flex", justifyContent: "center", pt: 0.75, pb: 0.25, flexShrink: 0 }}>
           <GearShift sections={paintSections} source={paint.source} onPaint={shiftPaint} />
         </Box>
       )}

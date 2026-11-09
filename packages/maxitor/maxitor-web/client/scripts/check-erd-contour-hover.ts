@@ -14,7 +14,7 @@
 
 import { Graphviz } from "@hpcc-js/wasm-graphviz";
 import { JSDOM } from "jsdom";
-import { buildDotSource, ERD_CARD_RADIUS, ERD_CARD_STROKE, setErdPaint, type ErdEntity, type ErdGraphPayload } from "../src/lib/buildDotSource.ts";
+import { buildDotSource, ERD_CARD_RADIUS, ERD_CARD_STROKE, type ErdEntity, type ErdGraphPayload } from "../src/lib/buildDotSource.ts";
 import { containNodeFills } from "../src/lib/containNodeFills.ts";
 import { addContourHitAreas, addEdgeHitAreas, bindLineHover, drawErdCards } from "../src/lib/erdPostPass.ts";
 import { copyId, physicalDrawing } from "../src/lib/erdViews.ts";
@@ -70,7 +70,6 @@ const shop: ErdGraphPayload = {
   resource_labels: { [STOREFRONT]: "StorefrontDatabase", [SUPPORT]: "SupportDatabase", [BILLING]: "BillingDatabase" },
 };
 
-setErdPaint("domain", {});
 const markup = drawErdCards(containNodeFills(gv.layout(buildDotSource(shop, "gv-dot-lr"), "svg", "dot")), ERD_CARD_RADIUS, ERD_CARD_STROKE);
 const dom = new JSDOM(`<div id="root">${markup.slice(markup.indexOf("<svg"))}</div>`);
 const { document, MouseEvent, AbortController: DomAbortController } = dom.window;

@@ -186,6 +186,17 @@ describe("ErdFilterPanel", () => {
     expect(divided[0].contains(points[0])).toBe(true);
   });
 
+  it("keeps the gear shift out of the scrolling sections, at the panel's fixed foot (spec 071)", () => {
+    render(
+      <ErdFilterPanel domainRows={domains} kindRows={kinds} onToggleDomain={() => undefined} onToggleKind={() => undefined} changeRows={[row("added", "Added")]} onToggleChange={() => undefined} paint={{ source: "changes", onPaint: () => undefined }} />,
+    );
+    const panel = screen.getByTestId("erd-filter-panel");
+    const scroller = panel.firstElementChild!;
+    const gear = screen.getAllByRole("radio")[0]!;
+    expect(panel.contains(gear)).toBe(true);
+    expect(scroller.contains(gear)).toBe(false);
+  });
+
   describe("the gear shift and the sections (spec 040)", () => {
     const panel = (source: "domains" | "kinds" | "changes", onPaint: (next: "domains" | "kinds" | "changes") => void) => (
       <ErdFilterPanel domainRows={domains} kindRows={kinds} onToggleDomain={() => undefined} onToggleKind={() => undefined} changeRows={[row("added", "Added")]} onToggleChange={() => undefined} paint={{ source, onPaint }} />

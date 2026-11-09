@@ -176,7 +176,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
         name: `cluster_resource_${index}`,
         id,
         label: data.resource_labels?.[resource] ?? (resource.split(".").pop() || resource),
-        colour: erdResourceFrameColour(resource),
+        colour: erdResourceFrameColour(resource, data.resource_colors),
         resource,
         members,
         groups: groupsIn(members, data.groups, entities),

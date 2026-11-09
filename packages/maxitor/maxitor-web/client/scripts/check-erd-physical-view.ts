@@ -16,7 +16,8 @@
  */
 
 import { Graphviz } from "@hpcc-js/wasm-graphviz";
-import { buildDotSource, setErdPaint, type ErdEntity, type ErdGraphPayload, type ErdGraphvizLayout } from "../src/lib/buildDotSource.ts";
+import { buildDotSource, type ErdEntity, type ErdGraphPayload, type ErdGraphvizLayout } from "../src/lib/buildDotSource.ts";
+import { erdPaintCss } from "../src/lib/erdPaint.ts";
 import { erdCompose } from "../src/lib/erdCompose.ts";
 import { copyId, physicalDrawing } from "../src/lib/erdViews.ts";
 
@@ -70,6 +71,7 @@ const shop: ErdGraphPayload = {
   domain_labels: { [STORE]: "Store", [MONEY]: "Money" },
   resource_ids: [ARCHIVE, BILLING, STOREFRONT],
   resource_labels: { [ARCHIVE]: "ArchiveDatabase", [BILLING]: "BillingDatabase", [STOREFRONT]: "StorefrontDatabase" },
+  resource_colors: COLOURS,
 };
 
 type Box = { left: number; top: number; right: number; bottom: number };
@@ -125,7 +127,6 @@ function render(data: ErdGraphPayload, layout: ErdGraphvizLayout): string {
 
 const LAYOUTS: ErdGraphvizLayout[] = ["gv-dot-lr", "gv-dot-tb", "gv-neato", "gv-fdp", "gv-circo"];
 
-setErdPaint("domain", {});
 for (const layout of LAYOUTS) {
   const tag = layout.slice(3);
   const svg = render(shop, layout);
@@ -152,15 +153,14 @@ for (const layout of LAYOUTS) {
   check(`[${tag}] the table no resource keeps stands in Not stored, a dashed frame`, unstored !== undefined && unstored.label === "Not stored" && unstored.dashed && inside(nodeBox(svg, copyId("shop.Legacy", null)), unstored.box), unstored?.label);
   const block = frames.get(`cluster_${copyId("shop.Invoice:payment", BILLING)}`);
   check(`[${tag}] a specialization block stands inside the frame that holds all its tables`, block !== undefined && inside(block.box, billing!.box));
-  check(`[${tag}] the frames are grey while domains paint`, billing?.stroke === "#94a3b8" && storefront?.stroke === "#94a3b8", `${billing?.stroke} / ${storefront?.stroke}`);
+  check(`[${tag}] each frame keeps its resource colour, whatever paints (spec 071)`, billing?.stroke === COLOURS[BILLING] && storefront?.stroke === COLOURS[STOREFRONT], `${billing?.stroke} / ${storefront?.stroke}`);
 }
 
-setErdPaint("resource", COLOURS);
-for (const layout of ["gv-dot-lr", "gv-neato", "gv-circo"] as ErdGraphvizLayout[]) {
-  const tag = layout.slice(3);
-  const painted = clustersOf(render(shop, layout));
-  check(`[${tag}] painted by resource, each frame takes its resource's colour`, painted.get("cluster_resource_1")?.stroke === COLOURS[BILLING] && painted.get("cluster_resource_2")?.stroke === COLOURS[STOREFRONT]);
-}
+// The paint is CSS, not the DOT (spec 071): the stylesheet paints each table by its resource, and greys the domain frames.
+const byResource = erdPaintCss("resources", shop.entities, { resources: COLOURS });
+check("painted by resource, the stylesheet paints each table by its resource", byResource.includes(`g.node[data-resource="${BILLING}"]`) && byResource.includes(`fill: ${COLOURS[BILLING]}`) && byResource.includes(`g.node[data-resource="${STOREFRONT}"]`));
+check("painted by resource, the domain frames grey", byResource.includes("g.cluster[data-domain] path:not(.erd-hit) { stroke: #94a3b8; }"));
+check("painted by domains, the stylesheet greys only the resource frames", erdPaintCss("domains", shop.entities, {}).includes("g.cluster[data-resource] path:not(.erd-hit) { stroke: #94a3b8; }"));
 
 if (failures > 0) {
   console.error(`${failures} assertion(s) failed`);
