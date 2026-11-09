@@ -1,0 +1,3 @@
+# version.toml — the data model of Maxitor core (bystrovmaxim/gnomon#73) is a component: its graph history reads the number from here.
+kind = "component"
+version = "0.1.0"

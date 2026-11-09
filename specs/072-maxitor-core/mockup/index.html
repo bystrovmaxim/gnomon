@@ -1,0 +1,877 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maxitor core — signing in, registering an organization, the empty frame · mockup</title>
+<style>
+  /* The visual language of spec 059's mockup and of today's Maxitor: the same colours, rows and cards. */
+  :root {
+    --page-bg: #e9edf1; --ink: #0f172a; --ink2: #1e293b; --muted: #64748b; --faint: #94a3b8;
+    --line: rgba(15,23,42,.1); --line2: rgba(15,23,42,.06);
+    --sidebar: #EBF2F5; --workspace: #f4f5f7; --canvas: #f6f8fa;
+    --ok: #16a34a; --bad: #b91c1c; --warn: #b45309;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: var(--font); color: var(--ink); background: var(--page-bg); display: flex; }
+  button { font: inherit; color: inherit; }
+
+  /* ---------- mockup navigator ---------- */
+  .nav { width: 300px; flex-shrink: 0; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--line); padding: 18px 12px 32px; }
+  .nav h1 { font-size: 15px; margin: 0 6px 4px; }
+  .nav .sub { font-size: 12px; color: var(--muted); margin: 0 6px 12px; line-height: 1.45; }
+  .nav .group { font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 14px 6px 4px; }
+  .nav button.screen { display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+  .nav button.screen:hover { background: rgba(15,23,42,.05); }
+  .nav button.screen.on { background: rgba(15,23,42,.08); font-weight: 600; }
+  .nav button.screen .n { color: var(--muted); font-size: 11px; min-width: 24px; font-variant-numeric: tabular-nums; }
+  .path { margin: 6px 4px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .path .pt { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .path .pf { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .path .steps { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .path .steps button { border: 1px solid var(--line); background: #f8fafc; border-radius: 6px; font-size: 11px; padding: 2px 6px; cursor: pointer; }
+  .path .steps span { color: var(--faint); font-size: 11px; }
+
+  .stage { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; padding: 18px 24px 48px; }
+  .frame-cap { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .frame-cap b { color: var(--ink); }
+  .frame-box { position: relative; }
+  .frame-scale { transform-origin: top left; position: absolute; top: 0; left: 0; }
+  .notes { max-width: 980px; margin-top: 18px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 20px 16px; }
+  .notes h2 { font-size: 15px; margin: 0 0 6px; }
+  .notes li { font-size: 13px; line-height: 1.55; }
+  .notes ul { padding-left: 18px; margin: 6px 0 0; }
+  .notes code { font-size: 12px; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; }
+
+  /* ---------- device ---------- */
+  .device { width: 1360px; height: 840px; background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 8px 28px rgba(15,23,42,.12); }
+  .urlbar { height: 34px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #f1f5f9; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .urlbar .u { flex: 1; max-width: 560px; height: 22px; border-radius: 6px; background: #fff; border: 1px solid var(--line); display: flex; align-items: center; padding: 0 10px; color: #334155; }
+  .urlbar .u b { color: var(--ink); font-weight: 600; }
+
+  /* header */
+  .hdr { height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 12px; background: #fff; border-bottom: 1px solid var(--line); position: relative; z-index: 20; }
+  .logo { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13.5px; margin-right: 8px; }
+  .logo .mk, .card .lg .mk { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .crumb { display: inline-flex; align-items: center; height: 28px; border-radius: 7px; font-size: 13px; color: var(--ink); font-weight: 600; white-space: nowrap; }
+  .crumb .ct { padding: 0 6px 0 8px; height: 28px; line-height: 28px; display: inline-flex; align-items: baseline; gap: 6px; border-radius: 7px 0 0 7px; }
+  .crumb .cvr { width: 22px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 0 7px 7px 0; cursor: pointer; color: var(--muted); }
+  .crumb .cvr:hover { background: rgba(15,23,42,.06); }
+  .crumb .lv { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .hdr .spacer { flex: 1; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #cbd5e1; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; cursor: pointer; position: relative; }
+  .avatar.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0f172a; }
+  .tip { position: absolute; top: 40px; right: 6px; z-index: 40; background: #0f172a; color: #fff; font-size: 12px; border-radius: 7px; padding: 6px 10px; white-space: nowrap; line-height: 1.4; }
+  .tip span { color: #94a3b8; }
+  .ico { width: 16px; height: 16px; flex-shrink: 0; }
+  .ico.sm { width: 14px; height: 14px; }
+
+  .body { flex: 1; min-height: 0; display: flex; position: relative; }
+  .sb { width: 255px; flex-shrink: 0; background: var(--sidebar); border-right: 1px solid rgba(15,23,42,.08); display: flex; flex-direction: column; }
+  .sb-top { padding: 12px 14px 8px; }
+  .sb-top .k { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .sb-top .t { font-size: 14px; font-weight: 600; margin-top: 3px; }
+  .sb-top .d { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .sb-empty { margin: 18px 16px; font-size: 12px; color: var(--faint); line-height: 1.5; border: 1.5px dashed rgba(15,23,42,.14); border-radius: 8px; padding: 14px 12px; text-align: center; }
+  .content { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+  .dots { flex: 1; background-color: var(--canvas); background-image: radial-gradient(rgba(15,23,42,.13) 1px, transparent 1px); background-size: 18px 18px; }
+
+  /* ---------- auth cards ---------- */
+  .auth { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--canvas); position: relative; }
+  .card { width: 420px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 28px 30px 24px; box-shadow: 0 8px 30px rgba(15,23,42,.08); }
+  .card.wide { width: 480px; }
+  .card .lg { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 16px; margin-bottom: 18px; }
+  .card .lg .mk { width: 28px; height: 28px; border-radius: 8px; font-size: 14px; }
+  .card h2 { font-size: 19px; margin: 0 0 4px; }
+  .card .sub { font-size: 13px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+  .card .sub b { color: var(--ink); }
+  .lab { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 5px; display: flex; justify-content: space-between; }
+  .lab .opt { font-weight: 400; color: var(--muted); }
+  .inp { height: 38px; border: 1px solid rgba(15,23,42,.2); border-radius: 8px; display: flex; align-items: center; padding: 0 12px; font-size: 13.5px; color: var(--ink2); margin-bottom: 12px; background: #fff; }
+  .inp.focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .inp.ok { border-color: #86efac; }
+  .inp.bad { border-color: #fca5a5; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
+  .inp .pre { color: var(--faint); }
+  .inp .st { margin-left: auto; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .inp .st.ok { color: var(--ok); } .inp .st.bad { color: var(--bad); }
+  .hintl { font-size: 11.5px; color: var(--muted); margin: -6px 0 12px; line-height: 1.45; }
+  .hintl.bad { color: var(--bad); }
+  .btn { height: 38px; border-radius: 8px; border: 0; background: var(--ink); color: #fff; font-weight: 600; font-size: 13.5px; width: 100%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn.dis { background: #cbd5e1; cursor: not-allowed; }
+  .btn.ghostb { background: #fff; color: var(--ink); border: 1px solid rgba(15,23,42,.18); font-weight: 500; }
+  .btn.ghostb:hover { border-color: rgba(15,23,42,.4); }
+  .provs { display: flex; flex-direction: column; gap: 8px; }
+  .icons { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; }
+  .icons button { height: 44px; border-radius: 9px; border: 1px solid rgba(15,23,42,.16); background: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+  .icons button:hover { border-color: rgba(15,23,42,.4); background: #f8fafc; }
+  .icons button .pv { width: 24px; height: 24px; border-radius: 6px; font-size: 13px; }
+  .icons button:hover::after { content: attr(data-name); position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; font-size: 11.5px; border-radius: 6px; padding: 3px 8px; white-space: nowrap; z-index: 5; }
+  .pv { width: 20px; height: 20px; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .pv.ya { background: #fc3f1d; } .pv.mr { background: #005ff9; } .pv.go { background: #fff; color: #4285f4; border: 1px solid rgba(15,23,42,.15); }
+  .pv.gh { background: #0f172a; } .pv.fb { background: #1877f2; } .pv.em { background: #e2e8f0; color: #334155; }
+  .or { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: 12px; margin: 16px 0; }
+  .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .fine { font-size: 11.5px; color: var(--muted); margin-top: 16px; line-height: 1.5; }
+  .fine a, .lnk { color: var(--ink); text-decoration: underline; cursor: pointer; }
+  .back { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted); cursor: pointer; margin-bottom: 14px; }
+  .back:hover { color: var(--ink); }
+  .alert { font-size: 12.5px; line-height: 1.5; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; display: flex; gap: 9px; }
+  .alert .ico { margin-top: 1px; }
+  .alert.bad { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+  .alert.warn { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
+  .alert.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+  .alert.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+
+  .otp { display: flex; gap: 8px; margin: 4px 0 14px; }
+  .otp span { width: 50px; height: 56px; border: 1px solid rgba(15,23,42,.2); border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; background: #fff; }
+  .otp span.cur { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .otp span.cur::after { content: ""; width: 2px; height: 24px; background: #0f172a; animation: blink 1s steps(1) infinite; }
+  .otp.bad span { border-color: #fca5a5; color: var(--bad); }
+  .otp.dead span { background: #f8fafc; color: var(--faint); border-color: rgba(15,23,42,.1); }
+  .otp .gap { width: 6px; border: 0; background: none; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .resend { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+
+  /* ---------- organization chooser ---------- */
+  .pick { flex: 1; overflow: auto; background: var(--canvas); padding: 40px 0; display: flex; justify-content: center; }
+  .pick .inner { width: 560px; }
+  .pick h2 { font-size: 22px; margin: 0 0 4px; }
+  .pick .sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .orow { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; }
+  .orow:hover { border-color: rgba(15,23,42,.3); box-shadow: 0 6px 20px rgba(15,23,42,.06); }
+  .orow .oa { width: 34px; height: 34px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; flex-shrink: 0; }
+  .orow .on { flex: 1; }
+  .orow .on b { font-size: 14px; }
+  .orow .on div { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .badge { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 7px; background: #f1f5f9; color: #475569; white-space: nowrap; }
+  .badge.adm { background: #ede9fe; color: #5b21b6; }
+  .orow.add { border-style: dashed; color: var(--muted); font-size: 13px; }
+  .orow.add .oa { background: #f1f5f9; color: var(--muted); }
+
+  /* ---------- menus and dialogs ---------- */
+  .menu { position: absolute; z-index: 50; top: 40px; right: 8px; width: 290px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 40px rgba(15,23,42,.16); padding: 6px 0; }
+  .menu .who { padding: 8px 14px 10px; border-bottom: 1px solid var(--line2); }
+  .menu .who b { font-size: 13.5px; } .menu .who div { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .menu .mg { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 10px 14px 4px; }
+  .menu .mi { display: flex; align-items: center; gap: 9px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+  .menu .mi:hover { background: #f1f5f9; }
+  .menu .mi .ck { margin-left: auto; color: var(--ok); }
+  .menu .mi .oa { width: 20px; height: 20px; border-radius: 5px; font-size: 10px; font-weight: 700; color: #fff; display: inline-flex; align-items: center; justify-content: center; }
+  .menu .mi .code { margin-left: auto; font-size: 11.5px; color: var(--faint); }
+  .menu hr { border: 0; border-top: 1px solid var(--line2); margin: 6px 0; }
+  .scrim { position: absolute; inset: 0; background: rgba(15,23,42,.18); z-index: 55; }
+  .dlg { position: absolute; z-index: 60; top: 90px; left: 50%; transform: translateX(-50%); width: 520px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 50px rgba(15,23,42,.2); padding: 20px 22px 18px; }
+  .dlg h3 { margin: 0 0 4px; font-size: 17px; }
+  .dlg .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+  .dlg .ft { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .btn2 { height: 32px; border-radius: 7px; border: 1px solid rgba(15,23,42,.18); background: #fff; font-size: 12.5px; padding: 0 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn2.pri { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+  .btn2.dis { opacity: .45; cursor: not-allowed; }
+  .btn2.danger { color: var(--bad); border-color: #fecaca; }
+  .srow { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; margin-bottom: 7px; font-size: 13px; }
+  .srow .sn { flex: 1; min-width: 0; }
+  .srow .sn div { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .srow .reg { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 7px; white-space: nowrap; }
+  .reg.ru { background: #fee2e2; color: #991b1b; } .reg.ab { background: #dbeafe; color: #1e40af; } .reg.all { background: #dcfce7; color: #166534; }
+  .srow.add { border-style: dashed; cursor: pointer; color: #334155; }
+  .srow.add:hover { border-color: rgba(15,23,42,.35); }
+  .dsec { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 7px; }
+
+  /* ---------- the letter ---------- */
+  .mailc { flex: 1; background: #eef1f5; display: flex; justify-content: center; padding: 26px 0; overflow: auto; }
+  .mailw { width: 760px; }
+  .mhead { background: #fff; border: 1px solid var(--line); border-radius: 10px 10px 0 0; padding: 14px 18px; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+  .mhead b { color: var(--ink); font-weight: 600; }
+  .mhead .subj { font-size: 17px; color: var(--ink); font-weight: 600; margin-bottom: 6px; }
+  .mbody { background: #eef2f6; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 10px 10px; padding: 34px 0 28px; display: flex; flex-direction: column; align-items: center; }
+  /* The letter itself: 520 px wide, one column, system fonts — what renders the same in Gmail, Yandex Mail and Outlook. */
+  .letter { width: 520px; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 10px 30px rgba(15,23,42,.08); color: #1e293b; }
+  .letter .band { background: #0f172a; padding: 20px 32px; display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 700; font-size: 16px; letter-spacing: .01em; }
+  .letter .band .mk { width: 28px; height: 28px; border-radius: 8px; background: #fff; color: #0f172a; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; }
+  .letter .band .tag { margin-left: auto; font-size: 11px; font-weight: 500; color: #94a3b8; letter-spacing: .04em; text-transform: uppercase; }
+  .letter .lb { padding: 30px 32px 8px; font-size: 14.5px; line-height: 1.65; }
+  .letter .lb h1 { font-size: 22px; line-height: 1.3; margin: 0 0 8px; color: #0f172a; letter-spacing: -.01em; }
+  .letter .lb p { margin: 0 0 14px; color: #334155; }
+  .letter .cells { display: flex; justify-content: center; gap: 8px; margin: 22px 0 10px; }
+  .letter .cells span { width: 52px; height: 64px; border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; display: inline-flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; }
+  .letter .cells i { width: 10px; }
+  .letter .valid { text-align: center; font-size: 12.5px; color: #64748b; margin-bottom: 24px; }
+  .letter .valid b { color: #0f172a; }
+  .letter .safe { margin: 4px 32px 28px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; font-size: 12.5px; line-height: 1.55; color: #475569; display: flex; gap: 10px; }
+  .letter .safe .ico { color: #64748b; margin-top: 2px; }
+  .letter .safe b { color: #0f172a; }
+  .lfoot { width: 520px; text-align: center; font-size: 11.5px; color: #94a3b8; line-height: 1.6; margin-top: 16px; }
+  .lfoot a { color: #64748b; text-decoration: underline; }
+
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #334155; margin: 6px 0 16px; cursor: pointer; }
+  .check .box { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid rgba(15,23,42,.35); background: #fff; flex-shrink: 0; margin-top: 1px; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+  .check.on .box { background: var(--ink); border-color: var(--ink); }
+  .check a { color: var(--ink); text-decoration: underline; }
+  .cookie { position: absolute; z-index: 45; left: 50%; bottom: 20px; transform: translateX(-50%); width: 760px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 40px rgba(15,23,42,.18); padding: 14px 16px; display: flex; gap: 14px; align-items: center; font-size: 13px; line-height: 1.5; color: #334155; }
+  .cookie .ck { font-size: 22px; }
+  .cookie b { color: var(--ink); }
+  .cookie a { color: var(--ink); text-decoration: underline; cursor: pointer; }
+  .cookie .btn2 { margin-left: auto; }
+  .auth.blocked .card { opacity: .55; pointer-events: none; }
+  .inp.pw { justify-content: space-between; letter-spacing: .18em; }
+  .inp.pw .eye { letter-spacing: 0; color: var(--muted); font-size: 12px; cursor: pointer; }
+  .lab a { font-weight: 500; color: var(--ink); text-decoration: underline; cursor: pointer; }
+  .switch-line { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 12px; }
+  .switch-line a { color: var(--ink); text-decoration: underline; cursor: pointer; font-weight: 500; }
+  .legal-links { display: flex; justify-content: center; gap: 14px; margin-top: 18px; font-size: 11.5px; }
+  .legal-links a { color: var(--muted); text-decoration: underline; cursor: pointer; }
+  .legal-links a:hover { color: var(--ink); }
+  .doc { flex: 1; overflow: auto; background: var(--canvas); display: flex; justify-content: center; padding: 36px 0 48px; }
+  .doc .paper { width: 720px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 34px 44px 30px; font-size: 14px; line-height: 1.65; color: #334155; }
+  .doc .paper .lg { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; color: var(--ink); margin-bottom: 22px; }
+  .doc .paper .lg .mk { width: 24px; height: 24px; border-radius: 7px; background: var(--ink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .doc h1 { font-size: 24px; color: var(--ink); margin: 0 0 4px; letter-spacing: -.01em; }
+  .doc .upd { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .doc h3 { font-size: 15px; color: var(--ink); margin: 22px 0 6px; }
+  .doc ul { margin: 4px 0 0; padding-left: 20px; } .doc li { margin: 3px 0; }
+  .doc p { margin: 0 0 10px; }
+  .doc .steps { counter-reset: s; list-style: none; padding: 0; } .doc .steps li { counter-increment: s; display: flex; gap: 12px; margin: 10px 0; }
+  .doc .steps li::before { content: counter(s); flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: #f1f5f9; color: var(--ink); font-weight: 700; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+  .doc .addr { display: inline-block; font-weight: 600; color: var(--ink); background: #f1f5f9; border-radius: 6px; padding: 1px 8px; }
+  .doc .foot { border-top: 1px solid var(--line2); margin-top: 26px; padding-top: 14px; font-size: 12px; color: var(--muted); display: flex; gap: 14px; }
+  .doc .foot a { color: var(--muted); text-decoration: underline; cursor: pointer; }
+  .nf { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--canvas); }
+  .nf .box { text-align: center; }
+  .nf .big { font-size: 56px; font-weight: 800; color: #cbd5e1; letter-spacing: -.02em; }
+  .nf h2 { font-size: 19px; margin: 4px 0 6px; }
+  .nf p { font-size: 13px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+  .empty-c { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .empty-c b { color: var(--ink2); font-size: 14px; }
+</style>
+</head>
+<body>
+<aside class="nav" id="nav"></aside>
+<main class="stage" id="stage">
+  <p class="frame-cap" id="cap"></p>
+  <div class="frame-box" id="box"><div class="frame-scale" id="scale"><div class="device" id="app"></div></div></div>
+  <div class="notes" id="notes"></div>
+</main>
+
+<script>
+/* ======================= sample data ======================= */
+const PEOPLE = {
+  ru: { name: "Anna Kovaleva", ini: "AK", email: "anna.kovaleva@yandex.ru", ip: "95.165.12.40", country: "Russia" },
+  ab: { name: "Daniel Weber", ini: "DW", email: "daniel.weber@gmail.com", ip: "84.141.7.213", country: "Germany" },
+};
+const ORGS = [
+  { name: "Severny Veter", code: "severny-veter", color: "#0d9488", admin: true, since: "you registered it" },
+  { name: "Lumen Labs", code: "lumen-labs", color: "#7c3aed", admin: false, since: "a user since 3 Nov" },
+];
+const PROVIDERS = {
+  russia: [["ya", "Я", "Yandex ID"], ["mr", "@", "Mail.ru ID"]],
+  abroad: [["go", "G", "Google"], ["gh", "", "GitHub"], ["fb", "f", "Facebook"], ["ya", "Я", "Yandex ID"], ["mr", "@", "Mail.ru ID"]],
+};
+
+/* ======================= icons ======================= */
+const P = (d, cls = "ico") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I = {
+  down: P('<path d="M6 9l6 6 6-6"/>', "ico sm"),
+  left: P('<path d="M15 6l-6 6 6 6"/>', "ico sm"),
+  mail: P('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'),
+  alert: P('<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>'),
+  info: P('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>'),
+  check: P('<path d="M5 12l5 5 9-10"/>', "ico sm"),
+  x: P('<path d="M6 6l12 12M18 6L6 18"/>', "ico sm"),
+  plus: P('<path d="M12 5v14M5 12h14"/>', "ico sm"),
+  out: P('<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/>', "ico sm"),
+  key: P('<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>', "ico sm"),
+  swap: P('<path d="M7 7h12l-3-3M17 17H5l3 3"/>', "ico sm"),
+  globe: P('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>', "ico sm"),
+  gh: '<svg width="12" height="12" viewBox="0 0 16 16" fill="#fff"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 014 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>',
+};
+const pvMark = (k, t) => `<span class="pv ${k}">${k === "gh" ? I.gh : t}</span>`;
+
+/* ======================= state ======================= */
+const DEF = { region: "russia", screen: "signin", email: "", codeState: "typing", pop: null, regState: "free", tip: false, refused: null, orgs: 1, linkState: null, next: null, consent: false, cookies: true, pwState: "ok", codeFor: "confirm", resetState: "request", letter: "confirm", signupState: "ok" };
+const S = Object.assign({}, DEF);
+function go(patch) { Object.assign(S, patch); render(); }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+const ME = () => PEOPLE[S.region === "russia" ? "ru" : "ab"];
+
+/* ======================= frame parts ======================= */
+function urlbar(path) {
+  return `<div class="urlbar"><span>🔒</span><span class="u">maxitor.aoa.run<b>${esc(path)}</b></span></div>`;
+}
+function header() {
+  const org = ORGS[0];
+  const p = ME();
+  return `<div class="hdr">
+    <span class="logo"><span class="mk">M</span>Maxitor</span>
+    ${S.screen === "nf" ? "" : `<span class="crumb"><span class="ct"><span class="lv">org</span>${esc(org.name)}</span>`}${S.screen === "nf" ? "" : S.orgs > 1 ? `<span class="cvr" onclick="go({pop:S.pop==='orgs'?null:'orgs',tip:false})" title="Your organizations">${I.down}</span>` : ""}${S.screen === "nf" ? "" : "</span>"}
+    <span class="spacer"></span>
+    <span class="avatar${S.pop === "me" ? " on" : ""}" onmouseenter="go({tip:true})" onmouseleave="go({tip:false})" onclick="go({pop:S.pop==='me'?null:'me',tip:false})">${p.ini}</span>
+    ${S.tip && !S.pop ? `<div class="tip">${esc(p.name)}<br><span>${esc(p.email)}</span></div>` : ""}
+  </div>`;
+}
+
+/* ======================= 1 · signing in ======================= */
+function viewSignin() {
+  const ru = S.region === "russia";
+  const provs = PROVIDERS[S.region].map(([k, t, n]) =>
+    `<button data-name="${n}" aria-label="Continue with ${n}" title="Continue with ${n}" onclick="go({screen:'consent',consent:false})">${pvMark(k, t)}</button>`).join("");
+  const pw = S.pwState;
+  let alert = "";
+  if (pw === "wrong") alert = `<div class="alert bad">${I.alert}<div><b>Wrong email or password.</b> Check both, or <a class="lnk" onclick="go({screen:'reset',resetState:'request'})">reset the password</a>.</div></div>`;
+  if (pw === "locked") alert = `<div class="alert warn">${I.alert}<div><b>Too many tries for this email.</b> You can try again at <b>14:52</b>, or <a class="lnk" onclick="go({screen:'reset',resetState:'request'})">reset the password</a> now.</div></div>`;
+  return `<div class="auth"><div class="card">
+    <div class="lg"><span class="mk">M</span>Maxitor</div>
+    ${S.next ? `<div class="alert info">${I.info}<div>Sign in to open <b>maxitor.aoa.run${esc(S.next)}</b>. You will land there right after.</div></div>` : ""}
+    <h2>Sign in</h2>
+    <div class="sub">With your email and password, or with ${ru ? "Yandex ID or Mail.ru ID" : "Google, GitHub, Facebook, Yandex ID or Mail.ru ID"}.</div>
+    ${alert}
+    <div class="lab">Email</div>
+    <div class="inp${pw === "ok" ? "" : " bad"}">${esc(ME().email)}</div>
+    <div class="lab">Password <a onclick="go({screen:'reset',resetState:'request'})">Forgot password?</a></div>
+    <div class="inp pw${pw === "ok" ? " focus" : " bad"}"><span>••••••••••</span><span class="eye">Show</span></div>
+    <button class="btn${pw === "locked" ? " dis" : ""}" onclick="go({screen:'org',pop:null})">Sign in</button>
+    <div class="switch-line">No account? <a onclick="go({screen:'signup',signupState:'ok'})">Create one</a></div>
+    <div class="or">or continue with</div>
+    <div class="icons">${provs}</div>
+    ${ru ? `<div class="fine">In Russia Maxitor signs in by email and password, Yandex ID or Mail.ru ID, as Russian law requires.</div>`
+      : `<div class="fine">Going to Russia? Google, GitHub and Facebook do not work there. Link your email, Yandex ID or Mail.ru ID in “Sign-in methods” beforehand.</div>`}
+    <div class="legal-links"><a onclick="go({screen:'privacy'})">Privacy</a><a onclick="go({screen:'deletion'})">Delete my data</a></div>
+  </div></div>`;
+}
+
+function viewSignup() {
+  const weak = S.signupState === "weak";
+  return `<div class="auth"><div class="card">
+    <div class="lg"><span class="mk">M</span>Maxitor</div>
+    <h2>Create an account</h2>
+    <div class="sub">Your email is your login. We send a code to confirm it is yours.</div>
+    <div class="lab">Email</div>
+    <div class="inp">${esc(ME().email)}</div>
+    <div class="lab">Password</div>
+    <div class="inp pw ${weak ? "bad" : "focus"}"><span>${weak ? "•••••" : "•••••••••••••"}</span><span class="eye">Show</span></div>
+    <div class="hintl${weak ? " bad" : ""}">${weak ? "Too short: at least 10 characters." : "At least 10 characters. Not your email, not a common password."}</div>
+    <button class="btn${weak ? " dis" : ""}" onclick="go({screen:'code',codeState:'typing',codeFor:'confirm'})">${I.mail}Continue</button>
+    <div class="switch-line">Already have an account? <a onclick="go({screen:'signin',pwState:'ok'})">Sign in</a></div>
+    <div class="legal-links"><a onclick="go({screen:'privacy'})">Privacy</a><a onclick="go({screen:'deletion'})">Delete my data</a></div>
+  </div></div>`;
+}
+
+function viewCode() {
+  const st = S.codeState;
+  const em = ME().email;
+  const digits = st === "typing" ? ["4", "8", "2", "", "", ""] : ["4", "8", "2", "9", "1", "7"];
+  const boxes = digits.map((d, i) => `${i === 3 ? '<span class="gap"></span>' : ""}<span class="${st === "typing" && i === 3 ? "cur" : ""}">${d}</span>`).join("");
+  let alert = "", btn = `<button class="btn${st === "typing" ? " dis" : ""}" onclick="go({screen:'consent',consent:false})">Confirm</button>`, otpCls = "", resend = `<span>No letter? Check spam.</span><span>Send again in <b>0:42</b></span>`;
+  if (st === "wrong") { otpCls = " bad"; alert = `<div class="alert bad">${I.alert}<div><b>The code is wrong.</b> 3 tries are left for this code.</div></div>`; btn = `<button class="btn">Try again</button>`; }
+  if (st === "used") { otpCls = " dead"; alert = `<div class="alert bad">${I.alert}<div><b>This code no longer works:</b> it was wrong five times. Ask for a new one — the old one is gone.</div></div>`; btn = `<button class="btn" onclick="go({codeState:'typing'})">${I.mail}Send a new code</button>`; resend = ""; }
+  if (st === "expired") { otpCls = " dead"; alert = `<div class="alert warn">${I.alert}<div><b>The code has expired.</b> A code lives ten minutes. Ask for a new one.</div></div>`; btn = `<button class="btn" onclick="go({codeState:'typing'})">${I.mail}Send a new code</button>`; resend = ""; }
+  if (st === "limit") { otpCls = " dead"; alert = `<div class="alert warn">${I.alert}<div><b>Too many codes for this address.</b> One address gets ten codes an hour. A new one can be sent at <b>14:52</b>.</div></div>`; btn = `<button class="btn dis">Send a new code at 14:52</button>`; resend = ""; }
+  return `<div class="auth"><div class="card">
+    <span class="back" onclick="go({screen:'signup',signupState:'ok'})">${I.left}Another email</span>
+    <h2>Confirm your email</h2>
+    <div class="sub">We sent a six-digit code to <b>${esc(em)}</b>. Enter it to confirm the address is yours. It works for ten minutes.</div>
+    ${alert}
+    <div class="otp${otpCls}">${boxes}</div>
+    ${btn}
+    ${resend ? `<div class="resend">${resend}</div>` : ""}
+  </div></div>`;
+}
+
+function viewRefused() {
+  const tried = "Google";
+  const provs = PROVIDERS[S.region].map(([k, t, n]) => `<button data-name="${n}" aria-label="Continue with ${n}" title="Continue with ${n}" onclick="go({screen:'consent',consent:false})">${pvMark(k, t)}</button>`).join("");
+  return `<div class="auth"><div class="card">
+    <div class="lg"><span class="mk">M</span>Maxitor</div>
+    <div class="alert bad">${I.globe}<div><b>${tried} does not work from Russia.</b> Russian law allows a person in Russia to sign in only by a Russian service or by the site’s own means.</div></div>
+    <h2>Sign in another way</h2>
+    <div class="sub">If your account was made with ${tried}, sign in with the email and password, Yandex ID or Mail.ru ID you linked to it.</div>
+    <button class="btn" onclick="go({screen:'signin',pwState:'ok'})">${I.mail}Sign in with email and password</button>
+    <div class="or">or continue with</div>
+    <div class="icons">${provs}</div>
+  </div></div>`;
+}
+
+/* ======================= 2 · registering an organization ======================= */
+function viewNewOrg() {
+  const p = ME();
+  const s = S.regState;
+  const code = s === "taken" ? "severny-veter" : s === "bad" ? "Sever_Veter" : "severny-veter";
+  const name = "Severny Veter";
+  let st = `<span class="st ok">${I.check}free</span>`, cls = " ok", hint = `<div class="hintl">Lower-case letters, digits and hyphens, 2–63 characters. It cannot be changed later.</div>`;
+  if (s === "taken") { st = `<span class="st bad">${I.x}taken</span>`; cls = " bad"; hint = `<div class="hintl bad">Another organization has this address. Try <span class="lnk">severny-veter-studio</span> or <span class="lnk">sv-studio</span>.</div>`; }
+  if (s === "bad") { st = `<span class="st bad">${I.x}not allowed</span>`; cls = " bad"; hint = `<div class="hintl bad">Only lower-case letters, digits and hyphens: “S”, “V” and “_” are not allowed.</div>`; }
+  if (s === "race") { st = `<span class="st ok">${I.check}free</span>`; }
+  return `<div class="auth"><div class="card wide">
+    <div class="lg"><span class="mk">M</span>Maxitor</div>
+    <h2>Register your organization</h2>
+    <div class="sub">You are signed in as <b>${esc(p.email)}</b>. An organization is where your people and your work live; you will be its administrator.</div>
+    ${s === "race" ? `<div class="alert bad">${I.alert}<div><b>Someone took “severny-veter” a moment ago.</b> Nothing was created. Choose another address.</div></div>` : ""}
+    <div class="lab">Organization’s name</div>
+    <div class="inp">${name}</div>
+    <div class="lab">Address <span class="opt">suggested from the name</span></div>
+    <div class="inp${cls}${s === "free" ? " focus" : ""}"><span class="pre">maxitor.aoa.run/w/</span>${code}${st}</div>
+    ${hint}
+    <button class="btn${s === "free" ? "" : " dis"}" onclick="go({screen:'org',pop:null})">Register and enter</button>
+  </div></div>`;
+}
+
+/* ======================= 3 · choosing an organization ======================= */
+function viewChoose() {
+  return `<div class="pick"><div class="inner">
+    <h2>Choose an organization</h2>
+    <div class="sub">${esc(ME().email)} works in ${ORGS.length} organizations. You can switch later from the organization’s name at the top.</div>
+    ${ORGS.map(o => `<div class="orow" onclick="go({screen:'org',orgs:2,pop:null})"><span class="oa" style="background:${o.color}">${o.name[0]}</span>
+      <div class="on"><b>${esc(o.name)}</b><div>maxitor.aoa.run/w/${o.code} · ${o.since}</div></div>${o.admin ? '<span class="badge adm">administrator</span>' : ""}</div>`).join("")}
+    <div class="orow add" onclick="go({screen:'neworg',regState:'free'})"><span class="oa">${I.plus}</span><div class="on">Register another organization</div></div>
+  </div></div>`;
+}
+
+/* ======================= 4 · the empty frame ======================= */
+function viewOrg() {
+  const org = ORGS[0];
+  return `<div class="body">
+    <div class="sb">
+      <div class="sb-top"><div class="k">Organization</div><div class="t">${esc(org.name)}</div><div class="d">/w/${org.code}</div></div>
+      <div class="sb-empty">Nothing here yet.<br>Plugins add their sections to this tree.</div>
+    </div>
+    <div class="content"><div class="dots"></div>
+      <div class="empty-c"><b>${esc(org.name)} is ready</b><br>The organization is empty: no plugin is enabled yet.</div>
+    </div>
+  </div>`;
+}
+function menuMe() {
+  const p = ME();
+  const orgs = S.orgs > 1 ? ORGS : [ORGS[0]];
+  return `<div class="menu">
+    <div class="who"><b>${esc(p.name)}</b><div>${esc(p.email)}</div></div>
+    <div class="mg">Organizations</div>
+    ${orgs.map((o, i) => `<div class="mi"><span class="oa" style="background:${o.color}">${o.name[0]}</span>${esc(o.name)}${i === 0 ? `<span class="ck">${I.check}</span>` : `<span class="code">/w/${o.code}</span>`}</div>`).join("")}
+    <div class="mi" onclick="go({screen:'neworg',pop:null,regState:'free'})">${I.plus}Register an organization</div>
+    <hr>
+    <div class="mi" onclick="go({pop:'methods',linkState:null})">${I.key}Sign-in methods</div>
+    <div class="mi" onclick="go({screen:'signin',pop:null})">${I.out}Sign out</div>
+  </div>`;
+}
+function menuOrgs() {
+  return `<div class="menu" style="left:150px;right:auto;width:300px">
+    <div class="mg">Your organizations</div>
+    ${ORGS.map((o, i) => `<div class="mi"><span class="oa" style="background:${o.color}">${o.name[0]}</span>${esc(o.name)}${i === 0 ? `<span class="ck">${I.check}</span>` : `<span class="code">/w/${o.code}</span>`}</div>`).join("")}
+    <hr><div class="mi" onclick="go({screen:'neworg',pop:null,regState:'free'})">${I.plus}Register an organization</div>
+  </div>`;
+}
+
+/* ======================= 5 · sign-in methods ======================= */
+function dlgMethods() {
+  const ru = S.region === "russia";
+  const p = ME();
+  const mine = ru
+    ? [["ya", "Я", "Yandex ID", "anna.kovaleva@yandex.ru · added 9 Nov from Russia", "ru", "in Russia"]]
+    : [["go", "G", "Google", "daniel.weber@gmail.com · added 9 Nov from Germany", "ab", "outside Russia"]];
+  mine[0][4] = ru ? "all" : "ab"; mine[0][5] = ru ? "everywhere" : "outside Russia";
+  if (S.linkState === "done") mine.push(["em", "✉", "Email and password", `${ru ? "anna@severny-veter.ru" : "d.weber@lumen.de"} · added just now`, "all", "everywhere"]);
+  const rows = mine.map(([k, t, n, d, r, rt]) => `<div class="srow">${pvMark(k, t)}<div class="sn"><b>${n}</b><div>${esc(d)}</div></div>${mine.length > 1 ? `<button class="btn2 danger">Unlink</button>` : `<button class="btn2 dis" title="The last way in cannot be unlinked">Unlink</button>`}</div>`).join("");
+  const offer = [];
+  if (S.linkState !== "done") offer.push(["em", "✉", "Email and password", "works in every country", "all", "everywhere", "go({linkState:'email'})"]);
+  const RUS = ["Yandex ID", "Mail.ru ID"];
+  PROVIDERS[S.region].forEach(([k, t, n]) => { if (!mine.some(m => m[2] === n)) offer.push([k, t, n, "", RUS.includes(n) ? "all" : "ab", RUS.includes(n) ? "everywhere" : "outside Russia", ""]); });
+  const add = offer.map(([k, t, n, d, r, rt, on]) => `<div class="srow add" onclick="${on}">${pvMark(k, t)}<div class="sn"><b>Link ${n}</b>${d ? `<div>${d}</div>` : ""}</div></div>`).join("");
+  let body = `<div class="dsec">How you sign in</div>${rows}<div class="dsec">Add a way in</div>${add}
+    <div class="alert info" style="margin-top:12px">${I.globe}<div>${ru
+      ? "Google, GitHub and Facebook do not work in Russia and cannot be linked from here."
+      : "Google, GitHub and Facebook do not work in Russia. Going there? Link an email, Yandex ID or Mail.ru ID — they work everywhere."}</div></div>`;
+  if (S.linkState === "email") body = `<div class="lab">Email — your login</div><div class="inp">${ru ? "anna@severny-veter.ru" : "d.weber@lumen.de"}</div>
+    <div class="lab">Password</div><div class="inp pw"><span>•••••••••••••</span><span class="eye">Show</span></div>
+    <div class="lab">Code we sent to the email</div>
+    <div class="otp"><span>3</span><span>0</span><span>5</span><span class="gap"></span><span>1</span><span>1</span><span class="cur"></span></div>`;
+  if (S.linkState === "taken") body = `<div class="alert bad">${I.alert}<div><b>This email already signs in another account.</b> Two accounts are never joined by email. Sign in with it and link from there, or choose another address.</div></div>`;
+  const ft = S.linkState === "email"
+    ? `<button class="btn2" onclick="go({linkState:null})">Back</button><button class="btn2 pri" onclick="go({linkState:'done'})">Link</button>`
+    : `<button class="btn2 pri" onclick="go({pop:null,linkState:null})">Done</button>`;
+  return `<div class="scrim" onclick="go({pop:null,linkState:null})"></div><div class="dlg">
+    <h3>${S.linkState === "email" ? "Link an email and password" : "Sign-in methods"}</h3>
+    <div class="sub">${esc(p.name)} · one account, several ways in. They belong to you, not to an organization.</div>
+    ${body}<div class="ft">${ft}</div></div>`;
+}
+
+/* ======================= password reset ======================= */
+function viewReset() {
+  const s = S.resetState;
+  const em = esc(ME().email);
+  if (s === "request") return `<div class="auth"><div class="card">
+    <span class="back" onclick="go({screen:'signin',pwState:'ok'})">${I.left}Back to sign in</span>
+    <h2>Reset your password</h2>
+    <div class="sub">Enter your email. If it has an account, we send a code to set a new password.</div>
+    <div class="lab">Email</div>
+    <div class="inp focus">${em}</div>
+    <button class="btn" onclick="go({resetState:'code'})">${I.mail}Send me a code</button>
+  </div></div>`;
+  if (s === "code") return `<div class="auth"><div class="card">
+    <span class="back" onclick="go({resetState:'request'})">${I.left}Another email</span>
+    <h2>Set a new password</h2>
+    <div class="sub">If <b>${em}</b> has an account, a six-digit code is on its way. It works for ten minutes.</div>
+    <div class="lab">Code from the letter</div>
+    <div class="otp"><span>7</span><span>0</span><span>3</span><span class="gap"></span><span>2</span><span>5</span><span>8</span></div>
+    <div class="lab">New password</div>
+    <div class="inp pw focus"><span>•••••••••••••</span><span class="eye">Show</span></div>
+    <div class="hintl">At least 10 characters. Not your email, not a common password.</div>
+    <button class="btn" onclick="go({resetState:'done'})">Set new password</button>
+    <div class="resend"><span>No letter? Check spam.</span><span>Send again in <b>0:51</b></span></div>
+  </div></div>`;
+  return `<div class="auth"><div class="card">
+    <div class="lg"><span class="mk">M</span>Maxitor</div>
+    <div class="alert ok">${I.check}<div><b>Your password is changed.</b> A letter says so to ${em}.</div></div>
+    <h2>Sign in with the new password</h2>
+    <div class="sub">The old password no longer works.</div>
+    <button class="btn" onclick="go({screen:'signin',pwState:'ok'})">Sign in</button>
+  </div></div>`;
+}
+
+/* ======================= 6 · the letters ======================= */
+function viewLetter() {
+  const p = ME();
+  const reset = S.letter === "reset";
+  const code = reset ? ["7", "0", "3", "2", "5", "8"] : ["4", "8", "2", "9", "1", "7"];
+  const subj = reset ? "703 258 — reset your Maxitor password" : "482 917 — confirm your email for Maxitor";
+  const tag = reset ? "Password reset" : "Confirm email";
+  const h = reset ? "Your code to set a new password" : "Confirm your email";
+  const lead = reset ? "Enter this code on the Maxitor page where you asked to reset your password, then choose a new one." : "Enter this code on the Maxitor page to confirm this address is yours. Then your account is one step away.";
+  const safe = reset
+    ? `<b>Did not ask for it?</b> Someone asked to reset the password of ${esc(p.email)} at 14:31 from ${p.country}. Do nothing: without the code the password stays as it is. Never tell this code to anyone — Maxitor will not ask for it.`
+    : `<b>Did not ask for it?</b> Someone entered ${esc(p.email)} on Maxitor at 14:31 from ${p.country}. Do nothing: without the code no account is created. Never tell this code to anyone — Maxitor will not ask for it.`;
+  return `<div class="mailc"><div class="mailw">
+    <div class="mhead"><div class="subj">${subj}</div>
+      From <b>Maxitor</b> &lt;no-reply@maxitor.aoa.run&gt;<br>To <b>${esc(p.email)}</b><br>Signed by <b>maxitor.aoa.run</b> (DKIM) · sent through Yandex Cloud Postbox</div>
+    <div class="mbody"><div class="letter">
+      <div class="band"><span class="mk">M</span>Maxitor<span class="tag">${tag}</span></div>
+      <div class="lb">
+        <h1>${h}</h1>
+        <p>Hello! ${lead}</p>
+        <div class="cells">${code.slice(0, 3).map(d => `<span>${d}</span>`).join("")}<i></i>${code.slice(3).map(d => `<span>${d}</span>`).join("")}</div>
+        <div class="valid">Works for <b>10 minutes</b> and only once</div>
+      </div>
+      <div class="safe">${I.info}<div>${safe}</div></div>
+    </div>
+    <div class="lfoot">You get this letter because this address was entered on maxitor.aoa.run.<br>Maxitor · <a>maxitor.aoa.run</a> · <a>Privacy</a></div></div>
+  </div></div>`;
+}
+
+/* ======================= 7 · not found ======================= */
+function viewConsent() {
+  const p = ME();
+  const on = S.consent;
+  return `<div class="auth"><div class="card">
+    <div class="lg"><span class="mk">M</span>Maxitor</div>
+    <h2>Create your account</h2>
+    <div class="sub"><b>${esc(p.email)}</b> is new to Maxitor. One step before your account is created.</div>
+    <div class="lab">Your name <span class="opt">from your ${S.region === "russia" ? "Yandex ID" : "Google account"}, you can change it</span></div>
+    <div class="inp">${esc(p.name)}</div>
+    <div class="check${on ? " on" : ""}" onclick="go({consent:${!on}})"><span class="box">${on ? I.check : ""}</span><span>I have read the <a onclick="event.stopPropagation();go({screen:'privacy'})">Privacy policy</a> and consent to the processing of my personal data.</span></div>
+    <button class="btn${on ? "" : " dis"}" onclick="${on ? "go({screen:'neworg',regState:'free'})" : ""}">Create account</button>
+    <div class="fine">Until you press the button, Maxitor keeps nothing about you. <a onclick="go({screen:'signin'})">Cancel</a></div>
+  </div></div>`;
+}
+function cookieBanner() {
+  return `<div class="cookie"><span class="ck">🍪</span><div>Maxitor uses <b>one cookie</b>, only to keep you signed in. No analytics, no advertising, nothing from other sites. <a onclick="go({screen:'privacy'})">Cookies in the Privacy policy</a></div><button class="btn2 pri" onclick="go({cookies:true})">Accept</button></div>`;
+}
+function docHead(title) {
+  return `<div class="lg"><span class="mk">M</span>Maxitor</div><h1>${title}</h1><div class="upd">Last updated 9 November 2026</div>`;
+}
+function docFoot() {
+  return `<div class="foot"><a onclick="go({screen:'signin'})">Sign in</a><a onclick="go({screen:'privacy'})">Privacy</a><a onclick="go({screen:'deletion'})">Delete my data</a></div>`;
+}
+function viewPrivacy() {
+  return `<div class="doc"><div class="paper">${docHead("Privacy")}<p style="margin-top:-12px;font-size:12px;color:var(--muted)">Version 1</p>
+    <p>Maxitor keeps only what it needs to let you sign in and work in your organizations.</p>
+    <h3>What we keep</h3>
+    <ul>
+      <li>Your name and email.</li>
+      <li>For each way you sign in — a code by email, Yandex ID, Mail.ru ID, Google, GitHub or Facebook: the service, the id it gives you, the email it gives, and the country, IP address and time when you added it.</li>
+      <li>The organizations you work in and your role there.</li>
+      <li>For ten minutes, a one-time code you asked for — only as a hash, never the code itself.</li>
+    </ul>
+    <h3>Why</h3>
+    <ul>
+      <li>To sign you in and keep you signed in.</li>
+      <li>To show you the organizations you work in, and nobody else’s.</li>
+      <li>To follow Russian law on how a person in Russia may sign in: that is what the country by IP is for.</li>
+    </ul>
+    <h3>Where and who else</h3>
+    <p>Your data lives in Maxitor’s database on a server in Russia. Letters with codes are sent through Yandex Cloud Postbox. When you sign in with a service, it sees that you sign in to Maxitor. We do not sell your data and do not show it to anyone else.</p>
+    <h3>Cookies</h3>
+    <p>Maxitor sets one cookie, <code>__Host-maxitor_session</code>, that keeps you signed in; it is deleted when you sign out. Your answer to the cookie banner is kept in your browser. There are no analytics, advertising or third-party cookies.</p>
+    <h3>How long</h3>
+    <p>As long as your account exists. A code is deleted once used or after ten minutes.</p>
+    <h3>Your data, your choice</h3>
+    <p>You can see and unlink your ways in under “Sign-in methods”. To delete everything, follow <a class="lnk" onclick="go({screen:'deletion'})">Delete my data</a>. Questions: <span class="addr">privacy@aoa.run</span>.</p>
+    ${docFoot()}</div></div>`;
+}
+function viewDeletion() {
+  return `<div class="doc"><div class="paper">${docHead("Delete my data")}
+    <p>You can ask Maxitor to delete your account and everything it keeps about you.</p>
+    <ol class="steps">
+      <li><div>Write to <span class="addr">privacy@aoa.run</span> <b>from the email of your account</b>, with the subject “Delete my Maxitor account”. If you sign in only with Google, GitHub, Facebook, Yandex ID or Mail.ru ID, write from the email that service gave Maxitor.</div></li>
+      <li><div>We delete your account, all its ways in and your place in every organization within <b>30 days</b>, and write back when it is done.</div></li>
+    </ol>
+    <h3>What stays</h3>
+    <p>What you made in an organization belongs to the organization and stays there, without your name. If you are an organization’s only administrator, pass the role to someone first, or say in the letter that the organization should be deleted too.</p>
+    <h3>Signed in with Google, GitHub or Facebook?</h3>
+    <p>You can also take Maxitor’s access away in that service’s settings. That stops new sign-ins but does not delete what Maxitor keeps — for that, write to us as above.</p>
+    ${docFoot()}</div></div>`;
+}
+function viewNotFound() {
+  return `<div class="nf"><div class="box">
+    <div class="big">404</div>
+    <h2>No such organization</h2>
+    <p>Maxitor has no organization at <b>/w/orbita</b> that you work in.<br>It may not exist, or you are not one of its users.</p>
+    <button class="btn2 pri" onclick="go({screen:'org',pop:null})">Go to Severny Veter</button>
+  </div></div>`;
+}
+
+/* ======================= render ======================= */
+function render() {
+  const app = document.getElementById("app");
+  let html = "";
+  const sc = S.screen;
+  if (sc === "signin") html = urlbar(S.next ? `/sign-in?next=${S.next}` : "/") + viewSignin();
+  else if (sc === "code") html = urlbar("/sign-up/confirm") + viewCode();
+  else if (sc === "signup") html = urlbar("/sign-up") + viewSignup();
+  else if (sc === "reset") html = urlbar("/reset-password") + viewReset();
+  else if (sc === "refused") html = urlbar("/sign-in/google/callback") + viewRefused();
+  else if (sc === "neworg") html = urlbar("/new") + viewNewOrg();
+  else if (sc === "choose") html = urlbar("/w") + viewChoose();
+  else if (sc === "org") html = urlbar("/w/severny-veter") + header() + viewOrg();
+  else if (sc === "letter") html = viewLetter();
+  else if (sc === "nf") html = urlbar("/w/orbita") + header() + viewNotFound();
+  else if (sc === "consent") html = urlbar("/sign-in/new-account") + viewConsent();
+  else if (sc === "privacy") html = urlbar("/privacy") + viewPrivacy();
+  else if (sc === "deletion") html = urlbar("/data-deletion") + viewDeletion();
+  if (!S.cookies && ["signin", "signup", "code", "reset", "refused", "consent", "privacy", "deletion"].includes(sc)) { html = html.replace('<div class="auth">', '<div class="auth blocked">') + cookieBanner(); }
+  if (S.pop === "me") html += menuMe();
+  else if (S.pop === "orgs") html += menuOrgs();
+  else if (S.pop === "methods") html += dlgMethods();
+  app.innerHTML = html;
+  renderNav(); renderNotes(); fit();
+}
+
+/* ======================= navigator and notes ======================= */
+const SCREENS = [
+  ["Signing in", [
+    ["1.1", "From Russia", { screen: "signin", region: "russia" }],
+    ["1.2", "Outside Russia", { screen: "signin", region: "abroad" }],
+    ["1.3", "Confirming the email by a code", { screen: "code", codeState: "typing" }],
+    ["1.4", "A wrong code", { screen: "code", codeState: "wrong" }],
+    ["1.5", "Tries used up", { screen: "code", codeState: "used" }],
+    ["1.6", "The code expired", { screen: "code", codeState: "expired" }],
+    ["1.7", "Too many codes", { screen: "code", codeState: "limit" }],
+    ["1.8", "Refused by region", { screen: "refused", region: "russia" }],
+    ["1.9", "The letter confirming the email", { screen: "letter", letter: "confirm" }],
+    ["1.10", "An organization’s page, not signed in", { screen: "signin", region: "russia", next: "/w/orbita" }],
+    ["1.11", "Consent: a new account", { screen: "consent", consent: false }],
+    ["1.12", "The cookie banner", { screen: "signin", cookies: false }],
+    ["1.13", "Creating an account by email", { screen: "signup", signupState: "ok" }],
+    ["1.14", "A password too short", { screen: "signup", signupState: "weak" }],
+    ["1.15", "Wrong email or password", { screen: "signin", pwState: "wrong" }],
+    ["1.16", "Too many password tries", { screen: "signin", pwState: "locked" }],
+  ]],
+  ["Password reset", [
+    ["7.1", "Asking for a code", { screen: "reset", resetState: "request" }],
+    ["7.2", "The code and a new password", { screen: "reset", resetState: "code" }],
+    ["7.3", "Password changed", { screen: "reset", resetState: "done" }],
+    ["7.4", "The letter to reset the password", { screen: "letter", letter: "reset" }],
+  ]],
+  ["Registering an organization", [
+    ["2.1", "The address is free", { screen: "neworg", regState: "free" }],
+    ["2.2", "The address is taken", { screen: "neworg", regState: "taken" }],
+    ["2.3", "The address is not allowed", { screen: "neworg", regState: "bad" }],
+    ["2.4", "Taken in a race", { screen: "neworg", regState: "race" }],
+  ]],
+  ["The organization", [
+    ["3", "Choosing an organization", { screen: "choose" }],
+    ["4.1", "The empty frame", { screen: "org", orgs: 1 }],
+    ["4.2", "Name and email on hover", { screen: "org", orgs: 1, tip: true }],
+    ["4.3", "The icon’s menu", { screen: "org", orgs: 2, pop: "me" }],
+    ["4.4", "Switching organizations", { screen: "org", orgs: 2, pop: "orgs" }],
+    ["4.5", "Someone else’s organization", { screen: "nf" }],
+  ]],
+  ["Sign-in methods", [
+    ["5.1", "From Russia", { screen: "org", region: "russia", pop: "methods", linkState: null }],
+    ["5.2", "Outside Russia", { screen: "org", region: "abroad", pop: "methods", linkState: null }],
+    ["5.3", "Linking an email", { screen: "org", region: "russia", pop: "methods", linkState: "email" }],
+    ["5.4", "An email linked", { screen: "org", region: "russia", pop: "methods", linkState: "done" }],
+    ["5.5", "The email has another account", { screen: "org", region: "russia", pop: "methods", linkState: "taken" }],
+  ]],
+  ["Public pages", [
+    ["6.1", "Privacy", { screen: "privacy" }],
+    ["6.2", "Delete my data", { screen: "deletion" }],
+  ]],
+];
+const PATHS = [
+  ["First time, by email", "An email and password to an empty organization", [["Cookies", "1.12"], ["Sign in", "1.1"], ["Create", "1.13"], ["Confirm", "1.3"], ["Consent", "1.11"], ["Register", "2.1"], ["Empty frame", "4.1"]]],
+  ["Forgot the password", "A code by email and a new password", [["Sign in", "1.15"], ["Reset", "7.1"], ["New password", "7.2"], ["Done", "7.3"]]],
+  ["First time, abroad", "A provider to an empty organization", [["Sign in", "1.2"], ["Consent", "1.11"], ["Register", "2.1"], ["Empty frame", "4.1"]]],
+  ["Before a trip", "Link an email that works everywhere", [["Menu", "4.3"], ["Methods", "5.1"], ["Link", "5.3"], ["Linked", "5.4"]]],
+];
+const NOTES = {
+  "1.1": ["Signing in from Russia", [
+    "The page asks <code>SignInOptionsAction</code> what to show. It runs <code>DetectRegionAction</code>, which reads <code>Ctx.Request.client_ip</code> and asks <code>GeoIpGateway</code> for the country. The page itself never says which region it decided.",
+    "From Russia: email and password, Yandex ID and Mail.ru ID — nothing else. Google, GitHub and Facebook are not hidden behind a link: they are not on the page at all.",
+    "The email is the login. “Sign in” is <code>SignInWithPasswordAction</code>: it checks the password against its hash and signs the session; a wrong email and a wrong password get the same answer (1.15).",
+    "“Forgot password?” leads to the reset (7.1); “Create one” to creating an account by email (1.13).",
+    "Providers are one row of icon buttons; hovering shows the name, and each button is labelled “Continue with …” for screen readers.",
+  ]],
+  "1.2": ["Signing in outside Russia", [
+    "The same page for a foreign IP: email and password and all five providers. Yandex ID and Mail.ru ID work in every country; Google, GitHub and Facebook only outside Russia.",
+    "The note under the buttons warns those who go to Russia to link a way in that works there.",
+    "A provider button runs <code>StartSignInAction</code>, which checks the region again and answers the provider’s address with <code>state</code> and a PKCE challenge.",
+  ]],
+  "1.3": ["Confirming the email by a code", [
+    "After “Continue” on 1.13 Maxitor sends a six-digit code to the address: the email becomes a login only once its owner proves they read it.",
+    "Six digits in two groups of three, as in the letter; pasting the whole code fills every box. “Confirm” is <code>ConfirmEmailAction</code>; it leads to the consent step (1.11).",
+    "“Send again” waits a minute after the last code: one address gets at most one code a minute.",
+  ]],
+  "1.4": ["A wrong code", [
+    "The boxes turn red and the page says how many tries are left. A code has five tries; the count belongs to the code, not to the person.",
+  ]],
+  "1.5": ["Tries used up", ["After the fifth wrong try the code is deleted. The only way on is a new code; the old one would not work even if it were right."]],
+  "1.6": ["The code expired", ["A code lives ten minutes. An expired code is deleted the same way as a used one."]],
+  "1.7": ["Too many codes", [
+    "One address gets at most ten codes an hour, one IP at most thirty, for confirming and for resetting alike. The page says when the next code can be sent, and the button waits until then; a <code>warning</code> event is written.",
+  ]],
+  "1.8": ["Refused by region", [
+    "Reached only when someone opens a Google, GitHub or Facebook address from Russia that the page never offered — for example a link saved abroad and opened in Moscow. <code>StartSignInAction</code> or <code>FinishSignInAction</code> refuses it and writes a <code>warning</code> event to <code>Channel.security</code>.",
+    "The page offers what works here: email and password first, because it is the way back into an account made with Google. Email, Yandex ID and Mail.ru ID are never refused by region.",
+  ]],
+  "1.10": ["An organization’s page, not signed in", [
+    "Someone opens <code>/w/orbita</code> — a link from a colleague, a bookmark — without a session. Maxitor does not say whether the organization exists: it shows the sign-in page and keeps the address in <code>next</code>.",
+    "The page names only the address that was opened, nothing about the organization behind it.",
+    "After signing in by any way, the person lands on that address. If the account works in that organization, it opens; if not, the answer is 4.5, as for any signed-in account.",
+    "<code>next</code> is only a path of Maxitor itself (<code>/w/…</code>): an address of another site is dropped, so the sign-in page cannot be used to send people elsewhere.",
+  ]],
+  "1.9": ["The letter confirming the email", [
+    "Sent by <code>YandexCloudPostboxGateway</code> from <code>no-reply@maxitor.aoa.run</code>, signed by DKIM of the domain. The action only asks <code>MailGateway.send_email_confirmation(to, code, expires_in)</code>; the gateway builds the letter.",
+    "The code is in the subject, so a phone shows it in the notification without opening the letter.",
+    "No link in the letter: a code typed by hand cannot be opened by a mail scanner or used on another device by mistake.",
+    "If the address already has an account, the letter says so and offers to sign in or reset the password instead — the page itself answers the same either way.",
+  ]],
+  "2.1": ["Registering an organization: the address is free", [
+    "An account with no organization lands here after the consent step. Only the organization is asked for: the person’s name was set on the consent step.",
+    "The address is suggested from the organization’s name and checked as it is typed: free, taken or not allowed. It becomes <code>/w/&lt;code&gt;</code> in every address of the organization.",
+    "Registering is one change: the organization and its first user as administrator, under one change time.",
+  ]],
+  "2.2": ["The address is taken", ["The page says so at once and suggests two free addresses made from the name."]],
+  "2.3": ["The address is not allowed", ["Lower-case ASCII letters, digits and hyphens, 2–63 characters, not one of Maxitor’s reserved words (<code>w</code>, <code>api</code>, <code>new</code>, <code>sign-in</code>…). The page names the characters that are not allowed."]],
+  "2.4": ["Taken in a race", ["Two people pressed “Register” for the same free address. The database lets one through; the other gets this message and nothing of theirs is created."]],
+  "3": ["Choosing an organization", ["An account with several organizations chooses one after signing in. An account with one goes straight to it. The last row registers another organization with the same account."]],
+  "4.1": ["The empty frame", [
+    "The organization’s screen at <code>/w/severny-veter</code>: the left tree, empty; the grey field with dots, empty. Plugins fill both later (#74, #75).",
+    "The top row: the organization’s name — with a switch when the account has several — and the user’s icon.",
+  ]],
+  "4.2": ["Name and email on hover", ["Hovering over the icon shows the user’s name and the account’s email."]],
+  "4.3": ["The icon’s menu", ["The account’s organizations, registering another one, sign-in methods and signing out. Signing out clears the <code>__Host-maxitor_session</code> cookie."]],
+  "4.4": ["Switching organizations", ["Shown only when the account has users in several organizations. Opening <code>/w/&lt;another code&gt;</code> by hand does the same."]],
+  "4.5": ["Someone else’s organization", [
+    "Opening <code>/w/&lt;code&gt;</code> of an organization where the account has no active user answers 404 — the same as for an address that does not exist, so nobody can learn which addresses are taken or who works where.",
+    "The header shows no organization: you are in none of them here. The icon’s menu still works, and the button leads to your own organization.",
+    "The check is the action’s one <code>@access_decide</code>: the account’s user in the organization of the address exists and is active.",
+  ]],
+  "5.1": ["Sign-in methods from Russia", [
+    "Every way in of the account. The last one cannot be unlinked.",
+    "Only what works where you are can be added: from Russia, an email and password and Mail.ru ID — Google, GitHub and Facebook are not offered.",
+    "Two accounts are never joined by a matching email: a way in is added only while you are signed in.",
+  ]],
+  "5.2": ["Sign-in methods outside Russia", ["From abroad every way in can be added. An account with only Google is warned: it will not get in from Russia, so an email, Yandex ID or Mail.ru ID is worth linking."]],
+  "5.3": ["Linking an email and password", [
+    "A signed-in account adds an email login: the address, a password, and the code sent to the address. <code>LinkEmailAction</code> stores it once the code is right.",
+  ]],
+  "5.4": ["An email linked", ["The email is now one more way in and works in every country."]],
+  "1.11": ["Consent: a new account", [
+    "Every way in leads here for a person Maxitor does not know yet: after confirming the email, and after Yandex ID, Mail.ru ID, Google, GitHub or Facebook. An account that already exists skips it.",
+    "The box is not ticked in advance and the button stays grey until it is. The link opens <code>/privacy</code>.",
+    "Until “Create account”, nothing of the person is in the database: the confirmed email with its password’s hash, or the provider’s answer, waits in a signed fifteen-minute token. <code>CreateAccountAction</code> creates the account with the policy’s version, the time and the IP of the acceptance.",
+    "When the policy’s version changes, an existing account sees the same step at its next sign-in, with “Continue” instead of “Create account”.",
+  ]],
+  "1.12": ["The cookie banner", [
+    "Shown on the first visit, on every page, until accepted. It names the one cookie and what it is for, and links to the cookies section of <code>/privacy</code>.",
+    "Until “Accept”, the sign-in form is greyed out: without the session cookie nobody can stay signed in.",
+    "The answer is kept in the browser (<code>maxitor_cookie_consent</code>, with the policy’s version) and asked again when the version changes. A future cookie that is not strictly needed comes with its own switch here, off by default.",
+  ]],
+  "1.13": ["Creating an account by email", [
+    "The email is the login and the password is chosen here. “Continue” is <code>StartSignUpAction</code>: it checks the password’s rules and sends the confirmation code (1.3); nothing is stored but the code.",
+    "Rules: at least 10 characters, not the email, not in a list of common passwords. The password is hashed at once and never written to a log, an error or an event.",
+    "An address that already has an account gets the same page; its letter offers to sign in or reset the password instead.",
+  ]],
+  "1.14": ["A password too short", [
+    "The rule that failed is named under the field and the button stays grey. The check runs again on the server.",
+  ]],
+  "1.15": ["Wrong email or password", [
+    "One message for both: the page never says whether the address has an account.",
+    "Each wrong try is a <code>warning</code> event with the address masked; the password never appears.",
+  ]],
+  "1.16": ["Too many password tries", [
+    "One address gets at most ten wrong passwords in fifteen minutes, one IP at most thirty; then signing in by password waits until the time shown. Resetting the password stays open.",
+  ]],
+  "7.1": ["Asking for a code", [
+    "<code>RequestPasswordResetAction</code>: if the address has an account with a password, a code is sent (7.4); the page answers the same either way.",
+    "The same limits as every code: one a minute, ten an hour per address, thirty an hour per IP.",
+  ]],
+  "7.2": ["The code and a new password", [
+    "<code>ResetPasswordAction</code> checks the code (ten minutes, five tries) and the new password’s rules, then stores the new hash. The old password stops working.",
+  ]],
+  "7.3": ["Password changed", [
+    "A letter tells the address its password was changed, with the time and the country, so an owner who did not do it knows at once.",
+  ]],
+  "7.4": ["The letter to reset the password", [
+    "The same letter as 1.9 in look: code in the subject, no link, a “did not ask?” note with the time and country.",
+    "Asked through <code>MailGateway.send_password_reset(to, code, expires_in)</code>.",
+  ]],
+  "6.1": ["Privacy", [
+    "<code>/privacy</code>, open without signing in, linked from the foot of the sign-in page and of the letter. Static text in the core’s application: no action and no data behind it.",
+    "It lists exactly what the issue’s data model keeps — the account, the sign-ins with country, IP and time, the users in organizations, the hashes of the password and of a code — and why, where and how long. No log of sign-ins is named: no log store is switched on in this work.",
+    "Its address goes into the Branding of Google’s app and into Facebook’s app: neither can be published without it.",
+    "Requests go to <code>privacy@aoa.run</code>; the mailbox has to exist before the page goes live.",
+  ]],
+  "6.2": ["Delete my data", [
+    "<code>/data-deletion</code>: the instruction Google and Facebook ask for. A person writes from the account’s email; the account, its sign-ins and its users are deleted within 30 days.",
+    "Deleting by a button in the account is not in this issue; the page is the way until it is.",
+  ]],
+  "5.5": ["The email has another account", ["If the address already signs in another account, linking is refused: the accounts are not joined."]],
+};
+function stateOf(n) { for (const [, items] of SCREENS) for (const [k, , st] of items) if (k === n) return st; return null; }
+function curNum() {
+  for (const [, items] of SCREENS) for (const [n, , st] of items) {
+    const full = Object.assign({}, DEF, st);
+    if (Object.entries(full).every(([k, v]) => S[k] === v)) return n;
+  }
+  return null;
+}
+function openNum(n) { go(Object.assign({}, DEF, stateOf(n))); }
+function renderNav() {
+  const cur = curNum();
+  let h = `<h1>Maxitor core: the first people</h1><div class="sub">The exact screens of issue #73: signing in, registering an organization, the empty frame and sign-in methods. Every screen is live: buttons lead where the real ones will.</div>`;
+  for (const [g, items] of SCREENS) {
+    h += `<div class="group">${g}</div>`;
+    for (const [n, t] of items) h += `<button class="screen${cur === n ? " on" : ""}" onclick="openNum('${n}')"><span class="n">${n}</span>${t}</button>`;
+  }
+  h += `<div class="group">Paths</div>`;
+  for (const [t, f, steps] of PATHS) h += `<div class="path"><div class="pt">${t}</div><div class="pf">${f}</div><div class="steps">${steps.map(([s, n], i) => `${i ? "<span>→</span>" : ""}<button onclick="openNum('${n}')">${s}</button>`).join("")}</div></div>`;
+  document.getElementById("nav").innerHTML = h;
+}
+function renderNotes() {
+  const n = curNum();
+  const note = NOTES[n];
+  document.getElementById("cap").innerHTML = note ? `<b>${n} · ${note[0]}</b> — the screen is live` : "Free navigation through the mockup";
+  document.getElementById("notes").innerHTML = note ? `<h2>${n} · ${note[0]}</h2><ul>${note[1].map(x => `<li>${x}</li>`).join("")}</ul>` : `<h2>Free navigation</h2><ul><li>You got here by moving through the screens themselves.</li></ul>`;
+}
+function fit() {
+  const stage = document.getElementById("stage"), sc = document.getElementById("scale"), box = document.getElementById("box");
+  const k = Math.min(1, (stage.clientWidth - 48) / 1360);
+  sc.style.transform = `scale(${k})`; box.style.height = 840 * k + "px";
+}
+window.addEventListener("resize", fit);
+document.addEventListener("keydown", e => { if (e.key === "Escape") go({ pop: null, linkState: null }); });
+render();
+</script>
+</body>
+</html>

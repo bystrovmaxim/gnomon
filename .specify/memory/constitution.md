@@ -1,5 +1,14 @@
 <!-- Sync Impact Report
-  Version change: 1.4.0 → 1.5.0 (MINOR: amended rules).
+  Version change: 1.5.0 → 1.6.0 (MINOR: an amended rule).
+  Amended rule 55 in Authentication: a browser client may carry the JWT in an
+    HttpOnly, Secure, SameSite cookie with the __Host- prefix instead of the
+    Authorization header; the authentication action's response sets it, signing
+    out clears it, and the standard coordinator reads it with the same checks;
+    written for issue #73 at the maintainer's instruction.
+  Templates: none need an update; plan-template's Constitution Check reads the
+    constitution at run time.
+
+  Version 1.5.0: 1.4.0 → 1.5.0 (MINOR: amended rules).
   Amended rules 13, 15, 24, 25, 26 and 53 in the schema rules and in Data
     model and resources: a resource is a database and names its entities; an
     entity names only its domain and may lie in several resources or in none;
@@ -660,8 +669,14 @@ an ordinary table.
     reason — enough for debugging, but the existence of a specific object and
     the correctness of a password are not disclosed. An authentication refusal
     (no token, a foreign signature, expiry) stays generic.
+    A browser client MAY carry the same JWT in a cookie instead of the header:
+    the cookie is `HttpOnly`, `Secure`, `SameSite` and has the `__Host-`
+    prefix, so the page's scripts never read the token. The authentication
+    action's response sets it and signing out clears it; the standard
+    `JwtAuthCoordinator` reads the token from it with the same checks as from
+    the header.
     Check: the reason for a refusal is declared and visible; enumerating
-    existence is impossible.
+    existence is impossible; a token in a cookie is never readable by a script.
 
 56. **The token is issued by the authentication action.** The action MUST check
     the password against the hash read through a resource and, on success, sign
@@ -904,4 +919,4 @@ an ordinary table.
 - The sources of truth about the data structure are the constitution, `specs/`
   and `schema/`. There are no others.
 
-**Version**: 1.5.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-06
+**Version**: 1.6.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-10
