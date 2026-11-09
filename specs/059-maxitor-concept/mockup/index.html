@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Maxitor — organization, enterprise, product, container · mockup</title>
+<title>Maxitor — organization, boundary, product, container · mockup</title>
 <style>
   /* The mockup continues the visual language of today’s Maxitor: the same menu row sizes and the same panel and workspace colours. */
   :root {
@@ -133,7 +133,7 @@
   .fine { font-size: 11.5px; color: var(--muted); margin-top: 16px; line-height: 1.45; }
   .inviter { display: flex; gap: 10px; align-items: center; background: #f8fafc; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; font-size: 13px; }
 
-  /* ---------- enterprise picker ---------- */
+  /* ---------- boundary picker ---------- */
   .pick { flex: 1; overflow: auto; background: var(--canvas); padding: 34px 48px; }
   .pick h2 { font-size: 22px; margin: 0 0 4px; }
   .pick .sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
@@ -470,10 +470,6 @@
   .admlink:hover { border-color: rgba(15,23,42,.3); }
   .admlink > div { flex: 1; }
   .admlink .h { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-  .ssog { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .ssoc { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
-  .ssoc h5 { margin: 8px 0 10px; font-size: 14px; }
-  .ssoc .kv { grid-template-columns: 150px 1fr; }
 
   /* ======================= editing ======================= */
   .story { position: relative; }
@@ -567,7 +563,7 @@ const ME = { name: "Anna Kovaleva", ini: "AK" };
 const USERS = { ak: "Anna Kovaleva", ie: "Ilya Ershov", os: "Oleg Safin", ml: "Maria Lebedeva" };
 const INI = { ak: "AK", ie: "IE", os: "OS", ml: "ML" };
 
-const ENTERPRISES = [
+const BOUNDARIES = [
   { id: "e1", name: "“Northern Quarter” housing company", desc: "Housing stock: purchase, adaptation, management, operation and billing as one process", open: true, products: ["p1","p2","p3","p4"], stories: 23, initiatives: 6, last: "today" },
   { id: "e2", name: "“Shoreline” Development", desc: "Development: land bank, design, construction, sales, finance", open: true, products: [], stories: 41, initiatives: 9, last: "2 days ago", plist: [["Land bank","#0891b2"],["Construction control","#65a30d"],["Sales","#db2777"]] },
   { id: "e3", name: "“Pier” Hotels", desc: "Hotel business: booking, check-in, room service", open: false, products: [], stories: 12, initiatives: 3, last: "a month ago", plist: [["Booking","#9333ea"],["Housekeeping","#0d9488"]] },
@@ -805,16 +801,16 @@ const U_ST = { invited: "Invitation sent", active: "Active", blocked: "Blocked",
 const U_STC = { invited: "#d97706", active: "#16a34a", blocked: "#dc2626", removed: "#94a3b8" };
 const UCOL = { ak: "#0f172a", ie: "#ea580c", os: "#2563eb", ml: "#db2777", ss: "#0891b2", dk: "#65a30d", vs: "#9333ea", pn: "#78716c", kb: "#0d9488" };
 const ADM_USERS = [
-  { id: "ak", name: "Anna Kovaleva", email: "anna.kovaleva@severny-veter.ru", st: "active", admin: true, via: "invite", by: "ie", since: "12 Sep", seen: "now", owns: ["enterprise “Northern Quarter”", "product FSM", "6 stories"] },
-  { id: "ie", name: "Ilya Ershov", email: "ilya.ershov@severny-veter.ru", st: "active", admin: true, via: "first", since: "3 Sep", seen: "10 minutes ago", owns: ["enterprise “Shoreline”", "products Billing and Housing stock", "5 stories"] },
+  { id: "ak", name: "Anna Kovaleva", email: "anna.kovaleva@severny-veter.ru", st: "active", admin: true, via: "invite", by: "ie", since: "12 Sep", seen: "now", owns: ["boundary “Northern Quarter”", "product FSM", "6 stories"] },
+  { id: "ie", name: "Ilya Ershov", email: "ilya.ershov@severny-veter.ru", st: "active", admin: true, via: "first", since: "3 Sep", seen: "10 minutes ago", owns: ["boundary “Shoreline”", "products Billing and Housing stock", "5 stories"] },
   { id: "os", name: "Oleg Safin", email: "oleg.safin@severny-veter.ru", st: "active", admin: false, via: "invite", by: "ak", since: "20 Sep", seen: "now", owns: ["product Meetings", "3 containers"] },
-  { id: "ml", name: "Maria Lebedeva", email: "maria.lebedeva@severny-veter.ru", st: "active", admin: false, via: "sso", since: "2 Oct", seen: "yesterday", owns: ["enterprise “Pier”", "4 stories"] },
-  { id: "ss", name: "Sergey Smirnov", email: "sergey.smirnov@severny-veter.ru", st: "active", admin: false, via: "sso", since: "28 Oct", seen: "3 days ago", owns: [] },
+  { id: "ml", name: "Maria Lebedeva", email: "maria.lebedeva@severny-veter.ru", st: "active", admin: false, via: "invite", since: "2 Oct", seen: "yesterday", owns: ["boundary “Pier”", "4 stories"] },
+  { id: "ss", name: "Sergey Smirnov", email: "sergey.smirnov@severny-veter.ru", st: "active", admin: false, via: "invite", since: "28 Oct", seen: "3 days ago", owns: [] },
   { id: "dk", name: "Dmitry Krotov", email: "dmitry.krotov@partner-stroy.ru", st: "invited", admin: false, via: "invite", by: "ie", since: "2 days ago", seen: "has not signed in yet", owns: [] },
-  { id: "vs", name: "Vera Sokolova", email: "vera.sokolova@severny-veter.ru", st: "blocked", admin: false, via: "invite", by: "ak", since: "15 Sep", seen: "1 Nov", owns: ["enterprise “Transit”", "stage “Intake”", "3 stories"] },
+  { id: "vs", name: "Vera Sokolova", email: "vera.sokolova@severny-veter.ru", st: "blocked", admin: false, via: "invite", by: "ak", since: "15 Sep", seen: "1 Nov", owns: ["boundary “Transit”", "stage “Intake”", "3 stories"] },
   { id: "pn", name: "Pavel Nikitin", email: "pavel.nikitin@severny-veter.ru", st: "removed", admin: false, via: "invite", by: "ie", since: "5 Sep", seen: "18 Oct", gone: "20 Oct", owns: ["container “Warehouse API”"] },
 ];
-/* The fourth enterprise is closed, and Anna has no access to it: it is not in the picker, but administration shows it. */
+/* The fourth boundary is closed, and Anna has no access to it: it is not in the picker, but administration shows it. */
 const E4 = { id: "e4", name: "“Transit” Logistics", desc: "Warehouse logistics: intake, storage, shipping and delivery as one process", open: false, products: [] };
 const ADM_ENTS = {
   e1: { owner: "ak", granted: ["os"], created: "3 Sep" },
@@ -822,7 +818,7 @@ const ADM_ENTS = {
   e3: { owner: "ml", granted: ["ak", "ml", "dk"], created: "1 Oct" },
   e4: { owner: "vs", granted: ["vs", "os", "ss"], created: "15 Sep", n: 6 },
 };
-const ALL_ENTS = () => [...ENTERPRISES, E4];
+const ALL_ENTS = () => [...BOUNDARIES, E4];
 const au = id => ADM_USERS.find(u => u.id === id);
 const uini = u => u.name.split(" ").map(w => w[0]).join("");
 const uav = u => `<span class="av" style="background:${UCOL[u.id]};color:#fff">${uini(u)}</span>`;
@@ -849,7 +845,7 @@ function grant(eid, uid) { const g = ADM_ENTS[eid].granted, i = g.indexOf(uid); 
 function setOpen(eid, v) {
   const e = ALL_ENTS().find(x => x.id === eid), a = ADM_ENTS[eid];
   e.open = v;
-  if (!v && a.owner && !a.granted.includes(a.owner)) a.granted.push(a.owner); /* the owner of a closed enterprise is always on the list */
+  if (!v && a.owner && !a.granted.includes(a.owner)) a.granted.push(a.owner); /* the owner of a closed boundary is always on the list */
   render();
 }
 function invite() {
@@ -916,11 +912,11 @@ function crumb(lv, text, onText, onCaret, cur, dot) {
   return `<span class="crumb${cur ? " cur" : ""}"><span class="ct" onclick="${onText}">${dot ? `<i class="dot" style="background:${dot}"></i>` : ""}${esc(text)}</span>${onCaret ? `<span class="cvr" onclick="${onCaret}" title="Neighbours: ${lv}">${I.down}</span>` : ""}</span>`;
 }
 function header(minimal) {
-  const e = ENTERPRISES.find(x => x.id === S.ent);
+  const e = BOUNDARIES.find(x => x.id === S.ent);
   let cr = crumb("organization", ORG.name, "go({screen:'picker',pop:null,story:null})", null, S.screen === "picker");
   if (S.screen === "admin") cr += `<span class="sep">/</span>` + crumb("administration", "Administration", "go({adm:'users',umode:'list',usr:null,ead:null,pop:null})", null, true);
   if (!minimal) {
-    cr += `<span class="sep">/</span>` + crumb("enterprise", e.name, "go({screen:'ent',view:'map',pop:null,story:null,fIni:null})", "go({pop:S.pop==='sw-ent'?null:'sw-ent'})", S.screen === "ent", null);
+    cr += `<span class="sep">/</span>` + crumb("boundary", e.name, "go({screen:'ent',view:'map',pop:null,story:null,fIni:null})", "go({pop:S.pop==='sw-ent'?null:'sw-ent'})", S.screen === "ent", null);
     if (S.screen === "prod" || S.screen === "cont") {
       const p = PRODUCTS[S.prod];
       cr += `<span class="sep">/</span>` + crumb("product", p.name, "go({screen:'prod',view:'map',pop:null,story:null})", "go({pop:S.pop==='sw-prod'?null:'sw-prod'})", S.screen === "prod", p.color);
@@ -939,7 +935,7 @@ function header(minimal) {
     <span class="logo" onclick="go({screen:'picker',pop:null})"><span class="mk">M</span>Maxitor</span>
     <div class="crumbs">${cr}</div>
     <span class="spacer"></span>
-    ${minimal ? (S.screen === "admin" ? timePill(snap) : "") : `<span class="search" onclick="go({pop:'cmdk'})">${I.search}Search the enterprise<kbd>⌘K</kbd></span>
+    ${minimal ? (S.screen === "admin" ? timePill(snap) : "") : `<span class="search" onclick="go({pop:'cmdk'})">${I.search}Search the boundary<kbd>⌘K</kbd></span>
     ${timePill(snap)}`}
     ${room}
     <span class="avatar" title="${ME.name}">${ME.ini}</span>
@@ -952,12 +948,12 @@ function viewSignin() {
     <div class="lg"><span class="mk">M</span>Maxitor</div>
     <h2>Sign in</h2>
     <div class="sub">Maxitor is open only to members of the organization. Sign in with the email the invitation came to.</div>
-    <div class="lab">Work email</div>
+    <div class="lab">Email</div>
     <div class="inp">anna.kovaleva@severny-veter.ru</div>
-    <button class="btn" onclick="go({screen:'picker'})">Send me a sign-in link</button>
-    <div class="or">or</div>
-    <button class="btn ghostb" onclick="go({screen:'picker'})">${I.globe}Sign in with the organization’s SSO</button>
-    <div class="fine">No access? Ask the organization’s administrator to send you an invitation. Blocked and removed users cannot sign in.</div>
+    <div class="lab">Password</div>
+    <div class="inp">••••••••••</div>
+    <button class="btn" onclick="go({screen:'picker'})">Sign in</button>
+    <div class="fine">Or Yandex ID, Mail.ru ID, Google, GitHub or Facebook — the core's sign-in of spec 072. No access? Ask the organization’s administrator to send you an invitation. Blocked and removed users cannot sign in.</div>
   </div></div>`;
 }
 function viewInvite() {
@@ -972,7 +968,7 @@ function viewInvite() {
   </div></div>`;
 }
 function viewPicker() {
-  const cards = ENTERPRISES.map(e => {
+  const cards = BOUNDARIES.map(e => {
     const plist = e.plist || e.products.map(p => [PRODUCTS[p].name, PRODUCTS[p].hex]);
     return `<div class="ecard" onclick="go({screen:'ent',ent:'e1',view:'map',fIni:null})">
       <div class="eh">${esc(e.name)}${e.open ? "" : `<span class="lock" title="Closed: access granted to you explicitly">${I.lock}</span>`}</div>
@@ -984,25 +980,25 @@ function viewPicker() {
   }).join("");
   return `<div class="pick">
     <h2>Good afternoon, Anna</h2>
-    <div class="sub">${ORG.name} · 3 enterprises are available to you. Closed enterprises without access are not shown here at all.</div>
+    <div class="sub">${ORG.name} · 3 boundaries are available to you. Closed boundaries without access are not shown here at all.</div>
     <div class="lab" style="margin-bottom:8px">Continue where you stopped</div>
     <div class="resume">
       <div class="r" onclick="go({screen:'prod',ent:'e1',prod:'p1',view:'map',story:'s15'})">${I.map}<div><div class="w">“Northern Quarter” housing company · FSM · product map</div><div class="h">The work gets into the charges</div></div></div>
       <div class="r" onclick="go({screen:'cont',ent:'e1',prod:'p1',cont:'c2'})">${I.erd}<div><div class="w">FSM · container · graph</div><div class="h">FSM service · RequestsDomain</div></div></div>
     </div>
-    <div class="lab" style="margin-bottom:8px">Enterprise</div>
+    <div class="lab" style="margin-bottom:8px">Boundary</div>
     <div class="egrid">${cards}</div>
-    ${meAdmin() ? `<div class="admlink" onclick="go({screen:'admin',adm:'users',umode:'list',usr:null,ead:null})">${I.shield}<div><b>Organization administration</b><div class="h">${ADM_USERS.filter(u => u.st !== "removed").length} ${pl(ADM_USERS.filter(u => u.st !== "removed").length, "user", "users", "users")} · waiting for an invitation: ${ADM_USERS.filter(u => u.st === "invited").length} · blocked: ${ADM_USERS.filter(u => u.st === "blocked").length} · ${ALL_ENTS().length} enterprises, closed to you: ${ALL_ENTS().filter(e => !hasAccess("ak", e)).length}</div></div>${I.chevr}</div>` : ""}
+    ${meAdmin() ? `<div class="admlink" onclick="go({screen:'admin',adm:'users',umode:'list',usr:null,ead:null})">${I.shield}<div><b>Organization administration</b><div class="h">${ADM_USERS.filter(u => u.st !== "removed").length} ${pl(ADM_USERS.filter(u => u.st !== "removed").length, "user", "users", "users")} · waiting for an invitation: ${ADM_USERS.filter(u => u.st === "invited").length} · blocked: ${ADM_USERS.filter(u => u.st === "blocked").length} · ${ALL_ENTS().length} boundaries, closed to you: ${ALL_ENTS().filter(e => !hasAccess("ak", e)).length}</div></div>${I.chevr}</div>` : ""}
   </div>`;
 }
 
 /* ======================= the layers’ left panels ======================= */
-function sbEnterprise() {
-  const e = ENTERPRISES.find(x => x.id === S.ent);
+function sbBoundary() {
+  const e = BOUNDARIES.find(x => x.id === S.ent);
   const row = (v, icon, text, c4) => `<div class="sb-row${S.view === v && !S.sysKind ? " sel" : ""}" onclick="go({view:'${v}',story:null,fIni:null,list:false,c1group:null,sysKind:null})">${icon}${text}${c4 ? `<span class="c4">${c4}</span>` : ""}</div>`;
   const prow = id => { const p = PRODUCTS[id]; return `<div class="sb-row" onclick="go({screen:'prod',prod:'${id}',view:'map',story:null})"><i class="sw" style="background:${p.color}"></i>${p.name}<span class="num">${STORIES.filter(s => s.p === id).length}</span></div>`; };
   return `<aside class="sb">
-    <div class="sb-top"><div class="k">Enterprise</div><div class="t">${esc(e.name)}</div><div class="d">${esc(e.desc)}</div><div class="acc" onclick="go({ead:'${e.id}',story:null})" title="Enterprise access">${e.open ? I.globe : I.lock}${e.open ? "Open" : "Closed"} · ${ADM_ENTS[e.id].owner === "ak" ? "you are the owner" : "owner " + esc(uini(au(ADM_ENTS[e.id].owner)))}</div></div>
+    <div class="sb-top"><div class="k">Boundary</div><div class="t">${esc(e.name)}</div><div class="d">${esc(e.desc)}</div><div class="acc" onclick="go({ead:'${e.id}',story:null})" title="Boundary access">${e.open ? I.globe : I.lock}${e.open ? "Open" : "Closed"} · ${ADM_ENTS[e.id].owner === "ak" ? "you are the owner" : "owner " + esc(uini(au(ADM_ENTS[e.id].owner)))}</div></div>
     ${row("map", I.map, "Story map")}
     ${row("c1", I.land, "Landscape")}
     ${row("initiatives", I.flag, "Initiatives")}
@@ -1031,7 +1027,7 @@ function sbProduct() {
     <div class="sb-cap"><span>The product’s containers</span></div>
     ${conts}
     <div class="sb-note"><span><i style="background:#16a34a"></i>live graph</span><span><i style="background:#94a3b8"></i>history</span></div>
-    <div class="sb-row" style="margin-top:10px;color:var(--muted)" onclick="go({screen:'ent',view:'systems',story:null})">${I.back}All enterprise Software Systems</div>
+    <div class="sb-row" style="margin-top:10px;color:var(--muted)" onclick="go({screen:'ent',view:'systems',story:null})">${I.back}All boundary Software Systems</div>
     <div class="sb-foot"><b>Maxitor</b> 4.0 · mockup</div>
   </aside>`;
 }
@@ -1200,7 +1196,7 @@ function viewMap(scope) {
                 { l: "Stories", n: inScope.length, on: S.mapMode === "table", go: "go({mapMode:'table'})", c: "#475569" }];
   const m = S.mh;
   const prodSec = { t: "Products", rows: scope
-    ? [{ l: PRODUCTS[scope].name, c: PRODUCTS[scope].hex, icon: BI.box, sel: true, go: "" }, { l: "The whole enterprise map", c: "#94a3b8", icon: BI.globe, go: "go({screen:'ent',view:'map'})" }]
+    ? [{ l: PRODUCTS[scope].name, c: PRODUCTS[scope].hex, icon: BI.box, sel: true, go: "" }, { l: "The whole boundary map", c: "#94a3b8", icon: BI.globe, go: "go({screen:'ent',view:'map'})" }]
     : Object.entries(PRODUCTS).map(([id, p]) => ({ l: p.name, c: p.hex, icon: BI.box, off: hid(m, "p:" + id), go: `tgl('mh','p:${id}')` })).concat([{ l: "without a Software System", c: "#b45309", icon: BI.box, off: hid(m, "p:none"), go: "tgl('mh','p:none')" }]) };
   const sliceSec = { t: "Release slices", open: true, rows: SLICES.map(sl => ({ l: sl.name, c: sl.id === "r1" ? "#16a34a" : sl.id === "r2" ? "#3b82f6" : "#94a3b8", icon: BI.layer, off: hid(m, "r:" + (sl.id || "none")), go: `tgl('mh','r:${sl.id || "none"}')` })) };
   const iniSec = { t: "Initiatives", rows: Object.entries(INITIATIVES).filter(([id]) => inScope.some(s => s.n === id)).map(([id, n]) => ({ l: n.name, c: { draft: "#64748b", approved: "#2563eb", done: "#16a34a", rejected: "#dc2626" }[n.status], icon: BI.flag, off: S.fIni ? S.fIni !== id : hid(m, "n:" + id), go: `tgl('mh','n:${id}')` })).concat([{ l: "without an initiative", c: "#94a3b8", icon: BI.flag, off: S.fIni ? true : hid(m, "n:none"), go: "tgl('mh','n:none')" }]) };
@@ -1274,7 +1270,7 @@ function viewInitiatives(scope) {
       <td>${prods.map(p => `<span class="pchip"><i style="background:${PRODUCTS[p].color}"></i>${PRODUCTS[p].name}</span>`).join(" ") || `<span class="mut">—</span>`}</td></tr>`;
   }).join("");
   return { tabs, filter, fkey: "ini", world: wcard(scope ? `The product’s initiatives ${PRODUCTS[scope].name}` : "Initiatives",
-    `${scope ? "Initiatives that have stories of the product." : "All initiatives of the enterprise."} Products are derived from the initiative’s stories. A click opens the map with the stories highlighted.`,
+    `${scope ? "Initiatives that have stories of the product." : "All initiatives of the boundary."} Products are derived from the initiative’s stories. A click opens the map with the stories highlighted.`,
     `<table class="tbl"><tr><th>Initiative</th><th>Kind</th><th>State</th><th>Author</th><th>Stories done</th><th>Products</th></tr>${tr}</table>`) };
 }
 /* ======================= Software Systems as a list ======================= */
@@ -1334,7 +1330,7 @@ function clip(c, w, h, to) { /* a point on the rectangle’s edge in the directi
   const t = Math.min(Math.abs((w / 2) / (dx || 1e-6)), Math.abs((h / 2) / (dy || 1e-6)));
   return [c[0] + dx * t, c[1] + dy * t];
 }
-function viewC1Enterprise() {
+function viewC1Boundary() {
   const links = derivedLinks();
   const tabs = [{ l: "Groups", n: AREAS.length + 2, on: !S.list, go: "go({list:false})", c: "#d97706" }, { l: "Links", n: links.length, on: S.list, go: "go({list:true,c1group:null})", c: "#475569" }];
   if (S.list) return { tabs, world: linksTable(links, "Links between Software Systems, derived from the containers’ interfaces. With hundreds of Software Systems this is the main way to find a particular link: filters and table search.") };
@@ -1345,7 +1341,7 @@ function viewC1Enterprise() {
   const GL = [["a1", "a2", 5], ["a2", "a5", 9], ["a3", "a2", 4], ["a4", "a3", 6], ["a4", "a7", 23], ["a6", "a4", 3], ["a7", "a3", 2], ["a4", "ext", 12], ["a7", "ext", 31]];
   const AREA_TOP = { a1: ["Property registry", "Property valuation"], a2: ["Surveys", "Repair estimates"], a3: ["Owners’ contracts", "Residents’ registry"], a4: ["Dispatch office", "Lifts"], a5: ["Repair plan", "Contractors"], a6: ["Cleaning service", "Inspections"], a7: ["Tariffs", "Debt recovery"] };
   let svg = `<svg class="dg" width="1080" height="560" viewBox="0 0 1080 560">${DEFS}
-    <rect class="bnd" x="50" y="40" width="780" height="490" rx="16"/><text class="bnd-l" x="70" y="66">“Northern Quarter” housing company · enterprise boundary · ${SCALE.products} digital products</text>`;
+    <rect class="bnd" x="50" y="40" width="780" height="490" rx="16"/><text class="bnd-l" x="70" y="66">“Northern Quarter” housing company · boundary boundary · ${SCALE.products} digital products</text>`;
   for (const [a, b, n] of GL) {
     const p = ctr(a), q = ctr(b);
     const e1 = clip(p, ...WH(a), q), e2 = clip(q, ...WH(b), p);
@@ -1366,7 +1362,7 @@ function viewC1Enterprise() {
     const names = [...det, ...AREA_TOP[a.id]].slice(0, 3);
     svg += group(a.id, a.name, AREA_SYS[a.id], names, `+${AREA_SYS[a.id] - names.length} more · expand`, `go({c1group:'${a.id}'})`);
   }
-  svg += group("off", "Off the map", OFFMAP, ["Software Systems without stories", "on the enterprise map"], "no group is derived", "go({view:'systems',sysKind:'prod'})", true);
+  svg += group("off", "Off the map", OFFMAP, ["Software Systems without stories", "on the boundary map"], "no group is derived", "go({view:'systems',sysKind:'prod'})", true);
   svg += group("ext", "External systems", SCALE.externals, ["State housing system", "Acquiring bank", "SMS gateway", "1C Accounting"].slice(0, 4), `+${SCALE.externals - 4} more · as a list`, "go({view:'systems',sysKind:'ext'})", true);
   svg += `</svg>`;
   return { tabs, world: svg, legend: `<span><i class="sd" style="background:#fde68a;border:1px solid #d97706;border-radius:3px"></i>business area</span><span><i class="sd" style="border:1.5px dashed #64748b;border-radius:3px"></i>off the map and external</span><span>the number on a link — interfaces between the groups</span>` };
@@ -1789,7 +1785,7 @@ function popNewSys() {
     <div class="lab">Description</div><div class="inp" style="color:var(--muted)">${ext ? "Why we integrate with it" : "What value it gives, and to whom"}</div>
     ${ext ? `<div class="lab">Web link to the service</div><div class="inp">https://rosreestr.example.ru/api</div>
       <div class="hintb">Together with the external system its only container, “Land registry · API”, is created. Its interfaces are entered by hand in the container’s card: we have no source code. What our containers use will be derived from their code.</div>`
-    : `<div class="lab">Containers</div><div class="inp" style="color:var(--muted)">${I.search}&nbsp; Find among ${SCALE.containers} enterprise containers…</div>
+    : `<div class="lab">Containers</div><div class="inp" style="color:var(--muted)">${I.search}&nbsp; Find among ${SCALE.containers} boundary containers…</div>
       <div class="owns" style="margin:-4px 0 6px">${CONTAINERS.c12 ? `<span class="cchip">${kindIcon("service")}Materials warehouse ✕</span>` : ""}<span class="cchip">${kindIcon("mobile")}Technicians’ app ✕</span></div>
       <div class="fine2">A container may work for several products, so a product does not take it but only gathers it.</div>
       <div class="lab" style="margin-top:10px">Owner</div><div class="inp"><span class="who">${uav(au("ie"))}Ilya Ershov</span><span style="flex:1"></span>${I.down}</div>`}
@@ -1799,8 +1795,8 @@ function popNewSys() {
 /* ======================= popovers ======================= */
 function popSwitch(kind) {
   if (kind === "sw-ent") {
-    return `<div class="pop" style="top:46px;left:250px;width:360px"><div class="pin">${I.search}Find an enterprise</div><div class="pg">${ORG.name}</div>
-      ${ENTERPRISES.map(e => `<div class="pr${e.id === S.ent ? " hi" : ""}" onclick="go({screen:'ent',ent:'e1',view:'map',pop:null})">${e.open ? I.land : I.lock}<div>${esc(e.name)}<div class="ps">${e.stories} stories · ${e.initiatives} initiatives</div></div><span class="pm">${e.last}</span></div>`).join("")}
+    return `<div class="pop" style="top:46px;left:250px;width:360px"><div class="pin">${I.search}Find a boundary</div><div class="pg">${ORG.name}</div>
+      ${BOUNDARIES.map(e => `<div class="pr${e.id === S.ent ? " hi" : ""}" onclick="go({screen:'ent',ent:'e1',view:'map',pop:null})">${e.open ? I.land : I.lock}<div>${esc(e.name)}<div class="ps">${e.stories} stories · ${e.initiatives} initiatives</div></div><span class="pm">${e.last}</span></div>`).join("")}
       <div class="pfoot"><span>Closed ones without access are not shown</span><span>↵ open</span></div></div>`;
   }
   if (kind === "sw-prod") {
@@ -1822,12 +1818,12 @@ function popSwitch(kind) {
 }
 function popRoom(pid) {
   const p = PEOPLE.find(x => x.id === pid);
-  const e = ENTERPRISES.find(x => x.id === S.ent);
+  const e = BOUNDARIES.find(x => x.id === S.ent);
   return `<div class="pop rcard" style="top:46px;right:52px;width:330px">
     <div class="rn"><span class="avatar" style="background:${p.color};color:#fff;margin:0">${p.ini}</span>${p.name}</div>
     <div class="rw">Now: <b>${p.where}</b></div>
     <div class="rb"><button class="btn2" onclick='go(Object.assign({pop:null}, ${JSON.stringify(p.go)}))'>Go to</button><button class="btn2 pri" onclick='go(Object.assign({pop:null, follow:"${p.id}"}, ${JSON.stringify(p.go)}))'>Follow</button></div>
-    <div class="rf">A room works on every level — from the enterprise picker to a container’s graph. Entering by the link is open only to members of ${esc(ORG.name)}, and the name comes from the account. If the leader goes into a closed enterprise you have no access to, following stops, and it says so.</div></div>`;
+    <div class="rf">A room works on every level — from the boundary picker to a container’s graph. Entering by the link is open only to members of ${esc(ORG.name)}, and the name comes from the account. If the leader goes into a closed boundary you have no access to, following stops, and it says so.</div></div>`;
 }
 function popCmdk() {
   const r = (icon, t, sub, on) => `<div class="pr" onclick="${on}">${icon}<div>${t}<div class="ps">${sub}</div></div></div>`;
@@ -1842,7 +1838,7 @@ function popCmdk() {
     ${r(I.service, "Technician API · http", "published by the FSM service · used by the Technicians’ app", "go({screen:'prod',prod:'p1',view:'c2',pop:null})")}
     <div class="pg">Initiatives</div>
     ${r(I.flag, "A resident calls a technician from the app", "PR/FAQ · Approved · 7 stories", "go({screen:'ent',view:'map',fIni:'n1',pop:null,story:null})")}
-    <div class="pfoot"><span>Search the whole enterprise: jumps straight to the object, skipping layers</span><span>↑↓ ↵</span></div></div>`;
+    <div class="pfoot"><span>Search the whole boundary: jumps straight to the object, skipping layers</span><span>↑↓ ↵</span></div></div>`;
 }
 /* One catalog time track on every level: a chart of the volume of changes with a stretchable precision. What counts as
    a change depends on the open page. On the container layer the code graph keeps its own version track. */
@@ -1850,7 +1846,7 @@ const ZOOMS = { hour: ["Hour", 48], day: ["Day", 30], week: ["Week", 26], month:
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function hasGraph() { const c = CONTAINERS[S.cont]; return S.screen === "cont" && (c.live || c.hist); }
 function scopeOf() {
-  const e = ENTERPRISES.find(x => x.id === S.ent);
+  const e = BOUNDARIES.find(x => x.id === S.ent);
   if (S.screen === "cont") return { key: "cont:" + S.cont, title: `${CONTAINERS[S.cont].name} · catalog`, what: "changes of the container’s record in the catalog: owner, interfaces, products" };
   if (S.screen === "prod") {
     const p = PRODUCTS[S.prod];
@@ -1858,11 +1854,11 @@ function scopeOf() {
     return { key: `prod:${S.prod}:${S.view}`, title: `${p.name} · ${v[0]}`, what: v[1] };
   }
   if (S.screen === "ent") {
-    const v = { map: ["story map", "the whole map: business areas, stages, stories, steps, release slices"], c1: ["landscape", "Software Systems and the interfaces links are derived from"], initiatives: ["initiatives", "initiatives and their states"], systems: ["Software Systems", "Software System enterprise"] }[S.view];
+    const v = { map: ["story map", "the whole map: business areas, stages, stories, steps, release slices"], c1: ["landscape", "Software Systems and the interfaces links are derived from"], initiatives: ["initiatives", "initiatives and their states"], systems: ["Software Systems", "Software System boundary"] }[S.view];
     return { key: `ent:${S.view}`, title: `${e.name} · ${v[0]}`, what: v[1] };
   }
-  if (S.screen === "admin") return { key: "org:admin", title: `${ORG.name} · administration`, what: "invitations, blocks and removals of users, the administrator mark, enterprises and access grants" };
-  return { key: "org", title: ORG.name, what: "the organization’s enterprises, users and access" };
+  if (S.screen === "admin") return { key: "org:admin", title: `${ORG.name} · administration`, what: "invitations, blocks and removals of users, the administrator mark, boundaries and access grants" };
+  return { key: "org", title: ORG.name, what: "the organization’s boundaries, users and access" };
 }
 function series(key, zoom) {
   let h = 7; for (const ch of key + zoom) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -1891,7 +1887,7 @@ function changesIn(sc, count, label) {
   const CAT = {
     ent: ["+1 story in “Operations › Technician’s visit”", "Release slice “Release 2”: goal changed", "Initiative “Debts without phone calls”: draft", "The “Billing service” container publishes a new interface", "Business area “Cleaning”: new owner"],
     prod: ["+1 plan step in “The work gets into the charges”", "Story “A technician writes off materials”: in elaboration", "Container “Technicians’ app”: new owner", "Interface “Technician API · mcp” published", "Story moved to “Release 2”"],
-    org: ["User Maria Lebedeva: invitation sent", "Enterprise “Pier” Hotels closed", "Oleg Safin was granted access to a closed enterprise"],
+    org: ["User Maria Lebedeva: invitation sent", "Boundary “Pier” Hotels closed", "Oleg Safin was granted access to a closed boundary"],
     cont: ["Container owner: Anna Kovaleva", "+1 interface “Mobile API · mcp”", "Container added to the product “Billing”"],
   };
   const pool = sc.code ? CODE : CAT[sc.key.split(":")[0]];
@@ -2022,21 +2018,20 @@ function sbAdmin() {
   return `<aside class="sb">
     <div class="sb-top"><div class="k">Organization</div><div class="t">${esc(ORG.name)}</div><div class="d">Only organization administrators see administration. Active administrators now: ${activeAdmins().length}.</div></div>
     ${row("users", I.people, "Users", ADM_USERS.filter(u => u.st !== "removed").length)}
-    ${row("ents", I.land, "Enterprises", ALL_ENTS().length)}
-    ${row("sso", I.shield, "Sign-in and SSO")}
+    ${row("ents", I.land, "Boundaries", ALL_ENTS().length)}
     ${inv.length ? `<div class="sb-cap"><span>Waiting for an invitation</span><span>sent</span></div>${inv.map(u => urow(u, u.since)).join("")}` : ""}
     ${blk.length ? `<div class="sb-cap"><span>Blocked</span></div>${blk.map(u => urow(u, "")).join("")}` : ""}
     <div class="sb-foot"><b>Maxitor</b> 4.0 · mockup</div>
   </aside>`;
 }
 function viewAdmin() {
-  const v = S.adm === "ents" ? viewAdmEnts() : S.adm === "sso" ? viewAdmSso() : viewAdmUsers();
+  const v = S.adm === "ents" ? viewAdmEnts() : viewAdmUsers();
   v.world = v.world.replace('<div class="wcard">', '<div class="wcard wide">').replace(/<table class="tbl/g, '<table class="tbl adm');
   return v;
 }
-function viaKey(u) { return u.via === "sso" ? "sso" : u.via === "first" ? "first" : "invite"; }
-function viaShort(u) { return (u.via === "sso" ? "SSO" : u.via === "first" ? "first administrator" : "invitation") + " · " + u.since; }
-function viaLong(u) { return u.via === "sso" ? `via SSO, active at once · ${u.since}` : u.via === "first" ? `the organization’s first administrator · ${u.since}` : `invited by: ${esc(au(u.by).name)} · ${u.since}`; }
+function viaKey(u) { return u.via === "first" ? "first" : "invite"; }
+function viaShort(u) { return (u.via === "first" ? "first administrator" : "invitation") + " · " + u.since; }
+function viaLong(u) { return u.via === "first" ? `the organization’s first administrator · ${u.since}` : `invited by: ${esc(au(u.by).name)} · ${u.since}`; }
 function viewAdmUsers() {
   const h = S.uh;
   const rows = ADM_USERS.filter(u => !hid(h, "st:" + u.st) && !hid(h, "r:" + (u.admin ? "admin" : "user")) && !hid(h, "v:" + viaKey(u)));
@@ -2046,7 +2041,7 @@ function viewAdmUsers() {
   const filter = fpanel("usr", [
     { t: "States", rows: Object.entries(U_ST).map(([k, t]) => ({ l: t, c: U_STC[k], icon: BI.dot, off: hid(h, "st:" + k), go: `tgl('uh','st:${k}')` })) },
     { t: "Role", open: true, rows: [{ l: "Administrators", c: "#7c3aed", icon: BI.shield, off: hid(h, "r:admin"), go: "tgl('uh','r:admin')" }, { l: "Users", c: "#475569", icon: BI.dot, off: hid(h, "r:user"), go: "tgl('uh','r:user')" }] },
-    { t: "How they appeared", rows: [{ l: "By invitation", c: "#2563eb", icon: BI.mail, off: hid(h, "v:invite"), go: "tgl('uh','v:invite')" }, { l: "Via SSO", c: "#0891b2", icon: BI.key, off: hid(h, "v:sso"), go: "tgl('uh','v:sso')" }, { l: "First administrator", c: "#b45309", icon: BI.star, off: hid(h, "v:first"), go: "tgl('uh','v:first')" }] },
+    { t: "How they appeared", rows: [{ l: "By invitation", c: "#2563eb", icon: BI.mail, off: hid(h, "v:invite"), go: "tgl('uh','v:invite')" }, { l: "First administrator", c: "#b45309", icon: BI.star, off: hid(h, "v:first"), go: "tgl('uh','v:first')" }] },
   ]);
   const nameCell = u => `<span class="who">${uav(u)}<span>${esc(u.name)}${u.id === "ak" ? ' <span class="mut" style="font-weight:400">· you</span>' : ""}<div class="em">${esc(u.email)}</div></span></span>`;
   if (S.umode === "matrix") {
@@ -2056,7 +2051,7 @@ function viewAdmUsers() {
       if (e.open) return `<td class="c mut">${own ? '<span class="own">★ owner</span>' : "all"}</td>`;
       return `<td class="c">${own ? '<span class="own">★ owner</span>' : a.granted.includes(u.id) ? '<span class="yes">✓</span>' : '<span class="mut">—</span>'}</td>`;
     }).join("")}</tr>`).join("");
-    return { tabs, filter, fkey: "usr", world: wcard("Enterprise access", "The same users from another point of view: people in rows, enterprises in columns. An open enterprise is available to every user of the organization. A closed one shows who was granted access explicitly. ★ — the owner: they open and close the enterprise and grant access.",
+    return { tabs, filter, fkey: "usr", world: wcard("Boundary access", "The same users from another point of view: people in rows, boundaries in columns. An open boundary is available to every user of the organization. A closed one shows who was granted access explicitly. ★ — the owner: they open and close the boundary and grant access.",
       `<table class="tbl mx"><tr><th>User</th><th>State</th>${th}</tr>${tr}</table>`) };
   }
   const nOpen = ents.filter(e => e.open).length;
@@ -2088,25 +2083,9 @@ function viewAdmEnts() {
       <td>${mine ? "yes" : '<span class="mut">no · visible only here</span>'}</td>
       <td class="mut wr">${managerText(e.id)}</td></tr>`;
   }).join("");
-  return { filter, fkey: "aent", world: wcard("The organization’s enterprises", `All enterprises of ${esc(ORG.name)}, including closed ones you have no access to. Of those, only the name, owner and access list are visible here.`,
-    `<div class="wbar"><div class="inp">${I.search}&nbsp; Find an enterprise…</div><span class="spacer"></span><button class="btn2 pri" onclick="go({pop:'newent'})">+ New enterprise</button></div>
-     <table class="tbl"><tr><th>Enterprise</th><th>Access</th><th>Owner</th><th>Explicit access</th><th>Products</th><th>For you</th><th>Manages access</th></tr>${tr}</table>`) };
-}
-function viewAdmSso() {
-  const sso = ADM_USERS.filter(u => u.via === "sso"), inv = ADM_USERS.filter(u => u.st === "invited");
-  return { world: wcard("Sign-in and SSO", "How users get into the organization. Sign-in by invitation always works; SSO is an additional way.",
-    `<div class="ssog">
-      <div class="ssoc"><span class="badge b-u-active">Connected</span><h5>The organization’s SSO</h5>
-        <div class="kv"><span class="k">Email domain</span><span class="v"><b>severny-veter.ru</b></span>
-          <span class="k">First sign-in</span><span class="v">“Active” at once, without an invitation</span>
-          <span class="k">Came via SSO</span><span class="v">${sso.map(u => esc(u.name)).join(", ") || "nobody yet"}</span></div>
-        <div class="acts"><button class="btn2">Change the domain</button></div></div>
-      <div class="ssoc"><span class="badge b-u-invited">Always</span><h5>Sign-in by invitation</h5>
-        <div class="kv"><span class="k">Who invites</span><span class="v">organization administrators</span>
-          <span class="k">First sign-in</span><span class="v">“Invitation sent” → “Active” once the invitation is accepted</span>
-          <span class="k">Waiting now</span><span class="v">${inv.map(u => `<a class="lnk2" onclick="go({adm:'users',usr:'${u.id}'})">${esc(u.name)}</a>`).join(", ") || "nobody"}</span></div>
-        <div class="fine2">An email outside the SSO domain, for example a contractor’s, signs in only by invitation.</div></div>
-    </div>`) };
+  return { filter, fkey: "aent", world: wcard("The organization’s boundaries", `All boundaries of ${esc(ORG.name)}, including closed ones you have no access to. Of those, only the name, owner and access list are visible here.`,
+    `<div class="wbar"><div class="inp">${I.search}&nbsp; Find a boundary…</div><span class="spacer"></span><button class="btn2 pri" onclick="go({pop:'newent'})">+ New boundary</button></div>
+     <table class="tbl"><tr><th>Boundary</th><th>Access</th><th>Owner</th><th>Explicit access</th><th>Products</th><th>For you</th><th>Manages access</th></tr>${tr}</table>`) };
 }
 function userDrawer() {
   const u = au(S.usr);
@@ -2135,10 +2114,10 @@ function userDrawer() {
       ${btns ? `<div class="acts">${btns}</div>` : `<div class="fine2" style="margin-top:10px">Removed ${u.gone}. This is final: there is no move out of “Removed”.</div>`}
       ${last ? `<div class="hintb warn2">This is the last active administrator: they cannot be blocked, removed or lose the mark. Appoint another one first.</div>` : ""}</div>
     <div class="db"><div class="kv">
-      <span class="k">Administrator</span><span class="v"><span class="tg${u.admin ? " on" : ""}${admDis ? " dis" : ""}" ${admDis ? "" : `onclick="admSet('${u.id}',{admin:${!u.admin}})"`}></span>&nbsp; ${u.admin ? "invites, blocks, creates enterprises" : "no"}</span>
+      <span class="k">Administrator</span><span class="v"><span class="tg${u.admin ? " on" : ""}${admDis ? " dis" : ""}" ${admDis ? "" : `onclick="admSet('${u.id}',{admin:${!u.admin}})"`}></span>&nbsp; ${u.admin ? "invites, blocks, creates boundaries" : "no"}</span>
       <span class="k">Appeared</span><span class="v">${viaLong(u)}</span>
       <span class="k">Last sign-in</span><span class="v">${u.seen}</span></div>
-      <div class="dsec"><span>Enterprise access</span><span>closed ones are granted by the owner</span></div>${acc}
+      <div class="dsec"><span>Boundary access</span><span>closed ones are granted by the owner</span></div>${acc}
       <div class="dsec"><span>Owns</span></div><div class="owns">${owns}</div>${ownWarn}
     </div>
     <div class="df"><span>created ${u.since}</span><span class="lnk2" onclick="go({pop:'snap'})">Change history</span></div></div>`;
@@ -2149,7 +2128,7 @@ function entAccessDrawer() {
   const a = ADM_ENTS[e.id], o = au(a.owner || ""), cm = canManage(e.id), mine = hasAccess("ak", e);
   const seg = `<div class="sgx${cm ? "" : " dis"}"><span class="${e.open ? "on" : ""}" ${cm ? `onclick="setOpen('${e.id}',true)"` : ""}>Open</span><span class="${e.open ? "" : "on"}" ${cm ? `onclick="setOpen('${e.id}',false)"` : ""}>Closed</span></div>`;
   const rule = e.open
-    ? "Open: every user of the organization has access. The list below is kept but has no effect while the enterprise is open. If it is closed, only those on the list keep access."
+    ? "Open: every user of the organization has access. The list below is kept but has no effect while the boundary is open. If it is closed, only those on the list keep access."
     : "Closed: only those on the list have access. If it is opened, everyone gets access, and nobody loses it.";
   const self = !mine && meAdmin()
     ? `<div class="hintb warn2">You have no access to ${esc(shortEnt(e))}: only the name, the owner and the access list are visible here. ${cm ? `Owner ${o ? "blocked" : "not appointed"}, so you manage access as the administrator.` : `Access is granted by the owner, ${esc(o.name)}.`}</div>${cm ? `<button class="btn2 pri" onclick="grant('${e.id}','ak')">Grant access to myself</button><div class="fine2">The grant stays in the catalog history: who, to whom and when. It is visible on the time track.</div>` : ""}`
@@ -2159,13 +2138,13 @@ function entAccessDrawer() {
     return `<div class="arow"><span class="who">${uav(u)}</span><div class="an">${esc(u.name)}${id === "ak" ? " · you" : ""}<div class="as">${own ? "owner" : esc(u.email)}</div></div>${u.st !== "active" ? ubadge(u.st) : ""}${cm && !(own && !e.open) ? `<span class="x" onclick="grant('${e.id}','${id}')" title="Remove access">✕</span>` : ""}</div>`;
   }).join("") || '<div class="mut" style="font-size:12.5px">Nobody yet.</div>';
   return `<div class="drawer">
-    <div class="dh"><div class="dk"><span>Enterprise access</span><span class="close" onclick="go({ead:null})">✕</span></div>
+    <div class="dh"><div class="dk"><span>Boundary access</span><span class="close" onclick="go({ead:null})">✕</span></div>
       <h3>${e.open ? "" : `<span class="lock">${I.lock}</span> `}${esc(e.name)}</h3><div class="dt">${mine ? esc(e.desc) : "The description and content are hidden: you have no access."}</div>
       <div style="margin-top:12px">${seg}</div><div class="hintb">${rule}</div></div>
     <div class="db"><div class="kv" style="grid-template-columns:140px 1fr">
       <span class="k">Owner</span><span class="v">${o ? esc(o.name) + (o.st !== "active" ? " " + ubadge(o.st) : "") : "not appointed"}${meAdmin() && !ownerActive(e.id) ? ' · <a>appoint another</a>' : ""}</span>
       <span class="k">Access managed by</span><span class="v">${managerText(e.id)}</span>
-      <span class="k">For you</span><span class="v">${mine ? (e.open ? "yes: the enterprise is open" : "yes: you are on the list") : "no"}</span></div>
+      <span class="k">For you</span><span class="v">${mine ? (e.open ? "yes: the boundary is open" : "yes: you are on the list") : "no"}</span></div>
       ${self}
       <div class="dsec"><span>Explicit access · ${a.granted.length}</span><span>${cm ? "you can change it" : "read only"}</span></div>${list}
       ${cm ? `<div class="inp" style="height:34px;color:var(--muted);margin-top:8px">${I.search}&nbsp; Grant access to a user…</div>` : ""}
@@ -2183,11 +2162,10 @@ function popInvite() {
     <div class="sub">${esc(ORG.name)}. The user appears in the “Invitation sent” state and becomes active once they accept the invitation.</div>
     <div class="lab">Email</div><div class="inp">kirill.belov@partner-stroy.ru</div>
     <div class="lab">Name · optional, the person can correct it themselves</div><div class="inp">Kirill Belov</div>
-    <div class="arow"><div class="an">Organization administrator<div class="as">will be able to invite, block and remove users and create enterprises</div></div><span class="tg"></span></div>
+    <div class="arow"><div class="an">Organization administrator<div class="as">will be able to invite, block and remove users and create boundaries</div></div><span class="tg"></span></div>
     <div class="lab" style="margin-top:12px">Access</div>
-    <div class="arow">${I.land}<div class="an">Open enterprises · ${nOpen}<div class="as">available at once, nothing to choose</div></div><span class="yes">✓</span></div>
+    <div class="arow">${I.land}<div class="an">Open boundaries · ${nOpen}<div class="as">available at once, nothing to choose</div></div><span class="yes">✓</span></div>
     ${closed}
-    <div class="fine2">With an email of the severny-veter.ru domain no invitation is needed: the person signs in through SSO and becomes active at once.</div>
     <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 pri" onclick="invite()">Send the invitation</button></div></div>`;
 }
 function popRemove() {
@@ -2196,19 +2174,19 @@ function popRemove() {
   return `<div class="scrim" onclick="go({pop:null})"></div><div class="dlg">
     <h3>Remove the user for good?</h3>
     <div class="sub"><b>${esc(u.name)}</b> · ${esc(u.email)}. “Removed” is a final state: the user cannot be brought back and will not be able to sign in to Maxitor again.</div>
-    ${u.owns.length ? `<div class="lab">Stays with the user until the owner is changed</div><div class="owns">${u.owns.map(o => `<span class="cchip">${esc(o)}</span>`).join("")}</div><div class="fine2">Wherever the user is the owner, it will be visible that the owner is removed.${u.owns.some(o => o.startsWith("enterprise")) ? " The administrator will appoint a new owner of their enterprise: without an active owner this is allowed." : ""}</div>` : ""}
+    ${u.owns.length ? `<div class="lab">Stays with the user until the owner is changed</div><div class="owns">${u.owns.map(o => `<span class="cchip">${esc(o)}</span>`).join("")}</div><div class="fine2">Wherever the user is the owner, it will be visible that the owner is removed.${u.owns.some(o => o.startsWith("boundary")) ? " The administrator will appoint a new owner of their boundary: without an active owner this is allowed." : ""}</div>` : ""}
     <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 dangerf" onclick="admRemove('${u.id}')">Remove for good</button></div></div>`;
 }
 function popNewEnt() {
   return `<div class="scrim" onclick="go({pop:null})"></div><div class="dlg">
-    <h3>New enterprise</h3>
-    <div class="sub">An enterprise is all of ours that serves one end-to-end business process. The story map is created together with it: an enterprise has exactly one.</div>
+    <h3>New boundary</h3>
+    <div class="sub">A boundary is all of ours that serves one end-to-end business process. The story map is created together with it: a boundary has exactly one.</div>
     <div class="lab">Name — it also names the process</div><div class="inp">“South Shore” housing company</div>
     <div class="lab">Description</div><div class="inp" style="height:56px;align-items:flex-start;padding-top:9px;color:var(--muted)">What the process is and why it is improved…</div>
     <div class="lab">Access</div><div class="sgx" style="margin-bottom:12px"><span class="on">Open</span><span>Closed</span></div>
     <div class="lab">Owner · optional</div><div class="inp"><span class="who">${uav(au("ie"))}Ilya Ershov</span><span style="flex:1"></span>${I.down}</div>
-    <div class="fine2">The owner opens and closes the enterprise and grants access to it. While there is no owner, the administrator does this.</div>
-    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 pri" onclick="go({pop:null})">Create the enterprise</button></div></div>`;
+    <div class="fine2">The owner opens and closes the boundary and grants access to it. While there is no owner, the administrator does this.</div>
+    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 pri" onclick="go({pop:null})">Create the boundary</button></div></div>`;
 }
 
 function render() {
@@ -2221,8 +2199,8 @@ function render() {
   else {
     let sb = "", main = "";
     if (S.screen === "ent") {
-      sb = sbEnterprise();
-      const v = S.view === "map" ? viewMap(null) : S.view === "c1" ? viewC1Enterprise() : S.view === "initiatives" ? viewInitiatives(null) : viewSystems();
+      sb = sbBoundary();
+      const v = S.view === "map" ? viewMap(null) : S.view === "c1" ? viewC1Boundary() : S.view === "initiatives" ? viewInitiatives(null) : viewSystems();
       main = `<div class="content">${canvas(v)}${S.ead === S.ent ? entAccessDrawer() : S.cedit && !S.story ? contDrawer() : drawer()}</div>`;
     } else if (S.screen === "prod") {
       sb = sbProduct();
@@ -2250,24 +2228,24 @@ function render() {
 /* ======================= navigator and notes ======================= */
 const SCREENS = [
   ["Sign in", [["1.1", "Sign in", { screen: "signin" }], ["1.2", "Accept the invitation", { screen: "invite" }]]],
-  ["Organization", [["2", "Enterprise picker", { screen: "picker" }]]],
-  ["Enterprise", [["3.1", "Story map", { screen: "ent", view: "map", fIni: null, story: null }], ["3.2", "Landscape · C1", { screen: "ent", view: "c1", list: false, story: null }], ["3.3", "Initiatives", { screen: "ent", view: "initiatives", story: null }], ["3.4", "Software Systems as a list", { screen: "ent", view: "systems", story: null }], ["3.5", "Map filtered by initiative", { screen: "ent", view: "map", fIni: "n1", story: null }], ["3.6", "Landscape: a group expanded", { screen: "ent", view: "c1", c1group: "a4" }], ["3.7", "All products as a list", { screen: "ent", view: "systems", sysKind: "prod" }], ["3.8", "Stories as a table", { screen: "ent", view: "map", mapMode: "table" }], ["3.9", "Initiatives as a board", { screen: "ent", view: "initiatives", iniMode: "board" }]]],
+  ["Organization", [["2", "Boundary picker", { screen: "picker" }]]],
+  ["Boundary", [["3.1", "Story map", { screen: "ent", view: "map", fIni: null, story: null }], ["3.2", "Landscape · C1", { screen: "ent", view: "c1", list: false, story: null }], ["3.3", "Initiatives", { screen: "ent", view: "initiatives", story: null }], ["3.4", "Software Systems as a list", { screen: "ent", view: "systems", story: null }], ["3.5", "Map filtered by initiative", { screen: "ent", view: "map", fIni: "n1", story: null }], ["3.6", "Landscape: a group expanded", { screen: "ent", view: "c1", c1group: "a4" }], ["3.7", "All products as a list", { screen: "ent", view: "systems", sysKind: "prod" }], ["3.8", "Stories as a table", { screen: "ent", view: "map", mapMode: "table" }], ["3.9", "Initiatives as a board", { screen: "ent", view: "initiatives", iniMode: "board" }]]],
   ["Digital product", [["4.1", "Product map", { screen: "prod", prod: "p1", view: "map", story: null }], ["4.2", "A story and its plan", { screen: "prod", prod: "p1", view: "map", story: "s15" }], ["4.3", "Context · C1", { screen: "prod", prod: "p1", view: "c1", list: false, story: null }], ["4.4", "Containers · C2", { screen: "prod", prod: "p1", view: "c2", story: null }], ["4.5", "Containers as a list", { screen: "prod", prod: "p1", view: "c2", c2tab: "list", story: null }], ["4.7", "Interfaces as a table", { screen: "prod", prod: "p1", view: "c2", c2tab: "itf", story: null }], ["4.6", "The product’s initiatives", { screen: "prod", prod: "p1", view: "initiatives", story: null }]]],
   ["Container", [["5", "Container graph · C3", { screen: "cont", prod: "p1", cont: "c2", story: null }]]],
   ["Comparison", [["9.1", "A and B on the track", { screen: "ent", view: "map", pop: "snap", snapMode: "range", story: null }], ["9.2", "Map: what changed", { screen: "ent", view: "map", cmp: "28 Oct|now", story: null }], ["9.3", "Before → after", { screen: "ent", view: "map", cmp: "28 Oct|now", story: "s12" }], ["9.4", "C2: interfaces A → B", { screen: "prod", prod: "p1", view: "c2", cmp: "28 Oct|now" }], ["9.5", "Software System A → B", { screen: "ent", view: "systems", cmp: "28 Oct|now", story: null }], ["9.6", "Container: two times", { screen: "cont", prod: "p1", cont: "c2", cmp: "28 Oct|now" }], ["9.7", "Nothing changed", { screen: "prod", prod: "p3", view: "map", cmp: "28 Oct|now", story: null }]]],
   ["Editing", [["8.1", "Map: editing in place", { screen: "prod", prod: "p1", view: "map", newIn: "g9|r2", story: null }], ["8.2", "Moving a story", { screen: "prod", prod: "p1", view: "map", dnd: "s11>g8|r1", story: null }], ["8.3", "Story: editing in place", { screen: "prod", prod: "p1", view: "map", story: "s12" }], ["8.4", "Mob elaboration with the model", { screen: "ent", view: "map", story: "s13", room: true, mob: true }], ["8.5", "Shared editing on the map", { screen: "prod", prod: "p1", view: "map", room: true, coedit: true, story: null }], ["8.6", "New container", { screen: "prod", prod: "p1", view: "c2", c2tab: "list", pop: "newcont" }], ["8.7", "New Software System", { screen: "ent", view: "systems", pop: "newsys" }], ["8.8", "External container: interfaces by hand", { screen: "prod", prod: "p1", view: "c2", cedit: "xc1" }], ["8.9", "Our container: cannot be deleted", { screen: "prod", prod: "p1", view: "c2", c2tab: "list", cedit: "c2" }]]],
-  ["Administration", [["7.1", "Users", { screen: "admin", adm: "users" }], ["7.2", "Invite", { screen: "admin", adm: "users", pop: "invite" }], ["7.3", "User card", { screen: "admin", adm: "users", usr: "vs" }], ["7.4", "Remove for good", { screen: "admin", adm: "users", usr: "vs", pop: "rm" }], ["7.5", "Access matrix", { screen: "admin", adm: "users", umode: "matrix" }], ["7.6", "The organization’s enterprises", { screen: "admin", adm: "ents" }], ["7.7", "Closed without access", { screen: "admin", adm: "ents", ead: "e4" }], ["7.8", "New enterprise", { screen: "admin", adm: "ents", pop: "newent" }], ["7.9", "Sign-in and SSO", { screen: "admin", adm: "sso" }], ["7.10", "Access from inside the enterprise", { screen: "ent", view: "map", ead: "e1", story: null }]]],
-  ["Across layers", [["6.1", "Neighbours in the breadcrumbs", { screen: "prod", prod: "p1", view: "map", pop: "sw-prod", story: null }], ["6.2", "⌘K search", { screen: "prod", prod: "p1", view: "map", pop: "cmdk", story: null }], ["6.3", "History track · enterprise", { screen: "ent", view: "map", pop: "snap", story: null }], ["6.7", "Track · product, hourly precision", { screen: "prod", prod: "p1", view: "c2", pop: "snap", zoom: "hour" }], ["6.8", "Container graph versions", { screen: "cont", prod: "p1", cont: "c2", pop: "codever" }], ["6.10", "Comparing graph versions", { screen: "cont", prod: "p1", cont: "c2", pop: "codever", codeMode: "range" }], ["6.11", "Container at a past snapshot", { screen: "cont", prod: "p1", cont: "c2", snap: "h3" }], ["6.4", "Viewing a past snapshot", { screen: "ent", view: "c1", snap: "h3", pop: null, story: null }], ["6.5", "Room: who is where", { screen: "prod", prod: "p1", view: "map", room: true, pop: "room-ie" }], ["6.6", "Following a participant", { screen: "prod", prod: "p2", view: "c2", room: true, follow: "ie" }], ["6.9", "A room at the organization level", { screen: "picker", room: true }]]],
+  ["Administration", [["7.1", "Users", { screen: "admin", adm: "users" }], ["7.2", "Invite", { screen: "admin", adm: "users", pop: "invite" }], ["7.3", "User card", { screen: "admin", adm: "users", usr: "vs" }], ["7.4", "Remove for good", { screen: "admin", adm: "users", usr: "vs", pop: "rm" }], ["7.5", "Access matrix", { screen: "admin", adm: "users", umode: "matrix" }], ["7.6", "The organization’s boundaries", { screen: "admin", adm: "ents" }], ["7.7", "Closed without access", { screen: "admin", adm: "ents", ead: "e4" }], ["7.8", "New boundary", { screen: "admin", adm: "ents", pop: "newent" }], ["7.10", "Access from inside the boundary", { screen: "ent", view: "map", ead: "e1", story: null }]]],
+  ["Across layers", [["6.1", "Neighbours in the breadcrumbs", { screen: "prod", prod: "p1", view: "map", pop: "sw-prod", story: null }], ["6.2", "⌘K search", { screen: "prod", prod: "p1", view: "map", pop: "cmdk", story: null }], ["6.3", "History track · boundary", { screen: "ent", view: "map", pop: "snap", story: null }], ["6.7", "Track · product, hourly precision", { screen: "prod", prod: "p1", view: "c2", pop: "snap", zoom: "hour" }], ["6.8", "Container graph versions", { screen: "cont", prod: "p1", cont: "c2", pop: "codever" }], ["6.10", "Comparing graph versions", { screen: "cont", prod: "p1", cont: "c2", pop: "codever", codeMode: "range" }], ["6.11", "Container at a past snapshot", { screen: "cont", prod: "p1", cont: "c2", snap: "h3" }], ["6.4", "Viewing a past snapshot", { screen: "ent", view: "c1", snap: "h3", pop: null, story: null }], ["6.5", "Room: who is where", { screen: "prod", prod: "p1", view: "map", room: true, pop: "room-ie" }], ["6.6", "Following a participant", { screen: "prod", prod: "p2", view: "c2", room: true, follow: "ie" }], ["6.9", "A room at the organization level", { screen: "picker", room: true }]]],
 ];
 const PATHS = [
   ["Every day: story → container", "Work inside a product and a dive into a step’s graph", [["Product map", "4.1"], ["Story", "4.2"], ["Step’s graph", "5"], ["Back to the map", "4.2"]]],
   ["Every day: a neighbour on the layer", "Switch without going up", [["FSM", "4.1"], ["Neighbours ▾", "6.1"], ["⌘K search", "6.2"]]],
-  ["Once a week: the whole enterprise", "Planning by release slice and the landscape", [["Map", "3.1"], ["Initiatives", "3.3"], ["By initiative", "3.5"], ["C1", "3.2"]]],
+  ["Once a week: the whole boundary", "Planning by release slice and the landscape", [["Map", "3.1"], ["Initiatives", "3.3"], ["By initiative", "3.5"], ["C1", "3.2"]]],
   ["Together: a room", "Show colleagues a path through the layers", [["Who is where", "6.5"], ["Follow", "6.6"]]],
   ["Rarely: sign-in and picking", "Straight to where you stopped", [["Sign in", "1.1"], ["Picker", "2"]]],
   ["Once a week: what changed", "A and B across layers", [["Track", "9.1"], ["Map", "9.2"], ["C2", "9.4"], ["Graph", "9.6"]]],
   ["Together: mob elaboration", "Story → steps with the model", [["Map", "3.1"], ["Elaboration", "8.4"], ["Step in the graph", "5"]]],
-  ["Rarely: administration", "People, access and sign-in", [["Users", "7.1"], ["Invite", "7.2"], ["Enterprise", "7.6"], ["Without access", "7.7"]]],
+  ["Rarely: administration", "People, access and sign-in", [["Users", "7.1"], ["Invite", "7.2"], ["Boundary", "7.6"], ["Without access", "7.7"]]],
 ];
 function stateOf(num) { for (const [, items] of SCREENS) for (const [n, , st] of items) if (n === num) return st; }
 function curNum() {
@@ -2303,28 +2281,27 @@ const NOTES = {
   "8.4": ["Mob elaboration with the model", ["The team in a room is working out the story “A technician writes off materials”, which has no Software System yet. At the top it shows who is in the card now; Ilya is editing the text.", "The model read the story and the containers’ graphs. It proposes a Software System and four steps, and every proposal says what it is based on.", "Accept, Edit, Reject. Only what is accepted enters the catalog, and the author of the change is whoever accepted it. Rejecting is not a catalog change: proposals are not stored in the catalog.", "Accept the Software System and at least one step — “Ready” lights up."]],
   "8.5": ["Shared editing on the map", ["Editing is live: in a room everyone sees the others’ edits at once. The card Ilya is editing now is outlined in his colour. Oleg is writing a new card right now in “Technician’s visit × Release 2”.", "There are no locks: who is editing what is visible, but nothing is forbidden."]],
   "8.6": ["New container", ["The form asks only for what the code does not have: the name, kind, a link to the graph, products and owner.", "Through the link Maxitor finds the graph and shows what it will take from it: the interfaces and what the container uses. This is how it will work once the graph learns to print adapters and resource targets (<code>catalog-filling</code>).", "“Create the container” adds “Materials warehouse” to FSM and opens its card. Nothing refers to it, so it can be deleted."]],
-  "8.7": ["New Software System", ["Software Systems are created by hand: they are not in the code. Links to other Software Systems are not entered — they are derived from the containers.", "For a digital product its containers are chosen from all the enterprise’s containers. For an external system — a web link, and its only container is created together with it. The switch at the top changes the kind."]],
+  "8.7": ["New Software System", ["Software Systems are created by hand: they are not in the code. Links to other Software Systems are not entered — they are derived from the containers.", "For a digital product its containers are chosen from all the boundary’s containers. For an external system — a web link, and its only container is created together with it. The switch at the top changes the kind."]],
   "8.8": ["External container: interfaces by hand", ["The card opens with a click on an external container on the C2 diagram. We have no source code, so its interfaces and what it uses are entered by hand.", "Who uses its interfaces is derived from the code of our containers. So an interface that is used cannot be removed.", "An external system’s container is never deleted on its own: only together with the system."]],
   "8.9": ["Our container: cannot be deleted", ["The card opens with the “card” link in the container list. The interfaces and links of our container are read only: they come from the graph. Products and the owner are set by hand.", "Only what nothing refers to can be deleted. Plan steps refer to the FSM service, and other containers use its interfaces, so instead of a button it says what is in the way and where."]],
-  "7.1": ["Administration · users", ["Only organization administrators see administration (<code>UserCoreEntity.is_admin</code>). It is entered from the enterprise picker and from the left panel of any enterprise.", "The table stands on the canvas, like every view. The filter on the left is the same as everywhere: states by <code>UserLifecycle</code>, role and how the user appeared.", "Removed users are hidden by the filter by default but do not vanish: removal is final, and what the person owned stays theirs.", "The left panel has short lists of signals: who has not accepted an invitation yet and who is blocked."]],
-  "7.2": ["Invite a user", ["An invitation creates a user in the “Invitation sent” state. The name is optional: the person can correct it when they accept the invitation (screen 1.2).", "Open enterprises are available at once. Access to a closed one is granted by its owner, and by the administrator only if there is no owner or the owner is blocked. So “Pier” cannot be chosen here, while “Transit” can.", "With an email of the SSO domain no invitation is needed: the person signs in alone and becomes active at once.", "“Send the invitation” adds Kirill Belov to the list and opens his card."]],
-  "7.3": ["User card", ["The buttons are the moves of <code>UserLifecycle</code> from the current state. Blocked Vera can be unblocked or removed.", "The “Administrator” mark is a switch. The last active administrator cannot be blocked, removed or lose the mark: the buttons go dim, and it says why. Remove the mark from Ilya — Anna’s buttons go dim.", "Access to closed enterprises. For “Pier” the switch is disabled: the owner, Maria Lebedeva, grants access. For “Transit” the owner is blocked, so the administrator grants access.", "The “Owns” block: what the person owns stays theirs after a block too. Wherever they are the owner, it is visible that they are blocked."]],
-  "7.4": ["Remove for good", ["Removal is a final state with no move back, so it is confirmed separately.", "The window lists what the person owns: it stays theirs until the owner is changed. The administrator changes an enterprise’s owner only when there is no active owner, so before an active user is removed their enterprise stays theirs."]],
-  "7.5": ["Access matrix", ["Another point of view on the same data: people in rows, enterprises in columns. An open enterprise shows “all”. A closed one shows who was granted access explicitly and who the owner is.", "This is a viewing-mode tab, not a filter: the filter on the left is the same as for the list."]],
-  "7.6": ["The organization’s enterprises", ["The administrator sees all the organization’s enterprises, including closed ones without their access. Of such an enterprise only the name, the owner and the access list are visible: the description and the number of products are hidden.", "The “Manages access” column shows the rule: the owner, or, if there is no owner or the owner is blocked, the administrator.", "A new enterprise is created by the administrator."]],
-  "7.7": ["A closed enterprise without access", ["“Transit” is closed, Anna has no access, and the owner, Vera Sokolova, is blocked. So the administrator manages access.", "“Grant access to myself” adds the administrator to <code>granted_users</code>. It is an ordinary catalog change: it stays in the history with its author and time and is visible on the track.", "The owner is blocked, so next to them there is “appoint another”. Were the owner active, there would be neither this link nor the “Grant access to myself” button: the owner grants access, and the administrator cannot replace an active owner."]],
-  "7.8": ["New enterprise", ["The name names the enterprise’s end-to-end process. The story map is created together with it: an enterprise has exactly one.", "The owner is optional. While there is none, the administrator manages access."]],
-  "7.9": ["Sign-in and SSO", ["A connected SSO sets an email domain (<code>OrganizationCoreEntity.sso_domain</code>). Whoever first signs in through it appears straight in the “Active” state — the second initial state of <code>UserLifecycle</code>.", "Sign-in by invitation always works. Which SSO providers to support and how many domains an organization may have is not decided yet."]],
-  "7.10": ["Access from inside the enterprise", ["The owner manages access where they work. The line under the enterprise’s name in the left panel opens the same card over the map.", "Anna is the owner of “Northern Quarter”, so she can close it and grant access. Administration is not needed for this."]],
-  "1.1": ["Sign in", ["Maxitor stops being open: the sign-in comes first. A user signs in with the email the invitation came to (<code>UserCoreEntity.email</code>), or through the organization’s SSO.", "Only a user in the “Active” state can sign in. Blocked and removed users cannot, and an invited one first accepts the invitation.", "After signing in, Maxitor opens where the user stopped. The enterprise picker is shown only on the first sign-in."]],
+  "7.1": ["Administration · users", ["Only organization administrators see administration (<code>UserCoreEntity.is_admin</code>). It is entered from the boundary picker and from the left panel of any boundary.", "The table stands on the canvas, like every view. The filter on the left is the same as everywhere: states by <code>UserLifecycle</code>, role and how the user appeared.", "Removed users are hidden by the filter by default but do not vanish: removal is final, and what the person owned stays theirs.", "The left panel has short lists of signals: who has not accepted an invitation yet and who is blocked."]],
+  "7.2": ["Invite a user", ["An invitation creates a user in the “Invitation sent” state. The name is optional: the person can correct it when they accept the invitation (screen 1.2).", "Open boundaries are available at once. Access to a closed one is granted by its owner, and by the administrator only if there is no owner or the owner is blocked. So “Pier” cannot be chosen here, while “Transit” can.", "An invited person signs in by email and password or a provider once the invitation is accepted.", "“Send the invitation” adds Kirill Belov to the list and opens his card."]],
+  "7.3": ["User card", ["The buttons are the moves of <code>UserLifecycle</code> from the current state. Blocked Vera can be unblocked or removed.", "The “Administrator” mark is a switch. The last active administrator cannot be blocked, removed or lose the mark: the buttons go dim, and it says why. Remove the mark from Ilya — Anna’s buttons go dim.", "Access to closed boundaries. For “Pier” the switch is disabled: the owner, Maria Lebedeva, grants access. For “Transit” the owner is blocked, so the administrator grants access.", "The “Owns” block: what the person owns stays theirs after a block too. Wherever they are the owner, it is visible that they are blocked."]],
+  "7.4": ["Remove for good", ["Removal is a final state with no move back, so it is confirmed separately.", "The window lists what the person owns: it stays theirs until the owner is changed. The administrator changes a boundary’s owner only when there is no active owner, so before an active user is removed their boundary stays theirs."]],
+  "7.5": ["Access matrix", ["Another point of view on the same data: people in rows, boundaries in columns. An open boundary shows “all”. A closed one shows who was granted access explicitly and who the owner is.", "This is a viewing-mode tab, not a filter: the filter on the left is the same as for the list."]],
+  "7.6": ["The organization’s boundaries", ["The administrator sees all the organization’s boundaries, including closed ones without their access. Of such a boundary only the name, the owner and the access list are visible: the description and the number of products are hidden.", "The “Manages access” column shows the rule: the owner, or, if there is no owner or the owner is blocked, the administrator.", "A new boundary is created by the administrator."]],
+  "7.7": ["A closed boundary without access", ["“Transit” is closed, Anna has no access, and the owner, Vera Sokolova, is blocked. So the administrator manages access.", "“Grant access to myself” adds the administrator to <code>granted_users</code>. It is an ordinary catalog change: it stays in the history with its author and time and is visible on the track.", "The owner is blocked, so next to them there is “appoint another”. Were the owner active, there would be neither this link nor the “Grant access to myself” button: the owner grants access, and the administrator cannot replace an active owner."]],
+  "7.8": ["New boundary", ["The name names the boundary’s end-to-end process. The story map is created together with it: a boundary has exactly one.", "The owner is optional. While there is none, the administrator manages access."]],
+  "7.10": ["Access from inside the boundary", ["The owner manages access where they work. The line under the boundary’s name in the left panel opens the same card over the map.", "Anna is the owner of “Northern Quarter”, so she can close it and grant access. Administration is not needed for this."]],
+  "1.1": ["Sign in", ["Maxitor stops being open: the sign-in comes first. A user signs in with the email the invitation came to (<code>UserCoreEntity.email</code>), by password or by a provider (spec 072).", "Only a user in the “Active” state can sign in. Blocked and removed users cannot, and an invited one first accepts the invitation.", "After signing in, Maxitor opens where the user stopped. The boundary picker is shown only on the first sign-in."]],
   "1.2": ["Accept the invitation", ["The link from the invitation opens this screen. Accepting moves the user from “Invitation sent” to “Active” by <code>UserLifecycle</code>."]],
-  "2": ["Enterprise picker", ["The organization’s enterprise cards. A closed one is marked with a lock. Closed enterprises the user has no access to are not shown at all: even their names are already information.", "At the top — “Continue where you stopped”: the last product with a story and the last container graph. This is the most frequent path, and it needs no choice.", "The same list opens with the arrow next to the enterprise in the breadcrumbs, without coming back to this screen.", "An administrator sees the way into organization administration under the cards (7.1); other users do not have it."]],
-  "3.1": ["The enterprise’s story map", ["The full user story map: a business area’s card (yellow) stands over its first stage, as on a paper map; stages (blue) go from left to right with the stories under them, and release slices from top to bottom.", "Every story shows its product, initiative (a flag), lifecycle state and the progress of its plan steps.", "An enterprise may have hundreds of products, so the left panel holds only <b>mine</b> (where I am the owner), <b>pinned</b> and <b>recent</b>, and the “All products · 176” row leads to a list with search and filters.", "A click on a story opens its panel on the right without leaving the map."]],
+  "2": ["Boundary picker", ["The organization’s boundary cards. A closed one is marked with a lock. Closed boundaries the user has no access to are not shown at all: even their names are already information.", "At the top — “Continue where you stopped”: the last product with a story and the last container graph. This is the most frequent path, and it needs no choice.", "The same list opens with the arrow next to the boundary in the breadcrumbs, without coming back to this screen.", "An administrator sees the way into organization administration under the cards (7.1); other users do not have it."]],
+  "3.1": ["The boundary’s story map", ["The full user story map: a business area’s card (yellow) stands over its first stage, as on a paper map; stages (blue) go from left to right with the stories under them, and release slices from top to bottom.", "Every story shows its product, initiative (a flag), lifecycle state and the progress of its plan steps.", "A boundary may have hundreds of products, so the left panel holds only <b>mine</b> (where I am the owner), <b>pinned</b> and <b>recent</b>, and the “All products · 176” row leads to a list with search and filters.", "A click on a story opens its panel on the right without leaving the map."]],
   "3.2": ["Landscape · C1 System Landscape", ["With hundreds of Software Systems a flat diagram cannot be read, so the landscape by default is <b>groups by business area</b> in the same order as the map’s backbone. A group is not stored: it is derived from the Software System’s stories.", "A product with stories in two areas stands in both — the fair price for nobody keeping the groups by hand. Software Systems without stories are gathered in “Off the map”, external ones in a separate group on the boundary.", "The thickness and the number on a link between groups show how many interfaces there are between their Software Systems. The links of a particular Software System are visible only once it is selected.", "A click on a group expands it (3.6). “List” shows all derived links as a table."]],
-  "3.3": ["Initiatives", ["All initiatives of the enterprise: kind (PR/FAQ for now), state, author, how many stories are done. Products are derived from the initiative’s stories.", "The tabs at the top are the viewing mode: “Table” or “Board” (3.9). States, authors and products are the filter, on the left.", "A click opens the map with the initiative’s stories highlighted (3.5)."]],
-  "3.4": ["Software Systems as a list", ["All Software Systems of the enterprise as a table — on the canvas, like a graph: zoom with the wheel, move by dragging, ⊡ shows everything.", "The tabs at the top are views with counts: all, digital products, external systems. The filter on the left: business area (derived from stories), owner, “mine only”.", "With hundreds of them this is the main way to find a Software System: search, sorting, pages, saved views."]],
+  "3.3": ["Initiatives", ["All initiatives of the boundary: kind (PR/FAQ for now), state, author, how many stories are done. Products are derived from the initiative’s stories.", "The tabs at the top are the viewing mode: “Table” or “Board” (3.9). States, authors and products are the filter, on the left.", "A click opens the map with the initiative’s stories highlighted (3.5)."]],
+  "3.4": ["Software Systems as a list", ["All Software Systems of the boundary as a table — on the canvas, like a graph: zoom with the wheel, move by dragging, ⊡ shows everything.", "The tabs at the top are views with counts: all, digital products, external systems. The filter on the left: business area (derived from stories), owner, “mine only”.", "With hundreds of them this is the main way to find a Software System: search, sorting, pages, saved views."]],
   "3.5": ["Map with an initiative filter", ["The initiative’s stories stay bright, the others fade but do not disappear: it is visible where on the end-to-end process the initiative works.", "The filter is removed with the cross in the chip."]],
-  "4.1": ["Product map", ["The same enterprise map, but with only this product’s stories. The backbone stays whole, so it is visible which part of the process the product falls into.", "The cells say how many stories other products have there: context without noise.", "On the left — the product’s containers with live, git and “shared” marks. A dive into a container’s graph is one click."]],
+  "4.1": ["Product map", ["The same boundary map, but with only this product’s stories. The backbone stays whole, so it is visible which part of the process the product falls into.", "The cells say how many stories other products have there: context without noise.", "On the left — the product’s containers with live, git and “shared” marks. A dive into a container’s graph is one click."]],
   "4.2": ["A story and its plan", ["The panel on the right: the story’s lifecycle, Software System, initiative, release slice, owner.", "The plan — steps, each with its container and status. A click on a step’s container dives into its graph: the most frequent dive in all of Maxitor.", "A step in another product’s container is marked: here the “Billing service” belongs to Billing. So the story’s cross-product impact is visible without a separate diagram."]],
   "4.3": ["The product’s context · C1 System Context", ["The product in the centre and all the Software Systems it is linked to — other products and external systems. The links are again derived from containers.", "A click on the centre goes down to C2, a click on a neighbouring product goes to its context: a move sideways."]],
   "4.4": ["The product’s containers · C2", ["Interfaces are drawn explicitly, as lollipops on the container’s left edge: a row is a published interface with its protocol. A filled circle means it is used (the number of consumers on the right), a hollow dashed one — <b>unused</b>.", "A link goes from the consumer straight into the lollipop, so the line needs no label. The flow goes from left to right: clients → services → data → neighbouring Software Systems. Orange lines are calls into other products, light ones are calls to us from outside.", "The filter on the left: used and unused, protocols, whose interface (inside the product, of other products, of external systems), expand or collapse all neighbours.", "Neighbouring Software Systems are collapsed into one node with those of their interfaces that concern the product; a click expands it to the containers."]],
@@ -2332,16 +2309,16 @@ const NOTES = {
   "4.6": ["The product’s initiatives", ["The same list of initiatives, only those that have stories of this product. The same view looks the same on different layers."]],
   "5": ["Container graph · C3", ["This is today’s Maxitor with its left panel: Applications, Domains, ERD, lifecycles. The only new thing in it is the shared header.", "Graph versions — <b>today’s mechanism</b>, unchanged: a button in the workspace row, a track of commits from git and Live, one version or a comparison of A and B (6.8, 6.10).", "The time button in the header shows catalog time here too: changes of the container’s record — owner, interfaces, products. It is a different time, so it is in a different place.", "The “C2: publishes · uses” chip goes back to the diagram of this container’s links."]],
   "6.1": ["Neighbours in the breadcrumbs", ["Every breadcrumb is a switcher: a click on the name goes up to the layer, the arrow opens the neighbours on the same layer.", "With hundreds of products the list starts with search, then mine, pinned and recent, and only then the whole list — the first rows and an “All 176 as a list” link.", "When switching products the open view is kept: looking at FSM’s C2 — you will see Billing’s C2."]],
-  "6.2": ["⌘K search", ["Searches the whole enterprise: stories, containers, interfaces, initiatives, products. A choice jumps straight to the object, skipping the layers in between."]],
-  "6.3": ["History track · enterprise", ["Not a list of PRs but <b>a chart of the volume of changes</b>: a bar is how many changes are in the interval. The precision stretches: hour, day, week, month; smoothly with the wheel or a pinch.", "What counts as a change depends on the open page: on the enterprise map — the whole map, at C1 — Software Systems and interfaces, on a product — only its objects. So the track differs from page to page.", "A click on a bar shows the changes of that interval; a click on a change opens the catalog at that moment (6.4)."]],
+  "6.2": ["⌘K search", ["Searches the whole boundary: stories, containers, interfaces, initiatives, products. A choice jumps straight to the object, skipping the layers in between."]],
+  "6.3": ["History track · boundary", ["Not a list of PRs but <b>a chart of the volume of changes</b>: a bar is how many changes are in the interval. The precision stretches: hour, day, week, month; smoothly with the wheel or a pinch.", "What counts as a change depends on the open page: on the boundary map — the whole map, at C1 — Software Systems and interfaces, on a product — only its objects. So the track differs from page to page.", "A click on a bar shows the changes of that interval; a click on a change opens the catalog at that moment (6.4)."]],
   "6.4": ["Viewing a past moment", ["Everything is read only: the time button and the strip under the header are yellow, and “Back to now” is always in sight.", "Every change saves the state of the whole catalog, so the selected moment acts on all layers: you can go down from the map to C2 and see them at the same minute."]],
   "3.6": ["Landscape: a group expanded", ["An expanded business area shows its Software Systems as tiles. The “also in: …” mark means the product is in other areas too.", "There are no links here: with dozens of Software Systems they would turn into a mess again. Choosing a Software System opens its context — only its own links (1-hop), like the 1-hop button in today’s Maxitor.", "The other Software Systems of the area — through the link to the list."]],
   "3.7": ["All products as a list", ["The “All products · 176” row from the left panel and from the breadcrumb switcher leads here: a table with the kind filter already on."]],
-  "6.5": ["Room: who is where", ["“Open a room” is in the header on every level — from the enterprise picker to a container’s graph. A room belongs to the organization: only its member can enter, and the name comes from the account.", "The participants’ circles are in the header. A participant’s card says which level and view they are on and offers “Go to” and “Follow”.", "Pointers, shared filters and “never in a circle” stay as in today’s rooms (spec 028)."]],
+  "6.5": ["Room: who is where", ["“Open a room” is in the header on every level — from the boundary picker to a container’s graph. A room belongs to the organization: only its member can enter, and the name comes from the account.", "The participants’ circles are in the header. A participant’s card says which level and view they are on and offers “Go to” and “Follow”.", "Pointers, shared filters and “never in a circle” stay as in today’s rooms (spec 028)."]],
   "6.6": ["Following a participant", ["The screen goes after the leader across layers: from their map to C2 and further into a container’s graph. The frame and the strip under the header are in the leader’s colour, and everyone keeps their own zoom.", "Stop with the button in the strip or with Esc. Your own move through the breadcrumbs also stops following."]],
   "6.7": ["Track · product, hourly precision", ["The same track on the product’s containers page: fewer changes, and only those of FSM’s containers and their interfaces. Hourly precision, the last two days."]],
   "6.8": ["Container graph versions", ["Today’s Maxitor track (specs 030, 051): the commits of the graph history on one axis, a big dot — the graph changed, a small one — only the version was raised, version numbers under the track, Live after the dashes.", "This is the time of the <b>code</b>. Catalog time stays in the header: they have different sources and answer different questions, so they are in two places, not one. Decided: the container layer keeps both."]],
-  "6.9": ["A room at the organization level", ["A room works here too: you can choose an enterprise together and go down into it together.", "If the leader goes into a closed enterprise you have no access to, following stops with an explanation — a room does not open what is not yours."]],
+  "6.9": ["A room at the organization level", ["A room works here too: you can choose a boundary together and go down into it together.", "If the leader goes into a closed boundary you have no access to, following stops with an explanation — a room does not open what is not yours."]],
   "4.7": ["Interfaces as a table", ["The same interfaces as the lollipops on the diagram, but as a table: name, protocol, publisher, whose it is, who uses it. Unused ones are marked at once.", "The filter on the left is shared with the diagram: switch a protocol off on the diagram — it is off here too.", "The table is on the canvas too: zoom with the wheel, move by dragging, ⊡ — show everything."]],
   "3.8": ["Stories as a table", ["A second point of view on the same map: stories as rows with business area, stage, release slice, state, product, initiative, owner and steps.", "The tabs at the top are the viewing mode. The filter on the left is the same as on the map and works in both modes."]],
   "3.9": ["Initiatives as a board", ["Initiatives in columns by lifecycle state: draft, approved, done, rejected. A card holds the author, the progress of stories, the products.", "The table and the board are two viewing modes of the same initiatives; the filter on the left is shared."]],

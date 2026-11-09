@@ -1,74 +1,80 @@
-<!-- translated-from: data-model.ru_draft.md @ 2026-11-04T19:50:28Z (filesystem mtime; draft is gitignored, no git history) · sha256:224620da47bf -->
+<!-- translated-from: data-model.ru_draft.md @ 2026-11-08T19:33:25Z (filesystem mtime; draft is gitignored, no git history) · sha256:d039e3f48ad4 -->
 # Maxitor concept: data model
 
-The model is written as code, not as a picture. It is AOA entities in [model/enterprise_model.py](model/enterprise_model.py), and the code will later be built around them. All of this is design, so the whole model lives in the specification folder, not in the packages' code. The model's graph is built by the same standard mechanism as the graphs of the demo and Maxitor: the script [model/build_graph.py](model/build_graph.py) writes it to [model/graph.json](model/graph.json), and Maxitor shows it. The `model` folder is a component with its own [version.toml](model/version.toml), so the graph has a version and the graph history reads it.
+The model is written as code, not as a picture. It is AOA entities in [model/boundary_model.py](model/boundary_model.py), and the code will later be built around them. All of this is design, so the whole model lives in the specification folder, not in the packages' code. The model's graph is built by the same standard mechanism as the graphs of the demo and Maxitor: the script [model/build_graph.py](model/build_graph.py) writes it to [model/graph.json](model/graph.json), and Maxitor shows it. The `model` folder is a component with its own [version.toml](model/version.toml), so the graph has a version and the graph history reads it.
 
 Every term from the [dictionary](terms.md) that names a thing Maxitor stores becomes an entity. A term that is a rule becomes a constraint next to the entities it concerns.
 
-The words "belongs to" and "owner" mean different things here. "Belongs to" is composition: a part lives inside a whole, for example a container inside an enterprise. An **owner** is a user who is accountable for something.
+The words "belongs to" and "owner" mean different things here. "Belongs to" is composition: a part lives inside a whole, for example a container inside a boundary. An **owner** is a user who is accountable for something.
 
 ---
 
 ## Domains
 
-The model is split into three AOA domains. An AOA domain is a part of Maxitor itself, not a **business area** on the enterprise's map.
+The model is split into four AOA domains, and every domain is a plugin. An AOA domain is a part of Maxitor itself, not a **business area** on the boundary's map.
 
-| Domain | What it holds | Entities |
-|---|---|---|
-| `organization` | Who works in Maxitor and what they may work with | `OrganizationCoreEntity`, `UserCoreEntity`, `EnterpriseCoreEntity` |
-| `story_map` | The enterprise's story map and the plans of its stories | `StoryMapCoreEntity`, `ReleaseSliceCoreEntity`, `InitiativeCoreEntity`, `InitiativeKindEnumEntity`, `BusinessAreaCoreEntity`, `StageCoreEntity`, `UserStoryCoreEntity`, `PlanStepCoreEntity` |
-| `landscape` | The enterprise's C4 landscape | `SoftwareSystemCoreEntity`, `SoftwareSystemKindEnumEntity`, `DigitalProductSpecEntity`, `ExternalSystemSpecEntity`, `ContainerCoreEntity`, `InterfaceCoreEntity` |
+| Domain | What it holds | Depends on | Entities |
+|---|---|---|---|
+| `organization` | The core: who works in Maxitor and what they may work with | nothing | `OrganizationCoreEntity`, `UserCoreEntity`, `BoundaryCoreEntity` |
+| `backbone` | The boundary's backbone: business areas and their stages | `organization` | `BusinessAreaCoreEntity`, `StageCoreEntity` |
+| `landscape` | The boundary's C4 landscape | `organization`, `backbone` | `SoftwareSystemCoreEntity`, `SoftwareSystemKindEnumEntity`, `DigitalProductSpecEntity`, `ExternalSystemSpecEntity`, `ContainerCoreEntity`, `InterfaceCoreEntity` |
+| `story_map` | The boundary's story map and the plans of its stories | all three | `StoryMapCoreEntity`, `ReleaseSliceCoreEntity`, `InitiativeCoreEntity`, `InitiativeKindEnumEntity`, `UserStoryCoreEntity`, `PlanStepCoreEntity` |
 
-The enterprise lives in `organization`. It ties the account to the map and the landscape, and users' access is set on it. Links between domains are ordinary entity links: for example, the owner of a business area or of a container is a user from `organization`.
+Dependencies run one way only: a dependent plugin knows its masters, and a master knows nothing about the plugins that depend on it. In the model this is a rule about links: a link from an entity of a dependent plugin to an entity of a master is one-way (`AssociationOne` with `NoInverse()`), and the master has no field pointing back. Inside one plugin links are two-way as usual. So the boundary does not list its business areas, containers, Software Systems, initiatives or map; the user does not list what they own outside the core; a stage does not list its stories; a container does not list the steps done in it. What a master "has" in a dependent plugin is read from the dependent side.
+
+The boundary lives in `organization`: it is the frame every other plugin hangs its data on, and users' access is set on it. The backbone — business areas and their stages — belongs to the boundary directly: it is what defines the boundary's edge, and the map in `story_map` shows the backbone of its boundary rather than owning it.
+
+Every entity names the resource that stores it (`@entity(resource=...)`), and the resource names the domain. There are four storages, one per plugin, and all of them sit on one data source, `CatalogDataSource`: one PostgreSQL database for every plugin, a schema per plugin inside it. The model is a design, so the storages are stubs without methods for now.
 
 ## Entities and links
 
 ```mermaid
 erDiagram
     OrganizationCoreEntity ||--o{ UserCoreEntity : "users (composition)"
-    OrganizationCoreEntity ||--o{ EnterpriseCoreEntity : "enterprises (composition)"
-    UserCoreEntity }o--o{ EnterpriseCoreEntity : "granted_enterprises (association)"
-    UserCoreEntity |o--o{ EnterpriseCoreEntity : "owner"
-    EnterpriseCoreEntity ||--|| StoryMapCoreEntity : "story_map (composition)"
-    StoryMapCoreEntity ||--o{ BusinessAreaCoreEntity : "business_areas (composition)"
-    StoryMapCoreEntity ||--o{ ReleaseSliceCoreEntity : "release_slices (composition)"
-    ReleaseSliceCoreEntity |o--o{ UserStoryCoreEntity : "release_slice"
-    EnterpriseCoreEntity ||--o{ InitiativeCoreEntity : "initiatives (composition)"
-    InitiativeCoreEntity |o--o{ UserStoryCoreEntity : "initiative"
-    UserCoreEntity ||--o{ InitiativeCoreEntity : "author"
-    UserCoreEntity |o--o{ ReleaseSliceCoreEntity : "owner"
+    OrganizationCoreEntity ||--o{ BoundaryCoreEntity : "boundaries (composition)"
+    UserCoreEntity }o--o{ BoundaryCoreEntity : "granted_boundaries (association)"
+    UserCoreEntity |o--o{ BoundaryCoreEntity : "owner"
+    BusinessAreaCoreEntity }o--|| BoundaryCoreEntity : "boundary (one-way)"
     BusinessAreaCoreEntity ||--o{ StageCoreEntity : "stages (composition)"
-    StageCoreEntity ||--o{ UserStoryCoreEntity : "user_stories (aggregation)"
-    UserStoryCoreEntity ||--o{ PlanStepCoreEntity : "plan_steps (composition)"
-    SoftwareSystemCoreEntity |o--o{ UserStoryCoreEntity : "software_system"
-    ContainerCoreEntity ||--o{ PlanStepCoreEntity : "container"
-    EnterpriseCoreEntity ||--o{ SoftwareSystemCoreEntity : "software_systems (composition)"
-    EnterpriseCoreEntity ||--o{ ContainerCoreEntity : "containers (composition)"
+    BusinessAreaCoreEntity }o--o| UserCoreEntity : "owner (one-way)"
+    StageCoreEntity }o--o| UserCoreEntity : "owner (one-way)"
+    SoftwareSystemCoreEntity }o--|| BoundaryCoreEntity : "boundary (one-way)"
+    ContainerCoreEntity }o--|| BoundaryCoreEntity : "boundary (one-way)"
+    ContainerCoreEntity }o--|| BusinessAreaCoreEntity : "business_area (one-way)"
+    ContainerCoreEntity }o--o| UserCoreEntity : "owner (one-way)"
     SoftwareSystemCoreEntity ||--o| DigitalProductSpecEntity : "kind (specialization)"
     SoftwareSystemCoreEntity ||--o| ExternalSystemSpecEntity : "kind (specialization)"
     DigitalProductSpecEntity }o--o{ ContainerCoreEntity : "containers (association)"
+    DigitalProductSpecEntity }o--o| UserCoreEntity : "owner (one-way)"
     ExternalSystemSpecEntity ||--o| ContainerCoreEntity : "container (association)"
     ContainerCoreEntity ||--o{ InterfaceCoreEntity : "published_interfaces (composition)"
     ContainerCoreEntity }o--o{ InterfaceCoreEntity : "used_interfaces (association)"
-    UserCoreEntity |o--o{ BusinessAreaCoreEntity : "owner"
-    UserCoreEntity |o--o{ StageCoreEntity : "owner"
-    UserCoreEntity |o--o{ UserStoryCoreEntity : "owner"
-    UserCoreEntity |o--o{ DigitalProductSpecEntity : "owner"
-    UserCoreEntity |o--o{ ContainerCoreEntity : "owner"
+    StoryMapCoreEntity ||--|| BoundaryCoreEntity : "boundary (one-way)"
+    StoryMapCoreEntity ||--o{ ReleaseSliceCoreEntity : "release_slices (composition)"
+    ReleaseSliceCoreEntity |o--o{ UserStoryCoreEntity : "release_slice"
+    ReleaseSliceCoreEntity }o--o| UserCoreEntity : "owner (one-way)"
+    InitiativeCoreEntity }o--|| BoundaryCoreEntity : "boundary (one-way)"
+    InitiativeCoreEntity }o--|| UserCoreEntity : "author (one-way)"
+    InitiativeCoreEntity |o--o{ UserStoryCoreEntity : "initiative"
+    UserStoryCoreEntity }o--|| StageCoreEntity : "stage (one-way)"
+    UserStoryCoreEntity }o--o| UserCoreEntity : "owner (one-way)"
+    UserStoryCoreEntity }o--o| SoftwareSystemCoreEntity : "software_system (one-way)"
+    UserStoryCoreEntity ||--o{ PlanStepCoreEntity : "plan_steps (composition)"
+    PlanStepCoreEntity }o--|| ContainerCoreEntity : "container (one-way)"
 ```
 
 | Entity | Term | Fields | Kind |
 |---|---|---|---|
-| `OrganizationCoreEntity` | **Organization** | `id`, `name`, `sso_domain` | Core |
+| `OrganizationCoreEntity` | **Organization** | `id`, `name`, `code` | Core |
 | `UserCoreEntity` | **User** | `id`, `name`, `email`, `status`, `is_admin` | Core |
 | `UserStateEntity` + `UserLifecycle` | **User lifecycle** | four states and the moves between them | State |
-| `EnterpriseCoreEntity` | **Enterprise** | `id`, `name` (it also names the end-to-end process), `description`, `is_open`, `owner` | Core |
+| `BoundaryCoreEntity` | **Boundary** | `id`, `name` (it also names the end-to-end process), `description`, `is_open`, `owner` | Core |
 | `StoryMapCoreEntity` | **User story map** | `id` | Core |
 | `ReleaseSliceCoreEntity` | **Release slice** | `id`, `name`, `goal`, `position`, `target_date`, `owner` | Core |
 | `InitiativeCoreEntity` | **Initiative** | `id`, `name`, `kind`, `status`, `author` | Core |
 | `InitiativeStateEntity` + `InitiativeLifecycle` | **Initiative lifecycle** | four states and the moves between them | State |
 | `InitiativeKindEnumEntity` | initiative kinds | `pr_faq` (PR/FAQ) | Enumeration |
-| `BusinessAreaCoreEntity` | **Business area** | `id`, `name`, `position`, `owner` | Core |
+| `BusinessAreaCoreEntity` | **Business area** | `id`, `name`, `position`, `boundary`, `owner` | Core |
 | `StageCoreEntity` | **Stage** | `id`, `name`, `position`, `owner` | Core |
 | `UserStoryCoreEntity` | **User story** | `id`, `title`, `text`, `position`, `status`, `owner`, `software_system`, `release_slice`, `initiative` | Core |
 | `UserStoryStateEntity` + `UserStoryLifecycle` | **User story lifecycle** | six states and the moves between them | State |
@@ -78,12 +84,12 @@ erDiagram
 | `SoftwareSystemKindEnumEntity` | Software System kinds | `digital_product`, `external_system` | Enumeration |
 | `DigitalProductSpecEntity` | **Digital product** (specialization) | `id`, `owner` | Specialization |
 | `ExternalSystemSpecEntity` | **External system** (specialization) | `id` | Specialization |
-| `ContainerCoreEntity` | **Container** (ours or external) | `id`, `name`, `description`, `kind`, `live_graph_url`, `graph_history_url`, `service_url`, `owner` | Core |
+| `ContainerCoreEntity` | **Container** (ours or external) | `id`, `name`, `description`, `kind`, `live_graph_url`, `graph_history_url`, `service_url`, `business_area`, `owner` | Core |
 | `InterfaceCoreEntity` | **Interface** | `id`, `name`, `description`, `protocol` | Core |
 
 The table lists the fields that set an entity apart. Besides them, every entity has two shared fields; see "Creation and change dates".
 
-Every link has an inverse side (`Inverse`): an enterprise sees its map, and the map sees its enterprise. A user sees everything they own — `owned_enterprises`, `owned_release_slices`, `owned_business_areas`, `owned_stages`, `owned_user_stories`, `owned_digital_products`, `owned_containers` — and the initiatives they created, `authored_initiatives`.
+A link inside one plugin is two-way (`Inverse`): the map sees its release slices, and a slice sees its map. A link from a dependent plugin to a master is one-way (`NoInverse`, marked "one-way" on the diagram): the map knows its boundary, and the boundary does not know the map; a story knows its stage, and the stage does not know its stories. A user sees only what lies in the core: `owned_boundaries` and `granted_boundaries`. What they own in the other plugins and which initiatives they created is read from those plugins by their `owner` or `author` field.
 
 ## Rules
 
@@ -96,15 +102,15 @@ Every link has an inverse side (`Inverse`): an enterprise sees its map, and the 
 
 ### Organization, users and access
 
-- Every enterprise and every user belongs to exactly one organization (composition). Organizations are isolated from each other.
-- Access to an enterprise is set by the `is_open` flag and the many-to-many link `granted_users` ↔ `granted_enterprises`. An open enterprise is available to every user of its organization, and it needs no list. A closed one is available only to the users in `granted_users`. There are no other degrees of access yet.
-- While an enterprise is open, the `granted_users` list is kept but has no effect. If the enterprise is closed, the users in the list get access at once. If a closed one is opened, nobody loses access.
+- Every boundary and every user belongs to exactly one organization (composition). Organizations are isolated from each other.
+- Access to a boundary is set by the `is_open` flag and the many-to-many link `granted_users` ↔ `granted_boundaries`. An open boundary is available to every user of its organization, and it needs no list. A closed one is available only to the users in `granted_users`. There are no other degrees of access yet.
+- While a boundary is open, the `granted_users` list is kept but has no effect. If the boundary is closed, the users in the list get access at once. If a closed one is opened, nobody loses access.
 - Explicit access is a plain association, not a separate entity: the link has no data of its own yet, only "listed or not".
-- An **organization administrator** is a user with `is_admin`. An administrator invites, blocks, unblocks and removes users, appoints administrators, creates enterprises, appoints the owner of an enterprise that has no active owner, and connects SSO. There may be several administrators.
-- The enterprise's owner (`owner`) opens and closes the enterprise (`is_open`) and changes `granted_users`. If there is no active owner (`owner` is empty, blocked or removed), the administrator does this.
-- The administrator changes an enterprise's `owner`, and only when there is no active owner: when the enterprise is created, or after the owner was blocked or removed. An active owner cannot be replaced: otherwise the administrator would have a back door into a closed enterprise whose access the owner grants.
-- A closed enterprise without access is visible to the administrator only in administration: its name, `is_open`, owner and `granted_users`. The administrator sees its map and landscape only after adding themselves to `granted_users`. This is an ordinary catalog change, so it stays in the history with its author and time.
-- An organization's `sso_domain` is the email domain of its SSO. Whoever first signs in through SSO with an address of this domain appears straight in the `active` state, without an invitation. Empty means SSO is not connected, and users appear only by invitation.
+- An **organization administrator** is a user with `is_admin`. An administrator invites, blocks, unblocks and removes users, appoints administrators, creates boundaries, appoints the owner of a boundary that has no active owner. There may be several administrators.
+- The boundary's owner (`owner`) opens and closes the boundary (`is_open`) and changes `granted_users`. If there is no active owner (`owner` is empty, blocked or removed), the administrator does this.
+- The administrator changes a boundary's `owner`, and only when there is no active owner: when the boundary is created, or after the owner was blocked or removed. An active owner cannot be replaced: otherwise the administrator would have a back door into a closed boundary whose access the owner grants.
+- A closed boundary without access is visible to the administrator only in administration: its name, `is_open`, owner and `granted_users`. The administrator sees its map and landscape only after adding themselves to `granted_users`. This is an ordinary catalog change, so it stays in the history with its author and time.
+- A person signs in to Maxitor by email and password or by a provider (Yandex ID, Mail.ru ID, Google, GitHub, Facebook) as spec 072 lays out; signing in is the core's, not an organization's, and users appear in an organization only by invitation or by registering it.
 - A user is not a C4 Person. A Person uses the digital products; a user works in Maxitor.
 - A user's state is kept in the `status` field and follows the `UserLifecycle`:
 
@@ -121,14 +127,14 @@ Every link has an inverse side (`Inverse`): an enterprise sees its map, and the 
 
 ### Owners
 
-- An enterprise, a release slice, a business area, a stage, a user story, a digital product and our container have an owner. Each of them has zero or one owner (`owner`, an optional link). An empty owner is a visible signal that nobody has been made accountable yet.
+- A boundary, a release slice, a business area, a stage, a user story, a digital product and our container have an owner. Each of them has zero or one owner (`owner`, an optional link). An empty owner is a visible signal that nobody has been made accountable yet.
 - An external system and an external container have no owner: we do not run them.
 - A digital product's owner sits on the specialization, not on the Software System head, because an external system has no owner.
 
 ### Story map
 
-- An enterprise has exactly one map, and every map belongs to exactly one enterprise. So the link is a one-to-one composition.
-- A business area belongs to the map, and a stage to its business area (composition). Both stay Core.
+- A boundary has exactly one map, and every map belongs to exactly one boundary. So the link is a one-to-one composition.
+- A business area belongs to the boundary directly (a one-way link from the `backbone` plugin to the core), and a stage to its business area (composition). Both stay Core. The map does not own the backbone: it shows the backbone of its boundary.
 - Business areas, stages, release slices and user stories are ordered. A business area's `position` sets its place on the backbone from left to right, a stage's — its place inside the business area from left to right, a release slice's — the slice's place from top to bottom. A story's `position` is its priority inside the "stage × release slice" cell from top to bottom. So priority and slice never contradict each other.
 
 ### Release slices
@@ -138,12 +144,12 @@ Every link has an inverse side (`Inverse`): an enterprise sees its map, and the 
 - A slice has a goal (`goal`) — what people will get when its stories are done — and an optional target date (`target_date`).
 - A release slice is not a code version. A container's version (`version.toml`, a GitHub Release) is another idea: one slice holds work in many containers with their own versions.
 - A slice has no lifecycle of its own yet. It will be added later.
-- Slices belong to the map, not to the enterprise.
+- Slices belong to the map, not to the boundary.
 - A user story is a thing of its own. It can be moved under another stage and stays the same story. So a stage only aggregates stories and does not contain them.
 
 ### Initiatives
 
-- An initiative answers "why" for a group of stories. It belongs to the enterprise (composition).
+- An initiative answers "why" for a group of stories. It belongs to the boundary (composition).
 - An initiative has a kind from the `InitiativeKindEnumEntity` dictionary; for now there is one, PR/FAQ. The kind is a dictionary, not a lifecycle: it is a kind of justification, not a state, and it has no moves.
 - An initiative has zero or more stories, and a story has zero or one initiative (`initiative`). A story without an initiative happens, for example an idea before its PR/FAQ or a technical story, and it is a visible signal.
 - An initiative has exactly one author — the user who created it (`author`). The author never changes and stays the author even if blocked or removed. The author is not an owner; an initiative has no owner yet.
@@ -185,9 +191,10 @@ Why two levels of linking instead of one: neither follows from the other. A stor
 
 ### Landscape
 
-- The **enterprise boundary** is a rule, not an entity. Digital products and our containers lie inside the enterprise's boundary; external systems and their containers stand on it. Each of them is recorded in exactly one enterprise, so the boundary is always unambiguous.
-- A **Software System** is a generalization. The name, description and enterprise live in the `SoftwareSystemCoreEntity` head, and what sets a kind apart lives in the specializations. A digital product gathers our containers; an external system has exactly one container. Every Software System has exactly one kind, the `SoftwareSystemKindEnumEntity` dictionary sets it, and a specialization has the same `id` as its head.
-- All containers, ours and external, belong to the enterprise. A product only gathers containers (many to many), because one container may work for several products: the residents' mobile app works for both FSM and billing. An external system only refers to its container.
+- The **boundary's edge** is a rule, not an entity. Digital products and our containers lie inside the boundary's edge; external systems and their containers stand on it. Each of them is recorded in exactly one boundary, so the boundary is always unambiguous.
+- A **Software System** is a generalization. The name, description and boundary live in the `SoftwareSystemCoreEntity` head, and what sets a kind apart lives in the specializations. A digital product gathers our containers; an external system has exactly one container. Every Software System has exactly one kind, the `SoftwareSystemKindEnumEntity` dictionary sets it, and a specialization has the same `id` as its head.
+- Every container has exactly one **business area** (`business_area`, mandatory): the business that pays for it. An external container has one too: the business area that answers for the integration with that partner or bank. This is how the landscape depends on the backbone.
+- All containers, ours and external, belong to the boundary. A product only gathers containers (many to many), because one container may work for several products: the residents' mobile app works for both FSM and billing. An external system only refers to its container.
 - A container is one of two sorts. An **external** one has `external_system` set and belongs to no product. **Ours** has an empty `external_system` (`None`). There is no separate "sort" field: the link defines the sort.
 - An external system has exactly one container — its entry point. At C1 the system itself is visible, and at C2 and below that container takes part instead of it.
 - A container publishes its interfaces: there may be many, and every interface is published by exactly one container (composition, `published_interfaces` ↔ `publisher`). Other containers use these interfaces: many to many (`used_interfaces` ↔ `consumers`). The same set of endpoints on another protocol is a separate interface. In an AOA service one interface is one adapter.
@@ -206,7 +213,7 @@ Why two levels of linking instead of one: neither follows from the other. A stor
 ### Editing and deletion
 
 - Every edit is one catalog change with its author and time. The time track is built from the changes, and any of them can be undone. A past snapshot is read only.
-- Any user with access to the enterprise may edit. The owner is accountable for what they own, but others edit too.
+- Any user with access to the boundary may edit. The owner is accountable for what they own, but others edit too.
 - The model's proposals on mob elaboration are not catalog data. An accepted proposal becomes an ordinary edit by whoever accepted it: a step or a story's link to a Software System carries no separate "from the model" mark.
 - Only what nothing refers to is deleted:
 
@@ -226,20 +233,20 @@ Why two levels of linking instead of one: neither follows from the other. A stor
 
 The type of a link cannot express them:
 
-- a user in `granted_users` and the enterprise are from the same organization;
+- a user in `granted_users` and the boundary are from the same organization;
 - only a record nothing refers to is deleted (the table in "Editing and deletion");
 - an organization always has at least one active user with `is_admin`: the last one cannot be blocked, removed or lose the flag;
-- the owner of a closed enterprise is in its `granted_users`;
-- an owner has access to the enterprise that holds what they own: the enterprise is open, or the owner is in `granted_users`;
+- the owner of a closed boundary is in its `granted_users`;
+- an owner has access to the boundary that holds what they own: the boundary is open, or the owner is in `granted_users`;
 - an external container has neither products nor an owner;
 - graph links (`live_graph_url`, `graph_history_url`) exist only on our container, and `service_url` only on an external one;
-- all containers of a product and all interfaces a container uses are from the same enterprise;
+- all containers of a product and all interfaces a container uses are from the same boundary;
 - every external system has exactly one container, and that container is external;
 - a container does not use its own interface;
-- a story's Software System and the containers of its steps are from the same enterprise as the story;
+- a story's Software System and the containers of its steps are from the same boundary as the story;
 - a story's release slice lies on the same map as its stage;
-- a story's initiative is from the same enterprise as the story;
-- an initiative's author is a user of the same organization as its enterprise;
+- a story's initiative is from the same boundary as the story;
+- an initiative's author is a user of the same organization as its boundary;
 - a story in the "ready" state or later has a Software System and at least one step;
 - a story in the "done" state has only done steps.
 
@@ -249,7 +256,7 @@ The model stores only the two upper C4 levels. Everything below, Maxitor takes f
 
 | C4 level | What it is for us | Where it comes from |
 |---|---|---|
-| C1 — System Context | Software Systems: digital products and external systems on the enterprise's boundary | stored in the model |
+| C1 — System Context | Software Systems: digital products and external systems on the boundary's edge | stored in the model |
 | C2 — Container | containers and the interfaces that link them | stored in the model |
 | C3 — Component | how a container is built: for an AOA service its domains, actions, entities and adapters | the container's graph via `live_graph_url` and `graph_history_url` |
 | C4 — Code | the steps of actions and their bodies | the same graph and the code itself |
@@ -313,11 +320,12 @@ A container may work for several products, so its link counts for each of them. 
 Build the graph (the result is written to `model/graph.json`):
 
 ```bash
-cd /Users/bystrovmaxim/PythonDev/aoa/.claude/worktrees/maxitor-concept && uv run --extra dev python specs/059-maxitor-concept/model/build_graph.py > specs/059-maxitor-concept/model/graph.json && uv run graph-builder validate specs/059-maxitor-concept/model/graph.json
+cd /Users/bystrovmaxim/PythonDev/gnomon/specs/059-maxitor-concept/model && uv run python build_graph.py > graph.json && cd /Users/bystrovmaxim/PythonDev/gnomon && uv run graph-builder validate specs/059-maxitor-concept/model/graph.json
 ```
 
 View the graph: start `design-preview`, `maxitor` and `maxitor-client` from `.claude/launch.json` and open the ERD of the domain you need:
 
-- organization: `http://localhost:5173/?source=http%3A%2F%2F127.0.0.1%3A8899%2Fspecs%2F059-maxitor-concept%2Fmodel%2Fgraph.json&view=domain-erd&domain=enterprise_model.OrganizationDomain`
-- story_map: `http://localhost:5173/?source=http%3A%2F%2F127.0.0.1%3A8899%2Fspecs%2F059-maxitor-concept%2Fmodel%2Fgraph.json&view=domain-erd&domain=enterprise_model.StoryMapDomain`
-- landscape: `http://localhost:5173/?source=http%3A%2F%2F127.0.0.1%3A8899%2Fspecs%2F059-maxitor-concept%2Fmodel%2Fgraph.json&view=domain-erd&domain=enterprise_model.LandscapeDomain`
+- organization: `http://localhost:5173/?source=http%3A%2F%2F127.0.0.1%3A8899%2Fspecs%2F059-maxitor-concept%2Fmodel%2Fgraph.json&view=domain-erd&domain=boundary_model.OrganizationDomain`
+- backbone: `http://localhost:5173/?source=http%3A%2F%2F127.0.0.1%3A8899%2Fspecs%2F059-maxitor-concept%2Fmodel%2Fgraph.json&view=domain-erd&domain=boundary_model.BackboneDomain`
+- story_map: `http://localhost:5173/?source=http%3A%2F%2F127.0.0.1%3A8899%2Fspecs%2F059-maxitor-concept%2Fmodel%2Fgraph.json&view=domain-erd&domain=boundary_model.StoryMapDomain`
+- landscape: `http://localhost:5173/?source=http%3A%2F%2F127.0.0.1%3A8899%2Fspecs%2F059-maxitor-concept%2Fmodel%2Fgraph.json&view=domain-erd&domain=boundary_model.LandscapeDomain`

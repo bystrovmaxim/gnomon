@@ -1,9 +1,9 @@
-# specs/059-maxitor-concept/model/enterprise_model.py
+# specs/059-maxitor-concept/model/boundary_model.py
 """
 The data model of the Maxitor concept, written as AOA entities.
 
 Every approved dictionary term that names a thing Maxitor stores becomes an entity
-here. A term that is a rule (for example, the enterprise boundary) becomes a
+here. A term that is a rule (for example, the boundary's edge) becomes a
 constraint next to the entities it concerns. The model grows one term at a time, and
 the code around it is built later. ``data-model.md`` next to the ``model`` folder
 explains the model in words and draws it.
@@ -11,52 +11,84 @@ explains the model in words and draws it.
 All entities live in one module because ``Inverse`` names the partner class: if the
 classes were split across modules, they would import each other in a circle.
 
+Every domain is a plugin, and the plugins depend on each other in one direction only::
+
+    organization            the core; depends on nothing
+        ▲
+    backbone                business areas and stages; depends on organization
+        ▲
+    landscape               the C4 landscape; depends on organization and backbone
+        ▲
+    story_map               the map and its stories; depends on all three
+
+A dependent plugin knows its masters, and a master knows nothing about those that depend
+on it. In the model this is a rule about links: a link from a dependent entity to a
+master entity is one-way — ``AssociationOne[...]`` with ``NoInverse()`` — and the
+master has no field pointing back. Inside one plugin links are two-way as usual. So the
+boundary does not list its business areas, containers or map; the user does not list
+what they own outside the core; a stage does not list its stories; a container does
+not list the steps done in it. What a master "has" in a dependent plugin is read from
+the dependent side.
+
 ::
 
-    OrganizationDomain — who works
+    OrganizationDomain — the core: who works
         OrganizationCoreEntity                     the Maxitor account
             ├── users: UserCoreEntity *               users (composition)
-            └── enterprises: EnterpriseCoreEntity *   enterprises (composition)
-        UserCoreEntity * ── granted_enterprises ── * EnterpriseCoreEntity   explicit access to a closed enterprise
-        UserCoreEntity 0..1 ── owner ── * EnterpriseCoreEntity              the owner manages access
-        Access: an open enterprise (is_open) — every user of the organization; a closed one — granted_users
+            └── boundaries: BoundaryCoreEntity *   boundaries (composition)
+        UserCoreEntity * ── granted_boundaries ── * BoundaryCoreEntity   explicit access to a closed boundary
+        UserCoreEntity 0..1 ── owner ── * BoundaryCoreEntity              the owner manages access
+        Access: an open boundary (is_open) — every user of the organization; a closed one — granted_users
 
-    StoryMapDomain — the story map
-        EnterpriseCoreEntity.story_map: StoryMapCoreEntity   exactly one per enterprise (composition)
-            ├── release_slices: ReleaseSliceCoreEntity *   horizontal slices from top to bottom; owner 0..1
-            └── business_areas: BusinessAreaCoreEntity *   upper level of the backbone, in order; owner 0..1 on every level
-                    └── stages: StageCoreEntity *           lower level of the backbone, in order
-                            └── user_stories: UserStoryCoreEntity *   by priority; can move under another stage
-                                    └── plan_steps: PlanStepCoreEntity *   plan steps in order (composition)
-        UserStoryCoreEntity * ── software_system ── 0..1 SoftwareSystemCoreEntity   where the requirement arises
-        UserStoryCoreEntity * ── release_slice ── 0..1 ReleaseSliceCoreEntity       which slice it is planned for
-        EnterpriseCoreEntity.initiatives: InitiativeCoreEntity *   why the stories are done; kind — PR/FAQ; exactly one author
-        UserStoryCoreEntity * ── initiative ── 0..1 InitiativeCoreEntity             which initiative it serves
-        PlanStepCoreEntity * ── container ── 1 ContainerCoreEntity                    where the step's work happens
+    BackboneDomain — the backbone of the map; depends on organization
+        BusinessAreaCoreEntity * ──► 1 BoundaryCoreEntity   the upper level of the backbone, in order; owner 0..1
+            └── stages: StageCoreEntity *                      the lower level of the backbone, in order; owner 0..1
+        BusinessAreaCoreEntity * ──► 0..1 UserCoreEntity       owner
+        StageCoreEntity * ──► 0..1 UserCoreEntity              owner
 
-    LandscapeDomain — the C4 landscape
-        EnterpriseCoreEntity.software_systems: SoftwareSystemCoreEntity *   the top C4 level (composition)
+    LandscapeDomain — the C4 landscape; depends on organization and backbone
+        SoftwareSystemCoreEntity * ──► 1 BoundaryCoreEntity   the top C4 level
             └── kind: Specialization by SoftwareSystemKindEnumEntity
                     ├── DigitalProductSpecEntity       gives value, gathers our containers; owner 0..1
                     └── ExternalSystemSpecEntity       beyond the boundary, exactly one container — its entry point
-        EnterpriseCoreEntity.containers: ContainerCoreEntity *   everything that runs; owner 0..1 on ours
-            └── published_interfaces: InterfaceCoreEntity *   what the container publishes (composition)
-
+        ContainerCoreEntity * ──► 1 BoundaryCoreEntity        everything that runs; owner 0..1 on ours
+        ContainerCoreEntity * ──► 1 BusinessAreaCoreEntity      the business area that pays for the container
+            └── published_interfaces: InterfaceCoreEntity *    what the container publishes (composition)
         DigitalProductSpecEntity * ── containers ── * ContainerCoreEntity      a product gathers containers rather than containing them
         ExternalSystemSpecEntity 1 ── container ── 0..1 ContainerCoreEntity  the external system's entry point
         ContainerCoreEntity * ── used_interfaces ── * InterfaceCoreEntity     whose interfaces the container uses
 
-The AOA domains here are parts of Maxitor itself, not business areas on an enterprise's
-map. The enterprise lives in OrganizationDomain: it ties the account to the map and the
-landscape, and users' access is set on it.
+    StoryMapDomain — the map and its stories; depends on organization, backbone and landscape
+        StoryMapCoreEntity 1 ──► 1 BoundaryCoreEntity   exactly one map per boundary
+            └── release_slices: ReleaseSliceCoreEntity *   horizontal slices from top to bottom; owner 0..1
+        UserStoryCoreEntity * ──► 1 StageCoreEntity        the stage the story lies under; it can move under another
+            └── plan_steps: PlanStepCoreEntity *             plan steps in order (composition)
+        UserStoryCoreEntity * ──► 0..1 SoftwareSystemCoreEntity   where the requirement arises
+        UserStoryCoreEntity * ── release_slice ── 0..1 ReleaseSliceCoreEntity       which slice it is planned for
+        InitiativeCoreEntity * ──► 1 BoundaryCoreEntity   why the stories are done; kind — PR/FAQ; exactly one author
+        UserStoryCoreEntity * ── initiative ── 0..1 InitiativeCoreEntity             which initiative it serves
+        PlanStepCoreEntity * ──► 1 ContainerCoreEntity      where the step's work happens
 
-The enterprise boundary is not an entity. Digital products and our containers lie inside
-the enterprise's boundary; external systems and their containers stand on it. A container
+    ──► is a one-way link to a master plugin; ── is a two-way link inside one plugin.
+
+The AOA domains here are parts of Maxitor itself, not business areas on a boundary's
+map. The boundary lives in OrganizationDomain: it is the frame every other plugin hangs
+its data on, and users' access is set on it. The backbone — business areas and stages —
+belongs to the boundary directly: it is what defines the boundary's edge, and
+the map in StoryMapDomain shows the backbone of its boundary rather than owning it.
+
+Every entity names its domain, and each plugin's storage names the entities it keeps
+(``@entities(...)``); a storage has no domain and there is no data source. The four storages
+are one PostgreSQL database for every plugin, a schema per plugin inside it. The model is a
+design, so each storage is a stub without methods; they appear when it is known what to fetch.
+
+The boundary's edge is not an entity. Digital products and our containers lie inside
+the boundary's edge; external systems and their containers stand on it. A container
 is external if it is an external system's entry point; otherwise it is ours. Every
-container and every Software System belongs to exactly one enterprise, so the boundary is
+container and every Software System belongs to exactly one boundary, so the boundary is
 always unambiguous.
 
-A Software System is a generalization: what is shared (name, description, enterprise)
+A Software System is a generalization: what is shared (name, description, boundary)
 lives in the ``SoftwareSystemCoreEntity`` head, and what sets a kind apart lives in the
 ``DigitalProductSpecEntity`` and ``ExternalSystemSpecEntity`` specializations. Every
 Software System has exactly one kind; the ``SoftwareSystemKindEnumEntity`` dictionary
@@ -83,7 +115,6 @@ from typing import Annotated
 from pydantic import Field
 
 from aoa.action_machine.domain import (
-    AggregateMany,
     AssociationMany,
     AssociationOne,
     BaseCoreEntity,
@@ -93,7 +124,6 @@ from aoa.action_machine.domain import (
     BaseStateEntity,
     Classifier,
     CompositeMany,
-    CompositeOne,
     Generalization,
     Inverse,
     Lifecycle,
@@ -102,59 +132,64 @@ from aoa.action_machine.domain import (
     value,
 )
 from aoa.action_machine.intents.entity import entity
+from aoa.action_machine.intents.meta import meta
+from aoa.action_machine.intents.entities import entities
+from aoa.action_machine.resources import BaseStorage
 
 
 class OrganizationDomain(BaseDomain):
-    """Who works in Maxitor: the organization, its users, its enterprises and access to them."""
+    """The core: the organization, its users, its boundaries and access to them. Depends on nothing."""
 
     name = "organization"
-    description = "The organization, its users and enterprises, and which users work with which enterprises"
+    description = "The core: the organization, its users and boundaries, and which users work with which boundaries"
 
 
-class StoryMapDomain(BaseDomain):
-    """The enterprise's story map: a backbone of business areas and stages, with user stories under it."""
+class BackboneDomain(BaseDomain):
+    """The backbone of the boundary's map: business areas and their stages. Depends on organization."""
 
-    name = "story_map"
-    description = "The enterprise's user story map: business areas, stages and user stories"
+    name = "backbone"
+    description = "The backbone of the boundary: business areas and their stages, which define the boundary's edge"
 
 
 class LandscapeDomain(BaseDomain):
-    """The enterprise's C4 landscape: Software Systems, containers and the interfaces that link them."""
+    """The boundary's C4 landscape: Software Systems, containers and interfaces. Depends on organization and backbone."""
 
     name = "landscape"
-    description = "Levels C1 and C2: the enterprise's Software Systems, their containers and interfaces; C3 is in the container's graph"
+    description = "Levels C1 and C2: the boundary's Software Systems, their containers and interfaces; C3 is in the container's graph"
+
+
+class StoryMapDomain(BaseDomain):
+    """The boundary's story map: user stories under the backbone, their plans and initiatives. Depends on all other plugins."""
+
+    name = "story_map"
+    description = "The boundary's user story map: release slices, initiatives, user stories and their plan steps"
 
 
 @entity(
-    description="A Maxitor account: one or more enterprises and the users who work with them",
+    description="A Maxitor account: one or more boundaries and the users who work with them",
     domain=OrganizationDomain,
 )
 class OrganizationCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN
-    ROLE: A Maxitor account; a studio with three clients has one organization and three enterprises.
-    CONTRACT: Its enterprises and its users belong to it (composition). It may connect SSO: whoever
-        signs in through it for the first time becomes a user who is active at once.
-    INVARIANTS: Not a legal entity and not an enterprise; organizations are isolated from each other.
+    ROLE: A Maxitor account; a studio with three clients has one organization and three boundaries.
+    CONTRACT: Its boundaries and its users belong to it (composition).
+    INVARIANTS: Not a legal entity and not a boundary; organizations are isolated from each other.
     AI-CORE-END
     """
 
     id: str = Field(description="Organization id")
     name: str = Field(description="Organization name, for example the studio's name")
-    sso_domain: str | None = Field(
-        default=None,
-        description="Email domain of the organization's SSO: a first sign-in through it is active at once; empty means no SSO",
-    )
 
     users: Annotated[
         CompositeMany[UserCoreEntity],
         Inverse(UserCoreEntity, "organization"),
     ] = Field(description="The organization's users")
 
-    enterprises: Annotated[
-        CompositeMany[EnterpriseCoreEntity],
-        Inverse(EnterpriseCoreEntity, "organization"),
-    ] = Field(description="The enterprises the organization runs")
+    boundaries: Annotated[
+        CompositeMany[BoundaryCoreEntity],
+        Inverse(BoundaryCoreEntity, "organization"),
+    ] = Field(description="The boundaries the organization runs")
 
     created_at: datetime = Field(description="When the record was created")
     updated_at: datetime | None = Field(
@@ -204,17 +239,20 @@ class UserLifecycle(Lifecycle[UserStateEntity]):
 class UserCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN
-    ROLE: A person who works in Maxitor: sees enterprises and is accountable for parts of their map and landscape.
-    CONTRACT: Belongs to exactly one organization. Has access to every open enterprise of the
-        organization and to the closed ones where they are listed explicitly. May own an enterprise,
+    ROLE: A person who works in Maxitor: sees boundaries and is accountable for parts of their map and landscape.
+    CONTRACT: Belongs to exactly one organization. Has access to every open boundary of the
+        organization and to the closed ones where they are listed explicitly. May own a boundary,
         a release slice, a business area, a stage, a user story, a digital product and our container.
         The state follows UserLifecycle: invitation sent, active, blocked, removed. An organization
-        administrator invites, blocks and removes users, creates enterprises and appoints the owner of
-        an enterprise that has no active owner.
-    INVARIANTS: Owns only what lies in an enterprise they have access to. An organization always has
+        administrator invites, blocks and removes users, creates boundaries and appoints the owner of
+        a boundary that has no active owner.
+    INVARIANTS: Owns only what lies in a boundary they have access to. An organization always has
         at least one active administrator.
         A blocked or removed user does not work in Maxitor; what they owned stays theirs until the
         owner is changed, and it is visible that the owner is blocked or removed.
+        The core knows nothing of the other plugins: what a user owns there — business areas, stages,
+        stories, products, containers, slices — and the initiatives they authored are read from those
+        plugins' entities, which point at the user one way.
     AI-CORE-END
     """
 
@@ -224,7 +262,7 @@ class UserCoreEntity(BaseCoreEntity):
     status: UserLifecycle = Field(description="The user's state: invitation sent, active, blocked or removed")
     is_admin: bool = Field(
         default=False,
-        description="Organization administrator: invites, blocks and removes users, creates enterprises",
+        description="Organization administrator: invites, blocks and removes users, creates boundaries",
     )
 
     organization: Annotated[
@@ -232,50 +270,15 @@ class UserCoreEntity(BaseCoreEntity):
         Inverse(OrganizationCoreEntity, "users"),
     ] = Field(description="The organization the user belongs to")
 
-    granted_enterprises: Annotated[
-        AssociationMany[EnterpriseCoreEntity],
-        Inverse(EnterpriseCoreEntity, "granted_users"),
-    ] = Field(description="Closed enterprises the user is listed in explicitly; open ones are accessible anyway")
+    granted_boundaries: Annotated[
+        AssociationMany[BoundaryCoreEntity],
+        Inverse(BoundaryCoreEntity, "granted_users"),
+    ] = Field(description="Closed boundaries the user is listed in explicitly; open ones are accessible anyway")
 
-    owned_enterprises: Annotated[
-        AssociationMany[EnterpriseCoreEntity],
-        Inverse(EnterpriseCoreEntity, "owner"),
-    ] = Field(description="Enterprises the user owns and manages access to")
-
-    owned_business_areas: Annotated[
-        AssociationMany[BusinessAreaCoreEntity],
-        Inverse(BusinessAreaCoreEntity, "owner"),
-    ] = Field(description="Business areas the user owns")
-
-    owned_stages: Annotated[
-        AssociationMany[StageCoreEntity],
-        Inverse(StageCoreEntity, "owner"),
-    ] = Field(description="Stages the user owns")
-
-    owned_user_stories: Annotated[
-        AssociationMany[UserStoryCoreEntity],
-        Inverse(UserStoryCoreEntity, "owner"),
-    ] = Field(description="User stories the user owns")
-
-    owned_digital_products: Annotated[
-        AssociationMany[DigitalProductSpecEntity],
-        Inverse(DigitalProductSpecEntity, "owner"),
-    ] = Field(description="Digital products the user owns")
-
-    owned_containers: Annotated[
-        AssociationMany[ContainerCoreEntity],
-        Inverse(ContainerCoreEntity, "owner"),
-    ] = Field(description="Our containers the user owns")
-
-    owned_release_slices: Annotated[
-        AssociationMany[ReleaseSliceCoreEntity],
-        Inverse(ReleaseSliceCoreEntity, "owner"),
-    ] = Field(description="Release slices the user owns")
-
-    authored_initiatives: Annotated[
-        AssociationMany[InitiativeCoreEntity],
-        Inverse(InitiativeCoreEntity, "author"),
-    ] = Field(description="Initiatives the user created")
+    owned_boundaries: Annotated[
+        AssociationMany[BoundaryCoreEntity],
+        Inverse(BoundaryCoreEntity, "owner"),
+    ] = Field(description="Boundaries the user owns and manages access to")
 
     created_at: datetime = Field(description="When the record was created")
     updated_at: datetime | None = Field(
@@ -287,68 +290,51 @@ class UserCoreEntity(BaseCoreEntity):
     description="All of ours that serves one end-to-end business process; the frame of the map and the landscape",
     domain=OrganizationDomain,
 )
-class EnterpriseCoreEntity(BaseCoreEntity):
+class BoundaryCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN
-    ROLE: The frame of the story map and of the C4 landscape; everything in them belongs to exactly one enterprise.
+    ROLE: The frame of the story map and of the C4 landscape; everything in them belongs to exactly one boundary.
     CONTRACT: Defined by its end-to-end business process, not by a legal entity and not by infrastructure.
         Belongs to exactly one organization.
-    INVARIANTS: A studio that works for three clients runs three enterprises in one organization;
+    INVARIANTS: A studio that works for three clients runs three boundaries in one organization;
         a holding with unrelated businesses runs one per business. There is exactly one map. Every
-        Software System and every container is recorded in exactly one enterprise. Only users of the
-        enterprise's organization have access to it: to an open one — all of them, to a closed one —
+        Software System and every container is recorded in exactly one boundary. Only users of the
+        boundary's organization have access to it: to an open one — all of them, to a closed one —
         those listed explicitly. The owner opens it, closes it and grants access; without an active
         owner the administrator does. The administrator changes the owner, and only when there is no
         active owner.
+        The boundary is the core's frame and knows nothing of what hangs on it: its backbone, map,
+        Software Systems, containers and initiatives live in the other plugins and point at the
+        boundary one way.
     AI-CORE-END
     """
 
-    id: str = Field(description="Enterprise id")
-    name: str = Field(description="Enterprise name; it also names the end-to-end process, for example development")
+    id: str = Field(description="Boundary id")
+    name: str = Field(description="Boundary name; it also names the end-to-end process, for example development")
     description: str = Field(description="What the process is and why it is set up and improved")
     is_open: bool = Field(
-        description="Whether the enterprise is open: an open one is available to every user of the organization, a closed one only to those listed",
+        description="Whether the boundary is open: an open one is available to every user of the organization, a closed one only to those listed",
     )
 
     organization: Annotated[
         AssociationOne[OrganizationCoreEntity],
-        Inverse(OrganizationCoreEntity, "enterprises"),
-    ] = Field(description="The organization that runs the enterprise")
+        Inverse(OrganizationCoreEntity, "boundaries"),
+    ] = Field(description="The organization that runs the boundary")
 
     granted_users: Annotated[
         AssociationMany[UserCoreEntity],
-        Inverse(UserCoreEntity, "granted_enterprises"),
+        Inverse(UserCoreEntity, "granted_boundaries"),
     ] = Field(
-        description="Users of the organization granted access explicitly; it applies while the enterprise is closed",
+        description="Users of the organization granted access explicitly; it applies while the boundary is closed",
     )
 
     owner: Annotated[
         AssociationOne[UserCoreEntity] | None,
-        Inverse(UserCoreEntity, "owned_enterprises"),
+        Inverse(UserCoreEntity, "owned_boundaries"),
     ] = Field(
         default=None,
-        description="The enterprise's owner: opens, closes and grants access; replaced only when not active",
+        description="The boundary's owner: opens, closes and grants access; replaced only when not active",
     )
-
-    story_map: Annotated[
-        CompositeOne[StoryMapCoreEntity],
-        Inverse(StoryMapCoreEntity, "enterprise"),
-    ] = Field(description="The enterprise's only user story map: the development map of the whole enterprise")
-
-    software_systems: Annotated[
-        CompositeMany[SoftwareSystemCoreEntity],
-        Inverse(SoftwareSystemCoreEntity, "enterprise"),
-    ] = Field(description="The enterprise's Software Systems: its digital products and the external systems on its boundary")
-
-    containers: Annotated[
-        CompositeMany[ContainerCoreEntity],
-        Inverse(ContainerCoreEntity, "enterprise"),
-    ] = Field(description="Everything that runs: our containers and the entry points of external systems on the boundary")
-
-    initiatives: Annotated[
-        CompositeMany[InitiativeCoreEntity],
-        Inverse(InitiativeCoreEntity, "enterprise"),
-    ] = Field(description="The enterprise's initiatives: why its stories are done")
 
     created_at: datetime = Field(description="When the record was created")
     updated_at: datetime | None = Field(
@@ -357,29 +343,346 @@ class EnterpriseCoreEntity(BaseCoreEntity):
 
 
 @entity(
-    description="The development map of the whole enterprise: a two-level backbone with user stories under it",
+    description="The upper level of the backbone: a large part of the boundary's end-to-end process",
+    domain=BackboneDomain,
+)
+class BusinessAreaCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: A large part of the end-to-end process, for example the land bank, design or finance.
+    CONTRACT: Belongs to exactly one boundary and has its place in order from left to right. The
+        boundary does not know its business areas: the backbone plugin depends on the core, not
+        the other way round.
+    INVARIANTS: Not an AOA domain. A domain is an area inside the code of one application, while a
+        business area is a part of the business on the boundary's map; they may overlap, but
+        neither follows from the other. The backbone defines the boundary's edge: nothing
+        that is not on it gets developed.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Business area id")
+    name: str = Field(description="Area name, for example the land bank or construction")
+    position: int = Field(description="Place on the backbone, counting from the left", ge=0)
+
+    boundary: Annotated[
+        AssociationOne[BoundaryCoreEntity],
+        NoInverse(),
+    ] = Field(description="The boundary whose backbone this area is part of; the core does not list its areas")
+
+    stages: Annotated[
+        CompositeMany[StageCoreEntity],
+        Inverse(StageCoreEntity, "business_area"),
+    ] = Field(description="The lower level of the backbone inside this area, from left to right")
+
+    owner: Annotated[
+        AssociationOne[UserCoreEntity] | None,
+        NoInverse(),
+    ] = Field(default=None, description="The user who owns the area; empty until an owner is appointed")
+
+    created_at: datetime = Field(description="When the record was created")
+    updated_at: datetime | None = Field(
+        default=None, description="When the record last changed; empty if it has not changed yet"
+    )
+
+
+@entity(
+    description="The lower level of the backbone: a step inside a business area",
+    domain=BackboneDomain,
+)
+class StageCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: A step inside one business area; user stories lie under it.
+    CONTRACT: Belongs to exactly one business area and has its place in order from left to right.
+        The stage does not know its stories: they live in the story map plugin, which depends on
+        the backbone, and point at the stage one way.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Stage id")
+    name: str = Field(description="Stage name")
+    position: int = Field(description="Place inside the business area, counting from the left", ge=0)
+
+    business_area: Annotated[
+        AssociationOne[BusinessAreaCoreEntity],
+        Inverse(BusinessAreaCoreEntity, "stages"),
+    ] = Field(description="The business area this stage is a step of")
+
+    owner: Annotated[
+        AssociationOne[UserCoreEntity] | None,
+        NoInverse(),
+    ] = Field(default=None, description="The user who owns the stage; empty until an owner is appointed")
+
+    created_at: datetime = Field(description="When the record was created")
+    updated_at: datetime | None = Field(
+        default=None, description="When the record last changed; empty if it has not changed yet"
+    )
+
+
+# The container is declared before the Software System classes on purpose. Declared after the
+# specializations that refer to it, model_rebuild recurses forever (an AOA bug,
+# bystrovmaxim/aoa#415).
+@entity(
+    description="The C4 level below a Software System: what actually runs — a service, a database, an app, a queue",
+    domain=LandscapeDomain,
+)
+class ContainerCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: What actually runs; most often a service, so people call containers services.
+    CONTRACT: Belongs to exactly one boundary and is paid for by exactly one business area of its
+        backbone. Either ours — working for zero or more digital products — or external — the entry
+        point of exactly one external system, belonging to no product. Publishes its interfaces (many)
+        and uses those of others (many to many). Created by hand together with a link: ours to the
+        graph history on GitHub and, if the service runs, to the live graph; an external one to the
+        service's web address. The interfaces and links of our container are derived from its code;
+        for an external one they are entered by hand: there is no source code.
+    INVARIANTS: Our container without a single product is a signal that it serves no value. A container
+        is the highest level with real links; links between Software Systems are derived from container
+        links. The history link holds no access keys: only a public link to the graph file. Graph links
+        exist only on our container, the service's web address only on an external one. An external
+        container has a business area too: the one that answers for the integration with that partner.
+        The container does not know the plan steps done in it: they live in the story map plugin and
+        point at the container one way.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Container id")
+    name: str = Field(description="Container name, for example the residents' mobile app or a bank's API")
+    description: str = Field(description="What the container does")
+    kind: str = Field(description="Container kind: service, database, mobile app, web app, queue")
+    live_graph_url: str | None = Field(
+        default=None,
+        description="Address of the running container's live graph: the service or its graph-json; empty if there is none",
+    )
+    graph_history_url: str | None = Field(
+        default=None,
+        description="Link to the container's graph file on GitHub, through which Maxitor opens its version history; no keys",
+    )
+    service_url: str | None = Field(
+        default=None,
+        description="Web address of an external service, for example its website or API documentation; only on an external container",
+    )
+
+    boundary: Annotated[
+        AssociationOne[BoundaryCoreEntity],
+        NoInverse(),
+    ] = Field(description="The boundary the container is recorded in; the core does not list its containers")
+
+    business_area: Annotated[
+        AssociationOne[BusinessAreaCoreEntity],
+        NoInverse(),
+    ] = Field(description="The business area that pays for the container; for an external one — the area that answers for the integration")
+
+    digital_products: Annotated[
+        AssociationMany[DigitalProductSpecEntity],
+        Inverse(DigitalProductSpecEntity, "containers"),
+    ] = Field(description="The digital products our container works for; an external container has none")
+
+    external_system: Annotated[
+        AssociationOne[ExternalSystemSpecEntity] | None,
+        Inverse(ExternalSystemSpecEntity, "container"),
+    ] = Field(
+        default=None,
+        description="The external system this container is the entry point of; our container has none",
+    )
+
+    published_interfaces: Annotated[
+        CompositeMany[InterfaceCoreEntity],
+        Inverse(InterfaceCoreEntity, "publisher"),
+    ] = Field(description="The interfaces the container publishes for others; there may be many")
+
+    used_interfaces: Annotated[
+        AssociationMany[InterfaceCoreEntity],
+        Inverse(InterfaceCoreEntity, "consumers"),
+    ] = Field(description="Other containers' interfaces this container uses; this is how a container link arises")
+
+    owner: Annotated[
+        AssociationOne[UserCoreEntity] | None,
+        NoInverse(),
+    ] = Field(default=None, description="The user who owns our container; an external container has no owner")
+
+    created_at: datetime = Field(description="When the record was created")
+    updated_at: datetime | None = Field(
+        default=None, description="When the record last changed; empty if it has not changed yet"
+    )
+
+
+@entity(
+    description="A set of related endpoints of a container on one protocol, for example a mobile API over HTTP",
+    domain=LandscapeDomain,
+)
+class InterfaceCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: What links one container to another: a set of related endpoints on one protocol.
+    CONTRACT: Published by exactly one container and used by zero or more containers. The same set
+        of endpoints on another protocol (HTTP and MCP) is another interface.
+    INVARIANTS: In an AOA service one interface is one adapter. The interfaces of our container are
+        derived from its code; those of an external one are entered by hand.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Interface id")
+    name: str = Field(description="Interface name, for example admin, mobile or payment")
+    description: str = Field(description="Who the interface is for and what is done through it")
+    protocol: str = Field(description="The interface's protocol, for example http, mcp, grpc, sftp")
+
+    publisher: Annotated[
+        AssociationOne[ContainerCoreEntity],
+        Inverse(ContainerCoreEntity, "published_interfaces"),
+    ] = Field(description="The container that publishes the interface; there is exactly one")
+
+    consumers: Annotated[
+        AssociationMany[ContainerCoreEntity],
+        Inverse(ContainerCoreEntity, "used_interfaces"),
+    ] = Field(description="The containers that use the interface")
+
+    created_at: datetime = Field(description="When the record was created")
+    updated_at: datetime | None = Field(
+        default=None, description="When the record last changed; empty if it has not changed yet"
+    )
+
+
+@entity(description="Software System kinds: a digital product or an external system", domain=LandscapeDomain)
+class SoftwareSystemKindEnumEntity(BaseEnumEntity):
+    """The dictionary of kinds the Software System specialization axis takes its codes from."""
+
+    DIGITAL_PRODUCT = value(code="digital_product", display_name="Digital product")
+    EXTERNAL_SYSTEM = value(code="external_system", display_name="External system")
+
+
+@entity(
+    description="The top C4 level inside a boundary: something that makes sense on its own, without looking inside",
+    domain=LandscapeDomain,
+)
+class SoftwareSystemCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: The head of the Software System generalization: what a digital product and an external system share.
+    CONTRACT: Belongs to exactly one boundary and has exactly one kind — one of the specializations.
+    INVARIANTS: The word itself is vague, so a Software System is spoken of only through its kind.
+        There are no fields linking one Software System to another: such links are derived from the
+        links of its containers. The list of Software Systems and their containers are entered by hand:
+        they are not in the code. The Software System does not know the stories whose requirements
+        arise in it: they live in the story map plugin and point at it one way.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Software System id")
+    name: str = Field(description="Name, for example FSM, billing, the state housing system or a bank")
+    description: str = Field(description="What it is: what value it gives or why we integrate with it")
+
+    boundary: Annotated[
+        AssociationOne[BoundaryCoreEntity],
+        NoInverse(),
+    ] = Field(description="The boundary inside whose boundary, or on whose boundary, it stands; the core does not list its systems")
+
+    kind: Annotated[
+        Specialization[DigitalProductSpecEntity | ExternalSystemSpecEntity, SoftwareSystemKindEnumEntity],
+        Inverse(field_name="software_system"),
+    ] = Field(description="The Software System's kind: a digital product or an external system")
+
+    created_at: datetime = Field(description="When the record was created")
+    updated_at: datetime | None = Field(
+        default=None, description="When the record last changed; empty if it has not changed yet"
+    )
+
+
+@entity(
+    description="A kind of Software System: something that gives people value by improving the boundary's business process",
+    domain=LandscapeDomain,
+)
+class DigitalProductSpecEntity(BaseSpecEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: The carrier of value for the people who use it; not a service but a set of containers that give value together.
+    CONTRACT: Gathers one or more containers but does not contain them: one container may work for
+        several products, and the containers belong to the boundary.
+    INVARIANTS: All of a product's containers belong to the same boundary as the product.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Digital product id; the same as its Software System's")
+
+    software_system: Annotated[
+        Generalization[SoftwareSystemCoreEntity],
+        Classifier(variant=SoftwareSystemKindEnumEntity.DIGITAL_PRODUCT),
+        Inverse(SoftwareSystemCoreEntity, "kind"),
+    ] = Field(description="The Software System this product is a kind of")
+
+    containers: Annotated[
+        AssociationMany[ContainerCoreEntity],
+        Inverse(ContainerCoreEntity, "digital_products"),
+    ] = Field(description="The containers that together give the product's value, including supporting ones")
+
+    owner: Annotated[
+        AssociationOne[UserCoreEntity] | None,
+        NoInverse(),
+    ] = Field(default=None, description="The user who owns the product; empty until an owner is appointed")
+
+    created_at: datetime = Field(description="When the record was created")
+    updated_at: datetime | None = Field(
+        default=None, description="When the record last changed; empty if it has not changed yet"
+    )
+
+
+@entity(
+    description="A kind of Software System: anything we integrate with that lies beyond the boundary's edge",
+    domain=LandscapeDomain,
+)
+class ExternalSystemSpecEntity(BaseSpecEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: A system on the boundary's edge: the systems of partners, banks, the state. Needed at C1.
+    CONTRACT: Has exactly one container — its entry point. At C2 and below that container takes part
+        instead of the system: our containers use its interfaces.
+    INVARIANTS: The same external system on the boundary of two boundaries is recorded in each
+        separately, because boundaries are isolated from each other.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="External system id; the same as its Software System's")
+
+    software_system: Annotated[
+        Generalization[SoftwareSystemCoreEntity],
+        Classifier(variant=SoftwareSystemKindEnumEntity.EXTERNAL_SYSTEM),
+        Inverse(SoftwareSystemCoreEntity, "kind"),
+    ] = Field(description="The Software System this external system is a kind of")
+
+    container: Annotated[
+        AssociationOne[ContainerCoreEntity],
+        Inverse(ContainerCoreEntity, "external_system"),
+    ] = Field(description="The external system's only container — its entry point")
+
+    created_at: datetime = Field(description="When the record was created")
+    updated_at: datetime | None = Field(
+        default=None, description="When the record last changed; empty if it has not changed yet"
+    )
+
+
+@entity(
+    description="The development map of the whole boundary: user stories under the boundary's backbone",
     domain=StoryMapDomain,
 )
 class StoryMapCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN
-    ROLE: The only user story map of one enterprise.
-    CONTRACT: Belongs to exactly one enterprise; an enterprise has exactly one map.
-    INVARIANTS: The backbone reads from left to right: business areas, and inside each its stages.
+    ROLE: The only user story map of one boundary.
+    CONTRACT: Belongs to exactly one boundary; a boundary has exactly one map. The boundary does
+        not know its map: the story map plugin depends on the core, not the other way round.
+    INVARIANTS: The map shows the backbone of its boundary — business areas and their stages from
+        the backbone plugin — but does not own it: the backbone belongs to the boundary. What the map
+        owns is its release slices.
     AI-CORE-END
     """
 
     id: str = Field(description="Map id")
 
-    enterprise: Annotated[
-        AssociationOne[EnterpriseCoreEntity],
-        Inverse(EnterpriseCoreEntity, "story_map"),
-    ] = Field(description="The enterprise the map belongs to")
-
-    business_areas: Annotated[
-        CompositeMany[BusinessAreaCoreEntity],
-        Inverse(BusinessAreaCoreEntity, "story_map"),
-    ] = Field(description="The upper level of the backbone, from left to right")
+    boundary: Annotated[
+        AssociationOne[BoundaryCoreEntity],
+        NoInverse(),
+    ] = Field(description="The boundary the map belongs to; the core does not list its map")
 
     release_slices: Annotated[
         CompositeMany[ReleaseSliceCoreEntity],
@@ -425,7 +728,7 @@ class ReleaseSliceCoreEntity(BaseCoreEntity):
 
     owner: Annotated[
         AssociationOne[UserCoreEntity] | None,
-        Inverse(UserCoreEntity, "owned_release_slices"),
+        NoInverse(),
     ] = Field(default=None, description="The user who owns the slice; empty until an owner is appointed")
 
     created_at: datetime = Field(description="When the record was created")
@@ -475,14 +778,14 @@ class InitiativeLifecycle(Lifecycle[InitiativeStateEntity]):
 
 
 @entity(
-    description="An enterprise's initiative: why the stories under it are done",
+    description="A boundary's initiative: why the stories under it are done",
     domain=StoryMapDomain,
 )
 class InitiativeCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN
     ROLE: The answer to "why" for a group of user stories; for now the only kind is PR/FAQ.
-    CONTRACT: Belongs to exactly one enterprise. It has zero or more stories, and every story lies
+    CONTRACT: Belongs to exactly one boundary. It has zero or more stories, and every story lies
         under at most one initiative. It has exactly one author — the user who created it. The state
         follows InitiativeLifecycle: draft, approved, done or rejected.
     INVARIANTS: The initiative's content is not modelled yet: it will be a set of nodes, not a
@@ -498,10 +801,10 @@ class InitiativeCoreEntity(BaseCoreEntity):
     )
     status: InitiativeLifecycle = Field(description="The initiative's state: draft, approved, done or rejected")
 
-    enterprise: Annotated[
-        AssociationOne[EnterpriseCoreEntity],
-        Inverse(EnterpriseCoreEntity, "initiatives"),
-    ] = Field(description="The enterprise the initiative belongs to")
+    boundary: Annotated[
+        AssociationOne[BoundaryCoreEntity],
+        NoInverse(),
+    ] = Field(description="The boundary the initiative belongs to; the core does not list its initiatives")
 
     user_stories: Annotated[
         AssociationMany[UserStoryCoreEntity],
@@ -510,85 +813,8 @@ class InitiativeCoreEntity(BaseCoreEntity):
 
     author: Annotated[
         AssociationOne[UserCoreEntity],
-        Inverse(UserCoreEntity, "authored_initiatives"),
+        NoInverse(),
     ] = Field(description="The user who created the initiative")
-
-    created_at: datetime = Field(description="When the record was created")
-    updated_at: datetime | None = Field(
-        default=None, description="When the record last changed; empty if it has not changed yet"
-    )
-
-
-@entity(
-    description="The upper level of the backbone: a large part of the enterprise's end-to-end process",
-    domain=StoryMapDomain,
-)
-class BusinessAreaCoreEntity(BaseCoreEntity):
-    """
-    AI-CORE-BEGIN
-    ROLE: A large part of the end-to-end process, for example the land bank, design or finance.
-    CONTRACT: Belongs to exactly one map and has its place in order from left to right.
-    INVARIANTS: Not an AOA domain. A domain is an area inside the code of one application, while a
-        business area is a part of the business on the enterprise's map; they may overlap, but
-        neither follows from the other.
-    AI-CORE-END
-    """
-
-    id: str = Field(description="Business area id")
-    name: str = Field(description="Area name, for example the land bank or construction")
-    position: int = Field(description="Place on the backbone, counting from the left", ge=0)
-
-    story_map: Annotated[
-        AssociationOne[StoryMapCoreEntity],
-        Inverse(StoryMapCoreEntity, "business_areas"),
-    ] = Field(description="The map this area stands on")
-
-    stages: Annotated[
-        CompositeMany[StageCoreEntity],
-        Inverse(StageCoreEntity, "business_area"),
-    ] = Field(description="The lower level of the backbone inside this area, from left to right")
-
-    owner: Annotated[
-        AssociationOne[UserCoreEntity] | None,
-        Inverse(UserCoreEntity, "owned_business_areas"),
-    ] = Field(default=None, description="The user who owns the area; empty until an owner is appointed")
-
-    created_at: datetime = Field(description="When the record was created")
-    updated_at: datetime | None = Field(
-        default=None, description="When the record last changed; empty if it has not changed yet"
-    )
-
-
-@entity(
-    description="The lower level of the backbone: a step inside a business area",
-    domain=StoryMapDomain,
-)
-class StageCoreEntity(BaseCoreEntity):
-    """
-    AI-CORE-BEGIN
-    ROLE: A step inside one business area; user stories lie under it.
-    CONTRACT: Belongs to exactly one business area and has its place in order from left to right.
-    AI-CORE-END
-    """
-
-    id: str = Field(description="Stage id")
-    name: str = Field(description="Stage name")
-    position: int = Field(description="Place inside the business area, counting from the left", ge=0)
-
-    business_area: Annotated[
-        AssociationOne[BusinessAreaCoreEntity],
-        Inverse(BusinessAreaCoreEntity, "stages"),
-    ] = Field(description="The business area this stage is a step of")
-
-    user_stories: Annotated[
-        AggregateMany[UserStoryCoreEntity],
-        Inverse(UserStoryCoreEntity, "stage"),
-    ] = Field(description="User stories under this stage, from top to bottom by priority")
-
-    owner: Annotated[
-        AssociationOne[UserCoreEntity] | None,
-        Inverse(UserCoreEntity, "owned_stages"),
-    ] = Field(default=None, description="The user who owns the stage; empty until an owner is appointed")
 
     created_at: datetime = Field(description="When the record was created")
     updated_at: datetime | None = Field(
@@ -649,10 +875,11 @@ class UserStoryCoreEntity(BaseCoreEntity):
     AI-CORE-BEGIN
     ROLE: One user story under a stage on the map.
     CONTRACT: At any moment lies under exactly one stage. Moved under another stage, it stays the
-        same story, so the stage aggregates stories rather than containing them (which would be
-        composition). Points to zero or one Software System — the digital product or external system
-        where the requirement arises. On mob elaboration it is split into plan steps, and each step
-        points to its container. The state follows UserStoryLifecycle.
+        same story: the link to the stage is a one-way association from the story, and the stage,
+        which lives in the backbone plugin, does not know its stories. Points to zero or one Software
+        System — the digital product or external system where the requirement arises. On mob
+        elaboration it is split into plan steps, and each step points to its container. The state
+        follows UserStoryLifecycle.
     INVARIANTS: The steps' containers do not have to belong to the story's Software System: a story of
         one product may need work in a container of another, and this makes cross-product impact
         visible. "Ready" — only with a Software System and at least one step; "done" — only when all
@@ -670,17 +897,17 @@ class UserStoryCoreEntity(BaseCoreEntity):
 
     stage: Annotated[
         AssociationOne[StageCoreEntity],
-        Inverse(StageCoreEntity, "user_stories"),
-    ] = Field(description="The stage the story lies under")
+        NoInverse(),
+    ] = Field(description="The stage the story lies under; the backbone does not list the stories of a stage")
 
     owner: Annotated[
         AssociationOne[UserCoreEntity] | None,
-        Inverse(UserCoreEntity, "owned_user_stories"),
+        NoInverse(),
     ] = Field(default=None, description="The user who owns the story; empty until an owner is appointed")
 
     software_system: Annotated[
         AssociationOne[SoftwareSystemCoreEntity] | None,
-        Inverse(SoftwareSystemCoreEntity, "user_stories"),
+        NoInverse(),
     ] = Field(
         default=None,
         description="The Software System where the story's requirement arises; empty until mob elaboration",
@@ -743,8 +970,9 @@ class PlanStepCoreEntity(BaseCoreEntity):
     AI-CORE-BEGIN
     ROLE: One piece of work from a story's plan, done in one container.
     CONTRACT: Belongs to exactly one user story and has its place in its plan in order. Points to
-        exactly one container. Readiness follows PlanStepLifecycle: for now there are two states,
-        "not done" (initial) and "done" (final).
+        exactly one container; the container, which lives in the landscape plugin, does not know
+        its steps. Readiness follows PlanStepLifecycle: for now there are two states, "not done"
+        (initial) and "done" (final).
     INVARIANTS: A step on an external container is not our work but a request to the other side.
     AI-CORE-END
     """
@@ -762,272 +990,54 @@ class PlanStepCoreEntity(BaseCoreEntity):
 
     container: Annotated[
         AssociationOne[ContainerCoreEntity],
-        Inverse(ContainerCoreEntity, "plan_steps"),
-    ] = Field(description="The container where the step's work happens")
+        NoInverse(),
+    ] = Field(description="The container where the step's work happens; the landscape does not list the steps of a container")
 
     created_at: datetime = Field(description="When the record was created")
     updated_at: datetime | None = Field(
         default=None, description="When the record last changed; empty if it has not changed yet"
     )
-
-
-# The container is declared before the Software System classes on purpose. Declared after the
-# specializations that refer to it, model_rebuild recurses forever (an AOA bug,
-# bystrovmaxim/aoa#415).
-@entity(
-    description="The C4 level below a Software System: what actually runs — a service, a database, an app, a queue",
-    domain=LandscapeDomain,
-)
-class ContainerCoreEntity(BaseCoreEntity):
-    """
-    AI-CORE-BEGIN
-    ROLE: What actually runs; most often a service, so people call containers services.
-    CONTRACT: Belongs to exactly one enterprise. Either ours — working for zero or more digital
-        products — or external — the entry point of exactly one external system, belonging to no product.
-        Publishes its interfaces (many) and uses those of others (many to many). Created by hand together
-        with a link: ours to the graph history on GitHub and, if the service runs, to the live graph;
-        an external one to the service's web address. The interfaces and links of our container are
-        derived from its code; for an external one they are entered by hand: there is no source code.
-    INVARIANTS: Our container without a single product is a signal that it serves no value. A container
-        is the highest level with real links; links between Software Systems are derived from container
-        links. The history link holds no access keys: only a public link to the graph file. Graph links
-        exist only on our container, the service's web address only on an external one.
-    AI-CORE-END
-    """
-
-    id: str = Field(description="Container id")
-    name: str = Field(description="Container name, for example the residents' mobile app or a bank's API")
-    description: str = Field(description="What the container does")
-    kind: str = Field(description="Container kind: service, database, mobile app, web app, queue")
-    live_graph_url: str | None = Field(
-        default=None,
-        description="Address of the running container's live graph: the service or its graph-json; empty if there is none",
-    )
-    graph_history_url: str | None = Field(
-        default=None,
-        description="Link to the container's graph file on GitHub, through which Maxitor opens its version history; no keys",
-    )
-    service_url: str | None = Field(
-        default=None,
-        description="Web address of an external service, for example its website or API documentation; only on an external container",
-    )
-
-    enterprise: Annotated[
-        AssociationOne[EnterpriseCoreEntity],
-        Inverse(EnterpriseCoreEntity, "containers"),
-    ] = Field(description="The enterprise the container is recorded in")
-
-    digital_products: Annotated[
-        AssociationMany[DigitalProductSpecEntity],
-        Inverse(DigitalProductSpecEntity, "containers"),
-    ] = Field(description="The digital products our container works for; an external container has none")
-
-    external_system: Annotated[
-        AssociationOne[ExternalSystemSpecEntity] | None,
-        Inverse(ExternalSystemSpecEntity, "container"),
-    ] = Field(
-        default=None,
-        description="The external system this container is the entry point of; our container has none",
-    )
-
-    published_interfaces: Annotated[
-        CompositeMany[InterfaceCoreEntity],
-        Inverse(InterfaceCoreEntity, "publisher"),
-    ] = Field(description="The interfaces the container publishes for others; there may be many")
-
-    used_interfaces: Annotated[
-        AssociationMany[InterfaceCoreEntity],
-        Inverse(InterfaceCoreEntity, "consumers"),
-    ] = Field(description="Other containers' interfaces this container uses; this is how a container link arises")
-
-    owner: Annotated[
-        AssociationOne[UserCoreEntity] | None,
-        Inverse(UserCoreEntity, "owned_containers"),
-    ] = Field(default=None, description="The user who owns our container; an external container has no owner")
-
-    plan_steps: Annotated[
-        AssociationMany[PlanStepCoreEntity],
-        Inverse(PlanStepCoreEntity, "container"),
-    ] = Field(description="The plan steps of user stories whose work happens in this container")
-
-    created_at: datetime = Field(description="When the record was created")
-    updated_at: datetime | None = Field(
-        default=None, description="When the record last changed; empty if it has not changed yet"
-    )
-
-
-@entity(
-    description="A set of related endpoints of a container on one protocol, for example a mobile API over HTTP",
-    domain=LandscapeDomain,
-)
-class InterfaceCoreEntity(BaseCoreEntity):
-    """
-    AI-CORE-BEGIN
-    ROLE: What links one container to another: a set of related endpoints on one protocol.
-    CONTRACT: Published by exactly one container and used by zero or more containers. The same set
-        of endpoints on another protocol (HTTP and MCP) is another interface.
-    INVARIANTS: In an AOA service one interface is one adapter. The interfaces of our container are
-        derived from its code; those of an external one are entered by hand.
-    AI-CORE-END
-    """
-
-    id: str = Field(description="Interface id")
-    name: str = Field(description="Interface name, for example admin, mobile or payment")
-    description: str = Field(description="Who the interface is for and what is done through it")
-    protocol: str = Field(description="The interface's protocol, for example http, mcp, grpc, sftp")
-
-    publisher: Annotated[
-        AssociationOne[ContainerCoreEntity],
-        Inverse(ContainerCoreEntity, "published_interfaces"),
-    ] = Field(description="The container that publishes the interface; there is exactly one")
-
-    consumers: Annotated[
-        AssociationMany[ContainerCoreEntity],
-        Inverse(ContainerCoreEntity, "used_interfaces"),
-    ] = Field(description="The containers that use the interface")
-
-    created_at: datetime = Field(description="When the record was created")
-    updated_at: datetime | None = Field(
-        default=None, description="When the record last changed; empty if it has not changed yet"
-    )
-
-
-
-@entity(description="Software System kinds: a digital product or an external system", domain=LandscapeDomain)
-class SoftwareSystemKindEnumEntity(BaseEnumEntity):
-    """The dictionary of kinds the Software System specialization axis takes its codes from."""
-
-    DIGITAL_PRODUCT = value(code="digital_product", display_name="Digital product")
-    EXTERNAL_SYSTEM = value(code="external_system", display_name="External system")
-
-
-@entity(
-    description="The top C4 level inside an enterprise: something that makes sense on its own, without looking inside",
-    domain=LandscapeDomain,
-)
-class SoftwareSystemCoreEntity(BaseCoreEntity):
-    """
-    AI-CORE-BEGIN
-    ROLE: The head of the Software System generalization: what a digital product and an external system share.
-    CONTRACT: Belongs to exactly one enterprise and has exactly one kind — one of the specializations.
-    INVARIANTS: The word itself is vague, so a Software System is spoken of only through its kind.
-        There are no fields linking one Software System to another: such links are derived from the
-        links of its containers. The list of Software Systems and their containers are entered by hand:
-        they are not in the code.
-    AI-CORE-END
-    """
-
-    id: str = Field(description="Software System id")
-    name: str = Field(description="Name, for example FSM, billing, the state housing system or a bank")
-    description: str = Field(description="What it is: what value it gives or why we integrate with it")
-
-    enterprise: Annotated[
-        AssociationOne[EnterpriseCoreEntity],
-        Inverse(EnterpriseCoreEntity, "software_systems"),
-    ] = Field(description="The enterprise inside whose boundary, or on whose boundary, it stands")
-
-    kind: Annotated[
-        Specialization[DigitalProductSpecEntity | ExternalSystemSpecEntity, SoftwareSystemKindEnumEntity],
-        Inverse(field_name="software_system"),
-    ] = Field(description="The Software System's kind: a digital product or an external system")
-
-    user_stories: Annotated[
-        AssociationMany[UserStoryCoreEntity],
-        Inverse(UserStoryCoreEntity, "software_system"),
-    ] = Field(description="The user stories whose requirements arise in this Software System")
-
-    created_at: datetime = Field(description="When the record was created")
-    updated_at: datetime | None = Field(
-        default=None, description="When the record last changed; empty if it has not changed yet"
-    )
-
-
-@entity(
-    description="A kind of Software System: something that gives people value by improving the enterprise's business process",
-    domain=LandscapeDomain,
-)
-class DigitalProductSpecEntity(BaseSpecEntity):
-    """
-    AI-CORE-BEGIN
-    ROLE: The carrier of value for the people who use it; not a service but a set of containers that give value together.
-    CONTRACT: Gathers one or more containers but does not contain them: one container may work for
-        several products, and the containers belong to the enterprise.
-    INVARIANTS: All of a product's containers belong to the same enterprise as the product.
-    AI-CORE-END
-    """
-
-    id: str = Field(description="Digital product id; the same as its Software System's")
-
-    software_system: Annotated[
-        Generalization[SoftwareSystemCoreEntity],
-        Classifier(variant=SoftwareSystemKindEnumEntity.DIGITAL_PRODUCT),
-        Inverse(SoftwareSystemCoreEntity, "kind"),
-    ] = Field(description="The Software System this product is a kind of")
-
-    containers: Annotated[
-        AssociationMany[ContainerCoreEntity],
-        Inverse(ContainerCoreEntity, "digital_products"),
-    ] = Field(description="The containers that together give the product's value, including supporting ones")
-
-    owner: Annotated[
-        AssociationOne[UserCoreEntity] | None,
-        Inverse(UserCoreEntity, "owned_digital_products"),
-    ] = Field(default=None, description="The user who owns the product; empty until an owner is appointed")
-
-    created_at: datetime = Field(description="When the record was created")
-    updated_at: datetime | None = Field(
-        default=None, description="When the record last changed; empty if it has not changed yet"
-    )
-
-
-@entity(
-    description="A kind of Software System: anything we integrate with that lies beyond the enterprise boundary",
-    domain=LandscapeDomain,
-)
-class ExternalSystemSpecEntity(BaseSpecEntity):
-    """
-    AI-CORE-BEGIN
-    ROLE: A system on the enterprise's boundary: the systems of partners, banks, the state. Needed at C1.
-    CONTRACT: Has exactly one container — its entry point. At C2 and below that container takes part
-        instead of the system: our containers use its interfaces.
-    INVARIANTS: The same external system on the boundary of two enterprises is recorded in each
-        separately, because enterprises are isolated from each other.
-    AI-CORE-END
-    """
-
-    id: str = Field(description="External system id; the same as its Software System's")
-
-    software_system: Annotated[
-        Generalization[SoftwareSystemCoreEntity],
-        Classifier(variant=SoftwareSystemKindEnumEntity.EXTERNAL_SYSTEM),
-        Inverse(SoftwareSystemCoreEntity, "kind"),
-    ] = Field(description="The Software System this external system is a kind of")
-
-    container: Annotated[
-        AssociationOne[ContainerCoreEntity],
-        Inverse(ContainerCoreEntity, "external_system"),
-    ] = Field(description="The external system's only container — its entry point")
-
-    created_at: datetime = Field(description="When the record was created")
-    updated_at: datetime | None = Field(
-        default=None, description="When the record last changed; empty if it has not changed yet"
-    )
-
-
 
 
 OrganizationCoreEntity.model_rebuild()
 UserCoreEntity.model_rebuild()
-EnterpriseCoreEntity.model_rebuild()
-StoryMapCoreEntity.model_rebuild()
-ReleaseSliceCoreEntity.model_rebuild()
-InitiativeCoreEntity.model_rebuild()
+BoundaryCoreEntity.model_rebuild()
 BusinessAreaCoreEntity.model_rebuild()
 StageCoreEntity.model_rebuild()
-UserStoryCoreEntity.model_rebuild()
-PlanStepCoreEntity.model_rebuild()
+ContainerCoreEntity.model_rebuild()
+InterfaceCoreEntity.model_rebuild()
 SoftwareSystemCoreEntity.model_rebuild()
 DigitalProductSpecEntity.model_rebuild()
 ExternalSystemSpecEntity.model_rebuild()
-ContainerCoreEntity.model_rebuild()
-InterfaceCoreEntity.model_rebuild()
+StoryMapCoreEntity.model_rebuild()
+ReleaseSliceCoreEntity.model_rebuild()
+InitiativeCoreEntity.model_rebuild()
+UserStoryCoreEntity.model_rebuild()
+PlanStepCoreEntity.model_rebuild()
+
+
+# Each plugin's storage names the entities it keeps (a storage has no domain and no data source).
+
+
+@meta(description="Stores the core: organizations, users and boundaries")
+@entities(OrganizationCoreEntity, UserCoreEntity, BoundaryCoreEntity)
+class OrganizationStorage(BaseStorage):
+    """Stores the core: organizations, users and boundaries; the design never opens it."""
+
+
+@meta(description="Stores the backbone: business areas and stages")
+@entities(BusinessAreaCoreEntity, StageCoreEntity)
+class BackboneStorage(BaseStorage):
+    """Stores the backbone: business areas and stages; the design never opens it."""
+
+
+@meta(description="Stores the landscape: Software Systems, containers and interfaces")
+@entities(ContainerCoreEntity, InterfaceCoreEntity, SoftwareSystemKindEnumEntity, SoftwareSystemCoreEntity, DigitalProductSpecEntity, ExternalSystemSpecEntity)
+class LandscapeStorage(BaseStorage):
+    """Stores the landscape: Software Systems, containers and interfaces; the design never opens it."""
+
+
+@meta(description="Stores the story map: slices, initiatives, stories and steps")
+@entities(StoryMapCoreEntity, ReleaseSliceCoreEntity, InitiativeKindEnumEntity, InitiativeCoreEntity, UserStoryCoreEntity, PlanStepCoreEntity)
+class StoryMapStorage(BaseStorage):
+    """Stores the story map: slices, initiatives, stories and steps; the design never opens it."""

@@ -11,8 +11,8 @@ Maxitor is four layers nested in each other. Each layer matches an entity of the
 
 | Layer | Entity | What people do there | C4 level |
 |---|---|---|---|
-| Organization | `OrganizationCoreEntity` | choose an enterprise, manage people and access | — |
-| Enterprise | `EnterpriseCoreEntity` | plan the development of the whole enterprise, look at the landscape | C1 of the whole enterprise |
+| Organization | `OrganizationCoreEntity` | choose a boundary, manage people and access | — |
+| Boundary | `BoundaryCoreEntity` | plan the development of the whole boundary, look at the landscape | C1 of the whole boundary |
 | Digital product | `DigitalProductSpecEntity` | keep the product's map, work out stories, look at containers | C1 of the product and C2 |
 | Container | `ContainerCoreEntity` | read the code's graph: domains, actions, entities, lifecycles | C3 and code |
 
@@ -28,30 +28,30 @@ The main observation: **moving between layers is rare, while work inside one lay
 | Every day | Product map → story → its plan steps → the graph of a step's container → back to the story | product ↔ container |
 | Every day | A container's graph: domains, ERD, lifecycles, comparing versions | container |
 | Every day | Switch to a neighbouring product or container without going up | product, container |
-| Once a week | The enterprise's whole map by release slice, the list of initiatives, the C1 landscape | enterprise |
-| Rarely | Switch enterprise (a studio has several) | organization |
-| Rarely | Invite or block a user, open or close an enterprise | organization |
+| Once a week | The boundary's whole map by release slice, the list of initiatives, the C1 landscape | boundary |
+| Rarely | Switch boundary (a studio has several) | organization |
+| Rarely | Invite or block a user, open or close a boundary | organization |
 | Once a session | Sign in | — |
 
 ## Eleven rules
 
-1. **Maxitor opens where the user stopped.** After signing in, the user lands straight on the last layer, object and tab. The enterprise picker is shown only to a user who comes for the first time. The most frequent path must not start with a choice.
-2. **Breadcrumbs are switchers too.** The header always shows the path `Organization / Enterprise / Product / Container`. Clicking a name goes up to that layer. Clicking the arrow next to it opens the list of neighbours on the same layer, with search. So going down and up is visible, and switching sideways costs one click.
-3. **⌘K search jumps across layers.** It searches the whole enterprise: products, containers, stories, initiatives. From it one lands right on the object, skipping the layers in between.
+1. **Maxitor opens where the user stopped.** After signing in, the user lands straight on the last layer, object and tab. The boundary picker is shown only to a user who comes for the first time. The most frequent path must not start with a choice.
+2. **Breadcrumbs are switchers too.** The header always shows the path `Organization / Boundary / Product / Container`. Clicking a name goes up to that layer. Clicking the arrow next to it opens the list of neighbours on the same layer, with search. So going down and up is visible, and switching sideways costs one click.
+3. **⌘K search jumps across layers.** It searches the whole boundary: products, containers, stories, initiatives. From it one lands right on the object, skipping the layers in between.
 4. **Every layer has its own left panel in the style of today's Maxitor.** On the container layer it is today's panel: Applications, Domains, ERD, lifecycles. On the layers above it holds their views and the layer's children. There may be hundreds of children, so the panel holds only **mine** (where I am the owner), **pinned** and **recent**, and an "All 176 →" row leads to a list with search. This is the most frequent way down, so it is always in sight.
-5. **The same view looks the same on different layers.** The product map is the same as the enterprise map, but with only this product's stories. The backbone stays whole, so it is visible which part of the process the product falls into. The product's initiatives are the same list of initiatives with a filter.
+5. **The same view looks the same on different layers.** The product map is the same as the boundary map, but with only this product's stories. The backbone stays whole, so it is visible which part of the process the product falls into. The product's initiatives are the same list of initiatives with a filter.
 6. **A story opens as a panel on the right and does not leave the layer.** The panel holds its plan: the steps with their containers. A step in another product's container is marked: that is cross-product impact. Clicking a step's container is that most frequent way down to the graph.
 7. **Any diagram switches to a list.** C1 and C2 can be viewed as a diagram and as a table. The diagram is for understanding the structure, the table for finding, sorting and comparing.
 8. **Everything lives on a canvas and is handled like a graph.** Views have no title bar: a view is named by the selected row of the left panel. The canvas always has one layout: tabs at the top centre, the filter at the top left, zoom at the bottom left, the legend at the bottom right. **Tabs and the filter are different things.** Tabs (as in the Events explorer, with counts) choose the viewing mode, that is, the point of view: "Map · Stories", "Table · Board", "Diagram · Interfaces · Containers", "Groups · Links". A view with one point of view has no tabs. **The filter is always the same**: a panel like DOMAINS/KINDS on the ERD, with accordion sections (the first open, the others closed), rows with an icon in a coloured circle and no checkboxes, a row that is off goes pale, and a switch at the bottom collapses the panel to icons. States, slices, products, authors, protocols are always the filter, never tabs. Tables lie on the canvas too: the wheel zooms, dragging moves, ⊡ shows everything. A table fits the width, and a long one is moved down. The filter and the tabs do not reset the camera.
 9. **Catalog time is one track on every level; code time is its own.** The catalog time button is always in the header, and what it shows depends on the page. On the container layer today's graph version track stays next to the graph (see "Time track").
-10. **A room works on every level.** "Open a room" is in the header from the enterprise picker down to the container's graph. "Go to" and "Follow" lead across layers.
-11. **Hundreds are the norm, not the exception.** An enterprise has hundreds of Software Systems and containers. So search, filters and tables are the main navigation, diagrams show groups and open on a click, and counts are visible before the click (see "Scale").
+10. **A room works on every level.** "Open a room" is in the header from the boundary picker down to the container's graph. "Go to" and "Follow" lead across layers.
+11. **Hundreds are the norm, not the exception.** A boundary has hundreds of Software Systems and containers. So search, filters and tables are the main navigation, diagrams show groups and open on a click, and counts are visible before the click (see "Scale").
 
 ## Where C1 and C2 live
 
 | View | Layer | What it shows |
 |---|---|---|
-| **Landscape** (C1, System Landscape) | enterprise | groups of Software Systems by business area in backbone order, "Off the map", and external systems on the boundary; a group opens to its Software Systems, and a Software System to its context |
+| **Landscape** (C1, System Landscape) | boundary | groups of Software Systems by business area in backbone order, "Off the map", and external systems on the boundary; a group opens to its Software Systems, and a Software System to its context |
 | **Context** (C1, System Context) | product | the product in the centre and the Software Systems it is linked to: other products and external systems |
 | **Containers** (C2) | product | the product's containers inside its frame, each with its published interfaces as lollipops; outside — the Software Systems they are linked to, collapsed into one node that opens to its containers; the filter on the left |
 | **Graph** (C3) | container | today's Maxitor: domains, actions, entities, lifecycles |
@@ -73,7 +73,7 @@ Links at C1 are not drawn by hand: they are a roll-up of the containers' links. 
 
 ## Scale
 
-An enterprise has hundreds of Software Systems and containers, so every view is designed for hundreds:
+A boundary has hundreds of Software Systems and containers, so every view is designed for hundreds:
 
 | Where | How it works |
 |---|---|
@@ -91,7 +91,7 @@ Time is the same thing on every level; only what counts as a change differs.
 
 - **Not a list of PRs but a chart of the volume of changes.** A bar shows how many changes there were in the interval.
 - **The precision stretches:** hour, day, week, month; smoothly with the wheel or a pinch over the track.
-- **The track depends on the open page.** On the enterprise map the whole map counts, on the landscape — Software Systems and interfaces, on a product's page — only its objects. So the track differs from page to page.
+- **The track depends on the open page.** On the boundary map the whole map counts, on the landscape — Software Systems and interfaces, on a product's page — only its objects. So the track differs from page to page.
 - **Clicking a bar shows the changes of the interval; clicking a change opens the catalog at that moment.** This acts on all layers at once, because every change saves the state of the whole catalog. While a past moment is selected, everything is read only, and a yellow strip under the header has a "Back to now" link.
 - **The container layer has two times, and they stand in different places** (decided: keep both). In the header, as on every layer, is catalog time: changes of the container's record (owner, interfaces, products). In the workspace row is **today's Maxitor graph version mechanism, unchanged** (specs 030 and 051): the track of commits from the repository, a big dot where the graph changed, a small one where only the version was raised, Live after the dashes, one version or a comparison of A and B.
 - **The link between the two times is a hint, not automation.** If a past catalog moment is selected in the header, "v1.3.0 was in effect then →" appears next to the graph version button; the graph switches only on a click.
@@ -110,14 +110,14 @@ Screens 9.1–9.7 of the mockup. The catalog comparison speaks the same language
 
 ## Administration
 
-Administration is part of the organization layer, screens 7.1–7.10 of the mockup. Only organization administrators see it. It can be entered from two places: under the cards in the enterprise picker and from the left panel of any enterprise. People come here rarely, so it has no place in the header.
+Administration is part of the organization layer, screens 7.1–7.10 of the mockup. Only organization administrators see it. It can be entered from two places: under the cards in the boundary picker and from the left panel of any boundary. People come here rarely, so it has no place in the header.
 
-- **Three sections in the left panel**: users, enterprises, sign-in and SSO. Under them, short lists of signals: who has not accepted an invitation yet and who is blocked.
-- **Tables live on the canvas**, like every view, and the filter is the same panel: the user's state, role and how they appeared. Users have two viewing modes: a list and an access matrix with people in rows and enterprises in columns.
+- **Three sections in the left panel**: users and boundaries. Under them, short lists of signals: who has not accepted an invitation yet and who is blocked.
+- **Tables live on the canvas**, like every view, and the filter is the same panel: the user's state, role and how they appeared. Users have two viewing modes: a list and an access matrix with people in rows and boundaries in columns.
 - **A user's card opens on the right**, like a story. Its buttons are only the lifecycle moves from the current state. Removal is confirmed in a separate window, because it is final, and the window lists what the person owns.
 - **The last-administrator rule is visible, not only checked.** For the last active administrator the "Block" and "Remove" buttons and the administrator mark are disabled, and it says why.
-- **The owner manages access where they work.** The "Open · you are the owner" line under the enterprise's name in the left panel opens the access card over the map, without going to administration. The administrator manages access and may appoint a new owner only if there is no active owner: none was appointed, or the owner is blocked or removed.
-- **A closed enterprise without access is visible to the administrator only in administration**: its name, owner and access list. Its description and number of products are hidden. If the owner is not active, the administrator can grant access to themselves, and that stays in the catalog history.
+- **The owner manages access where they work.** The "Open · you are the owner" line under the boundary's name in the left panel opens the access card over the map, without going to administration. The administrator manages access and may appoint a new owner only if there is no active owner: none was appointed, or the owner is blocked or removed.
+- **A closed boundary without access is visible to the administrator only in administration**: its name, owner and access list. Its description and number of products are hidden. If the owner is not active, the administrator can grant access to themselves, and that stays in the catalog history.
 - **Where the decision is not yours, the switch is disabled**, and the caption says who decides: for example, "granted by the owner, Maria Lebedeva".
 
 ## Editing
@@ -135,10 +135,10 @@ Screens 8.1–8.9 of the mockup. Editing happens in place, as in Miro or Notion,
 
 ## Rooms
 
-- A room works on every level, from the enterprise picker to the container's graph, and belongs to the organization. Only a member of the organization can enter, and the name comes from the account: a separate name dialog is not needed.
+- A room works on every level, from the boundary picker to the container's graph, and belongs to the organization. Only a member of the organization can enter, and the name comes from the account: a separate name dialog is not needed.
 - The participants' circles stand in the header. A participant's card says which level and view they are on and offers "Go to" and "Follow".
 - When following, the screen goes after the leader across layers. The frame and the strip under the header are in the leader's colour, and everyone keeps their own zoom. Following stops with a button, the Esc key or one's own move.
-- If the leader goes into a closed enterprise you have no access to, following stops with an explanation.
+- If the leader goes into a closed boundary you have no access to, following stops with an explanation.
 - Pointers, shared filters and the ban on following in a circle stay as in today's rooms (spec 028).
 
 ## What the mockup suggests adding to the model
