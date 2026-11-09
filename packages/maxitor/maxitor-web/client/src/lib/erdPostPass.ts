@@ -454,22 +454,40 @@ function tableOf(node: Element): string {
  * given, every line touching a kept table — and dim the rest. The look of a hovered table, a hovered key
  * row and a hovered line alike (spec 029, FR-040, FR-041).
  */
+type HoverIndex = { nodes: SVGElement[]; edges: SVGElement[]; titles: Map<SVGElement, string> };
+/** One index per drawing, keyed by its SVG: a new drawing gets a new SVG, so a stale index is dropped with it. */
+const HOVER_INDEXES = new WeakMap<Element, HoverIndex>();
+
+/** The drawing's tables and lines, read once — a hover must not walk the whole SVG on every mouse move (spec 071). */
+function hoverIndex(root: ParentNode): HoverIndex {
+  const holder = root as unknown as { matches?: (selector: string) => boolean; querySelector?: (selector: string) => Element | null };
+  const svg = holder.matches?.("svg") ? (root as unknown as Element) : (holder.querySelector?.("svg") ?? null);
+  if (!svg) return { nodes: [], edges: [], titles: new Map() };
+  let index = HOVER_INDEXES.get(svg);
+  if (!index) {
+    const nodes = [...svg.querySelectorAll<SVGElement>("g.node")];
+    const edges = [...svg.querySelectorAll<SVGElement>("g.edge")];
+    const titles = new Map<SVGElement, string>();
+    for (const element of [...nodes, ...edges]) titles.set(element, element.querySelector(":scope > title")?.textContent?.trim() ?? "");
+    index = { nodes, edges, titles };
+    HOVER_INDEXES.set(svg, index);
+  }
+  return index;
+}
+
 export function focusTables(root: ParentNode, tables: ReadonlySet<string>, lines?: ReadonlySet<Element>): void {
-  root.querySelectorAll<SVGElement>("g.node").forEach((node) => {
-    node.style.opacity = tables.has(tableOf(node)) ? "1" : "0.35";
-  });
-  root.querySelectorAll<SVGElement>("g.edge").forEach((edge) => {
-    const title = edge.querySelector(":scope > title")?.textContent?.trim() ?? "";
-    const kept = lines ? lines.has(edge) : [...tables].some((table) => title.includes(table));
+  const { nodes, edges, titles } = hoverIndex(root);
+  for (const node of nodes) node.style.opacity = tables.has(titles.get(node) ?? "") ? "1" : "0.35";
+  for (const edge of edges) {
+    const kept = lines ? lines.has(edge) : [...tables].some((table) => (titles.get(edge) ?? "").includes(table));
     edge.style.opacity = kept ? "1" : "0.2";
-  });
+  }
 }
 
 /** Every table and line as drawn again — a table Diff fades stays faded. */
 export function clearTableFocus(root: ParentNode): void {
-  root.querySelectorAll<SVGElement>("g.node, g.edge").forEach((element) => {
-    element.style.opacity = "";
-  });
+  const { nodes, edges } = hoverIndex(root);
+  for (const element of [...nodes, ...edges]) element.style.opacity = "";
 }
 
 export function bindLineHover(

@@ -191,6 +191,8 @@ const FRAMED_FIT = { fitToViewBox: true, fitMarginPx: 8 };
  *  picture comes from here, not from Graphviz. Small on purpose: a few pictures cover a person's back and forth. */
 const LAYOUT_CACHE = new Map<string, string>();
 const LAYOUT_CACHE_MAX = 24;
+/** How long a hover waits before lighting a table: a pointer passing over small tables at a distance stays quiet. */
+const HOVER_INTENT_MS = 60;
 
 export function ErdGraphvizCanvas({
   bundle,
@@ -671,12 +673,18 @@ export function ErdGraphvizCanvas({
       { signal: ac.signal },
     );
 
-    // Hovering a copy lights every copy of its entity (spec 070, FR-004).
+    // Hovering a copy lights every copy of its entity (spec 070, FR-004). The light waits a moment, so a pointer
+    // crossing many small tables at a distance does not flash the drawing on every one (spec 071, FR-018).
+    let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+    const later = (act: () => void) => {
+      if (hoverTimer !== null) clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(act, HOVER_INTENT_MS);
+    };
     const onEnter = (evt: Event) => {
       const id = (evt.currentTarget as Element).querySelector("title")?.textContent?.trim() || "";
-      focusTables(panner, new Set(drawnData.entities.filter((entity) => copyEntity(entity.id) === copyEntity(id)).map((entity) => entity.id).concat(id)));
+      later(() => focusTables(panner, new Set(drawnData.entities.filter((entity) => copyEntity(entity.id) === copyEntity(id)).map((entity) => entity.id).concat(id))));
     };
-    const onLeave = () => clearTableFocus(panner);
+    const onLeave = () => later(() => clearTableFocus(panner));
 
     panner.querySelectorAll("g.node").forEach((node) => {
       (node as HTMLElement).style.cursor = "pointer";
@@ -715,6 +723,7 @@ export function ErdGraphvizCanvas({
 
     return () => {
       cancelled = true;
+      if (hoverTimer !== null) clearTimeout(hoverTimer);
       ac.abort();
       unbindPan?.();
       cancelAnimationFrame(raf1);
