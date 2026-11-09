@@ -34,6 +34,7 @@ from typing import cast
 from maxitor.web.model.core.history_entry import HistoryEntry
 from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
 from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
+from maxitor.web.model.rooms.events import RoomVersionMovedEvent, RoomVersionRefusedEvent
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
@@ -42,6 +43,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -73,6 +75,7 @@ class SetRoomVersionAction(BaseAction[SetRoomVersionParams, RoomAnswerResult]):
     """
 
     @summary_aspect("Move the room or refuse the pick")
+    @emits(RoomVersionMovedEvent, RoomVersionRefusedEvent)
     async def version_summary(
         self,
         params: SetRoomVersionParams,
@@ -96,12 +99,12 @@ class SetRoomVersionAction(BaseAction[SetRoomVersionParams, RoomAnswerResult]):
         reason = reason or _view_refusal(view, params.a)
         if reason is not None:
             socket.send({"type": "error", "reason": reason})
-            await box.info(Channel.business, "Version refused in room {%var.room}", room=room.id)
+            await box.info(Channel.business, "Version refused in room {%var.room}", RoomVersionRefusedEvent(room=room.id))
             return RoomAnswerResult()
         async with room.lock:
             room.version, room.version_a, room.view, room.source = params.b, params.a, view, cast(str, source)
             registry.broadcast(room, {"type": "version", "b": params.b, "a": params.a, "view": view, "by": participant.id})
-        await box.info(Channel.business, "Room {%var.room} moved to version {%var.version}", room=room.id, version=params.b)
+        await box.info(Channel.business, "Room {%var.room} moved to version {%var.version}", RoomVersionMovedEvent(room=room.id, version=params.b))
         return RoomAnswerResult()
 
 

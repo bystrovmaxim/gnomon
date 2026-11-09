@@ -27,6 +27,7 @@ from typing import cast
 
 from maxitor.web.model.rooms.actions.end_room_action import schedule_end_if_empty
 from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
+from maxitor.web.model.rooms.events import ParticipantLeftEvent
 from maxitor.web.model.rooms.layout_authority import recheck_layouts
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
@@ -35,6 +36,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -61,6 +63,7 @@ class LeaveRoomAction(BaseAction[LeaveRoomParams, RoomAnswerResult]):
     """
 
     @summary_aspect("Remove the participant and tell the room")
+    @emits(ParticipantLeftEvent)
     async def leave_summary(
         self,
         params: LeaveRoomParams,
@@ -77,10 +80,5 @@ class LeaveRoomAction(BaseAction[LeaveRoomParams, RoomAnswerResult]):
             registry.broadcast(room, {"type": "follows", "follows": room.follows()})
             recheck_layouts(room)
             schedule_end_if_empty(registry, room)
-        await box.info(
-            Channel.business,
-            "Participant {%var.participant} left room {%var.room}",
-            participant=participant.id,
-            room=room.id,
-        )
+        await box.info(Channel.business, "Participant {%var.participant} left room {%var.room}", ParticipantLeftEvent(participant=participant.id, room=room.id))
         return RoomAnswerResult()

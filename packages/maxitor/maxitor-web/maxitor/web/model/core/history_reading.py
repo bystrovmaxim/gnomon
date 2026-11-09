@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from typing import NoReturn
 
+from maxitor.web.model.core.events import HistoryKeyRefusedEvent, HistoryPortBlockedMaxitorEvent, HistoryUnreadableEvent
 from maxitor.web.model.core.history_address import PrivateHistory, PublicHistory, history_from_name, port_route
 from maxitor.web.model.core.history_entry import HistoryEntry, short_sha
 from maxitor.web.model.core.history_errors import HistoryNotFoundError, HistoryUnreachableError, TooManyWrongKeysError
@@ -78,13 +79,13 @@ async def refuse(
     """Log a port's refusal and raise its fixed answer; a refusal of a private history is a security warning."""
     if isinstance(outcome, PortUnreachable | PortNotModified):
         reason = outcome.reason if isinstance(outcome, PortUnreachable) else "an unexpected 304"
-        await box.warning(Channel.business, "History {%var.history} at {%var.port} cannot be read now: {%var.reason}", history=history.title, port=label(route), reason=reason)
+        await box.warning(Channel.business, "History {%var.history} at {%var.port} cannot be read now: {%var.reason}", HistoryUnreadableEvent(history=history.title, port=label(route), reason=reason))
         raise HistoryUnreachableError()
     if isinstance(history, PrivateHistory):
         if isinstance(outcome, PortTooManyWrongKeys):
-            await box.warning(Channel.security, "History {%var.history} at {%var.port} blocked Maxitor for too many wrong keys; the last came from {%var.client}", history=history.id, port=label(history.port), client=client or "unknown")
+            await box.warning(Channel.security, "History {%var.history} at {%var.port} blocked Maxitor for too many wrong keys; the last came from {%var.client}", HistoryPortBlockedMaxitorEvent(history=history.id, port=label(history.port), client=client or "unknown"))
         else:
-            await box.warning(Channel.security, "History {%var.history} at {%var.port} refused the key from {%var.client}", history=history.id, port=label(history.port), client=client or "unknown")
+            await box.warning(Channel.security, "History {%var.history} at {%var.port} refused the key from {%var.client}", HistoryKeyRefusedEvent(history=history.id, port=label(history.port), client=client or "unknown"))
     if isinstance(outcome, PortTooManyWrongKeys):
         raise TooManyWrongKeysError()
     raise HistoryNotFoundError()

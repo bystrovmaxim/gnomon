@@ -30,12 +30,14 @@ from __future__ import annotations
 
 from typing import Literal
 
+from maxitor.repo_graph_port.events import BadWebhookSignatureEvent, ClientBlockedEvent, WrongHistoryKeyEvent
 from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
 from pydantic import Field
 
 from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
@@ -71,6 +73,7 @@ class ReportSecurityEventAction(BaseAction[ReportSecurityEventParams, ReportSecu
     """
 
     @summary_aspect("Write the event")
+    @emits(BadWebhookSignatureEvent, ClientBlockedEvent, WrongHistoryKeyEvent)
     async def report_summary(
         self,
         params: ReportSecurityEventParams,
@@ -81,9 +84,9 @@ class ReportSecurityEventAction(BaseAction[ReportSecurityEventParams, ReportSecu
         """Write the event at its level."""
         _ = (state, connections)
         if params.kind == "wrong_key":
-            await box.warning(Channel.security, "Wrong key for history {%var.history} from {%var.client}", history=params.history or "(none named)", client=params.client)
+            await box.warning(Channel.security, "Wrong key for history {%var.history} from {%var.client}", WrongHistoryKeyEvent(history=params.history or "(none named)", client=params.client))
         elif params.kind == "bad_signature":
-            await box.warning(Channel.security, "Webhook with a wrong signature from {%var.client}", client=params.client)
+            await box.warning(Channel.security, "Webhook with a wrong signature from {%var.client}", BadWebhookSignatureEvent(client=params.client))
         else:
-            await box.critical(Channel.security, "Blocked {%var.client} for a minute: {%var.count} wrong keys", client=params.client, count=params.count)
+            await box.critical(Channel.security, "Blocked {%var.client} for a minute: {%var.count} wrong keys", ClientBlockedEvent(client=params.client, count=params.count))
         return ReportSecurityEventResult()

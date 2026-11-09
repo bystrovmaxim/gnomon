@@ -425,6 +425,23 @@ AOA turns a refusal into `AccessDenied`, which carries the verdict: the step tha
 
 The step gets no state of the action, so an aspect that needs the organization's `id` looks it up again — one light query. If the membership ended between the decision and the aspect, the aspect refuses with the same `FORBIDDEN_OBJECT` and touches nothing.
 
+### 6.7. What an action writes to the log
+
+Every domain of Maxitor — the core's and every plugin's — lists the events its actions may write: `events = (...)` on its `BaseDomain`. That makes the domain a typed zone of AOA. A method that writes declares its events with `@emits(...)`, and writes only those, each as an instance of a `BaseEvent` subclass whose typed fields are the line's variables:
+
+```python
+class NoteAddedEvent(BaseEvent):
+    note_id: str = Field(description="The note added")
+
+@summary_aspect("Add the note")
+@emits(NoteAddedEvent)
+async def add_summary(self, params, state, box, connections):
+    ...
+    await box.info(Channel.business, "Note {%var.note_id} added", NoteAddedEvent(note_id=note_id))
+```
+
+A line with no event, with loose variables, or with an event the method does not declare is refused when it is written; an `@emits` outside the domain's list fails the build. A domain that writes nothing declares `events = ()`. `maxitor plugin check` refuses a plugin whose domain lists no events. No event carries a password, a code, a token or a secret, and an email only masked.
+
 ## 7. The frame: the tree and the right panel
 
 The Maxitor screen is always one: on the left the navigation tree, at the top the core's row (organization, moment, the path to the open node, room, user), on the right the right panel, a grey field with dots. The frame belongs wholly to the core. A plugin is given one thing — the content of the right panel while its node is open. A plugin does not draw and cannot change the tree, the row or the panel's look. Into the tree it only **adds its nodes** by a YAML declaration, and the core builds the tree.

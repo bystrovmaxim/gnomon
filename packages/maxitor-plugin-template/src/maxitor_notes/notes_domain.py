@@ -16,4 +16,6 @@ class NotesDomain(BaseDomain):
     """
 
     name = "notes"
+    # The plugin writes no log line yet; a typed zone with no events refuses any line it would write.
+    events = ()
     description = "Notes people write on catalog items"

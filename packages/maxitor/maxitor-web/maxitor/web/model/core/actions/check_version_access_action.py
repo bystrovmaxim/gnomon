@@ -30,6 +30,7 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor.web.model.core.core_domain import CoreDomain
+from maxitor.web.model.core.events import HistoryKeyRefusedEvent, HistoryPortBlockedMaxitorEvent, HistoryUnreadableEvent
 from maxitor.web.model.core.history_address import PrivateHistory, history_from_name, parse_version_source
 from maxitor.web.model.core.history_errors import HistoryNotFoundError
 from maxitor.web.model.core.history_reading import refuse
@@ -49,6 +50,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.context_requires import context_requires
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
 from aoa.action_machine.resources import Connections
@@ -85,6 +87,7 @@ class CheckVersionAccessAction(BaseAction[CheckVersionAccessParams, CheckVersion
 
     @summary_aspect("Decide whether the reader may read the version")
     @context_requires("user.history_key", "request.client_ip")
+    @emits(HistoryKeyRefusedEvent, HistoryPortBlockedMaxitorEvent, HistoryUnreadableEvent)
     async def access_summary(
         self,
         params: CheckVersionAccessParams,

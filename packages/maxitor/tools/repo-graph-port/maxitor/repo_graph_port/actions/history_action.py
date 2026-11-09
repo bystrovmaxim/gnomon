@@ -33,6 +33,7 @@ from __future__ import annotations
 import asyncio
 from typing import cast
 
+from maxitor.repo_graph_port.events import HistoryListedEvent
 from maxitor.repo_graph_port.history_not_found_error import HistoryNotFoundError
 from maxitor.repo_graph_port.history_reading import (
     chosen,
@@ -61,6 +62,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.context_requires import context_requires
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
@@ -103,6 +105,7 @@ class HistoryAction(BaseAction[HistoryParams, HistoryResult]):
 
     @summary_aspect("List the history's versions")
     @context_requires("env.history_refresh_seconds", "user.history", "user.user_id")
+    @emits(HistoryListedEvent)
     async def history_summary(
         self,
         params: HistoryParams,
@@ -153,5 +156,5 @@ class HistoryAction(BaseAction[HistoryParams, HistoryResult]):
                 change=change,
             ))
         proposals = await proposals_of(mirror, cache, host, history, points[-1].graph_at if points else None, interval, points[-1].version if points else None)
-        await box.info(Channel.business, "History {%var.history} listed for {%var.reader}", history=history.id, reader=ctx.get("user.user_id") or "a guest")
+        await box.info(Channel.business, "History {%var.history} listed for {%var.reader}", HistoryListedEvent(history=history.id, reader=ctx.get("user.user_id") or "a guest"))
         return HistoryResult(versions=records, proposals=proposals, version_problem=await version_problem_of(mirror, host, history))

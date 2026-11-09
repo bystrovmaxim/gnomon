@@ -30,6 +30,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from maxitor.web.model.core.core_domain import CoreDomain
+from maxitor.web.model.core.events import HistoryKeyRefusedEvent, HistoryPortBlockedMaxitorEvent, HistoryUnreadableEvent
 from maxitor.web.model.core.history_reading import live_same_as, open_history
 from maxitor.web.model.core.resources.graph_source_gateway import GRAPH_SOURCE_CONNECTION_KEY, GraphSourceGateway
 from maxitor.web.model.core.resources.history_access import HISTORY_ACCESS_CONNECTION_KEY, HistoryAccessController
@@ -47,6 +48,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.context_requires import context_requires
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
 from aoa.action_machine.resources import Connections
@@ -88,6 +90,7 @@ class HistoryVersionsAction(BaseAction[HistoryVersionsParams, HistoryVersionsRes
 
     @summary_aspect("Answer the versions")
     @context_requires("user.history_key", "request.client_ip")
+    @emits(HistoryKeyRefusedEvent, HistoryPortBlockedMaxitorEvent, HistoryUnreadableEvent)
     async def versions_summary(
         self,
         params: HistoryVersionsParams,

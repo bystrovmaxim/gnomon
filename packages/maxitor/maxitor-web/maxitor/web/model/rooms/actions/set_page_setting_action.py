@@ -26,6 +26,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from maxitor.web.model.rooms.actions.room_action_support import INVALID_VALUE, RoomAnswerResult, located
+from maxitor.web.model.rooms.events import PageSettingChangedEvent
 from maxitor.web.model.rooms.pages import setting_error
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
@@ -35,6 +36,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -65,6 +67,7 @@ class SetPageSettingAction(BaseAction[SetPageSettingParams, RoomAnswerResult]):
     """
 
     @summary_aspect("Validate the setting and tell the room")
+    @emits(PageSettingChangedEvent)
     async def setting_summary(
         self,
         params: SetPageSettingParams,
@@ -84,10 +87,5 @@ class SetPageSettingAction(BaseAction[SetPageSettingParams, RoomAnswerResult]):
                 room,
                 {"type": "setting", "page": params.page, "name": params.name, "value": params.value, "by": participant.id},
             )
-        await box.info(
-            Channel.business,
-            "Setting {%var.setting} changed in room {%var.room}",
-            setting=params.name,
-            room=room.id,
-        )
+        await box.info(Channel.business, "Setting {%var.setting} changed in room {%var.room}", PageSettingChangedEvent(setting=params.name, room=room.id))
         return RoomAnswerResult()

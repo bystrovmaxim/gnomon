@@ -58,6 +58,18 @@ from maxitor.web.model.rooms.actions.room_action_support import (
     RoomAnswerResult,
     origin_allowed,
 )
+from maxitor.web.model.rooms.events import (
+    JoinRefusedEndedEvent,
+    JoinRefusedForeignOriginEvent,
+    JoinRefusedFullEvent,
+    JoinRefusedInvalidNameEvent,
+    JoinRefusedNoTicketEvent,
+    ParticipantJoinedEvent,
+    ParticipantReturnedEvent,
+    RoomCreatedForSourceEvent,
+    RoomCreatedOnHistoryEvent,
+    RoomCreationRefusedEvent,
+)
 from maxitor.web.model.rooms.pages import name_error, page_key, page_keys
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, Room, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
@@ -67,6 +79,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -134,6 +147,7 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswerResult]):
     """
 
     @summary_aspect("Check the newcomer, seat the tab and tell the room")
+    @emits(JoinRefusedEndedEvent, JoinRefusedForeignOriginEvent, JoinRefusedFullEvent, JoinRefusedInvalidNameEvent, JoinRefusedNoTicketEvent, ParticipantJoinedEvent, ParticipantReturnedEvent, RoomCreatedForSourceEvent, RoomCreatedOnHistoryEvent, RoomCreationRefusedEvent)
     async def join_summary(
         self,
         params: JoinRoomParams,
@@ -148,10 +162,10 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswerResult]):
         bundle = cast(StaticBundleStorage, connections[STATIC_BUNDLE_CONNECTION_KEY])
 
         if not origin_allowed(params.origin, params.host, registry.allowed_origins):
-            await box.warning(Channel.security, "Room join refused: foreign origin {%var.origin}", origin=params.origin)
+            await box.warning(Channel.security, "Room join refused: foreign origin {%var.origin}", JoinRefusedForeignOriginEvent(origin=params.origin))
             raise ConnectionRefusalError(ORIGIN_NOT_ALLOWED, "origin not allowed")
         if name_error(params.participant_name):
-            await box.warning(Channel.security, "Room join refused: invalid name for {%var.room}", room=params.room_id)
+            await box.warning(Channel.security, "Room join refused: invalid name for {%var.room}", JoinRefusedInvalidNameEvent(room=params.room_id))
             raise ConnectionRefusalError(INVALID_VALUE, "invalid name")
 
         histories = cast(HistoryStoreController, connections[HISTORY_STORE_CONNECTION_KEY])
@@ -164,7 +178,7 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswerResult]):
             returning = participant is not None
             if participant is None:
                 if len(room.participants) >= MAX_PARTICIPANTS:
-                    await box.warning(Channel.security, "Room join refused: {%var.room} is full", room=room.id)
+                    await box.warning(Channel.security, "Room join refused: {%var.room} is full", JoinRefusedFullEvent(room=room.id))
                     raise ConnectionRefusalError(ROOM_FULL, "room full")
                 participant = registry.add_participant(room, params.participant, params.participant_name)
             was_away = participant.away
@@ -188,9 +202,9 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswerResult]):
                 registry.broadcast(room, {"type": "presence", **participant.public()}, except_participant=participant.id)
 
         if not returning:
-            await box.info(Channel.business, "Participant {%var.participant} joined room {%var.room}", participant=participant.id, room=room.id)
+            await box.info(Channel.business, "Participant {%var.participant} joined room {%var.room}", ParticipantJoinedEvent(participant=participant.id, room=room.id))
         elif was_away:
-            await box.info(Channel.business, "Participant {%var.participant} returned to room {%var.room}", participant=participant.id, room=room.id)
+            await box.info(Channel.business, "Participant {%var.participant} returned to room {%var.room}", ParticipantReturnedEvent(participant=participant.id, room=room.id))
         return RoomAnswerResult()
 
     @staticmethod
@@ -206,12 +220,12 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswerResult]):
         if params.room_id != NEW_ROOM:
             existing = registry.room(params.room_id)
             if existing is None:
-                await box.warning(Channel.security, "Room join refused: {%var.room} has ended", room=params.room_id)
+                await box.warning(Channel.security, "Room join refused: {%var.room} has ended", JoinRefusedEndedEvent(room=params.room_id))
                 raise ConnectionRefusalError(ROOM_ENDED, "room ended")
             key = await _admitted(existing.history, params.ticket, histories, access, box)
             return existing, await _built(store, existing.source, key)
         if registry.room_count() >= MAX_ROOMS:
-            await box.warning(Channel.security, "Room creation refused: {%var.limit} rooms are open", limit=MAX_ROOMS)
+            await box.warning(Channel.security, "Room creation refused: {%var.limit} rooms are open", RoomCreationRefusedEvent(limit=MAX_ROOMS))
             raise ConnectionRefusalError(TOO_MANY_ROOMS, "too many rooms")
         if params.history:
             return await _history_room(params, registry, store, histories, access, box)
@@ -219,7 +233,7 @@ class JoinRoomAction(BaseAction[JoinRoomParams, RoomAnswerResult]):
             raise ConnectionRefusalError(INVALID_VALUE, "a new room needs a source")
         entry = await _built(store, params.source)
         room = registry.open_room(params.source, params.participant)
-        await box.info(Channel.business, "Room {%var.room} created for {%var.source}", room=room.id, source=label(params.source))
+        await box.info(Channel.business, "Room {%var.room} created for {%var.source}", RoomCreatedForSourceEvent(room=room.id, source=label(params.source)))
         return room, entry
 
 
@@ -245,7 +259,7 @@ async def _history_room(
     version_a = params.version_a if params.version_a and params.version_a != version and history.offers(params.version_a) and history.older(params.version_a, version) else None
     view = "one" if version_a is None else "split" if params.opening_view == "split" else "diff"
     room = registry.open_room(source, params.participant, history=history.name, version=version, version_a=version_a, view=view)
-    await box.info(Channel.business, "Room {%var.room} created on {%var.history}", room=room.id, history=history_line(history))
+    await box.info(Channel.business, "Room {%var.room} created on {%var.history}", RoomCreatedOnHistoryEvent(room=room.id, history=history_line(history)))
     return room, entry
 
 
@@ -262,7 +276,7 @@ async def _admitted(history_name: str | None, ticket: str, histories: HistorySto
     digest = access.redeem(ticket, history_name) if ticket else None
     key = next((held for held in history.keys if key_digest(held) == digest), None) if history is not None and digest else None
     if key is None:
-        await box.warning(Channel.security, "Room join refused: no valid ticket for a private history")
+        await box.warning(Channel.security, "Room join refused: no valid ticket for a private history", JoinRefusedNoTicketEvent())
         raise ConnectionRefusalError(ROOM_ENDED, "not found")
     return key
 

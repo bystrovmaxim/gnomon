@@ -29,6 +29,7 @@ from typing import cast
 
 from maxitor.graph_compare import Counts, ElementComparison, Status
 from maxitor.web.model.diagrams.diagrams_domain import DiagramsDomain
+from maxitor.web.model.diagrams.events import ComparisonComputedEvent
 from maxitor.web.model.diagrams.resources.comparison_store import (
     COMPARISON_STORE_CONNECTION_KEY,
     ComparisonStoreController,
@@ -39,6 +40,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseResult, BaseState, StubParams
@@ -69,6 +71,7 @@ class CompareVersionsAction(BaseAction[StubParams, CompareVersionsResult]):
     """
 
     @summary_aspect("Give the changed elements and the counts")
+    @emits(ComparisonComputedEvent)
     async def compare_summary(
         self,
         params: StubParams,
@@ -82,13 +85,7 @@ class CompareVersionsAction(BaseAction[StubParams, CompareVersionsResult]):
         before = store.computed
         comparison = await store.current()
         if store.computed != before:
-            await box.info(
-                Channel.debug,
-                "Comparison computed in {%var.ms} ms: nodes {%var.nodes}, edges {%var.edges}",
-                ms=round(store.last_milliseconds),
-                nodes=_said(comparison.node_counts),
-                edges=_said(comparison.edge_counts),
-            )
+            await box.info(Channel.debug, "Comparison computed in {%var.ms} ms: nodes {%var.nodes}, edges {%var.edges}", ComparisonComputedEvent(ms=round(store.last_milliseconds), nodes=_said(comparison.node_counts), edges=_said(comparison.edge_counts)))
         sha_a, sha_b = store.digests()
         return CompareVersionsResult(
             sha_a=sha_a,
