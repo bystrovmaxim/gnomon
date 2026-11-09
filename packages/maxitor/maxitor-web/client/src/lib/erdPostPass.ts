@@ -148,6 +148,9 @@ export type ErdLineInfo = {
   target_field?: string | null;
 };
 
+/** How long a hover waits before acting: a pointer passing over the drawing changes nothing. */
+export const HOVER_INTENT_MS = 100;
+
 /** The class the hovered look hangs on. */
 export const EDGE_HOVER_CLASS = "is-hovered";
 const MARK_NAME_FILL = "#0f172a";
@@ -512,20 +515,34 @@ export function bindLineHover(
   const touching = (table: string) =>
     new Set(edgesById(relations.flatMap((line, k) => (line.source === table || line.target === table ? [k] : []))));
   // The tables a set of lines joins: both ends of each.
+  // A hover that acted on every mouse move flashed the drawing and worked the main thread; the light waits
+  // ``HOVER_INTENT_MS``, and a further move resets it, so a pointer passing over the drawing changes nothing.
+  let hoverTimer: ReturnType<typeof setTimeout> | null = null;
+  const later = (action: () => void, trusted = true) => {
+    // A synthetic event (a check, a test) acts at once; the browser's own pointer waits, so a pass over the drawing
+    // never flashes it.
+    if (!trusted) return action();
+    if (hoverTimer !== null) clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(action, HOVER_INTENT_MS);
+  };
+  signal.addEventListener("abort", () => {
+    if (hoverTimer !== null) clearTimeout(hoverTimer);
+  });
+
   const joined = (edges: Element[]) => new Set(edges.flatMap((edge) => {
     const line = relations[Number(edge.id.slice(2))];
     return line ? [line.source, line.target] : [];
   }));
 
   root.querySelectorAll('g.edge[id^="re"]').forEach((edge) => {
-    edge.addEventListener("mouseenter", () => {
+    edge.addEventListener("mouseenter", (event: Event) => later(() => {
       show([edge], true);
       focusTables(root, joined([edge]), new Set([edge]));
-    }, { signal });
-    edge.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    edge.addEventListener("mouseleave", (event: Event) => later(() => {
       show([edge], false);
       clearTableFocus(root);
-    }, { signal });
+    }, event.isTrusted), { signal });
   });
 
   // A row's lines: every line one of whose ends is this row.
@@ -541,17 +558,17 @@ export function bindLineHover(
     if (!lines.length) return;
     // The row's own table stays the hovered one; its lines and every table they join are lit with it.
     const own = tableOf(cell.closest("g.node") ?? cell);
-    cell.addEventListener("mouseenter", () => {
+    cell.addEventListener("mouseenter", (event: Event) => later(() => {
       const edges = edgesById(lines);
       // Scenario 2 (maintainer, 2026-10-27): the field's lines go bold (``show``); the tables they join
       // stay bright; the hovered table's other lines stay as they are; every other line and table dims.
       show(edges, true);
       focusTables(root, new Set([own, ...joined(edges)]), touching(own));
-    }, { signal });
-    cell.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    cell.addEventListener("mouseleave", (event: Event) => later(() => {
       show(edgesById(lines), false);
       focusTables(root, new Set([own]));
-    }, { signal });
+    }, event.isTrusted), { signal });
   });
 
   // Bundles (spec 065): a bundle is lit as a line is, every row of its relations marked; its ends stay bright.
@@ -570,28 +587,28 @@ export function bindLineHover(
   for (const bundle of bundles) {
     const edge = bundleEdge(bundle);
     if (!edge) continue;
-    edge.addEventListener("mouseenter", () => {
+    edge.addEventListener("mouseenter", (event: Event) => later(() => {
       showBundles([bundle], true);
       focusTables(root, new Set(bundleEnds([bundle])), new Set([edge]));
-    }, { signal });
-    edge.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    edge.addEventListener("mouseleave", (event: Event) => later(() => {
       showBundles([bundle], false);
       clearTableFocus(root);
-    }, { signal });
+    }, event.isTrusted), { signal });
   }
   // A folded box: its bundles are lit, the tables and boxes at their other ends stay bright, the rest dims.
   root.querySelectorAll("g.node").forEach((node) => {
     const box = tableOf(node);
     if (!isContourId(box)) return;
     const own = bundles.filter((bundle) => bundle.source === box || bundle.target === box);
-    node.addEventListener("mouseenter", () => {
+    node.addEventListener("mouseenter", (event: Event) => later(() => {
       showBundles(own, true);
       focusTables(root, new Set([box, ...bundleEnds(own)]), new Set(bundleEdges(own)));
-    }, { signal });
-    node.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    node.addEventListener("mouseleave", (event: Event) => later(() => {
       showBundles(own, false);
       clearTableFocus(root);
-    }, { signal });
+    }, event.isTrusted), { signal });
   });
 
   // A resource contour (spec 064): its lines to other resources are lit as a hovered line is, the tables at their
@@ -611,19 +628,19 @@ export function bindLineHover(
     const own = bundles.filter((bundle) => bundle.source === frameId || bundle.target === frameId);
     // Inside tables: every line they touch. Folded: the bundles stand for them, so no table line is lit.
     const lineIds = inside.size ? relations.flatMap((line, k) => (inside.has(line.source) || inside.has(line.target) ? [k] : [])) : [];
-    cluster.addEventListener("mouseenter", () => {
+    cluster.addEventListener("mouseenter", (event: Event) => later(() => {
       const edges = edgesById(lineIds);
       cluster.classList.add(EDGE_HOVER_CLASS);
       show(edges, true);
       showBundles(own, true);
       focusTables(root, new Set([...inside, ...joined(edges), ...bundleEnds(own)]), new Set([...edges, ...bundleEdges(own)]));
-    }, { signal });
-    cluster.addEventListener("mouseleave", () => {
+    }, event.isTrusted), { signal });
+    cluster.addEventListener("mouseleave", (event: Event) => later(() => {
       cluster.classList.remove(EDGE_HOVER_CLASS);
       show(edgesById(lineIds), false);
       showBundles(own, false);
       clearTableFocus(root);
-    }, { signal });
+    }, event.isTrusted), { signal });
   });
 }
 

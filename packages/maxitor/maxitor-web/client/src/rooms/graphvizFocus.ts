@@ -19,8 +19,8 @@ import { cardFor, isFollowing, mirroredFocus, reportHover, sameRef, subscribeFoc
 
 /** Mouse events a follower's own mouse may not deliver to the diagram while following. */
 const HELD_BACK = ["mouseover", "mouseout", "mouseenter", "mouseleave", "click", "dblclick"] as const;
-/** The label shows at once: a diagram's hover is answered without the browser tooltip's wait. */
-const TOOLTIP_DELAY_MS = 0;
+/** How long the label waits: long enough that a pointer passing over the drawing shows nothing, short enough to feel at once. */
+const TOOLTIP_DELAY_MS = 100;
 
 const ROW_CELL = 'g[id^="a_fn"], g[id^="a_ft"]';
 
