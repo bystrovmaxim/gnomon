@@ -1,7 +1,7 @@
 // src/lib/erdCard.ts
 /** What a card says of a table or a row of the ERD, from what the diagram holds (spec 043, FR-004 – FR-006). */
 import type { CardField, CardSubject } from "@/components/diagrams/ElementCard";
-import { isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
+import { DOMAIN_CONTOUR_ID_PREFIX, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdField, type ErdRelation } from "@/lib/buildDotSource";
 import { copyEntity } from "@/lib/erdViews";
 import { FIELDS_CHANGED, rowCard, tableInside, type CardTarget } from "@/lib/erdDiffCard";
 import { svgDataUriForGraphNodeIcon } from "@/lib/icons";
@@ -105,14 +105,39 @@ function bundleSubject(
 const RESOURCE_FILL = "#7570B3";
 
 /**
- * The card of a resource's frame, or of its folded box (spec 068; spec 070): the resource's icon and name, and the
- * tables it keeps — an empty frame's card says it keeps none — folded as a table's fields are, their count on the fold.
+ * The card of a frame, or of its folded box (spec 068; spec 070; spec 071): a resource's icon and name, or a domain's,
+ * and the tables it keeps — an empty frame's card says it keeps none — folded as a table's fields are, their count on
+ * the fold.
  */
-function contourSubject(ref: ElementRef, id: string, entities: readonly ErdEntity[], resourceLabels: Readonly<Record<string, string>>): Omit<CardSubject, "at"> | null {
-  const resource = id.slice(3);
-  if (!(resource in resourceLabels) && !entities.some((entity) => tableResource(entity) === resource)) return null;
+function contourSubject(
+  ref: ElementRef,
+  id: string,
+  entities: readonly ErdEntity[],
+  resourceLabels: Readonly<Record<string, string>>,
+  domainLabels: Readonly<Record<string, string>>,
+): Omit<CardSubject, "at"> | null {
+  const key = id.slice(3);
   const short = (full: string) => full.split(".").pop() || full;
   const tableName = (entity: ErdEntity) => entity.label || short(copyEntity(entity.id));
+  if (id.startsWith(DOMAIN_CONTOUR_ID_PREFIX)) {
+    const tables = entities
+      .filter((entity) => (entity.domain_qualname?.trim() || "") === key)
+      .sort((one, other) => tableName(one).localeCompare(tableName(other)));
+    return {
+      key: `contour:${id}`,
+      ref,
+      title: domainLabels[key] || short(key),
+      icon: svgDataUriForGraphNodeIcon("#3b82f6", "Domain"),
+      detail: tables.length ? "Domain" : "Domain · no entity",
+      nodeId: null,
+      change: null,
+      fieldNoun: "table",
+      fields: tables.map((entity) => ({ name: tableName(entity), type: entity.entity_kind ?? undefined })),
+      copy: domainLabels[key] || short(key),
+    };
+  }
+  const resource = key;
+  if (!(resource in resourceLabels) && !entities.some((entity) => tableResource(entity) === resource)) return null;
   const tables = entities.filter((entity) => tableResource(entity) === resource).sort((one, other) => tableName(one).localeCompare(tableName(other)));
   return {
     key: `contour:${id}`,
@@ -185,9 +210,9 @@ export function erdSubject(
   domainLabels: Readonly<Record<string, string>> = {},
   storageKnown = true,
 ): Omit<CardSubject, "at"> | null {
-  // A resource's frame, and its folded box, have a card of their own (spec 068).
-  if (ref.kind === "contour") return contourSubject(ref, `rc:${ref.id}`, entities, resourceLabels);
-  if (ref.kind === "table" && isContourId(ref.id)) return contourSubject(ref, ref.id, entities, resourceLabels);
+  // A frame — a resource's or a domain's — and its folded box, have a card of their own (spec 068, spec 071).
+  if (ref.kind === "contour") return contourSubject(ref, ref.id, entities, resourceLabels, domainLabels);
+  if (ref.kind === "table" && isContourId(ref.id)) return contourSubject(ref, ref.id, entities, resourceLabels, domainLabels);
   const bundle = ref.kind === "edge" ? bundles.find((each) => each.id === ref.id) : undefined;
   if (bundle) return bundleSubject(ref, bundle, entities, relations, resourceLabels);
   if (ref.kind === "edge") return lineSubject(ref, entities, relations);

@@ -1,7 +1,7 @@
 // src/lib/erdPostPass.test.ts
 import { afterEach, describe, expect, it } from "vitest";
 import type { ErdEntity } from "@/lib/buildDotSource";
-import { scaleFoldControls, addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFoldControls, bindLineHover, erdBundleSx, erdFoldSx, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, erdBundleSx, contourResource, crossLines, erdContourHoverSx, END_LABEL_CLASS, erdEndLabelSx, focusTables, markRows, placeEndLabel, type Box, type ErdLineInfo } from "@/lib/erdPostPass";
 
 // Markup shaped like Graphviz's: Player (0) has id, gender and an FK row named showcase twice
 // (own row and FK row); Showcase (1) has id and players; Gender (2) has id.
@@ -385,13 +385,13 @@ ${contour("Orders")}${contour("Support")}${contour("Billing")}
     expect(crossLines("Billing", shopRelations, shopEntities)).toEqual([]);
   });
 
-  it("gives a resource contour, and only one, a 10 px hit stroke along its border", () => {
+  it("gives every frame's whole outline a transparent hit area that takes the pointer", () => {
     const root = mountShop();
-    addContourHitAreas(root);
     const hits = [...root.querySelectorAll("g.cluster path.erd-hit")];
     expect(hits.map((hit) => hit.closest("g.cluster")!.id)).toEqual(["rc:Orders", "rc:Support", "rc:Billing"]);
-    expect(hits[0]!.getAttribute("stroke-width")).toBe("10");
-    expect(hits[0]!.getAttribute("pointer-events")).toBe("stroke");
+    expect(hits[0]!.getAttribute("fill")).toBe("transparent");
+    expect(hits[0]!.getAttribute("pointer-events")).toBe("all");
+    expect(hits[0]!.getAttribute("stroke")).toBe("none");
     expect(contourResource(root.querySelector("#clust1")!)).toBeNull();
   });
 
@@ -463,40 +463,11 @@ describe("folded contours and their bundles (spec 065)", () => {
   const mountFold = () => {
     document.body.innerHTML = `<div id="root">${FOLD_SVG}</div>`;
     const root = document.getElementById("root")!;
-    addFoldControls(root);
     bindLineHover(root, foldRelations, foldEntities, new AbortController().signal, bundles);
     return root;
   };
   const bright = (root: ParentNode) =>
     [...root.querySelectorAll<SVGElement>("g.node")].filter((n) => n.style.opacity === "1").map((n) => n.querySelector("title")!.textContent).sort();
-
-  it("puts a minus in the top right corner of each contour and a plus on each folded box, once", () => {
-    const root = mountFold();
-    addFoldControls(root);
-    const controls = [...root.querySelectorAll(".erd-fold-control")].map((c) => [c.getAttribute("data-fold"), c.getAttribute("data-folded"), c.getAttribute("transform"), c.getAttribute("aria-label")]);
-    expect(controls).toEqual([
-      ["rc:Billing", "0", "translate(57,13)", "Fold"],
-      ["rc:Orders", "1", "translate(183,20)", "Unfold"],
-    ]);
-    expect(root.querySelector('[data-fold="rc:Orders"] path')!.getAttribute("d")).toContain("V");
-    expect(root.querySelector('[data-fold="rc:Billing"] path')!.getAttribute("d")).not.toContain("V");
-  });
-
-  it("draws a fold control at screen size: a 16-pixel face inside a 28-pixel hit area, growing inward from the corner (spec 068)", () => {
-    const root = mountFold();
-    addFoldControls(root);
-    const control = root.querySelector('[data-fold="rc:Billing"]')!;
-    const box = (selector: string) => ["x", "y", "width", "height"].map((name) => Number(control.querySelector(selector)!.getAttribute(name)));
-    expect(box(".erd-fold-hit")).toEqual([-28, 0, 28, 28]);
-    expect(box(".erd-fold-face")).toEqual([-22, 6, 16, 16]);
-    expect(control.querySelector(".erd-fold-scale")!.contains(control.querySelector(".erd-fold-face"))).toBe(true);
-    expect(control.querySelector("title")!.textContent).toBe("Fold");
-    const folded = root.querySelector('[data-fold="rc:Orders"]')!;
-    expect(["x", "width"].map((name) => Number(folded.querySelector(".erd-fold-hit")!.getAttribute(name)))).toEqual([0, 28]);
-    expect(erdFoldSx["& .erd-fold-scale"]).toMatchObject({ transformOrigin: "0 0", opacity: 0.75 });
-    scaleFoldControls(root, 0.25);
-    expect([...root.querySelectorAll<SVGGElement>(".erd-fold-scale")].map((part) => part.style.transform)).toEqual(Array(2).fill("scale(4.0000)"));
-  });
 
   it("lights a hovered bundle, marks the rows of every relation it stands for, and keeps its ends bright", () => {
     const root = mountFold();

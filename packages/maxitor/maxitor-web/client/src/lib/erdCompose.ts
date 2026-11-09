@@ -21,6 +21,7 @@ import {
   buildBlockMeasureDot,
   buildDotSource,
   CONTOUR_ID_PREFIX,
+  DOMAIN_CONTOUR_ID_PREFIX,
   erdBlockWidths,
   erdDomainFrameColour,
   erdGraphvizEngine,
@@ -163,6 +164,7 @@ function groupsIn(members: readonly ErdEntity[], groups: readonly ErdGroup[] | u
 /** The ordered frames of ``data``, as ``buildDotSource`` frames them. */
 function framesOf(data: ErdGraphPayload): Frame[] {
   const entities = data.entities ?? [];
+  if (data.model !== "physical" && data.model !== "logical") return [];
   const plan = foldPlan(data);
   if (data.model === "physical") {
     const frames: Frame[] = [];
@@ -203,7 +205,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
     const members = entities.filter((entity) => domainOf(entity) === qual);
     return {
       name: `cluster_domain_${index}`,
-      id: `cluster_domain_${index}`,
+      id: `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`,
       label: data.domain_labels?.[qual] ?? (qual.split(".").pop() || qual),
       colour: erdDomainFrameColour(qual, data.domain_colors),
       resource: null,

@@ -195,22 +195,29 @@ describe("the card of a resource's frame and of its folded box (spec 068, spec 0
   const card = (ref: { kind: "contour" | "table"; id: string }) => erdSubject(ref, drawn, document.createElement("div"), [], labels);
 
   it("gives a resource's frame its icon, name and copies — their count only on the fold — and the full id to copy", () => {
-    const subject = card({ kind: "contour", id: ORDERS })!;
+    const subject = card({ kind: "contour", id: `rc:${ORDERS}` })!;
     expect([subject.title, subject.detail, subject.nodeId, subject.copy, subject.fieldNoun]).toEqual(["OrdersResource", "Resource", ORDERS, ORDERS, "table"]);
     expect(subject.fields).toEqual([{ name: "Line", type: "detail" }, { name: "Order", type: "core" }]);
     expect(decodeURIComponent(subject.icon!)).toContain("#7570B3");
   });
 
   it("gives a folded resource box the same card as its frame", () => {
-    expect(card({ kind: "table", id: `rc:${ORDERS}` })!.fields).toEqual(card({ kind: "contour", id: ORDERS })!.fields);
+    expect(card({ kind: "table", id: `rc:${ORDERS}` })!.fields).toEqual(card({ kind: "contour", id: `rc:${ORDERS}` })!.fields);
   });
 
   it("gives an empty resource's frame a card that says it keeps nothing", () => {
-    expect(card({ kind: "contour", id: ARCHIVE })).toMatchObject({ title: "ArchiveResource", detail: "Resource · keeps no entity", fields: [] });
+    expect(card({ kind: "contour", id: `rc:${ARCHIVE}` })).toMatchObject({ title: "ArchiveResource", detail: "Resource · keeps no entity", fields: [] });
   });
 
   it("has no card for a frame of a resource the graph does not have", () => {
-    expect(card({ kind: "contour", id: "shop.Gone" })).toBeNull();
+    expect(card({ kind: "contour", id: "rc:shop.Gone" })).toBeNull();
+  });
+
+  it("gives a domain's frame its name and tables", () => {
+    const store = { id: "shop.Order", label: "Order", domain_qualname: "shop.StoreDomain", entity_kind: "core", fields: [] };
+    const subject = erdSubject({ kind: "contour", id: "dc:shop.StoreDomain" }, [store], document.createElement("div"), [], {}, [], { "shop.StoreDomain": "StoreDomain" })!;
+    expect([subject.title, subject.detail, subject.fieldNoun]).toEqual(["StoreDomain", "Domain", "table"]);
+    expect(subject.fields).toEqual([{ name: "Order", type: "core" }]);
   });
 
   it("reads a copy's card as its entity's, naming the entity for the full graph", () => {

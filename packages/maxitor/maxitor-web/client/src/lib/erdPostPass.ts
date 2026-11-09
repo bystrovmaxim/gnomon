@@ -174,21 +174,41 @@ export function contourResource(group: Element): string | null {
   return group.classList.contains("cluster") && group.id.startsWith(CONTOUR_ID_PREFIX) ? group.id.slice(CONTOUR_ID_PREFIX.length) : null;
 }
 
+/** The frame a cluster group names — a resource's (``rc:``) or a domain's (``dc:``) — or ``null`` for any other group. */
+export function contourId(group: Element): string | null {
+  return group.classList.contains("cluster") && isContourId(group.id) ? group.id : null;
+}
+
 /**
- * Give every resource contour an invisible stroke about 10 px wide along its border, so the pointer catches a 2 px
- * border; only the stroke takes the pointer, so the empty inside of a contour is not the contour's (spec 064, FR-005).
+ * What a click on ``target`` folds (research R4): the frame whose empty space it hit, or the folded box it landed on.
+ * ``stayed`` is whether the pointer moved less than the click slop between down and up, so a pan that starts inside a
+ * frame does not fold it. ``null`` folds nothing.
+ */
+export function clickFolds(target: Element | null, stayed: boolean): string | null {
+  if (!target?.closest || !stayed) return null;
+  const frame = target.closest("g.cluster");
+  const frameId = frame ? contourId(frame) : null;
+  if (frameId) return frameId;
+  const box = target.closest("g.node");
+  const boxTitle = box?.querySelector(":scope > title")?.textContent?.trim() ?? "";
+  return isContourId(boxTitle) ? boxTitle : null;
+}
+
+/**
+ * Give every frame — a resource's and a domain's — a hit area over its whole outline, filled transparent, so a click
+ * anywhere on its empty space folds it; tables and lines are drawn after it, so they stay on top and keep their own
+ * hover and card (research R4).
  */
 export function addContourHitAreas(root: ParentNode): void {
   root.querySelectorAll("g.cluster").forEach((cluster) => {
-    if (contourResource(cluster) === null || cluster.querySelector("path.erd-hit")) return;
+    if (contourId(cluster) === null || cluster.querySelector("path.erd-hit")) return;
     const path = cluster.querySelector("path");
     if (!path) return;
     const hit = path.cloneNode(false) as Element;
     hit.setAttribute("class", "erd-hit");
-    hit.setAttribute("fill", "none");
-    hit.setAttribute("stroke", "transparent");
-    hit.setAttribute("stroke-width", "10");
-    hit.setAttribute("pointer-events", "stroke");
+    hit.setAttribute("fill", "transparent");
+    hit.setAttribute("stroke", "none");
+    hit.setAttribute("pointer-events", "all");
     path.parentNode!.insertBefore(hit, path);
   });
 }
@@ -322,98 +342,6 @@ export const erdContourHoverSx = {
 export const erdBundleSx = {
   [`& g.edge[id^='rb'] text, & g.edge[id^='rb'] rect.${END_LABEL_CLASS}`]: { visibility: "visible" },
 } as const;
-
-/** The class of a contour's fold control, and the attribute naming the contour it folds (spec 065). */
-export const FOLD_CONTROL_CLASS = "erd-fold-control";
-export const FOLD_ATTRIBUTE = "data-fold";
-
-/** The class of the part of a fold control that is drawn at screen size. */
-const FOLD_SCALE_CLASS = "erd-fold-scale";
-
-/**
- * The canvas's style for the fold controls (spec 068): drawn at screen size whatever the zoom, plain at rest, darker
- * under the pointer, with the hand cursor.
- */
-export const erdFoldSx = {
-  [`& .${FOLD_CONTROL_CLASS}`]: { cursor: "pointer" },
-  [`& .${FOLD_SCALE_CLASS}`]: {
-    transformBox: "view-box",
-    transformOrigin: "0 0",
-    opacity: 0.75,
-    transition: "opacity 120ms ease",
-  },
-  [`& g.cluster:hover .${FOLD_SCALE_CLASS}, & g.node:hover .${FOLD_SCALE_CLASS}`]: { opacity: 0.9 },
-  [`& .${FOLD_CONTROL_CLASS}:hover .${FOLD_SCALE_CLASS}`]: { opacity: 1 },
-  [`& .${FOLD_CONTROL_CLASS}:hover .erd-fold-face`]: { strokeWidth: 2.2 },
-} as const;
-
-/**
- * A fold control's sizes in screen pixels (spec 068): the square a reader sees, the area that takes the click, and the
- * gap between the square and its contour's top right corner. On a contour the control grows from that corner inward, so
- * it never reaches the name, which stands in the middle of the header. A folded box can be smaller on screen than the
- * control, so there it stands outside, to the right of the box's top right corner.
- */
-const FOLD_FACE = 16;
-const FOLD_HIT = 28;
-const FOLD_GAP = 6;
-
-/**
- * Put a fold control in the top right corner of every resource frame — a minus — and of every
- * folded box — a plus (spec 065). It sits inside the contour's group, so pointing at it is pointing at the contour.
- * It is drawn at screen size: the canvas scales it by one over its zoom through ``scaleFoldControls`` (spec 068).
- */
-export function addFoldControls(root: ParentNode): void {
-  const groups: Array<{ group: Element; id: string; folded: boolean }> = [];
-  root.querySelectorAll("g.cluster").forEach((cluster) => {
-    if (isContourId(cluster.id)) groups.push({ group: cluster, id: cluster.id, folded: false });
-  });
-  root.querySelectorAll("g.node").forEach((node) => {
-    const title = tableOf(node);
-    if (isContourId(title)) groups.push({ group: node, id: title, folded: true });
-  });
-  for (const { group, id, folded } of groups) {
-    if (group.querySelector(`:scope > .${FOLD_CONTROL_CLASS}`)) continue;
-    const outline = group.querySelector("path:not(.erd-hit), polygon");
-    const span = spanOf(outline?.getAttribute("d") ?? outline?.getAttribute("points") ?? "");
-    if (!outline || !span) continue;
-    const ink = outline.getAttribute("stroke") ?? "#64748b";
-    // In screen pixels, from the corner: the hit area fills the corner — inside a contour, outside a folded box — and
-    // the face sits in its middle.
-    const hitX = folded ? 0 : -FOLD_HIT;
-    const face = { x: hitX + (FOLD_HIT - FOLD_FACE) / 2, y: (FOLD_HIT - FOLD_FACE) / 2 };
-    const middle = { x: face.x + FOLD_FACE / 2, y: face.y + FOLD_FACE / 2 };
-    const arm = FOLD_FACE * 0.28;
-    const sign = `M${fixed(middle.x - arm)} ${fixed(middle.y)}H${fixed(middle.x + arm)}` + (folded ? `M${fixed(middle.x)} ${fixed(middle.y - arm)}V${fixed(middle.y + arm)}` : "");
-    const control = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    control.setAttribute("class", FOLD_CONTROL_CLASS);
-    control.setAttribute(FOLD_ATTRIBUTE, id);
-    control.setAttribute("data-folded", folded ? "1" : "0");
-    control.setAttribute("pointer-events", "all");
-    control.setAttribute("role", "button");
-    control.setAttribute("aria-label", folded ? "Unfold" : "Fold");
-    control.setAttribute("transform", `translate(${fixed(span.x1 + (folded ? FOLD_GAP / 2 : -FOLD_GAP / 2))},${fixed(span.y0 + (folded ? 0 : FOLD_GAP / 2))})`);
-    control.innerHTML =
-      `<title>${folded ? "Unfold" : "Fold"}</title>` +
-      `<g class="${FOLD_SCALE_CLASS}">` +
-      `<rect class="erd-fold-hit" x="${hitX}" y="0" width="${FOLD_HIT}" height="${FOLD_HIT}" fill="transparent"/>` +
-      `<rect class="erd-fold-face" x="${fixed(face.x)}" y="${fixed(face.y)}" width="${FOLD_FACE}" height="${FOLD_FACE}" rx="4" fill="#ffffff" stroke="${ink}" stroke-width="1.5"/>` +
-      `<path d="${sign}" fill="none" stroke="${ink}" stroke-width="2" stroke-linecap="round"/>` +
-      `</g>`;
-    group.appendChild(control);
-  }
-}
-
-/**
- * Draw every fold control in ``root`` at screen size for ``zoom`` (spec 068). Only the controls change: a style the whole
- * drawing inherits would make the browser restyle every table on every frame of a pan, and the fields would lag behind
- * their tables. The canvas calls it when the zoom changes and on each new drawing, never on a pan alone.
- */
-export function scaleFoldControls(root: ParentNode, zoom: number): void {
-  const transform = `scale(${(1 / Math.max(zoom, 0.01)).toFixed(4)})`;
-  root.querySelectorAll<SVGGElement>(`.${FOLD_SCALE_CLASS}`).forEach((part) => {
-    if (part.style.transform !== transform) part.style.transform = transform;
-  });
-}
 
 /** The canvas's style for line labels: hidden, and shown on their plates while the line is hovered. */
 export const erdEndLabelSx = {

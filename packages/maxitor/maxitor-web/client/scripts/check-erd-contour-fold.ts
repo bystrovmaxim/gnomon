@@ -1,12 +1,13 @@
 // scripts/check-erd-contour-fold.ts
 /**
- * The ERD drawing check of spec 065 — folding contours, on the SVG the page shows.
+ * The ERD drawing check of spec 065 and spec 071 — folding a frame by a click, on the SVG the page shows.
  *
  * It lays out the physical view of a shop — a storefront, a support desk and a billing database — through the WASM
- * Graphviz build the client loads, with the production passes, and asserts what the reader sees: a folded resource is
- * one box with its counts and no copy of its own; each link of a copy still drawn keeps a line of its own to the box;
- * the links between two folded boxes are one line, wider, with its count on a plate; every resource's frame carries a
- * minus in its corner and every box a plus (spec 065, spec 070).
+ * Graphviz build the client loads, with the production passes, puts the SVG in a DOM, gives every frame its transparent
+ * hit area, and asserts what the reader sees: a folded resource is one box with its counts and no copy of its own; each
+ * link of a copy still drawn keeps a line of its own to the box; the links between two folded boxes are one line,
+ * wider, with its count on a plate; a click on a frame's empty space folds it, a click on its box unfolds it, a drag of
+ * 10 px folds nothing, and no corner control (``erd-fold-scale``) exists (spec 065, spec 071).
  *
  * Exit codes: 0 all assertions passed; 1 an assertion failed; 2 the environment cannot run it.
  */
@@ -15,7 +16,7 @@ import { Graphviz } from "@hpcc-js/wasm-graphviz";
 import { JSDOM } from "jsdom";
 import { buildDotSource, ERD_CARD_RADIUS, ERD_CARD_STROKE, setErdPaint, type ErdEntity, type ErdGraphPayload } from "../src/lib/buildDotSource.ts";
 import { containNodeFills } from "../src/lib/containNodeFills.ts";
-import { addFoldControls, drawErdCards } from "../src/lib/erdPostPass.ts";
+import { addContourHitAreas, clickFolds, drawErdCards } from "../src/lib/erdPostPass.ts";
 import { copyId, physicalDrawing } from "../src/lib/erdViews.ts";
 
 let failures = 0;
@@ -58,12 +59,11 @@ const shop = (folded: string[]): ErdGraphPayload => ({
 });
 
 setErdPaint("domain", {});
-/** The drawing as the page holds it, in a DOM, its fold controls placed. */
+/** The drawing as the page holds it, in a DOM, its hit areas placed. */
 function draw(folded: string[]): Document {
   const markup = drawErdCards(containNodeFills(gv.layout(buildDotSource(shop(folded), "gv-dot-lr"), "svg", "dot")), ERD_CARD_RADIUS, ERD_CARD_STROKE);
   const { document } = new JSDOM(`<div id="root">${markup.slice(markup.indexOf("<svg"))}</div>`).window;
-  (globalThis as { document?: Document }).document = document;
-  addFoldControls(document.getElementById("root")!);
+  addContourHitAreas(document.getElementById("root")!);
   return document;
 }
 const titles = (doc: Document) => [...doc.querySelectorAll("g.node > title")].map((title) => title.textContent ?? "");
@@ -80,17 +80,22 @@ check("a folded resource is one box, its copies not drawn", titles(one).includes
 check("the box says what it stands for", one.body.textContent!.includes("2 tables · 1 relation inside"));
 const fromTables = lines(one);
 check("each link of a copy still drawn has a line of its own to the box", fromTables.length === 3 && fromTables.every((line) => line.width === 1 && line.plate === ""), JSON.stringify(fromTables));
-const controls = [...one.querySelectorAll(".erd-fold-control")].map((control) => `${control.getAttribute("data-fold")}=${control.getAttribute("data-folded")}`).sort();
-check("every resource's frame has a minus and the box a plus", JSON.stringify(controls) === JSON.stringify([`rc:${BILLING}=0`, `rc:${STOREFRONT}=1`, `rc:${SUPPORT}=0`]), controls.join(", "));
+check("no corner control remains", one.querySelectorAll(".erd-fold-scale, .erd-fold-control").length === 0);
+
+// A click on a frame's empty space — its hit area — folds it; a click on the folded box unfolds it; a drag folds none.
+const hit = one.querySelector(`g[id="rc:${BILLING}"] path.erd-hit`)!;
+check("a click on a frame's empty space folds it", clickFolds(hit, true) === `rc:${BILLING}`);
+check("a drag of 10 px folds nothing", clickFolds(hit, false) === null);
+const box = [...one.querySelectorAll("g.node")].find((node) => node.querySelector(":scope > title")?.textContent?.trim() === `rc:${STOREFRONT}`)!;
+check("a click on the folded box unfolds it", clickFolds(box, true) === `rc:${STOREFRONT}`);
 
 const two = draw([`rc:${STOREFRONT}`, `rc:${SUPPORT}`]);
 const between = lines(two);
 check("the links between two folded boxes are one line", between.length === 1, JSON.stringify(between));
 check("that line is wider and plated with its count", between[0]?.width === 4.4 && between[0]?.plate === "×3", JSON.stringify(between[0]));
 
-
 if (failures > 0) {
   console.error(`${failures} assertion(s) failed`);
   process.exit(1);
 }
-console.log("ERD contour fold: folded boxes, a line per table link, bundles between boxes, fold controls");
+console.log("ERD contour fold: a click folds and unfolds, a drag folds nothing, no corner control");

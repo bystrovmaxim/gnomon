@@ -91,7 +91,7 @@ const label = contour(STOREFRONT).querySelector("a")?.getAttribute("xlink:title"
 check("the hover label is the resource's full id", label === STOREFRONT, label ?? "none");
 const hit = contour(STOREFRONT).querySelector("path.erd-hit");
 const border = contour(STOREFRONT).querySelector("path:not(.erd-hit)");
-check("the border has a 10 px hit stroke along it, catching only the stroke", hit?.getAttribute("d") === border?.getAttribute("d") && hit?.getAttribute("stroke-width") === "10" && hit?.getAttribute("pointer-events") === "stroke");
+check("the frame's whole outline — border, name and empty space — is one transparent hit area", hit?.getAttribute("d") === border?.getAttribute("d") && hit?.getAttribute("fill") === "transparent" && hit?.getAttribute("pointer-events") === "all");
 
 const hover = (element: Element, on: boolean) => element.dispatchEvent(new MouseEvent(on ? "mouseenter" : "mouseleave"));
 const tableTitle = (node: Element) => node.querySelector("title")?.textContent ?? "";
@@ -111,8 +111,18 @@ hover(contour(BILLING), true);
 check("billing, with no line out, dims every table and line", bright().length === 0 && dimmed().length === 4 && lit().length === 0 && [...root.querySelectorAll<HTMLElement>("g.edge")].every((edge) => edge.style.opacity === "0.2"));
 hover(contour(BILLING), false);
 
+// A domain frame in the logical view carries the same hit area over its whole outline (spec 071).
+const logical = gv.layout(buildDotSource({ entities: shop.entities.map((copy) => ({ ...copy, id: copy.copy_of })), relations: [{ source: "shop.Ticket", target: "shop.Order", source_field: "order", relationship_kind: "association" }], model: "logical", domain_labels: { "shop.ShopDomain": "Shop" } }, "gv-dot-lr"), "svg", "dot");
+const logicalDom = new JSDOM(`<div id="root">${logical.slice(logical.indexOf("<svg"))}</div>`).window.document;
+const logicalRoot = logicalDom.getElementById("root")!;
+addContourHitAreas(logicalRoot);
+const domain = logicalRoot.querySelector('g[id="dc:shop.ShopDomain"]');
+const domainHit = domain?.querySelector("path.erd-hit");
+const domainBorder = domain?.querySelector("path:not(.erd-hit)");
+check("a domain frame's whole outline is one transparent hit area", domainHit?.getAttribute("d") === domainBorder?.getAttribute("d") && domainHit?.getAttribute("pointer-events") === "all");
+
 if (failures > 0) {
   console.error(`${failures} assertion(s) failed`);
   process.exit(1);
 }
-console.log("ERD contour hover: a resource contour lights its links to other resources and dims the rest");
+console.log("ERD contour hover: a frame's whole outline is one hit area, for a resource and a domain");

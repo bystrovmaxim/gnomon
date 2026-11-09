@@ -221,9 +221,13 @@ describe("folding a resource frame (spec 065, spec 070)", () => {
     expect(buildDotSource(physical([`rc:${ARCHIVE}`]), "gv-dot-lr")).toContain("0 tables · 0 relations inside");
   });
 
-  it("folds nothing in the logical view, and ignores an id that names no frame", () => {
+  it("folds a domain frame in the logical view, and ignores an id that names no frame", () => {
     expect(foldPlan({ ...logical(), folded_contours: new Set([`rc:${STOREFRONT}`]) }).holder.size).toBe(0);
     expect(buildDotSource(physical(["rc:shop.Nowhere"]), "gv-dot-lr")).toBe(buildDotSource(physical([]), "gv-dot-lr"));
+    const plan = foldPlan({ ...logical(), folded_contours: new Set([`dc:${STORE}`]) });
+    expect([...plan.holder.keys()]).toEqual(["shop.Order", "shop.OrderLine"]);
+    expect(plan.counts.get(`dc:${STORE}`)).toEqual({ tables: 2, inside: 1, resources: 1, changed: 0 });
+    expect(plan.bundles).toEqual([{ id: "rb0", source: "shop.Invoice", target: `dc:${STORE}`, relations: [1] }]);
   });
 
   it("marks a folded box whose copies changed, in Diff", () => {

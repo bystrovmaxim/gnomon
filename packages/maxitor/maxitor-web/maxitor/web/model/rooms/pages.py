@@ -141,10 +141,12 @@ SETTINGS: dict[str, dict[str, Callable[[Any], bool]]] = {
         "one_hop": _boolean,
         "fields_collapsed": _boolean,
         "fields_except": _strings,
-        # The view drawn (spec 070), the resources switched off (spec 061) and the frames drawn folded (spec 065).
+        # The view drawn (spec 070), the resources switched off (spec 061) and the frames drawn folded (spec 065);
+        # the logical view's domain frames on or off (spec 071).
         "model": _one_of("logical", "physical"),
         "disabled_resources": _strings,
         "folded_contours": _strings,
+        "frames": _boolean,
         "paint": _one_of("domains", "kinds", "resources", "changes"),
         "paint_diff": _one_of("domains", "kinds", "resources", "changes"),
     },

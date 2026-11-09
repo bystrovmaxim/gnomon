@@ -31,6 +31,13 @@ describe("the view in the address (spec 038)", () => {
     expect(paramsToView(new URLSearchParams("paint=domains")).settings).not.toHaveProperty("disabled_resources");
   });
 
+  it("round-trips the logical view's frames switch (spec 071)", () => {
+    expect(viewToParams({ frames: false })).toEqual({ frames: "0" });
+    expect(viewToParams({ frames: true })).toEqual({ frames: "1" });
+    expect(paramsToView(new URLSearchParams("frames=1")).settings).toEqual({ frames: true });
+    expect(paramsToView(new URLSearchParams("frames=0")).settings).toEqual({ frames: false });
+  });
+
   it("carries the map's filters", () => {
     const settings = { disabled_node_types: ["Action", "Field"], disabled_domains: ["a.Orders"] };
     const params = viewToParams(settings);

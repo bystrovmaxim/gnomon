@@ -11,7 +11,7 @@
  * element's tooltip text in a small label beside it — and so does everyone over their own diagram: the native tooltip
  * is taken off, its text kept as ``data-tooltip``, so the two always look alike (spec 038).
  */
-import { CONTOUR_ID_PREFIX } from "@/lib/buildDotSource";
+import { isContourId } from "@/lib/buildDotSource";
 import { dimUnpaired, hoverAcross, reportHalfHover, subscribeHalfHover, type Portable } from "@/lib/halfPicking";
 import { useHalf } from "@/lib/half";
 import { useEffect, useRef } from "react";
@@ -38,9 +38,9 @@ export function elementRefOf(target: Element, nodeKind: "node" | "table"): Eleme
   const node = target.closest("g.node");
   const title = node ? titleOf(node) : "";
   if (title) return { kind: nodeKind, id: title };
-  // A resource's frame is named by its resource (spec 064); a domain's frame has no such id and names nothing.
+  // A frame is named by its id — a resource's (spec 064) or a domain's (spec 071); anything else names nothing.
   const contour = target.closest("g.cluster");
-  return contour?.id.startsWith(CONTOUR_ID_PREFIX) ? { kind: "contour", id: contour.id.slice(CONTOUR_ID_PREFIX.length) } : null;
+  return contour && isContourId(contour.id) ? { kind: "contour", id: contour.id } : null;
 }
 
 /** The elements a hover of ``ref`` enters, outermost first; the last one carries its tooltip. */
@@ -51,7 +51,7 @@ export function elementsOf(root: ParentNode, ref: ElementRef): Element[] {
     return [node, cell].filter((e): e is Element => e != null);
   }
   if (ref.kind === "contour") {
-    const contour = [...root.querySelectorAll("g.cluster")].find((e) => e.id === `${CONTOUR_ID_PREFIX}${ref.id}`);
+    const contour = [...root.querySelectorAll("g.cluster")].find((e) => e.id === ref.id);
     return contour ? [contour] : [];
   }
   const selector = ref.kind === "edge" ? "g.edge" : "g.node";

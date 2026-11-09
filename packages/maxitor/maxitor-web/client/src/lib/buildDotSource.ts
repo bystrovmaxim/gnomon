@@ -105,6 +105,8 @@ export const erdEdgeId = (k: number) => `re${k}`;
  * has one, so the post-pass and the room tell it from a domain frame and from the invisible spacing.
  */
 export const CONTOUR_ID_PREFIX = "rc:";
+/** Prefix of a domain frame's id in the logical view: ``dc:<domain qualname>`` (spec 071). */
+export const DOMAIN_CONTOUR_ID_PREFIX = "dc:";
 
 /** Id of the ``i``-th "same entity" line of the ``k``-th entity drawn more than once (spec 070). */
 export const erdSameId = (k: number, i: number) => `se${k}_${i}`;
@@ -270,9 +272,9 @@ export type ErdFoldPlan = {
   counts: ReadonlyMap<string, ErdFoldCount>;
 };
 
-/** Whether ``id`` names a resource frame (``rc:``). */
+/** Whether ``id`` names a frame — a resource's (``rc:``) or a domain's (``dc:``). */
 export function isContourId(id: string): boolean {
-  return id.startsWith(CONTOUR_ID_PREFIX);
+  return id.startsWith(CONTOUR_ID_PREFIX) || id.startsWith(DOMAIN_CONTOUR_ID_PREFIX);
 }
 
 /** The resource a drawn table lies in: a copy's resource in the physical view, else none. */
@@ -281,29 +283,39 @@ export function tableResource(entity: ErdEntity): string | null {
 }
 
 /**
- * The fold plan of ``data`` (spec 065): in the physical view a copy is drawn in its resource's frame when that frame is
- * folded. A relation between two folded boxes joins the bundle of those two boxes, whichever way it points; a relation
- * from a table still drawn to a box is a line of its own; one with both ends in one box is counted inside it. A
- * specialization is never drawn.
+ * The fold plan of ``data`` (spec 065, spec 071): in the physical view a copy is drawn in its resource's frame when that
+ * frame is folded; in the logical view an entity is drawn in its domain's frame when that frame is folded. A relation
+ * between two folded boxes joins the bundle of those two boxes, whichever way it points; a relation from a table still
+ * drawn to a box is a line of its own; one with both ends in one box is counted inside it. A specialization is never
+ * drawn.
  */
 export function foldPlan(data: ErdGraphPayload): ErdFoldPlan {
-  const folded = data.model === "physical" ? (data.folded_contours ?? new Set<string>()) : new Set<string>();
+  const folded = data.folded_contours ?? new Set<string>();
   const holder = new Map<string, string>();
   const counts = new Map<string, ErdFoldCount>();
   const count = (id: string) => {
     if (!counts.has(id)) counts.set(id, { tables: 0, inside: 0, resources: 1, changed: 0 });
     return counts.get(id)!;
   };
+  /** The frame a drawn table belongs to: its resource's in the physical view, its domain's in the logical one. */
+  const frameOf = (entity: ErdEntity): string | null => {
+    if (data.model === "physical") {
+      const resource = tableResource(entity);
+      return resource ? `${CONTOUR_ID_PREFIX}${resource}` : null;
+    }
+    const qual = entity.domain_qualname?.trim();
+    return qual ? `${DOMAIN_CONTOUR_ID_PREFIX}${qual}` : null;
+  };
   for (const entity of data.entities ?? []) {
-    const resource = tableResource(entity);
-    const id = resource ? `${CONTOUR_ID_PREFIX}${resource}` : null;
+    const id = frameOf(entity);
     if (!id || !folded.has(id)) continue;
     holder.set(entity.id, id);
     const box = count(id);
     box.tables += 1;
     if (entity.diff !== undefined && erdGlance(entity) !== "unchanged") box.changed += 1;
   }
-  for (const id of folded) if ((data.resource_ids ?? []).includes(id.slice(CONTOUR_ID_PREFIX.length))) count(id);
+  // An empty resource frame still folds: its box stands alone, its tables and relations inside are none.
+  for (const id of folded) if (data.model === "physical" && id.startsWith(CONTOUR_ID_PREFIX) && (data.resource_ids ?? []).includes(id.slice(CONTOUR_ID_PREFIX.length))) count(id);
   const bundles: ErdBundle[] = [];
   const byEnds = new Map<string, ErdBundle>();
   (data.relations ?? []).forEach((relation, k) => {
@@ -772,7 +784,7 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     const colour = paintSource === "domain" ? (data.domain_colors?.[qual] ?? FRAME_GREY) : FRAME_GREY;
     return [
       `  subgraph "${name}" {`,
-      '    id="";',
+      `    id="${escDot(`${DOMAIN_CONTOUR_ID_PREFIX}${qual}`)}";`,
       `    tooltip="${escDot(qual)}";`,
       `    label=<<TABLE BORDER="0" CELLPADDING="10"><TR><TD><B>${escHtml(domainName(qual))}</B></TD></TR></TABLE>>;`,
       '    style="rounded";',
@@ -790,8 +802,18 @@ export function buildDotSource(data: ErdGraphPayload, layout: ErdGraphvizLayout,
     return quals.map((qual) => ({ qual, members: members.filter((nd) => domainOf(nd) === qual) }));
   };
   const framed = new Set<string>();
-  if (data.model === "logical" && isDot) {
+  if (data.model === "logical") {
     byDomain(entities ?? []).forEach(({ qual, members }, index) => {
+      const id = `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`;
+      const name = domainName(qual);
+      const colour = paintSource === "domain" ? (data.domain_colors?.[qual] ?? FRAME_GREY) : FRAME_GREY;
+      if (isFolded(id)) {
+        members.forEach((nd) => framed.add(nd.id));
+        lines.push(...foldNode(id, name, colour, colour === FRAME_GREY ? "#475569" : colour));
+        return;
+      }
+      // The three engines that cannot frame reproducibly are composed by ``erdCompose`` (research R2).
+      if (!isDot) return;
       members.forEach((nd) => framed.add(nd.id));
       lines.push(`  subgraph "cluster_domain_${index}_room" {`, "    style=invis;", '    label="";', '    id="";', '    tooltip="";', "    margin=36;", ...domainFrame(`cluster_domain_${index}`, qual, members), "  }");
     });

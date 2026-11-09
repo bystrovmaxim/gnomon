@@ -19,20 +19,20 @@ One phase = one commit, referencing (#80); the phases are the seven of issue #80
 
 ## Phase 2 — The logical view's frames, folding by a click, the frame's card (US2, US3, US4; FR-004–FR-011; SC-002, SC-004, SC-005)
 
-- [ ] T011 [US2] Add the page setting `frames` in `client/lib/viewUrl.ts` (`frames: { param: "frames", kind: "switch" }`, default on) and `"frames": _boolean` on the `domain-erd` page in `web/maxitor/web/model/rooms/pages.py`
-- [ ] T012 [US2] Add a frames switch beside `ErdModelPill` in `ErdGraphvizCanvas.tsx`, shown in the logical view; off, `buildDotSource` emits no domain cluster and `erdCompose` is skipped
-- [ ] T013 [US2] Draw the logical view's domain frames in all five layouts through the paths of phase 1; frame ids `dc:<domain qualname>` (a constant beside `CONTOUR_ID_PREFIX` in `client/lib/buildDotSource.ts`)
-- [ ] T014 [US2] Extend `foldPlan` in `client/lib/buildDotSource.ts` to fold domain frames from `folded_contours` in the logical view, drawing the folded box as a resource frame's is drawn; `pages.py` accepts `dc:` ids in `folded_contours`; a fold whose frame is not drawn is kept and ignored
-- [ ] T015 [US3] In `client/lib/erdPostPass.ts` make `addContourHitAreas` cover every frame (`rc:` and `dc:`), its whole outline filled transparent with `pointer-events="all"`; bind a click on it (pointer moved < 4 px between down and up) to fold, and a click on a folded box to unfold, in `ErdGraphvizCanvas.tsx`
-- [ ] T016 [US3] Remove `addFoldControls`, `scaleFoldControls`, `FOLD_SCALE_CLASS`, `FOLD_FACE`, `FOLD_HIT`, `FOLD_GAP` from `client/lib/erdPostPass.ts` and the fold zoom tracking (`foldZoomRef`) from `ErdGraphvizCanvas.tsx`, with their tests
-- [ ] T017 [US4] Bind the frame's card to the hit area and to the folded box for both frame kinds; a table or line inside keeps its own card and hover
-- [ ] T018 [P] [US2] Vitest: `foldPlan` folds a domain frame; `viewUrl` reads and writes `frames`; a stale fold id is ignored; a folded frame whose tables are all filtered out is not drawn
-- [ ] T019 [P] [US2] pytest in `web/tests`: the room accepts `frames` and `dc:` folds, refuses a non-boolean `frames`
-- [ ] T020 [US2] Extend `scripts/check-erd-logical-view.ts` to five layouts, frames on (a frame per domain, none overlapping, no foreign table) and off (no frame); extend `scripts/check-layout-determinism.ts` to the logical view with frames off
-- [ ] T021 [US3] Rewrite `scripts/check-erd-contour-fold.ts`: a click inside a frame folds it, a click on the box unfolds it, a drag of 10 px does not fold, no element of class `erd-fold-scale` exists
-- [ ] T022 [US4] Extend `scripts/check-erd-contour-hover.ts`: the frame's card on its border, name and empty space, for a resource and a domain frame; a table's card on a table inside
-- [ ] T023 [US2] Side by side and Diff: both halves draw with the same frames switch, folds and paint; Vitest on the settings each half reads, and a case in `scripts/check-erd-contour-fold.ts` folding a frame in Side by side
-- [ ] T024 Adversarial check: keep `pointer-events="stroke"`, then fold on any pointer-up; T022 and T021 fail in turn, nothing else; restore. Commit phase 2
+- [x] T011 [US2] Add the page setting `frames` in `client/lib/viewUrl.ts` (`frames: { param: "frames", kind: "switch" }`, default on) and `"frames": _boolean` on the `domain-erd` page in `web/maxitor/web/model/rooms/pages.py`
+- [x] T012 [US2] Add a frames switch beside `ErdModelPill` in `ErdGraphvizCanvas.tsx`, shown in the logical view; off, `buildDotSource` emits no domain cluster and `erdCompose` is skipped
+- [x] T013 [US2] Draw the logical view's domain frames in all five layouts through the paths of phase 1; frame ids `dc:<domain qualname>` (a constant beside `CONTOUR_ID_PREFIX` in `client/lib/buildDotSource.ts`)
+- [x] T014 [US2] Extend `foldPlan` in `client/lib/buildDotSource.ts` to fold domain frames from `folded_contours` in the logical view, drawing the folded box as a resource frame's is drawn; `pages.py` accepts `dc:` ids in `folded_contours`; a fold whose frame is not drawn is kept and ignored
+- [x] T015 [US3] In `client/lib/erdPostPass.ts` make `addContourHitAreas` cover every frame (`rc:` and `dc:`), its whole outline filled transparent with `pointer-events="all"`; bind a click on it (pointer moved < 4 px between down and up) to fold, and a click on a folded box to unfold, in `ErdGraphvizCanvas.tsx`
+- [x] T016 [US3] Remove `addFoldControls`, `scaleFoldControls`, `FOLD_SCALE_CLASS`, `FOLD_FACE`, `FOLD_HIT`, `FOLD_GAP` from `client/lib/erdPostPass.ts` and the fold zoom tracking (`foldZoomRef`) from `ErdGraphvizCanvas.tsx`, with their tests
+- [x] T017 [US4] Bind the frame's card to the hit area and to the folded box for both frame kinds; a table or line inside keeps its own card and hover
+- [x] T018 [P] [US2] Vitest: `foldPlan` folds a domain frame; `viewUrl` reads and writes `frames`; a stale fold id is ignored; a folded frame whose tables are all filtered out is not drawn
+- [x] T019 [P] [US2] pytest in `web/tests`: the room accepts `frames` and `dc:` folds, refuses a non-boolean `frames`
+- [x] T020 [US2] Extend `scripts/check-erd-logical-view.ts` to five layouts, frames on (a frame per domain, none overlapping, no foreign table) and off (no frame); extend `scripts/check-layout-determinism.ts` to the logical view with frames off
+- [x] T021 [US3] Rewrite `scripts/check-erd-contour-fold.ts`: a click inside a frame folds it, a click on the box unfolds it, a drag of 10 px does not fold, no element of class `erd-fold-scale` exists
+- [x] T022 [US4] Extend `scripts/check-erd-contour-hover.ts`: the frame's card on its border, name and empty space, for a resource and a domain frame; a table's card on a table inside
+- [x] T023 [US2] Side by side and Diff: both halves draw with the same frames switch, folds and paint; Vitest on the settings each half reads, and a case in `scripts/check-erd-contour-fold.ts` folding a frame in Side by side
+- [x] T024 Adversarial check: keep `pointer-events="stroke"`, then fold on any pointer-up; T022 and T021 fail in turn, nothing else; restore. Commit phase 2
 
 ## Phase 3 — The paint switch (US5; FR-012, FR-013)
 
