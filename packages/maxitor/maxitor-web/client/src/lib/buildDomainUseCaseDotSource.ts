@@ -226,8 +226,8 @@ export function buildDomainUseCaseDotBundle(
     `  edge [${edgeDefaultAttrs}];`,
   ];
 
-  const pushActionNodes = (indent: string) => {
-    for (const a of actions) {
+  const pushActionNodes = (indent: string, list: DomainUseCaseDiagramPayload["actions"] = actions) => {
+    for (const a of list) {
       const nid = domainUseCaseDotNodeId("a", a.id);
       const linesCount = wrapLabel(a.short_label || a.label).length;
       const H = Math.max(60, linesCount * 14 + 20);
@@ -243,16 +243,34 @@ export function buildDomainUseCaseDotBundle(
   };
 
   if (boundary) {
-    // Neutral contour — diagram may mix actions from several domains (see per-node accent_color).
-    lines.push(`  subgraph cluster_scope {`);
-    lines.push(`    label="";`);
-    lines.push(`    style="rounded,filled";`);
-    lines.push(`    color="#64748b";`);
-    lines.push(`    fontcolor="#0f172a";`);
-    lines.push(`    fillcolor="#ffffff";`);
-    lines.push(`    penwidth=1.2;`);
-    pushActionNodes("    ");
-    lines.push(`  }`);
+    const domains = [...new Set(actions.map((action) => action.domain_id))];
+    if (domains.length > 1) {
+      // The all-domains use case: one boundary per domain, each named, its own use cases inside (spec 071).
+      domains.forEach((domainId, at) => {
+        const mine = actions.filter((action) => action.domain_id === domainId);
+        const label = mine[0]?.domain_short_label ?? domainId;
+        lines.push(`  subgraph cluster_scope_${at} {`);
+        lines.push(`    label="${dotEscLabel(label)}";`);
+        lines.push(`    style="rounded,filled";`);
+        lines.push(`    color="#64748b";`);
+        lines.push(`    fontcolor="#0f172a";`);
+        lines.push(`    fillcolor="#ffffff";`);
+        lines.push(`    penwidth=1.2;`);
+        pushActionNodes("    ", mine);
+        lines.push(`  }`);
+      });
+    } else {
+      // One domain: the neutral contour around its use cases, as before.
+      lines.push(`  subgraph cluster_scope {`);
+      lines.push(`    label="";`);
+      lines.push(`    style="rounded,filled";`);
+      lines.push(`    color="#64748b";`);
+      lines.push(`    fontcolor="#0f172a";`);
+      lines.push(`    fillcolor="#ffffff";`);
+      lines.push(`    penwidth=1.2;`);
+      pushActionNodes("    ");
+      lines.push(`  }`);
+    }
   } else {
     pushActionNodes("  ");
   }
