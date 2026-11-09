@@ -187,6 +187,10 @@ const LAYOUT_TOOLS: {
  * follower would glide after each new picture (spec 038, spec 070). A drawing without frames fits its tables and lines.
  */
 const FRAMED_FIT = { fitToViewBox: true, fitMarginPx: 8 };
+/** The last layouts, by the text Graphviz was given: folding a frame and unfolding it again is instant — the second
+ *  picture comes from here, not from Graphviz. Small on purpose: a few pictures cover a person's back and forth. */
+const LAYOUT_CACHE = new Map<string, string>();
+const LAYOUT_CACHE_MAX = 24;
 
 export function ErdGraphvizCanvas({
   bundle,
@@ -557,11 +561,17 @@ export function ErdGraphvizCanvas({
         if (cancelled || !prepared) return;
         // Dot draws frames as clusters; Neato, FDP and Circo go through the composer (research R2). With the logical
         // view's frames off there is no frame, so those three lay the tables out plain, as before (spec 071).
-        const svg = prepared.isDot
+        const cacheKey = `${layout}\n${foldedData.model ?? "plain"}\n${prepared.source}`;
+        const cached = LAYOUT_CACHE.get(cacheKey);
+        const svg = cached ?? (prepared.isDot
           ? prepared.gv.layout(prepared.source, "svg", engine)
           : foldedData.model
             ? erdCompose(foldedData, layout, (dot, eng) => prepared.gv.layout(dot, "svg", eng as Engine))
-            : prepared.gv.layout(prepared.source, "svg", engine);
+            : prepared.gv.layout(prepared.source, "svg", engine));
+        if (!cached) {
+          LAYOUT_CACHE.set(cacheKey, svg);
+          if (LAYOUT_CACHE.size > LAYOUT_CACHE_MAX) LAYOUT_CACHE.delete(LAYOUT_CACHE.keys().next().value!);
+        }
         if (cancelled) return;
         setRawSvg(svg);
         // The renderer paints a card's band and row tints as rectangles inside a rounded outline;
