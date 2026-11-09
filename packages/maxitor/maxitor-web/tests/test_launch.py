@@ -41,3 +41,13 @@ def test_the_front_runs_when_it_is_installed(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(importlib, "import_module", lambda _module: SimpleNamespace(run=lambda: ran.append(True)))
     launch.main()
     assert ran == [True]
+
+
+def test_plugin_check_without_its_extra_names_the_extra(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """``maxitor plugin check`` without the SDK: one line naming the ``plugins`` extra, exit 2."""
+    monkeypatch.setattr("sys.argv", ["maxitor", "plugin", "check", ".", "--core", "4.0.0"])
+    monkeypatch.setattr(importlib, "import_module", _missing("maxitor_plugin_sdk"))
+    with pytest.raises(SystemExit) as stopped:
+        launch.main()
+    assert stopped.value.code == 2
+    assert capsys.readouterr().err == 'maxitor plugin check needs its extra: pip install "maxitor[plugins]"\n'

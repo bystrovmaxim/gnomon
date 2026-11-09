@@ -13,7 +13,7 @@ import { enabledKeys } from "@/lib/freshGraph";
 import { useCurrentPage, usePageSetting } from "@/lib/pageSettings";
 import { CollapseAllButton, CollapseFramesButton, HoverCardsButton, ZoomToolbar } from "@/components/ui/ZoomToolbar";
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
-import { defaultPaint, paintSettingName, paintSource, type PaintSection } from "@/lib/erdPaint";
+import { erdPaintSource, paintSettingName, type PaintSection } from "@/lib/erdPaint";
 import { OneHopToggle } from "@/components/ui/OneHopToggle";
 import { useSvgPanZoom, WHEEL_ZOOM_SHIELD_SX } from "../../hooks/useSvgPanZoom";
 import {
@@ -517,7 +517,8 @@ export function ErdGraphvizCanvas({
   }, [bundle.entity_kinds, baseEntities]);
   // What paints the headers is a page setting, One's and Diff's apart: a room shares it, the address carries it.
   const diffDrawing = Boolean(bundle.diff);
-  const [chosenPaint, setChosenPaint] = usePageSetting<PaintSection>(paintSettingName(diffDrawing), defaultPaint(diffDrawing));
+  // ``null`` until the reader chooses: the physical view's own default, resources, is not a choice of Domains.
+  const [chosenPaint, setChosenPaint] = usePageSetting<PaintSection | null>(paintSettingName(diffDrawing), null);
   // Resources paint only the physical view; there they paint until someone chooses another section (spec 070).
   const paintSections: PaintSection[] = [
     "domains",
@@ -525,7 +526,7 @@ export function ErdGraphvizCanvas({
     ...(model === "physical" && baseResources.length > 0 ? (["resources"] as const) : []),
     ...(diffDrawing && changesOnDiagram(baseEntities).length > 0 ? (["changes"] as const) : []),
   ];
-  const paintSection = paintSource(paintSections, model === "physical" && chosenPaint === defaultPaint(diffDrawing) && !diffDrawing ? "resources" : chosenPaint);
+  const paintSection = erdPaintSource(paintSections, chosenPaint, model === "physical", diffDrawing);
   // The paint is CSS, not the DOT (spec 071): the tables and frames carry ``data-*`` tags, and this is its stylesheet.
   // A repaint rewrites it, laying nothing out.
   const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}|${JSON.stringify(bundle.domain_qualifier_colors)}`;
@@ -947,7 +948,7 @@ export function ErdGraphvizCanvas({
             onToggleChange={toggleChange}
             resourceRows={resourceRows}
             onToggleResource={toggleResource}
-            paint={choosing ? { source: paintSection, onPaint: setChosenPaint } : null}
+            paint={choosing ? { source: paintSection, onPaint: (section: string) => setChosenPaint(section as PaintSection) } : null}
           />
         )}
         {half?.side !== "b" && <ErdModelPill model={model} counts={modelCounts} physicalKnown={bundle.storage_known} physicalAvailable={physicalAvailable} onModel={setModel} />}

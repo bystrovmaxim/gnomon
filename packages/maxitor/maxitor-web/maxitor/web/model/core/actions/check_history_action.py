@@ -34,6 +34,12 @@ from __future__ import annotations
 from typing import Literal, cast
 
 from maxitor.web.model.core.core_domain import CoreDomain
+from maxitor.web.model.core.events import (
+    HeldKeyRevokedEvent,
+    HistoryChangedEvent,
+    HistoryNotCheckedEvent,
+    HistoryUnchangedEvent,
+)
 from maxitor.web.model.core.history_entry import HistoryEntry
 from maxitor.web.model.core.history_reading import history_line, text_or_none
 from maxitor.web.model.core.resources.history_store import HISTORY_STORE_CONNECTION_KEY, HistoryStoreController
@@ -53,6 +59,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
@@ -90,6 +97,7 @@ class CheckHistoryAction(BaseAction[CheckHistoryParams, CheckHistoryResult]):
     """
 
     @summary_aspect("Check the history and tell its rooms")
+    @emits(HeldKeyRevokedEvent, HistoryChangedEvent, HistoryNotCheckedEvent, HistoryUnchangedEvent)
     async def check_summary(
         self,
         params: CheckHistoryParams,
@@ -120,10 +128,10 @@ async def _check(entry: HistoryEntry, gateway: RepoGraphPortGateway, rooms: Room
         listed = await gateway.versions(entry.route, entry.link, key, entry.etag, version_link=entry.version_link, version_key=entry.version_key)
         if isinstance(listed, PortNotFound):
             entry.forget(key)
-            await box.warning(Channel.security, "{%var.history} at {%var.port}: the port no longer accepts a key Maxitor held", history=history_line(entry), port=label(entry.route))
+            await box.warning(Channel.security, "{%var.history} at {%var.port}: the port no longer accepts a key Maxitor held", HeldKeyRevokedEvent(history=history_line(entry), port=label(entry.route)))
             continue
         if not isinstance(listed, Listed | PortNotModified):
-            await box.warning(Channel.business, "{%var.history} at {%var.port} not checked: the port cannot be read now", history=history_line(entry), port=label(entry.route))
+            await box.warning(Channel.business, "{%var.history} at {%var.port} not checked: the port cannot be read now", HistoryNotCheckedEvent(history=history_line(entry), port=label(entry.route)))
             return "unreachable"
         described = await gateway.describe(entry.route, entry.link, key, version_link=entry.version_link, version_key=entry.version_key)
         live = described.body.get("live") if isinstance(described, Described) and not entry.public else entry.live
@@ -132,13 +140,13 @@ async def _check(entry: HistoryEntry, gateway: RepoGraphPortGateway, rooms: Room
         if isinstance(described, Described):
             version_file, version_problem = text_or_none(described.body.get("version_file")), text_or_none(described.body.get("version_problem"))
         if isinstance(listed, PortNotModified) and (live, version_file, version_problem) == (entry.live, entry.version_file, entry.version_problem):
-            await box.info(Channel.business, "{%var.history} unchanged", history=history_line(entry))
+            await box.info(Channel.business, "{%var.history} unchanged", HistoryUnchangedEvent(history=history_line(entry)))
             return "unchanged"
         if isinstance(listed, Listed):
             entry.versions, entry.etag, entry.proposals = listed.versions, listed.etag, listed.proposals
         entry.live, entry.version_file, entry.version_problem = live, version_file, version_problem
         _tell_rooms(entry, rooms)
-        await box.info(Channel.business, "{%var.history} changed: {%var.count} versions{%var.live}", history=history_line(entry), count=len(entry.versions), live=" and Live" if entry.live else "")
+        await box.info(Channel.business, "{%var.history} changed: {%var.count} versions{%var.live}", HistoryChangedEvent(history=history_line(entry), count=len(entry.versions), live=" and Live" if entry.live else ""))
         return "changed"
     for room in rooms.rooms_of_history(entry.name):
         rooms.broadcast(room, {"type": "refused", "code": 4404, "reason": "not found"})

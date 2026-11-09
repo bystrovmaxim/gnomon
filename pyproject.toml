@@ -10,7 +10,7 @@ license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.12"
 authors = [{ name = "@Bystrov.Maxim" }]
 classifiers = ["Private :: Do Not Upload"]
-dependencies = ["maxitor[all]", "maxitor-plugin-template"]
+dependencies = ["maxitor[all]", "maxitor-plugin-sdk", "maxitor-plugin-template"]
 
 [project.optional-dependencies]
 dev = [
@@ -33,10 +33,11 @@ dev = [
 package = false
 
 [tool.uv.workspace]
-members = ["packages/maxitor", "packages/maxitor-plugin-template"]
+members = ["packages/maxitor", "packages/maxitor-plugin-sdk", "packages/maxitor-plugin-template"]
 
 [tool.uv.sources]
 maxitor = { workspace = true }
+maxitor-plugin-sdk = { workspace = true }
 maxitor-plugin-template = { workspace = true }
 
 [tool.pytest.ini_options]
@@ -56,12 +57,17 @@ show_error_codes = true
 namespace_packages = true
 explicit_package_bases = true
 exclude = "collect_python_files\\.py$"
-mypy_path = "external/aoa/packages/aoa-action-machine/src:external/aoa/packages/aoa-fastapi-adapter/src:packages/maxitor/maxitor-web:packages/maxitor/tools/repo-graph-port:packages/maxitor/tools/graph-builder:packages/maxitor/core/graph_compare:packages/maxitor/core/graph_map:packages/maxitor-plugin-template/src"
+mypy_path = "external/aoa/packages/aoa-action-machine/src:external/aoa/packages/aoa-fastapi-adapter/src:packages/maxitor/maxitor-core:packages/maxitor/maxitor-web:packages/maxitor/tools/repo-graph-port:packages/maxitor/tools/graph-builder:packages/maxitor/core/graph_compare:packages/maxitor/core/graph_map:packages/maxitor-plugin-sdk/src:packages/maxitor-plugin-template/src"
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+# The core's drivers ship no types: asyncpg for its storage's errors, botocore for signing Postbox's requests.
+module = ["asyncpg", "asyncpg.*", "botocore", "botocore.*"]
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "maxitor_notes.actions.*"
@@ -137,8 +143,8 @@ exclude = ["tests/"]
 [tool.taskipy.tasks]
 maxitor = "uv run uvicorn maxitor.web.api.app:app --reload --host 127.0.0.1 --port 8000"
 lint = "ruff check packages/ tests/ scripts/"
-typecheck = "mypy packages/maxitor/maxitor-web/maxitor packages/maxitor/tools/repo-graph-port/maxitor packages/maxitor/tools/graph-builder/maxitor packages/maxitor/core/graph_compare/maxitor packages/maxitor/core/graph_map/maxitor packages/maxitor-plugin-template/src/maxitor_notes"
-pylint = "pylint packages/maxitor packages/maxitor-plugin-template/src/maxitor_notes"
+typecheck = "mypy packages/maxitor/maxitor-core/maxitor packages/maxitor/maxitor-web/maxitor packages/maxitor/tools/repo-graph-port/maxitor packages/maxitor/tools/graph-builder/maxitor packages/maxitor/core/graph_compare/maxitor packages/maxitor/core/graph_map/maxitor packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk packages/maxitor-plugin-template/src/maxitor_notes"
+pylint = "pylint packages/maxitor packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk packages/maxitor-plugin-template/src/maxitor_notes"
 dead = "vulture"
 cc = "python scripts/check_radon.py cc"
 mi = "python scripts/check_radon.py mi"

@@ -34,6 +34,7 @@ from maxitor.web.model.core.actions.check_source_action import CheckSourceAction
 from maxitor.web.model.core.resources.graph_source_gateway import GRAPH_SOURCE_CONNECTION_KEY, GraphSourceGateway
 from maxitor.web.model.core.resources.graph_store_controller import GRAPH_STORE_CONNECTION_KEY, GraphStoreController
 from maxitor.web.model.rooms.actions.room_action_support import SOURCE_UNAVAILABLE, RoomAnswerResult, located
+from maxitor.web.model.rooms.events import RoomSourceReloadedEvent
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 
@@ -41,6 +42,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -69,6 +71,7 @@ class ReloadSourceForRoomAction(BaseAction[ReloadSourceForRoomParams, RoomAnswer
     """
 
     @summary_aspect("Rebuild the source and announce a changed graph")
+    @emits(RoomSourceReloadedEvent)
     async def reload_summary(
         self,
         params: ReloadSourceForRoomParams,
@@ -90,11 +93,5 @@ class ReloadSourceForRoomAction(BaseAction[ReloadSourceForRoomParams, RoomAnswer
         )
         if result.status == "failed":
             raise ConnectionRefusalError(SOURCE_UNAVAILABLE, "the service's graph cannot be rebuilt now")
-        await box.info(
-            Channel.business,
-            "Participant {%var.participant} reloaded {%var.source} for room {%var.room}",
-            participant=participant.id,
-            source=room.source,
-            room=room.id,
-        )
+        await box.info(Channel.business, "Participant {%var.participant} reloaded {%var.source} for room {%var.room}", RoomSourceReloadedEvent(participant=participant.id, source=room.source, room=room.id))
         return RoomAnswerResult()

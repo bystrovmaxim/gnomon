@@ -1,0 +1,15 @@
+# maxitor-core.yaml — the passport of Maxitor's core: who it is and which files of a plugin it reads.
+# Its version is the version of the maxitor package; CorePassportAction answers both together.
+passport: 1
+
+# The core's identity: a plugin's requires.maxitor names a range of its versions.
+id: maxitor
+
+# The formats of a plugin's files this core reads; a plugin written in another format is refused.
+reads:
+  plugin-passport: [1]
+  navigation: [1]
+  foreign-keys: [1]
+
+# The major version of maxitor-plugin-sdk this core is built with; a plugin built with another is refused.
+sdk: 1

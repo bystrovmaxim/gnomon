@@ -160,11 +160,12 @@ def test_only_browser_includes_the_client_build_it_needs() -> None:
 
 
 def test_only_group_packaging_keeps_the_build_and_its_smoke() -> None:
-    """The packaging selector keeps Maxitor's build and the install smoke that reads it."""
+    """The packaging selector keeps the builds of Maxitor and the plugin SDK and the install smoke that reads them."""
     runner = _runner()
     rows = {step.name: step for step in runner._select(runner.STEPS, "ci", False, "packaging", None)}
-    assert set(rows) == {"Build wheel/sdist (packages/maxitor)", "Packaging wheel install smoke"}
-    assert rows["Packaging wheel install smoke"].after == ("Build wheel/sdist (packages/maxitor)",)
+    builds = ("Build wheel/sdist (packages/maxitor)", "Build wheel/sdist (packages/maxitor-plugin-sdk)")
+    assert set(rows) == {*builds, "Packaging wheel install smoke"}
+    assert rows["Packaging wheel install smoke"].after == builds
 
 
 def _graph_rows(runner, graph_file: Path) -> tuple:

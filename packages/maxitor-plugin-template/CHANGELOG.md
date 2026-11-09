@@ -5,6 +5,14 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-11-10
+
+### Changed
+
+- **The checks of a plugin's files live in `maxitor-plugin-sdk`.** The JSON schemas and `plugin_check.py` left the template's `checks/` for the SDK, which the template now depends on; its tests import them from there, and `maxitor plugin check . --core 4.0.0` decides it against a core.
+- **The passport names its SDK.** `sdk: 1` is the major version of `maxitor-plugin-sdk` the plugin is built with; a core built with another refuses it.
+- **The notes read the core's organizations from its own schema.** The storage reads `organization.organization`, `organization."user"` and `user_versions`, the tables of Maxitor's core.
+
 ## [0.2.0] — 2026-11-09
 
 ### Changed

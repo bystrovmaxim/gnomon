@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-template/checks/schemas/foreign-keys-1.schema.json",
+  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/foreign-keys-1.schema.json",
   "title": "Maxitor cross-plugin foreign keys, format 1",
   "description": "foreign-keys.yaml: identifiers only. No constraint name, no delete rule, no SQL, no source schema: the installer builds the statement from checked names.",
   "type": "object",

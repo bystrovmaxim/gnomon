@@ -113,7 +113,7 @@ STOP_GRACE_SECONDS = 5.0
 POLL_SECONDS = 0.05
 CLIENT_BUILD = "Maxitor client: npm ci and Vite build"
 GRAPH_WRITE = "Graph files (graph-builder write)"
-PACKAGES = ("packages/maxitor",)
+PACKAGES = ("packages/maxitor", "packages/maxitor-plugin-sdk")
 LOCAL = "local"
 CI = "ci"
 BOTH = "both"
@@ -197,6 +197,14 @@ STEPS: tuple[Step, ...] = (
     # Do not chase it; the steps below stay green with it in the log.
     Step(CLIENT_BUILD, f"({CLIENT} && npm ci && npm run build)", "client", after=(AUTO_FIX,)),
     _client("Maxitor client: unit tests", "npm test"),
+    # The core's Next.js application: its pages and server code compile and typecheck. Its browser check needs
+    # the local stand (scripts/core-stand.sh) and runs by hand: web/scripts/check-core.mjs.
+    Step(
+        "Maxitor core: the Next.js application builds",
+        "(cd packages/maxitor/maxitor-core/web && npm ci --no-audit --no-fund && npm run build)",
+        "client",
+        after=(AUTO_FIX,),
+    ),
     # Every diagram must be laid out to the same bits in Chromium, Firefox and WebKit, on a phone and a
     # desktop screen, or pointers in a room land on the wrong nodes (spec 028, FR-006). The same step
     # then opens a room in each engine and proves a pointer lands within 2 px of its node (SC-003).
@@ -251,11 +259,13 @@ STEPS: tuple[Step, ...] = (
             ci_command=f'uv run --extra dev pytest packages/{package}/tests/ -v -m "not benchmark"',
         )
         for package in (
+            "maxitor/maxitor-core",
             "maxitor/maxitor-web",
             "maxitor/tools/repo-graph-port",
             "maxitor/tools/graph-builder",
             "maxitor/core/graph_compare",
             "maxitor/core/graph_map",
+            "maxitor-plugin-sdk",
             "maxitor-plugin-template",
         )
     ),

@@ -33,6 +33,7 @@ from __future__ import annotations
 import asyncio
 from typing import cast
 
+from maxitor.repo_graph_port.events import HostEventReceivedEvent
 from maxitor.repo_graph_port.history_reading import refreshed
 from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
 from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
@@ -45,6 +46,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
@@ -85,6 +87,7 @@ class ReceiveHostEventAction(BaseAction[ReceiveHostEventParams, ReceiveHostEvent
     """
 
     @summary_aspect("Refresh the histories the event changed")
+    @emits(HostEventReceivedEvent)
     async def receive_summary(
         self,
         params: ReceiveHostEventParams,
@@ -115,5 +118,5 @@ class ReceiveHostEventAction(BaseAction[ReceiveHostEventParams, ReceiveHostEvent
                     cache.forget_pull_request(history.repository, params.merge_commit_sha)
             if moved:
                 changed.append(history.id)
-        await box.info(Channel.business, "Event {%var.kind} on {%var.repository} changed {%var.changed}", kind=params.kind, repository=params.repository, changed=", ".join(changed) or "nothing")
+        await box.info(Channel.business, "Event {%var.kind} on {%var.repository} changed {%var.changed}", HostEventReceivedEvent(kind=params.kind, repository=params.repository, changed=", ".join(changed) or "nothing"))
         return ReceiveHostEventResult(changed=changed)

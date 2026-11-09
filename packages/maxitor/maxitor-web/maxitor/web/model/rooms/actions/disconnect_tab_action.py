@@ -32,6 +32,7 @@ from maxitor.web.model.rooms.actions.expire_participant_action import (
     ExpireParticipantParams,
 )
 from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult
+from maxitor.web.model.rooms.events import ParticipantDisconnectedEvent
 from maxitor.web.model.rooms.layout_authority import recheck_layouts
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
@@ -40,6 +41,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -66,6 +68,7 @@ class DisconnectTabAction(BaseAction[DisconnectTabParams, RoomAnswerResult]):
     """
 
     @summary_aspect("Detach the tab and open the return window when it was the last")
+    @emits(ParticipantDisconnectedEvent)
     async def disconnect_summary(
         self,
         params: DisconnectTabParams,
@@ -94,10 +97,5 @@ class DisconnectTabAction(BaseAction[DisconnectTabParams, RoomAnswerResult]):
             registry.broadcast(room, {"type": "presence", **participant.public()}, except_participant=participant.id)
             recheck_layouts(room)
         if participant.away:
-            await box.info(
-                Channel.business,
-                "Participant {%var.participant} lost the connection to room {%var.room}",
-                participant=participant.id,
-                room=room.id,
-            )
+            await box.info(Channel.business, "Participant {%var.participant} lost the connection to room {%var.room}", ParticipantDisconnectedEvent(participant=participant.id, room=room.id))
         return RoomAnswerResult()

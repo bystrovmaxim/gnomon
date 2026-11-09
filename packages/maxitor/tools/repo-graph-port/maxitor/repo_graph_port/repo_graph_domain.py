@@ -19,6 +19,16 @@ A marker: ``@meta(domain=RepoGraphDomain)`` on every action and resource of the 
 
 from __future__ import annotations
 
+from maxitor.repo_graph_port.events import (
+    BadWebhookSignatureEvent,
+    ClientBlockedEvent,
+    HistoryDescribedEvent,
+    HistoryListedEvent,
+    HistoryVersionReadEvent,
+    HostEventReceivedEvent,
+    WrongHistoryKeyEvent,
+)
+
 from aoa.action_machine.domain import BaseDomain
 
 
@@ -32,4 +42,13 @@ class RepoGraphDomain(BaseDomain):
     """
 
     name = "repo_graph"
+    events = (
+        HistoryListedEvent,
+        HistoryVersionReadEvent,
+        HostEventReceivedEvent,
+        HistoryDescribedEvent,
+        WrongHistoryKeyEvent,
+        BadWebhookSignatureEvent,
+        ClientBlockedEvent,
+    )
     description = "A graph's history read from the repository that keeps its file: versions, tags, graphs"

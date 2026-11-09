@@ -37,7 +37,7 @@ Epics 1 and 5 start first and do not depend on each other: epic 5 changes the pr
 
 **Why together.** Without a sign-in a change has no author, and without storage the sign-in has nowhere to keep users.
 
-**Context.** `model/enterprise_model.py` (the `organization`, `story_map` and `landscape` domains); `data-model` — "Editing and deletion", "Constraints checked separately"; mockup 1.1, 1.2, 2.
+**Context.** `model/boundary_model.py` (the `organization`, `story_map` and `landscape` domains); `data-model` — "Editing and deletion", "Constraints checked separately"; mockup 1.1, 1.2, 2.
 
 **Not included.** Administration screens (epic 2), the time track (epic 6).
 
@@ -73,7 +73,7 @@ Epics 1 and 5 start first and do not depend on each other: epic 5 changes the pr
 - Phases:
   1. Signing in through an email link.
   2. The invitation and its acceptance.
-  3. Choosing an enterprise.
+  3. Choosing a boundary.
   4. The user's last place.
 
 **4/4. Catalog change and undo**
@@ -93,15 +93,15 @@ Epics 1 and 5 start first and do not depend on each other: epic 5 changes the pr
 
 ## Epic 2. Organization and access
 
-**Goal.** Administrators manage the organization's people, and enterprise owners manage access to their enterprises.
+**Goal.** Administrators manage the organization's people, and boundary owners manage access to their boundaries.
 
-**Context.** The terms "Organization administrator", "Enterprise access", "Owner", "User lifecycle"; `data-model` — "Organization, users and access"; `ux` — "Administration"; mockup 7.1–7.10.
+**Context.** The terms "Organization administrator", "Boundary access", "Owner", "User lifecycle"; `data-model` — "Organization, users and access"; `ux` — "Administration"; mockup 7.1–7.10.
 
-**Related.** [#106](https://github.com/bystrovmaxim/aoa/issues/106) — signing in through a provider, the basis of SSO.
+**Related.** Signing in by email and password or a provider is the core's (spec 072).
 
-**Not included.** Roles inside an enterprise.
+**Not included.** Roles inside a boundary.
 
-**1/3. User administration**
+**1/2. User administration**
 - Done when:
   - the user list and the access matrix stand on the canvas with the filter;
   - invitations work;
@@ -114,47 +114,39 @@ Epics 1 and 5 start first and do not depend on each other: epic 5 changes the pr
   3. Invitation.
   4. The user's card and the moves.
 
-**2/3. Enterprise, owner and access**
+**2/2. Boundary, owner and access**
 - Done when:
-  - an enterprise is open or closed;
+  - a boundary is open or closed;
   - the owner grants access; the administrator grants access and appoints an owner only when there is no active owner;
-  - a closed enterprise without access is visible to the administrator only in administration, and the administrator can grant access to themselves;
-  - the access card opens both from administration and from inside the enterprise.
+  - a closed boundary without access is visible to the administrator only in administration, and the administrator can grant access to themselves;
+  - the access card opens both from administration and from inside the boundary.
 - Mockup: 7.6–7.8, 7.10.
-- Decide on the way: "Handing over an enterprise", "Deleting an enterprise".
+- Decide on the way: "Handing over a boundary", "Deleting a boundary".
 - Phases:
   1. The owner and the rule of who manages access.
-  2. The organization's list of enterprises.
+  2. The organization's list of boundaries.
   3. The access card in both places.
-  4. A new enterprise.
+  4. A new boundary.
 
-**3/3. The organization's SSO**
-- Done when: the organization has SSO connected with an email domain, and the first sign-in through it makes the user active at once.
-- Mockup: 7.9.
-- Decide on the way: "SSO settings".
-- Phases:
-  1. Signing in through a provider (#106).
-  2. The organization's domain and the first sign-in.
-  3. The "Sign-in and SSO" screen.
 
 ---
 
 ## Epic 3. Story map
 
-**Goal.** An enterprise and its products are planned on a user story map, and a story is split into plan steps by container.
+**Goal.** A boundary and its products are planned on a user story map, and a story is split into plan steps by container.
 
 **Context.** The terms "User story map", "Backbone", "Business area", "Stage", "Release slice", "Initiative", "User story", "Plan step", "User story lifecycle", "Catalog editing", "Deletion"; `ux` — "Editing"; mockup 3.1, 3.3, 3.5, 3.8, 3.9, 4.1, 4.2, 4.6, 8.1–8.3.
 
 **Not included.** Initiative content, mob elaboration with the model (epic 8).
 
-**1/4. The enterprise's and the product's map**
+**1/4. The boundary's and the product's map**
 - Done when:
   - the map stands on the canvas: a business area's card over its first stage, release slices from top to bottom;
   - a product's map shows how many stories of a cell are in other products and without a Software System;
   - there is a table mode and the shared filter.
 - Mockup: 3.1, 3.8, 4.1.
 - Phases:
-  1. The enterprise's map.
+  1. The boundary's map.
   2. The product's map.
   3. The table and the filter.
 
@@ -196,14 +188,14 @@ Epics 1 and 5 start first and do not depend on each other: epic 5 changes the pr
 
 ## Epic 4. Landscape: from C1 to a container's graph
 
-**Goal.** The enterprise's Software Systems, containers and interfaces are visible at C1 and C2, links between Software Systems are derived from container links, and a container opens its graph.
+**Goal.** The boundary's Software Systems, containers and interfaces are visible at C1 and C2, links between Software Systems are derived from container links, and a container opens its graph.
 
-**Context.** The terms "Software System", "Digital product", "External system", "Enterprise boundary", "Container", "Interface", "Container link"; `data-model` — "Landscape", "Links are built at the container level", "A container and its graph"; `catalog-filling` — what is entered by hand; `ux` — "Where C1 and C2 live", "Interfaces at C2", "Scale"; mockup 3.2, 3.4, 3.6, 3.7, 4.3–4.5, 4.7, 5, 6.1, 6.2, 8.6–8.9.
+**Context.** The terms "Software System", "Digital product", "External system", "Boundary boundary", "Container", "Interface", "Container link"; `data-model` — "Landscape", "Links are built at the container level", "A container and its graph"; `catalog-filling` — what is entered by hand; `ux` — "Where C1 and C2 live", "Interfaces at C2", "Scale"; mockup 3.2, 3.4, 3.6, 3.7, 4.3–4.5, 4.7, 5, 6.1, 6.2, 8.6–8.9.
 
 **1/6. Software Systems**
 - Done when:
   - the Software System list stands on the canvas with the filter;
-  - a new digital product gathers the enterprise's containers, and a new external system is created at once with its container;
+  - a new digital product gathers the boundary's containers, and a new external system is created at once with its container;
   - only a Software System without stories can be deleted.
 - Mockup: 3.4, 3.7, 8.7.
 - Decide on the way: "Rented SaaS we configure ourselves".
@@ -345,7 +337,7 @@ Epics 1 and 5 start first and do not depend on each other: epic 5 changes the pr
 
 ## Epic 7. Rooms on every level
 
-**Goal.** The organization's room works from the enterprise picker to a container's graph, and editing in it is shared.
+**Goal.** The organization's room works from the boundary picker to a container's graph, and editing in it is shared.
 
 **Context.** `ux` — "Rooms", "Editing"; the term "Catalog editing"; spec 028; mockup 6.5, 6.6, 6.9, 8.5.
 
@@ -353,13 +345,13 @@ Epics 1 and 5 start first and do not depend on each other: epic 5 changes the pr
 - Done when:
   - a room can be opened on any layer;
   - only a member of the organization can enter;
-  - following goes across layers and stops with an explanation at a closed enterprise without access.
+  - following goes across layers and stops with an explanation at a closed boundary without access.
 - Mockup: 6.5, 6.6, 6.9.
 - Decide on the way: "Room" — an entity of the model or the state of the room server.
 - Phases:
   1. The room belongs to the organization.
   2. Following across layers.
-  3. A closed enterprise while following.
+  3. A closed boundary while following.
 
 **2/2. Shared editing** — depends on epic 3.
 - Done when: in a room everyone sees the others' edits at once, each object shows who is editing it, and there are no locks.
@@ -402,7 +394,7 @@ Epics 1 and 5 start first and do not depend on each other: epic 5 changes the pr
 
 These dictionary questions belong to no epic and wait for a separate decision:
 
-- a user's rights inside an enterprise;
+- a user's rights inside a boundary;
 - initiative content;
 - deployment (C4 Deployment);
 - checking links against tracing;

@@ -2,7 +2,7 @@
 """foreign-keys.yaml: nothing but checked identifiers reaches the installer, so nothing in it can become SQL."""
 
 import pytest
-from plugin_check import check_plugin
+from maxitor_plugin_sdk.checks import check_plugin
 
 
 def _key(doc):

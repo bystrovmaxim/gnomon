@@ -24,6 +24,7 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor.web.model.rooms.actions.room_action_support import INVALID_VALUE, RoomAnswerResult, located
+from maxitor.web.model.rooms.events import ParticipantRenamedEvent
 from maxitor.web.model.rooms.pages import name_error
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
@@ -33,6 +34,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -61,6 +63,7 @@ class RenameParticipantAction(BaseAction[RenameParticipantParams, RoomAnswerResu
     """
 
     @summary_aspect("Validate the name and tell the room")
+    @emits(ParticipantRenamedEvent)
     async def rename_summary(
         self,
         params: RenameParticipantParams,
@@ -76,10 +79,5 @@ class RenameParticipantAction(BaseAction[RenameParticipantParams, RoomAnswerResu
         async with room.lock:
             participant.name = params.name.strip()
             registry.broadcast(room, {"type": "renamed", "participant": participant.id, "name": participant.name})
-        await box.info(
-            Channel.business,
-            "Participant {%var.participant} renamed in room {%var.room}",
-            participant=participant.id,
-            room=room.id,
-        )
+        await box.info(Channel.business, "Participant {%var.participant} renamed in room {%var.room}", ParticipantRenamedEvent(participant=participant.id, room=room.id))
         return RoomAnswerResult()

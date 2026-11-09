@@ -26,6 +26,7 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult
+from maxitor.web.model.rooms.events import RoomEndedEvent
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, Room, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
 from pydantic import Field
@@ -34,6 +35,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -61,6 +63,7 @@ class EndRoomAction(BaseAction[EndRoomParams, RoomAnswerResult]):
     """
 
     @summary_aspect("End the room if it is still empty")
+    @emits(RoomEndedEvent)
     async def end_room_summary(
         self,
         params: EndRoomParams,
@@ -77,7 +80,7 @@ class EndRoomAction(BaseAction[EndRoomParams, RoomAnswerResult]):
             if room.participants or room.empty_since != params.since:
                 return RoomAnswerResult()
             registry.end_room(room)
-        await box.info(Channel.business, "Room {%var.room} ended", room=room.id)
+        await box.info(Channel.business, "Room {%var.room} ended", RoomEndedEvent(room=room.id))
         return RoomAnswerResult()
 
 

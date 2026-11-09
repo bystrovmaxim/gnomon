@@ -27,6 +27,7 @@ from typing import cast
 
 from maxitor.web.model.rooms.actions.end_room_action import schedule_end_if_empty
 from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult
+from maxitor.web.model.rooms.events import ParticipantExpiredEvent
 from maxitor.web.model.rooms.layout_authority import recheck_layouts
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
@@ -36,6 +37,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -64,6 +66,7 @@ class ExpireParticipantAction(BaseAction[ExpireParticipantParams, RoomAnswerResu
     """
 
     @summary_aspect("Remove the participant if they are still away")
+    @emits(ParticipantExpiredEvent)
     async def expire_summary(
         self,
         params: ExpireParticipantParams,
@@ -85,10 +88,5 @@ class ExpireParticipantAction(BaseAction[ExpireParticipantParams, RoomAnswerResu
             registry.broadcast(room, {"type": "follows", "follows": room.follows()})
             recheck_layouts(room)
             schedule_end_if_empty(registry, room)
-        await box.info(
-            Channel.business,
-            "Participant {%var.participant} left room {%var.room} after losing the connection",
-            participant=participant.id,
-            room=room.id,
-        )
+        await box.info(Channel.business, "Participant {%var.participant} left room {%var.room} after losing the connection", ParticipantExpiredEvent(participant=participant.id, room=room.id))
         return RoomAnswerResult()

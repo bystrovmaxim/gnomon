@@ -13,6 +13,21 @@ in the Maxitor model layer.
 
 from __future__ import annotations
 
+from maxitor.web.model.core.events import (
+    HeldKeyRevokedEvent,
+    HistoryChangedEvent,
+    HistoryKeyRefusedEvent,
+    HistoryNotCheckedEvent,
+    HistoryOpenedEvent,
+    HistoryPortBlockedMaxitorEvent,
+    HistoryUnchangedEvent,
+    HistoryUnreadableEvent,
+    SourceNotRebuiltEvent,
+    SourceRebuiltEvent,
+    SourceUnchangedEvent,
+    SourceUnreachableEvent,
+)
+
 from aoa.action_machine.domain import BaseDomain
 
 
@@ -26,4 +41,18 @@ class CoreDomain(BaseDomain):
     """
 
     name = "core"
+    events = (
+        HistoryUnreadableEvent,
+        HistoryPortBlockedMaxitorEvent,
+        HistoryKeyRefusedEvent,
+        HeldKeyRevokedEvent,
+        HistoryNotCheckedEvent,
+        HistoryUnchangedEvent,
+        HistoryChangedEvent,
+        SourceUnreachableEvent,
+        SourceUnchangedEvent,
+        SourceNotRebuiltEvent,
+        SourceRebuiltEvent,
+        HistoryOpenedEvent,
+    )
     description = "Core domain: user management, authentication, authorization, " "and other core functionalities"

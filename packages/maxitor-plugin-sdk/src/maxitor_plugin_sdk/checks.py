@@ -1,14 +1,14 @@
-# packages/maxitor-plugin-template/checks/plugin_check.py
+# packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/checks.py
 """
-What Maxitor's installer checks in a plugin before installing it, as far as the plugin's own files show it.
+What Maxitor checks in one plugin before installing it, as far as the plugin's own files show it: each file
+against its schema, and the rules across fields a schema cannot express.
 
-The installer and ``maxitor-plugin-sdk`` do not exist yet; until they do, the template carries these checks
-itself, and they move into the SDK when it appears. A check that needs Maxitor — the tree of Maxitor's own
-nodes, other plugins' passports, the database catalog — stays with the installer.
+Whether a plugin fits a core and the other plugins is ``compat``'s; a check that needs Maxitor itself — the tree
+of Maxitor's own nodes, the database catalog — stays with the installer.
 
-Run from the template's folder::
+Run from a plugin's folder::
 
-    python checks/plugin_check.py .
+    python -m maxitor_plugin_sdk.checks .
 """
 
 from __future__ import annotations
@@ -33,13 +33,23 @@ PLACEHOLDER = re.compile(r"\{([a-z][a-z0-9_]*)\}")
 
 def check_plugin(root: Path) -> list[str]:
     """Return every problem found in the plugin whose ``pyproject.toml`` lies in ``root``; empty when there is none."""
+    return read_plugin(root)[1]
+
+
+def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
+    """
+    The plugin's passport and every problem of its files.
+
+    The passport is answered when it keeps its schema, so a caller can still name the plugin; the problems list
+    every file's.
+    """
     problems: list[str] = []
     package = _package_folder(root, problems)
     if package is None:
-        return problems
+        return None, problems
     passport = _read(package / PASSPORT_FILE, "plugin-passport-1", problems)
     if passport is None:
-        return problems
+        return None, problems
     _check_version(root, passport, problems)
     navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-1", problems)
     if navigation is not None:
@@ -49,7 +59,22 @@ def check_plugin(root: Path) -> list[str]:
         keys = _read(package.parent / keys_file, "foreign-keys-1", problems)
         if keys is not None:
             problems.extend(foreign_key_problems(keys, own_schema=passport["name"]))
-    return problems
+    return {**passport, "formats": _formats(passport, navigation, keys_file)}, problems
+
+
+def _formats(passport: Mapping[str, Any], navigation: Mapping[str, Any] | None, keys_file: object) -> dict[str, int]:
+    """
+    The format of each of the plugin's files Maxitor reads.
+
+    The passport and navigation.yaml name their format; foreign-keys.yaml names none and is read by the one
+    schema there is, format 1.
+    """
+    formats = {"plugin-passport": int(passport["passport"])}
+    if navigation is not None:
+        formats["navigation"] = int(navigation["navigation"])
+    if keys_file is not None:
+        formats["foreign-keys"] = 1
+    return formats
 
 
 def find_cycle(dependencies: Mapping[str, Iterable[str]]) -> list[str] | None:
@@ -96,7 +121,9 @@ def navigation_problems(navigation: Mapping[str, Any]) -> list[str]:
         seen_ids.add(node_id)
         each = node.get("each")
         if each is not None and scope is not None and each["key"] in scope:
-            problems.append(f"navigation: {node_id!r} defines {each['key']!r}, which a list node above it already defines")
+            problems.append(
+                f"navigation: {node_id!r} defines {each['key']!r}, which a list node above it already defines"
+            )
         # A list node's own page belongs to one instance, so it already sees the key that instance adds.
         page_scope = scope if each is None or scope is None else scope | {each["key"]}
         path_params = frozenset(PLACEHOLDER.findall(node.get("page", "")))
@@ -111,7 +138,9 @@ def navigation_problems(navigation: Mapping[str, Any]) -> list[str]:
             if page_scope is not None:
                 for name in PLACEHOLDER.findall(page):
                     if name not in page_scope:
-                        problems.append(f"navigation: {node_id!r} uses {{{name}}}, which neither it nor a list node above it defines")
+                        problems.append(
+                            f"navigation: {node_id!r} uses {{{name}}}, which neither it nor a list node above it defines"
+                        )
     return problems
 
 
@@ -129,7 +158,9 @@ def _control_problems(node_id: str, controls: Mapping[str, Any], path_params: fr
             problems.append(f"navigation: {node_id!r} has a control on {param!r}, which is a parameter of its path")
     for control in choices:
         if control["default"] not in {option["value"] for option in control["options"]}:
-            problems.append(f"navigation: {node_id!r}: the default {control['default']!r} of {control['param']!r} is not one of its options")
+            problems.append(
+                f"navigation: {node_id!r}: the default {control['default']!r} of {control['param']!r} is not one of its options"
+            )
     return problems
 
 
@@ -140,11 +171,15 @@ def foreign_key_problems(keys: Mapping[str, Any], own_schema: str) -> list[str]:
         if key["to"]["schema"] == own_schema:
             problems.append(f"foreign key {number}: a key inside the plugin's own schema belongs to its migrations")
         if len(key["from"]["columns"]) != len(key["to"]["columns"]):
-            problems.append(f"foreign key {number}: {len(key['from']['columns'])} columns refer to {len(key['to']['columns'])}")
+            problems.append(
+                f"foreign key {number}: {len(key['from']['columns'])} columns refer to {len(key['to']['columns'])}"
+            )
     return problems
 
 
-def _walk(nodes: Iterable[Mapping[str, Any]], scope: frozenset[str] | None = None) -> Iterator[tuple[Mapping[str, Any], frozenset[str] | None]]:
+def _walk(
+    nodes: Iterable[Mapping[str, Any]], scope: frozenset[str] | None = None
+) -> Iterator[tuple[Mapping[str, Any], frozenset[str] | None]]:
     """
     Every node with the parameters in scope at its place.
 
@@ -181,8 +216,8 @@ def _read(path: Path, schema: str, problems: list[str]) -> dict[str, Any] | None
         return None
     try:
         document = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as error:
-        problems.append(f"{name}: not YAML ({error.__class__.__name__})")
+    except yaml.YAMLError as unreadable:
+        problems.append(f"{name}: not YAML ({unreadable.__class__.__name__})")
         return None
     validator = Draft202012Validator(json.loads((SCHEMAS / f"{schema}.schema.json").read_text(encoding="utf-8")))
     errors = sorted(validator.iter_errors(document), key=lambda error: list(error.absolute_path))
@@ -196,7 +231,9 @@ def _check_version(root: Path, passport: Mapping[str, Any], problems: list[str])
     """The passport's version is the package's version."""
     project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]
     if project["version"] != passport["version"]:
-        problems.append(f"{PASSPORT_FILE}: version {passport['version']} differs from pyproject.toml's {project['version']}")
+        problems.append(
+            f"{PASSPORT_FILE}: version {passport['version']} differs from pyproject.toml's {project['version']}"
+        )
 
 
 def main(argv: list[str] | None = None) -> int:

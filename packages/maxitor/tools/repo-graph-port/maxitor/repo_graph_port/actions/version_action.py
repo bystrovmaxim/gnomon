@@ -25,6 +25,7 @@ from __future__ import annotations
 import asyncio
 from typing import cast
 
+from maxitor.repo_graph_port.events import HistoryVersionReadEvent
 from maxitor.repo_graph_port.history_not_found_error import HistoryNotFoundError
 from maxitor.repo_graph_port.history_reading import chosen, graph_of, points_of, refreshed
 from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
@@ -40,6 +41,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.context_requires import context_requires
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
@@ -80,6 +82,7 @@ class VersionAction(BaseAction[VersionParams, VersionResult]):
 
     @summary_aspect("Read the version's graph file")
     @context_requires("env.history_refresh_seconds", "user.history", "user.user_id")
+    @emits(HistoryVersionReadEvent)
     async def version_summary(
         self,
         params: VersionParams,
@@ -102,5 +105,5 @@ class VersionAction(BaseAction[VersionParams, VersionResult]):
             if params.sha not in {point.commit.sha for point in points} and params.sha not in heads.values():
                 raise HistoryNotFoundError()
             kept = await graph_of(mirror, cache, host, history, params.sha)
-        await box.info(Channel.business, "History {%var.history} version read for {%var.reader}", history=history.id, reader=ctx.get("user.user_id") or "a guest")
+        await box.info(Channel.business, "History {%var.history} version read for {%var.reader}", HistoryVersionReadEvent(history=history.id, reader=ctx.get("user.user_id") or "a guest"))
         return VersionResult(graph=kept.decode("utf-8"))

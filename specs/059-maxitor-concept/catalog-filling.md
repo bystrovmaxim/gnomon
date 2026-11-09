@@ -19,7 +19,7 @@
 | An external container's interfaces | by hand: we have no source code |
 | What an external container uses, for example our interface for its webhooks | by hand, for the same reason |
 | Links between Software Systems | derived from container links; never entered at all |
-| Enterprises, the map, initiatives, stories, plan steps, owners, access | by hand: these are people's decisions |
+| Boundaries, the map, initiatives, stories, plan steps, owners, access | by hand: these are people's decisions |
 
 The line runs along the source code. Where we have code, Maxitor reads the facts from it, and nobody duplicates them. Where there is no code — an external container — only a person can enter the fact.
 
@@ -41,7 +41,7 @@ For now the links are not checked: they are derived from code and shown. Reconci
 - **New container:** name, kind and one link. For our container it is GitHub and, if there is one, live; for an external one, a web link to the service.
 - **Our container's interfaces and links** are read only in Maxitor. Next to them it shows which graph and which version of it they come from.
 - **An external container** has "add an interface" and "what it uses" forms.
-- **Software System:** it is created by hand, and its containers are chosen from the list of the enterprise's containers.
+- **Software System:** it is created by hand, and its containers are chosen from the list of the boundary's containers.
 
 ## Not decided yet
 

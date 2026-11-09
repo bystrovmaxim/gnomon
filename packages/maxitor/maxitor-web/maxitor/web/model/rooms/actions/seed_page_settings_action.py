@@ -29,6 +29,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
+from maxitor.web.model.rooms.events import RoomSeededEvent, SeedRefusedEvent
 from maxitor.web.model.rooms.pages import setting_error
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
 from maxitor.web.model.rooms.rooms_domain import RoomsDomain
@@ -38,6 +39,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -67,6 +69,7 @@ class SeedPageSettingsAction(BaseAction[SeedPageSettingsParams, RoomAnswerResult
     """
 
     @summary_aspect("Apply the opener's values the room lacks and tell the room")
+    @emits(RoomSeededEvent, SeedRefusedEvent)
     async def seed_summary(
         self,
         params: SeedPageSettingsParams,
@@ -78,12 +81,7 @@ class SeedPageSettingsAction(BaseAction[SeedPageSettingsParams, RoomAnswerResult
         registry = cast(RoomRegistryController, connections[ROOM_REGISTRY_KEY])
         room, participant, _ = located(registry, cast(SocketChannelController, connections["socket"]))
         if participant.id != room.created_by:
-            await box.warning(
-                Channel.security,
-                "Seed refused in room {%var.room}: {%var.participant} did not open it",
-                room=room.id,
-                participant=participant.id,
-            )
+            await box.warning(Channel.security, "Seed refused in room {%var.room}: {%var.participant} did not open it", SeedRefusedEvent(room=room.id, participant=participant.id))
             return RoomAnswerResult()
         applied = 0
         async with room.lock:
@@ -97,10 +95,5 @@ class SeedPageSettingsAction(BaseAction[SeedPageSettingsParams, RoomAnswerResult
                     room,
                     {"type": "setting", "page": params.page, "name": name, "value": value, "by": participant.id},
                 )
-        await box.info(
-            Channel.business,
-            "Room {%var.room} seeded with {%var.count} settings of a page",
-            room=room.id,
-            count=applied,
-        )
+        await box.info(Channel.business, "Room {%var.room} seeded with {%var.count} settings of a page", RoomSeededEvent(room=room.id, count=applied))
         return RoomAnswerResult()

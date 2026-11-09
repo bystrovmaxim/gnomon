@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-template/checks/schemas/navigation-1.schema.json",
+  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/navigation-1.schema.json",
   "title": "Maxitor navigation, format 1",
   "description": "navigation.yaml: a plugin's nodes in Maxitor's left tree. A plugin only adds nodes: there is no field to hide, rename or move a node it does not own.",
   "type": "object",

@@ -15,6 +15,13 @@ future_roots = ["packages/maxitor/maxitor-web/maxitor/web"]
 import_prefixes = ["maxitor.web"]
 may_import = ["action_machine", "graph_builder", "graph_compare", "graph_map"]
 
+# Maxitor's core: accounts, organizations and the session. It imports neither the graph viewer nor a tool.
+[packages.core]
+current_roots = ["packages/maxitor/maxitor-core/maxitor/core"]
+future_roots = ["packages/maxitor/maxitor-core/maxitor/core"]
+import_prefixes = ["maxitor.core"]
+may_import = ["action_machine"]
+
 # The repo-graph-port service: it never imports the front, and the front reads it over HTTP, never imports it.
 [packages.repo_graph_port]
 current_roots = ["packages/maxitor/tools/repo-graph-port/maxitor/repo_graph_port"]

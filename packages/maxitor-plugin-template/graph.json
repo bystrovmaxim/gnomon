@@ -1143,7 +1143,7 @@
       "properties": {
         "description": "Notes people write on catalog items",
         "name": "notes",
-        "typed_events": false
+        "typed_events": true
       },
       "type": "Domain"
     },

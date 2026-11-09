@@ -88,8 +88,8 @@ async def test_every_version_table_of_a_read_is_bound_to_the_organization_and_th
     else:
         await storage.note_authors(ORG, ITEM, MOMENT, 50, None)
     query = connection.queries()[-1]
-    aliases = re.findall(r"(?:FROM|JOIN) (?:\w+\.)?(\w+_versions) (\w+)", query)
-    assert {table for table, _alias in aliases} == {"note_versions", "member_versions"}
+    aliases = re.findall(r'(?:FROM|JOIN) (?:"?\w+"?\.)?"?(\w+_versions)"? (\w+)', query)
+    assert {table for table, _alias in aliases} == {"note_versions", "user_versions"}
     for _table, alias in aliases:
         assert f"{alias}.valid_from_at <= $3::text::timestamptz" in query
         assert f"{alias}.valid_to_at IS NULL OR {alias}.valid_to_at > $3::text::timestamptz" in query
@@ -116,8 +116,9 @@ async def test_an_organization_without_changes_has_no_notes_and_no_query_for_the
 
 
 async def test_membership_is_read_from_the_current_tables_of_the_core() -> None:
-    storage, connection = await _open(lambda query, params: ORG if "core.members" in query else None)
+    storage, connection = await _open(lambda query, params: ORG if '"organization"."user"' in query else None)
     assert await storage.organization_of("acme", WRITER) == ORG
     query, params = connection.statements[-1]
-    assert "core.organizations o" in query and "core.members m" in query and "_versions" not in query
+    assert '"organization"."organization" o' in query and '"organization"."user" m' in query and "_versions" not in query
+    assert "m.account_id" in query and "m.status = 'active'" in query
     assert params == ("acme", WRITER)

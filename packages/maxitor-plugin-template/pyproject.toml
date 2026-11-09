@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "maxitor-plugin-template"
-version = "0.2.0"
+version = "0.3.0"
 description = "The Maxitor plugin template: a small complete plugin, notes on catalog items."
 readme = "README.md"
 license = "Apache-2.0"
@@ -20,6 +20,7 @@ classifiers = ["Private :: Do Not Upload"]
 dependencies = [
     "aoa-action-machine[postgres,jwt]>=1.6.0b2",
     "aoa-fastapi-adapter>=1.5.0",
+    "maxitor-plugin-sdk>=1.0,<2",
     "PyYAML>=6.0,<7",
     "uvicorn>=0.30",
 ]
@@ -28,11 +29,12 @@ dependencies = [
 [project.entry-points."maxitor.plugins"]
 notes = "maxitor_notes"
 
-# Inside the gnomon repository AOA comes from the submodule external/aoa; a copy of the template drops this table
-# and takes AOA from PyPI.
+# Inside the gnomon repository AOA comes from the submodule external/aoa and the SDK from the workspace; a copy of
+# the template drops this table and takes both from PyPI.
 [tool.uv.sources]
 aoa-action-machine = { path = "../../external/aoa/packages/aoa-action-machine", editable = true }
 aoa-fastapi-adapter = { path = "../../external/aoa/packages/aoa-fastapi-adapter", editable = true }
+maxitor-plugin-sdk = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/maxitor_notes"]

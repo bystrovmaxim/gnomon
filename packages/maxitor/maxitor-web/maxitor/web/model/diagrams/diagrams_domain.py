@@ -12,6 +12,10 @@ interchange graph, and ERD JSON surfaces (not sample business domains).
 
 from __future__ import annotations
 
+from maxitor.web.model.diagrams.events import (
+    ComparisonComputedEvent,
+)
+
 from aoa.action_machine.domain import BaseDomain
 
 
@@ -25,4 +29,7 @@ class DiagramsDomain(BaseDomain):
     """
 
     name = "diagrams"
+    events = (
+        ComparisonComputedEvent,
+    )
     description = "Diagrams surface: sidebar menu, interchange graph, ERD rows, and related composition"

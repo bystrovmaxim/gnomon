@@ -29,6 +29,7 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor.web.model.rooms.actions.room_action_support import RoomAnswerResult, located
+from maxitor.web.model.rooms.events import FollowRefusedEvent, FollowStartedEvent
 from maxitor.web.model.rooms.follow_circle import would_close_circle
 from maxitor.web.model.rooms.layout_authority import recheck_layouts
 from maxitor.web.model.rooms.resources.room_registry import ROOM_REGISTRY_KEY, RoomRegistryController
@@ -39,6 +40,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseState
@@ -67,6 +69,7 @@ class FollowAction(BaseAction[FollowParams, RoomAnswerResult]):
     """
 
     @summary_aspect("Check the circle rule and link, or refuse")
+    @emits(FollowRefusedEvent, FollowStartedEvent)
     async def follow_summary(
         self,
         params: FollowParams,
@@ -91,19 +94,7 @@ class FollowAction(BaseAction[FollowParams, RoomAnswerResult]):
                 recheck_layouts(room)
         if reason is not None:
             socket.send({"type": "follow_refused", "target": params.target, "reason": reason})
-            await box.warning(
-                Channel.security,
-                "Follow refused in room {%var.room}: {%var.participant} to {%var.target}",
-                room=room.id,
-                participant=participant.id,
-                target=params.target,
-            )
+            await box.warning(Channel.security, "Follow refused in room {%var.room}: {%var.participant} to {%var.target}", FollowRefusedEvent(room=room.id, participant=participant.id, target=params.target))
             return RoomAnswerResult()
-        await box.info(
-            Channel.business,
-            "Participant {%var.participant} follows {%var.target} in room {%var.room}",
-            participant=participant.id,
-            target=params.target,
-            room=room.id,
-        )
+        await box.info(Channel.business, "Participant {%var.participant} follows {%var.target} in room {%var.room}", FollowStartedEvent(participant=participant.id, target=params.target, room=room.id))
         return RoomAnswerResult()

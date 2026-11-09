@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from typing import cast
 
+from maxitor.repo_graph_port.events import HistoryDescribedEvent
 from maxitor.repo_graph_port.history_reading import chosen, points_of, refreshed, version_problem_of
 from maxitor.repo_graph_port.repo_graph_domain import RepoGraphDomain
 from maxitor.repo_graph_port.resources.git_mirror import GitMirrorStorage
@@ -36,6 +37,7 @@ from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
 from aoa.action_machine.intents.context_requires import context_requires
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
@@ -84,6 +86,7 @@ class DescribeHistoryAction(BaseAction[DescribeHistoryParams, DescribeHistoryRes
 
     @summary_aspect("Describe the history")
     @context_requires("env.history_refresh_seconds", "user.history", "user.user_id")
+    @emits(HistoryDescribedEvent)
     async def describe_summary(
         self,
         params: DescribeHistoryParams,
@@ -97,7 +100,7 @@ class DescribeHistoryAction(BaseAction[DescribeHistoryParams, DescribeHistoryRes
         host = cast(GitHubHostGateway, connections["GitHubHostGateway"])
         history = chosen(cast(HistoriesConfigStorage, connections["HistoriesConfigStorage"]), params.history, params.link, ctx.get("user.history"), params.version_link, params.version_key)
         history = await refreshed(mirror, cast(VersionCacheStorage, connections["VersionCacheStorage"]), host, history, ctx.get("env.history_refresh_seconds"))
-        await box.info(Channel.business, "History {%var.history} described for {%var.reader}", history=history.id, reader=ctx.get("user.user_id") or "a guest")
+        await box.info(Channel.business, "History {%var.history} described for {%var.reader}", HistoryDescribedEvent(history=history.id, reader=ctx.get("user.user_id") or "a guest"))
         points = await points_of(mirror, cast(VersionCacheStorage, connections["VersionCacheStorage"]), host, history)
         return DescribeHistoryResult(
             id=history.id,

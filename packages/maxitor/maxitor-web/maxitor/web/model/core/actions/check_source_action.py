@@ -35,6 +35,12 @@ from typing import Literal, cast
 
 from maxitor.web.api.graph_store import GraphBuildError, GraphEntry, GraphStoreBusyError
 from maxitor.web.model.core.core_domain import CoreDomain
+from maxitor.web.model.core.events import (
+    SourceNotRebuiltEvent,
+    SourceRebuiltEvent,
+    SourceUnchangedEvent,
+    SourceUnreachableEvent,
+)
 from maxitor.web.model.core.resources.graph_source_gateway import (
     GRAPH_SOURCE_CONNECTION_KEY,
     Document,
@@ -50,6 +56,7 @@ from aoa.action_machine.auth import GuestRole
 from aoa.action_machine.intents.aspects import summary_aspect
 from aoa.action_machine.intents.check_roles import check_roles
 from aoa.action_machine.intents.connection import connection
+from aoa.action_machine.intents.emits import emits
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging import Channel
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
@@ -90,6 +97,7 @@ class CheckSourceAction(BaseAction[CheckSourceParams, CheckSourceResult]):
     """
 
     @summary_aspect("Ask the service, rebuild a changed graph, tell the rooms")
+    @emits(SourceNotRebuiltEvent, SourceRebuiltEvent, SourceUnchangedEvent, SourceUnreachableEvent)
     async def check_summary(
         self,
         params: CheckSourceParams,
@@ -128,18 +136,18 @@ async def _check(
     if not params.force:
         answer = await gateway.fetch_if_changed(params.source, held.etag, held.last_modified)
         if isinstance(answer, Unreachable):
-            await box.warning(Channel.error, "Source {%var.source} unreachable: {%var.reason}", source=label(params.source), reason=answer.reason)
+            await box.warning(Channel.error, "Source {%var.source} unreachable: {%var.reason}", SourceUnreachableEvent(source=label(params.source), reason=answer.reason))
             return "unreachable"
         if not isinstance(answer, Document) or answer.sha256 == held.content_sha256:
-            await box.info(Channel.business, "Source {%var.source} unchanged", source=label(params.source))
+            await box.info(Channel.business, "Source {%var.source} unchanged", SourceUnchangedEvent(source=label(params.source)))
             return "unchanged"
     try:
         rebuilt = await store.replace(params.source)
     except (GraphBuildError, GraphStoreBusyError) as exc:
-        await box.warning(Channel.error, "Source {%var.source} not rebuilt: {%var.reason}", source=label(params.source), reason=str(exc))
+        await box.warning(Channel.error, "Source {%var.source} not rebuilt: {%var.reason}", SourceNotRebuiltEvent(source=label(params.source), reason=str(exc)))
         return "failed"
     if rebuilt.fingerprint != held.fingerprint:
         for room in rooms.rooms_of_source(params.source):
             rooms.broadcast(room, {"type": "graph_changed", "fingerprint": rebuilt.fingerprint})
-    await box.info(Channel.business, "Source {%var.source} rebuilt", source=label(params.source))
+    await box.info(Channel.business, "Source {%var.source} rebuilt", SourceRebuiltEvent(source=label(params.source)))
     return "rebuilt"
