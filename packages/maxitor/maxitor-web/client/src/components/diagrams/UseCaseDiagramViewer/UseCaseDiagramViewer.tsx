@@ -120,14 +120,8 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
   /** LR/TB + Neato/FDP when Boundary is off; Boundary on keeps the preset for when it goes off again. */
   const [boundary, setBoundary] = usePageSetting("boundary", true);
 
-  /** Boundary on forces hierarchical dot ranks; preserve neato/fdp in ``layoutPreset`` for when Boundary turns off. */
-  const layoutForBundler = useMemo((): UseCaseDiagramLayoutPreset => {
-    if (boundary) {
-      if (layoutPreset === "dot_lr" || layoutPreset === "dot_tb") return layoutPreset;
-      return "dot_lr";
-    }
-    return layoutPreset;
-  }, [boundary, layoutPreset]);
+  /** Every layout mode works with Boundary on and off: the boundaries are the graph's clusters, which each engine draws. */
+  const layoutForBundler = layoutPreset;
 
   const domainKeyList = useMemo(() => {
     if (!data) return [];
@@ -520,7 +514,7 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
                   },
                 }}
               >
-                {(boundary ? USE_CASE_LAYOUT_TOOL_ROW.slice(0, 2) : USE_CASE_LAYOUT_TOOL_ROW).map(({ preset, title, Glyph: LayoutGlyph }) => (
+                {USE_CASE_LAYOUT_TOOL_ROW.map(({ preset, title, Glyph: LayoutGlyph }) => (
                   <ToggleButton key={preset} value={preset} aria-label={title}>
                     <Tooltip title={title} placement="top">
                       <Box component="span" sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "1em", height: "1em" }}>

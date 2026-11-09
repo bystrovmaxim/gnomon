@@ -194,8 +194,7 @@ export function buildDomainUseCaseDotBundle(
   layout?: DomainUseCaseDotLayoutOptions,
 ): DomainUseCaseDotBundle {
   const boundary = layout?.boundary !== false;
-  const layoutEngine: DomainUseCaseLayoutEngine =
-    boundary ? "dot" : (layout?.layoutEngine ?? "dot");
+  const layoutEngine: DomainUseCaseLayoutEngine = layout?.layoutEngine ?? "dot";
   const { actions, roles, edges } = data;
   const files: DomainUseCaseGraphvizFile[] = [];
   const actionImages: Array<{ path: string; width: string; height: string }> = [];
