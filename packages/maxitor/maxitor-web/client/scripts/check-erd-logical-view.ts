@@ -13,7 +13,7 @@
  */
 
 import { Graphviz } from "@hpcc-js/wasm-graphviz";
-import { buildDotSource, type ErdEntity, type ErdGraphPayload, type ErdGraphvizLayout } from "../src/lib/buildDotSource.ts";
+import { buildDotSource, setErdPaint, type ErdEntity, type ErdGraphPayload, type ErdGraphvizLayout } from "../src/lib/buildDotSource.ts";
 import { erdCompose } from "../src/lib/erdCompose.ts";
 
 let failures = 0;
@@ -98,6 +98,7 @@ function render(data: ErdGraphPayload, layout: ErdGraphvizLayout): string {
 
 const LAYOUTS: ErdGraphvizLayout[] = ["gv-dot-lr", "gv-dot-tb", "gv-neato", "gv-fdp", "gv-circo"];
 
+setErdPaint("domain", {});
 for (const layout of LAYOUTS) {
   const tag = layout.slice(3);
   const svg = render(shop, layout);
@@ -114,6 +115,7 @@ for (const layout of LAYOUTS) {
   check(`[${tag}] each domain's frame takes its colour while domains paint`, money?.stroke === "#9333ea" && store?.stroke === "#16a34a", `${money?.stroke} / ${store?.stroke}`);
 }
 
+setErdPaint("kind", {});
 check("with frames off no frame is drawn", [...["gv-dot-lr", "gv-neato", "gv-circo"] as ErdGraphvizLayout[]].every((layout) => {
   const svg = render({ ...shop, model: undefined }, layout);
   return (svg.match(/class="cluster"/g) ?? []).length === 0;

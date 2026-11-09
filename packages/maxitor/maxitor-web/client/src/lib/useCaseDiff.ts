@@ -104,6 +104,16 @@ export function withUseCaseOneHop(kept: DomainUseCaseDiagramPayload, base: Domai
   };
 }
 
+/** The diagram with only the elements whose ids are in ``ids``, and the edges between them (spec 071). */
+export function keepUseCaseElements(diagram: DomainUseCaseDiagramPayload, ids: ReadonlySet<string>): DomainUseCaseDiagramPayload {
+  return {
+    ...diagram,
+    actions: diagram.actions.filter((action) => ids.has(action.id)),
+    roles: diagram.roles.filter((role) => ids.has(role.id)),
+    edges: diagram.edges.filter((edge) => ids.has(edge.source_id) && ids.has(edge.target_id)),
+  };
+}
+
 /** The same diagram with every mark taken off, as One draws it. */
 export function unmarkedUseCase(diagram: DomainUseCaseDiagramPayload): DomainUseCaseDiagramPayload {
   return {

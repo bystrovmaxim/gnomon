@@ -14,7 +14,7 @@
 
 import { Graphviz } from "@hpcc-js/wasm-graphviz";
 import { JSDOM } from "jsdom";
-import { buildDotSource, ERD_CARD_RADIUS, ERD_CARD_STROKE, type ErdEntity, type ErdGraphPayload } from "../src/lib/buildDotSource.ts";
+import { buildDotSource, ERD_CARD_RADIUS, ERD_CARD_STROKE, setErdPaint, type ErdEntity, type ErdGraphPayload } from "../src/lib/buildDotSource.ts";
 import { containNodeFills } from "../src/lib/containNodeFills.ts";
 import { addContourHitAreas, clickFolds, drawErdCards } from "../src/lib/erdPostPass.ts";
 import { copyId, physicalDrawing } from "../src/lib/erdViews.ts";
@@ -58,6 +58,7 @@ const shop = (folded: string[]): ErdGraphPayload => ({
   folded_contours: new Set(folded),
 });
 
+setErdPaint("domain", {});
 /** The drawing as the page holds it, in a DOM, its hit areas placed. */
 function draw(folded: string[]): Document {
   const markup = drawErdCards(containNodeFills(gv.layout(buildDotSource(shop(folded), "gv-dot-lr"), "svg", "dot")), ERD_CARD_RADIUS, ERD_CARD_STROKE);

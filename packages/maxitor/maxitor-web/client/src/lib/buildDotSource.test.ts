@@ -1,6 +1,6 @@
 // src/lib/buildDotSource.test.ts
-import { describe, expect, it } from "vitest";
-import { buildDotSource, bundleWidth, foldPlan, type ErdEntity, type ErdGraphPayload, type ErdRelation } from "@/lib/buildDotSource";
+import { afterEach, describe, expect, it } from "vitest";
+import { buildDotSource, bundleWidth, foldPlan, setErdPaint, type ErdEntity, type ErdGraphPayload, type ErdRelation } from "@/lib/buildDotSource";
 import { copyId, physicalDrawing } from "@/lib/erdViews";
 
 const STOREFRONT = "shop.StorefrontDatabase";
@@ -77,6 +77,8 @@ function parents(dot: string): Record<string, string | null> {
   return found;
 }
 
+afterEach(() => setErdPaint("domain", {}));
+
 describe("the logical view (spec 070)", () => {
   it("frames each domain round its tables, headed by the domain's name, with no resource anywhere", () => {
     const dot = buildDotSource(logical(), "gv-dot-lr");
@@ -92,9 +94,11 @@ describe("the logical view (spec 070)", () => {
     expect(dot.match(/id="re\d+"/g)).toEqual(['id="re0"', 'id="re1"']);
   });
 
-  it("outlines a domain's frame in its colour, whatever paints (the paint is CSS, spec 071)", () => {
+  it("outlines a domain's frame in its colour while domains paint, grey otherwise", () => {
     const coloured = { ...logical(), domain_colors: { [STORE]: "#123456", [MONEY]: "#654321" } };
     expect(buildDotSource(coloured, "gv-dot-lr")).toContain('color="#123456";');
+    setErdPaint("kind", {});
+    expect(buildDotSource(coloured, "gv-dot-lr")).not.toContain('color="#123456";');
   });
 
   it("without a view draws today's text: no frame", () => {
@@ -172,18 +176,23 @@ describe("the physical view (spec 070)", () => {
   });
 });
 
-describe("the resource frames (spec 061, spec 070, spec 071)", () => {
-  it("takes each resource's colour from the payload, and keeps the tables in their domain colour", () => {
-    const dot = buildDotSource({ ...physical(), resource_colors: { [BILLING]: "#111111", [STOREFRONT]: "#222222" } }, "gv-dot-lr");
+describe("painting by resource (spec 061, spec 070)", () => {
+  it("gives each copy's header, and its resource's frame, the resource's colour", () => {
+    setErdPaint("resource", { [BILLING]: "#111111", [STOREFRONT]: "#222222" });
+    const dot = buildDotSource(physical(), "gv-dot-lr");
+    expect(dot).toMatch(new RegExp(`"${copyId("shop.Invoice", BILLING)}" \\[label=<[^\\n]*BGCOLOR="#111111"`));
+    expect(dot).toMatch(new RegExp(`"${copyId("shop.Invoice", STOREFRONT)}" \\[label=<[^\\n]*BGCOLOR="#222222"`));
     expect(dot).toContain('color="#111111";');
-    expect(dot).toContain('color="#222222";');
-    // The paint is CSS, not the DOT: every table's header keeps its domain colour (spec 071).
-    expect(dot).toMatch(new RegExp(`"${copyId("shop.Invoice", BILLING)}" \\[label=<[^\\n]*BGCOLOR="#3b82f6"`));
   });
 
-  it("leaves the Not stored frame grey", () => {
-    const dot = buildDotSource(physical(), "gv-dot-lr");
-    expect(dot).toMatch(new RegExp(`cluster_resource_3[\\s\\S]*color="#94a3b8"`));
+  it("leaves a copy in Not stored grey", () => {
+    setErdPaint("resource", { [BILLING]: "#111111" });
+    expect(buildDotSource(physical(), "gv-dot-lr")).toMatch(new RegExp(`"${copyId("shop.Legacy", null)}" \\[label=<[^\\n]*BGCOLOR="#64748b"`));
+  });
+
+  it("keeps the frames grey while another section paints", () => {
+    setErdPaint("domain", {});
+    expect(buildDotSource(physical(), "gv-dot-lr")).not.toContain('color="#111111";');
   });
 });
 

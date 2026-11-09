@@ -176,7 +176,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
         name: `cluster_resource_${index}`,
         id,
         label: data.resource_labels?.[resource] ?? (resource.split(".").pop() || resource),
-        colour: erdResourceFrameColour(resource, data.resource_colors),
+        colour: erdResourceFrameColour(resource),
         resource,
         members,
         groups: groupsIn(members, data.groups, entities),
@@ -312,6 +312,19 @@ function frameLayoutDot(frames: readonly Frame[], sizes: ReadonlyMap<string, { w
   return lines.join("\n");
 }
 
+/** Where the line from ``centre`` toward ``toward`` leaves ``box``: the straight line is clipped at the card's outline. */
+function borderPoint(box: Box, centre: { x: number; y: number }, toward: { x: number; y: number }): { x: number; y: number } {
+  const dx = toward.x - centre.x;
+  const dy = toward.y - centre.y;
+  if (dx === 0 && dy === 0) return centre;
+  const halfW = boxW(box) / 2;
+  const halfH = boxH(box) / 2;
+  const tx = dx !== 0 ? halfW / Math.abs(dx) : Number.POSITIVE_INFINITY;
+  const ty = dy !== 0 ? halfH / Math.abs(dy) : Number.POSITIVE_INFINITY;
+  const t = Math.min(tx, ty);
+  return { x: centre.x + dx * t, y: centre.y + dy * t };
+}
+
 /** Move a box from one centre to another. */
 function place(inner: Box, fromCentre: Box, toCentre: Box): Box {
   const dx = boxCx(toCentre) - boxCx(fromCentre);
@@ -387,6 +400,8 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
   // 5. Assemble: frame and group clusters, the moved table cards, and straight lines between them.
   const parts: string[] = [];
   const drawn: Box[] = [];
+  /** Every drawn table's and folded box's box, so its lines leave from its border, not its centre. */
+  const finalBoxes = new Map<string, Box>();
   const frameBox = (fc: { x: number; y: number }, size: { width: number; height: number }): Box => ({ left: fc.x - size.width / 2, right: fc.x + size.width / 2, top: fc.y + size.height / 2, bottom: fc.y - size.height / 2 });
   for (const frame of frames) {
     const entry = inner.get(frame.name)!;
@@ -395,6 +410,7 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
     const box = frameBox(fc, entry.size);
     parts.push(frameCluster(frame, box, frame.resource === null && data.model === "physical"));
     drawn.push(box);
+    if (frame.folded) finalBoxes.set(frame.id, box);
     for (const group of frame.groups) {
       const groupName = `cluster_${group.group_id}`;
       const groupBox = entry.groups.get(groupName);
@@ -410,7 +426,9 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
     const dx = centre.x - boxCx(box);
     const dy = centre.y - boxCy(box);
     parts.push(dx === 0 && dy === 0 ? markup : `<g transform="translate(${dx.toFixed(2)},${dy.toFixed(2)})">${markup}</g>`);
-    drawn.push({ left: box.left + dx, right: box.right + dx, top: box.top + dy, bottom: box.bottom + dy });
+    const moved = { left: box.left + dx, right: box.right + dx, top: box.top + dy, bottom: box.bottom + dy };
+    finalBoxes.set(id, moved);
+    drawn.push(moved);
   }
   // Straight lines, one per drawn end pair, in the order buildDotSource writes them.
   const plan = foldPlan(data);
@@ -418,8 +436,13 @@ export function erdCompose(data: ErdGraphPayload, layout: ErdGraphvizLayout, lay
     const from = centres.get(source);
     const to = centres.get(target);
     if (!from || !to) return;
+    // The line leaves and enters at the cards' outlines, as Graphviz's own routing does — never at their centres.
+    const fromBox = finalBoxes.get(source);
+    const toBox = finalBoxes.get(target);
+    const start = fromBox ? borderPoint(fromBox, from, to) : from;
+    const end = toBox ? borderPoint(toBox, to, from) : to;
     const style = styles.get(id) ?? { stroke: "#94a3b8", dash: null };
-    parts.push(`<g id="${id}" class="edge"><title>${escHtml(`${source}->${target}`)}</title><path fill="none" stroke="${style.stroke}"${style.dash ? ` stroke-dasharray="${style.dash}"` : ""} d="M ${from.x.toFixed(2)},${from.y.toFixed(2)} L ${to.x.toFixed(2)},${to.y.toFixed(2)}"/></g>`);
+    parts.push(`<g id="${id}" class="edge"><title>${escHtml(`${source}->${target}`)}</title><path fill="none" stroke="${style.stroke}"${style.dash ? ` stroke-dasharray="${style.dash}"` : ""} d="M ${start.x.toFixed(2)},${start.y.toFixed(2)} L ${end.x.toFixed(2)},${end.y.toFixed(2)}"/></g>`);
   };
   (data.relations ?? []).forEach((relation, k) => {
     if (relation.relationship_kind === "specialization") return;

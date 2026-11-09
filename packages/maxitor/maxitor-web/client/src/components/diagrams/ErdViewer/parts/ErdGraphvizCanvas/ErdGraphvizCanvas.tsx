@@ -14,7 +14,7 @@ import { enabledKeys } from "@/lib/freshGraph";
 import { useCurrentPage, usePageSetting } from "@/lib/pageSettings";
 import { CollapseAllButton, HoverCardsButton, ZoomToolbar } from "@/components/ui/ZoomToolbar";
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
-import { defaultPaint, erdPaintCss, paintSettingName, paintSource, type PaintSection } from "@/lib/erdPaint";
+import { defaultPaint, paintSettingName, paintSource, type PaintSection } from "@/lib/erdPaint";
 import { OneHopToggle } from "@/components/ui/OneHopToggle";
 import { loadGraphvizWasm, loadGraphvizWasmFor } from "../../hooks/useGraphviz";
 import { useSvgPanZoom } from "../../hooks/useSvgPanZoom";
@@ -26,6 +26,7 @@ import {
   ERD_KIND_PAINT_PALETTE,
   erdDiffMarks,
   erdGraphvizEngine,
+  setErdPaint,
   erdEdgeId,
   type ErdEntity,
   type ErdGraphPayload,
@@ -64,7 +65,7 @@ import { DiffCard } from "@/components/history/DiffCard";
 import { COPY_CLICK_SLOP_PX } from "@/lib/erdCopy";
 import type { ErdDomainsBundle } from "@/lib/loadErdDomainsBundle";
 import { bindNameCopy } from "@/lib/erdCopy";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, clearTableFocus, clickFolds, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons, tagErdPaint } from "@/lib/erdPostPass";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, bindLineHover, clearTableFocus, clickFolds, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons } from "@/lib/erdPostPass";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { kindGlyphSvg, kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
@@ -491,17 +492,15 @@ export function ErdGraphvizCanvas({
   const paintSection = paintSource(paintSections, model === "physical" && chosenPaint === defaultPaint(diffDrawing) && !diffDrawing ? "resources" : chosenPaint);
   // The paint is CSS, not the DOT (spec 071): the tables and frames carry ``data-*`` tags, and this is its stylesheet.
   // A repaint rewrites it, laying nothing out.
-  const paintCss = useMemo(
-    () => erdPaintCss(paintSection, baseEntities, { kinds: kindPaint, resources: bundle.resource_colors, domains: bundle.domain_qualifier_colors }),
-    [paintSection, baseEntities, kindPaint, bundle.resource_colors, bundle.domain_qualifier_colors],
+  const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}|${JSON.stringify(bundle.domain_qualifier_colors)}`;
+  // What the Graphviz text is painted by: a section's name, and the colours of its rows when kinds or resources paint.
+  const applyPaint = useCallback(
+    () =>
+      paintSection === "resources"
+        ? setErdPaint("resource", bundle.resource_colors)
+        : setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint),
+    [paintSection, kindPaint, bundle.resource_colors],
   );
-  /** The markup with its paint stylesheet: rewritten on a repaint, with no new layout (spec 071). */
-  const withPaintStyle = useCallback((markup: string) => markup.replace(/(<svg\b[^>]*>)/, `$1<style id="erd-paint">${paintCss}</style>`), [paintCss]);
-  // A repaint rewrites the drawing's stylesheet only: nothing moves, so no layout runs (spec 071).
-  useEffect(() => {
-    const style = pannerRef.current?.querySelector<HTMLElement>("style#erd-paint");
-    if (style && style.textContent !== paintCss) style.textContent = paintCss;
-  }, [paintCss, svgMarkup]);
   const diffNames = useDiffNames();
   const ownBase = useMemo(() => (half ? erdOfSide({ ...baseGraph, entities: baseGraph.entities ?? [] }, half.side) : null), [half, baseGraph]);
   const halfNote = useHalfPicking({
@@ -517,8 +516,11 @@ export function ErdGraphvizCanvas({
     if (writesPair) setDiffCounts(null);
   }, [writesPair]);
 
-  // The text Graphviz is given: the layout's input, which no paint changes (spec 071).
-  const dot = useMemo(() => buildDotSource(foldedData, layout), [foldedData, layout]);
+  // The text Graphviz is given carries the colours too: two tabs painting differently must not claim one input.
+  const dot = useMemo(() => {
+    applyPaint();
+    return buildDotSource(foldedData, layout);
+  }, [foldedData, layout, applyPaint]);
   // The picture's hash and the text Graphviz was given, hashed with it as one pair: the settings digest a room
   // compares layouts under (FR-093).
   const layoutPair = useSvgLayoutPair(rawSvg, `${erdGraphvizEngine(layout)}\n${dot}`);
@@ -547,6 +549,7 @@ export function ErdGraphvizCanvas({
         if (cancelled) return null;
         // Every table of a specialization block as wide as its widest table (spec 029): measured first, on the shared
         // instance. FDP depends on what ran before it in an instance, so the drawing itself is that instance's first layout.
+        applyPaint();
         const source = buildErdDot(foldedData, layout, (measureDot) => measurer.layout(measureDot, "svg", "dot"));
         return loadGraphvizWasmFor(engine).then((gv) => ({ gv, source, isDot }));
       })
@@ -564,9 +567,7 @@ export function ErdGraphvizCanvas({
         // The renderer paints a card's band and row tints as rectangles inside a rounded outline;
         // this trims every fill to the contour before the markup reaches the page.
         markupDataRef.current = drawnData;
-        const cards = placeKindIcons(drawErdCards(containNodeFills(svg), ERD_CARD_RADIUS, ERD_CARD_STROKE, erdDiffMarks(drawnData.entities)), drawnData.entities, kindGlyphSvg, folds);
-        // The paint is tagged here, after the layout, and painted by the stylesheet — a repaint lays nothing out (spec 071).
-        setSvgMarkup(withPaintStyle(tagErdPaint(cards, drawnData.entities, foldedData.model)));
+        setSvgMarkup(placeKindIcons(drawErdCards(containNodeFills(svg), ERD_CARD_RADIUS, ERD_CARD_STROKE, erdDiffMarks(drawnData.entities)), drawnData.entities, kindGlyphSvg, folds));
         setSvgRenderVersion((v) => v + 1);
       })
       .catch((e) => {
@@ -579,7 +580,7 @@ export function ErdGraphvizCanvas({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dot, drawnData, layout, bundleVersion, resetFitFlag]);
+  }, [dot, drawnData, layout, bundleVersion, resetFitFlag, paintKey]);
 
   useLayoutEffect(() => {
     if (!svgMarkup) return;

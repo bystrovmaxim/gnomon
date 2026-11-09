@@ -45,7 +45,7 @@ import { filterUseCaseDiagramByDomains } from "@/lib/filterUseCaseDiagramByDomai
 import { loadGraphvizWasmFor } from "@/lib/prefetch/erdGraphviz";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
-import { filterUseCaseByChanges, filterUseCaseByElements, loadUseCaseDiff, USE_CASE_ELEMENTS, unmarkedUseCase, withUseCaseOneHop, useCaseCard, useCaseChangeKinds, useCaseChanges, useCaseCounts, useCaseIdAt } from "@/lib/useCaseDiff";
+import { filterUseCaseByChanges, filterUseCaseByElements, loadUseCaseDiff, USE_CASE_ELEMENTS, unmarkedUseCase, withUseCaseOneHop, keepUseCaseElements, useCaseCard, useCaseChangeKinds, useCaseChanges, useCaseCounts, useCaseIdAt } from "@/lib/useCaseDiff";
 import { bindUseCaseHover } from "@/lib/useCaseHover";
 import { cardPlace, useGraphvizChangeStepping } from "@/lib/useGraphvizChangeStepping";
 
@@ -171,8 +171,12 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
   const offElements = useMemo(() => new Set(offElementList), [offElementList]);
   const filtered = useMemo(() => {
     if (data == null) return null;
-    const kept = filterUseCaseByElements(filterUseCaseByChanges(filterUseCaseDiagramByDomains(data, effectiveEnabled), diffing ? offChanges : new Set<string>()), offElements);
-    return includeOneHop ? withUseCaseOneHop(kept, data) : kept;
+    // The one rule (spec 071): scope, then base (the scope with its 1-hop neighbours), then drawn — the base without
+    // the neighbours when 1-hop is off, and without what a panel filter hides.
+    const scope = filterUseCaseDiagramByDomains(data, effectiveEnabled);
+    const full = withUseCaseOneHop(scope, data);
+    const kept = filterUseCaseByElements(filterUseCaseByChanges(full, diffing ? offChanges : new Set<string>()), offElements);
+    return includeOneHop ? kept : keepUseCaseElements(kept, new Set([...scope.actions, ...scope.roles].map((element) => element.id)));
   }, [data, effectiveEnabled, diffing, offChanges, includeOneHop, offElements]);
 
   // What paints the actions is a page setting, One's and Diff's apart; a room shares it, the address carries it (spec 041, FR-022, FR-023).
