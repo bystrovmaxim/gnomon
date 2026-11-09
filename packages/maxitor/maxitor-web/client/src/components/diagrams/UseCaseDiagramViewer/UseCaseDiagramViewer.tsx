@@ -16,7 +16,7 @@ import { useCurrentPage, usePageSetting } from "@/lib/pageSettings";
 import { fetchDomainUseCaseDiagram } from "@/api/domainUseCaseDiagram";
 import { DiagramShell, useDiagramLoader } from "@/components/diagrams/DiagramShell";
 import { DiffCard } from "@/components/history/DiffCard";
-import { useSvgPanZoom } from "@/components/diagrams/ErdViewer/hooks/useSvgPanZoom";
+import { useSvgPanZoom, WHEEL_ZOOM_SHIELD_SX } from "@/components/diagrams/ErdViewer/hooks/useSvgPanZoom";
 import {
   LayoutGlyphDotLR,
   LayoutGlyphDotTB,
@@ -473,7 +473,7 @@ export function UseCaseDiagramViewer({ domainId }: UseCaseDiagramViewerProps) {
                 touchAction: "none",
                 zIndex: 1,
                 "&.erd-panning": { cursor: "grabbing" },
-                "&.erd-wheel-zooming .use-case-panner": { pointerEvents: "none" },
+                ...WHEEL_ZOOM_SHIELD_SX,
               }}
             >
               <Box

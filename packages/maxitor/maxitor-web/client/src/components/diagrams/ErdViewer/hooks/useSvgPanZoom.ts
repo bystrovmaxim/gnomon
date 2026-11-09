@@ -51,7 +51,8 @@ function stripGraphvizBackdropPolygons(svg: SVGSVGElement): void {
       fill === "transparent";
 
     let huge = false;
-    if (vbArea > 0) {
+    // A known backdrop needs no measuring: measuring would lay the whole drawing out first.
+    if (!knownBackdrop && vbArea > 0) {
       try {
         const b = poly.getBBox();
         const a = Math.abs(b.width * b.height);
@@ -67,6 +68,14 @@ function stripGraphvizBackdropPolygons(svg: SVGSVGElement): void {
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
+
+/** The box of ``svg`` when its size is set in CSS pixels, as the diagrams set it from the view box; else ``null``. */
+function ownBox(svg: SVGSVGElement): Rect | null {
+  const width = /^([\d.]+)px$/.exec(svg.style.width)?.[1];
+  const height = /^([\d.]+)px$/.exec(svg.style.height)?.[1];
+  if (!width || !height || !(Number(width) >= 2) || !(Number(height) >= 2)) return null;
+  return { x: 0, y: 0, width: Number(width), height: Number(height) };
+}
 
 function unionClientRects(elements: Iterable<Element>, viewport: HTMLElement): Rect | null {
   const vr = viewport.getBoundingClientRect();
@@ -157,6 +166,15 @@ const MIN_WIDTH_FOR_LEFT_INSET = 600;
 /** How long after the last move the picture stops being a moving layer. */
 const MOVING_HINT_MS = 200;
 
+/**
+ * The viewport's style while a wheel zoom runs: a clear sheet over the drawing takes the pointer, so nothing under it
+ * lights up as the picture moves. A sheet, not ``pointer-events: none`` on the drawing: that property is inherited, and
+ * switching it restyled every element of the drawing on each zoom, a quarter of a second on a large model (#85).
+ */
+export const WHEEL_ZOOM_SHIELD_SX = {
+  "&.erd-wheel-zooming::after": { content: '""', position: "absolute", inset: 0, zIndex: 1 },
+} as const;
+
 export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
   const fitBottomInset = options?.fitBottomInset ?? 0;
   const fitLeftInset = options?.fitLeftInset ?? 0;
@@ -175,6 +193,11 @@ export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
   const wheelRafRef = useRef<number | null>(null);
   const wheelFocalRef = useRef<{ ox: number; oy: number } | null>(null);
   const wheelIdleTimeoutRef = useRef<number | null>(null);
+  /**
+   * The viewport's box, read once when a wheel zoom starts: read on every wheel event it made the browser lay out the
+   * whole drawing again each time, seconds on a large model (#85). The viewport does not move during a zoom.
+   */
+  const wheelRectRef = useRef<DOMRect | null>(null);
   const interactAbortRef = useRef<AbortController | null>(null);
   const resizeFitRafRef = useRef<number | null>(null);
   const hasFittedRef = useRef(false);
@@ -280,6 +303,15 @@ export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
 
     stripGraphvizBackdropPolygons(svg);
 
+    // A drawing fitted to its own box, sized in CSS pixels, is the box: at the identity transform it stands at the
+    // panner's corner. Nothing is measured, so the browser does not lay the drawing out for the fit — a quarter of a
+    // second on 1 000 tables (#85).
+    const sized = fitToViewBox ? ownBox(svg) : null;
+    if (sized) {
+      placeFitted(sized);
+      return;
+    }
+
     // Measure real painted SVG content at identity panner transform. Nobody hears of it — a room would send it as this
     // screen's view and a follower would glide to it and back (spec 038) — and the measurement that fails puts the
     // transform it found back.
@@ -307,19 +339,24 @@ export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
       return;
     }
 
-    const pad = 0.92;
-    let s = Math.min((availW * pad) / box.width, (availH * pad) / box.height);
-    s = Math.max(MIN_SCALE, Math.min(s, fitMaxScale));
+    placeFitted(box);
 
-    panRef.current.scale = s;
-    const tx = leftInset + fitMarginPx + (availW - box.width * s) / 2 - box.x * s;
-    const ty = fitMarginPx + (availH - box.height * s) / 2 - box.y * s;
-    panRef.current.tx = tx;
-    panRef.current.ty = ty;
-    applyTransform();
-    hasFittedRef.current = true;
-    setFitted(true);
-    setFitCount((count) => count + 1);
+    /** The view that shows ``box``, in the drawing's px at the identity transform, centred in the space left for it. */
+    function placeFitted(box: Rect): void {
+      const pad = 0.92;
+      let s = Math.min((availW * pad) / box.width, (availH * pad) / box.height);
+      s = Math.max(MIN_SCALE, Math.min(s, fitMaxScale));
+
+      panRef.current.scale = s;
+      const tx = leftInset + fitMarginPx + (availW - box.width * s) / 2 - box.x * s;
+      const ty = fitMarginPx + (availH - box.height * s) / 2 - box.y * s;
+      panRef.current.tx = tx;
+      panRef.current.ty = ty;
+      applyTransform();
+      hasFittedRef.current = true;
+      setFitted(true);
+      setFitCount((count) => count + 1);
+    }
   }, [applyTransform, fitBottomInset, fitLeftInset, fitMarginPx, fitBoundsSelector, fitMaxScale, fitToViewBox]);
 
   useEffect(() => {
@@ -377,7 +414,7 @@ export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
     const vp = viewportRef.current;
     if (!vp) return;
 
-    const rect = vp.getBoundingClientRect();
+    const rect = wheelRectRef.current ?? vp.getBoundingClientRect();
     const focal = wheelFocalRef.current ?? { ox: rect.width / 2, oy: rect.height / 2 };
     const { ox, oy } = focal;
 
@@ -425,18 +462,21 @@ export function useSvgPanZoom(options?: UseSvgPanZoomOptions) {
         applyTransform(false);
         return;
       }
+      // Read before anything is written, so the read finds the page laid out already.
+      if (wheelIdleTimeoutRef.current === null) wheelRectRef.current = vp.getBoundingClientRect();
+      const r = wheelRectRef.current ?? vp.getBoundingClientRect();
       vp.classList.add("erd-wheel-zooming");
       if (wheelIdleTimeoutRef.current !== null) {
         window.clearTimeout(wheelIdleTimeoutRef.current);
       }
       wheelIdleTimeoutRef.current = window.setTimeout(() => {
         wheelIdleTimeoutRef.current = null;
+        wheelRectRef.current = null;
         vp.classList.remove("erd-wheel-zooming");
         wheelFocalRef.current = null;
         setZoomPct(Math.round(panRef.current.scale * 100));
       }, 120);
 
-      const r = vp.getBoundingClientRect();
       wheelFocalRef.current = { ox: evt.clientX - r.left, oy: evt.clientY - r.top };
       wheelAccumRef.current += evt.deltaY;
       if (wheelRafRef.current == null) {

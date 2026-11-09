@@ -25,7 +25,7 @@ import { svgDataUriForGraphNodeIcon } from "@/lib/icons";
 import { bindUseCaseHover } from "@/lib/useCaseHover";
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
 import { DiagramShell, useDiagramLoader } from "@/components/diagrams/DiagramShell";
-import { useSvgPanZoom } from "@/components/diagrams/ErdViewer/hooks/useSvgPanZoom";
+import { useSvgPanZoom, WHEEL_ZOOM_SHIELD_SX } from "@/components/diagrams/ErdViewer/hooks/useSvgPanZoom";
 import { LayoutGlyphDotLR, LayoutGlyphDotTB } from "@/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/layoutEngineGlyphs";
 import { ZoomToolbar } from "@/components/ui/ZoomToolbar";
 import { buildLifecycleFsmDotSource, LIFECYCLE_FADED_CLASS, paletteForStateType, type LifecycleFsmRankdir } from "@/lib/buildLifecycleFsmDotSource";
@@ -288,7 +288,7 @@ export function LifecycleFsmViewer({ lifecycleGraphNodeId }: LifecycleFsmViewerP
                 touchAction: "none",
                 zIndex: 1,
                 "&.erd-panning": { cursor: "grabbing" },
-                "&.erd-wheel-zooming .lifecycle-fsm-panner": { pointerEvents: "none" },
+                ...WHEEL_ZOOM_SHIELD_SX,
               }}
             >
               <Box

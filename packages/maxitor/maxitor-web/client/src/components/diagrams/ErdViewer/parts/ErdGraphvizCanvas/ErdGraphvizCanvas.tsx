@@ -1,5 +1,4 @@
 // src/components/diagrams/ErdViewer/parts/ErdGraphvizCanvas/ErdGraphvizCanvas.tsx
-import type { Engine } from "@hpcc-js/wasm-graphviz";
 import Box from "@mui/material/Box";
 import Snackbar from "@mui/material/Snackbar";
 import ToggleButton from "@mui/material/ToggleButton";
@@ -16,17 +15,12 @@ import { CollapseAllButton, CollapseFramesButton, HoverCardsButton, ZoomToolbar 
 import { ErdFilterPanel, type ErdFilterRow } from "@/components/ui/ErdFilterPanel";
 import { defaultPaint, paintSettingName, paintSource, type PaintSection } from "@/lib/erdPaint";
 import { OneHopToggle } from "@/components/ui/OneHopToggle";
-import { loadGraphvizWasm, loadGraphvizWasmFor } from "../../hooks/useGraphviz";
-import { useSvgPanZoom } from "../../hooks/useSvgPanZoom";
+import { useSvgPanZoom, WHEEL_ZOOM_SHIELD_SX } from "../../hooks/useSvgPanZoom";
 import {
   buildDotSource,
-  buildErdDot,
   CONTOUR_ID_PREFIX,
   DOMAIN_CONTOUR_ID_PREFIX,
-  ERD_CARD_RADIUS,
-  ERD_CARD_STROKE,
   ERD_KIND_PAINT_PALETTE,
-  erdDiffMarks,
   erdGraphvizEngine,
   setErdPaint,
   erdEdgeId,
@@ -38,14 +32,16 @@ import {
   foldPlan,
   isContourId,
   tableResource,
+  erdPaintColours,
+  standInColoursOf,
+  type ErdPaintSource,
 } from "@/lib/buildDotSource";
-import { containNodeFills } from "@/lib/containNodeFills";
 import { enrichErdDataForViewer } from "@/lib/enrichErdData";
 import { filterGraphByKinds, kindsOnDiagram, pruneGraphToEntities } from "@/lib/erdKindFilter";
 import { physicalViewAvailable, resourcesOfDiagram, resourcesOnDiagram } from "@/lib/erdResourceFilter";
 import { useErdResourceSettings } from "@/lib/erdResourceSettings";
 import { copyEntity, physicalDrawing, viewLayout } from "@/lib/erdViews";
-import { erdCompose } from "@/lib/erdCompose";
+import { layOutErdOffPage } from "@/lib/erdLayoutClient";
 import { ErdModelPill } from "./ErdModelPill";
 import { changeDiskUri, changesOnDiagram, domainsOn, filterGraphByChanges, onScreen, tablesToDraw } from "@/lib/erdFilterPresence";
 import { mergeRelationsOnScreen } from "@/lib/mergeErdRelations";
@@ -67,9 +63,11 @@ import { DiffCard } from "@/components/history/DiffCard";
 import { COPY_CLICK_SLOP_PX } from "@/lib/erdCopy";
 import type { ErdDomainsBundle } from "@/lib/loadErdDomainsBundle";
 import { bindNameCopy } from "@/lib/erdCopy";
-import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadges, addFrameIcons, bindLineHover, erdDetailSx, seenFromAfar, setErdDetail, clearTableFocus, clickFolds, drawErdCards, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables, placeKindIcons } from "@/lib/erdPostPass";
+import { indexPaint, paintDrawing, type ErdPaintIndex } from "@/lib/erdRepaint";
+import { hideWhatLeaves, nodesOfDot } from "@/lib/erdLeaving";
+import { addContourHitAreas, addEdgeHitAreas, addEndLabelBadgesLazily, bindLineHover, erdDetailSx, seenFromAfar, setErdDetail, clearTableFocus, clickFolds, erdBundleSx, erdContourHoverSx, erdEndLabelSx, erdLineHoverSx, focusTables } from "@/lib/erdPostPass";
 import { postProcessGraphvizSvgDom } from "@/lib/sanitizeGraphvizSvgOverlays";
-import { kindGlyphSvg, kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
+import { kindLegendDiskUri, svgDataUriForInterchangeDomainLegend } from "@/lib/icons";
 import { diagramCanvasEmptyMessageSx } from "@/lib/ui";
 import {
   LayoutGlyphCirco,
@@ -189,10 +187,6 @@ const LAYOUT_TOOLS: {
  * follower would glide after each new picture (spec 038, spec 070). A drawing without frames fits its tables and lines.
  */
 const FRAMED_FIT = { fitToViewBox: true, fitMarginPx: 8 };
-/** The last layouts, by the text Graphviz was given: folding a frame and unfolding it again is instant — the second
- *  picture comes from here, not from Graphviz. Small on purpose: a few pictures cover a person's back and forth. */
-const LAYOUT_CACHE = new Map<string, string>();
-const LAYOUT_CACHE_MAX = 24;
 /** How long a hover waits before lighting a table: a pointer passing over small tables at a distance stays quiet. */
 const HOVER_INTENT_MS = 100;
 
@@ -272,6 +266,14 @@ export function ErdGraphvizCanvas({
   const { viewportRef, pannerRef, zoomPct, fitToContainer, zoomIn, zoomOut, bindInteractions, resetFitFlag, needsFit, centreOnClient, onTransform, getScale } = panZoom;
   /** The tables the markup on hand was drawn from: a markup older than the tables shown now is never placed again. */
   const markupDataRef = useRef<{ entities: ErdEntity[]; relations?: ErdRelation[] } | null>(null);
+  /** The markup on the page, with the paint's stand-ins; where they stand in it; and what the paint makes of them. */
+  const placedMarkupRef = useRef<string | null>(null);
+  const paintIndexRef = useRef<ErdPaintIndex | null>(null);
+  const paintColoursRef = useRef<ReadonlyMap<string, string>>(new Map());
+  /** The slot each stand-in of the last picture stands for, and what that picture was made from. */
+  const paintSlotsRef = useRef<{ data: unknown; layout: string; slots: ReadonlyMap<string, string> } | null>(null);
+  /** Counts repaints that keep the drawing on the page and only set its colours (#85). */
+  const [paintVersion, setPaintVersion] = useState(0);
   useSvgDiagramSurface(viewportRef, panZoom, Boolean(svgMarkup) && panZoom.fitted);
   // Rows, lines and bundles pass to the other half by identity; a bundle's place is ``bundlesRef``, set with each drawing (spec 068).
   const portable = useMemo(() => erdPortable(() => ({ entities: markupDataRef.current?.entities ?? [], relations: markupDataRef.current?.relations ?? [], bundles: bundlesRef.current })), []);
@@ -510,13 +512,14 @@ export function ErdGraphvizCanvas({
   // A repaint rewrites it, laying nothing out.
   const paintKey = `${paintSection}|${JSON.stringify(kindPaint)}|${JSON.stringify(bundle.resource_colors)}|${JSON.stringify(bundle.domain_qualifier_colors)}`;
   // What the Graphviz text is painted by: a section's name, and the colours of its rows when kinds or resources paint.
-  const applyPaint = useCallback(
-    () =>
+  const paint = useMemo(
+    (): { source: ErdPaintSource; colours: Readonly<Record<string, string>> } =>
       paintSection === "resources"
-        ? setErdPaint("resource", bundle.resource_colors)
-        : setErdPaint(paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", kindPaint),
+        ? { source: "resource", colours: bundle.resource_colors }
+        : { source: paintSection === "domains" ? "domain" : paintSection === "kinds" ? "kind" : "change", colours: kindPaint },
     [paintSection, kindPaint, bundle.resource_colors],
   );
+  const applyPaint = useCallback(() => setErdPaint(paint.source, paint.colours), [paint]);
   const diffNames = useDiffNames();
   const ownBase = useMemo(() => (half ? erdOfSide({ ...baseGraph, entities: baseGraph.entities ?? [] }, half.side) : null), [half, baseGraph]);
   const halfNote = useHalfPicking({
@@ -560,38 +563,20 @@ export function ErdGraphvizCanvas({
     setGvBusy(true);
     setRenderError(null);
     setRawSvg("");
-    const engine = erdGraphvizEngine(layout) as Engine;
-    const isDot = layout === "gv-dot-lr" || layout === "gv-dot-tb";
-    loadGraphvizWasm()
-      .then((measurer) => {
-        if (cancelled) return null;
-        // Every table of a specialization block as wide as its widest table (spec 029): measured first, on the shared
-        // instance. FDP depends on what ran before it in an instance, so the drawing itself is that instance's first layout.
-        applyPaint();
-        const source = buildErdDot(foldedData, layout, (measureDot) => measurer.layout(measureDot, "svg", "dot"));
-        return loadGraphvizWasmFor(engine).then((gv) => ({ gv, source, isDot }));
-      })
-      .then((prepared) => {
-        if (cancelled || !prepared) return;
-        // Dot draws frames as clusters; Neato, FDP and Circo go through the composer (research R2). With the logical
-        // view's frames off there is no frame, so those three lay the tables out plain, as before (spec 071).
-        const cacheKey = `${layout}\n${foldedData.model ?? "plain"}\n${prepared.source}`;
-        const cached = LAYOUT_CACHE.get(cacheKey);
-        const svg = cached ?? (prepared.isDot
-          ? prepared.gv.layout(prepared.source, "svg", engine)
-          : foldedData.model
-            ? erdCompose(foldedData, layout, (dot, eng) => prepared.gv.layout(dot, "svg", eng as Engine))
-            : prepared.gv.layout(prepared.source, "svg", engine));
-        if (!cached) {
-          LAYOUT_CACHE.set(cacheKey, svg);
-          if (LAYOUT_CACHE.size > LAYOUT_CACHE_MAX) LAYOUT_CACHE.delete(LAYOUT_CACHE.keys().next().value!);
-        }
+    // The picture is made off the page, in the layout worker, with stand-ins for the paint's colours: the drawing on the
+    // page stays live meanwhile, and a picture that differs from it only in colours is repainted where it is (#85).
+    layOutErdOffPage({ data: foldedData, layout, paint })
+      .then(({ rawSvg: laidOut, markup, colours, slots }) => {
         if (cancelled) return;
-        setRawSvg(svg);
-        // The renderer paints a card's band and row tints as rectangles inside a rounded outline;
-        // this trims every fill to the contour before the markup reaches the page.
+        setRawSvg(laidOut);
+        paintColoursRef.current = colours;
+        paintSlotsRef.current = { data: foldedData, layout, slots };
+        if (markup === placedMarkupRef.current && markupDataRef.current === drawnData) {
+          setPaintVersion((v) => v + 1);
+          return;
+        }
         markupDataRef.current = drawnData;
-        setSvgMarkup(placeKindIcons(drawErdCards(containNodeFills(addFrameIcons(svg)), ERD_CARD_RADIUS, ERD_CARD_STROKE, erdDiffMarks(drawnData.entities)), drawnData.entities, kindGlyphSvg, folds));
+        setSvgMarkup(markup);
         setSvgRenderVersion((v) => v + 1);
       })
       .catch((e) => {
@@ -608,6 +593,31 @@ export function ErdGraphvizCanvas({
     // switch must lay out again all the same (spec 071).
   }, [dot, drawnData, layout, bundleVersion, resetFitFlag, paintKey, foldedData.model]);
 
+  // A new paint shows at once: the drawing on the page takes its colours by slot, before the frame is painted; the
+  // picture laid out off the page confirms them (spec 071, SC-007; #85).
+  useLayoutEffect(() => {
+    const svg = pannerRef.current?.querySelector("svg");
+    const last = paintSlotsRef.current;
+    if (!svg || !paintIndexRef.current || !last || last.data !== foldedData || last.layout !== layout) return;
+    setErdPaint(paint.source, paint.colours);
+    paintColoursRef.current = standInColoursOf(last.slots, erdPaintColours(foldedData));
+    paintDrawing(svg, paintIndexRef.current, paintColoursRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paint]);
+
+  // A fold or a filter change shows at once: what the new picture no longer holds leaves the drawing on the page while
+  // the new one is laid out off it — for the reader, and for a room follower applying a received setting (#85).
+  useLayoutEffect(() => {
+    const svg = pannerRef.current?.querySelector("svg");
+    if (svg && placedMarkupRef.current) hideWhatLeaves(svg, nodesOfDot(dot));
+  }, [dot]);
+
+  useLayoutEffect(() => {
+    const svg = pannerRef.current?.querySelector("svg");
+    if (!paintVersion || !svg || !paintIndexRef.current) return;
+    paintDrawing(svg, paintIndexRef.current, paintColoursRef.current);
+  }, [paintVersion]);
+
   useLayoutEffect(() => {
     if (!svgMarkup) return;
     const panner = pannerRef.current;
@@ -618,6 +628,7 @@ export function ErdGraphvizCanvas({
     // every render of the canvas (a zoom click is enough) and replaced the SVG, so the size, the table
     // hover and every listener bound below were lost on the drawing the user actually sees.
     panner.innerHTML = svgOfHalf(svgMarkup, half);
+    placedMarkupRef.current = svgMarkup;
 
     const ac = new AbortController();
     const svg = panner.querySelector("svg");
@@ -635,12 +646,15 @@ export function ErdGraphvizCanvas({
       }
 
       postProcessGraphvizSvgDom(svg);
+      // The stand-ins become the paint's colours, and are remembered for the next repaint (#85).
+      paintIndexRef.current = indexPaint(svg);
+      paintDrawing(svg, paintIndexRef.current, paintColoursRef.current);
       // The level of detail follows the zoom: a pan never crosses a threshold, so only a zoom changes a class.
       setErdDetail(svg, getScale());
       ac.signal.addEventListener("abort", onTransform(() => setErdDetail(svg, getScale())));
       addEdgeHitAreas(svg);
       addContourHitAreas(svg);
-      addEndLabelBadges(svg);
+      addEndLabelBadgesLazily(svg, ac.signal);
       bindLineHover(svg, drawnData.relations, drawnData.entities, ac.signal, bundlesRef.current);
     }
     bindNameCopy(panner, setCopyMessage, ac.signal);
@@ -722,7 +736,7 @@ export function ErdGraphvizCanvas({
     const kept = keptHeaderRef.current;
     keptHeaderRef.current = null;
     const header = kept ? panner.querySelector(`[id="a_hd${kept.table}"]`)?.getBoundingClientRect() : null;
-    const stage = viewportRef.current?.getBoundingClientRect();
+    const stage = header ? viewportRef.current?.getBoundingClientRect() : null;
     if (kept && header && stage) centreOnClient(stage.left + stage.width / 2 + header.left - kept.left, stage.top + stage.height / 2 + header.top - kept.top);
     let unbindPan: (() => void) | undefined;
     let cancelled = false;
@@ -930,7 +944,7 @@ export function ErdGraphvizCanvas({
             touchAction: "none",
             zIndex: 1,
             "&.erd-panning": { cursor: "grabbing" },
-            "&.erd-wheel-zooming .erd-svg-panner": { pointerEvents: "none" },
+            ...WHEEL_ZOOM_SHIELD_SX,
           }}
         >
           {gvBusy && !svgMarkup && (

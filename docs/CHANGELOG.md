@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-11-09] — The ERD of a large model stays live
+
+On a model of a thousand tables the whole system's ERD used to stop the page: Graphviz laid the model out on the page itself for some twenty seconds, and every repaint and every unfold did it again. Now the first picture comes in under three seconds, and the page answers while a model is laid out: Graphviz and the drawing of the cards run in a Web Worker, beside the page.
+
+The picture is made with stand-ins for the paint's colours, so one layout serves every paint. A repaint lays nothing out — the drawing on the page takes its new colours where it is, in about 70 ms. A fold or a filter change shows at once: what leaves the drawing leaves the current picture, and the new layout replaces it within a second. A room follower sees a received setting the same way. Zooming no longer stalls the page for seconds, and the server reads the tables of every domain in a few queries for the whole request, in half a second instead of two.
+
+Nothing the reader sees changed. `client/scripts/measure-erd.ts` measures it, `--headless` without a window, and `specs/071-erd-frames-folding/measurements.md` keeps the numbers before and after. Three targets are still missed — placing a whole new picture blocks the page for about 0.6 s, a hover's highlight takes about 125 ms, and the one zoom frame that crosses from near to far about 170 ms — and are bystrovmaxim/gnomon#87. ([#85](https://github.com/bystrovmaxim/gnomon/issues/85))
+
 ## [2026-11-09] — The ERD's frames, folding and filters, the same in every layout
 
 The ERD frames what it shows in both of its views and in all five layouts. In the logical view each domain is a frame, and **Boundary** in the toolbar switches the frames off and on; in the physical view each database is one frame holding its tables directly. Dot draws a frame as a cluster; Neato, FDP and Circo cannot frame the same way twice, so Maxitor composes their frames — each frame's tables laid out alone, a specialization block as one unit holding only its own tables, then the frames — and the same model gives the same picture on every load and in every browser. A frame's title is its disk and its name set as one label, the disk on the axis of the name's capitals, the title centred. Under Dot the parts of a model that no line joins are wrapped into columns, so a model of many unlinked tables or domains is drawn about as wide as tall instead of one tall thread.

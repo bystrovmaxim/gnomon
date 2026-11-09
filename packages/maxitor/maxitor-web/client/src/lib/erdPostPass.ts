@@ -15,7 +15,7 @@
  */
 
 // Relative, with its extension: the ERD checks in ``scripts/`` run this module under plain Node, which knows no ``@/``.
-import { CONTOUR_ID_PREFIX, DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, FRAME_DISK_SLOT_PREFIX, frameOfCluster, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
+import { CONTOUR_ID_PREFIX, DOMAIN_CONTOUR_ID_PREFIX, ERD_DIFF_COLOUR, erdHeadInk, isPaintStandIn, painted, FRAME_DISK_SLOT_PREFIX, frameOfCluster, isContourId, tableResource, type ErdBundle, type ErdEntity, type ErdFold } from "./buildDotSource.ts";
 import { svgDataUriForGraphNodeIcon } from "./icons/graph_node_disk_icons.ts";
 
 /** Draws a kind's glyph in a 24-unit box: ``(word, ink, strokeWidth) => inner SVG``. */
@@ -37,12 +37,36 @@ export const CAP_HALF_EM = 0.359;
  * The box of a cell's ``points`` polygon inside its ``<g id="a_<id>">``, or ``null``. A cell that holds a
  * nested table (the header) is closed by its last ``</a>`` before the next cell's group, hence ``outer``.
  */
+/**
+ * Where each cell's group ``<g id="a_<cell>">`` starts in ``markup``, read in one pass. The post-pass looks up several
+ * cells of every table: searching the whole drawing for each made a model of a thousand tables cost seconds (#85).
+ */
+function cellStarts(markup: string): Map<string, number> {
+  const starts = new Map<string, number>();
+  for (const match of markup.matchAll(/<g id="a_([^"]+)">/g)) if (!starts.has(match[1]!)) starts.set(match[1]!, match.index ?? 0);
+  return starts;
+}
+
+/** ``markup`` with every edit made, in one pass: each edit replaces ``remove`` characters at ``at`` with ``text``. */
+function applyEdits(markup: string, edits: ReadonlyArray<{ at: number; remove: number; text: string }>): string {
+  const sorted = [...edits].sort((one, other) => one.at - other.at);
+  const parts: string[] = [];
+  let from = 0;
+  for (const { at, remove, text } of sorted) {
+    parts.push(markup.slice(from, at), text);
+    from = at + remove;
+  }
+  parts.push(markup.slice(from));
+  return parts.join("");
+}
+
 function cellBox(
   markup: string,
   cellId: string,
   outer = false,
+  starts?: ReadonlyMap<string, number>,
 ): { x: number; y: number; right: number; bottom: number; size: number; end: number } | null {
-  const start = markup.indexOf(`<g id="a_${cellId}">`);
+  const start = starts ? (starts.get(cellId) ?? -1) : markup.indexOf(`<g id="a_${cellId}">`);
   if (start < 0) return null;
   const close = markup.indexOf("</a>", start);
   const match = /points="([^"]+)"/.exec(markup.slice(start, outer ? markup.indexOf("</g>", start) : close));
@@ -66,14 +90,17 @@ function cellBox(
 type Attribute = { at: number; length: number };
 
 /** The first ``<text>`` inside ``<g id="a_<id>">``: where its ``x`` and ``y`` attributes sit, and its font size. */
-function textPlace(markup: string, cellId: string): { x: Attribute; y: Attribute; fontSize: number } | null {
-  const start = markup.indexOf(`<g id="a_${cellId}">`);
+function textPlace(markup: string, cellId: string, starts?: ReadonlyMap<string, number>): { x: Attribute; y: Attribute; fontSize: number } | null {
+  const start = starts ? (starts.get(cellId) ?? -1) : markup.indexOf(`<g id="a_${cellId}">`);
   if (start < 0) return null;
-  const tag = /<text\b[^>]*>/.exec(markup.slice(start));
+  // Searched from the cell on, never by copying the rest of the drawing.
+  const textTag = /<text\b[^>]*>/g;
+  textTag.lastIndex = start;
+  const tag = textTag.exec(markup);
   if (!tag) return null;
   const find = (name: string): Attribute | null => {
     const attr = new RegExp(` ${name}="[-\\d.]+"`).exec(tag[0]);
-    return attr ? { at: start + tag.index + attr.index, length: attr[0].length } : null;
+    return attr ? { at: tag.index + attr.index, length: attr[0].length } : null;
   };
   const x = find("x");
   const y = find("y");
@@ -97,6 +124,14 @@ function collapseChevron(x: number, axis: number, size: number, ink: string, col
 }
 
 /**
+ * The colours ``placeKindIcons`` paints a kind glyph and a fold chevron with, given their stand-ins: a repaint that
+ * keeps the drawing reads them without placing the glyphs again (#85).
+ */
+export function paintKindIcons(entities: readonly ErdEntity[]): void {
+  for (const entity of entities) painted(`glyph-ink:${entity.id}`, erdHeadInk(entity));
+}
+
+/**
  * Draw each table's kind glyph at the left of its header, after the inset, and its name right after it,
  * both on one axis — the middle of the header band: the glyph's centre on it, and the name's capitals
  * centred on it (spec 029, FR-033). ``entities`` is the list the DOT was built from (its order gives the
@@ -104,11 +139,12 @@ function collapseChevron(x: number, axis: number, size: number, ink: string, col
  */
 export function placeKindIcons(markup: string, entities: readonly ErdEntity[], drawGlyph: KindGlyphDrawer, folds?: ReadonlyMap<string, ErdFold>): string {
   const edits: Array<{ at: number; remove: number; text: string }> = [];
+  const starts = cellStarts(markup);
   entities.forEach((entity, table) => {
-    const slot = cellBox(markup, `ks${table}`);
-    const header = cellBox(markup, `hd${table}`, true);
-    const nameCell = cellBox(markup, `hn${table}`, true);
-    const name = textPlace(markup, `hn${table}`);
+    const slot = cellBox(markup, `ks${table}`, false, starts);
+    const header = cellBox(markup, `hd${table}`, true, starts);
+    const nameCell = cellBox(markup, `hn${table}`, true, starts);
+    const name = textPlace(markup, `hn${table}`, starts);
     if (!slot || slot.size <= 0 || !header || !nameCell || !name) return;
     const iconX = header.x + HEADER_INSET_PT;
     const textX = iconX + slot.size + HEADER_GLYPH_GAP;
@@ -123,16 +159,12 @@ export function placeKindIcons(markup: string, entities: readonly ErdEntity[], d
       remove: 0,
       text:
         `<g class="erd-kind-icon" pointer-events="none" transform="translate(${iconX.toFixed(2)},${iconY.toFixed(2)}) ` +
-        `scale(${(slot.size / 24).toFixed(4)})">${drawGlyph(kind, erdHeadInk(entity), HEADER_GLYPH_STROKE)}</g>`,
+        `scale(${(slot.size / 24).toFixed(4)})">${drawGlyph(kind, painted(`glyph-ink:${entity.id}`, erdHeadInk(entity)), HEADER_GLYPH_STROKE)}</g>`,
     });
-    const control = cellBox(markup, `cl${table}`);
-    if (control) edits.push({ at: control.end, remove: 0, text: collapseChevron(header.right - HEADER_INSET_PT - slot.size, axis, slot.size, erdHeadInk(entity), folds?.get(entity.id)?.collapsed === true) });
+    const control = cellBox(markup, `cl${table}`, false, starts);
+    if (control) edits.push({ at: control.end, remove: 0, text: collapseChevron(header.right - HEADER_INSET_PT - slot.size, axis, slot.size, painted(`glyph-ink:${entity.id}`, erdHeadInk(entity)), folds?.get(entity.id)?.collapsed === true) });
   });
-  let out = markup;
-  for (const { at, remove, text } of edits.sort((a, b) => b.at - a.at)) {
-    out = out.slice(0, at) + text + out.slice(at + remove);
-  }
-  return out;
+  return applyEdits(markup, edits);
 }
 
 // ── Line hover ──────────────────────────────────────────────────────────────
@@ -162,8 +194,29 @@ export const ROW_TAPPABLE_PX = 20;
  */
 export function seenFromAfar(node: Element, touch = false): boolean {
   const row = node.querySelector('g[id^="a_fn"]') ?? node.querySelector('g[id^="a_hd"]');
-  const height = row?.getBoundingClientRect().height ?? Infinity;
+  const height = row ? rowOnScreen(row) : Infinity;
   return height > 0 && height < (touch ? ROW_TAPPABLE_PX : ROW_READABLE_PX);
+}
+
+/**
+ * Per drawing: the zoom it is shown at, as ``setErdDetail`` is told it, and the height of a field row and of a header
+ * in the drawing's own units, each measured once. A hover reads them instead of asking the browser where a row is,
+ * which laid the whole drawing out first whenever anything had changed since — a tenth of a second on 1 000 tables (#85).
+ */
+const DRAWING_ZOOM = new WeakMap<Element, { scale: number; rows: Map<string, number> }>();
+
+/** How tall ``row`` stands on screen, in CSS px. */
+function rowOnScreen(row: Element): number {
+  const svg = row.closest("svg");
+  const zoom = svg ? DRAWING_ZOOM.get(svg) : undefined;
+  if (!zoom || !("getBBox" in row)) return row.getBoundingClientRect().height;
+  const kind = row.id.slice(2, 4);
+  let height = zoom.rows.get(kind);
+  if (height === undefined) {
+    height = (row as SVGGraphicsElement).getBBox().height;
+    zoom.rows.set(kind, height);
+  }
+  return height * zoom.scale;
 }
 
 /** The class the hovered look hangs on. */
@@ -255,10 +308,17 @@ export const END_LABEL_CLASS = "erd-end-label";
  * table it crosses (spec 029, FR-042). The labels and their plates show only while the line is hovered
  * (``erdEndLabelSx``); a line's own hover, a row's hover and a follower's replayed hover all set it.
  */
-export function addEndLabelBadges(root: ParentNode): void {
-  const tables = [...root.querySelectorAll<SVGGraphicsElement>("g.node")].map((node) => node.getBBox());
-  root.querySelectorAll<SVGTextElement>("g.edge text").forEach((label) => {
-    if (label.previousElementSibling?.classList.contains(END_LABEL_CLASS)) return;
+export function addEndLabelBadges(root: ParentNode, edges?: Iterable<Element>): void {
+  const labels = (edges ? [...edges].flatMap((edge) => [...edge.querySelectorAll<SVGTextElement>("text")]) : [...root.querySelectorAll<SVGTextElement>("g.edge text")]).filter(
+    (label) => !label.previousElementSibling?.classList.contains(END_LABEL_CLASS),
+  );
+  if (!labels.length) return;
+  let tables = BADGE_TABLES.get(root);
+  if (!tables) {
+    tables = [...root.querySelectorAll<SVGGraphicsElement>("g.node")].map((node) => node.getBBox());
+    BADGE_TABLES.set(root, tables);
+  }
+  labels.forEach((label) => {
     const box = label.getBBox();
     if (!(box.width > 0)) return;
     const size = { width: box.width + 6, height: box.height + 2 };
@@ -289,6 +349,30 @@ export function addEndLabelBadges(root: ParentNode): void {
     plate.setAttribute("rx", "3");
     label.parentNode!.insertBefore(plate, label);
   });
+}
+
+/** Each drawing's tables as boxes, read once for the plates of its labels. */
+const BADGE_TABLES = new WeakMap<ParentNode, Box[]>();
+/** How many lines get their plates in one idle moment. */
+const BADGE_LINES_PER_IDLE = 40;
+
+/**
+ * The plates of a drawing's labels (``addEndLabelBadges``), made when they are needed rather than with the drawing:
+ * a bundle's count, on view at all times, at once; any other line's labels show only while it is lit, so a line gets
+ * its plates when it is first lit, and the rest a few lines at a time while the page is idle. Measuring every label
+ * of 1 000 tables with the drawing held each new picture back by half a second (#85).
+ */
+export function addEndLabelBadgesLazily(root: ParentNode, signal: AbortSignal): void {
+  addEndLabelBadges(root, root.querySelectorAll('g.edge[id^="rb"]'));
+  const rest = [...root.querySelectorAll('g.edge:not([id^="rb"])')];
+  const idle = (work: () => void) =>
+    typeof requestIdleCallback === "function" ? requestIdleCallback(work, { timeout: 2000 }) : setTimeout(work, 50);
+  const next = () => {
+    if (signal.aborted || !rest.length) return;
+    addEndLabelBadges(root, rest.splice(0, BADGE_LINES_PER_IDLE));
+    idle(next);
+  };
+  idle(next);
 }
 
 /** A box in the drawing's units. */
@@ -385,35 +469,61 @@ const GREEK_HEIGHT_EM = 0.42;
 /**
  * A bar for every text of every table in ``svg``, once per drawing, hidden until the drawing is seen from afar. The bar
  * is measured from the text's own attributes — its length from its characters, its place from its anchor and baseline
- * — so making them lays nothing out.
+ * — so making them lays nothing out. A table's name is a bar of its own, painted as the name is; the bars of its rows
+ * are one shape per colour: some twenty thousand elements fewer on 1 000 tables, the same picture (#85).
  */
 export function addGreekText(svg: Element): void {
   if (svg.querySelector(`.${GREEK_CLASS}`)) return;
-  for (const text of svg.querySelectorAll("g.node text")) {
-    const size = Number(text.getAttribute("font-size") ?? 14);
-    const x = Number(text.getAttribute("x"));
-    const y = Number(text.getAttribute("y"));
-    if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-    const width = (text.textContent ?? "").length * size * GREEK_ADVANCE_EM;
-    const anchor = text.getAttribute("text-anchor");
-    const left = anchor === "middle" ? x - width / 2 : anchor === "end" ? x - width : x;
-    const height = size * GREEK_HEIGHT_EM;
-    const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    const isName = text.closest("g[id^='a_hn']") !== null;
-    bar.setAttribute("class", `${GREEK_CLASS}${isName ? ` ${GREEK_NAME_CLASS}` : ""}`);
-    bar.setAttribute("x", left.toFixed(2));
-    bar.setAttribute("y", (y - size * 0.36 - height / 2).toFixed(2));
-    bar.setAttribute("width", width.toFixed(2));
-    bar.setAttribute("height", height.toFixed(2));
-    bar.setAttribute("rx", (height / 2).toFixed(2));
-    bar.setAttribute("fill", text.getAttribute("fill") ?? "#0f172a");
-    bar.setAttribute("opacity", "0.55");
-    text.parentNode?.insertBefore(bar, text);
+  for (const node of svg.querySelectorAll("g.node")) {
+    const rows = new Map<string, string[]>();
+    for (const text of node.querySelectorAll("text")) {
+      const size = Number(text.getAttribute("font-size") ?? 14);
+      const x = Number(text.getAttribute("x"));
+      const y = Number(text.getAttribute("y"));
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      const width = (text.textContent ?? "").length * size * GREEK_ADVANCE_EM;
+      const anchor = text.getAttribute("text-anchor");
+      const left = anchor === "middle" ? x - width / 2 : anchor === "end" ? x - width : x;
+      const height = size * GREEK_HEIGHT_EM;
+      const top = y - size * 0.36 - height / 2;
+      const fill = text.getAttribute("fill") ?? "#0f172a";
+      if (text.closest("g[id^='a_hn']") !== null) {
+        const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        bar.setAttribute("class", `${GREEK_CLASS} ${GREEK_NAME_CLASS}`);
+        bar.setAttribute("x", left.toFixed(2));
+        bar.setAttribute("y", top.toFixed(2));
+        bar.setAttribute("width", width.toFixed(2));
+        bar.setAttribute("height", height.toFixed(2));
+        bar.setAttribute("rx", (height / 2).toFixed(2));
+        bar.setAttribute("fill", fill);
+        bar.setAttribute("opacity", "0.55");
+        text.parentNode?.insertBefore(bar, text);
+        continue;
+      }
+      if (!(width > 0)) continue;
+      // The bar a rounded rectangle would be: straight sides, a half circle at each end.
+      const r = Math.min(height, width) / 2;
+      const part = `M${(left + r).toFixed(2)},${top.toFixed(2)}h${(width - 2 * r).toFixed(2)}a${r.toFixed(2)},${r.toFixed(2)} 0 0 1 0,${(2 * r).toFixed(2)}h${(2 * r - width).toFixed(2)}a${r.toFixed(2)},${r.toFixed(2)} 0 0 1 0,${(-2 * r).toFixed(2)}z`;
+      const parts = rows.get(fill);
+      if (parts) parts.push(part);
+      else rows.set(fill, [part]);
+    }
+    for (const [fill, parts] of rows) {
+      const bars = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      bars.setAttribute("class", GREEK_CLASS);
+      bars.setAttribute("d", parts.join(""));
+      bars.setAttribute("fill", fill);
+      bars.setAttribute("opacity", "0.55");
+      node.appendChild(bars);
+    }
   }
 }
 
 /** Mark ``svg`` with the detail its ``scale`` shows; only a crossing of a threshold changes a class. */
 export function setErdDetail(svg: Element, scale: number): void {
+  const zoom = DRAWING_ZOOM.get(svg);
+  if (zoom) zoom.scale = scale;
+  else DRAWING_ZOOM.set(svg, { scale, rows: new Map() });
   const far = scale < FAR_ROWS_SCALE;
   if (far) addGreekText(svg);
   svg.classList.toggle(FAR_ROWS_CLASS, far);
@@ -554,6 +664,7 @@ export function bindLineHover(
   const tables = new Map(entities.map((e, index) => [e.id, { index, fields: e.fields }]));
   const edgeRows = relations.map((line) => rowsOf(line, tables));
   const show = (edges: Element[], on: boolean) => {
+    if (on) addEndLabelBadges(root, edges);
     for (const edge of edges) {
       const k = Number(edge.id.slice(2));
       edge.classList.toggle(EDGE_HOVER_CLASS, on);
@@ -751,7 +862,9 @@ export function addFrameIcons(markup: string): string {
     const name = /<text\b[^>]*\by="(-?[\d.]+)"[^>]*font-size="([\d.]+)"/.exec(markup.slice(at + whole.length, at + whole.length + 600));
     const middle = name ? Number(name[1]) - Number(name[2]) * FRAME_CAP_MIDDLE : top + height / 2;
     const icon = svgDataUriForGraphNodeIcon(fill, kind === "d" ? "Domain" : "Resource");
-    return `<image class="frame-disk" href="${icon}" x="${(left + (width - size) / 2).toFixed(2)}" y="${(middle - size / 2).toFixed(2)}" width="${size.toFixed(2)}" height="${size.toFixed(2)}"/>`;
+    // A disk painted by a stand-in keeps it, so a repaint can draw the disk again in the new colour (#85).
+    const paint = isPaintStandIn(fill) ? ` data-paint="${fill}" data-disk="${kind === "d" ? "Domain" : "Resource"}"` : "";
+    return `<image class="frame-disk"${paint} href="${icon}" x="${(left + (width - size) / 2).toFixed(2)}" y="${(middle - size / 2).toFixed(2)}" width="${size.toFixed(2)}" height="${size.toFixed(2)}"/>`;
   });
 }
 

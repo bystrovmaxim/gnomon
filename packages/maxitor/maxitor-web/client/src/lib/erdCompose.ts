@@ -23,14 +23,13 @@ import {
   CONTOUR_ID_PREFIX,
   DOMAIN_CONTOUR_ID_PREFIX,
   erdBlockWidths,
-  erdDomainFrameColour,
+  domainFramePaint,
   erdGraphvizEngine,
-  erdResourceFrameColour,
   foldPlan,
   specializationId,
-  frameInk,
   frameTitleLabel,
   FRAME_GREY,
+  resourceFramePaint,
   tableResource,
   type ErdEntity,
   type ErdGraphPayload,
@@ -56,7 +55,9 @@ type Frame = {
   index: number;
   id: string;
   label: string;
+  /** The outline's colour and the ink of the title, as the paint gives them. */
   colour: string;
+  ink: string;
   resource: string | null;
   members: ErdEntity[];
   groups: ErdGroup[];
@@ -184,7 +185,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
         index,
         id,
         label: data.resource_labels?.[resource] ?? (resource.split(".").pop() || resource),
-        colour: erdResourceFrameColour(resource),
+        ...resourceFramePaint(resource),
         resource,
         members,
         groups: groupsIn(members, data.groups, entities),
@@ -199,7 +200,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
         index: resources.length,
         id: `cluster_resource_${resources.length}`,
         label: "Not stored",
-        colour: FRAME_GREY,
+        ...resourceFramePaint(null),
         resource: null,
         members: unstored,
         groups: groupsIn(unstored, data.groups, entities),
@@ -217,7 +218,7 @@ function framesOf(data: ErdGraphPayload): Frame[] {
       index,
       id: `${DOMAIN_CONTOUR_ID_PREFIX}${qual}`,
       label: data.domain_labels?.[qual] ?? (qual.split(".").pop() || qual),
-      colour: erdDomainFrameColour(qual, data.domain_colors),
+      ...domainFramePaint(qual, data.domain_colors),
       resource: null,
       members,
       groups: groupsIn(members, data.groups, entities),
@@ -271,7 +272,7 @@ type Title = { markup: string; box: Box };
 
 /** The HTML label of a frame's title — the very label a Dot frame carries, so both draw the same disk and name. */
 function titleLabel(frame: Frame): string {
-  const ink = frameInk(frame.colour);
+  const ink = frame.ink;
   if (frame.resource === null && frame.id.startsWith("cluster_")) return `<TABLE BORDER="0" CELLPADDING="0"><TR><TD><FONT POINT-SIZE="15" COLOR="${ink}"><B>${escHtml(frame.label)}</B></FONT></TD></TR></TABLE>`;
   const kind = frame.id.startsWith(DOMAIN_CONTOUR_ID_PREFIX) ? "domain" : "resource";
   return frameTitleLabel({ kind, slot: frame.index, name: frame.label, disk: ink, ink, tooltip: frame.tooltip });
