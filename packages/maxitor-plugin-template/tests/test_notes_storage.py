@@ -5,6 +5,7 @@ import re
 from datetime import UTC, datetime
 
 import pytest
+from maxitor_notes.notes_refusal_error import NotesRefusalError
 from maxitor_notes.storage.notes_storage import NotesStorage
 
 from aoa.action_machine.exceptions import HandleError
@@ -16,13 +17,18 @@ WRITER = "33333333-3333-3333-3333-333333333333"
 MOMENT = "2026-11-08T10:15:00.123456Z"
 
 
+LATER = "2026-11-09T10:15:00.123456Z"
+
+
 def _answer(query, params):
+    if "watermark($1::text::uuid)" in query:
+        return LATER
     if "change_time($1::text::uuid)" in query:
         return datetime(2026, 11, 8, 10, 15, tzinfo=UTC)
     if query.startswith("SELECT to_char($1::timestamptz"):
         return MOMENT
     if "FROM note_versions n" in query and "DISTINCT" not in query:
-        return [{"id": "n1", "item_id": ITEM, "writer_id": WRITER, "writer_name": "Ann", "body": "Check the limits", "updated_at": MOMENT}]
+        return [{"id": "n1", "item_id": ITEM, "writer_id": WRITER, "writer_name": "Ann", "body": "Check the limits", "updated_at": MOMENT, "since": MOMENT}]
     if "DISTINCT n.writer_id" in query:
         return [{"id": WRITER, "name": "Ann"}]
     return None
@@ -122,3 +128,23 @@ async def test_membership_is_asked_of_the_cores_function_never_of_its_tables() -
     query, params = connection.statements[-1]
     assert query == "SELECT member_organization($1, $2::text::uuid)::text"
     assert params == ("acme", WRITER)
+
+
+@pytest.mark.parametrize("read", ["notes", "authors"])
+async def test_a_moment_later_than_the_watermark_is_refused_and_nothing_is_read(read) -> None:
+    storage, connection = await _open()
+    future = "2026-11-10T00:00:00.000000Z"
+    with pytest.raises(NotesRefusalError) as refusal:
+        if read == "notes":
+            await storage.notes_of_item(ORG, ITEM, future, None)
+        else:
+            await storage.note_authors(ORG, ITEM, future, 50, None)
+    assert (refusal.value.reason, refusal.value.status) == ("moment_not_come", 422)
+    assert refusal.value.body == {"error": "moment_not_come", "watermark": LATER}
+    assert not any("FROM note_versions n" in query for query in connection.queries())
+
+
+async def test_any_moment_before_an_organizations_first_change_is_refused() -> None:
+    storage, _connection = await _open(lambda query, params: None)
+    with pytest.raises(NotesRefusalError):
+        await storage.notes_of_item(ORG, ITEM, MOMENT, None)

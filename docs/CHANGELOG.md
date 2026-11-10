@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-11-11] — The plugin template keeps its history: any moment, editing, revisions and the time scale's data
+
+The plugin template, which every Maxitor plugin is written from, now keeps its whole history. Its notes read at any past moment exactly as they were then, and the same question always gets the same answer; a moment that has not come yet is refused. A note is edited or deleted with the moment the person saw: if someone else changed or deleted it in between, nothing is overwritten and the answer says who and when. An item's notes can be published as numbered revisions — v1, v2 — each with a title, its own words and, if wanted, a release label; between two revisions the published notes do not change, and the draft shows what changed since the last one. History is only looked at: nothing restores or rewrites the past.
+
+The template also answers the core's time scale, which comes next: how many notes were added, changed and removed in each stretch of time — counted by the page's own query, so the counts match what the page shows — and its revisions as milestones, each with a card the core draws. How any plugin does this is now part of `maxitor-plugin-sdk` and checked by `maxitor-plugin-check`: the plugin declares which comparisons its pages can draw and keeps the answers in its folder `history/`.
+
+The documentation of plugins moved to one place, `docs/plugins/`: the plugin concept and versioned storage, which now shows every rule on the notes. ([#97](https://github.com/bystrovmaxim/gnomon/issues/97))
+
 ## [2026-11-10] — Plugins in an organization: the marketplace, installing, disabling and enabling
 
 An organization's administrator now installs plugins. Settings sits at the foot of the organization's tree, and its first page is Plugins: what the organization runs and what the marketplace offers, with one search over both. A plugin's details show its passport, its wheel and the tables it will have. Installing checks first that the plugin fits this Maxitor and that everything it needs is already installed, and names what is missing. A plugin can be disabled — its sections leave the tree, its data stays — and enabled again, but never so that an enabled plugin is left without one it needs. An organization can also add a plugin of its own, from a release on GitHub or GitLab or by uploading the file itself; no other organization sees it. All of it works on a phone.

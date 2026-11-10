@@ -11,3 +11,16 @@ tables:
       body: {type: text, nullable: false, description: The text of the note.}
     indexes:
       - [item_id]
+  revision:
+    description: 'An item''s notes published under a number. Written once and never changed; its moment is when it was published, and it holds the notes as they read at that moment.'
+    columns:
+      item_id: {type: uuid, nullable: false, description: The catalog item whose notes are published.}
+      number: {type: integer, nullable: false, description: 'The revision''s number for its item: 1, 2, … with no gap.'}
+      title: {type: text, nullable: false, description: The revision's first line.}
+      comment: {type: text, nullable: false, description: 'The revision''s own words: shown under the time scale when the revision is chosen.'}
+      release: {type: text, nullable: true, description: 'A release label the revision was published as; empty when it carries none.'}
+      publisher_id: {type: uuid, nullable: false, description: The account of the member who published the revision.}
+    unique:
+      - [item_id, number]
+    indexes:
+      - [item_id]

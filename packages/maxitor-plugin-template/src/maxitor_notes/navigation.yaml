@@ -32,6 +32,13 @@ nodes:
       shared: [view]
       # Pointers travel as an anchor and a fraction inside it; the page marks its notes with data-room-anchor.
       surface: document
+    # How the page answers the core's time scale. read is its reading action: over a stretch it counts the page's own
+    # bars. milestones and card are actions of the folder history/ (history/<name>_action.py). The comparisons are the
+    # passport's, as no compare narrows them here.
+    history:
+      read: list_item_notes
+      milestones: list_note_history
+      card: note_milestone_card
 
   # A section of its own in the root of the tree.
   - id: notes
@@ -41,3 +48,26 @@ nodes:
     order: 500
     page: /
     roles: [reader]
+
+  # The item's notes as the revision in force holds them: milestones alone on the scale, a point per revision.
+  - id: item-published
+    attach: core:item
+    title: Published notes
+    icon: note
+    order: 310
+    page: /items/{item_id}/published
+    roles: [reader]
+    history:
+      milestones: list_note_history
+      card: note_milestone_card
+
+  # What changed since the last revision. The draft is a comparison already: it offers one moment only.
+  - id: item-draft
+    attach: core:item
+    title: Draft
+    icon: note
+    order: 320
+    page: /items/{item_id}/draft
+    roles: [reader]
+    history:
+      compare: []

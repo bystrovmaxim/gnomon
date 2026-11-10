@@ -23,7 +23,7 @@ The addresses and their answers are in [contracts/actions.md](../../../specs/072
 
 An organization's administrator finds them in Settings at the foot of the organization's tree → Plugins (`/w/<code>/settings/plugins`): the installed plugins and the marketplace, one search over both, the details of a plugin, installing, disabling and enabling, and adding a private plugin by a release's Package URL and `sha256` or by uploading its wheel. The page only asks; the installer checks versions and deploys them every minute. Nobody else sees Settings: its address answers 404.
 
-A plugin carries no SQL: it declares its tables in `schema.yaml`, and the installer builds each version once — the schema `<name>_<x>_<y>_<z>`, the user `plg_<name>_<x>_<y>_<z>`, the tables with their version tables, the rights. The user sees nothing but its schema and reaches the core through five functions of the schema `organization`. Every line the domain writes is a typed event. The concept is in [plugins](../../maxitor-plugin-template/docs/plugins.md); the addresses in [contracts/actions.md](../../../specs/073-plugin-marketplace/contracts/actions.md).
+A plugin carries no SQL: it declares its tables in `schema.yaml`, and the installer builds each version once — the schema `<name>_<x>_<y>_<z>`, the user `plg_<name>_<x>_<y>_<z>`, the tables with their version tables, the rights. The user sees nothing but its schema and reaches the core through five functions of the schema `organization`. Every line the domain writes is a typed event. The concept is in [plugins](../../../docs/plugins/concept.md); the addresses in [contracts/actions.md](../../../specs/073-plugin-marketplace/contracts/actions.md).
 
 ## The core's passport
 

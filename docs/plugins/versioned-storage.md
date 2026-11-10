@@ -195,7 +195,7 @@ Three rules of a query:
 
 - **one moment for the whole query** — all participants of a join, whatever schemas they come from, are taken at the same `T`;
 - **a condition at every table** — no version table without a condition on the moment; a test that parses the SQL of reading actions checks this;
-- **`organization_id` in every condition** — both in `WHERE` and in every `JOIN`. The organization is the one in the request's address, whose membership the gateway and the action have checked (see [plugins, section 6.5](plugins.md)); it never comes from the request body.
+- **`organization_id` in every condition** — both in `WHERE` and in every `JOIN`. The organization is the one in the request's address, whose membership the gateway and the action have checked (see [plugins, section 6.5](concept.md)); it never comes from the request body.
 
 **Indexes.** Each version table has one GiST for the constraint and a B-tree for each access path; the set is confirmed by plans and measurements:
 
@@ -220,7 +220,7 @@ The keys of all version tables start with `organization_id`, so that partitionin
 
 A changing action has no `moment` parameter for reading. But it may have a **`base_moment`** parameter — the moment the user saw while editing. Version tables give a conflict check for free: if the open version of a row the action is about to change has `valid_from_at > base_moment`, someone changed it after the user looked at it. The action answers with a conflict, the client rereads. The check is per row, not per organization, so parallel edits of different rows do not get in each other's way. The parameter is optional and makes sense for editing existing rows, not for creating.
 
-**The only exception is returning to a past state** (undo, restore). Such an action reads from the version tables the state of the rows it needs at a past moment — and that is all it takes from there: values to write. Then it writes through the current tables with the same checks as any other change, and creates a new change. A return does not erase the past, it adds to it.
+**History is only looked at.** No action restores or rewrites the past: a screen at a past moment and every comparison of two moments offer no writing. The one thing a changing action takes from the version tables is when and by whom a row was last changed or closed — for the conflict of `base_moment` and its answer.
 
 The right to read the past is the present one: whoever has access to the data now sees its whole history.
 
@@ -285,3 +285,18 @@ Version rows physically disappear in three cases only, and none of them is a use
 - rule 5 "four kinds of tables" — add version tables as a fifth kind, with their naming and service fields;
 - rule 11 — an entity's time fields stay and are copied into the versions with the rest; `valid_from_at` does not replace them, because it answers a different question: not when the record was created or changed, but from what moment this state of it is in force;
 - rules 24 and 26 — the resource writes the current row and its version in one transaction; where the lock and the time come from; the action does not write versions itself.
+
+## 9. The pattern on the plugin template's notes
+
+The plugin template `notes` (`packages/maxitor-plugin-template`) keeps its data exactly as this document says, and shows each rule on one small table, `note`, and its revisions, `revision`.
+
+**Now and the past.** Every reading action takes `at`; without it the storage reads at the watermark, and a moment later than the watermark is refused (`moment_not_come`, 422) with the watermark in the answer. Every reading query writes its moment condition through one function of `maxitor-plugin-sdk` — `moments.in_force(alias, moment)` — at every version table, with `organization_id` in every condition; a test of the template runs every reading method and parses its SQL.
+
+**Editing with `base_moment`.** `EditNoteAction` takes the start of the version the editor saw. In one transaction after `change_time`: the current row is locked `FOR UPDATE`; if the note's open version began after `base_moment`, the action writes nothing and answers `changed_since` (409) naming who changed it and when; the same text writes nothing; otherwise the current row is updated, the open version closes with `closed_by` and `closed_operation`, and the new version opens at the change time.
+
+**Deleting.** `DeleteNoteAction` makes the same checks, deletes the current row and closes its version with who deleted it and by which action — no new version. At every earlier moment the note is still there; editing a deleted note answers `deleted` (409) naming who deleted it and when.
+
+**Revisions.** `PublishNotesAction` takes the item's last number from the current table under the organization's lock and writes the next one, with its title, comment and optional release label; with no note changed since the last revision it answers `nothing_to_publish`. A revision copies nothing: it names a moment, and the published notes at any moment are the notes read at the moment of the revision in force then. The draft is the difference between those and the notes at the moment.
+
+**The time scale's bars.** The page's reading action, given a stretch instead of a moment, runs the same query and filters with the stretch form of the condition, `moments.overlaps(alias, start, end)`, and gets every version that was part of the page at some time in the stretch. `history.bars_of` counts an opening alone as added, an opening where a version closed at the same time as changed, and a closing alone as removed — what the versions themselves say, with no journal.
+

@@ -1451,7 +1451,7 @@ dev = [
 
 [[package]]
 name = "maxitor-plugin-sdk"
-version = "1.1.0"
+version = "1.2.0"
 source = { editable = "packages/maxitor-plugin-sdk" }
 dependencies = [
     { name = "jsonschema" },
@@ -1468,7 +1468,7 @@ requires-dist = [
 
 [[package]]
 name = "maxitor-plugin-template"
-version = "0.4.0"
+version = "0.5.0"
 source = { editable = "packages/maxitor-plugin-template" }
 dependencies = [
     { name = "aoa-action-machine", extra = ["jwt", "postgres"] },

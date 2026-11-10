@@ -8,23 +8,25 @@ Maxitor installs this plugin: an organization's administrator finds it in Settin
 
 ## Documentation
 
-- [docs/plugins.md](docs/plugins.md) — the plugin concept: the passport, the core as a node of the dependency graph and the one compatibility check, delivery, database roles and schemas, cross-plugin foreign keys, one sign-in, the frame with its tree, panel, canvas and controls, rooms, the lifecycle, the rules, and a tutorial on this template.
-- [docs/versioned-storage.md](docs/versioned-storage.md) — how tables, versions and time are kept so that any past moment reads by the same actions as the present.
+- [The plugin concept](../../docs/plugins/concept.md): the passport, the core as a node of the dependency graph and the one compatibility check, delivery, database roles and schemas, cross-plugin foreign keys, one sign-in, the frame with its tree, panel, canvas and controls, rooms, the lifecycle, the rules, and a tutorial on this template.
+- [Versioned storage](../../docs/plugins/versioned-storage.md) — how tables, versions and time are kept so that any past moment reads by the same actions as the present.
 
 ## Files
 
 | File | What it is |
 |---|---|
 | `pyproject.toml` | The pip package; the entry point `maxitor.plugins` leads the installer to the passport. |
-| `src/maxitor_notes/maxitor-plugin.yaml` | The passport: id, name, version, required Maxitor version, dependencies on other plugins, roles, backend, frontend, database. |
-| `src/maxitor_notes/navigation.yaml` | The plugin's nodes in Maxitor's left tree: one under every catalog item, one in the root; the address of each page and how it behaves in a room. |
-| `src/maxitor_notes/foreign-keys.yaml` | The key from a note's writer to the core's user of that account, as identifiers only; the installer creates it. |
-| `src/maxitor_notes/schema.yaml` | The plugin's tables: `note`. Maxitor builds it with `note_versions`, the service fields and the indexes. |
+| `src/maxitor_notes/maxitor-plugin.yaml` | The passport: id, name, version, required Maxitor version, dependencies on other plugins, roles, backend, frontend, database, and the comparisons its pages can draw (`history.compare`). |
+| `src/maxitor_notes/navigation.yaml` | The plugin's nodes in Maxitor's left tree: the item's notes, its published notes and its draft under every catalog item, one in the root; the address of each page, how it behaves in a room, and how it answers the time scale (`history`). |
+| `src/maxitor_notes/foreign-keys.yaml` | The keys from a note's writer and a revision's publisher to the core's user of that account, as identifiers only; the installer creates them. |
+| `src/maxitor_notes/schema.yaml` | The plugin's tables: `note` and `revision`. Maxitor builds them with `note_versions` and `revision_versions`, the service fields and the indexes. |
 | `src/maxitor_notes/app.py` | The passport's `backend.app`: the backend Maxitor runs behind its gateway; every route lies under `/p/notes/api/{organization}` and is an action. |
 | `src/maxitor_notes/organization_auth_coordinator.py` | Checks the core's EdDSA token for this plugin and puts the address's organization into the context beside the person. |
 | `src/maxitor_notes/membership.py` | The second lock: each action's `@access_decide` lets only a member of the organization of the address in, and its main step finds the organization's id again. |
-| `src/maxitor_notes/storage/notes_storage.py` | The plugin's own schema: a write is one transaction whose change time comes from the core's `change_time`; a read is bound to one organization and one moment, a writer's name from the core's `member_name`. |
-| `src/maxitor_notes/actions/` | Add a note; list an item's notes at a moment; list the writers for the page's author filter (Maxitor's list contract). |
+| `src/maxitor_notes/storage/notes_storage.py` | The plugin's own schema: a write is one transaction whose change time comes from the core's `change_time`, an edit or a deletion refused when the note changed after `base_moment`; a read is bound to one organization and one moment, written through the SDK's moment condition, a moment later than the watermark refused. |
+| `src/maxitor_notes/actions/` | Add, edit and delete a note; list an item's notes at a moment, or its bars over a stretch; publish a revision; the published notes and the draft at a moment; the writers for the page's author filter (Maxitor's list contract). |
+| `src/maxitor_notes/history/` | What the core's time scale asks: the milestones of a stretch (`list_note_history`) and one milestone's card (`note_milestone_card`). |
+| `src/maxitor_notes/notes_refusal_error.py` | The refusals and their HTTP answers: a moment not come, a note changed or deleted since, nothing to publish. |
 | `graph.json` | The plugin's graph, built by `graph-builder write` from its code. |
 | `web/` | The frontend: a Next.js application under `/p/notes` whose pages keep every view setting in their address. |
 | `web/scripts/copy-build.mjs` | Puts the standalone build into `src/maxitor_notes/_web`, where the wheel carries it. |

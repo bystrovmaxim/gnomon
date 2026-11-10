@@ -1,0 +1,1685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maxitor plugin template — notes now and at any moment of the past · mockup</title>
+<style>
+  /* The visual language of the mockups of spec 059 and of issues #73 and #82: the same colours, header, tree and dialogs. */
+  :root {
+    --page-bg: #e9edf1; --ink: #0f172a; --ink2: #1e293b; --muted: #64748b; --faint: #94a3b8;
+    --line: rgba(15,23,42,.1); --line2: rgba(15,23,42,.06);
+    --sidebar: #EBF2F5; --canvas: #f6f8fa;
+    --ok: #16a34a; --bad: #b91c1c; --warn: #b45309;
+    --add: #16a34a; --rem: #dc2626; --chg: #d97706;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: var(--font); color: var(--ink); background: var(--page-bg); display: flex; }
+  button, textarea, input { font: inherit; color: inherit; }
+  code, .mono { font-family: var(--mono); }
+
+  /* ---------- mockup navigator ---------- */
+  .nav { width: 300px; flex-shrink: 0; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--line); padding: 18px 12px 32px; }
+  .nav h1 { font-size: 15px; margin: 0 6px 4px; }
+  .nav .sub { font-size: 12px; color: var(--muted); margin: 0 6px 12px; line-height: 1.45; }
+  .nav .group { font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 14px 6px 4px; }
+  .nav button.screen { display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+  .nav button.screen:hover { background: rgba(15,23,42,.05); }
+  .nav button.screen.on { background: rgba(15,23,42,.08); font-weight: 600; }
+  .nav button.screen .n { color: var(--muted); font-size: 11px; min-width: 24px; font-variant-numeric: tabular-nums; }
+  .seg { display: flex; margin: 4px 6px 6px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: #f8fafc; }
+  .seg button { flex: 1; border: 0; background: none; border-radius: 6px; font-size: 12.5px; padding: 5px 0; cursor: pointer; color: var(--muted); }
+  .seg button.on { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+  .path { margin: 6px 4px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .path .pt { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .path .pf { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .path .steps { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .path .steps button { border: 1px solid var(--line); background: #f8fafc; border-radius: 6px; font-size: 11px; padding: 2px 6px; cursor: pointer; }
+  .path .steps span { color: var(--faint); font-size: 11px; }
+
+  .stage { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; padding: 18px 24px 48px; }
+  .frame-cap { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .frame-cap b { color: var(--ink); }
+  .frame-box { position: relative; }
+  .frame-scale { transform-origin: top left; position: absolute; top: 0; left: 0; }
+  .notes { max-width: 980px; margin-top: 18px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 20px 16px; }
+  .notes h2 { font-size: 15px; margin: 0 0 6px; }
+  .notes li { font-size: 13px; line-height: 1.55; }
+  .notes ul { padding-left: 18px; margin: 6px 0 0; }
+  .notes code { font-size: 12px; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; }
+
+  /* ---------- device ---------- */
+  .device { width: 1360px; height: 840px; background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 8px 28px rgba(15,23,42,.12); }
+  .urlbar { height: 34px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #f1f5f9; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .urlbar .u { flex: 1; max-width: 760px; height: 22px; border-radius: 6px; background: #fff; border: 1px solid var(--line); display: flex; align-items: center; padding: 0 10px; color: #334155; white-space: nowrap; overflow: hidden; }
+  .urlbar .u b { color: var(--ink); font-weight: 600; }
+  .urlbar .u i { font-style: normal; color: #1d4ed8; }
+
+  .hdr { height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 12px; background: #fff; border-bottom: 1px solid var(--line); position: relative; z-index: 20; }
+  .burger { display: none; width: 32px; height: 32px; border: 0; background: none; border-radius: 7px; align-items: center; justify-content: center; cursor: pointer; margin-left: -6px; }
+  .burger:hover { background: rgba(15,23,42,.06); }
+  .logo { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13.5px; margin-right: 8px; }
+  .logo .mk { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .crumb { display: inline-flex; align-items: baseline; gap: 6px; height: 28px; line-height: 28px; padding: 0 8px; font-size: 13px; font-weight: 600; white-space: nowrap; min-width: 0; }
+  .crumb .lv { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .crumb .sep { color: var(--faint); font-weight: 400; margin: 0 2px; }
+  .hdr .spacer { flex: 1; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #cbd5e1; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .avatar.sm { width: 24px; height: 24px; font-size: 10px; }
+  .ico { width: 16px; height: 16px; flex-shrink: 0; }
+  .ico.sm { width: 14px; height: 14px; }
+
+  /* The core's moment in the top row: the graph viewer's pill (VersionButton) — clock, the moment in bold, chevron. */
+  .pill { height: 28px; display: inline-flex; align-items: center; border-radius: 8px; background: rgba(15,23,42,.05); margin-left: 6px; min-width: 0; }
+  .pill.open { background: rgba(15,23,42,.1); }
+  .pill .pb2 { height: 28px; border: 0; background: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 6px 0 8px; font-size: 12.5px; color: #334155; cursor: pointer; white-space: nowrap; min-width: 0; border-radius: 8px; }
+  .pill .pb2 b { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  .pill .pb2 .live { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+  .pill .pb2 .past { width: 7px; height: 7px; border-radius: 50%; background: #2563eb; flex-shrink: 0; }
+  .pill .stp { width: 26px; height: 28px; border: 0; background: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #475569; }
+  .pill .stp.off { color: #cbd5e1; cursor: default; }
+  .pill .dv { width: 1px; height: 16px; background: rgba(15,23,42,.12); }
+  .pill .nowb { border: 0; background: none; font-size: 12px; color: #1d4ed8; font-weight: 600; padding: 0 9px; height: 28px; cursor: pointer; white-space: nowrap; }
+
+  /* ---------- the organization's frame ---------- */
+  .body { flex: 1; min-height: 0; display: flex; position: relative; }
+  .sb { width: 255px; flex-shrink: 0; background: var(--sidebar); border-right: 1px solid rgba(15,23,42,.08); display: flex; flex-direction: column; }
+  .sbh { flex-shrink: 0; display: flex; align-items: center; gap: 4px; padding: 4px 8px 2px; }
+  .sbb { width: 32px; height: 32px; border: 0; padding: 0; border-radius: 6px; background: transparent; color: rgb(100,116,139); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .sbb:hover { background: rgba(15,23,42,.07); }
+  .sbb.off { opacity: .4; cursor: default; } .sbb.off:hover { background: transparent; }
+  .sb.collapsed { width: 48px; }
+  .sb.collapsed .sbh { flex-direction: column; padding: 4px 8px; }
+  .tree { flex: 1; overflow-y: auto; padding: 6px 8px 4px; }
+  .tg, .ti { display: flex; align-items: center; min-width: 0; border-radius: 6px; cursor: pointer; color: rgb(30,41,59); font-size: 13px; line-height: 1.35; }
+  .tg { min-height: 36px; padding: 0 8px; font-weight: 600; letter-spacing: -.01em; margin-top: 4px; }
+  .ti { min-height: 32px; padding: 0 8px 0 32px; font-weight: 400; }
+  .ti.l2 { padding-left: 56px; }
+  .tg:hover, .ti:hover { background: rgba(15,23,42,.07); }
+  .ti.on, .ti.on:hover { background: rgba(15,23,42,.09); }
+  .tg .slot, .ti .slot { width: 32px; flex-shrink: 0; display: inline-flex; align-items: center; color: rgb(100,116,139); }
+  .tg .slot .ico { width: 20px; height: 20px; }
+  .ti .slot .ico { width: 16px; height: 16px; opacity: .88; }
+  .tg .lb, .ti .lb { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .content { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+
+  /* Maxitor's controls over the right panel, declared in navigation.yaml: the same place for every plugin. */
+  .ctl { height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--line2); background: #fff; }
+  .ctl .vseg { display: flex; border: 1px solid var(--line); border-radius: 7px; padding: 2px; background: #f8fafc; }
+  .ctl .vseg span { font-size: 12px; padding: 3px 10px; border-radius: 5px; color: var(--muted); cursor: pointer; }
+  .ctl .vseg span.on { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+  .ctl .flt { height: 28px; border: 1px solid var(--line); border-radius: 7px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; font-size: 12px; color: #334155; background: #fff; cursor: pointer; }
+  .ctl .who { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+  .ctl .who .avatar { width: 22px; height: 22px; font-size: 9px; border: 2px solid #fff; margin-left: -8px; }
+
+  /* ---------- the plugin's page ---------- */
+  .page { flex: 1; overflow-y: auto; background: var(--canvas); padding: 22px 32px 48px; }
+  .page .inner { max-width: 760px; margin: 0 auto; }
+  .ph { display: flex; align-items: flex-end; gap: 16px; }
+  .ph .tx { flex: 1; min-width: 0; }
+  .ph .k { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .ph h2 { font-size: 22px; margin: 2px 0 0; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 14px 0 16px; }
+  .tabs button { border: 0; background: none; padding: 8px 12px; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+  .tabs button.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+  .tabs .cnt { font-size: 11px; background: #fef3c7; color: #92400e; border-radius: 9px; padding: 0 6px; font-weight: 600; }
+  .tabs .cnt.z { background: #e2e8f0; color: #475569; }
+
+  .banner { display: flex; gap: 10px; align-items: center; border-radius: 9px; padding: 10px 12px; font-size: 13px; line-height: 1.45; margin-bottom: 14px; }
+  .banner .ico { flex-shrink: 0; }
+  .banner .tx { flex: 1; min-width: 0; }
+  .banner.past { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+  .banner.rev { background: #f5f3ff; border: 1px solid #ddd6fe; color: #4c1d95; }
+  .banner.draft { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
+  .banner .btn2 { flex-shrink: 0; }
+
+  .composer { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .composer textarea { flex: 1; border: 0; outline: 0; resize: none; font-size: 13.5px; line-height: 1.5; min-height: 22px; padding: 3px 0; background: none; }
+  .composer.focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+
+  .note { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; position: relative; }
+  .note.fresh { border-color: #86efac; box-shadow: 0 0 0 3px rgba(22,163,74,.1); }
+  .note.editing { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .note.conflict { border-color: #fca5a5; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
+  .note.gone .nb { color: var(--muted); }
+  .nh { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .nh b { font-weight: 600; }
+  .nh .tm { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .nh .acts { margin-left: auto; display: flex; gap: 2px; flex-shrink: 0; }
+  .ib { width: 28px; height: 28px; border: 0; background: none; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: #64748b; cursor: pointer; }
+  .ib:hover { background: rgba(15,23,42,.06); color: var(--ink); }
+  .ib.del:hover { color: var(--bad); background: #fef2f2; }
+  .ib.more { display: none; }
+  .nb { font-size: 13.5px; line-height: 1.55; color: var(--ink2); margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+  .note { min-width: 0; overflow: hidden; }
+  .tagnew { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 6px; background: #dcfce7; color: #166534; }
+  .note textarea { width: 100%; border: 1px solid rgba(15,23,42,.2); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; line-height: 1.5; resize: vertical; min-height: 66px; margin-top: 8px; outline: 0; }
+  .note textarea:focus { border-color: #0f172a; }
+  .eft { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .eft .hint { font-size: 11.5px; color: var(--muted); margin-right: auto; }
+  .eft .hint code { font-size: 11px; background: #f1f5f9; padding: 0 4px; border-radius: 4px; }
+
+  .since { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 9px; display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; color: #475569; line-height: 1.5; }
+  .since .mk { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 7px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+  .since .mk.chg { background: #fef3c7; color: #92400e; }
+  .since .mk.del { background: #fee2e2; color: #991b1b; }
+  .since .mk.same { background: #dcfce7; color: #166534; }
+  .since .tx { flex: 1; min-width: 0; }
+  .since .now { color: var(--muted); }
+  .since .btn2 { flex-shrink: 0; }
+
+  .cbox { margin-top: 10px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; padding: 10px 12px; font-size: 12.5px; color: #7f1d1d; line-height: 1.5; }
+  .cbox .t { font-weight: 600; display: flex; gap: 7px; align-items: center; }
+  .cbox .mine { background: #fff; border: 1px solid #fecaca; border-radius: 7px; padding: 8px 10px; margin-top: 8px; color: var(--ink2); font-size: 13px; }
+  .cbox .mine .lbl { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 2px; }
+  .cbox .ft { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  .del-w { background: #fee2e2; color: #991b1b; text-decoration: line-through; border-radius: 3px; padding: 0 1px; }
+  .ins-w { background: #dcfce7; color: #166534; border-radius: 3px; padding: 0 1px; }
+
+  .revhd { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; }
+  .revhd .ref { font-size: 15px; font-weight: 700; background: #ede9fe; color: #5b21b6; border-radius: 7px; padding: 4px 9px; font-variant-numeric: tabular-nums; }
+  .revhd .tt { flex: 1; min-width: 0; }
+  .revhd .tt b { font-size: 14px; }
+  .revhd .tt div { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .sum { display: inline-flex; gap: 8px; font-size: 12px; font-weight: 600; flex-wrap: wrap; }
+  .sum .a { color: var(--add); } .sum .r { color: var(--rem); } .sum .c { color: var(--chg); } .sum .z { color: var(--muted); font-weight: 400; }
+
+  .chrow { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 10px; }
+  .chrow .st { width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .chrow .st.a { background: #dcfce7; color: #166534; } .chrow .st.r { background: #fee2e2; color: #991b1b; } .chrow .st.c { background: #fef3c7; color: #92400e; }
+  .chrow .bd { flex: 1; min-width: 0; }
+  .chrow .bd .w { font-size: 12px; color: var(--muted); }
+  .chrow .bd .nb { margin-top: 3px; }
+
+  .empty-st { background: #fff; border: 1.5px dashed rgba(15,23,42,.16); border-radius: 12px; padding: 34px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .empty-st b { color: var(--ink2); font-size: 15px; display: block; margin-bottom: 4px; }
+  .empty-st .btn2 { margin-top: 14px; }
+
+  .nf { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--canvas); padding: 20px; }
+  .nf .box { text-align: center; max-width: 420px; }
+  .nf .big { width: 54px; height: 54px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: inline-flex; align-items: center; justify-content: center; }
+  .nf .big .ico { width: 26px; height: 26px; }
+  .nf h2 { font-size: 19px; margin: 12px 0 6px; }
+  .nf p { font-size: 13px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+  .nf code { font-size: 12px; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #334155; }
+
+  /* ---------- buttons ---------- */
+  .btn2 { height: 30px; border-radius: 7px; border: 1px solid rgba(15,23,42,.18); background: #fff; font-size: 12.5px; padding: 0 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; justify-content: center; }
+  .btn2:hover { border-color: rgba(15,23,42,.4); }
+  .btn2.pri { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+  .btn2.dis { opacity: .45; cursor: not-allowed; }
+  .btn2.dpri { background: var(--bad); color: #fff; border-color: var(--bad); font-weight: 600; }
+  .btn2.blue { color: #1d4ed8; border-color: #bfdbfe; background: #fff; }
+  .btn2.blue:hover { border-color: #60a5fa; }
+  .lnk { color: #1d4ed8; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+
+  /* ---------- the core's moment, on the right of the top row ---------- */
+  .hdr .pill { margin: 0 8px 0 0; }
+  .pill .md { font-weight: 400; color: #475569; }
+  .pill .cnts { display: inline-flex; gap: 5px; font-weight: 600; margin-left: 4px; flex-shrink: 0; }
+  .pill .ab { font-weight: 600; color: #475569; }
+
+  /* ---------- the picker card: the graph viewer's VersionPicker, 760 × auto, opened under the pill ---------- */
+  .card { position: absolute; z-index: 50; top: 89px; right: 10px; width: 760px; max-height: calc(100% - 100px); overflow-y: auto; background: #fff;
+          border: 1px solid rgba(15,23,42,.1); border-radius: 10px; box-shadow: 0 12px 40px rgba(15,23,42,.16), 0 1px 2px rgba(15,23,42,.06); padding: 14px 20px 12px; }
+  .device:not(.phone) .card { overflow: visible; max-height: none; }
+  .card .grab { display: none; }
+  .chd { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .chd .tt { min-width: 0; }
+  .chd .tt b { font-size: 13px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chd .tt span { font-size: 11.5px; color: var(--muted); line-height: 16px; }
+  .chd .rt { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .ib2 { width: 28px; height: 28px; border: 0; background: none; border-radius: 8px; color: #64748b; display: inline-flex; align-items: center; justify-content: center; cursor: help; }
+  .ib2.sm { cursor: pointer; }
+  .ib2.sm.on { color: #8250df; }
+  .ib2:hover { background: rgba(15,23,42,.06); color: var(--ink); }
+  .modes { display: inline-flex; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; padding: 2px; gap: 2px; }
+  .modes button { height: 24px; border: 0; background: none; border-radius: 6px; padding: 0 8px; font-size: 12px; color: #475569; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+  .modes button:hover { background: rgba(15,23,42,.05); }
+  .modes button.on { background: rgba(15,23,42,.08); color: var(--ink); font-weight: 600; }
+  .modes .ph-lab { display: none; }
+
+  /* the continuous history: a histogram of changes, zoomed and moved like Kibana's */
+  .hbar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 11.5px; color: var(--muted); flex-wrap: nowrap; white-space: nowrap; }
+  .zm { display: inline-flex; border: 1px solid rgba(15,23,42,.12); border-radius: 7px; padding: 1px; gap: 1px; }
+  .zm button { border: 0; background: none; height: 22px; padding: 0 7px; border-radius: 5px; font-size: 11.5px; color: #475569; cursor: pointer; }
+  .zm button:hover { background: rgba(15,23,42,.06); color: var(--ink); }
+  .zm button.on { background: rgba(15,23,42,.08); color: var(--ink); font-weight: 600; }
+  .zm .pm { width: 24px; font-size: 14px; line-height: 1; }
+  .span { font-variant-numeric: tabular-nums; color: #334155; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .lg { margin-left: auto; display: inline-flex; gap: 10px; flex-shrink: 0; }
+  .lg span { display: inline-flex; align-items: center; gap: 4px; }
+  .lg i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .hist { position: relative; cursor: crosshair; touch-action: none; user-select: none; }
+  .hist.grabbing { cursor: grabbing; }
+  .htip { position: absolute; z-index: 3; width: 270px; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 8px; box-shadow: 0 8px 30px rgba(15,23,42,.14), 0 1px 2px rgba(15,23,42,.06);
+          padding: 9px 11px; font-size: 12px; line-height: 1.45; color: #1e293b; pointer-events: none; }
+  .htip .h { font-weight: 600; margin-bottom: 4px; }
+  .htip .c { display: flex; gap: 10px; font-weight: 600; margin-bottom: 4px; }
+  .htip .e { color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .htip .f { color: var(--faint); margin-top: 4px; font-size: 11px; }
+  .hhint { font-size: 11px; color: var(--faint); margin: 6px 0 0; }
+
+  /* under the track: the chosen moment's message — in Diff A's on the left and B's on the right — and what lies between */
+  .msgs { display: grid; grid-template-columns: minmax(0,1fr); column-gap: 16px; }
+  .msgs.two { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  .msg { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(15,23,42,.06); display: flex; flex-direction: column; }
+  .msg .mb { flex-grow: 1; margin: 2px 0 6px; padding: 8px 10px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; font-size: 12px; line-height: 1.5; color: #334155; background: #f8fafc; border: 1px solid rgba(15,23,42,.06); border-radius: 6px; }
+  .msg .mb b { color: var(--ink); }
+  .chipA, .chipB { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 9px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+  .chipA { border: 1.4px solid var(--ink); color: var(--ink); background: #fff; }
+  .chipB { background: var(--ink); color: #fff; }
+  .betw { margin-top: 8px; }
+  .betw > button { border: 0; padding: 0; background: none; cursor: pointer; font-size: 12px; color: #475569; }
+  .betw > button:hover { color: var(--ink); }
+  .betw ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 150px; overflow-y: auto; }
+  .betw li { border-top: 1px solid rgba(15,23,42,.06); display: flex; gap: 8px; padding: 5px 0; font-size: 12px; color: #334155; cursor: pointer; min-width: 0; }
+  .betw li b { color: var(--ink); white-space: nowrap; font-weight: 600; }
+  .betw li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- the page in Diff and Side by side: drawn by the plugin with @maxitor/panel's parts ---------- */
+  .banner.cmp { background: #fff; border: 1px solid var(--line); color: var(--ink2); flex-wrap: wrap; }
+  .banner.cmp .tx { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .paint-authors .note[class*="dk-"] { border-left: 3px solid var(--au) !important; }
+  .note.dk-a { border-left: 3px solid #16a34a; }
+  .note.dk-c { border-left: 3px solid #d97706; }
+  .note.dk-r { border-left: 3px solid #dc2626; background: #fffafa; }
+  .note.dk-r .nb { color: #94a3b8; text-decoration: line-through; }
+  .note.dk-u { opacity: .75; }
+  .note.hl { box-shadow: 0 0 0 3px rgba(37,99,235,.28); border-color: #2563eb; }
+  .ckb { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+  .ckb.a { background: #dcfce7; color: #166534; } .ckb.c { background: #fef3c7; color: #92400e; } .ckb.r { background: #fee2e2; color: #991b1b; }
+  .unch { font-size: 12.5px; color: var(--muted); padding: 9px 12px; border: 1px dashed rgba(15,23,42,.16); border-radius: 10px; margin-bottom: 8px; cursor: pointer; background: #fbfcfd; }
+  .unch:hover { color: var(--ink); }
+  .sx-h { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; color: #475569; margin-bottom: 8px; position: sticky; top: -22px; background: var(--canvas); padding: 6px 0; z-index: 2; }
+  .sx-h > div { display: flex; gap: 6px; align-items: center; min-width: 0; }
+  .sx-r { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; border-radius: 12px; }
+  .sx-r.hl { box-shadow: 0 0 0 3px rgba(37,99,235,.28); }
+  .sx-c { min-width: 0; display: flex; }
+  .sx-c .note { margin: 0; flex: 1; }
+  .sx-c .side { display: none; }
+  .ph0 { flex: 1; border: 1.5px dashed rgba(15,23,42,.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--faint); min-height: 64px; padding: 8px; text-align: center; }
+
+  /* @maxitor/panel's ChangeStepper, placed by the page over its content */
+  .cwrap { position: relative; display: inline-flex; }
+  .cwrap .pill { margin: 0; }
+  .cdrop { position: absolute; z-index: 40; top: 36px; left: 0; width: 380px; max-height: 430px; overflow-y: auto; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 12px;
+           box-shadow: 0 12px 40px rgba(15,23,42,.16); padding: 10px 6px; }
+  .cdrop .gh { font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 2px 10px 6px; }
+  .cr { display: flex; gap: 12px; align-items: center; padding: 7px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+  .cr:hover, .cr.on { background: rgba(15,23,42,.05); }
+  .cr .sg { width: 10px; font-weight: 700; text-align: center; }
+  .cr .sg.a { color: #16a34a; } .cr .sg.c { color: #d97706; } .cr .sg.r { color: #dc2626; }
+  .cr .cx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cr .ck { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+  /* ---------- dialogs ---------- */
+  .scrim { position: absolute; inset: 0; background: rgba(15,23,42,.18); z-index: 55; }
+  .scrim.clear { background: transparent; z-index: 45; }
+  .dlg { position: absolute; z-index: 60; top: 110px; left: 50%; transform: translateX(-50%); width: 540px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 50px rgba(15,23,42,.2); padding: 20px 22px 18px; }
+  .dlg .grab { display: none; }
+  .dlg h3 { margin: 0 0 4px; font-size: 17px; }
+  .dlg .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+  .dlg .sub b { color: var(--ink); }
+  .dlg .ft { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .dlg .ft .btn2 { height: 32px; }
+  .dsec { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 12px 0 5px; }
+  .qt { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font-size: 13px; line-height: 1.55; background: #fbfcfd; }
+  .inp { width: 100%; min-height: 38px; border: 1px solid rgba(15,23,42,.2); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; outline: 0; }
+  .inp:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .lab { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 5px; }
+
+  .toast { position: absolute; z-index: 70; bottom: 22px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; font-size: 13px; border-radius: 9px; padding: 10px 14px; display: flex; gap: 9px; align-items: center; box-shadow: 0 10px 30px rgba(15,23,42,.25); white-space: nowrap; }
+  .toast .ico { color: #86efac; }
+  .toast a { color: #cbd5e1; text-decoration: underline; cursor: pointer; margin-left: 6px; }
+
+  .sheet { position: absolute; z-index: 60; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 20px 20px 0 0; padding: 8px 12px 22px; box-shadow: 0 -10px 40px rgba(15,23,42,.18); }
+  .sheet .grab { width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 10px; }
+  .sheet .sq { font-size: 12.5px; color: var(--muted); padding: 0 6px 10px; border-bottom: 1px solid var(--line2); margin-bottom: 6px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sheet .it { display: flex; gap: 12px; align-items: center; height: 48px; padding: 0 8px; font-size: 15px; border-radius: 10px; cursor: pointer; }
+  .sheet .it:hover { background: rgba(15,23,42,.05); }
+  .sheet .it.bad { color: var(--bad); }
+  .sheet .it .ico { width: 18px; height: 18px; }
+
+  /* ---------- the phone: 375 × 812, one column, no horizontal scrolling ---------- */
+  .device.phone { width: 375px; height: 812px; border-radius: 34px; }
+  .device.phone .urlbar { height: 44px; padding: 0 14px; }
+  .device.phone .urlbar .u { max-width: none; font-size: 11.5px; }
+  .device.phone .hdr { gap: 4px; padding: 0 8px 0 12px; }
+  .device.phone .burger { display: inline-flex; }
+  .device.phone .logo { margin-right: 0; }
+  .device.phone .logo .nm, .device.phone .crumb, .device.phone .hdr .spacer { display: none; }
+  .device.phone .hdr .pill { flex: 1; margin: 0 2px; }
+  .device.phone .hdr .pill .pb2 { flex: 1; justify-content: flex-start; }
+  .device.phone .hdr .pill .pb2 b { flex-shrink: 1; }
+  .device.phone .pill .stp { width: 34px; }
+  .device.phone .pill, .device.phone .pill .pb2, .device.phone .pill .stp, .device.phone .pill .nowb { height: 34px; }
+  .device.phone .pill .nowb, .device.phone .pill .dv:has(+ .nowb) { display: none; }
+  .device.phone .body > .sb { display: none; }
+  .device.phone .sb.drawer { display: flex; position: absolute; z-index: 60; top: 0; left: 0; bottom: 0; width: 296px; box-shadow: 12px 0 40px rgba(15,23,42,.18); }
+  .device.phone .ti, .device.phone .tg { min-height: 42px; font-size: 14.5px; }
+  .device.phone .ctl { padding: 0 12px; height: 50px; }
+  .device.phone .ctl .who, .device.phone .ctl .flt.au { display: none; }
+  .device.phone .ctl .vseg span { padding: 6px 12px; font-size: 13px; }
+  .device.phone .page { padding: 14px 12px 28px; }
+  .device.phone .ph h2 { font-size: 20px; }
+  .device.phone .tabs { margin: 10px 0 12px; }
+  .device.phone .tabs button { flex: 1; justify-content: center; font-size: 14px; padding: 10px 4px; }
+  .device.phone .banner { flex-wrap: wrap; font-size: 13px; }
+  .device.phone .banner .tx { flex-basis: calc(100% - 30px); }
+  .device.phone .banner .btn2 { width: 100%; height: 40px; font-size: 14px; }
+  .device.phone .composer { flex-direction: column; align-items: stretch; }
+  .device.phone .composer textarea { font-size: 15px; }
+  .device.phone .composer .btn2 { height: 40px; font-size: 14px; }
+  .device.phone .note { padding: 12px; }
+  .device.phone .nb { font-size: 14.5px; }
+  .device.phone .nh .tm { font-size: 11.5px; }
+  .device.phone .ib.ed, .device.phone .ib.del { display: none; }
+  .device.phone .ib.more { display: inline-flex; width: 36px; height: 36px; margin: -6px -6px -6px 0; }
+  .device.phone .note textarea { font-size: 15px; min-height: 96px; }
+  .device.phone .eft { flex-wrap: wrap; }
+  .device.phone .eft .hint { flex-basis: 100%; }
+  .device.phone .eft .btn2 { flex: 1; height: 40px; font-size: 14px; }
+  .device.phone .cbox .ft .btn2 { flex: 1; height: 40px; font-size: 13.5px; }
+  .device.phone .revhd { flex-wrap: wrap; }
+  .device.phone .revhd .btn2 { width: 100%; height: 40px; font-size: 14px; }
+  .device.phone .card { top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 86%; border-radius: 12px 12px 0 0; border: 0; padding: 8px 16px 18px; }
+  .device.phone .card .grab { display: block; width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 10px; }
+  .device.phone .chd { flex-wrap: wrap; }
+  .device.phone .chd .rt { width: 100%; }
+  .device.phone .modes { flex: 1; }
+  .device.phone .modes button { flex: 1; justify-content: center; height: 32px; font-size: 13px; }
+  .device.phone .modes .dt-lab { display: none; }
+  .device.phone .modes .ph-lab { display: inline; }
+  .device.phone .hbar { flex-wrap: wrap; }
+  .device.phone .lg { margin-left: 0; width: 100%; }
+  .device.phone .zm button { height: 30px; padding: 0 9px; font-size: 12.5px; }
+  .device.phone .msgs.two { grid-template-columns: minmax(0,1fr); }
+  .device.phone .cdrop { position: fixed; }
+  .device.phone .sx-h { display: none; }
+  .device.phone .sx-r { grid-template-columns: minmax(0,1fr); gap: 4px; padding: 6px; background: #eef2f6; margin-bottom: 10px; }
+  .device.phone .sx-c .side { display: inline-flex; margin-right: 6px; }
+  .device.phone .dlg { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; border-radius: 20px 20px 0 0; max-height: 88%; overflow-y: auto; padding: 8px 16px 22px; border: 0; }
+  .device.phone .dlg .grab { display: block; width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 12px; }
+  .device.phone .dlg .ft { flex-direction: column-reverse; gap: 8px; }
+  .device.phone .dlg .ft .btn2 { width: 100%; height: 46px; font-size: 15px; }
+  .device.phone .inp { font-size: 15px; min-height: 44px; }
+  .device.phone .toast { left: 12px; right: 12px; transform: none; bottom: 16px; white-space: normal; }
+  .device.phone .nf .btn2 { height: 44px; padding: 0 22px; font-size: 15px; }
+
+  /* ---------- the canvas: every view of Maxitor lies on it and is handled like a graph (spec 059, ux 8) ---------- */
+  .strip { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 7px 14px; font-size: 12.5px; border-bottom: 1px solid; flex-wrap: wrap; }
+  .strip b { font-weight: 600; }
+  .strip .lnk2 { margin-left: auto; text-decoration: underline; cursor: pointer; font-weight: 600; }
+  .strip.past { background: #eff6ff; color: #1e3a8a; border-color: #bfdbfe; }
+  .strip.cmp { background: #eef2ff; color: #312e81; border-color: #c7d2fe; }
+  .strip.rev { background: #f5f3ff; color: #4c1d95; border-color: #ddd6fe; }
+  .strip .chipA, .strip .chipB { height: 17px; }
+  .cvs { flex: 1; min-height: 0; display: flex; position: relative; }
+  .cv { flex: 1; min-width: 0; position: relative; overflow: hidden; cursor: grab; user-select: none;
+        background-color: var(--canvas); background-image: radial-gradient(rgba(15,23,42,.13) 1px, transparent 1px); background-size: 18px 18px; }
+  .half { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; position: relative; }
+  .half + .half { border-left: 1px solid rgba(15,23,42,.14); }
+  .hh { flex-shrink: 0; height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 12px; color: #334155; background: #fff; border-bottom: 1px solid rgba(15,23,42,.08); }
+  .hh .sd { font-weight: 700; } .hh .sd.a { color: #b45309; } .hh .sd.b { color: #1d4ed8; }
+  .hh b { flex: 1; min-width: 0; color: #0f172a; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hh .n { color: var(--muted); white-space: nowrap; }
+  .trk { flex-shrink: 0; height: 20px; padding: 0 8px; font-size: 11.5px; font-weight: 600; border: 0; border-radius: 6px; color: #64748b; background: transparent; cursor: pointer; }
+  .trk.on { color: #1d4ed8; background: rgba(37,99,235,.1); }
+  .flip { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; flex-shrink: 0; }
+  .flip button { width: 30px; height: 20px; border: 0; border-radius: 6px; font-size: 12px; font-weight: 700; color: #334155; background: transparent; cursor: pointer; }
+  .flip button.a.on { background: #b45309; color: #fff; } .flip button.b.on { background: #1d4ed8; color: #fff; }
+  .half .cv { flex: 1; }
+  .device:not(.phone) .half .vtabs { left: calc(172px + (100% - 172px) / 2); }
+  .half .cstep-o { top: auto; bottom: 10px; right: 12px; }
+  .half .cstep-o .cdrop { top: auto; bottom: 40px; }
+  .dcard { position: absolute; z-index: 9; width: 300px; box-sizing: border-box; padding: 10px 12px; font-size: 12px; line-height: 1.45; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 8px; box-shadow: 0 8px 30px rgba(15,23,42,.14), 0 1px 2px rgba(15,23,42,.06); color: #0f172a; }
+  .dcard .dh { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; margin-bottom: 4px; }
+  .dcard .bd { border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0; }
+  .dcard .drow { display: grid; grid-template-columns: minmax(70px, auto) 1fr; gap: 6px; padding: 4px 0; border-top: 1px solid rgba(15,23,42,.06); }
+  .dcard .drow > span:first-child { color: #64748b; }
+  .dcard .drow > span:last-child { overflow-wrap: anywhere; }
+  .cvnote { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 8; background: rgba(15,23,42,.88); color: #fff; font-size: 12px; border-radius: 8px; padding: 6px 10px; opacity: 0; transition: opacity 160ms ease; pointer-events: none; white-space: nowrap; }
+  .cvnote.on { opacity: 1; }
+  .note.across { box-shadow: 0 0 0 2px rgba(37,99,235,.45); }
+  .cv.drag { cursor: grabbing; }
+  .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; width: max-content; }
+  .world.glide { transition: transform .45s cubic-bezier(.2,.7,.2,1); }
+  /* maxitor-web's ErdModelPill: the view's tabs at the top centre */
+  .vtabs { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; padding: 2px; gap: 1px; background: rgba(241,245,249,.88); backdrop-filter: blur(8px); border-radius: 999px; border: 1px solid rgba(15,23,42,.07); white-space: nowrap; }
+  .vtabs button { display: flex; align-items: center; gap: 6px; padding: 0 12px; height: 26px; border: 0; border-radius: 999px; font-size: 12px; font-weight: 500; color: #64748b; background: transparent; cursor: pointer; }
+  .vtabs button:hover { color: #0f172a; }
+  .vtabs button.on { color: #0f172a; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.10), 0 0 0 .5px rgba(15,23,42,.06); }
+  .vtabs .n { font-size: 10.5px; font-weight: 400; color: #94a3b8; font-variant-numeric: tabular-nums; }
+  /* maxitor-web's ErdFilterPanel: 148 px, a strict accordion, the gear shift at its foot */
+  .fp { position: absolute; top: 12px; left: 12px; z-index: 6; width: 148px; max-height: calc(100% - 68px); display: flex; flex-direction: column; overflow: hidden; cursor: default;
+        background: rgba(255,255,255,.88); backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,.08); border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,.07); padding: 0 10px; }
+  .fp .secs { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 0; }
+  .fp .sh { display: flex; align-items: center; gap: 4px; padding: 6px 0; cursor: pointer; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: rgba(0,0,0,.6); }
+  .fp .sh svg { width: 16px; height: 16px; transition: transform 120ms ease; }
+  .fp .sh.closed svg { transform: rotate(-90deg); }
+  .fp .rows { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+  .fp .row { display: flex; align-items: center; gap: 8px; cursor: pointer; transition: opacity 120ms ease; min-width: 0; }
+  .fp .row.off { opacity: .42; }
+  .fp .row .lb { font-size: 11px; color: rgba(0,0,0,.87); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .fp .bd { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); display: inline-flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; font-size: 8px; font-weight: 700; box-sizing: border-box; }
+  .fp .gear { border-top: 1px solid rgba(0,0,0,.07); display: flex; justify-content: center; padding: 6px 0; flex-shrink: 0; margin: 0 -10px; }
+  .gs { position: relative; height: 20px; display: inline-flex; }
+  .gs i { position: absolute; left: 8px; right: 8px; top: 9.5px; height: 1px; background: #cbd5e1; }
+  .gs button { position: absolute; top: 0; width: 16px; height: 20px; border: 0; padding: 0; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .gs button span { width: 6px; height: 6px; border-radius: 50%; background: #fff; border: 1px solid #cbd5e1; transition: all 120ms ease; box-sizing: border-box; }
+  .gs button.on { cursor: default; } .gs button.on span { width: 8px; height: 8px; background: #475569; border: 0; box-shadow: 0 0 0 3px rgba(71,85,105,.12); }
+  .gs button:hover span { border-color: #94a3b8; }
+  /* maxitor-web's ZoomToolbar: ghost buttons, no card */
+  .zoombar { position: absolute; bottom: 10px; left: 10px; z-index: 6; display: flex; align-items: center; gap: 2px; padding: 2px 0; }
+  .zoombar [data-z] { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #64748b; font-size: 15px; font-weight: 500; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .zoombar [data-z]:hover { background: rgba(15,23,42,.06); color: #0f172a; }
+  .zoombar .zpct { min-width: 3.1em; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; color: #64748b; padding: 0 6px 0 4px; user-select: none; }
+  .zoombar .tdiv { width: 1px; height: 22px; background: rgba(15,23,42,.12); margin: 0 2px; }
+  .zoombar .vb { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #64748b; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .zoombar .vb:hover { background: rgba(15,23,42,.06); color: #0f172a; }
+  .zoombar .vb.on, .zoombar .vb.on:hover { color: #1d4ed8; }
+  .device.phone .zoombar [data-z], .device.phone .zoombar .vb { width: 44px; height: 44px; }
+  .lgd { position: absolute; right: 12px; bottom: 10px; z-index: 6; display: flex; gap: 12px; font-size: 11.5px; color: var(--muted); cursor: default;
+         background: rgba(255,255,255,.92); border: 1px solid var(--line2); padding: 6px 12px; border-radius: 8px; }
+  .lgd span { display: inline-flex; align-items: center; gap: 5px; }
+  .lgd i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .newb { position: absolute; top: 12px; right: 12px; z-index: 7; }
+  .newb .btn2 { height: 30px; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+  .device.phone .newb { top: auto; bottom: 12px; right: 12px; }
+  .device.phone .newb .btn2 { height: 44px; padding: 0 16px; font-size: 14px; border-radius: 22px; }
+  .cstep-o { position: absolute; top: 12px; right: 12px; z-index: 7; }
+  .cstep-o .pill { background: rgba(255,255,255,.95); border: 1px solid rgba(15,23,42,.1); box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+  .cstep-o .cdrop { left: auto; right: 0; }
+
+  /* the world: notes as cards on the canvas */
+  .grid { display: grid; grid-template-columns: repeat(3, 300px); gap: 14px; align-items: start; }
+  .grid > .wide { grid-column: 1 / -1; }
+  .grid.g2 { grid-template-columns: repeat(2, 300px); }
+  .grid.g1 { grid-template-columns: 300px; }
+  .grid .note, .grid .composer, .grid .ph0 { margin: 0; cursor: default; }
+  .grid .note { box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .grid .nh b { white-space: nowrap; }
+  .edl { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+  .edl .ico { width: 12px; height: 12px; }
+  .grid .composer { flex-direction: column; align-items: stretch; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .grid .composer .ch { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; }
+  .grid .composer textarea { min-height: 66px; border: 1px dashed rgba(15,23,42,.16); border-radius: 8px; padding: 8px 10px; }
+  .grid .ph0 { min-height: 96px; background: rgba(255,255,255,.5); }
+  .grid .revhd, .grid .wcard { margin: 0; }
+  .wcard { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(15,23,42,.06); cursor: default; }
+  .wcard h4 { margin: 0 0 4px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .wcard .cap { font-size: 12px; color: var(--muted); margin: 0 0 10px; line-height: 1.45; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .tbl td { padding: 9px 8px; border-bottom: 1px solid var(--line2); vertical-align: top; line-height: 1.45; }
+  .tbl td.who { white-space: nowrap; }
+  .tbl tr.hlrow td { background: rgba(37,99,235,.08); }
+  .tbl td.tm { white-space: nowrap; color: var(--muted); font-size: 12px; }
+  .hdr .room { display: inline-flex; align-items: center; margin-right: 10px; }
+  .hdr .room .avatar { width: 24px; height: 24px; font-size: 9.5px; border: 2px solid #fff; margin-left: -6px; }
+  .device.phone .hdr .pill .cnts { display: none; }
+  .device.phone .grid, .device.phone .grid.g2 { grid-template-columns: 300px; }
+  .device.phone .fp, .device.phone .lgd, .device.phone .hdr .room { display: none; }
+  .device.phone .strip { font-size: 13px; }
+  .device.phone .cstep-o { top: auto; bottom: 10px; right: 12px; }
+  .device.phone .cstep-o .cdrop { top: auto; bottom: 40px; width: 330px; }
+
+  /* a milestone's card: the graph viewer's VersionTip, drawn by the core from the plugin's data */
+  .htip.mt { width: 320px; padding: 12px 14px; }
+  .mtip .r1 { display: flex; align-items: center; gap: 8px; }
+  .mtip .badge { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 11px; font-size: 12px; font-weight: 500; }
+  .mtip .badge .ico { width: 13px; height: 13px; }
+  .mtip .ref { color: #64748b; font-size: 12.5px; }
+  .mtip .ago { margin-left: auto; color: #64748b; font-size: 12px; }
+  .mtip .tt { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-top: 8px; line-height: 1.4; }
+  .mtip .meta { font-size: 11.5px; color: #64748b; margin-top: 3px; }
+  .mtip .au { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 12.5px; color: #475569; }
+  .mtip .r2 { display: flex; align-items: center; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+  .mtip .chip { background: #f1f5f9; border-radius: 9px; padding: 2px 8px; font-size: 12px; font-weight: 600; color: #334155; }
+  .mtip .sm { font-size: 12px; color: #64748b; }
+</style>
+</head>
+<body>
+<aside class="nav" id="nav"></aside>
+<main class="stage" id="stage">
+  <p class="frame-cap" id="cap"></p>
+  <div class="frame-box" id="box"><div class="frame-scale" id="scale"><div class="device" id="app"></div></div></div>
+  <div class="notes" id="notes"></div>
+</main>
+
+<script>
+/* ======================= sample data ======================= */
+const ORG = { name: "Severny Veter", code: "severny-veter" };
+const ITEM = { title: "payments-service", id: "payments-service" };
+const PEOPLE = {
+  anna: { name: "Anna Kovaleva", ini: "AK", bg: "#cbd5e1" },
+  ilya: { name: "Ilya Petrov", ini: "IP", bg: "#bae6fd" },
+  olga: { name: "Olga Sidorova", ini: "OS", bg: "#fde68a" },
+};
+const ME = "anna";
+/* The watermark: the latest moment whose answer can no longer change. "Now" reads here. */
+const WM0 = "2026-11-10T11:24";
+const T = {
+  n1a: "The refund path retries three times, then parks the payment in manual review.",
+  n1b: "The refund path retries five times with a growing pause, then parks the payment in manual review.",
+  n2a: "Settlement files arrive at 02:00 UTC; the import must finish before 06:00.",
+  n2b: "Settlement files arrive at 02:00 UTC; the import must finish before 05:30, when the ledger closes.",
+  n2c: "Settlement files arrive at 02:00 UTC; from December the import must finish before 05:00.",
+  n2mine: "Settlement files arrive at 02:00 UTC; the import must finish before 05:30, when the ledger closes. A failed import pages the on-call engineer.",
+  n3: "Card tokens are kept by the provider; we store only the last four digits.",
+  n4: "Chargebacks older than 120 days are rejected by the bank; do not reopen them.",
+  n4mine: "Chargebacks older than 120 days are rejected by the bank; do not reopen them, answer the customer with the bank's letter.",
+  n5: "Partial refunds keep the original fee; the fee is not given back.",
+  n6: "The provider's sandbox resets every Sunday at 03:00; test cards disappear with it.",
+  n7: "Refunds over 5 000 EUR need a second approval in the back office.",
+};
+/* The notes the item gathered over six weeks before the story of the screens: each with the versions its edits move between. */
+const G = [
+  ["The webhook from the provider is retried for 24 hours; our handler must be idempotent.", "The webhook from the provider is retried for 72 hours; our handler must be idempotent.", "The webhook from the provider is retried for 72 hours; the handler is idempotent by event id."],
+  ["Currency rates come from the ECB file at 16:00 CET.", "Currency rates come from the ECB file at 16:00 CET and are cached for one day."],
+  ["Payouts to merchants run daily at 09:00.", "Payouts to merchants run twice a day, at 09:00 and 17:00."],
+  ["3-D Secure is required for cards issued in the EEA.", "3-D Secure is required for cards issued in the EEA and the UK."],
+  ["The dispute queue is owned by the risk team.", "The dispute queue is owned by the risk team; escalations go to Olga."],
+  ["Logs with card data are kept for 30 days.", "Logs with card data are masked and kept for 30 days."],
+  ["Test merchants start with the prefix TST-.", "Test merchants start with the prefix TST- and never receive payouts."],
+  ["The fraud score threshold is 0.82.", "The fraud score threshold is 0.78.", "The fraud score threshold is 0.80 after the October review."],
+  ["Apple Pay tokens are not stored at all."],
+];
+function genHistory() {
+  let seed = 11;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+  const who = ["anna", "ilya", "olga"], out = [];
+  const iso = x => new Date(x).toISOString().slice(0, 16);
+  const day0 = Date.UTC(2026, 8, 28);
+  const work = d => day0 + d * 864e5 + (8 + Math.floor(rnd() * 10)) * 36e5 + Math.floor(rnd() * 60) * 6e4;
+  const edits = [2, 1, 3, 1, 1, 2, 1, 2, 0];
+  G.forEach((vs, i) => {
+    const id = "g" + (i + 1), d = Math.floor(i * 2.6 + rnd() * 2);
+    out.push({ t: iso(work(d)), who: who[i % 3], op: "add", id, body: vs[0] });
+    for (let k = 1; k <= edits[i]; k++) out.push({ t: iso(work(Math.min(33, d + 2 + Math.floor(rnd() * (33 - d))))), who: who[Math.floor(rnd() * 3)], op: "edit", id, body: vs[k % vs.length] });
+  });
+  // 14 Oct: the fraud threshold argued over one late morning — sixteen edits in two and a half hours.
+  for (let k = 0; k < 16; k++) out.push({ t: iso(Date.UTC(2026, 9, 14, 10, 2 + k * 9)), who: k % 2 ? "olga" : "ilya", op: "edit", id: "g8", body: G[7][k % 2 ? 1 : 0] });
+  out.push({ t: iso(Date.UTC(2026, 9, 14, 12, 41)), who: "anna", op: "edit", id: "g8", body: G[7][2] });
+  out.push({ t: "2026-10-22T15:40", who: "ilya", op: "delete", id: "g9" });
+  out.push({ t: "2026-10-30T15:10", who: "olga", op: "delete", id: "g5" });
+  return out;
+}
+/* Every change of the item's notes. A reading folds them up to its moment, as the version tables do. */
+const EV = genHistory().concat([
+  { t: "2026-11-03T10:12", who: "anna", op: "add", id: "n1", body: T.n1a },
+  { t: "2026-11-03T11:40", who: "ilya", op: "add", id: "n2", body: T.n2a },
+  { t: "2026-11-04T09:05", who: "anna", op: "add", id: "n3", body: T.n3 },
+  { t: "2026-11-05T16:30", who: "ilya", op: "edit", id: "n1", body: T.n1b },
+  { t: "2026-11-06T10:15", who: "olga", op: "add", id: "n4", body: T.n4 },
+  { t: "2026-11-06T14:48", who: "ilya", op: "delete", id: "n3" },
+  { t: "2026-11-08T13:02", who: "anna", op: "edit", id: "n2", body: T.n2b },
+  { t: "2026-11-09T17:20", who: "olga", op: "add", id: "n5", body: T.n5 },
+]);
+/* Published revisions: each holds the notes as they were at its moment, in force until the next one. */
+const REV = [
+  { n: 1, t: "2026-10-09T12:00", who: "anna", title: "First review", comment: "The notes as the team agreed them at the first review of payments-service: webhooks, rates, payouts, 3-D Secure." },
+  { n: 2, t: "2026-10-20T16:00", who: "olga", release: "handbook 2026.10", title: "After the fraud review", comment: "The fraud threshold settled at 0.80 after the argument of 14 Oct; the Apple Pay note is gone, it repeated the provider's documentation." },
+  { n: 3, t: "2026-11-04T12:00", who: "anna", title: "Refunds and settlement", comment: "Refunds, settlement files and card tokens written down before the audit. The dispute queue note is gone: the risk team keeps its own page." },
+  { n: 4, t: "2026-11-07T09:30", who: "ilya", release: "handbook 2026.11", title: "After the retry change", comment: "Refunds retry five times with a growing pause. Chargebacks older than 120 days are not reopened; the card token note went to the security page." },
+  { n: 5, t: "2026-11-08T15:00", who: "anna", title: "Import deadline", comment: "The import of settlement files must finish by 05:30, when the ledger closes. Only a wording change: no note added or removed." },
+];
+const PAST = "2026-11-05T12:00";
+const PAST2 = "2026-11-06T18:00";
+const BEFORE = "2026-09-27T09:00";
+const FUTURE = "2026-11-12T09:00";
+const KIND_COL = { add: "#16a34a", edit: "#d97706", delete: "#dc2626" };
+const KIND_NAME = { add: "added", edit: "changed", delete: "deleted" };
+
+/* ======================= icons ======================= */
+const P = (d, cls = "ico") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I = {
+  left: P('<path d="M15 6l-6 6 6 6"/>', "ico sm"), right: P('<path d="M9 6l6 6-6 6"/>', "ico sm"),
+  chevron: P('<path d="M6 9l6 6 6-6"/>'), chev: P('<path d="M6 9l6 6 6-6"/>', "ico sm"),
+  clock: P('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', "ico sm"),
+  alert: P('<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>'),
+  info: P('<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2M12 7.9v.2"/>'),
+  check: P('<path d="M5 12l5 5 9-10"/>', "ico sm"),
+  pen: P('<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>', "ico sm"),
+  trash: P('<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>', "ico sm"),
+  dots: P('<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>'),
+  menu: P('<path d="M4 7h16M4 12h16M4 17h16"/>'),
+  note: P('<path d="M6 4h9l4 4v12H6z"/><path d="M14 4v5h5M9 13h6M9 16.5h4"/>', "ico sm"),
+  box: P('<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>', "ico sm"),
+  user: P('<circle cx="12" cy="9" r="3.5"/><path d="M5 20a7 7 0 0114 0"/>', "ico sm"),
+  send: P('<path d="M5 12h14M13 6l6 6-6 6"/>', "ico sm"),
+  panel: '<svg width="17.6" height="17.6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.38" stroke-linecap="round" stroke-linejoin="round"><path d="M4.75 5.75h14.5c.55 0 1 .45 1 1v10.5c0 .55-.45 1-1 1H4.75c-.55 0-1-.45-1-1V6.75c0-.55.45-1 1-1z"/><path d="M9.25 6.25v11.5"/></svg>',
+  back: '<svg width="17.6" height="17.6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.38" stroke-linecap="round" stroke-linejoin="round"><path d="M19.25 12H4.75M10.25 6.5L4.75 12l5.5 5.5"/></svg>',
+  plus: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  three: '<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="3.4" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
+  branch: P('<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="9" r="2.2"/><path d="M6 8.2v7.6M18 11.2c0 3-4 3.5-10.5 5.4"/>', "ico sm"),
+  hourglass: P('<path d="M7 4h10M7 20h10M8 4c0 5 8 5 8 8s-8 3-8 8M16 4c0 5-8 5-8 8"/>'),
+  one: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>',
+  diff: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 7.5v5M9.5 10h5M9.5 16h5"/></svg>',
+  split: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M12 5v14"/></svg>',
+};
+
+/* ======================= state ======================= */
+const DEF = {
+  page: "notes", mode: "one", at: null, from: null, extra: [], revs: [], edit: null, editText: "", base: null, conflict: null, dlg: null, toast: null,
+  compose: "", dcard: false, sbc: false, paint: null, fsec: null, track: true, hideSmall: false, view: "cards", hideAu: "", hideK: "", side: "b", fresh: null, picker: false, sheet: null, drawer: false, phone: false, focus: false, stepper: false, stepIdx: null, unch: false, betw: false,
+};
+const S = JSON.parse(JSON.stringify(DEF));
+const NAV = [];
+const NAV_KEYS = ["page", "at", "from", "mode", "view"];
+function go(patch) {
+  if (NAV_KEYS.some(k => k in patch && patch[k] !== S[k])) NAV.push(Object.fromEntries(NAV_KEYS.map(k => [k, S[k]])));
+  Object.assign(S, patch); render();
+}
+function back() { const prev = NAV.pop(); if (prev) { Object.assign(S, prev, { picker: false, stepIdx: null, stepper: false }); render(); } }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); }
+const ms = t => Date.parse(t + ":00Z");
+const iso = x => new Date(x).toISOString().slice(0, 16);
+const events = () => EV.concat(S.extra).sort((a, b) => a.t < b.t ? -1 : 1);
+const revisions = () => REV.concat(S.revs);
+const WM = () => events().concat(revisions()).reduce((m, e) => e.t > m ? e.t : m, WM0);
+const moment = () => S.at || WM();
+const cmp = () => S.mode !== "one" && S.page !== "draft";
+const isPast = () => S.at !== null && S.at < WM();
+const isFuture = () => S.at !== null && S.at > WM();
+const readOnly = () => isPast() || cmp();
+const nextT = () => iso(ms(WM()) + 6e4);
+
+/* The notes of the item at a moment, newest first: each with its open version's start (`since`), its writer and last editor. */
+function notesAt(m) {
+  const map = new Map();
+  for (const e of events()) {
+    if (e.t > m) break;
+    if (e.op === "add") map.set(e.id, { id: e.id, body: e.body, writer: e.who, created: e.t, since: e.t, editor: null });
+    else if (e.op === "edit") { const n = map.get(e.id); if (n) Object.assign(n, { body: e.body, since: e.t, editor: e.who }); }
+    else if (e.op === "delete") map.delete(e.id);
+  }
+  return [...map.values()].sort((a, b) => a.created < b.created ? 1 : -1);
+}
+function lastChange(id, m = WM()) { let r = null; for (const e of events()) { if (e.t > m) break; if (e.id === id) r = e; } return r; }
+function revInForce(m) { let r = null; for (const v of revisions()) if (v.t <= m) r = v; return r; }
+function revAfter(v) { return revisions().find(x => x.n === v.n + 1) || null; }
+/* What a page shows at a moment: the notes then, or the notes of the revision in force then. */
+function setOf(m) { if (S.page === "notes") return notesAt(m || WM()); const v = revInForce(m || WM()); return v ? notesAt(v.t) : []; }
+function changes(from, to) {
+  const a = new Map(from.map(n => [n.id, n])), b = new Map(to.map(n => [n.id, n])), out = [];
+  for (const n of to) { if (!a.has(n.id)) out.push({ k: "a", n }); else if (a.get(n.id).body !== n.body) out.push({ k: "c", n, old: a.get(n.id) }); }
+  for (const n of from) if (!b.has(n.id)) out.push({ k: "r", n });
+  return out;
+}
+const count = ch => ({ a: ch.filter(c => c.k === "a").length, c: ch.filter(c => c.k === "c").length, r: ch.filter(c => c.k === "r").length });
+function sumHtml(c, unit = true) {
+  const p = [];
+  if (c.a) p.push(`<span class="a">+${c.a}${unit ? (c.a > 1 ? " notes" : " note") : ""}</span>`);
+  if (c.c) p.push(`<span class="c">${c.c} changed</span>`);
+  if (c.r) p.push(`<span class="r">−${c.r}${unit ? (c.r > 1 ? " notes" : " note") : ""}</span>`);
+  return p.length ? `<span class="sum">${p.join('<span class="z">·</span>')}</span>` : `<span class="sum"><span class="z">no changes</span></span>`;
+}
+
+/* ======================= time as a reader says it ======================= */
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fmt = t => `${+t.slice(8, 10)} ${MON[+t.slice(5, 7) - 1]}, ${t.slice(11, 16)}`;
+const fmtY = t => `${+t.slice(8, 10)} ${MON[+t.slice(5, 7) - 1]} ${t.slice(0, 4)}, ${t.slice(11, 16)}`;
+const dayOf = t => `${+t.slice(8, 10)} ${MON[+t.slice(5, 7) - 1]}`;
+function ago(t) {
+  const min = Math.round((ms(WM()) - ms(t)) / 6e4);
+  if (min < 2) return "just now"; if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60); if (h < 20) return `${h} h ago`;
+  const d = Math.round(h / 24); return d === 1 ? "yesterday" : `${d} days ago`;
+}
+const addr = t => `${t}:00.000000Z`;
+function spanText(x) { const m = x / 6e4; if (m < 120) return `${Math.round(m)} min`; const h = m / 60; if (h < 48) return `${Math.round(h)} h`; return `${Math.round(h / 24)} days`; }
+
+/* ======================= a word diff ======================= */
+function wdiff(a, b, side) {
+  const x = a.split(/(\s+)/), y = b.split(/(\s+)/), n = x.length, m = y.length;
+  const L = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = x[i] === y[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0, out = "";
+  const del = s => side === "b" ? "" : `<span class="del-w">${esc(s)}</span>`, ins = s => side === "a" ? "" : `<span class="ins-w">${esc(s)}</span>`;
+  while (i < n && j < m) {
+    if (x[i] === y[j]) { out += esc(x[i]); i++; j++; }
+    else if (L[i + 1][j] >= L[i][j + 1]) out += del(x[i++]);
+    else out += ins(y[j++]);
+  }
+  while (i < n) out += del(x[i++]);
+  while (j < m) out += ins(y[j++]);
+  return out;
+}
+const snip = (s, n = 54) => s.length > n ? s.slice(0, n - 1) + "…" : s;
+
+/* ======================= the plugin's actions ======================= */
+function addNote() {
+  const box = document.getElementById("compose"), body = (box ? box.value : S.compose).trim();
+  if (!body) { go({ compose: T.n7, focus: true }); return; }
+  const id = "m" + (S.extra.length + 1);
+  go({ extra: S.extra.concat([{ t: nextT(), who: ME, op: "add", id, body }]), compose: "", focus: false, dlg: null, fresh: id, toast: { text: "Note added" } });
+}
+function startEdit(id) { const n = notesAt(WM()).find(x => x.id === id); go({ edit: id, editText: n.body, base: n.since, conflict: null, sheet: null, toast: null, fresh: null }); }
+/* EditNoteAction with base_moment: the moment the person saw. A version opened after it is a conflict. */
+function saveEdit() {
+  const box = document.getElementById("editbox"), text = box ? box.value : S.editText, id = S.edit;
+  const n = notesAt(WM()).find(x => x.id === id);
+  if (!n) { go({ conflict: { id, mine: text, kind: "deleted", by: lastChange(id) } }); return; }
+  if (n.since > S.base) { go({ conflict: { id, mine: text, kind: "changed", by: lastChange(id) } }); return; }
+  if (text.trim() === n.body) { go({ edit: null }); return; }
+  go({ extra: S.extra.concat([{ t: nextT(), who: ME, op: "edit", id, body: text.trim() }]), edit: null, conflict: null, toast: { text: "Saved" } });
+}
+function retryOnTheirs() { const n = notesAt(WM()).find(x => x.id === S.conflict.id); go({ editText: S.conflict.mine, base: n.since, conflict: null }); }
+function keepTheirs() { go({ edit: null, conflict: null, toast: { text: "Your text was discarded; the note keeps its latest version" } }); }
+function addMineAsNew() {
+  const id = "m" + (S.extra.length + 1);
+  go({ extra: S.extra.concat([{ t: nextT(), who: ME, op: "add", id, body: S.conflict.mine }]), edit: null, conflict: null, fresh: id, toast: { text: "Your text was added as a new note" } });
+}
+function askDelete(id) { go({ dlg: { kind: "delete", id }, sheet: null, toast: null }); }
+function doDelete() {
+  const id = S.dlg.id, before = iso(ms(nextT()) - 6e4);
+  go({ extra: S.extra.concat([{ t: nextT(), who: ME, op: "delete", id }]), dlg: null, toast: { text: "Note deleted. At earlier moments it is still there", link: ["Show it", `go({at:'${before}',toast:null})`] } });
+}
+function askPublish() { go({ dlg: { kind: "publish", title: "" }, toast: null }); }
+function doPublish() {
+  const el = document.getElementById("revtitle"), title = (el && el.value.trim()) || "Partial refunds";
+  const n = revisions().length + 1;
+  const cm = document.getElementById("revcomment"), rl = document.getElementById("revrelease");
+  go({ revs: S.revs.concat([{ n, t: nextT(), who: ME, title, comment: cm ? cm.value.trim() : "", release: rl && rl.value.trim() ? rl.value.trim() : null }]), dlg: null, page: "published", toast: { text: `Published as v${n}` } });
+}
+/* panel.watermark: the core says the watermark moved; a page at "now" reads again. */
+function arrive() { if (S.extra.some(e => e.id === "o1")) return; go({ extra: S.extra.concat([{ t: nextT(), who: "olga", op: "add", id: "o1", body: T.n6 }]), fresh: "o1", toast: null }); }
+
+/* ======================= the moment and the modes ======================= */
+function labOf(m, short) {
+  if (S.page !== "notes") { const v = revInForce(m || WM()); return (m ? "" : "Now · ") + (v ? `v${v.n}` : "nothing"); }
+  return m ? (short ? (S.phone && cmp() ? dayOf(m) : fmt(m)) : fmtY(m)) : "Now";
+}
+function labFull(m) {
+  if (S.page !== "notes") { const v = revInForce(m || WM()); return v ? `v${v.n} · ${v.title}` : "nothing published"; }
+  return m ? fmtY(m) : "now";
+}
+function setMode(m) {
+  if (S.page === "draft" && m !== "one") return;
+  if (m === "one") return go({ mode: "one", from: null, stepIdx: null, stepper: false, edit: null, conflict: null });
+  let from = S.from;
+  if (!from) {
+    if (S.page === "notes") from = iso(Math.max(ms(events()[0].t), ms(moment()) - 7 * 864e5));
+    else { const v = revInForce(moment()), p = v && revisions().find(x => x.n === v.n - 1); from = p ? p.t : v ? v.t : null; }
+  }
+  go({ mode: m, from, stepIdx: null, edit: null, conflict: null });
+}
+function stepPoints() { return S.page === "notes" ? events().map(e => e.t) : revisions().map(v => v.t); }
+function step(d) {
+  const pts = stepPoints(), m = moment();
+  if (d < 0) { const p = pts.filter(t => t < m).pop(); if (p) go({ at: p, edit: null, conflict: null, stepIdx: null }); }
+  else { const p = pts.find(t => t > m); go({ at: p && p < WM() ? p : null, edit: null, conflict: null, stepIdx: null }); }
+}
+/* The core's pill: the graph viewer's VersionButton with its arrows — on the right of the top row. */
+function pill() {
+  let label;
+  if (cmp()) {
+    const c = count(changes(setOf(S.from), setOf(S.at)));
+    label = `<span class="ab">A</span><b>${esc(labOf(S.from, true))}</b>→<span class="ab">B</span><b>${esc(labOf(S.at, true))}</b>${S.phone ? "" : `<span class="md">· ${S.mode === "split" ? "side by side" : "diff"}</span>`}
+      <span class="cnts"><span style="color:#16a34a">+${c.a}</span><span style="color:#dc2626">−${c.r}</span><span style="color:#d97706">~${c.c}</span></span>`;
+  } else {
+    const t = S.at ? (S.page === "notes" ? labOf(S.at, true) : `${labOf(S.at)} · ${S.phone ? dayOf(S.at) : fmt(S.at)}`) : "Now";
+    label = `<span class="${S.at ? "past" : "live"}"></span><b>${esc(t)}</b>`;
+  }
+  const m = moment(), older = stepPoints().some(t => t < m), newer = S.at !== null;
+  return `<span class="pill${S.picker ? " open" : ""}">
+    <button class="stp${older ? "" : " off"}" title="An earlier point" onclick="${older ? "step(-1)" : ""}">${I.left}</button><span class="dv"></span>
+    <button class="pb2" onclick="go({picker:!S.picker,sheet:null,stepper:false})">${I.clock}${label}${I.chev}</button><span class="dv"></span>
+    <button class="stp${newer ? "" : " off"}" title="A later point" onclick="${newer ? "step(1)" : ""}">${I.right}</button>
+    ${S.at && !cmp() ? `<span class="dv"></span><button class="nowb" onclick="go({at:null,picker:false})">Now</button>` : ""}
+  </span>`;
+}
+
+/* ======================= frame parts ======================= */
+const PAGE_NAME = { notes: "Notes", published: "Published notes", draft: "Draft" };
+function urlbar() {
+  const base = `/w/${ORG.code}/notes/items/${ITEM.id}` + (S.page === "published" ? "/published" : S.page === "draft" ? "/draft" : "");
+  const q = [];
+  if (S.view === "table" && !cmp()) q.push(`view=<i>table</i>`);
+  if (cmp()) q.push(`mode=<i>${S.mode === "split" ? "side_by_side" : "diff"}</i>`, `from=<i>${addr(S.from)}</i>`);
+  if (S.at) q.push(`at=<i>${addr(S.at)}</i>`);
+  return `<div class="urlbar"><span>🔒</span><span class="u">maxitor.aoa.run<b>${base}</b>${q.length ? "?" + q.join("&amp;") : ""}</span></div>`;
+}
+function av(who, cls = "avatar sm") { const p = PEOPLE[who]; return `<span class="${cls}" style="background:${p.bg}" title="${esc(p.name)}">${p.ini}</span>`; }
+function header() {
+  return `<div class="hdr">
+    <button class="burger" aria-label="The organization's tree" onclick="go({drawer:true,picker:false})">${I.menu}</button>
+    <span class="logo"><span class="mk">M</span><span class="nm">Maxitor</span></span>
+    <span class="crumb"><span class="lv">org</span>${esc(ORG.name)}<span class="sep">/</span>${esc(ITEM.title)}<span class="sep">/</span>${PAGE_NAME[S.page]}</span>
+    <span class="spacer"></span>
+    <span class="room" title="Here now">${av("ilya", "avatar")}${av("olga", "avatar")}</span>
+    ${isFuture() ? "" : pill()}
+    ${av(ME, "avatar")}
+  </div>`;
+}
+function draftCount() { const d = historyDraft(); return d ? d.a + d.c + d.r : 0; }
+/* The plugin's three pages are three nodes of the tree under the item: a view is named by its row, not by a title. */
+function sidebar(cls = "") {
+  const it = (lb, page, ic, n) => `<div class="ti l2${S.page === page ? " on" : ""}" onclick="go({page:'${page}',drawer:false,edit:null,conflict:null,dlg:null,toast:null,picker:false,stepIdx:null,stepper:false${page === "draft" ? ",mode:'one',from:null" : ""}})"><span class="slot">${ic}</span><span class="lb">${lb}</span>${n ? `<span class="tabs"><span class="cnt">${n}</span></span>` : ""}</div>`;
+  const head = `<div class="sbh"><button class="sbb" title="${S.sbc ? "Expand sidebar" : "Collapse sidebar"}" aria-label="${S.sbc ? "Expand sidebar" : "Collapse sidebar"}" onclick="go({sbc:!S.sbc})">${I.panel}</button><button class="sbb${NAV.length ? "" : " off"}" title="Back" aria-label="Back" onclick="back()">${I.back}</button></div>`;
+  if (S.sbc && !cls) return `<div class="sb collapsed">${head}</div>`;
+  return `<div class="sb ${cls}">${head}<div class="tree">
+    <div class="tg"><span class="slot">${I.chevron}</span><span class="lb">Catalog</span></div>
+    <div class="ti"><span class="slot">${I.box}</span><span class="lb">checkout-web</span></div>
+    <div class="ti"><span class="slot">${I.box}</span><span class="lb"><b>payments-service</b></span></div>
+    ${it("Notes", "notes", I.note)}${it("Published notes", "published", I.note)}${it("Draft", "draft", I.note)}
+    <div class="ti"><span class="slot">${I.box}</span><span class="lb">ledger</span></div>
+    <div class="tg"><span class="slot">${I.chevron}</span><span class="lb">Notes</span></div>
+    <div class="ti"><span class="slot">${I.note}</span><span class="lb">All notes</span></div>
+  </div></div>`;
+}
+/* @maxitor/panel's ChangeStepper, which the page places over its canvas, top right. */
+function changeStepper(rows) {
+  const ch = rows.filter(r => r.k !== "u");
+  if (!ch.length) return `<div class="cstep-o"><span class="pill"><span class="pb2"><b>no changes</b></span></span></div>`;
+  const lbl = S.stepIdx === null ? `${ch.length} ${ch.length > 1 ? "changes" : "change"}` : `${S.stepIdx + 1} of ${ch.length} changes`;
+  const drop = S.stepper ? `<div class="cdrop"><div class="gh">${esc(ITEM.title)}</div>${ch.map((r, i) => {
+    const n = r.b || r.a;
+    return `<div class="cr${S.stepIdx === i ? " on" : ""}" onclick="go({stepIdx:${i},stepper:false,dcard:true})"><span class="sg ${r.k}">${{ a: "+", c: "~", r: "−" }[r.k]}</span><span class="cx">${esc(n.body)}</span><span class="ck">${{ a: "added", c: "changed", r: "deleted" }[r.k]}</span></div>`;
+  }).join("")}</div>` : "";
+  return `<div class="cstep-o"><span class="cwrap"><span class="pill${S.stepper ? " open" : ""}">
+    <button class="stp" onclick="stepCh(-1)">${I.left}</button><span class="dv"></span>
+    <button class="pb2" onclick="go({stepper:!S.stepper,picker:false})"><b>${lbl}</b>${I.chev}</button><span class="dv"></span>
+    <button class="stp" onclick="stepCh(1)">${I.right}</button></span>${drop}</span></div>`;
+}
+function stepCh(d) { const n = cmpRows().filter(r => r.k !== "u").length; if (!n) return; go({ stepIdx: S.stepIdx === null ? (d > 0 ? 0 : n - 1) : (S.stepIdx + d + n) % n, stepper: false, dcard: true }); }
+/* No strip under the header: the pill says the moment and leads back to now. */
+function strip() {
+  return ""; // the pill says the moment and leads back to now: a strip would repeat it
+  if (false) {
+    const c = { a: 0, c: 0, r: 0 }; cmpRows().forEach(r => { if (r.k !== "u") c[r.k]++; });
+    return `<div class="strip cmp">${I.clock}<span class="chipA">A</span><b>${esc(labFull(S.from))}</b><span>→</span><span class="chipB">B</span><b>${esc(labFull(S.at))}</b>${sumHtml(c)}<span>· ${S.mode === "split" ? "side by side" : "diff"} · read only</span><span class="lnk2" onclick="setMode('one')">One moment</span></div>`;
+  }
+  if (!isPast()) return "";
+  let extra = "";
+  if (S.page === "published") { const v = revInForce(S.at); if (v) { const k = events().filter(e => e.t > v.t && e.t <= S.at).length; if (k) extra = ` · v${v.n} is in force: between two revisions the page does not change`; } }
+  return `<div class="strip past">${I.clock}<span>You are reading <b>${esc(PAGE_NAME[S.page].toLowerCase())}</b> at <b>${fmtY(S.at)}</b>, ${ago(S.at)} · read only${extra}</span><span class="lnk2" onclick="go({at:null,picker:false})">Back to now</span></div>`;
+}
+
+/* ======================= the filter, the tabs, the legend ======================= */
+const AUTH_C = { anna: "#334155", ilya: "#0284c7", olga: "#ca8a04" };
+const KCOL = { a: "#16a34a", c: "#d97706", r: "#dc2626", u: "#94a3b8" };
+function hid(list, k) { return (list ? list.split(",") : []).includes(k); }
+function tgl(field, k) { const s = new Set(S[field] ? S[field].split(",") : []); s.has(k) ? s.delete(k) : s.add(k); go({ [field]: [...s].join(","), stepIdx: null }); }
+/* maxitor-web's ErdFilterPanel: sections as a strict accordion (one open), rows without counts, and — when more than one
+   section can paint the cards — the gear shift at its foot, one point per section. */
+function paintSource() { return cmp() ? (S.paint || "changes") : "authors"; }
+function fpanel(counts, compact, kinds = ["a", "c", "r", "u"]) {
+  const secs = [{ id: "authors", title: "Authors", rows: Object.keys(PEOPLE).map(k => ({ on: !hid(S.hideAu, k), go: `tgl('hideAu','${k}')`, bd: `<span class="bd" style="background:${AUTH_C[k]}">${PEOPLE[k].ini}</span>`, lb: PEOPLE[k].name })) }];
+  if (cmp()) secs.push({ id: "changes", title: "Changes", rows: [["a", "+", "Added"], ["c", "~", "Changed"], ["r", "−", "Removed"], ["u", "=", "Unchanged"]].filter(([k]) => kinds.includes(k)).map(([k, sg, l]) => ({ on: !hid(S.hideK, k), go: `tgl('hideK','${k}')`, bd: `<span class="bd" style="background:${KCOL[k]};font-size:11px">${sg}</span>`, lb: l })) });
+  const open = S.fsec || (cmp() ? paintSource() : "authors");
+  const body = secs.map(sec => `<div><div class="sh${open === sec.id ? "" : " closed"}" onclick="go({fsec:'${open === sec.id ? "none" : sec.id}'})">${I.chev}<span>${sec.title}</span></div>${open === sec.id ? `<div class="rows">${sec.rows.map(r => `<div class="row${r.on ? "" : " off"}" onclick="${r.go}">${r.bd}<span class="lb">${esc(r.lb)}</span></div>`).join("")}</div>` : ""}</div>`).join("");
+  const gear = secs.length > 1 ? `<div class="gear"><span class="gs" style="width:${18 * (secs.length - 1) + 16}px"><i></i>${secs.map((sec, i) => `<button class="${paintSource() === sec.id ? "on" : ""}" style="left:${i * 18}px" title="Paint by ${sec.title}" onclick="go({paint:'${sec.id}',fsec:'${sec.id}'})"><span></span></button>`).join("")}</span></div>` : "";
+  return `<div class="fp"><div class="secs">${body}</div>${gear}</div>`;
+}
+function vtabs(n, inHalf) {
+  return ""; // pills switch the data itself (Logical · Physical on the ERD); the notes' pages have one set of data
+  if ((cmp() && !inHalf) || S.page === "draft") return "";
+  const t = (k, l) => `<button class="${S.view === k ? "on" : ""}" onclick="go({view:'${k}'})">${l}<span class="n">${n}</span></button>`;
+  return `<div class="vtabs" role="radiogroup" aria-label="View">${t("cards", "Cards")}${t("table", "Table")}</div>`;
+}
+function legend() {
+  return "";
+  if (!cmp() && S.page !== "draft") return "";
+  return `<div class="lgd">${[["a", "added"], ["c", "changed"], ["r", "deleted"]].concat(cmp() ? [["u", "unchanged"]] : []).map(([k, l]) => `<span><i style="background:${KCOL[k]}"></i>${l}</span>`).join("")}</div>`;
+}
+/* maxitor-web's ZoomToolbar: zoom, then — after a hairline — the ways to show the same data, as the ERD's layout presets.
+   The pills at the top centre are kept for switching the data itself (the ERD's Logical · Physical); notes have one. */
+const VIEW_GLYPH = {
+  cards: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  table: '<rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M3.5 9.5h17M3.5 14h17M9 9.5V19"/>',
+};
+const zoombar = () => {
+  const views = S.page === "draft" ? "" : `<span class="tdiv"></span>${[["cards", "Cards"], ["table", "Table"]].map(([k, l]) => `<button class="vb${S.view === k ? " on" : ""}" aria-label="${l}" aria-pressed="${S.view === k}" title="${l}" onclick="go({view:'${k}'})"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${VIEW_GLYPH[k]}</svg></button>`).join("")}`;
+  return `<div class="zoombar" role="toolbar" aria-label="View controls"><button data-z="in" aria-label="Zoom in">+</button><button data-z="out" aria-label="Zoom out">−</button><button data-z="fit" aria-label="Fit to window">⊡</button><span class="zpct">100%</span>${views}</div>`;
+};
+
+/* ======================= the world: what the page lays on the canvas ======================= */
+function noteCard(n, extra = "") {
+  const ro = readOnly();
+  const tm = fmt(n.created), ed = n.editor ? `<div class="edl">${I.pen}edited by ${PEOPLE[n.editor].name} ${ago(n.since)}</div>` : "";
+  const editing = S.edit === n.id && !ro, cf = S.conflict && S.conflict.id === n.id ? S.conflict : null;
+  const acts = ro || editing ? "" : `<span class="acts">
+      <button class="ib ed" title="Edit" onclick="startEdit('${n.id}')">${I.pen}</button>
+      <button class="ib del" title="Delete" onclick="askDelete('${n.id}')">${I.trash}</button>
+      <button class="ib more" title="Actions" onclick="go({sheet:'${n.id}'})">${I.dots}</button></span>`;
+  let body = `<div class="nb">${esc(n.body)}</div>`;
+  if (editing && !cf) body = `<textarea id="editbox" oninput="S.editText=this.value">${esc(S.editText)}</textarea>
+      <div class="eft"><span class="hint">You edit the version of ${fmt(S.base)}: <code>base_moment</code></span>
+        <button class="btn2" onclick="go({edit:null})">Cancel</button><button class="btn2 pri" onclick="saveEdit()">Save</button></div>`;
+  if (cf && cf.kind === "changed") body += `<div class="cbox"><div class="t">${I.alert}${esc(PEOPLE[cf.by.who].name)} changed this note ${ago(cf.by.t)}, after you opened it</div>
+      The page read the note again: above is their text. Yours is kept here, nothing was saved.
+      <div class="mine"><div class="lbl">Your text</div>${wdiff(n.body, cf.mine)}</div>
+      <div class="ft"><button class="btn2 pri" onclick="retryOnTheirs()">Edit theirs with my text</button><button class="btn2" onclick="keepTheirs()">Keep theirs</button></div></div>`;
+  const fresh = S.fresh === n.id && !ro;
+  const cls = ["note", fresh ? "fresh" : "", editing ? "editing" : "", cf ? "conflict" : ""].join(" ");
+  return `<div class="${cls}" ${extra}><div class="nh">${av(n.writer)}<b>${esc(PEOPLE[n.writer].name)}</b>${fresh ? '<span class="tagnew">new</span>' : ""}<span class="tm">${tm}</span>${acts}</div>${body}${editing || cf ? "" : ed}</div>`;
+}
+function deletedWhileEditing() {
+  const cf = S.conflict;
+  if (!cf || cf.kind !== "deleted") return "";
+  const old = notesAt(iso(ms(cf.by.t) - 6e4)).find(x => x.id === cf.id) || { writer: ME };
+  return `<div class="note conflict"><div class="nh">${av(old.writer)}<b>${esc(PEOPLE[old.writer].name)}</b><span class="tm">deleted by ${esc(PEOPLE[cf.by.who].name)} ${ago(cf.by.t)}</span></div>
+    <div class="cbox"><div class="t">${I.alert}${esc(PEOPLE[cf.by.who].name)} deleted this note while you were editing it</div>
+      A deleted note cannot be edited. Your text is kept here, nothing was saved.
+      <div class="mine"><div class="lbl">Your text</div>${esc(cf.mine)}</div>
+      <div class="ft"><button class="btn2 pri" onclick="addMineAsNew()">Add as a new note</button><button class="btn2" onclick="go({edit:null,conflict:null})">Discard</button></div></div></div>`;
+}
+function cmpRows() {
+  const A = setOf(S.from), B = setOf(S.at), am = new Map(A.map(n => [n.id, n])), bm = new Map(B.map(n => [n.id, n]));
+  const ids = [...new Set(B.map(n => n.id).concat(A.map(n => n.id)))];
+  return ids.map(id => { const a = am.get(id), b = bm.get(id); return { id, a, b, k: !a ? "a" : !b ? "r" : a.body !== b.body ? "c" : "u", created: (b || a).created }; })
+    .sort((x, y) => x.created < y.created ? 1 : -1)
+    .filter(r => !hid(S.hideK, r.k) && !hid(S.hideAu, (r.b || r.a).writer));
+}
+function whoWhen(r) {
+  if (r.k === "a") return `written by ${PEOPLE[r.b.writer].name.split(" ")[0]} ${fmt(r.b.created)}`;
+  if (r.k === "c") return `changed by ${PEOPLE[r.b.editor || r.b.writer].name.split(" ")[0]} ${fmt(r.b.since)}`;
+  if (r.k === "r") { const d = lastChange(r.id, S.page === "notes" ? moment() : (revInForce(moment()) || {}).t || moment()); return d && d.op === "delete" ? `deleted by ${PEOPLE[d.who].name.split(" ")[0]} ${fmt(d.t)}` : "deleted"; }
+  return fmt(r.b.created);
+}
+function diffCard(r, i) {
+  const n = r.b || r.a, hl = i >= 0 && i === S.stepIdx ? " hl" : "";
+  const body = r.k === "c" ? wdiff(r.a.body, r.b.body) : esc(n.body);
+  const badge = r.k === "u" ? "" : `<span class="ckb ${r.k}">${{ a: "added", c: "changed", r: "deleted" }[r.k]}</span>`;
+  return `<div class="note dk-${r.k}${hl}" id="ch-${r.id}" data-nid="${r.id}" style="--au:${AUTH_C[n.writer]}"><div class="nh">${av(n.writer)}<b>${esc(PEOPLE[n.writer].name.split(" ")[0])}</b>${badge}<span class="tm">${esc(whoWhen(r))}</span></div><div class="nb">${body}</div></div>`;
+}
+function sideCard(r, side, i) {
+  const n = side === "a" ? r.a : r.b, hl = i >= 0 && i === S.stepIdx ? " hl" : "", id = `id="ch-${side}-${r.id}" data-nid="${r.id}"`;
+  if (!n) return "";
+  const html = r.k === "c" ? wdiff(r.a.body, r.b.body, side) : esc(n.body);
+  return `<div class="note dk-${r.k === "u" ? "u" : r.k === "c" ? "c" : side === "a" ? "r" : "a"}${hl}" ${id} style="--au:${AUTH_C[n.writer]};${r.k === "r" && side === "a" ? "background:#fff" : ""}"><div class="nh">${av(n.writer)}<b>${esc(PEOPLE[n.writer].name.split(" ")[0])}</b><span class="tm">${fmt(n.since)}</span></div><div class="nb" style="${r.k === "r" && side === "a" ? "text-decoration:none;color:var(--ink2)" : ""}">${html}</div></div>`;
+}
+/* Diff as a table: one row per note, its change, its writer, its text with the words marked, and when. */
+function diffTable(rows, ch) {
+  const lab = { a: "added", c: "changed", r: "deleted", u: "" };
+  const body = rows.map(r => {
+    const n = r.b || r.a, i = ch.indexOf(r), hl = i >= 0 && i === S.stepIdx ? ' class="hlrow"' : "";
+    const txt = r.k === "c" ? wdiff(r.a.body, r.b.body) : r.k === "r" ? `<span style="color:#94a3b8;text-decoration:line-through">${esc(n.body)}</span>` : esc(n.body);
+    return `<tr${hl} id="ch-${r.id}" data-nid="${r.id}" style="${r.k === "u" ? "opacity:.6" : ""}"><td>${r.k === "u" ? "" : `<span class="ckb ${r.k}">${lab[r.k]}</span>`}</td><td class="who">${av(n.writer)} ${esc(PEOPLE[n.writer].name)}</td><td>${txt}</td><td class="tm">${esc(whoWhen(r))}</td></tr>`;
+  }).join("");
+  return `<div class="grid" style="grid-template-columns:940px"><div class="wcard wide"><h4>${rows.filter(r => r.k !== "u").length} changes</h4><p class="cap">A ${esc(labFull(S.from))} → B ${esc(labFull(S.at))}</p><table class="tbl"><tr><th>Change</th><th>Writer</th><th>Note</th><th>When</th></tr>${body}</table></div></div>`;
+}
+function tableCard(list, title, cap) {
+  return `<div class="wcard wide"><h4>${title}</h4><p class="cap">${cap}</p><table class="tbl"><tr><th>Writer</th><th>Note</th><th>Written</th><th>Last change</th></tr>${list.map(n => `<tr><td class="who">${av(n.writer)} ${esc(PEOPLE[n.writer].name)}</td><td>${esc(n.body)}</td><td class="tm">${fmt(n.created)}</td><td class="tm">${n.editor ? `${PEOPLE[n.editor].name.split(" ")[0]}, ${fmt(n.since)}` : "—"}</td></tr>`).join("")}</table></div>`;
+}
+function shown(list) { return list.filter(n => !hid(S.hideAu, n.writer)); }
+function notesWorld() {
+  const list = shown(notesAt(moment()));
+  if (S.view === "table") return `<div class="grid" style="grid-template-columns:940px">${tableCard(list, `${list.length} notes`, isPast() ? `As they were at ${fmtY(S.at)}` : "Now")}</div>`;
+  let h = "";
+  h += deletedWhileEditing() + list.map(n => noteCard(n)).join("");
+  if (!list.length) {
+    const first = events()[0];
+    h += isPast() ? `<div class="empty-st wide"><b>No notes at this moment</b>The first note on ${esc(ITEM.title)} was written ${fmtY(first.t)}.<br><button class="btn2" onclick="go({at:'${first.t}'})">Go to ${fmt(first.t)}</button></div>`
+      : `<div class="empty-st wide"><b>No notes yet</b>Anyone in ${esc(ORG.name)} who opens this page sees a new note at once.</div>`;
+  }
+  return `<div class="grid">${h}</div>`;
+}
+function revHead(v) {
+  const nx = revAfter(v), prev = revisions().find(x => x.n === v.n - 1);
+  const sm = count(changes(prev ? notesAt(prev.t) : [], notesAt(v.t)));
+  const span = nx && nx.t <= WM() ? `in force from ${fmt(v.t)} to ${fmt(nx.t)}` : `in force since ${fmt(v.t)}`;
+  const d = !isPast() ? historyDraft() : null;
+  return `<div class="revhd wide"><span class="ref">v${v.n}</span><div class="tt"><b>${esc(v.title)}</b><div>${esc(PEOPLE[v.who].name)} published it ${fmtY(v.t)} · ${span}</div></div>${sumHtml(sm)}${d ? `<button class="btn2" onclick="go({page:'draft'})">Draft: ${d.a + d.c + d.r} waiting</button>` : ""}</div>`;
+}
+function publishedWorld() {
+  const v = revInForce(moment());
+  if (!v) return `<div class="grid"><div class="empty-st wide"><b>Nothing published at this moment</b>The first revision was published ${fmtY(revisions()[0].t)}.</div></div>`;
+  const list = shown(notesAt(v.t));
+  if (S.view === "table") return `<div class="grid" style="grid-template-columns:940px">${tableCard(list, `v${v.n} · ${esc(v.title)}`, `${esc(PEOPLE[v.who].name)} published it ${fmtY(v.t)}`)}</div>`;
+  return `<div class="grid">${revHead(v)}${list.map(n => `<div class="note"><div class="nh">${av(n.writer)}<b>${esc(PEOPLE[n.writer].name)}</b><span class="tm">${fmt(n.created)}</span></div><div class="nb">${esc(n.body)}</div></div>`).join("")}</div>`;
+}
+function draftWorld() {
+  const m = moment(), v = revInForce(m), ch = changes(v ? notesAt(v.t) : [], notesAt(m)), c = count(ch);
+  if (!ch.length) return `<div class="grid"><div class="empty-st wide"><b>Nothing to publish</b>The notes are as v${v ? v.n : 0} holds them. A note written, edited or deleted appears here until it is published.</div></div>`;
+  let h = `<div class="revhd wide"><span class="ref" style="background:#fef3c7;color:#92400e">v${(v ? v.n : 0) + 1}?</span><div class="tt"><b>Changes since v${v ? v.n : 0}</b><div>${v ? `v${v.n} was published ${fmtY(v.t)}` : "Nothing is published yet"}</div></div>${sumHtml(c)}
+    ${isPast() ? "" : `<button class="btn2 pri" onclick="askPublish()">Publish as v${(v ? v.n : 0) + 1}</button>`}</div>`;
+  h += ch.map(x => {
+    const n = x.n, lc = lastChange(n.id, m), r = { k: x.k, a: x.old || (x.k === "r" ? n : null), b: x.k === "r" ? null : n, id: n.id };
+    const who = x.k === "a" ? `added by ${PEOPLE[n.writer].name.split(" ")[0]} ${fmt(n.created)}` : x.k === "c" ? `changed by ${PEOPLE[n.editor || n.writer].name.split(" ")[0]} ${fmt(n.since)}` : `deleted by ${PEOPLE[lc.who].name.split(" ")[0]} ${fmt(lc.t)}`;
+    return `<div class="note dk-${x.k}"><div class="nh">${av(n.writer)}<b>${esc(PEOPLE[n.writer].name.split(" ")[0])}</b><span class="ckb ${x.k}">${{ a: "added", c: "changed", r: "deleted" }[x.k]}</span><span class="tm">${esc(who)}</span></div><div class="nb">${x.k === "c" ? wdiff(x.old.body, n.body) : esc(n.body)}</div></div>`;
+  }).join("");
+  return `<div class="grid">${h}</div>`;
+}
+function futurePage() {
+  return `<div class="nf"><div class="box"><span class="big">${I.hourglass}</span><h2>This moment has not come yet</h2>
+    <p>The address asks for ${fmtY(S.at)}. Maxitor has everything only up to ${fmtY(WM())}; an answer for a later moment could still change, so it is refused.<br><code>at</code> must not be later than the watermark.</p>
+    <button class="btn2 pri" onclick="go({at:null})">Open now</button></div></div>`;
+}
+function filterCounts(rows) {
+  const au = {}, k = {};
+  const base = S.page === "notes" ? notesAt(moment()) : S.page === "published" ? (revInForce(moment()) ? notesAt(revInForce(moment()).t) : []) : notesAt(moment());
+  (rows ? rows.map(r => r.b || r.a) : base).forEach(n => au[n.writer] = (au[n.writer] || 0) + 1);
+  if (rows) { const all = S.hideK; S.hideK = ""; cmpRows().forEach(r => k[r.k] = (k[r.k] || 0) + 1); S.hideK = all; }
+  return { au, k };
+}
+/* The canvas, or two of them side by side sharing one camera. */
+function canvasArea() {
+  if (isFuture()) return futurePage();
+  const rows = cmp() ? cmpRows() : null, counts = filterCounts(rows);
+  const nview = S.page === "notes" ? shown(notesAt(moment())).length : S.page === "published" && revInForce(moment()) ? shown(notesAt(revInForce(moment()).t)).length : 0;
+  const ch = rows ? rows.filter(r => r.k !== "u") : [];
+  if (cmp() && S.mode === "split") {
+    /* As maxitor-web's SideBySide: two halves, each with its own head (its letter and its version) and its own camera;
+       Track at the end of B's head; a phone shows one half and flips it with A / B. */
+    const half = side => {
+      const lab = labFull(side === "a" ? S.from : S.at), n = setOf(side === "a" ? S.from : S.at).length;
+      const head = S.phone ? `<span class="flip">${["a", "b"].map(x => `<button class="${x}${S.side === x ? " on" : ""}" onclick="go({side:'${x}'})">${x.toUpperCase()}</button>`).join("")}</span>`
+        : side === "b" ? `<button class="trk${S.track ? " on" : ""}" role="switch" aria-checked="${S.track}" onclick="go({track:!S.track})">Track</button>` : "";
+      const mine = rows.filter(r => side === "a" ? r.a : r.b);
+      const world = S.view === "table"
+        ? `<div class="grid" style="grid-template-columns:620px">${tableCard(mine.map(r => side === "a" ? r.a : r.b), `${mine.length} notes`, esc(lab))}</div>`
+        : `<div class="grid g1">${rows.map(r => sideCard(r, side, ch.indexOf(r))).join("")}</div>`;
+      const own = { au: {}, k: counts.k }; mine.forEach(r => { const n = side === "a" ? r.a : r.b; own.au[n.writer] = (own.au[n.writer] || 0) + 1; });
+      const extra = (S.phone ? "" : fpanel(own, false, side === "a" ? ["r", "c", "u"] : ["a", "c", "u"])) + vtabs(mine.length, true) + zoombar() + (side === "b" ? changeStepper(rows) : "");
+      return `<div class="half"><div class="hh"><span class="sd ${side}">${side.toUpperCase()}</span><b>${esc(lab)}</b><span class="n">${n} notes</span>${head}</div>
+        <div class="cv" data-side="${side}" data-left="${S.phone ? 20 : 172}"><div class="world">${world}</div>${extra}</div></div>`;
+    };
+    return `<div class="cvs">${S.phone ? half(S.side) : half("a") + half("b")}</div>`;
+  }
+  const world = rows && S.view === "table" ? diffTable(rows, ch) : rows ? `<div class="grid">${rows.map(r => diffCard(r, ch.indexOf(r))).join("")}${rows.length ? "" : `<div class="empty-st wide"><b>Nothing to show</b>No note changed between A and B, or the filter hides them.</div>`}</div>`
+    : S.page === "notes" ? notesWorld() : S.page === "published" ? publishedWorld() : draftWorld();
+  return `<div class="cvs"><div class="cv" data-left="${S.phone ? 20 : 172}"><div class="world">${world}</div>${vtabs(nview)}${S.page === "draft" ? "" : fpanel(counts)}${zoombar()}${legend()}${rows ? changeStepper(rows) : ""}${S.page === "notes" && !rows && !isPast() ? `<div class="newb"><button class="btn2 pri" onclick="go({dlg:{kind:'new'},focus:true})">${I.plus}New note</button></div>` : ""}</div></div>`;
+}
+
+/* ======================= the camera: wheel zooms, dragging moves, ⊡ shows everything ======================= */
+const CAM = {};
+function camKey() { return [S.page, S.mode, S.view, S.phone].join("|"); }
+/* @maxitor/panel's DiffCard, as maxitor-web's: the element's title and its status disk, then what changed — a property
+   by its path, before struck and after; an added or removed element in one line. The words are the page's answer. */
+function diffCardHtml(r) {
+  const n = r.b || r.a, st = { a: "added", c: "changed", r: "removed" }[r.k];
+  const disk = `<span class="bd" style="background:${KCOL[r.k]};width:14px;height:14px;font-size:9px">${{ a: "+", c: "~", r: "−" }[r.k]}</span>`;
+  const B = S.at ? fmt(S.at) : "now";
+  let body = r.k === "a" ? `<div>Added in B, ${B}</div>` : r.k === "r" ? `<div>Removed in B, ${B}</div>` : "";
+  if (r.k === "c") body += `<div class="drow"><span>body</span><span><s>${esc(r.a.body)}</s> → ${esc(r.b.body)}</span></div>`;
+  if (r.k === "c" && r.b.editor) body += `<div class="drow"><span>edited by</span><span>${esc(PEOPLE[r.b.editor].name)}, ${fmt(r.b.since)}</span></div>`;
+  return `<div class="dh"><span>Note by ${esc(PEOPLE[n.writer].name)}</span>${disk}</div>${body}`;
+}
+/* What a canvas says when it cannot show the element asked for, as the graph viewer's halves do. */
+function note(cv, text) {
+  let el = cv.querySelector(".cvnote");
+  if (!el) { el = document.createElement("div"); el.className = "cvnote"; cv.appendChild(el); }
+  el.textContent = text; el.classList.add("on");
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("on"), 2500);
+}
+function bindCanvas() {
+  const cvs = [...document.querySelectorAll(".cv")]; if (!cvs.length) return;
+  const halves = cvs.map(cv => {
+    const world = cv.querySelector(".world"), left = +cv.dataset.left, key = camKey() + "|" + (cv.dataset.side || "");
+    const fitCam = () => { const ww = world.offsetWidth, cw = cv.clientWidth, k = Math.max(.35, Math.min(1, (cw - left - 24) / ww)); return { k, x: left + Math.max(0, (cw - left - ww * k) / 2), y: 52 }; };
+    const cam = CAM[key] || (CAM[key] = fitCam());
+    const apply = () => { world.style.transform = `translate(${cam.x}px,${cam.y}px) scale(${cam.k})`; const z = cv.querySelector(".zpct"); if (z) z.textContent = Math.round(cam.k * 100) + "%"; };
+    const glide = () => { world.classList.add("glide"); setTimeout(() => world.classList.remove("glide"), 480); };
+    const zoomAt = (mx, my, f) => { const nk = Math.min(2.5, Math.max(.25, cam.k * f)); cam.x = mx - (mx - cam.x) * nk / cam.k; cam.y = my - (my - cam.y) * nk / cam.k; cam.k = nk; apply(); };
+    /* Bring a card into view, keeping the zoom; only when it is out of view, unless forced. */
+    const bring = (el, force) => {
+      const cx = cam.x + el.offsetLeft * cam.k, cy = cam.y + el.offsetTop * cam.k, w = el.offsetWidth * cam.k, h = el.offsetHeight * cam.k;
+      const out = cx < left || cx + w > cv.clientWidth || cy < 40 || cy + h > cv.clientHeight - 40;
+      if (!out && !force) return;
+      glide(); cam.x = left + (cv.clientWidth - left) / 2 - (el.offsetLeft + el.offsetWidth / 2) * cam.k; cam.y = cv.clientHeight / 3 - el.offsetTop * cam.k; apply();
+    };
+    apply();
+    return { cv, world, cam, apply, zoomAt, fitCam, glide, bring };
+  });
+  const scaleOf = c => c.getBoundingClientRect().width / c.clientWidth;
+  const overlay = el => el.closest(".fp, .vtabs, .zoombar, .lgd, .cstep-o, textarea, input, button, .note.editing, .cbox, .composer");
+  let drag = null, moved = false;
+  for (const h of halves) {
+    const { cv, cam } = h;
+    /* As maxitor-web's lib/wheelGesture.ts: a two-finger swipe or the wheel moves the picture; a pinch or the wheel with
+       Ctrl / ⌘ zooms it; Shift with a vertical wheel moves sideways. */
+    cv.addEventListener("wheel", e => {
+      if (e.target.closest(".fp, .cdrop")) return;
+      e.preventDefault();
+      const r = cv.getBoundingClientRect(), s = scaleOf(cv);
+      if (e.ctrlKey || e.metaKey) { h.zoomAt((e.clientX - r.left) / s, (e.clientY - r.top) / s, Math.exp(-e.deltaY * .0045)); return; }
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? cv.clientHeight : 1;
+      let dx = e.deltaX * unit, dy = e.deltaY * unit; if (e.shiftKey && dx === 0) { dx = dy; dy = 0; }
+      cam.x -= dx; cam.y -= dy; h.apply();
+    }, { passive: false });
+    cv.addEventListener("mousedown", e => {
+      if (S.dcard && !e.target.closest(".dcard, .cstep-o")) { S.dcard = false; document.querySelectorAll(".dcard").forEach(x => x.remove()); }
+      if (overlay(e.target) || e.button !== 0) return; drag = { h, x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, s: scaleOf(cv) }; moved = false; });
+    cv.addEventListener("click", e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+    cv.querySelectorAll("[data-z]").forEach(b => b.onclick = () => {
+      const cw = cv.clientWidth / 2, ch = cv.clientHeight / 2;
+      if (b.dataset.z === "in") h.zoomAt(cw, ch, 1.2); else if (b.dataset.z === "out") h.zoomAt(cw, ch, 1 / 1.2); else { Object.assign(cam, h.fitCam()); h.glide(); h.apply(); }
+    });
+    // what the pointer rests on is marked in the other half, and with Track on, brought into its view
+    if (halves.length > 1) cv.addEventListener("mouseover", e => {
+      const card = e.target.closest("[data-nid]"); if (!card || drag) return;
+      const other = halves.find(o => o !== h), twin = other.world.querySelector(`[data-nid="${card.dataset.nid}"]`);
+      document.querySelectorAll(".across").forEach(x => x.classList.remove("across"));
+      card.classList.add("across");
+      if (twin) { twin.classList.add("across"); if (S.track) other.bring(twin, false); }
+      else note(other.cv, `Not in ${other.cv.dataset.side === "a" ? "A" : "B"}`);
+    });
+  }
+  window.onmousemove = e => { if (!drag) return; const dx = (e.clientX - drag.x) / drag.s, dy = (e.clientY - drag.y) / drag.s; if (Math.abs(dx) + Math.abs(dy) > 4) { moved = true; drag.h.cv.classList.add("drag"); } if (moved) { drag.h.cam.x = drag.cx + dx; drag.h.cam.y = drag.cy + dy; drag.h.apply(); } };
+  window.onmouseup = () => { if (drag) drag.h.cv.classList.remove("drag"); drag = null; };
+  /* ChangeStepper: the camera glides to the change — in each half that holds it. */
+  if (cmp() && S.stepIdx !== null) {
+    const r = cmpRows().filter(x => x.k !== "u")[S.stepIdx];
+    if (r) requestAnimationFrame(() => halves.forEach((h, i) => {
+      const el = h.world.querySelector(`[data-nid="${r.id}"]`) || h.world.querySelector("#ch-" + r.id); if (!el) return;
+      h.bring(el, true);
+      if (i === halves.length - 1 && S.dcard) {   // the card stands in the panel that holds the stepper
+        const x = h.cam.x + (el.offsetLeft + el.offsetWidth) * h.cam.k + 12, y = h.cam.y + el.offsetTop * h.cam.k;
+        const box = document.createElement("div"); box.className = "dcard"; box.innerHTML = diffCardHtml(r);
+        box.style.left = Math.min(x, h.cv.clientWidth - 312) + "px"; box.style.top = Math.max(8, y) + "px";
+        h.cv.appendChild(box);
+      }
+    }));
+  }
+}
+
+/* ======================= the picker card ======================= */
+function modeSwitch() {
+  const b = (m, ic, lb, ph) => {
+    const off = S.page === "draft" && m !== "one";
+    return `<button class="${S.mode === m || (off && false) ? "on" : ""}" ${off ? 'style="opacity:.4;cursor:not-allowed" title="The draft is itself a comparison"' : ""} onclick="setMode('${m}')">${ic}<span class="dt-lab">${lb}</span><span class="ph-lab">${ph}</span></button>`;
+  };
+  const mode = S.page === "draft" ? "one" : S.mode;
+  return `<div class="modes" role="radiogroup">${b("one", I.one, "One", "One").replace(mode === "one" && S.mode !== "one" ? 'class=""' : "@@", 'class="on"')}${b("diff", I.diff, "Diff", "Diff")}${b("split", I.split, "Side by side", "A / B")}</div>`;
+}
+function card() {
+  if (!S.picker) return "";
+  const notes = S.page === "notes";
+  const head = notes
+    ? [`${ITEM.title} · Notes`, `${events().length} changes since ${fmtY(events()[0].t)} · live`, "Bars count the changes of the notes in each stretch of time: green added, amber changed, red deleted. Points on the lane above are published revisions; a small point only edited notes; a flag carries the release a revision was published as. Hatched: later than now."]
+    : [`${ITEM.title} · Published notes`, `${revisions().length} revisions${historyDraft() ? " · a draft waiting" : ""}`, "A point is a published revision, where it was published; a small point only edited notes, adding or removing none; a flag above it carries the release it was published as. Amber, dashed: the draft."];
+  const body = histBlock();
+  return `<div class="scrim clear" onclick="go({picker:false})"></div><div class="card" role="dialog" aria-label="Pick a moment"><div class="grab"></div>
+    <div class="chd"><div class="tt"><b>${esc(head[0])}</b><span>${esc(head[1])}</span></div><div class="rt">${variant() !== "bars" && milestones().some(m => m.minor) ? `<button class="ib2 sm${S.hideSmall ? "" : " on"}" title="${S.hideSmall ? "Show the small points" : "Hide the small points"}" onclick="go({hideSmall:!S.hideSmall})">${I.three}</button>` : ""}<button class="ib2" title="${esc(head[2])}">${I.info}</button>${modeSwitch()}</div></div>
+    ${body}</div>`;
+}
+/* What the page's history declares: "both" (read + milestones), "ms" (milestones alone), "bars" (read alone). */
+function variant() { return S._variant || (S.page === "notes" ? "both" : "ms"); }
+function historyDraft() { const v = revInForce(WM()); const d = count(changes(v ? notesAt(v.t) : [], notesAt(WM()))); return d.a + d.c + d.r ? d : null; }
+
+/* --- the continuous history: notes --- */
+function histBlock() {
+  const presets = [["1 h", 36e5], ["1 d", 864e5], ["7 d", 7 * 864e5], ["30 d", 30 * 864e5], ["All", 0]];
+  const z = `<span class="zm">${presets.map(([l, s]) => `<button onclick="preset(${s})">${l}</button>`).join("")}</span>`;
+  const lg = variant() === "ms" ? "" : `<span class="lg">${Object.keys(KIND_COL).map(k => `<span><i style="background:${KIND_COL[k]}"></i>${KIND_NAME[k]}</span>`).join("")}</span>`;
+  const hint = S.phone ? "Pinch to zoom · swipe to move · tap to choose" : "Drag across the scale to zoom into a stretch · wheel or pinch to zoom · swipe sideways or Shift-wheel to move · click to choose";
+  const msgs = variant() === "bars" ? "" : revMsgs();
+  return `<div class="hbar">${z}<span class="span" id="hspan"></span>${lg}</div><div class="hist" id="hist"></div><div class="hhint">${hint}</div>${msgs}`;
+}
+function lastBody(id, t) { let b = null; for (const e of events()) { if (e.t >= t) break; if (e.id === id && e.body) b = e.body; } return b; }
+
+/* --- the revisions: the graph viewer's track, one to one --- */
+function revPoints() {
+  const pts = revisions().map(v => ({ key: "v" + v.n, t: v.t, lab: "v" + v.n, kind: "rev", v }));
+  if (historyDraft()) pts.push({ key: "draft", lab: "draft", kind: "prop" });
+  pts.push({ key: "live", lab: "Live", kind: "live" });
+  return pts;
+}
+function keyAt(m) { if (m === null) return "live"; const v = revInForce(m); return v ? "v" + v.n : null; }
+function revMsgs() {
+  let msgs;
+  if (cmp()) {
+    const bv = revInForce(S.at || WM()), bk = bv ? "v" + bv.n : null, between = revisions().filter(v => v.t > S.from && v.t <= (S.at || WM()));
+    msgs = `<div class="msgs two">${revMsg(S.from, "A")}${revMsg(S.at, "B")}</div>${between.length ? `<div class="betw"><button onclick="go({betw:!S.betw})">${S.betw ? "▾" : "▸"} ${between.length} ${between.length > 1 ? "revisions" : "revision"} between</button>${S.betw ? `<ul>${between.map(v => `<li onclick="go({at:'${v.t}'})"><b>v${v.n}</b><span>${esc(v.title)} · ${PEOPLE[v.who].name}, ${fmt(v.t)}</span></li>`).join("")}</ul>` : ""}</div>` : ""}`;
+  } else msgs = `<div class="msgs">${revMsg(S.at)}</div>`;
+  return msgs;
+}
+function revMsg(m, tag) {
+  const v = revInForce(m || WM()), prev = v && revisions().find(x => x.n === v.n - 1);
+  const head = `${tag ? `<span class="${tag === "A" ? "chipA" : "chipB"}">${tag}</span>` : ""}<b style="font-size:12px">${v ? `v${v.n} · ${esc(v.title)}` : "Nothing published"}</b>`;
+  if (!v) return `<div class="msg"><div style="display:flex;gap:6px;align-items:center;margin:2px 0 4px">${head}</div></div>`;
+  const txt = `${esc(v.comment || v.title)}\n\n<span style="color:var(--muted)">${PEOPLE[v.who].name}, ${fmtY(v.t)}</span>`;
+  return `<div class="msg"><div style="display:flex;gap:6px;align-items:center;margin:2px 0 4px">${head}</div><div class="mb">${txt}</div></div>`;
+}
+function pickRev(key) {
+  if (key === "draft") return go({ page: "draft", picker: false, mode: "one", from: null });
+  const t = key === "live" ? null : revisions().find(v => "v" + v.n === key).t;
+  if (!cmp()) return go({ at: t });
+  const ord = x => x === null ? "9999" : x, a = S.from, b = S.at;
+  const nearA = Math.abs(ms(ord(t) === "9999" ? WM() : t) - ms(a)) < Math.abs(ms(ord(t) === "9999" ? WM() : t) - ms(b || WM()));
+  let na = nearA ? t : a, nb = nearA ? b : t;
+  if (ord(na) > ord(nb)) [na, nb] = [nb, na];
+  if (na === null) na = revisions().at(-1).t;
+  go({ from: na, at: nb, stepIdx: null });
+}
+
+/* ======================= milestones: what list_note_history answers, and the card note_milestone_card answers ======================= */
+function milestones() {
+  const out = []; let prev = [];
+  for (const v of revisions()) {
+    const cur = notesAt(v.t);
+    const sm0 = count(changes(prev, cur));
+    out.push({ id: "v" + v.n, at: v.t, minor: !sm0.a && !sm0.r, kind: v.direct ? "direct" : "revision", ref: "v" + v.n, title: v.title, author: v.who, summary: count(changes(prev, cur)), chips: [`${cur.length} notes`], meta: v.release ? `release: ${v.release}` : "published to: Published notes", release: v.release || null, comment: v.comment });
+    prev = cur;
+  }
+  const d = count(changes(prev, notesAt(WM())));
+  if (d.a + d.c + d.r) out.push({ id: "draft", at: WM(), kind: "proposal", ref: "draft", title: "Draft — waiting to be published", author: null, summary: d, chips: [], meta: "opens the draft's page", link: "draft" });
+  return out;
+}
+/* The core's fixed set of looks; a plugin names one per milestone and gives it its meaning (the graph: how a pull request was merged). */
+const MS_LOOK = { revision: { c: "#8250df", tint: "#fbefff", name: "Revision" }, direct: { c: "#8c959f", tint: "#f6f8fa", name: "Published directly" }, proposal: { c: "#9a6700", tint: "#fff8c5", name: "Draft" } };
+function summaryText(c) { const p = []; if (c.a) p.push(`+${c.a} ${c.a > 1 ? "notes" : "note"}`); if (c.c) p.push(`${c.c} changed`); if (c.r) p.push(`−${c.r} ${c.r > 1 ? "notes" : "note"}`); return p.join(" · ") || "no changes"; }
+/* The core draws the card from data only: badge, ref, when, title, meta, author, chips, summary — the graph viewer's VersionTip. */
+function milestoneCard(m) {
+  const lk = MS_LOOK[m.kind];
+  return `<div class="mtip"><div class="r1"><span class="badge" style="background:${lk.tint};color:${lk.c}">${m.kind === "proposal" ? I.clock : I.branch}${lk.name}</span><span class="ref">${esc(m.ref)}</span><span class="ago">${m.kind === "proposal" ? "now" : ago(m.at)}</span></div>
+    <div class="tt">${esc(m.title)}</div><div class="meta">${esc(m.meta)}</div>
+    ${m.author ? `<div class="au">${av(m.author)}${esc(PEOPLE[m.author].name)}</div>` : ""}
+    <div class="r2">${m.chips.map(c => `<span class="chip">${esc(c)}</span>`).join("")}<span class="sm">${summaryText(m.summary)}</span></div></div>`;
+}
+
+/* ======================= the histogram: Kibana's way of moving through time ======================= */
+const HV = { v0: 0, v1: 0, g0: 0, g1: 0, ymax: 0, yt: 1, raf: 0, drag: null, hover: null, hoverY: null };
+function domain() { const ev = events(), a = (ev.length ? ms(ev[0].t) : ms(WM()) - 7 * 864e5) - 864e5, w = ms(WM()); return [a, w + (w - a) * 0.025]; }
+function fitAll(anim) { const [a, b] = domain(); setView(a, b, anim); }
+function setView(a, b, anim = true) {
+  const [d0, d1] = domain();
+  let span = Math.min(Math.max(b - a, 20 * 6e4), d1 - d0);
+  a = Math.min(Math.max(a, d0), d1 - span);
+  HV.g0 = a; HV.g1 = a + span;
+  if (!anim) { HV.v0 = HV.g0; HV.v1 = HV.g1; redraw(); } else kick();
+}
+function kick() { if (!HV.raf) HV.raf = requestAnimationFrame(tick); }
+function tick() {
+  HV.raf = 0;
+  const k = .22; HV.v0 += (HV.g0 - HV.v0) * k; HV.v1 += (HV.g1 - HV.v1) * k; HV.ymax += (HV.yt - HV.ymax) * .25;
+  const done = Math.abs(HV.g0 - HV.v0) + Math.abs(HV.g1 - HV.v1) < (HV.g1 - HV.g0) * 2e-4 && Math.abs(HV.yt - HV.ymax) < .01;
+  if (done) { HV.v0 = HV.g0; HV.v1 = HV.g1; HV.ymax = HV.yt; }
+  redraw(); if (!done) kick();
+}
+function redraw() { drawHist(); }
+function anchorT() { return cmp() ? (ms(S.from) + ms(S.at || WM())) / 2 : ms(S.at || WM()); }
+function preset(span) {
+  if (!span) return fitAll(true);
+  const c = anchorT(), wm = ms(WM());
+  if (!S.at && !cmp()) setView(wm - span * .92, wm + span * .08); else setView(c - span / 2, c + span / 2);
+}
+function shiftBy(f) { const d = (HV.g1 - HV.g0) * f; setView(HV.g0 + d, HV.g1 + d); }
+function zoomBy(f) { const c = (HV.g0 + HV.g1) / 2, h = (HV.g1 - HV.g0) * f / 2; setView(c - h, c + h); }
+const STEPS = [6e4, 2 * 6e4, 5 * 6e4, 10 * 6e4, 15 * 6e4, 30 * 6e4, 36e5, 2 * 36e5, 3 * 36e5, 6 * 36e5, 12 * 36e5, 864e5, 2 * 864e5, 7 * 864e5];
+const TICKS = [5 * 6e4, 10 * 6e4, 15 * 6e4, 30 * 6e4, 36e5, 2 * 36e5, 3 * 36e5, 6 * 36e5, 12 * 36e5, 864e5, 2 * 864e5, 7 * 864e5, 14 * 864e5];
+const bucketStep = (span, W) => STEPS.find(s => span / s <= W / 9) || STEPS.at(-1);
+const tickStep = (span, W) => TICKS.find(s => span / s <= W / 78) || TICKS.at(-1);
+const HT = 22, HB = 86, HAX = 18, HCH = 26;
+function handles() { return cmp() ? { a: HV.drag && HV.drag.h === "a" ? HV.drag.t : ms(S.from), b: HV.drag && HV.drag.h === "b" ? HV.drag.t : ms(S.at || WM()) } : { one: HV.drag && HV.drag.h === "one" ? HV.drag.t : ms(S.at || WM()) }; }
+function bucketsIn(v0, v1, step) {
+  const b0 = Math.floor(v0 / step) * step, nb = Math.ceil((v1 - b0) / step) + 1;
+  const B = Array.from({ length: nb }, () => ({ add: 0, edit: 0, delete: 0, n: 0, evs: [] }));
+  for (const e of events()) { const t = ms(e.t), i = Math.floor((t - b0) / step); if (i < 0 || i >= nb) continue; B[i][e.op]++; B[i].n++; B[i].evs.push(e); }
+  return { b0, B };
+}
+function drawHist() {
+  const el = document.getElementById("hist"); if (!el) return;
+  /* Rows top to bottom: the milestones' lane (the graph's track), the bars, the time axis with its dates, the chosen moment's chip. */
+  const vr = variant(), bars = vr !== "ms", showMs = vr !== "bars", HB = bars ? 86 : 0;
+  const laneY = HT + 28, barsTop = HT + (showMs ? 50 : 0), chipY = barsTop + HB + 18 + 12;
+  const W = el.clientWidth, H = chipY + 12, v0 = HV.v0, v1 = HV.v1, span = v1 - v0, X = t => (t - v0) / span * W;
+  const wm = ms(WM()), step = bucketStep(span, W), { b0, B } = bucketsIn(v0, v1, step);
+  HV.yt = Math.max(1, ...B.map(b => b.n)); if (!HV.ymax) HV.ymax = HV.yt; if (Math.abs(HV.yt - HV.ymax) > .01) kick();
+  const Y = c => c / HV.ymax * (HB - 8), base = barsTop + HB, INK = "#0f172a", B0 = base, inLane = HV.hoverY !== null && HV.hoverY < barsTop;
+  let s = `<svg width="${W}" height="${H}" style="display:block"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#e2e8f0" stroke-width="2.5"/></pattern>
+    <filter id="ks2" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-opacity=".25"/></filter></defs>`;
+  // the y scale: two faint lines with their counts
+  if (bars) for (const f of [.5, 1]) { const c = Math.round(HV.ymax * f); if (!c) continue; const y = base - Y(c); s += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(15,23,42,.05)"/><text x="2" y="${y - 3}" font-size="9.5" fill="#94a3b8">${c}</text>`; }
+  // the time axis: day lines strong, others faint; labels as Kibana writes them
+  const ts = tickStep(span, W);
+  for (let t = Math.ceil(v0 / ts) * ts; t <= v1; t += ts) {
+    const x = X(t), day = t % 864e5 === 0, lab = ts >= 864e5 || day ? dayOf(iso(t)) : iso(t).slice(11, 16);
+    s += `<line x1="${x}" y1="${barsTop}" x2="${x}" y2="${B0}" stroke="rgba(15,23,42,${day ? .09 : .04})"/>`; if (x < 18 || x > W - 18) continue; s += `<text x="${x}" y="${base + 13}" font-size="10.5" fill="${day ? "#334155" : "#94a3b8"}" font-weight="${day ? 600 : 400}" text-anchor="middle">${lab}</text>`;
+  }
+  const xf = X(wm);
+  if (xf < W) s += `<rect x="${Math.max(0, xf)}" y="${HT}" width="${W - Math.max(0, xf)}" height="${B0 + 8 - HT}" fill="url(#hatch)"/>`;
+  const h = handles();
+  if (h.a !== undefined) { const xa = Math.max(0, X(h.a)), xb = Math.min(W, X(h.b)); if (xb > xa) s += `<rect x="${xa}" y="${HT}" width="${xb - xa}" height="${B0 + 8 - HT}" fill="rgba(15,23,42,.06)"/>`; }
+  const bw = X(b0 + step) - X(b0), gap = bw > 6 ? 1.5 : bw > 3 ? .75 : 0;
+  const hb = HV.hover !== null && !HV.drag && !inLane ? Math.floor(((HV.hover / W) * span + v0 - b0) / step) : -1;
+  if (bars) B.forEach((b, i) => {
+    if (!b.n) return;
+    const x = X(b0 + i * step) + gap / 2, w = Math.max(1.2, bw - gap); let y = base;
+    for (const k of ["add", "edit", "delete"]) { if (!b[k]) continue; const hh = Y(b[k]); y -= hh; s += `<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="${KIND_COL[k]}" opacity="${i === hb ? 1 : .78}"/>`; }
+  });
+  s += `<line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="#cbd5e1"/>`;
+  const msl = showMs ? milestones().filter(m => !(m.minor && S.hideSmall)) : [], hm = !showMs ? null : HV.hover !== null && !HV.drag ? (inLane ? nearMilestone(HV.hover, X, W) : null) : HV.hover === null && S._ms ? msl.find(m => m.id === S._ms) || null : null;
+  if (showMs) s += `<line x1="0" y1="${laneY}" x2="${W}" y2="${laneY}" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>`;
+  for (const m of msl) {
+    const x = m.kind === "proposal" ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); if (x < -2 || x > W + 2) continue;
+    const c = MS_LOOK[m.kind].c, on = hm === m, r = on ? 6 : m.minor ? 3 : 4.6;
+    // the release's flag: a stem and a pennant over the point, as the graph's track draws a tag
+    if (m.release) s += `<path d="M${x} ${laneY - r - 1}V${laneY - 22}" stroke="#64748b" stroke-width="1.4"/><path d="M${x} ${laneY - 22}h10l-2.8 3.2 2.8 3.2h-10z" fill="#64748b"/>`;
+    s += m.kind === "proposal"
+      ? `<circle cx="${x}" cy="${laneY}" r="${r}" fill="#fff" stroke="${c}" stroke-width="1.8" stroke-dasharray="2.2 2"/>`
+      : `<circle cx="${x}" cy="${laneY}" r="${r}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
+    s += `<text x="${Math.min(Math.max(x, 10), W - 12)}" y="${laneY + 17}" font-size="${m.minor ? 10 : 10.5}" font-weight="${on ? 700 : 500}" fill="${on ? c : m.minor ? "#94a3b8" : "#64748b"}" text-anchor="middle">${m.ref}</text>`;
+  }
+
+  // the moment "now": a green dashed line, with nothing written on it
+  if (xf >= 0 && xf <= W) s += `<line x1="${xf}" y1="${HT}" x2="${xf}" y2="${base}" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  const chip = (x, y, text, hollow) => { const w = text.length * 6.1 + 16; x = Math.min(Math.max(x, w / 2), W - w / 2); return `<rect x="${x - w / 2}" y="${y - 9}" width="${w}" height="18" rx="9" fill="${hollow ? "#fff" : INK}" stroke="${hollow ? INK : "none"}" stroke-width="1.4"/><text x="${x}" y="${y + 3.8}" font-size="10.5" font-weight="600" fill="${hollow ? INK : "#fff"}" text-anchor="middle">${text}</text>`; };
+  const handle = (t, text, hollow, chipY) => {
+    const x = X(t), out = x < 0 || x > W, cx = Math.min(Math.max(x, 0), W);
+    if (out) return chip(cx, chipY, (x < 0 ? "‹ " : "") + text + (x > W ? " ›" : ""), hollow);
+    return `<line x1="${x}" y1="${HT}" x2="${x}" y2="${B0}" stroke="${INK}" stroke-width="1.6"/><circle cx="${x}" cy="${B0}" r="5.5" fill="${hollow ? "#fff" : INK}" stroke="${hollow ? INK : "#fff"}" stroke-width="2" filter="url(#ks2)"/>` + chip(x, chipY, text, hollow);
+  };
+  const lab = t => t >= wm - 3e4 ? "Now" : fmt(iso(t));
+  if (h.one !== undefined) s += handle(h.one, lab(h.one), false, chipY);
+  else { s += handle(h.a, "A " + lab(h.a), true, HT - 11); s += handle(h.b, "B " + lab(h.b), false, chipY); }
+  if (HV.drag && HV.drag.kind === "brush") { const a = Math.min(HV.drag.x0, HV.drag.x1), b = Math.max(HV.drag.x0, HV.drag.x1); s += `<rect x="${a}" y="${HT}" width="${b - a}" height="${B0 - HT}" fill="rgba(37,99,235,.12)" stroke="#2563eb" stroke-dasharray="3 2"/>`; }
+  let tip = "";
+  if (hm) { const x = Math.min(X(ms(hm.at)), W); tip = `<div class="htip mt" style="left:${Math.min(Math.max(x - 160, 0), W - 320)}px;top:${H + 2}px">${milestoneCard(hm)}<div class="f">${hm.kind === "proposal" ? "Click to open the draft" : `Click to read the notes at ${fmt(hm.at)}`}</div></div>`; }
+  else if (bars && hb >= 0 && HV.hover !== null && !HV.drag) {
+    const x = HV.hover, t = v0 + x / W * span;
+    s += `<line x1="${x}" y1="${HT}" x2="${x}" y2="${base}" stroke="#2563eb" stroke-width="1" stroke-dasharray="2 2"/>`;
+    const b = B[hb], bs = b0 + hb * step;
+    const evs = b ? b.evs.slice(-4).reverse().map(e => `<div class="e">${fmt(e.t).split(", ")[1]} · ${PEOPLE[e.who].name.split(" ")[0]} ${KIND_NAME[e.op]} “${esc(snip(e.body || lastBody(e.id, e.t) || "", 34))}”</div>`).join("") : "";
+    const cnt = b && b.n ? `<div class="c">${["add", "edit", "delete"].filter(k => b[k]).map(k => `<span style="color:${KIND_COL[k]}">${b[k]} ${KIND_NAME[k]}</span>`).join("")}</div>${evs}${b.n > 4 ? `<div class="e">and ${b.n - 4} more</div>` : ""}` : `<div class="e">No changes</div>`;
+    const tl = Math.min(Math.max(x - 135, 0), W - 270);
+    tip = t > wm ? `<div class="htip" style="left:${tl}px;top:${H + 2}px"><div class="h">${fmtY(iso(t))}</div><div class="e">Later than now: it cannot be chosen yet.</div></div>`
+      : `<div class="htip" style="left:${tl}px;top:${H + 2}px"><div class="h">${fmt(iso(bs))} – ${fmt(iso(Math.min(bs + step, wm)))}</div>${cnt}<div class="f">Click to read the notes at ${fmt(iso(t))}</div></div>`;
+  }
+  el.innerHTML = s + "</svg>" + tip;
+  const sp = document.getElementById("hspan"); if (sp) sp.textContent = `${spanText(Math.min(v1, wm) - v0)} · bar ${spanText(step)}`; sp.title = `${fmtY(iso(v0))} – ${fmtY(iso(Math.min(v1, wm)))}`;
+}
+function nearMilestone(x, X, W) { let best = null, d = 8; for (const m of milestones().filter(mm => !(mm.minor && S.hideSmall))) { const mx = m.kind === "proposal" ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); const dd = Math.abs(mx - x); if (dd < d) { d = dd; best = m; } } return best; }
+function localX(el, e) { const r = el.getBoundingClientRect(); return (e.clientX - r.left) * el.clientWidth / r.width; }
+function commitMoment(h, t) {
+  const wm = ms(WM()); t = Math.min(t, wm);
+  const m = t >= wm - 6e4 ? null : iso(t);
+  if (h === "one") return go({ at: m, stepIdx: null, edit: null, conflict: null });
+  let a = h === "a" ? t : ms(S.from), b = h === "b" ? t : ms(S.at || WM());
+  if (a > b) [a, b] = [b, a];
+  go({ from: iso(a), at: b >= wm - 6e4 ? null : iso(b), stepIdx: null });
+}
+function mountHist() {
+  const el = document.getElementById("hist"); if (!el) return;
+  const tAt = x => HV.v0 + x / el.clientWidth * (HV.v1 - HV.v0), xAt = t => (t - HV.v0) / (HV.v1 - HV.v0) * el.clientWidth;
+  const near = x => { const h = handles(); let best = null, d = 10; for (const [k, t] of Object.entries(h)) { const dd = Math.abs(xAt(t) - x); if (dd < d) { d = dd; best = k; } } return best; };
+  el.onpointerdown = e => {
+    const x = localX(el, e), h = near(x);
+    if (h) HV.drag = { kind: "handle", h, t: tAt(x) };
+    else if (S.phone) HV.drag = { kind: "pan", x0: x, a: HV.g0, b: HV.g1, moved: false };
+    else HV.drag = { kind: "brush", x0: x, x1: x };
+    el.setPointerCapture(e.pointerId); el.classList.add("grabbing");
+  };
+  el.onpointermove = e => {
+    const x = localX(el, e), d = HV.drag;
+    if (!d) { const r = el.getBoundingClientRect(); HV.hover = x; HV.hoverY = (e.clientY - r.top) * el.clientWidth / r.width; drawHist(); el.style.cursor = near(x) ? "ew-resize" : ""; return; }
+    if (d.kind === "handle") { const [d0] = domain(); d.t = Math.min(Math.max(tAt(x), d0), ms(WM())); drawHist(); }
+    else if (d.kind === "brush") { d.x1 = x; drawHist(); }
+    else { const dx = x - d.x0; if (Math.abs(dx) > 3) d.moved = true; if (d.moved) { const sh = -dx / el.clientWidth * (d.b - d.a); setView(d.a + sh, d.b + sh, false); } }
+  };
+  el.onpointerup = e => {
+    const d = HV.drag; HV.drag = null; el.classList.remove("grabbing");
+    if (!d) return;
+    const x = localX(el, e);
+    if (d.kind === "handle") return commitMoment(d.h, d.t);
+    if (d.kind === "brush" && Math.abs(d.x1 - d.x0) > 6) { setView(tAt(Math.min(d.x0, d.x1)), tAt(Math.max(d.x0, d.x1))); return; }
+    if (d.kind === "pan" && d.moved) return;
+    const rr = el.getBoundingClientRect(), y = (e.clientY - rr.top) * el.clientWidth / rr.width, laneBottom = HT + 50;
+    const W = el.clientWidth, m = variant() === "bars" || y > laneBottom ? null : nearMilestone(x, tt => (tt - HV.v0) / (HV.v1 - HV.v0) * W, W);
+    if (m && m.link) return go({ page: "draft", picker: false, mode: "one", from: null });
+    const t = m ? ms(m.at) : tAt(x); if (t > ms(WM())) { drawHist(); return; }
+    if (!cmp()) return commitMoment("one", t);
+    const h = handles(); commitMoment(Math.abs(t - h.a) < Math.abs(t - h.b) ? "a" : "b", t);
+  };
+  el.onpointerleave = () => { if (!HV.drag) { HV.hover = null; HV.hoverY = null; drawHist(); } };
+    el.addEventListener("wheel", e => {
+    e.preventDefault();
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) { const dl = (e.deltaX || e.deltaY) / el.clientWidth * (HV.g1 - HV.g0); setView(HV.g0 + dl, HV.g1 + dl); return; }
+    const t = tAt(localX(el, e)), f = Math.exp(e.deltaY * (e.ctrlKey ? .012 : .0022));
+    setView(t - (t - HV.g0) * f, t + (HV.g1 - t) * f);
+  }, { passive: false });
+  redraw();
+}
+
+/* ======================= overlays ======================= */
+function dialog() {
+  const d = S.dlg; if (!d) return "";
+  let h = "";
+  if (d.kind === "delete") {
+    const n = notesAt(WM()).find(x => x.id === d.id);
+    h = `<h3>Delete this note?</h3><div class="sub">It disappears from now on for everyone in <b>${esc(ORG.name)}</b>. At every earlier moment it is still there, and the history shows who deleted it and when.</div>
+      <div class="qt">${esc(n.body)}</div>
+      <div class="ft"><button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 dpri" onclick="doDelete()">Delete</button></div>`;
+  } else if (d.kind === "new") {
+    h = `<h3>New note</h3><div class="sub">A note about <b>${esc(ITEM.title)}</b>. Everyone in ${esc(ORG.name)} who has this page open at “now” sees it at once.</div>
+      <textarea class="inp" id="compose" rows="5" style="resize:vertical" placeholder="Write a note about ${esc(ITEM.title)}…" oninput="S.compose=this.value">${esc(S.compose)}</textarea>
+      <div class="ft"><button class="btn2" onclick="go({dlg:null,compose:''})">Cancel</button><button class="btn2 pri" onclick="addNote()">Add note</button></div>`;
+  } else if (d.kind === "publish") {
+    const v = revInForce(WM()), c = count(changes(v ? notesAt(v.t) : [], notesAt(WM())));
+    h = `<h3>Publish v${(v ? v.n : 0) + 1}</h3><div class="sub">The published page will show the notes as they are now, until the next revision. The draft starts empty again.</div>
+      <div class="lab">Title</div><input class="inp" id="revtitle" placeholder="Partial refunds" value="${esc(d.title)}">
+      <div class="lab" style="margin-top:12px">Comment <span style="font-weight:400;color:var(--muted)">· shown under the scale when the revision is chosen</span></div><textarea class="inp" id="revcomment" rows="3" style="resize:vertical">Partial refunds keep the original fee: the note says so before the finance review.</textarea>
+      <div class="lab" style="margin-top:12px">Release <span style="font-weight:400;color:var(--muted)">· optional; a flag over the revision on the scale</span></div><input class="inp" id="revrelease" placeholder="handbook 2026.12">
+      <div class="dsec">What the revision changes</div><div>${sumHtml(c)}</div>
+      <div class="ft"><button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 pri" onclick="doPublish()">Publish v${(v ? v.n : 0) + 1}</button></div>`;
+  }
+  return `<div class="scrim" onclick="go({dlg:null})"></div><div class="dlg"><div class="grab"></div>${h}</div>`;
+}
+function sheet() {
+  if (!S.sheet) return "";
+  const n = notesAt(WM()).find(x => x.id === S.sheet);
+  return `<div class="scrim" onclick="go({sheet:null})"></div><div class="sheet"><div class="grab"></div><div class="sq">${esc(n.body)}</div>
+    <div class="it" onclick="startEdit('${n.id}')">${I.pen}Edit</div>
+    <div class="it bad" onclick="askDelete('${n.id}')">${I.trash}Delete</div></div>`;
+}
+function toast() { return S.toast ? `<div class="toast">${I.check}<span>${esc(S.toast.text)}</span>${S.toast.link ? `<a onclick="${S.toast.link[1]}">${S.toast.link[0]}</a>` : ""}</div>` : ""; }
+
+/* ======================= render ======================= */
+function render() {
+  const app = document.getElementById("app");
+  app.className = "device" + (S.phone ? " phone" : "");
+  app.classList.toggle("paint-authors", cmp() && paintSource() === "authors");
+  app.innerHTML = `${urlbar()}${header()}<div class="body">${sidebar()}<div class="content">${strip()}${canvasArea()}</div>${card()}${dialog()}${sheet()}${toast()}
+    ${S.drawer ? `<div class="scrim" onclick="go({drawer:false})"></div>${sidebar("drawer")}` : ""}</div>`;
+  if (S.focus) { const c = document.getElementById("compose"); if (c) { c.focus(); c.setSelectionRange(c.value.length, c.value.length); } }
+  anchorCard();
+  bindCanvas();
+  if (S.picker) mountHist();
+  renderNav(); renderNotes(); fit();
+}
+
+/* The card hangs from the pill, as the graph viewer's Popper does: 11 px under it, its right edge under the pill's. */
+function anchorCard() {
+  const card = document.querySelector(".card"), pill = document.querySelector(".hdr .pill"), body = document.querySelector(".body");
+  if (!card || !pill || S.phone) return;
+  const k = body.getBoundingClientRect().width / body.offsetWidth, pr = pill.getBoundingClientRect(), br = body.getBoundingClientRect();
+  card.style.top = ((pr.bottom - br.top) / k + 11) + "px";
+  card.style.right = Math.max(10, (br.right - pr.right) / k) + "px";
+}
+
+/* ======================= the screens ======================= */
+const AFTER_V5 = { revs: [{ n: 6, t: "2026-11-10T11:25", who: "anna", title: "Partial refunds" }] };
+const SCREENS = [
+  ["Now", [
+    ["1.1", "The notes now", {}],
+    ["1.2", "Writing a note", { dlg: { kind: "new" }, compose: T.n7, focus: true }],
+    ["1.3", "Someone else's note arrives", { extra: [{ t: "2026-11-10T11:25", who: "olga", op: "add", id: "o1", body: T.n6 }], fresh: "o1" }],
+    ["1.4", "An item with no notes", { _empty: true }],
+  ]],
+  ["Editing and deleting", [
+    ["2.1", "Editing a note", { edit: "n2", editText: T.n2mine, base: "2026-11-08T13:02" }],
+    ["2.2", "Someone changed it meanwhile", { extra: [{ t: "2026-11-10T11:25", who: "olga", op: "edit", id: "n2", body: T.n2c }], edit: "n2", editText: T.n2mine, base: "2026-11-08T13:02", conflict: { id: "n2", mine: T.n2mine, kind: "changed", by: { t: "2026-11-10T11:25", who: "olga", op: "edit" } } }],
+    ["2.3", "Deleting a note", { dlg: { kind: "delete", id: "n4" } }],
+    ["2.4", "Deleted while being edited", { extra: [{ t: "2026-11-10T11:25", who: "ilya", op: "delete", id: "n4" }], edit: "n4", editText: T.n4mine, base: "2026-11-06T10:15", conflict: { id: "n4", mine: T.n4mine, kind: "deleted", by: { t: "2026-11-10T11:25", who: "ilya", op: "delete" } } }],
+  ]],
+  ["The scale of the notes", [
+    ["3.1", "All the history", { picker: true }],
+    ["3.2", "Zoomed into one morning", { picker: true, _view: ["2026-10-14T09:00", "2026-10-14T14:00"] }],
+    ["3.3", "A moment chosen", { picker: true, at: PAST, _view: ["2026-11-01T00:00", "2026-11-10T18:00"] }],
+    ["3.6", "Bars alone", { picker: true, _variant: "bars" }],
+    ["3.5", "A revision over the bars", { picker: true, _ms: "v3", _view: ["2026-10-25T00:00", "2026-11-10T18:00"] }],
+    ["3.4", "Two moments, A and B", { picker: true, mode: "diff", from: PAST, _view: ["2026-11-01T00:00", "2026-11-10T18:00"] }],
+  ]],
+  ["The notes in the past", [
+    ["4.1", "At a past moment", { at: PAST }],
+    ["4.2", "Diff: A against B", { mode: "diff", from: PAST }],
+    ["4.3", "Stepping through the changes", { mode: "diff", from: PAST, stepIdx: 2, dcard: true }],
+    ["4.4", "Side by side", { mode: "split", from: PAST }],
+    ["4.5", "Before the first note", { at: BEFORE }],
+    ["4.6", "A moment not come yet", { at: FUTURE }],
+  ]],
+  ["Published revisions", [
+    ["5.1", "The published notes", { page: "published" }],
+    ["5.2", "The revisions on the scale", { page: "published", picker: true, _ms: "v4" }],
+    ["5.3", "Between two revisions", { page: "published", at: PAST2, picker: true }],
+    ["5.4", "Two revisions compared", { page: "published", mode: "diff", from: "2026-11-04T12:00", at: "2026-11-07T09:30", picker: true }],
+    ["5.5", "Two revisions side by side", { page: "published", mode: "split", from: "2026-10-09T12:00", at: "2026-11-07T09:30" }],
+    ["5.6", "The draft", { page: "draft" }],
+    ["5.7", "Publishing", { page: "draft", dlg: { kind: "publish", title: "Partial refunds" } }],
+    ["5.8", "Published", Object.assign({ page: "published", toast: { text: "Published as v6" } }, AFTER_V5)],
+  ]],
+  ["Phone only", [
+    ["6.1", "A note's actions", { phone: true, sheet: "n2" }],
+    ["6.2", "The tree in a drawer", { phone: true, drawer: true }],
+  ]],
+];
+const PATHS = [
+  ["Edit with a conflict", "Two people change one note", [["Edit", "2.1"], ["Conflict", "2.2"]]],
+  ["Back in time", "Choose a moment on the scale, then compare it with now", [["Scale", "3.1"], ["Revision", "3.5"], ["Moment", "3.3"], ["A and B", "3.4"], ["Diff", "4.2"], ["Side by side", "4.4"]]],
+  ["Publish", "The draft becomes v6", [["Published", "5.1"], ["Draft", "5.6"], ["Publish", "5.7"], ["v6", "5.8"]]],
+];
+const NOTES = {
+  "1.1": ["The notes now", [
+    "The page lies on the canvas, as every view of Maxitor does: notes are cards; as on every canvas of maxitor-web, the wheel or a two-finger swipe moves the picture, a pinch or Ctrl/⌘ with the wheel zooms it, dragging moves it, ⊡ shows everything. The filter at the top left (authors), the zoom at the bottom left with the ways to show the notes — cards or a table — as the ERD's layout buttons; the pills at the top centre are only for switching the data itself, and the notes have one set. No title: the page is named by its row in the tree.",
+    "The plugin's three pages are three nodes under the item: Notes, Published notes, Draft with its count.",
+    "A page with no <code>at</code> reads at the watermark: the pill says “Now” with a green dot. Writing, editing and deleting are offered only here; “New note” stands at the top right of the canvas, apart from the cards.",
+    "The pill is the core's (#98), the graph viewer's <code>VersionButton</code> with its arrows, on the right of the top row beside who is here now; its card opens under it from the right edge.",
+  ]],
+  "1.2": ["Writing a note", ["Writing is not mixed with the notes: “New note” at the top right of the canvas, only at “now”, opens a dialog — a sheet on a phone. “Add note” writes it under the organization's lock with the core's <code>change_time</code>; it appears first among the cards for everyone. In the mockup an empty field is filled with an example on the first click."]],
+  "1.3": ["Someone else's note arrives", [
+    "The core sends <code>panel.watermark</code>; a page at “now” reads again, so Olga's note appears without a reload, marked <b>new</b>. A page in the past or in a comparison does not read again: its answer cannot change.",
+    "<span class=\"lnk\" onclick=\"arrive()\">This link</span> plays the event on any “now” screen.",
+  ]],
+  "1.4": ["An item with no notes", ["Only the field to write the first one."]],
+  "2.1": ["Editing a note", ["The edit carries <code>base_moment</code>: the start of the version the person saw. Save writes a new version and closes the old one; the old text stays readable at every earlier moment."]],
+  "2.2": ["Someone changed it meanwhile", [
+    "Olga saved first, so the note's open version began after <code>base_moment</code>: <code>EditNoteAction</code> answers with a conflict and the page reads again.",
+    "Their text is shown; the person's own text is kept, with the difference marked.",
+  ]],
+  "2.3": ["Deleting a note", ["<code>DeleteNoteAction</code> closes the last version with <code>closed_by</code> and <code>closed_operation</code>: gone from now on, still there at every earlier moment."]],
+  "2.4": ["Deleted while being edited", ["A deleted note cannot be edited. The person's text is not lost: it can be added as a new note."]],
+  "3.1": ["The scale of the notes: all the history", [
+    "The notes change continuously, so the scale has no points: it is a histogram, as in Kibana. Each bar counts the changes in its stretch of time — added, changed, deleted — and the bars get finer as you zoom in: a day, an hour, five minutes, a minute.",
+    "Wheel or pinch zooms smoothly around the pointer; a sideways swipe or Shift-wheel moves the time; the presets 1 h … All jump with the same smooth motion. One scale only, as in Elastic: drag across the bars to zoom into that stretch; All shows the whole history again.",
+    "A click anywhere chooses that moment, to the minute: the address keeps it as chosen. Hatched is later than the watermark and cannot be chosen.",
+    "The card is the graph viewer's <code>VersionPicker</code>: the same head, the “i”, the switch One / Diff / Side by side, the message of the chosen moment under the track.",
+  ]],
+  "3.2": ["Zoomed into one morning", ["14 Oct: sixteen edits of the fraud threshold in two and a half hours. At this zoom a bar is ten minutes; hovering a bar lists its changes."]],
+  "3.3": ["A moment chosen", ["The chosen moment is a dark line with its chip under the axis, as the graph's knob is; it can be dragged. Under the scale: the comment of the milestone in force at that moment — the revision v3 here — as the plugin returns it for the chosen milestone."]],
+  "3.6": ["Bars alone", ["A page that declares only <code>read</code>: its history is the histogram and nothing else, as a list of files or a page with no milestones of its own. Without milestones there are no comments, so nothing stands under the scale."]],
+  "3.5": ["A revision over the bars", [
+    "The notes page declares both: <code>read</code> gives the bars, <code>milestones</code> the published revisions. A milestone is drawn the same in every variant: a point on the axis where it happened, over bars or alone.",
+    "Its colour is its <code>kind</code>, one of the core's fixed looks to which the plugin gives a meaning: here purple is a revision and amber the draft — in the graph the colours say how a pull request was merged. Its size is the plugin's <code>minor</code>: here a small point is a revision that only edited notes, adding or removing none — in the graph a pull request that did not change the graph; the switch of three dots in the card's head hides the small points. A flag over a point is the plugin's <code>release</code>: here the release a revision was published as, an optional label of publishing; in the graph a release, in the story map a shipped release. The draft is an amber dashed point at the right edge.",
+    "Hovering a flag asks <code>note_milestone_card</code> for that milestone and the core draws its card from the data: badge, ref, when, title, meta, author, chips, summary — the graph viewer's card. A click reads the notes at the revision's moment; a click on the draft opens the draft's page.",
+  ]],
+  "3.4": ["Two moments, A and B", [
+    "Diff and Side by side hold two handles: A's hollow chip above, B's dark chip below, the stretch between them shaded. Each is dragged; a click moves the nearer one.",
+    "Under the scale the comments of the milestones in force at A and at B, A's on the left and B's on the right, and the milestones between them — as the graph's “N versions between”. A page with bars alone has nothing under its scale: comments belong to milestones.",
+  ]],
+  "4.1": ["At a past moment", [
+    "The address holds <code>at</code>; the pill shows the moment with a blue dot and a “Now” button beside it; The arrows step through the changes of the notes.",
+    "The past is only looked at: no “New note”, no edit, no delete, nothing to restore. Its answer never changes, whatever is written later.",
+  ]],
+  "4.2": ["Diff: A against B", [
+    "One panel; the page gets <code>at</code> = B and <code>against</code> = A, and draws on its own canvas every note with what happened to it between them — added, changed with its words marked, deleted, unchanged pale. The filter gains a section of changes; its gear shift paints the cards by change or by author.",
+    "The pill names both moments and the counts <code>+ − ~</code>; the page sends them to the core, which cannot know what a change of a note is.",
+  ]],
+  "4.3": ["Stepping through the changes", [
+    "<code>ChangeStepper</code> from <code>@maxitor/panel</code>, at the top right of the canvas: the arrows, or Shift + ↑ ↓, go change by change; the camera glides to the note, and the step opens its card beside it — as the ERD does.",
+    "The card is <code>@maxitor/panel</code>'s <code>DiffCard</code>: the note and its status disk, then what changed — a property by its path, before struck and after; an added or removed note in one line. The canvas places it beside the anchored note and closes it on Escape or a click outside; a click on the stepper moves it to the next change.",
+    "The frame, the place and the behaviour are the core's library, running in the page; the words are the plugin's: its page answers the differences of an anchor between <code>against</code> and <code>at</code>, because only the plugin knows what a change of its object is.",
+  ]],
+  "4.4": ["Side by side", [
+    "The two panels are the core's: it lays them out as maxitor-web's SideBySide does — each with its head, its letter (A brown, B blue) and its version, and its own camera — and opens the same page of the plugin in each. The page never knows there are two: it draws one canvas from its context.",
+    "Panel A gets <code>at</code> = A, <code>against</code> = B, <code>side</code> = a: the notes at A, marked with what became of them by B. Panel B gets <code>at</code> = B, <code>against</code> = A, <code>side</code> = b: the notes at B, marked with what they are against A. Each side's filter lists only the changes it can show.",
+    "The address parameters are one for both panels: an author or the table switched in one is switched in the other. Track, on by default, works through anchors: the page marks each note with its <code>data-room-anchor</code>; the core passes the anchor under the pointer to the other panel, which marks the note and brings it into view, keeping its zoom.",
+    "On a phone one panel at a time, switched by A / B in its head, opening on B.",
+  ]],
+  "4.5": ["Before the first note", ["An early moment is a valid moment: the page says there were no notes and when the first was written."]],
+  "4.6": ["A moment not come yet", ["An <code>at</code> later than the watermark is refused, because its answer could still change."]],
+  "5.1": ["The published notes", ["The notes as the revision in force holds them: its number, title, author and moment. When the notes changed since, the page leads to the draft."]],
+  "5.2": ["The revisions on the scale", [
+    "The published page declares only <code>milestones</code>: no bars, and each revision stands where it was published, on the same time scale with the same zoom — a revision of last week and one of an hour ago are not drawn at an equal step.",
+    "The draft is an amber dashed point at the right edge; hovering a point shows its card, drawn by the core from <code>note_milestone_card</code>'s data.",
+  ]],
+  "5.3": ["Between two revisions", ["At 6 Nov, 18:00 the notes had already changed, but v4 was not published yet: the page shows v3, as at any moment from 4 Nov, 12:00 to 7 Nov, 09:30. The address keeps the moment as chosen."]],
+  "5.4": ["Two revisions compared", ["Diff between v3 and v4, the same parts as the notes' Diff: the card holds A and B on the track and both revisions' messages; the page lists the changes."]],
+  "5.5": ["Two revisions side by side", ["v1 against v4: what the first review said and what is in force today, a note per row."]],
+  "5.6": ["The draft", ["What changed since the last revision, note by note. The draft is itself a comparison, so Diff and Side by side are not offered on it."]],
+  "5.7": ["Publishing", ["<code>PublishNotesAction</code>: the next number, a title, a comment, an optional release, the author and the moment. The comment is what the scale shows under itself when the revision is chosen; the release puts a flag over the revision's point."]],
+  "5.8": ["Published", ["v6 is in force; the draft is empty."]],
+  "6.1": ["A note's actions on a phone", ["The “⋯” button opens a sheet with Edit and Delete."]],
+  "6.2": ["The tree in a drawer", ["The button left of the logo opens the organization's tree; the pill takes the rest of the top row."]],
+};
+function base(o) { const s = JSON.parse(JSON.stringify(DEF)); Object.assign(s, JSON.parse(JSON.stringify(o))); return s; }
+function full(n) { for (const [, items] of SCREENS) for (const [k, , st] of items) if (k === n) return base(st); return null; }
+const KEYS = ["page", "view", "mode", "at", "from", "compose", "extra", "revs", "edit", "conflict", "dlg", "picker", "sheet", "drawer", "_empty", "stepper", "stepIdx", "_view", "_ms", "_variant"];
+function norm(o) { return JSON.stringify(KEYS.map(k => k === "dlg" && o.dlg ? { kind: o.dlg.kind, id: o.dlg.id } : o[k] === undefined ? null : o[k])); }
+function curNum() { const me = norm(S); for (const [, items] of SCREENS) for (const [n] of items) if (norm(full(n)) === me) return n; return null; }
+const EV_ALL = EV.slice(), REV_ALL = REV.slice();
+function openNum(n) {
+  const ph = S.phone, st = full(n);
+  for (const k of Object.keys(S)) delete S[k];
+  Object.assign(S, st, n.startsWith("6.") ? {} : { phone: ph });
+  EV.length = 0; REV.length = 0; if (!S._empty) { EV.push(...EV_ALL); REV.push(...REV_ALL); }
+  HV.ymax = 0;
+  for (const k of Object.keys(CAM)) delete CAM[k];
+  NAV.length = 0;
+  if (S._view) setView(ms(S._view[0]), ms(S._view[1]), false); else fitAll(false);
+  render();
+}
+function renderNav() {
+  const cur = curNum();
+  let h = `<h1>Plugin template: notes now and in the past</h1><div class="sub">The screens of issue #97: the notes now; editing and deleting; any moment of the past, Diff and Side by side; published revisions and the draft. Every screen is live and has a phone version.</div>`;
+  h += `<div class="seg"><button class="${S.phone ? "" : "on"}" onclick="go({phone:false,drawer:false,sheet:null})">Desktop</button><button class="${S.phone ? "on" : ""}" onclick="go({phone:true})">Phone</button></div>`;
+  for (const [g, items] of SCREENS) {
+    h += `<div class="group">${g}</div>`;
+    for (const [n, t] of items) h += `<button class="screen${cur === n ? " on" : ""}" onclick="openNum('${n}')"><span class="n">${n}</span>${t}</button>`;
+  }
+  h += `<div class="group">Paths</div>`;
+  for (const [t, f, steps] of PATHS) h += `<div class="path"><div class="pt">${t}</div><div class="pf">${f}</div><div class="steps">${steps.map(([s, n], i) => `${i ? "<span>→</span>" : ""}<button onclick="openNum('${n}')">${s}</button>`).join("")}</div></div>`;
+  document.getElementById("nav").innerHTML = h;
+}
+function renderNotes() {
+  const n = curNum(), note = NOTES[n], dev = S.phone ? "phone, 375 × 812" : "desktop, 1360 × 840";
+  document.getElementById("cap").innerHTML = note ? `<b>${n} · ${note[0]}</b> — ${dev}, the screen is live` : `Free navigation through the mockup — ${dev}`;
+  document.getElementById("notes").innerHTML = note ? `<h2>${n} · ${note[0]}</h2><ul>${note[1].map(x => `<li>${x}</li>`).join("")}</ul>` : `<h2>Free navigation</h2><ul><li>You got here by moving through the screens themselves: everything written, edited, deleted and published is read back at every moment.</li></ul>`;
+}
+function fit() {
+  const stage = document.getElementById("stage"), sc = document.getElementById("scale"), box = document.getElementById("box");
+  const w = S.phone ? 375 : 1360, h = S.phone ? 812 : 840;
+  const k = Math.min(1, (stage.clientWidth - (stage.style.padding === "0px" ? 0 : 48)) / w);
+  sc.style.transform = `scale(${k})`; box.style.height = h * k + "px";
+}
+window.addEventListener("resize", fit);
+/* As in maxitor-web's lib/stepKeys.ts: Shift + ← → step the moment, as the pill's arrows do; Shift + ↑ ↓ step a comparison's
+   changes, as ChangeStepper's arrows do. Not while one types. */
+document.addEventListener("keydown", e => {
+  if (!e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable=true]")) return;
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); step(e.key === "ArrowLeft" ? -1 : 1); }
+  else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && cmp()) { e.preventDefault(); stepCh(e.key === "ArrowUp" ? -1 : 1); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") go({ dcard: false, dlg: null, drawer: false, picker: false, sheet: null, stepper: false }); });
+fitAll(false);
+/* An address like #3.4 opens that screen; #3.4-phone opens its phone version; #bare hides the navigator and the notes. */
+(function fromHash() {
+  const h = location.hash.slice(1); if (!h) return render();
+  const bare = h.includes("bare"), m = h.match(/(\d+\.\d+)/);
+  if (bare) { document.getElementById("nav").style.display = "none"; document.getElementById("notes").style.display = "none"; document.getElementById("cap").style.display = "none"; document.getElementById("stage").style.padding = "0"; }
+  S.phone = h.includes("phone");
+  if (m) openNum(m[1]); else render();
+})();
+</script>
+</body>
+</html>

@@ -24,6 +24,7 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator
 
+from maxitor_plugin_sdk.history import HISTORY_FOLDER, history_problems
 from maxitor_plugin_sdk.plugin_schema import PluginSchemaError, read_plugin_schema
 
 SCHEMAS = Path(__file__).parent / "schemas"
@@ -56,6 +57,7 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-1", problems)
     if navigation is not None:
         problems.extend(navigation_problems(navigation))
+        problems.extend(_history_problems(package, passport, navigation))
     schema_file = passport.get("database", {}).get("schema")
     if schema_file is not None:
         problems.extend(_schema_problems(package.parent / schema_file))
@@ -65,6 +67,16 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
         if keys is not None:
             problems.extend(foreign_key_problems(keys, own_schema=passport["name"]))
     return {**passport, "formats": _formats(passport, navigation, keys_file, schema_file)}, problems
+
+
+def _history_problems(package: Path, passport: Mapping[str, Any], navigation: Mapping[str, Any]) -> list[str]:
+    """Each page's history against the passport's comparisons and the plugin's folder ``history/``."""
+    actions = {path.name.removesuffix("_action.py") for path in (package / HISTORY_FOLDER).glob("*_action.py")}
+    problems: list[str] = []
+    for node, _scope in _walk(navigation["nodes"]):
+        if "history" in node:
+            problems.extend(history_problems(passport.get("history"), node["id"], node["history"], actions))
+    return problems
 
 
 def _schema_problems(path: Path) -> list[str]:

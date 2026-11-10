@@ -5,3 +5,6 @@ foreign_keys:
   # A note's writer is a member of the note's organization: the core's user of that account there.
   - from: { table: note, columns: [organization_id, writer_id] }
     to:   { schema: core, table: user, columns: [organization_id, account_id] }
+  # A revision's publisher is a member of its organization too.
+  - from: { table: revision, columns: [organization_id, publisher_id] }
+    to:   { schema: core, table: user, columns: [organization_id, account_id] }

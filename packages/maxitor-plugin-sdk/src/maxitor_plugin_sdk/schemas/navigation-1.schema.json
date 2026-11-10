@@ -164,6 +164,44 @@
           "items": {
             "$ref": "#/$defs/childNode"
           }
+        },
+        "history": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Optional: how the page answers the core's time scale. bars, milestones and card name actions of the plugin's folder history/ (history/<name>_action.py).",
+          "properties": {
+            "compare": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "diff",
+                  "side_by_side"
+                ]
+              },
+              "description": "Narrows the passport's comparisons for this page; never widens them."
+            },
+            "read": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "The page's reading action; the SDK counts its bars over a stretch when the page names no bars of its own."
+            },
+            "bars": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "The plugin's own bars."
+            },
+            "milestones": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "The milestones in a stretch."
+            },
+            "card": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "One milestone's card."
+            }
+          }
         }
       },
       "oneOf": [

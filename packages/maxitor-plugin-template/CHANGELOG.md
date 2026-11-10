@@ -5,6 +5,19 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-11-11
+
+### Added
+
+- **Every past moment, and not the future.** Every reading action reads at the watermark or at the moment given, through the SDK's moment condition; a moment later than the watermark is refused with the watermark. A test reads the SQL of every reading method and refuses one without the condition or the organization. ([#97](https://github.com/bystrovmaxim/gnomon/issues/97))
+- **Editing and deleting a note**, `EditNoteAction` and `DeleteNoteAction`, each with the moment the editor saw: a note changed by someone else after it is a conflict naming who and when, and a deleted note cannot be edited; nothing is written by a refusal. Refusals are `NotesRefusalError`, with their HTTP status. ([#97](https://github.com/bystrovmaxim/gnomon/issues/97))
+- **Published revisions.** `PublishNotesAction` publishes an item's notes as its next number with a title, a comment and an optional release; the published notes and the draft are read at any moment. The table `revision` joins `schema.yaml`, and its publisher's key `foreign-keys.yaml`. ([#97](https://github.com/bystrovmaxim/gnomon/issues/97))
+- **The data of the core's time scale.** The notes page's reading action answers its bars over a stretch; the folder `history/` answers the milestones — the revisions, the draft last — and a milestone's card. The passport declares the comparisons its pages can draw, and `navigation.yaml` the item's notes, published notes and draft with their history. ([#97](https://github.com/bystrovmaxim/gnomon/issues/97))
+
+### Changed
+
+- **The documentation moved** to the repository's `docs/plugins/`: the plugin concept and versioned storage, which now shows its pattern on the notes. ([#97](https://github.com/bystrovmaxim/gnomon/issues/97))
+
 ## [0.4.0] — 2026-11-10
 
 ### Changed
