@@ -82,9 +82,9 @@ class CheckParams(BaseParams):
 class CheckResult(BaseResult):
     """How the check ended."""
 
-    state: Literal["active", "rejected", "draft", "gone"] = Field(
+    state: Literal["active", "rejected", "draft", "gone", "busy"] = Field(
         description="active; rejected with its reason; draft when the wheel could not be had yet; gone when the"
-        " version is no longer a draft",
+        " version is no longer a draft; busy when another installer is checking it",
     )
 
 
@@ -154,9 +154,21 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
     async def check_summary(
         self, params: CheckParams, state: BaseState, box: ToolsBox, connections: Connections
     ) -> CheckResult:
-        """Each refusal raises ``VersionRejectedError``; the end records the verdict in one transaction."""
+        """Held for the whole check, so two installers never check one version; the verdict in one transaction."""
         _ = state
         store = cast(DeployStorage, connections[DEPLOY_CONNECTION_KEY])
+        key = f"check:{params.version_id}"
+        if not await store.try_hold(key):
+            return CheckResult(state="busy")
+        try:
+            return await self._check(params, box, connections, store)
+        finally:
+            await store.release(key)
+
+    async def _check(
+        self, params: CheckParams, box: ToolsBox, connections: Connections, store: DeployStorage
+    ) -> CheckResult:
+        """Each refusal raises ``VersionRejectedError``; the end records the verdict in one transaction."""
         found = await store.version(params.version_id)
         if found is None or found["state"] != "draft":
             return CheckResult(state="gone")

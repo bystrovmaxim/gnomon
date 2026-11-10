@@ -92,3 +92,37 @@ async def test_an_install_cut_off_by_a_stop_is_finished_by_the_next_start(tmp_pa
     await one_round(again, connections, started=True)  # type: ignore[arg-type]
     finished = [(p.organization_id, p.row_id) for _c, a, p, _k in again.runs if isinstance(a, DeployAndInstallAction)]
     assert finished == [("o1", "r1"), ("o2", "r2")]
+
+
+async def test_a_refused_connection_is_reported_and_the_next_round_starts_again(tmp_path: Path, monkeypatch: Any) -> None:
+    """The database refuses: the round writes the critical event and the loop goes on, still taking up as a start."""
+    from maxitor.core.plugins.actions.report_connection_refused_action import ReportConnectionRefusedAction
+    from maxitor.plugin_installer import loop
+
+    from aoa.action_machine.exceptions.handle_error import HandleError
+
+    class Refusing(Machine):
+        rounds = 0
+
+        async def run(self, context: Any, action: Any, params: Any, connections: Any) -> Any:
+            if isinstance(action, TakeUpPendingAction):
+                Refusing.rounds += 1
+                if Refusing.rounds == 1:
+                    raise HandleError("PostgreSQL connection error: password authentication failed")
+                self.runs.append((context, action, params, set()))
+                raise SystemExit("stop the test")
+            self.runs.append((context, action, params, set()))
+            return None
+
+    async def no_wait(_seconds: float) -> None:
+        return None
+
+    monkeypatch.setattr(loop.asyncio, "sleep", no_wait)
+    machine = Refusing()
+    import pytest
+
+    with pytest.raises(SystemExit):
+        await loop.run_forever(machine, {"deploy": DeployStorage(connection_params="postgresql://unused")}, 60)  # type: ignore[arg-type]
+    reported = [p for _c, a, p, _k in machine.runs if isinstance(a, ReportConnectionRefusedAction)]
+    assert [p.reason for p in reported] == ["PostgreSQL connection error: password authentication failed"]
+    assert machine.runs[-1][2].started is True

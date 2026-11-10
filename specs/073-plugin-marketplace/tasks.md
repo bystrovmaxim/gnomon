@@ -84,3 +84,8 @@ Phase 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7 → 9 → 8 → 10: phase 9 ru
 ## Implementation strategy
 
 The order follows the issue: the domain, the formats, the database side, the installer, the actions, the page, the stand, the template, the tail. Each phase is committed with its tests green; the browser checks run against the stand after the push.
+
+## Phase 11: Convergence
+
+- [x] T039 Catch a refused database connection in the installer's round in `packages/maxitor/tools/plugin-installer/maxitor/plugin_installer/loop.py`, write `InstallerConnectionRefusedEvent` (critical) and try again the next round, per FR-005a (partial)
+- [x] T040 Claim a draft version in `CheckVersionAction` (`packages/maxitor/maxitor-core/maxitor/core/plugins/actions/check_version_action.py`) as `DeployAndInstallAction` claims an install, so two installers never check one version at once, per FR-009a (partial)

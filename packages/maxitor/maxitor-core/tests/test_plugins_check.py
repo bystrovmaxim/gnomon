@@ -187,7 +187,11 @@ class World:
         self.gateway = _gateway(handler or (lambda r: httpx.Response(200, content=self.data)))
         self.pool, self.connection = recording_pool(self.answer)
 
+    held = True
+
     def answer(self, query: str, params: tuple[Any, ...]) -> Any:
+        if query.startswith("SELECT pg_try_advisory_lock"):
+            return self.held
         if query.startswith("SELECT greatest"):
             return MOMENT
         if "FROM plugin_version v JOIN plugin p" in query:
@@ -270,3 +274,19 @@ async def test_the_same_owners_plugin_takes_the_new_version(tmp_path: Path) -> N
     assert await world.run() == "active"
     assert world.updates("plugin")[0][1][0] == "withdrawn"  # the waiting plugin steps aside
     assert world.updates("plugin_version")[-1][1][0] == "existing"
+
+
+async def test_a_version_another_installer_is_checking_is_left_alone(tmp_path: Path) -> None:
+    world = World(tmp_path)
+    world.held = False
+    assert await world.run() == "busy"
+    assert not any(q.startswith(("UPDATE", "INSERT")) for q in world.connection.queries())
+
+
+async def test_the_hold_is_let_go_whatever_the_verdict(tmp_path: Path) -> None:
+    for world in (World(tmp_path / "a"), World(tmp_path / "b", stored=False, handler=lambda r: httpx.Response(200, content=b"x"))):
+        await world.run()
+        queries = world.connection.queries()
+        assert queries[0] == "SELECT pg_try_advisory_lock(hashtext($1))"
+        assert queries[-1] == "SELECT pg_advisory_unlock(hashtext($1))"
+        assert world.connection.statements[0][1] == world.connection.statements[-1][1] == (f"check:{VERSION}",)

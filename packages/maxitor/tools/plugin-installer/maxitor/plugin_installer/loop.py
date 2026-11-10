@@ -6,6 +6,7 @@ The installer's loop: on start and then every period, take up the queue and fini
 
     TakeUpPendingAction ──► for each version: CheckVersionAction
                         └─► for each install: DeployAndInstallAction
+    the database refuses the connection ──► ReportConnectionRefusedAction, and the next round tries again
 
 Every step is an action of the domain plugins run by the machine with the installer's own context; there is no
 route. A row another installer holds is left to it; a failed row records its reason and the loop goes on.
@@ -19,11 +20,13 @@ from typing import Any
 
 from maxitor.core.plugins.actions.check_version_action import CheckParams, CheckVersionAction
 from maxitor.core.plugins.actions.deploy_and_install_action import DeployAndInstallAction, DeployParams
+from maxitor.core.plugins.actions.report_connection_refused_action import RefusedParams, ReportConnectionRefusedAction
 from maxitor.core.plugins.actions.take_up_pending_action import TakeUpParams, TakeUpPendingAction
 from maxitor.core.plugins.installer_role import InstallerRole
 
 from aoa.action_machine.context.context import Context
 from aoa.action_machine.context.user_info import UserInfo
+from aoa.action_machine.exceptions.handle_error import HandleError
 from aoa.action_machine.resources.connection_scope import connection_scope
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 
@@ -61,6 +64,10 @@ async def run_forever(machine: ActionProductMachine, connections: Mapping[str, A
     """Round after round, ``period_seconds`` apart, until the process is stopped."""
     started = True
     while True:
-        await one_round(machine, connections, started=started)
-        started = False
+        try:
+            await one_round(machine, connections, started=started)
+            started = False
+        except HandleError as error:
+            # The storage could not be opened: nothing was taken up, and the next round tries again, still as a start.
+            await run_action(machine, connections, ReportConnectionRefusedAction(), RefusedParams(reason=str(error)[:500]))
         await asyncio.sleep(period_seconds)

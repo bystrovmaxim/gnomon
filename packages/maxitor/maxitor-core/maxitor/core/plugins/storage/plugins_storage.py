@@ -123,6 +123,14 @@ class PluginsStorage(CoreStorage):
         """Deploying one version: two installs of it never build it twice."""
         await self._fetchval("SELECT pg_advisory_xact_lock(hashtext($1))", (f"version:{version_id}",))
 
+    async def try_hold(self, key: str) -> bool:
+        """Hold ``key`` for this connection until ``release``; ``False`` when another process holds it."""
+        return bool(await self._fetchval("SELECT pg_try_advisory_lock(hashtext($1))", (key,)))
+
+    async def release(self, key: str) -> None:
+        """Let go of a key held by ``try_hold``: a pooled connection would keep it otherwise."""
+        await self._fetchval("SELECT pg_advisory_unlock(hashtext($1))", (key,))
+
     async def try_claim(self, key: str) -> bool:
         """Claim a row for the rest of the transaction; ``False`` when another process holds it."""
         return bool(await self._fetchval("SELECT pg_try_advisory_xact_lock(hashtext($1))", (key,)))
