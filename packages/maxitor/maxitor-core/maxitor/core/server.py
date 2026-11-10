@@ -39,6 +39,15 @@ from maxitor.core.errors import CoreRefusalError
 from maxitor.core.gateways.geoip import GEOIP_CONNECTION_KEY, GeoIpGateway
 from maxitor.core.gateways.mail import MAIL_CONNECTION_KEY, MailGateway, OutboxMailGateway, YandexCloudPostboxGateway
 from maxitor.core.gateways.providers import GATEWAYS
+from maxitor.core.plugins.actions.disable_plugin_action import DisablePluginAction
+from maxitor.core.plugins.actions.drop_failed_install_action import DropFailedInstallAction
+from maxitor.core.plugins.actions.enable_plugin_action import EnablePluginAction
+from maxitor.core.plugins.actions.list_plugins_action import ListPluginsAction
+from maxitor.core.plugins.actions.plugin_details_action import PluginDetailsAction
+from maxitor.core.plugins.actions.request_install_action import RequestInstallAction
+from maxitor.core.plugins.actions.retry_install_action import RetryInstallAction
+from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
+from maxitor.core.plugins.storage.wheel_storage import WHEELS_CONNECTION_KEY, WheelStorage
 from maxitor.core.settings import CoreSettings
 from maxitor.core.storage.core_storage import CORE_CONNECTION_KEY, CoreStorage
 from maxitor.core.tokens import TOKENS_CONNECTION_KEY, SessionTokensController
@@ -76,6 +85,13 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/organizations", RegisterOrganizationAction),
     ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
     ("get", "/api/v1/core/passport", CorePassportAction),
+    ("get", "/api/v1/organizations/{code}/plugins", ListPluginsAction),
+    ("get", "/api/v1/organizations/{code}/plugins/{passport_id}", PluginDetailsAction),
+    ("post", "/api/v1/plugins/install", RequestInstallAction),
+    ("post", "/api/v1/plugins/retry", RetryInstallAction),
+    ("post", "/api/v1/plugins/drop", DropFailedInstallAction),
+    ("post", "/api/v1/plugins/disable", DisablePluginAction),
+    ("post", "/api/v1/plugins/enable", EnablePluginAction),
 ]
 
 
@@ -125,8 +141,13 @@ def create_app(
         if isinstance(storage, CoreStorage):
             await storage.close()
 
+    def open_plugins() -> BaseResource:
+        return PluginsStorage(pool=pools["core"])
+
     shared: dict[str, Any] = {
         CORE_CONNECTION_KEY: PerCallConnection(factory=open_storage, finalize=close_storage),
+        PLUGINS_CONNECTION_KEY: PerCallConnection(factory=open_plugins, finalize=close_storage),
+        WHEELS_CONNECTION_KEY: WheelStorage(settings.wheel_store),
         GEOIP_CONNECTION_KEY: GeoIpGateway(settings.geoip_database),
         MAIL_CONNECTION_KEY: mail_gateway(settings),
         TOKENS_CONNECTION_KEY: SessionTokensController(settings.session_secret, settings.policy_version),

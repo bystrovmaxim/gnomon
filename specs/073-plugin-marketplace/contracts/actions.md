@@ -1,6 +1,6 @@
 # Contracts: the actions of the `plugins` domain
 
-Every address is declared by the chain of `FastApiAdapter` in `maxitor/core/server.py`, served by the core's web process; every action belongs to the domain `plugins`. Auth is the core's `CoreAuthCoordinator`. "Admin" means the action's `@access_decide` lets through only an active administrator of the organization `<code>`; anyone else is answered `404 {error: "not_found"}`, the same as an organization or page that does not exist. Bodies and answers are Pydantic models in the action's module. A refusal is `{error: <reason>, ...details}` with the status named.
+Every address is declared by the chain of `FastApiAdapter` in `maxitor/core/server.py`, served by the core's web process; every action belongs to the domain `plugins`. Auth is the core's `CoreAuthCoordinator`. "Admin" means the action's `@access_decide` lets through only an active administrator of the organization `<code>`; anyone else is answered `404 {error: "not_found"}`, the same as an organization or page that does not exist. Bodies and answers are Pydantic models in the action's module. The adapter reads a POST's parameters from its JSON body only, so every POST names the organization's `code` in its body. A refusal is `{error: <reason>, ...details}` with the status named.
 
 ## The page
 
@@ -15,11 +15,11 @@ Every address is declared by the chain of `FastApiAdapter` in `maxitor/core/serv
 
 | Method and address | Action | Auth | Body → answer |
 |---|---|---|---|
-| `POST /api/v1/organizations/{code}/plugins/{passport_id}/install` | `RequestInstallAction` | admin | — → `{state: "installing"}` or `409 core_range` with `{range, core}`, `409 missing_dependency` with `{missing: [..]}`, `409 already_installed`, `409 not_installable` (withdrawn or not active) |
-| `POST /api/v1/organizations/{code}/plugins/{passport_id}/retry` | `RetryInstallAction` | admin | — → `{state: "installing"}` or `409 not_failed` |
-| `POST /api/v1/organizations/{code}/plugins/{passport_id}/drop` | `DropFailedInstallAction` | admin | — → `{state: "removed"}` or `409 not_failed` |
-| `POST /api/v1/organizations/{code}/plugins/{passport_id}/disable` | `DisablePluginAction` | admin | — → `{state: "disabled"}` or `409 needed_by` with `{dependents: [..]}`, `409 not_enabled` |
-| `POST /api/v1/organizations/{code}/plugins/{passport_id}/enable` | `EnablePluginAction` | admin | — → `{state: "enabled"}` or `409 not_disabled` |
+| `POST /api/v1/plugins/install` | `RequestInstallAction` | admin | `{code, passport_id}` → `{state: "installing"}` or `409 core_range` with `{range, core}`, `409 missing_dependency` with `{missing: [..]}`, `409 already_installed`, `409 not_installable` (withdrawn or not active) |
+| `POST /api/v1/plugins/retry` | `RetryInstallAction` | admin | `{code, passport_id}` → `{state: "installing"}` or `409 not_failed` |
+| `POST /api/v1/plugins/drop` | `DropFailedInstallAction` | admin | `{code, passport_id}` → `{state: "removed"}` or `409 not_failed` |
+| `POST /api/v1/plugins/disable` | `DisablePluginAction` | admin | `{code, passport_id}` → `{state: "disabled"}` or `409 needed_by` with `{dependents: [..]}`, `409 not_enabled` |
+| `POST /api/v1/plugins/enable` | `EnablePluginAction` | admin | `{code, passport_id}` → `{state: "enabled"}` or `409 not_disabled` |
 
 ## A private plugin
 

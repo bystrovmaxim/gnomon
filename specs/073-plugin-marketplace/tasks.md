@@ -42,11 +42,11 @@ Paths: `core` = `packages/maxitor/maxitor-core`, `py` = `core/maxitor/core`, `pl
 
 ## Phase 5: Installing, disabling, enabling (issue phase 5)
 
-- [ ] T020 [US1] Write `RequestInstallAction`, `RetryInstallAction`, `DropFailedInstallAction` in `plugins/actions/` with `@access_decide` for an active administrator, refusals `core_range`, `missing_dependency`, `already_installed`, `not_installable` (FR-014, FR-026h)
-- [ ] T021 [US3] Write `DisablePluginAction` (refused with the enabled dependents named) and `EnablePluginAction` in `plugins/actions/` (FR-017, FR-018)
-- [ ] T022 [US5] Write `ListPluginsAction` (both tabs, counts, `ILIKE` with `%` and `_` escaped, private plugins of other organizations filtered) and `PluginDetailsAction` (404 for another organization's private plugin) in `plugins/actions/` (FR-029, FR-030, FR-013)
-- [ ] T023 [US1] Add the routes of contracts to `py/server.py` with `PerCallConnection` for `PluginsStorage` and `WheelStore` declared in place; `OpenOrganizationAction` answers `is_admin` and the enabled plugins with their sections
-- [ ] T024 [US2] Tests: each refusal; a disabled dependency counts as installed; two concurrent installs — one row; the disable refusal names dependents; search matches title, `name`, `passport_id`, description and counts both tabs; a private plugin of another organization appears nowhere; a non-administrator gets 404 on every address; the installer stopped mid-install and started again finishes the row
+- [x] T020 [US1] Write `RequestInstallAction`, `RetryInstallAction`, `DropFailedInstallAction` in `plugins/actions/` with `@access_decide` for an active administrator, refusals `core_range`, `missing_dependency`, `already_installed`, `not_installable` (FR-014, FR-026h)
+- [x] T021 [US3] Write `DisablePluginAction` (refused with the enabled dependents named) and `EnablePluginAction` in `plugins/actions/` (FR-017, FR-018)
+- [x] T022 [US5] Write `ListPluginsAction` (both tabs, counts, `ILIKE` with `%` and `_` escaped, private plugins of other organizations filtered) and `PluginDetailsAction` (404 for another organization's private plugin) in `plugins/actions/` (FR-029, FR-030, FR-013)
+- [x] T023 [US1] Add the routes of contracts to `py/server.py` with `PerCallConnection` for `PluginsStorage` and `WheelStore` declared in place; `OpenOrganizationAction` answers `is_admin` and the enabled plugins with their sections
+- [x] T024 [US2] Tests: each refusal; a disabled dependency counts as installed; two concurrent installs — one row; the disable refusal names dependents; search matches title, `name`, `passport_id`, description and counts both tabs; a private plugin of another organization appears nowhere; a non-administrator gets 404 on every address; the installer stopped mid-install and started again finishes the row
 
 ## Phase 6: A private plugin (issue phase 6)
 

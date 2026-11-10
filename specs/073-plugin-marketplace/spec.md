@@ -224,7 +224,7 @@ The author of a plugin writes `schema.yaml`; the core builds the tables with the
 - **FR-015**: Installing a version not yet deployed MUST deploy it once for all of Maxitor — its schema `<name>_<x>_<y>_<z>`, its user `plg_<name>_<x>_<y>_<z>`, its tables and their rights — in one transaction; a version already deployed MUST NOT be deployed again.
 - **FR-016**: A failed deploy MUST leave nothing in the database and nothing of the organization changed; the row MUST be `failed` with the reason.
 - **FR-017**: Disabling MUST keep the data and take the plugin's sections out of the organization's tree; it MUST be refused while an enabled plugin depends on it, naming every such plugin.
-- **FR-018**: Enabling MUST bring the plugin's sections back with all their data.
+- **FR-018**: Enabling MUST bring the plugin's sections back with all their data; it MUST be refused while a plugin it needs is disabled, naming it, so that an enabled plugin never runs without what it needs.
 
 **`schema.yaml` and the tables**
 

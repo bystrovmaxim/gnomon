@@ -67,3 +67,28 @@ def test_the_settings_never_show_the_dsn(monkeypatch: Any) -> None:
     monkeypatch.setenv("MAXITOR_INSTALLER_DSN", "postgresql://maxitor_installer:s3cret@db/maxitor")
     settings = InstallerSettings.from_environment()
     assert "s3cret" not in repr(settings) and settings.period_seconds == 60.0 and settings.wheel_max_bytes == 50 * 1024 * 1024
+
+
+async def test_an_install_cut_off_by_a_stop_is_finished_by_the_next_start(tmp_path: Path) -> None:
+    """The installer dies in the middle of a deploy; started again, it takes the same row up and finishes it."""
+
+    class Dying(Machine):
+        async def run(self, context: Any, action: Any, params: Any, connections: Any) -> Any:
+            if isinstance(action, DeployAndInstallAction):
+                raise SystemExit("the installer's process stops")
+            return await super().run(context, action, params, connections)
+
+    connections = {
+        "deploy": DeployStorage(connection_params="postgresql://unused"),
+        "wheels": WheelStorage(tmp_path / "wheels"),
+        "runtime": PluginRuntimeStorage(tmp_path / "runtime", "postgresql://u@db/maxitor"),
+        "wheel_source": WheelSourceGateway(1024, 1.0),
+    }
+    import pytest
+
+    with pytest.raises(SystemExit):
+        await one_round(Dying(), connections, started=True)  # type: ignore[arg-type]
+    again = Machine()
+    await one_round(again, connections, started=True)  # type: ignore[arg-type]
+    finished = [(p.organization_id, p.row_id) for _c, a, p, _k in again.runs if isinstance(a, DeployAndInstallAction)]
+    assert finished == [("o1", "r1"), ("o2", "r2")]
