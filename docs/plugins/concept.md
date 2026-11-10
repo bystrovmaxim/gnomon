@@ -99,6 +99,7 @@ database:
 | `dependencies` | the plugins this one cannot work without: `id`, a `version` range and a `source` — a pip package or a wheel at an address with a mandatory `sha256` |
 | `roles` | the plugin's roles; the core's administrator assigns them to people |
 | `frontend.navigation` | the file with the plugin's tree nodes, pages, controls and behaviour in a room |
+| `history.compare` | optional: the comparisons its pages can draw beside one moment, out of `diff` and `side_by_side`; without it every page offers one moment only (section 7.9) |
 
 Why both `id` and `name`. `id` is unique in the world and stands in other plugins' dependencies. `name` is short and fits a schema name; two authors may both call a plugin `notes`, and then only one of them gets into one installation — the installer refuses the second and names the conflict.
 
@@ -711,6 +712,30 @@ The rules of controls:
 
 If a filter row must highlight something on the canvas on hover, a message `panel.control.hover` from the core to the page will be needed; it is introduced when the first plugin needs it.
 
+### 7.9. History: what a page gives the time scale
+
+Every page reads any past moment: that is versioned storage, and needs no declaration. The core's time scale (bystrovmaxim/gnomon#98) draws the history of the open page from data the plugin gives; the plugin declares it, and keeps the actions that answer it in its folder `history/`, one per file (`history/<name>_action.py`).
+
+```yaml
+# maxitor-plugin.yaml
+history:
+  compare: [diff, side_by_side]     # the comparisons the pages can draw; none: one moment only
+
+# navigation.yaml, a node
+history:
+  compare: []                       # narrows the passport's list; never widens it
+  read: list_item_notes             # the page's reading action: over a stretch it gives the page's own bars
+  milestones: list_note_history     # an action of history/: the milestones in a stretch
+  card: note_milestone_card         # an action of history/: one milestone's card
+```
+
+- **Bars** count the page's changes in each stretch — added, changed, removed. A page that names no `bars` of its own gets them from its reading action run over the stretch: the same query and filters with the SDK's stretch condition, grouped by `maxitor_plugin_sdk.history.bars_of`. So the bars count exactly what the page shows, the author filter included.
+- **Milestones** are the events that matter on their own — a pull request, a release, a published revision — and the draft as a `proposal` whose `link` is its page. A milestone carries its `kind` (its look, from the core's fixed set), `minor` (a small point), and an optional `release` (a flag over it); the plugin gives each its meaning.
+- **A card** is data: author, what the milestone changed, short counts, and its `comment`, shown under the scale when the milestone is chosen. The core draws it; no control of the plugin runs in the core's frame.
+- **The context** of every question is the address — the organization, the node, the page's parameters, the stretch and the bar's width — never what is on the screen, so an answer below the watermark never changes and can be kept.
+
+The shapes are `maxitor-plugin-sdk`'s `history-1.schema.json`; `maxitor-plugin-check` refuses a page whose `compare` is wider than the passport's and a history name with no action in `history/`.
+
 ## 8. The room
 
 A room is looking at Maxitor together: participants see each other as circles, one moment for all, can follow each other, see each other's pointers and selections. **A room works on every page of every plugin** — a plugin can neither turn it off nor "not support" it. This comes not from room code in the plugin but from rules the plugin keeps anyway: the state in the address and the view from the address only.
@@ -861,6 +886,13 @@ acme-maxitor-notes/
         actions/add_note_action.py
         actions/list_item_notes_action.py
         actions/list_note_authors_action.py
+        actions/edit_note_action.py
+        actions/delete_note_action.py
+        actions/publish_notes_action.py
+        actions/list_published_notes_action.py
+        actions/list_note_draft_action.py
+        history/list_note_history_action.py     # the milestones the time scale draws
+        history/note_milestone_card_action.py   # one milestone's card
         build_graph.py
         _web/                   # the build of web/, not in git
     web/                        # the Next.js sources

@@ -2,6 +2,11 @@
 
 How-to guides for Maxitor and its tools. Each package also has its own README: [Maxitor](../packages/maxitor/README.md), [`graph-builder`](../packages/maxitor/tools/graph-builder/README.md), [`repo-graph-port`](../packages/maxitor/tools/repo-graph-port/README.md), [Maxitor core](../packages/maxitor/maxitor-core/README.md), [`maxitor-plugin-sdk`](../packages/maxitor-plugin-sdk/README.md) and the [Open Gnomon Protocol](../packages/open-gnomon-protocol/README.md).
 
+## Plugins
+
+- [The plugin concept](plugins/concept.md) — what a Maxitor plugin is and how it lives in the core: the passport, compatibility, delivery, the database, one sign-in, the frame, rooms, the lifecycle, the rules, and a tutorial on the plugin template.
+- [Versioned storage](plugins/versioned-storage.md) — how tables, versions and time are kept so that any past moment reads by the same actions as the present, shown on the template's notes.
+
 ## How-to guides
 
 - [Set up versions and graphs](how-to/graph-setup.md) — the setup wizard of `graph-builder`, for a project in any language.

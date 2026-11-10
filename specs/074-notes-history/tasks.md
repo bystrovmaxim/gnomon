@@ -71,9 +71,9 @@
 
 **Goal**: the plugins' documentation in `docs/plugins/`; the template's graph rebuilt; versions raised; changelogs.
 
-- [ ] T027 [US6] `git mv TPL/docs/plugins.md docs/plugins/concept.md` and `git mv TPL/docs/versioned-storage.md docs/plugins/versioned-storage.md`; move the Russian drafts beside them on disk; fix every live link (`TPL/README.md`, `packages/maxitor/maxitor-core/README.md`, `packages/maxitor-plugin-sdk/README.md`, `docs/README.md`, links inside the moved files); add a "Plugins" section to `docs/README.md`.
-- [ ] T028 [US6] `docs/plugins/versioned-storage.md`: the notes example — now, the past, editing with `base_moment`, deleting, publishing revisions, the bars from a reading query; `docs/plugins/concept.md`: history in the passport and `navigation.yaml`, the folder `history/`, the contract's shapes; the template's README lists the new files.
-- [ ] T029 [US6] Rebuild `TPL/graph.json` (`graph-builder write`), raise the SDK to 1.2.0 and the template to 0.5.0 (`pyproject.toml`, passport, `uv.lock`); changelogs of the SDK, the template and `docs/CHANGELOG.md`.
+- [X] T027 [US6] `git mv TPL/docs/plugins.md docs/plugins/concept.md` and `git mv TPL/docs/versioned-storage.md docs/plugins/versioned-storage.md`; move the Russian drafts beside them on disk; fix every live link (`TPL/README.md`, `packages/maxitor/maxitor-core/README.md`, `packages/maxitor-plugin-sdk/README.md`, `docs/README.md`, links inside the moved files); add a "Plugins" section to `docs/README.md`.
+- [X] T028 [US6] `docs/plugins/versioned-storage.md`: the notes example — now, the past, editing with `base_moment`, deleting, publishing revisions, the bars from a reading query; `docs/plugins/concept.md`: history in the passport and `navigation.yaml`, the folder `history/`, the contract's shapes; the template's README lists the new files.
+- [X] T029 [US6] Rebuild `TPL/graph.json` (`graph-builder write`), raise the SDK to 1.2.0 and the template to 0.5.0 (`pyproject.toml`, passport, `uv.lock`); changelogs of the SDK, the template and `docs/CHANGELOG.md`.
 - [ ] T030 Closing check run taken to zero (the repository's closing script), then the quickstart walked.
 
 ## Dependencies
