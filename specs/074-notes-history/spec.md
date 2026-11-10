@@ -204,7 +204,7 @@ A person looking for how plugins work finds the plugin concept and versioned sto
 **The template's data of the scale**
 
 - **FR-022**: The template's Notes page MUST declare its reading action and its milestones; its Published notes page its milestones only; its Draft page no comparison.
-- **FR-023**: The template's milestones MUST be its revisions in order, each with its time, look, short reference, title, author and counts, and the draft last as a proposal leading to the draft's page when there are changes.
+- **FR-023**: The template's milestones MUST be its revisions in order, each light — its time, look, short reference, title, size and release label — and the draft last as a proposal leading to the draft's page when there are changes; who published a revision and what it changed come with its card (FR-024).
 - **FR-024**: A revision's card MUST hold its author, its counts of notes added, changed and removed, its number of notes, whether it is small (it only edited notes), its release label when it has one, and its comment.
 - **FR-025**: Milestones and cards MUST be read at a moment like any other answer and MUST be refused for another organization.
 
