@@ -13,7 +13,21 @@ import type { Me } from "@/lib/core";
 
 type Pop = "me" | "orgs" | "methods" | null;
 
-export function Header({ account, current, methods }: { account: Me; current: { code: string; name: string } | null; methods: string | null }) {
+export function Header({
+  account,
+  current,
+  methods,
+  trail = null,
+  onMenu,
+}: {
+  account: Me;
+  current: { code: string; name: string } | null;
+  methods: string | null;
+  /** A page inside the organization, after its name: "Settings". The name then leads back to the organization. */
+  trail?: string | null;
+  /** On a phone the tree is a drawer: this opens it. */
+  onMenu?: () => void;
+}) {
   const [pop, setPop] = useState<Pop>(methods ? "methods" : null);
   const [tip, setTip] = useState(false);
   const orgs = account.organizations;
@@ -29,10 +43,26 @@ export function Header({ account, current, methods }: { account: Me; current: { 
   return (
     <>
       <div className="hdr">
-        <span className="logo"><span className="mk">M</span>Maxitor</span>
+        {onMenu ? (
+          <button type="button" className="burger" aria-label="The organization's tree" onClick={onMenu}>
+            <Icon.menu />
+          </button>
+        ) : null}
+        <span className="logo"><span className="mk">M</span><span className="nm">Maxitor</span></span>
         {current ? (
           <span className="crumb">
-            <span className="ct"><span className="lv">org</span>{current.name}</span>
+            <span className="ct">
+              <span className="lv">org</span>
+              {trail ? (
+                <>
+                  <a href={`/w/${current.code}`}>{current.name}</a>
+                  <span className="sep">/</span>
+                  {trail}
+                </>
+              ) : (
+                current.name
+              )}
+            </span>
             {orgs.length > 1 ? (
               <span className="cvr" role="button" tabIndex={0} title="Your organizations" aria-label="Your organizations" onClick={() => setPop(pop === "orgs" ? null : "orgs")}>
                 <Icon.down />

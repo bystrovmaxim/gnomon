@@ -55,9 +55,9 @@ Paths: `core` = `packages/maxitor/maxitor-core`, `py` = `core/maxitor/core`, `pl
 
 ## Phase 7: The page (issue phase 7)
 
-- [ ] T027 [US1] In `web/`: the Settings link at the foot of the tree (administrators only), the settings column, the header crumb "<organization> / Settings" with the name leading back, the tree's groups of enabled plugins (FR-027, FR-028)
-- [ ] T028 [US1] `web/app/w/[code]/settings/plugins/page.tsx` and its components: tabs Installed and Marketplace, rows, cards, the details panel, the install dialog with its checks, the disable dialog and the disable refusal, the private plugin dialog (release and upload), the search with counts and the empty result; server actions calling the routes (FR-029, FR-030)
-- [ ] T029 [US1] The phone layout of every screen at 375 px: drawer for the tree and the settings column, sheets for dialogs, cards for rows, the details as a whole screen (FR-031)
+- [x] T027 [US1] In `web/`: the Settings link at the foot of the tree (administrators only), the settings column, the header crumb "<organization> / Settings" with the name leading back, the tree's groups of enabled plugins (FR-027, FR-028)
+- [x] T028 [US1] `web/app/w/[code]/settings/plugins/page.tsx` and its components: tabs Installed and Marketplace, rows, cards, the details panel, the install dialog with its checks, the disable dialog and the disable refusal, the private plugin dialog (release and upload), the search with counts and the empty result; server actions calling the routes (FR-029, FR-030)
+- [x] T029 [US1] The phone layout of every screen at 375 px: drawer for the tree and the settings column, sheets for dialogs, cards for rows, the details as a whole screen (FR-031)
 - [ ] T030 [US1] Check: `next build`; browser checks in `web/scripts/check-core.mjs` of the mockup's 1.1–3.4 and 5.1–7.2 at 1360 × 840 and 375 × 812, no horizontal scrollbar on the phone
 
 ## Phase 8: On the stand (issue phase 8)

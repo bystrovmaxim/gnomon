@@ -9,6 +9,8 @@ const config: NextConfig = {
   poweredByHeader: false,
   // A server action's arguments include passwords: the development terminal never prints them.
   logging: { serverFunctions: false },
+  // A private plugin's wheel is uploaded through a server action: at most 50 MB, about 67 MB in base64.
+  experimental: { serverActions: { bodySizeLimit: "70mb" } },
   async rewrites() {
     // After every route of the application, its dynamic ones too (the sign-in's start and callback): only an address
     // the application does not serve goes to the backend. An afterFiles rewrite would come before the dynamic routes.
