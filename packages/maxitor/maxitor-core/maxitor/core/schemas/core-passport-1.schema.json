@@ -16,6 +16,7 @@
       "required": ["plugin-passport", "navigation", "foreign-keys"],
       "properties": {
         "plugin-passport": { "$ref": "#/$defs/formats" },
+        "plugin-schema": { "$ref": "#/$defs/formats" },
         "navigation": { "$ref": "#/$defs/formats" },
         "foreign-keys": { "$ref": "#/$defs/formats" }
       }

@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-11-10] — Plugins in an organization: the marketplace, installing, disabling and enabling
+
+An organization's administrator now installs plugins. Settings sits at the foot of the organization's tree, and its first page is Plugins: what the organization runs and what the marketplace offers, with one search over both. A plugin's details show its passport, its wheel and the tables it will have. Installing checks first that the plugin fits this Maxitor and that everything it needs is already installed, and names what is missing. A plugin can be disabled — its sections leave the tree, its data stays — and enabled again, but never so that an enabled plugin is left without one it needs. An organization can also add a plugin of its own, from a release on GitHub or GitLab or by uploading the file itself; no other organization sees it. All of it works on a phone.
+
+A plugin brings no SQL any more. It describes its tables in `schema.yaml`, and Maxitor builds them, each with its history, by the rules of versioned storage. Every version of a plugin gets a database schema and a database user of its own, built once for all of Maxitor: the next organization on the same version builds nothing. That user sees only its own schema; what a plugin needs of the core — the time of a change, membership, a member's name — it asks the core's functions. The plugin template now works this way.
+
+The work that creates schemas and users is done by a separate process, `maxitor-plugin-installer`, the only one that knows the password allowing it. The web part of the core never sees it. The installer checks each new version — downloads it, compares its hash, reads its files without running them — and finishes each install; whatever stops it halfway, it finishes when it starts again. `./scripts/core-stand.sh up` now runs it too and fills the marketplace with the template, and `check-core.mjs` installs it in the browser. Removing a plugin from an organization is the next step, bystrovmaxim/gnomon#94. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+
 ## [2026-11-10] — Maxitor's own core: signing in, organizations and the plugins' compatibility rule
 
 Maxitor has a core of its own. A person signs in, registers an organization and lands in its frame at `/w/<code>`. The core keeps its own PostgreSQL database, in two schemas owned by its own role: `platform` for accounts, their ways in and one-time codes, and `organization` for organizations, their users and boundaries. Every table keeps its history, except the password's hash, which never enters it.

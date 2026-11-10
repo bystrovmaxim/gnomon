@@ -45,6 +45,8 @@ class CoreSettings:
     postbox_key_id: str | None = None
     postbox_secret: str | None = field(default=None, repr=False)
     geoip_database: Path | None = None
+    wheel_store: Path = Path(".core-stand/wheels")
+    wheel_max_bytes: int = 50 * 1024 * 1024
     providers: dict[str, ProviderKeys] = field(default_factory=dict, repr=False)
 
     @classmethod
@@ -72,6 +74,8 @@ class CoreSettings:
             postbox_key_id=key_id,
             postbox_secret=secret,
             geoip_database=Path(env["MAXITOR_GEOIP_DATABASE"]) if env.get("MAXITOR_GEOIP_DATABASE") else None,
+            wheel_store=Path(env.get("MAXITOR_WHEEL_STORE", ".core-stand/wheels")),
+            wheel_max_bytes=int(env.get("MAXITOR_WHEEL_MAX_BYTES", str(50 * 1024 * 1024))),
             providers=providers,
         )
 

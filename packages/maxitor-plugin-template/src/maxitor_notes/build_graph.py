@@ -17,7 +17,6 @@ from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_
 def main() -> None:
     """Write the plugin's graph document to standard output."""
     importlib.import_module("maxitor_notes.app")
-    importlib.import_module("maxitor_notes.migrate")
     sys.stdout.write(create_node_graph_coordinator().to_json())
 
 

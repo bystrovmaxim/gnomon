@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Plugins in an organization.** An organization's administrator opens Settings at the foot of its tree → Plugins (`/w/<code>/settings/plugins`): the installed plugins and the marketplace, one search over both with a count on each tab, a plugin's details, installing with its checks, disabling and enabling — each refused, with the plugins in the way named, when it would leave an enabled plugin without what it needs — a failed install retried or dropped, and a private plugin added by a release's Package URL and `sha256` or by uploading its wheel, which no other organization sees. Everyone else gets 404 there. The core's backend answers `GET /api/v1/organizations/{code}/plugins`, `GET /api/v1/organizations/{code}/plugins/{passport_id}` and `POST /api/v1/plugins/{install,retry,drop,disable,enable,private,private/upload}`; `GET /api/v1/organizations/{code}` also answers the enabled plugins with their sections, which the tree shows. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+- **The core's domain `plugins`** in a schema of its own: a plugin of the marketplace, its versions with their dependencies and navigation sections, and a plugin in an organization, every table versioned, every line a typed event. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+- **`maxitor-plugin-installer`** (`pip install "maxitor[plugin-installer]"`): a process of its own, the only holder of the role `maxitor_installer`'s password. It checks a version — download, `sha256`, passport 2, `schema.yaml`, the core's range — and deploys it once for all of Maxitor in one transaction: the schema `<name>_<x>_<y>_<z>`, the user `plg_<name>_<x>_<y>_<z>` with a SCRAM verifier, the tables with their version tables, the keys to the core, the rights; the plain password only in the version's `plugin.env`. `add-version` and `add-wheel` fill the marketplace. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+- **What a plugin needs of the core comes through functions**: `change_time`, `watermark`, `is_member`, `member_organization` and `member_name` of the schema `organization`, executable by the group `maxitor_plugin` only. A version's user sees nothing else: no core table, no other schema, nothing in `public`. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+
+### Changed
+
+- **The administrator's `bootstrap.sql`** also creates `maxitor_installer` (`CREATEROLE`, `CREATE` on the database; psql variable `installer_password`), the group `maxitor_plugin` and the schema `plugins`; a database made by the earlier script needs these three before `maxitor-core migrate`. New settings: `MAXITOR_WHEEL_STORE`, `MAXITOR_WHEEL_MAX_BYTES`, `MAXITOR_SCHEMA_PLUGINS`. The core reads plugin passport 2 and `schema.yaml` format 1, no longer passport 1. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+- **maxitor-web 1.23.0**: its graph shows the core's domain `plugins` and the installer.
+
 ### Changed
 
 - **Maxitor has a repository of its own**, [bystrovmaxim/gnomon](https://github.com/bystrovmaxim/gnomon), with the Open Gnomon Protocol beside it. The package, its commands and its extras are unchanged; the GitHub Action of `graph-builder` is now `bystrovmaxim/gnomon/packages/maxitor/tools/graph-builder@maxitor-v<version>`, and the setup skill installs from this repository.

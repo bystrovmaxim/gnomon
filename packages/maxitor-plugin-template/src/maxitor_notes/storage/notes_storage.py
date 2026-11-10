@@ -1,43 +1,34 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/storage/notes_storage.py
 """
-NotesStorage — the plugin's own database: the schema ``notes``, reached as the role ``plg_notes``.
+NotesStorage — the plugin's own database: its version's schema ``notes_<version>``, reached as its user
+``plg_notes_<version>``.
 
 ═══════════════════════════════════════════════════════════════════════════════
 PURPOSE
 ═══════════════════════════════════════════════════════════════════════════════
 
-Every read and write of the plugin goes through here. It writes only its own schema; it reads its own
-version tables and the core's tables of organizations and members, which every plugin role may read.
+Every read and write of the plugin goes through here. Its user sees nothing but its own schema: what it needs of the
+core — the organization's lock and change time, the watermark, membership and a member's name — it gets from the
+core's functions (``maxitor_plugin_sdk.core_functions``), never from the core's tables. The installer built the
+tables from ``schema.yaml``; this storage only reads and writes them.
 
 ═══════════════════════════════════════════════════════════════════════════════
 VERSIONED STORAGE
 ═══════════════════════════════════════════════════════════════════════════════
 
-A write is one transaction: the organization's lock, one change time, the current row and its version.
-Screens read only ``note_versions``, at one moment, with the moment condition at every table and
-``organization_id`` in every condition.
-
-Two pieces belong to ``maxitor-plugin-sdk`` once it exists (bystrovmaxim/gnomon#73): the writing
-functions, and the watermark over the version tables of every installed schema. Until then this
-storage writes its rows itself and takes the last change of its own table as the watermark; the core's
-tables it joins are read at the same moment.
-
-═══════════════════════════════════════════════════════════════════════════════
-THE CORE'S TABLES
-═══════════════════════════════════════════════════════════════════════════════
-
-The core keeps organizations and their users in its schema ``organization`` (bystrovmaxim/gnomon#73):
-``organization (id, code)``, ``"user" (organization_id, id, account_id, name, status)`` and ``user_versions``.
-A note's writer is the person's account, the ``sub`` of the plugin's token, matched against ``"user".account_id``.
-No SQL here names that schema: its name comes from ``MAXITOR_SCHEMA_ORGANIZATION`` and enters SQL only through
-``_identifier``. This storage only reads the core's tables.
+A write is one transaction: the core's ``change_time`` takes the organization's lock — the same lock every writer
+of the organization takes, the core's own included — and the time is after the organization's last change in the
+core's tables and in this schema. Screens read only ``note_versions``, at one moment, with the moment condition and
+``organization_id`` in every condition. No SQL names a schema: the user's ``search_path`` is its schema, then the
+core's schema of functions.
 """
 
 from __future__ import annotations
 
-import os
 from typing import Any, cast
 from uuid import uuid4
+
+from maxitor_plugin_sdk.core_functions import MEMBER_ORGANIZATION_SQL, change_time_sql, member_name, watermark_sql
 
 from aoa.action_machine.graph.core.exclude_graph_model import exclude_graph_model
 from aoa.action_machine.intents.entities import entities
@@ -47,17 +38,8 @@ from aoa.action_machine.resources.sql import SqlStorageWrapper
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
 
-
-def _identifier(name: str) -> str:
-    """Quote ``name`` as a PostgreSQL identifier, doubling any double quote inside it."""
-    if not name or "\x00" in name:
-        raise ValueError("An identifier must be a non-empty name without NUL.")
-    return '"' + name.replace('"', '""') + '"'
-
-
-def _core(table: str) -> str:
-    """A table of the core's schema, its schema named by the environment."""
-    return f"{_identifier(os.environ.get('MAXITOR_SCHEMA_ORGANIZATION', 'organization'))}.{_identifier(table)}"
+#: The plugin's version tables: its change time and watermark follow them.
+VERSION_TABLES = ("note_versions",)
 
 
 #: Connection key under which actions receive the storage.
@@ -72,16 +54,17 @@ def _in_force(alias: str, moment: str) -> str:
     return f"{alias}.valid_from_at <= {moment} AND ({alias}.valid_to_at IS NULL OR {alias}.valid_to_at > {moment})"
 
 
-@meta(description="The plugin's own schema notes, written as plg_notes; the core's members read alongside")
+@meta(description="The plugin's own schema, written as its version's user; the core reached only by its functions")
 @entities(NoteCoreEntity, NoteAuthorCoreEntity)
 class NotesStorage(PostgresStorage):
     """
     AI-CORE-BEGIN
     ROLE: The database of the plugin ``notes``.
-    CONTRACT: ``organization_of`` checks membership on the current tables; ``add_note`` writes a note and its
+    CONTRACT: ``organization_of`` asks the core's membership function; ``add_note`` writes a note and its
     version in one transaction and returns the change time; ``notes_of_item`` and ``note_authors`` read the
     version tables at one moment, the watermark when no moment is given.
-    INVARIANTS: Writes only the schema ``notes``; ``organization_id`` in every condition; a moment travels as a string.
+    INVARIANTS: Reads and writes only its own schema; ``organization_id`` in every condition; a moment travels as a
+        string.
     AI-CORE-END
     """
 
@@ -92,25 +75,14 @@ class NotesStorage(PostgresStorage):
 
     async def organization_of(self, code: str, user_id: str) -> str | None:
         """The id of the organization ``code`` if ``user_id`` is a member of it now, else ``None``."""
-        value = await self._fetchval(
-            f"SELECT o.id::text FROM {_core('organization')} o"
-            f" JOIN {_core('user')} m ON m.organization_id = o.id"
-            " WHERE o.code = $1 AND m.account_id = $2::text::uuid AND m.status = 'active'",
-            (code, user_id),
-        )
+        value = await self._fetchval(MEMBER_ORGANIZATION_SQL, (code, user_id))
         return None if value is None else str(value)
 
     async def add_note(self, organization_id: str, item_id: str, writer_id: str, body: str, operation: str) -> str:
         """Write a new note and its first version in one transaction; return the change time."""
         await self.begin()
         try:
-            await self._fetchval("SELECT pg_advisory_xact_lock(hashtext($1))", (organization_id,))
-            changed_at = await self._fetchval(
-                "SELECT greatest(clock_timestamp(), coalesce(max(t), '-infinity'::timestamptz) + interval '1 microsecond')"
-                " FROM (SELECT max(valid_from_at) AS t FROM note_versions WHERE organization_id = $1::text::uuid"
-                " UNION ALL SELECT max(valid_to_at) FROM note_versions WHERE organization_id = $1::text::uuid) AS last_changes",
-                (organization_id,),
-            )
+            changed_at = await self._fetchval(change_time_sql(VERSION_TABLES), (organization_id,))
             note_id = str(uuid4())
             await self._execute(
                 "INSERT INTO note (id, organization_id, item_id, writer_id, body, created_at, updated_at)"
@@ -139,10 +111,9 @@ class NotesStorage(PostgresStorage):
         when = "$3::text::timestamptz"
         rows = await self._fetch(
             f"SELECT n.id::text AS id, n.item_id::text AS item_id, n.writer_id::text AS writer_id,"
-            f" coalesce(m.name, '') AS writer_name, n.body AS body, {_MOMENT.format('n.updated_at')} AS updated_at"
+            f" {member_name('n.organization_id', 'n.writer_id', when)} AS writer_name, n.body AS body,"
+            f" {_MOMENT.format('n.updated_at')} AS updated_at"
             f" FROM note_versions n"
-            f" LEFT JOIN {_core('user_versions')} m ON m.organization_id = n.organization_id AND m.account_id = n.writer_id"
-            f" AND {_in_force('m', when)}"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {_in_force('n', when)}"
             f" AND ($4::text IS NULL OR n.writer_id = $4::text::uuid)"
             f" ORDER BY n.updated_at, n.id",
@@ -157,10 +128,8 @@ class NotesStorage(PostgresStorage):
             return []
         when = "$3::text::timestamptz"
         rows = await self._fetch(
-            f"SELECT DISTINCT n.writer_id::text AS id, coalesce(m.name, '') AS name"
+            f"SELECT DISTINCT n.writer_id::text AS id, {member_name('n.organization_id', 'n.writer_id', when)} AS name"
             f" FROM note_versions n"
-            f" LEFT JOIN {_core('user_versions')} m ON m.organization_id = n.organization_id AND m.account_id = n.writer_id"
-            f" AND {_in_force('m', when)}"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {_in_force('n', when)}"
             f" AND ($4::text IS NULL OR n.writer_id > $4::text::uuid)"
             f" ORDER BY id LIMIT $5",
@@ -169,12 +138,10 @@ class NotesStorage(PostgresStorage):
         return [NoteAuthorCoreEntity(**_mapping(row)) for row in rows]
 
     async def _watermark(self, organization_id: str) -> str | None:
-        """The last change of the organization in this schema, as a moment string; ``None`` before the first."""
+        """The last change of the organization in the core's tables and this schema, as a moment string; ``None``
+        before the first."""
         value = await self._fetchval(
-            f"SELECT {_MOMENT.format('max(t)')} FROM ("
-            " SELECT max(valid_from_at) AS t FROM note_versions WHERE organization_id = $1::text::uuid"
-            " UNION ALL SELECT max(valid_to_at) FROM note_versions WHERE organization_id = $1::text::uuid) AS last_changes",
-            (organization_id,),
+            f"SELECT {_MOMENT.format('w')} FROM ({watermark_sql(VERSION_TABLES)} AS w) AS mark", (organization_id,)
         )
         return None if value is None else str(value)
 

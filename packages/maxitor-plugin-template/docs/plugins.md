@@ -4,7 +4,7 @@ What a Maxitor plugin is, what it is made of, how it is installed, where its dat
 
 The document is a concept. The commands `maxitor plugin ...` and the packages `maxitor-plugin-sdk` and `@maxitor/panel` are described as they will work; they do not exist yet. Versioned storage, on which a plugin's data stands, is described in [versioned-storage](versioned-storage.md) and not repeated here.
 
-In short: a plugin is a Python package (pip or a ready wheel) that carries a passport, its own AOA backend and its own built Next.js frontend. The core's installer installs it: reads the passport, checks the dependencies and that there is no cycle, gives the plugin a role and a schema in the shared database, lets it build its schema, creates the cross-plugin foreign keys from a declaration in a file, and puts the plugin into the site. A person sees one site with one sign-in: the core's gateway accepts the session and passes each plugin a short signed token meant for it alone. The frame of the screen — the tree on the left, the row at the top and the right panel — belongs to the core: a plugin adds its nodes to the tree by a YAML declaration and gets the right panel when its node is open. Everything a person sees is written in the address, so Back, a link and a room work the same for every plugin.
+In short: a plugin is a Python package (pip or a ready wheel) that carries a passport, its own AOA backend and its own built Next.js frontend. The core's installer installs it: reads the passport, checks the dependencies and that there is no cycle, and deploys each version once — a schema and a database user of its own, the tables the plugin declares in `schema.yaml` built by the core, the keys to the core from a declaration in a file — then the plugin joins the site. A plugin carries no SQL and no migrations. A person sees one site with one sign-in: the core's gateway accepts the session and passes each plugin a short signed token meant for it alone. The frame of the screen — the tree on the left, the row at the top and the right panel — belongs to the core: a plugin adds its nodes to the tree by a YAML declaration and gets the right panel when its node is open. Everything a person sees is written in the address, so Back, a link and a room work the same for every plugin.
 
 ## Vocabulary
 
@@ -12,12 +12,12 @@ In short: a plugin is a Python package (pip or a ready wheel) that carries a pas
 |---|---|
 | **core** | Maxitor without plugins: sign-in, users, organizations, the frame, rooms, the gateway, the installer, the plugin registry; its `id` is `maxitor`, its version is the version of the `maxitor` package; its data is the schemas `platform` and `organization` |
 | **core passport** | the file `maxitor-core.yaml` in the `maxitor` package: the core's version and the formats of a plugin's files it reads |
-| **core contract** | everything a plugin relies on in the core: tree nodes, the panel and room protocols, controls, style tokens, the sign-in token, the core's tables |
+| **core contract** | everything a plugin relies on in the core: tree nodes, the panel and room protocols, controls, style tokens, the sign-in token, the core's functions for time, watermark and membership |
 | **plugin** | a package that installs into the core and adds data, actions and pages |
 | **passport** | the file `maxitor-plugin.yaml` in a plugin's package: who it is and what it needs |
-| **installer** | the part of the core that installs, upgrades and removes plugins |
-| **master role** | the database role `maxitor_admin`, used by the installer alone |
-| **plugin role** | the database role `plg_<name>`, used by the plugin and by it alone |
+| **installer** | the core's process `maxitor-plugin-installer`: it checks versions and deploys them; removing is bystrovmaxim/gnomon#94 |
+| **installer role** | the database role `maxitor_installer`, whose password only the installer's process holds |
+| **version user** | the database role `plg_<name>_<x>_<y>_<z>` of one deployed version, used by the plugin alone |
 | **gateway** | the site's entrance: it takes every request and hands it to the core or a plugin |
 | **frame** | what is always on screen: the navigation tree on the left, the core's row at the top, the right panel; only the core draws it |
 | **tree** | the navigation tree on the left; built from the `navigation.yaml` files of the core and the plugins |
@@ -37,9 +37,9 @@ A plugin is an independent application with three parts:
 
 - **backend** — an AOA service: actions, the resource of its database, roles; runs as a process of its own;
 - **frontend** — a Next.js site with its own `basePath`, whose pages are shown in the frame's right panel; runs as a Node process of its own;
-- **database schema** — its own PostgreSQL schema in the core's shared database, built by the rules of versioned storage; a plugin that keeps no state has none (section 5).
+- **database schema** — a PostgreSQL schema of its own per version in the core's shared database, built by the core from the plugin's `schema.yaml` by the rules of versioned storage; a plugin that keeps no state has none (section 5).
 
-A plugin depends on the core and possibly on other plugins. The core and the plugins it depends on know nothing of it. A plugin does not import another plugin's code: it reads its tables and calls its actions through the gateway. So plugins are installed, upgraded and removed one by one.
+A plugin depends on the core and possibly on other plugins. The core and the plugins it depends on know nothing of it. A plugin does not import another plugin's code and never reads another schema: it calls the other plugin's actions through the gateway. So plugins are installed, upgraded and removed one by one.
 
 Separate processes are not a convenience but a condition of isolation. If all plugins lived in one Python process, any of them would read the database passwords of all the others from memory, and separate database roles would mean nothing.
 
@@ -48,9 +48,9 @@ Separate processes are not a convenience but a condition of isolation. If all pl
 The passport is YAML, because a person reads it in review and the installer reads it before installing. The file `maxitor-plugin.yaml` lies at the root of the Python package and travels in the wheel. The installer finds it by the entry point `maxitor.plugins` in the wheel's `entry_points.txt` — without unpacking or installing the package.
 
 ```yaml
-passport: 1                          # the format of the passport
+passport: 2                          # the format of the passport
 id: io.github.acme.notes             # the global id, never changes
-name: notes                          # the name in an installation: schema, role, path
+name: notes                          # the name in an installation: each version's schema and user, the path
 title: Notes
 description: >
   Notes on any catalog item: who wrote what, when, and what changed.
@@ -79,21 +79,20 @@ roles:
 
 backend:
   app: acme_notes.app:create_app     # the AOA application factory
-  migrate: acme_notes.migrate:upgrade
 
 frontend:
   build: acme_notes/_web             # the built Next.js (standalone) inside the package
   navigation: acme_notes/navigation.yaml   # the plugin's nodes in the tree (section 7)
 
 database:
-  mechanics: [migration_ledger]      # tables of mechanics, without versions
+  schema: acme_notes/schema.yaml     # the plugin's tables; the core builds them
   foreign_keys: acme_notes/foreign-keys.yaml
 ```
 
 | Field | Rule |
 |---|---|
 | `id` | reverse domain notation, `^[a-z0-9-]+(\.[a-z0-9-]+)+$`; the author's domain makes it unique; never changes in the plugin's life |
-| `name` | `^[a-z][a-z0-9_]{1,30}$`, does not start with `pg_`, not on the reserved list (`core`, `public`, `information_schema`, `maxitor`, `api`, `p`, `w`, `auth`, `static`, `admin`, `root`); unique in an installation; it is the schema's name, the suffix of the role `plg_<name>` and the path `/p/<name>`; does not change after the first release |
+| `name` | `^[a-z][a-z0-9_]{1,30}$`, does not start with `pg_`, not on the reserved list (`core`, `public`, `information_schema`, `maxitor`, `api`, `p`, `w`, `auth`, `static`, `admin`, `root`); unique in an installation; it starts each version's schema `<name>_<x>_<y>_<z>` and user `plg_<name>_<x>_<y>_<z>` and is the path `/p/<name>`; does not change after the first release |
 | `title`, `description` | for people: the page of plugins, the installation plan |
 | `version` | strictly `x.y.z` (SemVer); equal to the version in the package's `pyproject.toml` |
 | `requires.maxitor` | the range of core versions — an edge to the node `maxitor` of the dependency graph (section 3.1) |
@@ -105,7 +104,7 @@ Why both `id` and `name`. `id` is unique in the world and stands in other plugin
 
 Version ranges are written as pip writes them (`>=2.1,<3`, `~=2.1`), and what "breaking" means is defined the same for the core and for plugins (section 3.4).
 
-The passport is checked by a JSON schema (`plugin-passport-1.schema.json`): an unknown field is an error, YAML is read by a safe loader without tags, the size is limited.
+The passport is checked by a JSON schema (`plugin-passport-2.schema.json`; format 1, which carried `backend.migrate`, is not read any more): an unknown field is an error, YAML is read by a safe loader without tags, the size is limited.
 
 ## 3. The core, dependencies and compatibility
 
@@ -210,8 +209,7 @@ acme_notes/
     __init__.py
     maxitor-plugin.yaml
     app.py               # the AOA application factory
-    migrate.py           # the migrations' entry point
-    migrations/          # migration files in the format the plugin chose
+    schema.yaml          # the plugin's tables, built by the core
     foreign-keys.yaml    # cross-plugin foreign keys
     navigation.yaml      # tree nodes, pages, controls, behaviour in a room
     actions/ ...
@@ -231,100 +229,69 @@ Each plugin is installed into **its own virtual environment** — `<maxitor data
 
 ### 5.1. Schemas and roles
 
-All data is in one PostgreSQL database (16 or newer). The core is in two schemas named after its domains: `platform` (accounts and their ways in) and `organization` (organizations, their users and boundaries). Each installed version of a plugin is in a schema named after its `name` and its version — `notes_0_3_0` beside `notes_0_4_0` — so versions live side by side. `public` stays empty and closed to everyone. No SQL names a schema: a plugin's own tables are found through its role's `search_path`, and any other schema it reads comes from its environment by its logical name (`MAXITOR_SCHEMA_ORGANIZATION=organization`) and enters SQL only quoted as an identifier. There are four kinds of roles:
+All data is in one PostgreSQL database (16 or newer). The core is in three schemas named after its domains: `platform` (accounts and their ways in), `organization` (organizations, their users and boundaries) and `plugins` (the marketplace and the plugins of each organization). Each deployed version of a plugin is in a schema of its own, `<name>_<x>_<y>_<z>` — `notes_0_3_0` beside `notes_0_4_0` — so versions live side by side and a plugin has no migrations between them. `public` stays empty and closed to everyone. No SQL names a schema: a role's `search_path` finds what it may use.
 
 | Role | Who uses it | What it can do |
 |---|---|---|
-| `maxitor_admin` | the installer only | creates roles and schemas, grants rights, creates cross-plugin keys, drops schemas; a member of every plugin role with the `SET` right |
-| `maxitor_core` | the core's backend and its migrations | owns the schemas `platform` and `organization`, writes to them; reads every schema |
-| `plg_<name>` | the plugin's backend and its migrations | owns its schema: builds it itself and writes only to it; reads every other schema |
-| `maxitor_read` | nobody directly — a group | `USAGE` on every schema and `SELECT` on all their tables; `maxitor_core` and every plugin role are its members |
+| `maxitor_core` | the core's web process and its migrations | owns `platform`, `organization` and `plugins`, writes to them; cannot create a role or a schema |
+| `maxitor_installer` | the installer's process only | `CREATEROLE` and `CREATE` on the database: creates each version's user and schema, owns the version's tables, moves the rows of `plugins` through their states |
+| `maxitor_plugin` | nobody directly — a group | `EXECUTE` on the core's five functions (section 5.4); every version's user is its member |
+| `plg_<name>_<x>_<y>_<z>` | the version's processes | `USAGE` on its schema, `SELECT, INSERT, UPDATE, DELETE` on its tables, membership of `maxitor_plugin` — nothing else: no DDL, no other schema, nothing in `public` |
 
-The installer creates a plugin's role and schema:
+A version is deployed once for all of Maxitor, in one transaction: the user (with a SCRAM verifier computed by the installer, so the plain password never reaches the database), the schema, the tables, the keys to the core, the rights. The plain password goes only into `<plugins runtime>/<schema>/plugin.env`, readable by its owner only; the version's process starts with it (bystrovmaxim/gnomon#75). The next organization on the same version builds nothing.
 
-```sql
-CREATE ROLE plg_notes LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT
-    CONNECTION LIMIT 20 PASSWORD :generated;
-GRANT plg_notes TO maxitor_admin WITH SET TRUE, INHERIT FALSE;
-GRANT maxitor_read TO plg_notes;
-CREATE SCHEMA notes_0_3_0 AUTHORIZATION plg_notes;
-GRANT USAGE ON SCHEMA notes_0_3_0 TO maxitor_read;
-ALTER ROLE plg_notes SET search_path = notes_0_3_0;
+The core installs the database extensions (`btree_gist` for `EXCLUDE`) once; a plugin installs none.
+
+### 5.2. A plugin declares its tables; the core builds them
+
+A plugin carries no SQL. Its `schema.yaml` (`plugin-schema-1.schema.json`) declares tables and tables of mechanics: columns with a type from a closed list (`uuid`, `text`, `integer`, `bigint`, `numeric`, `boolean`, `date`, `timestamptz`, `jsonb`), `nullable` and a description each, the primary key, unique keys, indexes and keys inside the plugin:
+
+```yaml
+schema: 1
+tables:
+  note:
+    description: A note on a catalog item.
+    columns:
+      item_id: {type: uuid, nullable: false, description: The catalog item the note is about.}
+      body: {type: text, nullable: false, description: The text of the note.}
+    indexes:
+      - [item_id]
 ```
 
-The installer generates the role's password and puts it into the environment file of this plugin's process, readable by it alone. The plugin gets no other password.
+The columns `id`, `organization_id`, `created_at` and `updated_at` are always added and never declared. Every table gets a primary key that begins with `organization_id` and, unless it is a table of mechanics, its `<table>_versions` with the service fields, the constraint that no two versions of a row overlap and the index of the versions in force — versioned storage holds by construction. A table's name matches `^[a-z][a-z0-9_]{0,39}$`, a column's `^[a-z][a-z0-9_]{0,47}$`; a name that does not, or a type outside the list, refuses the file before any SQL exists, and every name enters SQL only quoted as an identifier.
 
-Writing into someone else's schema is impossible by the database's own means: the plugin role owns nothing but its schema and has no rights but `SELECT`. After every migration of any plugin **the installer syncs the read rights**: it grants `SELECT ON ALL TABLES IN SCHEMA <name> TO maxitor_read` and revokes every right on the schema's tables granted to anyone else. The owner of the tables could grant rights on them itself — the sync undoes that.
+### 5.3. Keys to the core
 
-Reading every schema is a rule, not a loosening: other plugins read any of a plugin's tables, and under the organization's lock the writer computes the watermark over the version tables of **every** schema ([versioned-storage, sections 3–4](versioned-storage.md)).
-
-The core installs the database extensions (`btree_gist` for `EXCLUDE`) once; a plugin installs no extensions of its own.
-
-### 5.2. A plugin builds its own schema
-
-Migrations are the plugin's business: it chooses the file format, the installer only calls `backend.migrate` **in a separate process connected as `plg_<name>`**. Never in the master role's connection through `SET ROLE`: the plugin's SQL could run `RESET ROLE` and get the installer's rights. For the same reason the whole installation is not one transaction but a sequence of steps with undo (section 10).
-
-After a migration the installer checks the schema against the rules of versioned storage, by reading the `pg_catalog` only:
-
-1. every table, except those listed in `database.mechanics`, has a pair `<table>_versions`;
-2. the columns of the version table are the current table's columns plus the service fields of the right types;
-3. the primary key of the versions is `(organization_id, id, valid_from_at)` (for a pure link — the pair of keys);
-4. there is an `EXCLUDE` constraint on overlapping periods and a partial index on `valid_to_at`;
-5. every foreign key of the current tables is `ON DELETE RESTRICT`; version tables have no foreign keys;
-6. every cross-plugin key of `foreign-keys.yaml` is in place (section 5.3).
-
-If the check fails, the migration counts as failed, and the installation or upgrade is undone.
-
-`maxitor-plugin-sdk` helps a plugin write by the rules of versioned storage: the organization's lock, the issuing of time, the functions that write a row and its version — the same as the core's. A plugin writes no versioning of its own.
-
-### 5.3. Cross-plugin foreign keys
-
-A plugin **does not create** a key from its table into a table of the core or of a dependency itself. For that it would need the `REFERENCES` right on others' tables forever, and could at any moment hang a `RESTRICT` on any of them and forbid deleting there. Instead the keys are declared in a file, and the installer creates them:
+A plugin **does not create** a key into the core's tables itself: it would need rights on them. The keys are declared in `foreign-keys.yaml`, and the installer creates them when it deploys the version:
 
 ```yaml
 # acme_notes/foreign-keys.yaml
 foreign_keys:
-  - from: { table: note, columns: [item_id] }
-    to:   { schema: core, table: items, columns: [id] }
-  - from: { table: note, columns: [author_id] }
-    to:   { schema: people, table: person, columns: [id] }
+  - from: { table: note, columns: [organization_id, writer_id] }
+    to:   { schema: core, table: user, columns: [organization_id, account_id] }
 ```
 
-The file has no constraint name, no delete rule, no SQL — identifiers only. The protection against injection is not escaping but the fact that a string from the file has nowhere to become code:
+The file has no constraint name, no delete rule, no SQL — identifiers only, checked by a JSON schema; the source schema is always the plugin's own. A key may point at what the core offers to refer to: an organization's user (`core.user (organization_id, id)` or `(organization_id, account_id)`) and an organization (`core.organization (id)`). It is built `ON DELETE RESTRICT`, named `xfk_` and the first 16 characters of the declaration's hash. The database checks an existing key as the owner of the target table, so the version's user needs no right on it.
 
-1. **Shape.** The file is read by a safe YAML loader and checked by a JSON schema: an unknown field is an error; every identifier is `^[a-z_][a-z0-9_]{0,62}$`; from 1 to 8 columns, lists of equal length. A quote, a dot, a space, a semicolon do not get past this step.
-2. **From.** There is no source schema in the file at all: it is always the plugin's own.
-3. **To.** `to.schema` is `core` or the `name` of a direct dependency from the passport; `to.table` is a current table of that dependency or of the core. A key against the direction of the dependency cannot be declared.
-4. **Catalog.** By parameterized queries to `pg_catalog`: both tables exist and are current tables, not `_versions`; the columns exist; their types are equal pairwise; the target columns, exactly this set, carry a primary key or a uniqueness.
-5. **Building.** The SQL is built from checked names only, through `psycopg.sql.Identifier`, with no string formatting. The installer computes the constraint name itself: `xfk_` and the first 16 characters of the declaration's hash.
-6. **Running** — one transaction of the master role, holding only the installer's SQL:
+A key into a dependency's tables would tie one version's schema to another's, and how an organization moves between versions is not decided yet: such a key is refused for now.
 
-```sql
-GRANT REFERENCES (id) ON organization.items TO plg_notes;
-SET ROLE plg_notes;                       -- only a table's owner may alter it
-ALTER TABLE notes.note ADD CONSTRAINT xfk_5c1e09a7b3d24f60
-    FOREIGN KEY (item_id) REFERENCES organization.items (id)
-    ON DELETE RESTRICT ON UPDATE RESTRICT NOT VALID;
-ALTER TABLE notes.note VALIDATE CONSTRAINT xfk_5c1e09a7b3d24f60;
-RESET ROLE;
-REVOKE REFERENCES (id) ON organization.items FROM plg_notes;
-```
+### 5.4. What a plugin needs of the core
 
-The `REFERENCES` right lives for exactly one transaction: the database runs the checks of an existing key as the owner of the target table, and they need no right of the plugin.
+A plugin's backend works with the database through **its own resource**, connected as its version's user: one connection per call, writing and reading only its own schema. What it needs of the core it gets from five `SECURITY DEFINER` functions of the schema `organization`, each with a fixed `search_path`; `maxitor-plugin-sdk` builds the SQL that calls them (`maxitor_plugin_sdk.core_functions`):
 
-On an upgrade the installer compares the declarations by their names `xfk_…`: removes those that disappeared, creates the new ones. A plugin can drop its cross-plugin key itself — it owns the table — but the check after a migration finds it and restores the key.
+| Function | Answer |
+|---|---|
+| `change_time(organization)` | takes the organization's lock — the same every writer of the organization takes — and answers the core's change time; the plugin takes the greatest of it and one microsecond after its own last change |
+| `watermark(organization)` | the organization's last change in the core's tables; the plugin takes the greatest of it and its own |
+| `is_member(organization, account)` | whether the account has an active user there now |
+| `member_organization(code, account)` | the organization of an address when the account is active there; NULL otherwise |
+| `member_name(organization, account, at)` | the account's user's name in the organization at a moment |
 
-A key into a core table means a core row cannot be deleted while a plugin refers to it. The installer shows this in the installation plan ("`notes` forbids deleting `organization.items` that have notes"), and the core asks the plugins through an extension point "may this be deleted" instead of catching a database error. How extension points work is a document of its own.
-
-### 5.4. Its own resource and the bounds of a transaction
-
-A plugin's backend works with the database through **its own resource** — a `PostgresStorage` connected as `plg_<name>`. That is one physical boundary: one connection per call, writing only into its own schema, reading from any schema.
-
-Hence a rule easy to miss: **a transaction does not cross schemas of different owners.** One transaction — one connection — one role — writing into one schema. An action that needs to change both the core's data and the plugin's makes two changes with two times: its own through its resource, the core's through the core's action over HTTP. This is what rule 24 of the constitution says about two resources: an action glues them, not a shared transaction. The organization's lock does not suffer: PostgreSQL advisory locks are shared by every role of one database, and all of an organization's writers in all schemas still line up in one row.
+**A transaction does not cross schemas of different owners.** An action that needs to change both the core's data and the plugin's makes two changes with two times: its own through its resource, the core's through the core's action over HTTP. A dependency's data comes the same way, through its actions. The organization's lock is still one: advisory locks are shared by every role of one database.
 
 ### 5.5. The plugin registry
 
-The core keeps installed plugins in the mechanics table `platform.plugin`: `id`, `name`, version, state (`installing`, `enabled`, `disabled`, `failed`), installation time. The core does not list a plugin's version tables separately: the watermark and list-of-changes queries are assembled from the database catalog for the schemas in the registry. After a plugin is removed, no row about it remains in the core.
+The core's domain `plugins` keeps the marketplace and the plugins of each organization: a plugin (`id` from its passport, `name`, title, owner — none for a public plugin, an organization for a private one), its versions (purl, `sha256`, core range, state, and once deployed its schema and user), their dependencies and navigation sections, and a plugin in an organization (its version, its state, who installed it). Every table is versioned: the marketplace's under the plugin's lock, an organization's rows under its lock. The installer's process is the only one that checks and deploys; the page Settings → Plugins of an organization's administrator only asks.
 
 ## 6. One site
 
@@ -828,72 +795,48 @@ Here `at` is a surface coordinate, `view` the viewport in its units. The core ad
 
 What isolation gives:
 
-- a plugin with a bug, or broken into on the server, **writes only into its own schema** and does not touch the data of the core or of other plugins;
+- a plugin with a bug, or broken into on the server, **reads and writes only its own version's schema** and does not touch, or even see, the data of the core or of other plugins;
 - it has no passwords of other roles, no token signing key and no sessions of people;
 - its Python dependencies do not break anyone else's;
-- removing it does not change a single row of the core.
+- removing it from an organization (bystrovmaxim/gnomon#94) deletes only that organization's rows in its schema.
 
 What isolation does not give — and this must be known when installing a plugin:
 
-- **A plugin's server reads everything.** The read right covers every schema, and organizations are separated by a condition in the query, not by the database. A plugin broken into reads the data of every organization. If that becomes unacceptable, the next step is row-level security (RLS) by `organization_id`.
+- **A plugin sees every organization on its version.** Inside its own schema organizations are separated by a condition in the query, not by the database: a plugin broken into reads the data it keeps for every organization that runs the same version. If that becomes unacceptable, the next step is row-level security (RLS) by `organization_id`.
 - **A plugin's frontend acts on the person's behalf on the whole site.** One origin means a plugin's script in the browser can call any action of the core and of any plugin with the person's rights. That is the price of one sign-in without redirects. The right panel's `iframe` is from the same origin too and does not change this: it separates the frame's layout from the plugin, not rights.
 - **A plugin can load the database.** Its role's connection limit restrains this but does not rule it out.
 
-The conclusion: **a plugin is installed only if its author is trusted.** Isolation protects against bugs and limits writing, not against bad intent. That is why the installer's plan shows the source and `sha256` of each package, the roles, the cross-plugin keys and what exactly the plugin reads.
+The conclusion: **a plugin is installed only if its author is trusted.** Isolation protects against bugs and limits writing, not against bad intent. That is why the details of a plugin on the page Settings → Plugins show its source and `sha256`, its tables, its schema and user, and its keys to the core.
 
 ## 10. The lifecycle
 
-Every scenario is a command of the installer (`maxitor plugin ...`) and the same page of plugins in administration; both call the same actions of the core.
+An organization's administrator manages its plugins on the page Settings → Plugins (`/w/<code>/settings/plugins`); the page only asks, and the installer's process does the work on its next round, every minute, so a crash of either leaves nothing stuck.
 
-### Installation
+### The marketplace
+
+A plugin of the marketplace is `listed` or `withdrawn`: withdrawn, it keeps working where it is installed, and nobody installs it anew. A version is `draft` until the installer checks it: it downloads the wheel (PyPI, a release on GitHub or GitLab, at most 50 MB within 60 seconds, only from those hosts), compares its `sha256`, keeps it in the wheel store by its hash, reads — never runs — its passport, `schema.yaml`, `navigation.yaml` and `foreign-keys.yaml`, and checks the core's range and that its `id` and `name` are free. Then it is `active`, or `rejected` with the reason. The operator adds a public version with `maxitor-plugin-installer add-version <purl> <sha256>`, or a wheel at hand with `add-wheel <file.whl>`.
+
+A **private plugin** belongs to one organization and no other sees it. Its administrator adds it by the Package URL of a release that downloads without signing in, with its `sha256`, or by uploading the wheel — for a closed repository or any other source. Maxitor needs the source once and keeps no access token.
+
+### Installing
 
 ```text
-$ maxitor plugin install acme-maxitor-notes
-Installation plan:
-  1. io.github.acme.tags    2.3.1   pip acme-maxitor-tags        sha256 9ab1…
-  2. io.github.acme.people  1.4.0   wheel github.com/acme/…      sha256 3f5a…
-  3. io.github.acme.notes   1.2.0   pip acme-maxitor-notes       sha256 c07d…
-notes reads: organization.items, tags.tag, people.person
-notes forbids deleting: organization.items, people.person while they have notes
-Roles: notes.reader, notes.editor
-Continue? [y/N]
+installing ──▶ enabled ⇄ disabled
+     └──▶ failed ──retry──▶ installing
+              └────────────▶ removed
 ```
 
-1. Download the packages without installing (`pip download --no-deps --require-hashes` or a wheel by its address), check `sha256`.
-2. Read the passports from the wheels, check them by the schema, compare `version` with the package metadata, check `name`.
-3. Ask the compatibility check (section 3.3) for the plan on the union with the installed plugins.
-4. Show the plan and wait for consent.
-5. For each plugin in order:
-   1. create the environment and install the wheel into it;
-   2. with the master role — the role, the schema, the rights (section 5.1);
-   3. as the plugin's role, in a separate process — the migrations;
-   4. with the master role — check the schema, sync the rights, create the cross-plugin keys;
-   5. write the plugin into `core.plugin`;
-   6. start the backend and the frontend, wait for the health check to answer, switch on the routes; then rebuild the tree (section 7.3).
-6. If any step of any plugin fails — undo **everything this command installed**, in reverse order: stop the processes, drop the schemas and roles, the environments, the registry rows. Installation is whole or nothing.
-
-### Upgrade
-
-1. New versions and their passports — as on installation.
-2. The compatibility check: the upgrade must not take any installed dependent plugin out of its range; otherwise a refusal with the list, or upgrading them together in one command.
-3. Migrations forward as the plugin's role, the schema check, syncing rights and cross-plugin keys.
-4. Restarting the plugin's processes; for those seconds its pages are unavailable, the rest of the site works.
-
-There is no way back — as in rule 12 of the constitution: undoing an upgrade is restoring from a backup.
+Installing is refused unless the version fits the core and every plugin it needs is installed — enabled or disabled — in the organization; the refusal names what is missing. Otherwise the row waits in `installing`; the installer deploys the version if no organization has (section 5.1) and enables it, or leaves it `failed` with the reason, with nothing built and nothing of the organization changed. An organization has at most one row not `removed` per plugin.
 
 ### Disabling and enabling
 
-Disabling stops the processes and removes the routes and the nodes from the tree (the tree is rebuilt); the schema and the data stay. A plugin cannot be disabled while a plugin depending on it is enabled; the core names such plugins.
+Disabling takes the plugin's sections out of the organization's tree; its data stays. It is refused while an enabled plugin depends on it, and enabling is refused while a plugin it needs is disabled; both name the plugins in the way.
 
-### Removal
+### Removing
 
-1. Refused if any installed plugin depends on this one.
-2. Offer to export the data (`pg_dump -n <name>`): with the schema goes the whole history of the plugin's data, and at past moments its data is no more.
-3. Stop the processes, remove the routes.
-4. With the master role: `DROP SCHEMA <name> CASCADE` (the plugin's cross-plugin keys lie in its tables and go with them), `DROP ROLE plg_<name>`.
-5. Remove the environment and the `platform.plugin` row.
+Removing a plugin from an organization — in batches, in the background, resumed after a crash — is bystrovmaxim/gnomon#94. The schema and its user stay: other organizations run the version.
 
-The core's upgrade passes the same compatibility check (section 3.3) against every installed plugin and refuses if one of them is incompatible with the new version.
+The core's upgrade passes the same compatibility check (section 3.3) against every installed plugin and refuses if one of them is incompatible with the new version. How an organization moves to another version of a plugin it runs is not decided yet.
 
 ## 11. The layout of a plugin's repository
 
@@ -903,9 +846,7 @@ acme-maxitor-notes/
     src/acme_notes/
         maxitor-plugin.yaml
         app.py
-        migrate.py
-        migrations/
-            0001_note.sql
+        schema.yaml
         foreign-keys.yaml
         navigation.yaml
         notes_domain.py
@@ -947,52 +888,31 @@ Creates the tree of files of section 11, a passport with no dependencies, a `nav
 
 **2. The passport.** Fill in `title`, `description`, `roles`, `frontend.navigation`. There are no dependencies — only `requires.maxitor`.
 
-**3. The schema.** The current table and its version table, by the rules of versioned storage:
+**3. The schema.** The tables, declared — the core builds each with its version table, the service fields and the indexes:
 
-```sql
--- migrations/0001_note.sql
-CREATE TABLE note (
-    id              uuid PRIMARY KEY,
-    organization_id uuid NOT NULL,
-    item_id         uuid NOT NULL,
-    body            text NOT NULL,
-    created_at      timestamptz NOT NULL,
-    updated_at      timestamptz NOT NULL
-);
-
-CREATE TABLE note_versions (
-    organization_id  uuid NOT NULL,
-    id               uuid NOT NULL,
-    valid_from_at    timestamptz NOT NULL,
-    valid_to_at      timestamptz NULL,
-    valid_during     tstzrange GENERATED ALWAYS AS (tstzrange(valid_from_at, valid_to_at)) STORED,
-    author_id        uuid NULL,
-    operation        text NOT NULL,
-    closed_by        uuid NULL,
-    closed_operation text NULL,
-    item_id          uuid NOT NULL,
-    body             text NOT NULL,
-    created_at       timestamptz NOT NULL,
-    updated_at       timestamptz NOT NULL,
-    PRIMARY KEY (organization_id, id, valid_from_at),
-    EXCLUDE USING gist (organization_id WITH =, id WITH =, valid_during WITH &&)
-);
-
-CREATE INDEX note_versions_item ON note_versions (organization_id, item_id, valid_to_at);
-CREATE INDEX note_versions_from ON note_versions (organization_id, valid_from_at);
-CREATE INDEX note_versions_to   ON note_versions (organization_id, valid_to_at)
-    WHERE valid_to_at IS NOT NULL;
+```yaml
+# schema.yaml
+schema: 1
+tables:
+  note:
+    description: A note on a catalog item.
+    columns:
+      item_id: {type: uuid, nullable: false, description: The catalog item the note is about.}
+      writer_id: {type: uuid, nullable: false, description: The account of the member who wrote the note.}
+      body: {type: text, nullable: false, description: The text of the note.}
+    indexes:
+      - [item_id]
 ```
 
-The key to `organization.items` is not in the migration — it is in `foreign-keys.yaml`:
+The key to the core is not in `schema.yaml` — it is in `foreign-keys.yaml` (section 5.3):
 
 ```yaml
 foreign_keys:
-  - from: { table: note, columns: [item_id] }
-    to:   { schema: core, table: items, columns: [id] }
+  - from: { table: note, columns: [organization_id, writer_id] }
+    to:   { schema: core, table: user, columns: [organization_id, account_id] }
 ```
 
-**4. The resource and the actions.** The resource writes a row and its version with the functions of `maxitor-plugin-sdk`; the actions call the resource. A sketch:
+**4. The resource and the actions.** The resource takes its change time and watermark from the core's functions through `maxitor_plugin_sdk.core_functions` (section 5.4) and writes a row and its version; the actions call the resource. A sketch:
 
 ```python
 @meta("Notes of catalog items, in the plugin's own schema.")
@@ -1081,7 +1001,7 @@ The view switch and the author filter are the core's controls: they write `?view
 maxitor dev --plugin .
 ```
 
-Starts the core with an empty database, installs the plugin from its sources by the same steps as the installer (role, schema, migrations, check, keys), runs the backend and `next dev` behind the gateway inside the core's frame. Sign in as the core's test user; a second tab with another user checks the room.
+Starts the core with an empty database, installs the plugin from its sources by the same steps as the installer (user, schema, tables from `schema.yaml`, keys, rights), runs the backend and `next dev` behind the gateway inside the core's frame. Sign in as the core's test user; a second tab with another user checks the room.
 
 **8. Checking and building.**
 
@@ -1109,13 +1029,13 @@ maxitor plugin check dist/acme_maxitor_notes-1.0.0-py3-none-any.whl
 8. Tables, tree nodes, actions and roles are a contract: a breaking change of them raises the major version.
 9. Without all its dependencies a plugin is not installed; the whole closure is installed whole or not at all.
 10. A dependency cycle is forbidden and is checked on building and on installing.
-11. A plugin does not import another plugin's code: it only reads its tables and calls its actions through the gateway.
+11. A plugin does not import another plugin's code and does not read its tables: it calls its actions through the gateway.
 12. A plugin's backend and frontend are processes of their own; Python runs in its own environment.
-13. A plugin's data is in the schema `<name>` of the shared database, under the role `plg_<name>`, which writes only to its own schema; a plugin without a `database` section gets neither a schema nor a role.
-14. Every table except the mechanics is kept by versioned storage; the installer checks this after every migration.
-15. A plugin reads any schema and writes only its own.
-16. A plugin's SQL never runs in the master role's connection.
-17. A cross-plugin foreign key goes only towards a dependency, only `RESTRICT`, only by a declaration in `foreign-keys.yaml`; the installer creates it.
+13. A plugin's data is in its version's schema `<name>_<x>_<y>_<z>` of the shared database, under its version's user `plg_<name>_<x>_<y>_<z>`, which reads and writes only that schema; a plugin without a `database` section gets neither a schema nor a user.
+14. A plugin carries no SQL and no migrations: it declares its tables in `schema.yaml`, and the core builds every table except the mechanics with its version table.
+15. A plugin reaches the core only through its five functions: change time, watermark, membership, the organization of an address, a member's name.
+16. Only the installer's process holds the password of `maxitor_installer`; the core's web process never does.
+17. A key to the core is only `RESTRICT`, only by a declaration in `foreign-keys.yaml`, only to what the core offers; the installer creates it. A key to a dependency waits for moving organizations between versions.
 18. A transaction does not cross schemas of different owners; a change in two schemas is two changes glued by an action.
 19. A plugin works with the database through its own resource and with the outside world through AOA actions.
 20. A plugin's frontend is a Next.js application with `basePath: /p/<name>` on `@maxitor/panel`; its pages are shown only in the right panel.
@@ -1139,11 +1059,11 @@ Code breaks — a test catches it, each of these:
 1. a passport with an unknown field, a wrong `name` or a version other than the package's fails the check;
 2. a closure with an unavailable dependency or a version conflict installs no plugin at all;
 3. a cycle `a → b → a` and depending on oneself are refused, and the cycle is named;
-4. a plugin role cannot `INSERT`, `UPDATE`, `DELETE`, `CREATE` in someone else's schema or in `core`;
-5. a right a plugin granted on its table to another role disappears after the sync;
-6. a table without a version pair or with `ON DELETE CASCADE` fails the installation, and the installation is undone whole;
+4. a version's user cannot read, write or create anything outside its schema, and `maxitor_core` cannot create a schema or a role;
+5. the plain password of a version's user reaches no statement of the database, only its environment file;
+6. a `schema.yaml` with an unsafe name or an unknown type is refused before any SQL, and a deploy cut off at any step leaves nothing;
 7. a `foreign-keys.yaml` with a quote, a dot or a `;` in a name, with a schema that is not a dependency, with a `_versions` table or with mismatched types is refused before any SQL;
-8. after a cross-plugin key is created the plugin role has no `REFERENCES` right; a key the plugin dropped comes back after a migration;
+8. a key to the core needs no right of the version's user, and a key to a dependency is refused;
 9. the plugin's backend refuses a token with someone else's `aud`, with `HS256`, or expired;
 10. the session cookie does not reach the plugin's process;
 11. a call through the gateway into a plugin that is not a direct dependency is refused;

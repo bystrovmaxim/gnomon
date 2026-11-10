@@ -85,3 +85,22 @@ def test_the_front_importing_the_port_is_named(tmp_path: Path, monkeypatch: pyte
     """The front reads the port over HTTP; importing it is a violation."""
     found = _violations(tmp_path, monkeypatch, "maxitor/web", "from maxitor.repo_graph_port.commit import Commit\n")
     assert found == ["maxitor/web/module.py:1: context 'maxitor' must not import package 'repo_graph_port' via 'maxitor.repo_graph_port.commit'"]
+
+
+def test_a_nested_package_is_owned_by_its_longest_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A package inside another's folder (the core's domain plugins) is checked by its own rules, not the outer's."""
+    config = {
+        "packages": {
+            **CONFIG["packages"],
+            "core": {"current_roots": ["maxitor/core"], "import_prefixes": ["maxitor.core"], "may_import": ["action_machine", "plugins"]},
+            "plugins": {"current_roots": ["maxitor/core/plugins"], "import_prefixes": ["maxitor.core.plugins"], "may_import": ["action_machine", "core"]},
+        },
+        "standalone": CONFIG["standalone"],
+    }
+    for folder in ("aoa/action_machine", "maxitor/web", "maxitor/repo_graph_port", "maxitor/graph_builder", "maxitor/core/plugins"):
+        (tmp_path / folder).mkdir(parents=True, exist_ok=True)
+    (tmp_path / "maxitor/core/plugins/module.py").write_text("from maxitor.core.storage import x\nfrom maxitor.web import y\n", encoding="utf-8")
+    checker = _checker()
+    monkeypatch.setattr(checker, "REPO_ROOT", tmp_path)
+    found = [v.format() for v in checker.check_production(config)]
+    assert found == ["maxitor/core/plugins/module.py:2: context 'plugins' must not import package 'maxitor' via 'maxitor.web'"]

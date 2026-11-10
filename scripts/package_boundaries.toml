@@ -15,12 +15,28 @@ future_roots = ["packages/maxitor/maxitor-web/maxitor/web"]
 import_prefixes = ["maxitor.web"]
 may_import = ["action_machine", "graph_builder", "graph_compare", "graph_map"]
 
-# Maxitor's core: accounts, organizations and the session. It imports neither the graph viewer nor a tool.
+# Maxitor's core: accounts, organizations and the session. It imports neither the graph viewer nor a tool; it reaches
+# the domain plugins only to serve its routes and the organization's tree.
 [packages.core]
 current_roots = ["packages/maxitor/maxitor-core/maxitor/core"]
 future_roots = ["packages/maxitor/maxitor-core/maxitor/core"]
 import_prefixes = ["maxitor.core"]
-may_import = ["action_machine"]
+may_import = ["action_machine", "plugins"]
+
+# The core's domain plugins: the marketplace and the plugins of each organization. It builds on the core's storage,
+# roles and refusals, and never on the graph viewer or a tool.
+[packages.plugins]
+current_roots = ["packages/maxitor/maxitor-core/maxitor/core/plugins"]
+future_roots = ["packages/maxitor/maxitor-core/maxitor/core/plugins"]
+import_prefixes = ["maxitor.core.plugins"]
+may_import = ["action_machine", "core"]
+
+# The installer: a process of its own that checks and deploys plugin versions by running the domain plugins' actions.
+[packages.plugin_installer]
+current_roots = ["packages/maxitor/tools/plugin-installer/maxitor/plugin_installer"]
+future_roots = ["packages/maxitor/tools/plugin-installer/maxitor/plugin_installer"]
+import_prefixes = ["maxitor.plugin_installer"]
+may_import = ["action_machine", "core", "plugins"]
 
 # The repo-graph-port service: it never imports the front, and the front reads it over HTTP, never imports it.
 [packages.repo_graph_port]

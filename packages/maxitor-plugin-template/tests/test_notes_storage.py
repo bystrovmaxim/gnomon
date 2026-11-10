@@ -17,7 +17,7 @@ MOMENT = "2026-11-08T10:15:00.123456Z"
 
 
 def _answer(query, params):
-    if "greatest(clock_timestamp()" in query:
+    if "change_time($1::text::uuid)" in query:
         return datetime(2026, 11, 8, 10, 15, tzinfo=UTC)
     if query.startswith("SELECT to_char($1::timestamptz"):
         return MOMENT
@@ -41,20 +41,19 @@ async def test_a_note_is_written_with_its_version_in_one_transaction_under_the_l
     queries = connection.queries()
     assert changed_at == MOMENT
     assert queries[0] == "BEGIN"
-    assert queries[1].startswith("SELECT pg_advisory_xact_lock")
-    assert "greatest(clock_timestamp()" in queries[2]
-    assert queries[3].startswith("INSERT INTO note ")
-    assert queries[4].startswith("INSERT INTO note_versions ")
+    assert queries[1].startswith("SELECT greatest(change_time($1::text::uuid)")
+    assert queries[2].startswith("INSERT INTO note ")
+    assert queries[3].startswith("INSERT INTO note_versions ")
     assert queries[-1] == "COMMIT"
 
 
-async def test_the_time_is_issued_after_the_lock() -> None:
+async def test_the_time_comes_from_the_cores_lock_and_follows_the_plugins_own_changes() -> None:
     storage, connection = await _open()
     await storage.add_note(ORG, ITEM, WRITER, "Check the limits", "AddNoteAction")
-    queries = connection.queries()
-    lock = next(i for i, q in enumerate(queries) if "pg_advisory_xact_lock" in q)
-    time = next(i for i, q in enumerate(queries) if "greatest(clock_timestamp()" in q)
-    assert lock < time
+    time = connection.queries()[1]
+    assert "change_time($1::text::uuid)" in time and "FROM note_versions WHERE organization_id = $1::text::uuid" in time
+    assert "+ interval '1 microsecond'" in time
+    assert not any("pg_advisory" in q for q in connection.queries())  # the core's function takes the lock
 
 
 async def test_a_failed_write_rolls_back_and_leaves_nothing() -> None:
@@ -89,7 +88,9 @@ async def test_every_version_table_of_a_read_is_bound_to_the_organization_and_th
         await storage.note_authors(ORG, ITEM, MOMENT, 50, None)
     query = connection.queries()[-1]
     aliases = re.findall(r'(?:FROM|JOIN) (?:"?\w+"?\.)?"?(\w+_versions)"? (\w+)', query)
-    assert {table for table, _alias in aliases} == {"note_versions", "user_versions"}
+    assert {table for table, _alias in aliases} == {"note_versions"}
+    assert "member_name(n.organization_id, n.writer_id, $3::text::timestamptz)" in query
+    assert "user" not in query.replace("member_name", "")
     for _table, alias in aliases:
         assert f"{alias}.valid_from_at <= $3::text::timestamptz" in query
         assert f"{alias}.valid_to_at IS NULL OR {alias}.valid_to_at > $3::text::timestamptz" in query
@@ -99,7 +100,7 @@ async def test_every_version_table_of_a_read_is_bound_to_the_organization_and_th
 
 async def test_a_read_without_a_moment_reads_at_the_watermark() -> None:
     def answer(query, params):
-        if query.startswith("SELECT to_char(max(t)"):
+        if "watermark($1::text::uuid)" in query:
             return MOMENT
         return _answer(query, params)
 
@@ -115,10 +116,9 @@ async def test_an_organization_without_changes_has_no_notes_and_no_query_for_the
     assert not any("FROM note_versions n" in query for query in connection.queries())
 
 
-async def test_membership_is_read_from_the_current_tables_of_the_core() -> None:
-    storage, connection = await _open(lambda query, params: ORG if '"organization"."user"' in query else None)
+async def test_membership_is_asked_of_the_cores_function_never_of_its_tables() -> None:
+    storage, connection = await _open(lambda query, params: ORG if "member_organization(" in query else None)
     assert await storage.organization_of("acme", WRITER) == ORG
     query, params = connection.statements[-1]
-    assert '"organization"."organization" o' in query and '"organization"."user" m' in query and "_versions" not in query
-    assert "m.account_id" in query and "m.status = 'active'" in query
+    assert query == "SELECT member_organization($1, $2::text::uuid)::text"
     assert params == ("acme", WRITER)

@@ -1,7 +1,9 @@
 // packages/maxitor/maxitor-core/web/scripts/check-core.mjs
-// The scenarios of specs/072-maxitor-core/quickstart.md in Chromium against the local stand
-// (./scripts/core-stand.sh up): signing up with the code from the outbox, the consent step, registering an
-// organization, signing out and in, a wrong password, resetting the password, someone else's organization, an
+// The scenarios of specs/072-maxitor-core/quickstart.md and specs/073-plugin-marketplace/quickstart.md in Chromium
+// against the local stand (./scripts/core-stand.sh up): signing up with the code from the outbox, the consent step,
+// registering an organization, Settings → Plugins — the marketplace, the search, installing the plugin template and
+// seeing its sections in the tree, a second organization on the deployed version, disabling and enabling, a private
+// plugin's dialog — signing out and in, a wrong password, resetting the password, someone else's organization, an
 // organization's address without a session, and the same pages on a phone.
 //
 //   node packages/maxitor/maxitor-core/web/scripts/check-core.mjs
@@ -145,6 +147,88 @@ await scenario("a taken address and one with characters not allowed are named", 
   await page.getByText("“B”, “_” and “C” are not allowed").waitFor();
 });
 
+const SECOND = `check-b-${RUN}`;
+
+/** Wait until the Installed tab shows a plugin in a state, the page reading the installer's work by itself. */
+async function waitForState(title, state) {
+  for (let i = 0; i < 90; i += 1) {
+    const row = page.locator(".prow", { hasText: title });
+    if ((await row.count()) && (await row.locator(`.stt.${state}`).count())) return;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  throw new Error(`${title} never became ${state}`);
+}
+
+await scenario("Settings at the foot of the tree leads to Plugins; the marketplace offers the template", async () => {
+  await page.goto(`${BASE}/w/${CODE}`);
+  await page.locator(".sb-foot a", { hasText: "Settings" }).click();
+  await page.waitForURL(`**/w/${CODE}/settings/plugins`);
+  expect((await page.locator(".crumb").innerText()).includes("Settings"), "the header does not say Settings");
+  await page.getByRole("tab", { name: /Marketplace/ }).click();
+  await page.locator(".mcard", { hasText: "Notes" }).waitFor();
+  await page.getByLabel("Search plugins").fill("nothing-like-it");
+  await page.getByText("No plugin matches “nothing-like-it”").waitFor();
+  await page.getByRole("button", { name: "Clear the search" }).first().click();
+  await page.locator(".mcard", { hasText: "Notes" }).waitFor();
+});
+
+await scenario("installing the template builds its version and its sections join the tree", async () => {
+  await page.goto(`${BASE}/w/${CODE}/settings/plugins`);
+  await page.getByRole("tab", { name: /Marketplace/ }).click();
+  await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
+  await page.getByText("Install Notes 0.4.0").waitFor();
+  // The stand's first run deploys the version; a later run finds it deployed by an earlier one.
+  await page.locator(".dlg", { hasText: /is deployed for the first time|is already deployed in Maxitor/ }).waitFor();
+  await page.getByRole("button", { name: "Install Notes" }).click();
+  await page.getByRole("tab", { name: /Installed/ }).waitFor();
+  await waitForState("Notes", "enabled");
+  await page.goto(`${BASE}/w/${CODE}`);
+  await page.locator(".tree .tg", { hasText: "Notes" }).waitFor();
+});
+
+await scenario("a second organization installs the deployed version without building it", async () => {
+  await page.goto(`${BASE}/new`);
+  await page.getByLabel("Organization’s name").fill(`Check B ${RUN}`);
+  await page.getByText("free").waitFor();
+  await page.getByRole("button", { name: "Register and enter" }).click();
+  await page.waitForURL(`**/w/${SECOND}`);
+  await page.goto(`${BASE}/w/${SECOND}/settings/plugins`);
+  await page.getByRole("tab", { name: /Marketplace/ }).click();
+  await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
+  await page.getByText("is already deployed in Maxitor").waitFor();
+  await page.getByRole("button", { name: "Install Notes" }).click();
+  await waitForState("Notes", "enabled");
+});
+
+await scenario("disabling keeps the plugin, enabling brings its sections back", async () => {
+  await page.goto(`${BASE}/w/${SECOND}/settings/plugins`);
+  await page.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Disable" }).click();
+  await page.getByRole("button", { name: "Disable", exact: true }).last().click();
+  await waitForState("Notes", "disabled");
+  await page.goto(`${BASE}/w/${SECOND}`);
+  expect((await page.locator(".tree .tg", { hasText: "Notes" }).count()) === 0, "a disabled plugin stays in the tree");
+  await page.goto(`${BASE}/w/${SECOND}/settings/plugins`);
+  await page.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Enable" }).click();
+  await waitForState("Notes", "enabled");
+  await page.goto(`${BASE}/w/${CODE}/settings/plugins`);
+  await page.locator(".prow", { hasText: "Notes" }).locator(".stt.enabled").waitFor(); // the first organization untouched
+});
+
+await scenario("the private plugin dialog refuses a PyPI address before sending it", async () => {
+  await page.goto(`${BASE}/w/${CODE}/settings/plugins`);
+  await page.getByRole("button", { name: "Add a private plugin" }).click();
+  await page.getByLabel("Package URL").fill("pkg:pypi/sv-reports@0.3.0");
+  await page.getByText("A package on PyPI is the public marketplace's.").waitFor();
+  expect(await page.getByRole("button", { name: "Add and check" }).isDisabled(), "a PyPI address can be sent");
+  await page.getByRole("button", { name: "Upload a wheel" }).click();
+  await page.getByText("Choose a .whl file").waitFor();
+});
+
+await scenario("the settings of an organization one is not in answer No such page", async () => {
+  await page.goto(`${BASE}/w/orbita-${RUN}/settings/plugins`);
+  await page.getByText("No such page").waitFor();
+});
+
 await scenario("someone else's organization and a made-up one answer alike", async () => {
   await page.goto(`${BASE}/w/orbita-${RUN}`);
   await page.getByText("No such organization").waitFor();
@@ -161,7 +245,9 @@ await scenario("sign out, then a wrong password is one message and the right one
   await signIn("nobody-" + EMAIL, "Wrong-Password-1");
   await page.getByText("Wrong email or password.").waitFor();
   await signIn(EMAIL, PASSWORD);
-  await page.waitForURL(`**/w/${CODE}`);
+  // The account has two organizations by now, so it lands on choosing one.
+  await page.waitForURL(`${BASE}/w`);
+  await page.getByText("Choose an organization").waitFor();
 });
 
 await scenario("an organization's address without a session signs in and lands there", async () => {
@@ -199,7 +285,7 @@ await scenario("reset the password: the old one is refused, the new one works, a
   await p.getByText("Wrong email or password.").waitFor();
   await p.locator("#pw-current-password").fill(NEW_PASSWORD);
   await p.getByRole("button", { name: "Sign in", exact: true }).click();
-  await p.waitForURL(`**/w/${CODE}`);
+  await p.waitForURL(`${BASE}/w`);
   await other.close();
 });
 
@@ -211,6 +297,26 @@ await scenario("on a phone every page is one column without sideways scrolling",
     const wide = await p.evaluate(() => document.documentElement.scrollWidth);
     expect(wide <= 375, `${path} is ${wide} px wide`);
   }
+  await phone.close();
+});
+
+await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sheet and the drawer", async () => {
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+  await phone.addCookies(await context.cookies());
+  const p = await phone.newPage();
+  await p.goto(`${BASE}/w/${CODE}/settings/plugins`);
+  await p.locator(".prow", { hasText: "Notes" }).waitFor();
+  const wide = () => p.evaluate(() => document.documentElement.scrollWidth);
+  expect((await wide()) <= 375, `the installed tab is ${await wide()} px wide`);
+  await p.getByRole("tab", { name: /Marketplace/ }).click();
+  expect((await wide()) <= 375, `the marketplace is ${await wide()} px wide`);
+  await p.getByRole("button", { name: "Add a private plugin" }).click();
+  const sheet = await p.locator(".dlg.sheet").boundingBox();
+  expect(sheet && Math.round(sheet.y + sheet.height) >= 811 && sheet.width >= 370, "the dialog is not a sheet from the bottom");
+  await p.getByRole("button", { name: "Cancel" }).click();
+  await p.getByRole("button", { name: "The organization's tree" }).click();
+  await p.locator(".sb.drawer a", { hasText: "Plugins" }).waitFor();
   await phone.close();
 });
 

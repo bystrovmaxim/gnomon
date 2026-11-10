@@ -3,7 +3,7 @@
 The core's migrations: ``maxitor-core migrate`` connects as ``maxitor_core`` and brings the database up to date.
 
 The folder ``migrations/platform`` runs first, under the schema platform; ``migrations/organization`` next, under
-organization then platform. Each file runs once, in name order, in its own transaction, and is recorded in the
+organization then platform; ``migrations/plugins`` last, under plugins, organization, platform. Each file runs once, in name order, in its own transaction, and is recorded in the
 ledger with its sha256. A file whose recorded sha256 no longer matches stops the run: a migration that has run is
 never edited, a new one is added.
 """
@@ -18,7 +18,7 @@ from maxitor.core.storage.migrations_storage import MigrationsStorage
 
 MIGRATIONS = Path(__file__).with_name("migrations")
 #: The folders in the order they run.
-FOLDERS = ("platform", "organization")
+FOLDERS = ("platform", "organization", "plugins")
 
 
 class MigrationChangedError(RuntimeError):

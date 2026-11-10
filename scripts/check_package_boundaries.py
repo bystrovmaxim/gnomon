@@ -19,7 +19,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CONFIG_PATH = REPO_ROOT / "scripts" / "package_boundaries.toml"
 
+#: The packages the configuration must declare; any other ``[packages.<name>]`` it declares is checked too.
 CANONICAL = ("action_machine", "maxitor", "repo_graph_port")
+
+
+def _names(cfg: dict) -> tuple[str, ...]:
+    """The canonical packages first, then every other package the configuration declares, in its order."""
+    declared = list(_packages_table(cfg))
+    return (*CANONICAL, *(name for name in declared if name not in CANONICAL))
 
 
 @dataclass(frozen=True)
@@ -54,7 +61,7 @@ def _packages_table(cfg: dict) -> dict:
 def _package_roots(cfg: dict) -> dict[str, list[str]]:
     packages = _packages_table(cfg)
     out: dict[str, list[str]] = {}
-    for name in CANONICAL:
+    for name in _names(cfg):
         if name not in packages:
             raise SystemExit(f"Config section [packages.{name}] is required")
         roots = packages[name].get("current_roots") or []
@@ -86,7 +93,7 @@ def _owner_for_file(rel_posix: str, roots: dict[str, list[str]]) -> str | None:
 def _import_prefixes(cfg: dict) -> dict[str, str]:
     """Every ``import_prefixes`` entry of the canonical and standalone packages, mapped to its package."""
     packages = _packages_table(cfg)
-    prefixes = {str(prefix): name for name in CANONICAL for prefix in packages[name].get("import_prefixes") or []}
+    prefixes = {str(prefix): name for name in _names(cfg) for prefix in packages[name].get("import_prefixes") or []}
     for name, table in (cfg.get("standalone") or {}).items():
         prefixes.update({str(prefix): name for prefix in table.get("import_prefixes") or []})
     return prefixes
@@ -183,7 +190,7 @@ def _collect_py_files(roots: dict[str, list[str]]) -> list[Path]:
 
 def check_production(cfg: dict) -> list[Violation]:
     roots = _package_roots(cfg)
-    may_by_pkg = {p: _may_import(cfg, p) for p in CANONICAL}
+    may_by_pkg = {p: _may_import(cfg, p) for p in _names(cfg)}
     prefixes = _import_prefixes(cfg)
     allows = _load_allows(cfg)
     violations: list[Violation] = []

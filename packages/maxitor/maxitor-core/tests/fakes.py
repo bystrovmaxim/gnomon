@@ -6,7 +6,9 @@ that answer what the test says, and a logger that keeps every line and its event
 
 from __future__ import annotations
 
+import tempfile
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any, cast
 
 from fastapi.testclient import TestClient
@@ -292,7 +294,7 @@ class KeptLogger(BaseLogger):
 class World:
     """The backend with its doubles."""
 
-    def __init__(self) -> None:
+    def __init__(self, wheel_max_bytes: int = 50 * 1024 * 1024) -> None:
         self.storage = MemoryCoreStorage()
         self.geo = ChosenCountryGateway()
         self.mail = KeptMailGateway()
@@ -301,9 +303,13 @@ class World:
         machine = ActionProductMachine(
             graph_coordinator=create_node_graph_coordinator(), log_coordinator=LogCoordinator(loggers=[self.logger])
         )
+        from tests.plugin_fakes import MemoryPluginsStorage  # pylint: disable=import-outside-toplevel
+
+        self.plugins = MemoryPluginsStorage(self.storage)
+        self.wheels = Path(tempfile.mkdtemp(prefix="wheels-"))
         app = create_app(
-            CoreSettings(session_secret=SECRET),
-            resources={"core": self.storage, "geoip": self.geo, "mail": self.mail, **self.providers},
+            CoreSettings(session_secret=SECRET, wheel_store=self.wheels, wheel_max_bytes=wheel_max_bytes),
+            resources={"core": self.storage, "plugins": self.plugins, "geoip": self.geo, "mail": self.mail, **self.providers},
             machine=machine,
         )
         self.client = TestClient(app)

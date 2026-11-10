@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maxitor core — the marketplace and a plugin in an organization · mockup</title>
+<style>
+  /* The visual language of the mockups of spec 059 and of issue #73: the same colours, header, tree and dialogs. */
+  :root {
+    --page-bg: #e9edf1; --ink: #0f172a; --ink2: #1e293b; --muted: #64748b; --faint: #94a3b8;
+    --line: rgba(15,23,42,.1); --line2: rgba(15,23,42,.06);
+    --sidebar: #EBF2F5; --canvas: #f6f8fa;
+    --ok: #16a34a; --bad: #b91c1c; --warn: #b45309;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: var(--font); color: var(--ink); background: var(--page-bg); display: flex; }
+  button { font: inherit; color: inherit; }
+  code, .mono { font-family: var(--mono); }
+
+  /* ---------- mockup navigator ---------- */
+  .nav { width: 300px; flex-shrink: 0; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--line); padding: 18px 12px 32px; }
+  .nav h1 { font-size: 15px; margin: 0 6px 4px; }
+  .nav .sub { font-size: 12px; color: var(--muted); margin: 0 6px 12px; line-height: 1.45; }
+  .nav .group { font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 14px 6px 4px; }
+  .nav button.screen { display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+  .nav button.screen:hover { background: rgba(15,23,42,.05); }
+  .nav button.screen.on { background: rgba(15,23,42,.08); font-weight: 600; }
+  .nav button.screen .n { color: var(--muted); font-size: 11px; min-width: 24px; font-variant-numeric: tabular-nums; }
+  .seg { display: flex; margin: 4px 6px 6px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: #f8fafc; }
+  .seg button { flex: 1; border: 0; background: none; border-radius: 6px; font-size: 12.5px; padding: 5px 0; cursor: pointer; color: var(--muted); }
+  .seg button.on { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+  .path { margin: 6px 4px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .path .pt { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .path .pf { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .path .steps { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .path .steps button { border: 1px solid var(--line); background: #f8fafc; border-radius: 6px; font-size: 11px; padding: 2px 6px; cursor: pointer; }
+  .path .steps span { color: var(--faint); font-size: 11px; }
+
+  .stage { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; padding: 18px 24px 48px; }
+  .frame-cap { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .frame-cap b { color: var(--ink); }
+  .frame-box { position: relative; }
+  .frame-scale { transform-origin: top left; position: absolute; top: 0; left: 0; }
+  .notes { max-width: 980px; margin-top: 18px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 20px 16px; }
+  .notes h2 { font-size: 15px; margin: 0 0 6px; }
+  .notes li { font-size: 13px; line-height: 1.55; }
+  .notes ul { padding-left: 18px; margin: 6px 0 0; }
+  .notes code { font-size: 12px; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; }
+
+  /* ---------- device ---------- */
+  .device { width: 1360px; height: 840px; background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 8px 28px rgba(15,23,42,.12); }
+  .urlbar { height: 34px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #f1f5f9; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .urlbar .u { flex: 1; max-width: 560px; height: 22px; border-radius: 6px; background: #fff; border: 1px solid var(--line); display: flex; align-items: center; padding: 0 10px; color: #334155; white-space: nowrap; overflow: hidden; }
+  .urlbar .u b { color: var(--ink); font-weight: 600; }
+
+  .hdr { height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 12px; background: #fff; border-bottom: 1px solid var(--line); position: relative; z-index: 20; }
+  .burger { display: none; width: 32px; height: 32px; border: 0; background: none; border-radius: 7px; align-items: center; justify-content: center; cursor: pointer; margin-left: -6px; }
+  .burger:hover { background: rgba(15,23,42,.06); }
+  .logo { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13.5px; margin-right: 8px; }
+  .logo .mk { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .crumb { display: inline-flex; align-items: baseline; gap: 6px; height: 28px; line-height: 28px; padding: 0 8px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+  .crumb .lv { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .hdr .spacer { flex: 1; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #cbd5e1; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+  .ico { width: 16px; height: 16px; flex-shrink: 0; }
+  .ico.sm { width: 14px; height: 14px; }
+
+  /* ---------- the organization's frame ---------- */
+  .body { flex: 1; min-height: 0; display: flex; position: relative; }
+  .sb { width: 255px; flex-shrink: 0; background: var(--sidebar); border-right: 1px solid rgba(15,23,42,.08); display: flex; flex-direction: column; }
+  .sb-top { padding: 12px 14px 8px; }
+  .sb-top .k { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .sb-top .t { font-size: 14px; font-weight: 600; margin-top: 3px; }
+  .sb-top .d { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .sb-empty { margin: 18px 16px; font-size: 12px; color: var(--faint); line-height: 1.5; border: 1.5px dashed rgba(15,23,42,.14); border-radius: 8px; padding: 14px 12px; text-align: center; }
+  /* The tree as maxitor-web's LeftSidebar draws it: 13 px rows, a chevron for a group, children indented, the chosen row only shaded. */
+  .tree { flex: 1; overflow-y: auto; padding: 6px 8px 4px; }
+  .tg, .ti { display: flex; align-items: center; min-width: 0; border-radius: 6px; cursor: pointer; color: rgb(30,41,59); font-size: 13px; line-height: 1.35; }
+  .tg { min-height: 36px; padding: 0 8px; font-weight: 600; letter-spacing: -.01em; margin-top: 4px; }
+  .ti { min-height: 32px; padding: 0 8px 0 32px; font-weight: 400; }
+  .tg:hover, .ti:hover { background: rgba(15,23,42,.07); }
+  .ti.on, .ti.on:hover { background: rgba(15,23,42,.09); }
+  .tg .slot, .ti .slot { width: 32px; flex-shrink: 0; display: inline-flex; align-items: center; color: rgb(100,116,139); }
+  .tg .slot .ico { width: 20px; height: 20px; }
+  .ti .slot .ico { width: 16px; height: 16px; opacity: .88; }
+  .tg .lb, .ti .lb { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sb-foot { padding: 4px 8px 8px; }
+  .sb-foot .ti { padding-left: 8px; color: rgb(71,85,105); }
+  .crumb .sep { color: var(--faint); font-weight: 400; margin: 0 2px; }
+  .crumb a { cursor: pointer; border-radius: 6px; }
+  .crumb a:hover { text-decoration: underline; }
+  .content { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+  .dots { flex: 1; background-color: var(--canvas); background-image: radial-gradient(rgba(15,23,42,.13) 1px, transparent 1px); background-size: 18px 18px; }
+  .empty-c { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; width: 80%; }
+  .empty-c b { color: var(--ink2); font-size: 14px; }
+
+  /* ---------- the plugins page ---------- */
+  .page { flex: 1; overflow-y: auto; background: var(--canvas); padding: 26px 32px 48px; }
+  .page .inner { max-width: 960px; margin: 0 auto; }
+  .ph { display: flex; align-items: flex-start; gap: 16px; }
+  .ph .tx { flex: 1; }
+  .ph h2 { font-size: 22px; margin: 0 0 4px; }
+  .ph .sub { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 18px 0 16px; }
+  .tabs button { border: 0; background: none; padding: 8px 12px; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .tabs button.on { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+  .tabs .cnt { font-size: 11px; background: #e2e8f0; color: #475569; border-radius: 9px; padding: 0 6px; font-weight: 600; }
+  .search { display: flex; align-items: center; gap: 8px; height: 36px; border: 1px solid rgba(15,23,42,.18); border-radius: 8px; background: #fff; padding: 0 10px; margin-bottom: 14px; max-width: 420px; color: var(--muted); }
+  .search:focus-within { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .search input { flex: 1; min-width: 0; border: 0; outline: 0; font: inherit; font-size: 13.5px; color: var(--ink); background: none; }
+  .search .clr { border: 0; background: #e2e8f0; color: #475569; width: 18px; height: 18px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+  .search .clr .ico { width: 11px; height: 11px; }
+  mark { background: #fef08a; color: inherit; border-radius: 2px; padding: 0 1px; }
+  .sec { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 20px 0 8px; display: flex; align-items: center; gap: 8px; }
+  .sec:first-child { margin-top: 0; }
+  .sec span { text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+  .prow { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start; margin-bottom: 8px; }
+  .prow.gone { background: #fbfcfd; }
+  .prow.gone .ptile { opacity: .45; }
+  .ptile { width: 38px; height: 38px; border-radius: 9px; color: #fff; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .ptile.lg { width: 48px; height: 48px; border-radius: 11px; font-size: 20px; }
+  .pmain { flex: 1; min-width: 0; }
+  .ptitle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; font-weight: 600; }
+  .ptitle a { cursor: pointer; }
+  .ptitle a:hover { text-decoration: underline; }
+  .ver { font-size: 12px; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .pmeta { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.55; }
+  .pmeta .mono { font-size: 11.5px; color: #475569; word-break: break-all; }
+  .pmeta b { color: var(--ink2); font-weight: 600; }
+  .pacts { display: flex; gap: 6px; flex-shrink: 0; }
+  .stt { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 7px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+  .stt.enabled { background: #dcfce7; color: #166534; }
+  .stt.disabled { background: #e2e8f0; color: #475569; }
+  .stt.installing, .stt.checking { background: #dbeafe; color: #1e40af; }
+  .stt.failed, .stt.rejected { background: #fee2e2; color: #991b1b; }
+  .stt.removing { background: #ffedd5; color: #9a3412; }
+  .stt.removed { background: #f1f5f9; color: #94a3b8; }
+  .stt.private { background: #ede9fe; color: #5b21b6; }
+  .stt.withdrawn { background: #fef3c7; color: #92400e; }
+  .prog { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .prog div { display: flex; gap: 8px; align-items: center; }
+  .prog .done { color: var(--ok); }
+  .prog .cur { color: #1e40af; font-weight: 600; }
+  .prog .todo { color: var(--faint); }
+  .prog .mark { width: 14px; display: inline-flex; justify-content: center; }
+  .spin { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #bfdbfe; border-top-color: #1d4ed8; animation: spin .8s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pnote { margin-top: 10px; font-size: 12.5px; line-height: 1.5; border-radius: 8px; padding: 8px 10px; display: flex; gap: 8px; }
+  .pnote .ico { margin-top: 1px; }
+  .pnote.bad { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+  .pnote.warn { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
+  .pnote.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .mcard { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; }
+  .mcard:hover { border-color: rgba(15,23,42,.28); box-shadow: 0 6px 20px rgba(15,23,42,.05); }
+  .mcard .top { display: flex; gap: 12px; align-items: flex-start; }
+  .mcard .by { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .mcard .desc { font-size: 12.5px; color: #334155; line-height: 1.5; }
+  .reqs { display: flex; flex-direction: column; gap: 3px; }
+  .req { font-size: 12px; display: flex; gap: 6px; align-items: center; color: var(--muted); }
+  .req.ok { color: #15803d; } .req.bad { color: var(--bad); }
+  .mcard .ft { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 4px; }
+  .mcard .ft .lnk2 { font-size: 12.5px; color: var(--muted); cursor: pointer; text-decoration: underline; }
+  .mcard.dim .desc, .mcard.dim .ptitle { opacity: .6; }
+
+  .empty-st { background: #fff; border: 1.5px dashed rgba(15,23,42,.16); border-radius: 12px; padding: 34px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .empty-st b { color: var(--ink2); font-size: 15px; display: block; margin-bottom: 4px; }
+  .empty-st .btn2 { margin-top: 14px; }
+
+  /* ---------- buttons, fields ---------- */
+  .btn2 { height: 32px; border-radius: 7px; border: 1px solid rgba(15,23,42,.18); background: #fff; font-size: 12.5px; padding: 0 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn2:hover { border-color: rgba(15,23,42,.4); }
+  .btn2.pri { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+  .btn2.dis { opacity: .45; cursor: not-allowed; }
+  .btn2.danger { color: var(--bad); border-color: #fecaca; }
+  .btn2.dpri { background: var(--bad); color: #fff; border-color: var(--bad); font-weight: 600; }
+  .lab { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 5px; display: flex; justify-content: space-between; }
+  .lab .opt { font-weight: 400; color: var(--muted); }
+  .inp { min-height: 38px; border: 1px solid rgba(15,23,42,.2); border-radius: 8px; display: flex; align-items: center; padding: 8px 12px; font-size: 13.5px; color: var(--ink2); margin-bottom: 12px; background: #fff; cursor: text; gap: 8px; }
+  .inp.mono { font-size: 12.5px; word-break: break-all; }
+  .inp.focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .inp.ok { border-color: #86efac; }
+  .inp.bad { border-color: #fca5a5; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
+  .inp .ph2 { color: var(--faint); }
+  .inp .st { margin-left: auto; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-family: var(--font); }
+  .inp .st.ok { color: var(--ok); } .inp .st.bad { color: var(--bad); }
+  .hintl { font-size: 11.5px; color: var(--muted); margin: -6px 0 12px; line-height: 1.5; }
+  .hintl.bad { color: var(--bad); }
+  .hintl code { font-size: 11px; background: #f1f5f9; padding: 0 4px; border-radius: 4px; color: #334155; }
+  .alert { font-size: 12.5px; line-height: 1.5; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; gap: 9px; }
+  .alert .ico { margin-top: 1px; }
+  .alert.bad { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+  .alert.warn { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
+  .alert.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+  .alert code { font-size: 11.5px; background: rgba(255,255,255,.6); padding: 0 4px; border-radius: 4px; }
+
+  .drop { border: 1.5px dashed rgba(15,23,42,.22); border-radius: 10px; padding: 18px 14px; text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 12px; cursor: pointer; background: #fbfcfd; }
+  .drop:hover { border-color: rgba(15,23,42,.45); }
+  .drop b { color: var(--ink); }
+  .frow { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; }
+  .frow.bad { border-color: #fca5a5; background: #fef2f2; }
+  .frow .fn { flex: 1; min-width: 0; }
+  .frow .fn b { word-break: break-all; }
+  .frow .fn div { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .dlg .seg { margin: 0 0 14px; }
+  /* ---------- dialogs and the details panel ---------- */
+  .scrim { position: absolute; inset: 0; background: rgba(15,23,42,.18); z-index: 55; }
+  .dlg { position: absolute; z-index: 60; top: 100px; left: 50%; transform: translateX(-50%); width: 540px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 50px rgba(15,23,42,.2); padding: 20px 22px 18px; }
+  .dlg .grab { display: none; }
+  .dlg h3 { margin: 0 0 4px; font-size: 17px; }
+  .dlg .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+  .dlg .sub b { color: var(--ink); }
+  .dlg .ft { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .dsec { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
+  .chk { display: flex; gap: 9px; font-size: 13px; padding: 8px 0; border-bottom: 1px solid var(--line2); line-height: 1.45; }
+  .chk:last-child { border-bottom: 0; }
+  .chk .ico { margin-top: 2px; }
+  .chk.ok .ico { color: var(--ok); } .chk.bad .ico { color: var(--bad); }
+  .chk .d { font-size: 12px; color: var(--muted); }
+  .chk code { font-size: 11.5px; background: #f1f5f9; padding: 0 4px; border-radius: 4px; }
+  .bul { margin: 0 0 4px; padding-left: 18px; font-size: 13px; line-height: 1.55; color: #334155; }
+  .bul li { margin: 3px 0; }
+  .dep { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; margin-bottom: 7px; font-size: 13px; }
+  .dep .ptile { width: 28px; height: 28px; font-size: 13px; border-radius: 7px; }
+  .dep .dn { flex: 1; } .dep .dn div { font-size: 11.5px; color: var(--muted); }
+
+  .panel { position: absolute; z-index: 60; top: 78px; right: 0; bottom: 0; width: 460px; background: #fff; border-left: 1px solid var(--line); box-shadow: -12px 0 40px rgba(15,23,42,.12); display: flex; flex-direction: column; }
+  .panel .pb { flex: 1; overflow-y: auto; padding: 20px 22px; }
+  .panel .pf { border-top: 1px solid var(--line2); padding: 12px 22px; display: flex; gap: 8px; justify-content: flex-end; }
+  .panel .phd { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .panel .phd h3 { margin: 0; font-size: 18px; }
+  .panel .close { margin-left: auto; align-self: flex-start; width: 30px; height: 30px; border: 0; background: none; border-radius: 7px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .panel .close:hover { background: rgba(15,23,42,.06); }
+  .panel .pback { display: none; }
+  .panel .desc { font-size: 13px; line-height: 1.55; color: #334155; margin-bottom: 6px; }
+  .kv { display: grid; grid-template-columns: 118px 1fr; gap: 7px 12px; font-size: 12.5px; margin: 0; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; min-width: 0; color: var(--ink2); }
+  .kv dd .mono { font-size: 11.5px; word-break: break-all; }
+  .tbl { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tbl span { font-family: var(--mono); font-size: 11.5px; background: #f1f5f9; border-radius: 5px; padding: 1px 6px; }
+
+  .toast { position: absolute; z-index: 70; bottom: 22px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; font-size: 13px; border-radius: 9px; padding: 10px 14px; display: flex; gap: 9px; align-items: center; box-shadow: 0 10px 30px rgba(15,23,42,.25); white-space: nowrap; }
+  .toast .ico { color: #86efac; }
+  .toast a { color: #cbd5e1; text-decoration: underline; cursor: pointer; margin-left: 6px; }
+
+  .nf { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--canvas); padding: 20px; }
+  .nf .box { text-align: center; }
+  .nf .big { font-size: 56px; font-weight: 800; color: #cbd5e1; letter-spacing: -.02em; }
+  .nf h2 { font-size: 19px; margin: 4px 0 6px; }
+  .nf p { font-size: 13px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+
+  /* ---------- the phone: 375 × 812, one column, no horizontal scrolling ---------- */
+  .device.phone { width: 375px; height: 812px; border-radius: 34px; }
+  .device.phone .urlbar { height: 44px; padding: 0 14px; }
+  .device.phone .urlbar .u { max-width: none; font-size: 12px; }
+  .device.phone .burger { display: inline-flex; }
+  .device.phone .logo { margin-right: 2px; }
+  .device.phone .logo .nm { display: none; }
+  .device.phone .crumb { padding: 0 4px; overflow: hidden; text-overflow: ellipsis; }
+  .device.phone .crumb .lv { display: none; }
+  .device.phone .body > .sb { display: none; }
+  .device.phone .sb.drawer { display: flex; position: absolute; z-index: 60; top: 44px; left: 0; bottom: 0; width: 296px; box-shadow: 12px 0 40px rgba(15,23,42,.18); }
+  .device.phone .ti, .device.phone .tg { min-height: 42px; font-size: 14.5px; }
+  .device.phone .page { padding: 16px 12px 28px; }
+  .device.phone .ph { flex-direction: column; gap: 12px; }
+  .device.phone .ph h2 { font-size: 21px; }
+  .device.phone .ph .btn2 { height: 36px; font-size: 13.5px; }
+  .device.phone .tabs { margin: 14px 0 12px; }
+  .device.phone .search { max-width: none; height: 44px; }
+  .device.phone .search input { font-size: 15px; }
+  .device.phone .tabs button { flex: 1; justify-content: center; font-size: 14px; padding: 10px 6px; }
+  .device.phone .prow { flex-wrap: wrap; padding: 12px; gap: 12px; }
+  .device.phone .pmain { flex-basis: calc(100% - 52px); }
+  .device.phone .pacts { width: 100%; }
+  .device.phone .pacts .btn2 { flex: 1; justify-content: center; height: 40px; font-size: 13.5px; }
+  .device.phone .grid { grid-template-columns: 1fr; }
+  .device.phone .mcard .ft .btn2 { height: 40px; padding: 0 18px; font-size: 13.5px; }
+  .device.phone .inp { min-height: 44px; font-size: 15px; }
+  .device.phone .inp.mono { font-size: 13px; }
+  .device.phone .dlg { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; border-radius: 20px 20px 0 0; max-height: 88%; overflow-y: auto; padding: 8px 16px 22px; border: 0; }
+  .device.phone .dlg .grab { display: block; width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 12px; }
+  .device.phone .dlg h3 { font-size: 18px; }
+  .device.phone .dlg .ft { flex-direction: column-reverse; gap: 8px; }
+  .device.phone .dlg .ft .btn2, .device.phone .panel .pf .btn2 { width: 100%; justify-content: center; height: 46px; font-size: 15px; }
+  .device.phone .dep { flex-wrap: wrap; }
+  .device.phone .dep .btn2 { width: 100%; justify-content: center; height: 40px; }
+  .device.phone .panel { top: 44px; left: 0; width: auto; border-left: 0; box-shadow: none; }
+  .device.phone .panel .pb { padding: 14px 16px 20px; }
+  .device.phone .panel .pf { padding: 10px 16px 18px; flex-direction: column-reverse; }
+  .device.phone .panel .close { display: none; }
+  .device.phone .panel .pback { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; color: var(--muted); cursor: pointer; margin-bottom: 14px; }
+  .device.phone .kv { grid-template-columns: 1fr; gap: 2px; }
+  .device.phone .kv dt { margin-top: 8px; font-size: 11.5px; }
+  .device.phone .toast { left: 12px; right: 12px; transform: none; bottom: 16px; white-space: normal; }
+</style>
+</head>
+<body>
+<aside class="nav" id="nav"></aside>
+<main class="stage" id="stage">
+  <p class="frame-cap" id="cap"></p>
+  <div class="frame-box" id="box"><div class="frame-scale" id="scale"><div class="device" id="app"></div></div></div>
+  <div class="notes" id="notes"></div>
+</main>
+
+<script>
+/* ======================= sample data ======================= */
+const ORG = { name: "Severny Veter", code: "severny-veter" };
+const PEOPLE = {
+  admin: { name: "Anna Kovaleva", ini: "AK" },
+  member: { name: "Ilya Petrov", ini: "IP" },
+};
+const CORE = "1.0.0";
+/* Every plugin the mockup knows: what its passport says, where its wheel is, what its schema.yaml declares. */
+const PL = {
+  graph: { title: "Code graph", name: "graph", id: "run.aoa.maxitor.graph", ver: "1.0.0", color: "#2563eb",
+    desc: "The graph of your code: entities, use cases and their history, version by version.",
+    src: "pkg:pypi/maxitor-graph@1.0.0", sha: "c41f0a9e…72d3", core: ">=1.0,<2", deps: [], tables: ["source", "snapshot", "room"], deployed: true, tree: ["Graph", "History"] },
+  notes: { title: "Notes", name: "notes", id: "run.aoa.maxitor.notes", ver: "1.2.0", color: "#0d9488",
+    desc: "Notes of the organization: a text, its tags and who wrote it.",
+    src: "pkg:pypi/maxitor-notes@1.2.0", sha: "4b1e9c0d…77d0", core: ">=1.0,<2", deps: [], tables: ["note", "note_tag"], deployed: true, tree: ["All notes", "Tags"], by: "9 Nov" },
+  tasks: { title: "Tasks", name: "tasks", id: "run.aoa.maxitor.tasks", ver: "0.4.1", color: "#ea580c",
+    desc: "Tasks and boards; a task can carry notes.",
+    src: "pkg:pypi/maxitor-tasks@0.4.1", sha: "e09a7c55…1b4f", core: ">=1.0,<2", deps: ["notes"], tables: ["task", "task_comment", "board"], deployed: false, tree: ["My tasks", "Boards"], by: "9 Nov" },
+  glossary: { title: "Glossary", name: "glossary", id: "run.aoa.maxitor.glossary", ver: "2.0.0", color: "#a16207",
+    desc: "Terms of the organization and what they mean.",
+    src: "pkg:pypi/maxitor-glossary@2.0.0", sha: "77ab01e2…c90e", core: ">=1.0,<2", deps: [], tables: ["term"], deployed: true, tree: ["Terms"], by: "3 Nov", withdrawn: true },
+  timesheets: { title: "Timesheets", name: "timesheets", id: "run.aoa.maxitor.timesheets", ver: "0.2.0", color: "#7c3aed",
+    desc: "Hours spent on tasks, week by week.",
+    src: "pkg:pypi/maxitor-timesheets@0.2.0", sha: "0f3d81aa…9e12", core: ">=1.0,<2", deps: ["tasks"], tables: ["entry", "week"], deployed: true, tree: ["Timesheets"] },
+  calendar: { title: "Calendar", name: "calendar", id: "run.aoa.maxitor.calendar", ver: "3.1.0", color: "#db2777",
+    desc: "Meetings and deadlines of the organization.",
+    src: "pkg:pypi/maxitor-calendar@3.1.0", sha: "5a2e6f10…03bb", core: ">=2.0,<3", deps: [], tables: ["event"], deployed: false, tree: ["Calendar"] },
+  reports: { title: "Reports", name: "reports", id: "ru.severny-veter.reports", ver: "0.3.0", color: "#475569", private: true,
+    desc: "Severny Veter's monthly reports built from tasks and timesheets.",
+    src: "pkg:github/severny-veter/maxitor-reports@v0.3.0?file=sv_reports-0.3.0-py3-none-any.whl", sha: "9d1f02c7…a8e5", core: ">=1.0,<2", deps: ["tasks"], tables: ["report", "report_line"], deployed: false, tree: ["Reports"] },
+};
+const ORDER = ["graph", "notes", "tasks", "glossary", "timesheets", "calendar", "reports"];
+const MARKET = ["graph", "notes", "tasks", "timesheets", "calendar"];
+
+/* ======================= icons ======================= */
+const P = (d, cls = "ico") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I = {
+  left: P('<path d="M15 6l-6 6 6 6"/>', "ico sm"),
+  chevron: P('<path d="M6 9l6 6 6-6"/>'),
+  alert: P('<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>'),
+  info: P('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/>'),
+  check: P('<path d="M5 12l5 5 9-10"/>', "ico sm"),
+  x: P('<path d="M6 6l12 12M18 6L6 18"/>', "ico sm"),
+  plus: P('<path d="M12 5v14M5 12h14"/>', "ico sm"),
+  lock: P('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>', "ico sm"),
+  puzzle: P('<path d="M9 4h3a2 2 0 114 0h0v4a2 2 0 110 4v4h-4a2 2 0 10-4 0H4v-4a2 2 0 100-4V4h5z"/>'),
+  menu: P('<path d="M4 7h16M4 12h16M4 17h16"/>'),
+  search: P('<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'),
+  gear: P('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>', "ico sm"),
+  page: P('<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/>', "ico sm"),
+};
+const tile = (k, cls = "") => `<span class="ptile ${cls}" style="background:${PL[k].color}">${PL[k].title[0]}</span>`;
+
+/* ======================= state ======================= */
+const ST0 = { notes: "enabled", tasks: "enabled", glossary: "disabled" };
+const DEF = { screen: "plugins", tab: "installed", user: "admin", st: ST0, dlg: null, target: null, typed: "", priv: "ok", privRow: null, q: "", toast: null, sel: null, drawer: false, phone: false };
+const S = JSON.parse(JSON.stringify(DEF));
+function go(patch) { Object.assign(S, patch); render(); }
+function setSt(k, v) { const st = Object.assign({}, S.st); if (v === null) delete st[k]; else st[k] = v; return st; }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+const live = k => S.st[k] && S.st[k] !== "removed";
+const installedAs = k => ["enabled", "disabled"].includes(S.st[k]);
+const dependents = k => ORDER.filter(o => live(o) && PL[o].deps.includes(k));
+const inMarket = () => {
+  const list = MARKET.filter(k => !live(k));
+  return list;
+};
+const privateShown = () => S.privRow && !live("reports");
+
+/* ======================= frame parts ======================= */
+function urlbar(path) { return `<div class="urlbar"><span>🔒</span><span class="u">maxitor.aoa.run<b>${esc(path)}</b></span></div>`; }
+function header() {
+  const p = PEOPLE[S.user];
+  return `<div class="hdr">
+    <button class="burger" aria-label="The organization's tree" onclick="go({drawer:true})">${I.menu}</button>
+    <span class="logo"><span class="mk">M</span><span class="nm">Maxitor</span></span>
+    <span class="crumb"><span class="lv">org</span>${S.screen === "plugins" && S.user === "admin" ? `<a onclick="go({screen:'org',sel:'notes:All notes',drawer:false,dlg:null,toast:null})">${esc(ORG.name)}</a><span class="sep">/</span>Settings` : esc(ORG.name)}</span>
+    <span class="spacer"></span>
+    <span class="avatar" title="${esc(p.name)}">${p.ini}</span>
+  </div>`;
+}
+function sidebar(cls = "") {
+  const groups = ORDER.filter(k => S.st[k] === "enabled").map(k => {
+    const items = PL[k].tree.map(t => `<div class="ti${S.screen === "org" && S.sel === k + ":" + t ? " on" : ""}" onclick="go({screen:'org',sel:'${k}:${t}',drawer:false,dlg:null,toast:null})"><span class="slot">${I.page}</span><span class="lb">${esc(t)}</span></div>`).join("");
+    return `<div class="tg"><span class="slot">${I.chevron}</span><span class="lb">${esc(PL[k].title)}</span></div>${items}`;
+  }).join("");
+  const foot = S.user === "admin"
+    ? `<div class="sb-foot"><div class="ti" onclick="go({screen:'plugins',drawer:false,toast:null,dlg:null})"><span class="slot">${I.gear}</span><span class="lb">Settings</span></div></div>` : "";
+  return `<div class="sb ${cls}">
+    ${groups ? `<div class="tree">${groups}</div>` : `<div class="tree"><div class="sb-empty">Nothing here yet.<br>Plugins add their sections to this tree.</div></div>`}
+    ${foot}
+  </div>`;
+}
+
+/* The organization's settings: their own column in place of the tree. Plugins is one item of it. */
+function settingsNav(cls = "") {
+  return `<div class="sb ${cls}">
+    <div class="tree"><div class="tg"><span class="slot">${I.chevron}</span><span class="lb">Settings</span></div>
+      <div class="ti on" onclick="go({screen:'plugins',drawer:false})"><span class="slot">${I.puzzle}</span><span class="lb">Plugins</span></div></div>
+  </div>`;
+}
+
+/* ======================= the plugins page ======================= */
+function stateBadge(s) {
+  const t = { enabled: "enabled", disabled: "disabled", installing: "installing", failed: "failed", removing: "removing", removed: "removed" }[s];
+  return `<span class="stt ${s}">${s === "installing" || s === "removing" ? '<span class="spin"></span>' : ""}${t}</span>`;
+}
+function installedRow(k) {
+  const p = PL[k], s = S.st[k];
+  const needs = p.deps.length ? ` · needs ${p.deps.map(d => `<b>${PL[d].title}</b>`).join(", ")}` : "";
+  const when = s === "removed" ? `Removed by Anna Kovaleva on 10 Nov · its data in ${ORG.name} is deleted`
+    : `Installed by Anna Kovaleva on ${p.by || "10 Nov"}${needs}`;
+  let acts = "", extra = "";
+  if (s === "enabled") acts = `<button class="btn2" onclick="askDisable('${k}')">Disable</button><button class="btn2 danger" onclick="askRemove('${k}')">Remove</button>`;
+  if (s === "disabled") acts = `<button class="btn2" onclick="go({st:setSt('${k}','enabled'),toast:'enabled:${k}'})">Enable</button><button class="btn2 danger" onclick="askRemove('${k}')">Remove</button>`;
+  if (s === "failed") {
+    acts = `<button class="btn2 pri" onclick="go({st:setSt('${k}','installing'),toast:null})">Retry</button><button class="btn2 danger" onclick="go({st:setSt('${k}','removed'),toast:'removed:${k}'})">Remove</button>`;
+    extra = `<div class="pnote bad">${I.alert}<div><b>Building the tables stopped:</b> the database did not answer within 60 s. Nothing of ${ORG.name} was changed; the schema <code>${p.name}_${p.ver.replace(/\./g, "_")}</code> is kept for the next try.</div></div>`;
+  }
+  if (s === "installing") {
+    const v = p.ver.replace(/\./g, "_");
+    const steps = p.deployed
+      ? [["done", "Compatibility: core " + CORE + ", every dependency installed"], ["done", `Version ${p.ver} is already deployed — skipped`], ["cur", `Adding it to ${ORG.name}`]]
+      : [["done", "Compatibility: core " + CORE + ", every dependency installed"], ["done", `Schema <code>${p.name}_${v}</code> and user <code>plg_${p.name}_${v}</code>`], ["cur", `Tables from schema.yaml: ${p.tables.length} of ${p.tables.length}`], ["todo", "Rights of the user"]];
+    extra = `<div class="prog" title="Mockup: click to finish" onclick="go({st:setSt('${k}','enabled'),toast:'installed:${k}'})">${steps.map(([c, t]) => `<div class="${c}"><span class="mark">${c === "done" ? I.check : c === "cur" ? '<span class="spin"></span>' : "○"}</span><span>${t}</span></div>`).join("")}</div>`;
+  }
+  if (s === "removing") extra = `<div class="prog" title="Mockup: click to finish" onclick="go({st:setSt('${k}','removed'),toast:'removed:${k}'})"><div class="cur"><span class="mark"><span class="spin"></span></span><span>Deleting ${ORG.name}'s rows in <code>${p.name}_${p.ver.replace(/\./g, "_")}</code>, current and past versions, under the organization's lock</span></div></div>`;
+  if (p.withdrawn && s !== "removed") extra += `<div class="pnote warn">${I.info}<div><b>Withdrawn from the marketplace.</b> It keeps working here; no organization can install it anew.</div></div>`;
+  return `<div class="prow${s === "removed" ? " gone" : ""}">${tile(k)}
+    <div class="pmain">
+      <div class="ptitle"><a onclick="go({dlg:'detail',target:'${k}'})">${hl(p.title)}</a><span class="ver">${p.ver}</span>${stateBadge(s)}${p.private ? '<span class="stt private">private</span>' : ""}</div>
+      ${S.q.trim() && !p.title.toLowerCase().includes(S.q.trim().toLowerCase()) ? `<div class="pmeta" style="color:#334155">${hl(p.desc.toLowerCase().includes(S.q.trim().toLowerCase()) ? p.desc : p.id)}</div>` : ""}
+      <div class="pmeta"><span class="mono">${esc(p.src)}</span><br>${when}</div>
+      ${extra}
+    </div>
+    ${acts ? `<div class="pacts">${acts}</div>` : ""}
+  </div>`;
+}
+function reqLines(k) {
+  const p = PL[k];
+  const coreOk = p.core.startsWith(">=1");
+  let h = `<div class="req ${coreOk ? "ok" : "bad"}">${coreOk ? I.check : I.x}${coreOk ? `Works with core ${CORE}` : `Needs core ${p.core.replace(",", ", ")} — this Maxitor runs ${CORE}`}</div>`;
+  p.deps.forEach(d => { const ok = installedAs(d); h += `<div class="req ${ok ? "ok" : "bad"}">${ok ? I.check : I.x}Needs ${PL[d].title}${ok ? " — installed" : " — not installed"}</div>`; });
+  return `<div class="reqs">${h}</div>`;
+}
+function marketCard(k) {
+  const p = PL[k];
+  const coreOk = p.core.startsWith(">=1");
+  const btn = coreOk ? `<button class="btn2 pri" onclick="askInstall('${k}')">Install</button>` : `<button class="btn2 dis" title="Does not fit this core">Install</button>`;
+  return `<div class="mcard${coreOk ? "" : " dim"}">
+    <div class="top">${tile(k)}<div class="pmain"><div class="ptitle">${hl(p.title)}<span class="ver">${p.ver}</span>${p.private ? '<span class="stt private">private</span>' : ""}</div>
+      <div class="by">${p.private ? `${ORG.name}'s own · ${hl(p.id)}` : `Maxitor marketplace · ${hl(p.id)}`}</div></div></div>
+    <div class="desc">${hl(p.desc)}</div>
+    ${reqLines(k)}
+    <div class="ft"><span class="lnk2" onclick="go({dlg:'detail',target:'${k}'})">Details</span>${btn}</div>
+  </div>`;
+}
+function privateCard() {
+  const p = PL.reports, r = S.privRow;
+  if (r === "active") return marketCard("reports");
+  const badge = r === "checking" ? `<span class="stt checking"><span class="spin"></span>checking</span>` : `<span class="stt rejected">rejected</span>`;
+  let body = "";
+  if (r === "checking") body = `<div class="prog" title="Mockup: click to finish" onclick="go({privRow:'active'})">
+      <div class="done"><span class="mark">${I.check}</span><span>Downloaded the wheel from GitHub</span></div>
+      <div class="done"><span class="mark">${I.check}</span><span>SHA-256 matches</span></div>
+      <div class="cur"><span class="mark"><span class="spin"></span></span><span>Reading the passport and schema.yaml</span></div>
+      <div class="todo"><span class="mark">○</span><span>Compatibility with core ${CORE}</span></div></div>`;
+  if (r === "sha") body = `<div class="pnote bad">${I.alert}<div><b>The SHA-256 does not match.</b> The wheel at this address hashes to <code>2c7e…f051</code>, not the <code>9d1f…a8e5</code> you gave. Nothing is installed; check that the release and the hash are the same build.</div></div>`;
+  if (r === "closed") body = `<div class="pnote bad">${I.alert}<div><b>The release needs signing in.</b> GitHub answered 404 for this address without an account: the repository is closed. Maxitor keeps no access tokens — upload the wheel instead.</div></div>`;
+  if (r === "id") body = `<div class="pnote bad">${I.alert}<div><b>The passport's id is taken.</b> The wheel says it is <code>run.aoa.maxitor.notes</code>, the id of a plugin already in the marketplace. A plugin's id is unique across Maxitor, private plugins included.</div></div>`;
+  return `<div class="mcard">
+    <div class="top">${tile("reports")}<div class="pmain"><div class="ptitle">${r === "id" ? "maxitor-reports" : esc(p.title)}<span class="ver">0.3.0</span>${badge}<span class="stt private">private</span></div>
+      <div class="by"><span class="mono" style="word-break:break-all">${esc(p.src)}</span></div></div></div>
+    ${body}
+    <div class="ft"><span></span>${r === "checking" ? "" : r === "closed" ? `<button class="btn2 pri" onclick="go({dlg:'private',priv:'fempty'})">Upload the wheel</button>` : `<button class="btn2" onclick="go({dlg:'private',priv:'ok'})">Add again</button>`}</div>
+  </div>`;
+}
+/* The search looks through the title, the name, the passport's id and the description, case aside. */
+function matches(k) {
+  const q = S.q.trim().toLowerCase();
+  if (!q) return true;
+  const p = PL[k];
+  return [p.title, p.name, p.id, p.desc].some(x => x.toLowerCase().includes(q));
+}
+function hl(text) {
+  const q = S.q.trim();
+  const t = esc(text);
+  if (!q) return t;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return t;
+  return esc(text.slice(0, i)) + "<mark>" + esc(text.slice(i, i + q.length)) + "</mark>" + esc(text.slice(i + q.length));
+}
+function typeSearch(v) {
+  S.q = v; render();
+  const el = document.getElementById("q");
+  if (el) { el.focus(); el.setSelectionRange(v.length, v.length); }
+}
+function viewPlugins() {
+  if (S.user !== "admin") return `<div class="nf"><div class="box"><div class="big">404</div><h2>No such page</h2>
+    <p>${ORG.name} has no page at <b>/w/${ORG.code}/settings/plugins</b> for you.</p>
+    <button class="btn2 pri" onclick="go({screen:'org',sel:'notes:All notes'})">Back to ${ORG.name}</button></div></div>`;
+  const allInst = ORDER.filter(live), allGone = ORDER.filter(k => S.st[k] === "removed");
+  const inst = allInst.filter(matches), gone = allGone.filter(matches);
+  const allMk = inMarket(), mk = allMk.filter(matches);
+  const privOn = privateShown() && matches("reports");
+  const q = S.q.trim();
+  const nothing = `<div class="empty-st"><b>No plugin matches “${esc(q)}”</b>The search looks through the name, the id and the description.<br><button class="btn2" onclick="go({q:''})">Clear the search</button></div>`;
+  let body = "";
+  if (S.tab === "installed") {
+    if (q && !inst.length && !gone.length) body = nothing;
+    else if (!inst.length && !gone.length) body = `<div class="empty-st"><b>No plugin is installed yet</b>${ORG.name} is empty. Plugins from the marketplace add their sections to the tree on the left.<br><button class="btn2 pri" onclick="go({tab:'market'})">Open the marketplace</button></div>`;
+    else {
+      body = inst.map(installedRow).join("");
+      if (gone.length) body += `<div class="sec">Removed <span>— kept in the history</span></div>` + gone.map(installedRow).join("");
+    }
+  } else {
+    if (q && !mk.length && !privOn) body = nothing;
+    else {
+    if (privOn) body += `<div class="sec">${I.lock}Private to ${ORG.name}</div><div class="grid">${privateCard()}</div><div class="sec" style="margin-top:22px">Maxitor marketplace</div>`;
+    if (q && !mk.length) body += `<div class="empty-st">No plugin of the marketplace matches “${esc(q)}”.</div>`;
+    else body += mk.length ? `<div class="grid">${mk.map(marketCard).join("")}</div>` : `<div class="empty-st"><b>Everything is installed</b>${ORG.name} has every plugin of the marketplace.</div>`;
+    }
+  }
+  const mcount = mk.length + (privOn ? 1 : 0);
+  const search = (allInst.length || allGone.length || S.tab === "market")
+    ? `<label class="search">${I.search}<input id="q" type="search" placeholder="Search plugins by name, id or description" value="${esc(S.q)}" oninput="typeSearch(this.value)">${S.q ? `<button class="clr" aria-label="Clear the search" onclick="event.preventDefault();go({q:''})">${I.x}</button>` : ""}</label>` : "";
+  return `<div class="page"><div class="inner">
+    <div class="ph"><div class="tx"><h2>Plugins</h2><div class="sub">What ${ORG.name} has installed and what the marketplace offers.</div></div>
+      <button class="btn2" onclick="go({dlg:'private',priv:'empty'})">${I.plus}Add a private plugin</button></div>
+    <div class="tabs"><button class="${S.tab === "installed" ? "on" : ""}" onclick="go({tab:'installed',toast:null})">Installed<span class="cnt">${inst.length}</span></button>
+      <button class="${S.tab === "market" ? "on" : ""}" onclick="go({tab:'market',toast:null})">Marketplace<span class="cnt">${mcount}</span></button></div>
+    ${search}${body}
+  </div></div>`;
+}
+function viewOrgPage() {
+  const [k, t] = (S.sel || "notes:All notes").split(":");
+  return `<div class="content"><div class="dots"></div><div class="empty-c"><b>${esc(PL[k].title)} · ${esc(t)}</b><br>The plugin's own page: the plugin draws it, the core only hosts it (#75).</div></div>`;
+}
+
+/* ======================= dialogs ======================= */
+function askInstall(k) { go({ dlg: "install", target: k, toast: null }); }
+function askDisable(k) { go({ dlg: ORDER.some(o => S.st[o] === "enabled" && PL[o].deps.includes(k)) ? "dblocked" : "disable", target: k, toast: null }); }
+function dlgDisableBlocked() {
+  const p = PL[S.target], ds = ORDER.filter(o => S.st[o] === "enabled" && PL[o].deps.includes(S.target));
+  return dlgWrap(`<h3>${esc(p.title)} cannot be disabled yet</h3>
+    <div class="sub">${ds.map(d => `<b>${PL[d].title}</b>`).join(", ")} ${ds.length > 1 ? "need" : "needs"} ${esc(p.title)} and ${ds.length > 1 ? "are" : "is"} enabled in ${ORG.name}. Disable ${ds.length > 1 ? "them" : "it"} first.</div>
+    ${ds.map(d => `<div class="dep">${tile(d)}<div class="dn"><b>${PL[d].title}</b> ${PL[d].ver}<div>enabled · needs ${esc(p.title)}</div></div><button class="btn2" onclick="askDisable('${d}')">Disable ${PL[d].title}</button></div>`).join("")}
+    <div class="ft"><button class="btn2 pri" onclick="go({dlg:null})">Close</button></div>`);
+}
+function askRemove(k) { go({ dlg: dependents(k).length ? "blocked" : "remove", target: k, typed: "", toast: null }); }
+function dlgWrap(inner) { return `<div class="scrim" onclick="go({dlg:null})"></div><div class="dlg"><div class="grab"></div>${inner}</div>`; }
+function dlgInstall() {
+  const k = S.target, p = PL[k], v = p.ver.replace(/\./g, "_");
+  const missing = p.deps.filter(d => !installedAs(d));
+  let checks = `<div class="chk ok">${P('<path d="M5 12l5 5 9-10"/>')}<div>Works with this Maxitor<div class="d">Core ${CORE} is within <code>${esc(p.core)}</code> of its passport.</div></div></div>`;
+  p.deps.forEach(d => {
+    const ok = installedAs(d);
+    checks += ok
+      ? `<div class="chk ok">${P('<path d="M5 12l5 5 9-10"/>')}<div>Needs ${PL[d].title}<div class="d">Installed in ${ORG.name}, ${PL[d].ver}, ${S.st[d]}.</div></div></div>`
+      : `<div class="chk bad">${P('<path d="M6 6l12 12M18 6L6 18"/>')}<div>Needs ${PL[d].title}<div class="d">Not installed in ${ORG.name}. Install it first; then come back.</div></div></div>`;
+  });
+  const what = missing.length ? "" : p.deployed
+    ? `<div class="dsec">What happens</div><div class="alert info">${I.info}<div>Version ${p.ver} is already deployed in Maxitor. Installing only adds it to ${ORG.name}: nothing new is built in the database.</div></div>`
+    : `<div class="dsec">What happens</div><ul class="bul"><li>Version ${p.ver} is deployed for the first time: the schema <code>${p.name}_${v}</code>, the database user <code>plg_${p.name}_${v}</code>, and ${p.tables.length} tables from its <code>schema.yaml</code> with their version tables.</li><li>The user reads and writes its own schema only.</li><li>Once enabled, everyone in ${ORG.name} sees its sections in the tree.</li></ul>`;
+  const ft = missing.length
+    ? `<button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 pri" onclick="askInstall('${missing[0]}')">Install ${PL[missing[0]].title} first</button>`
+    : `<button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 pri" onclick="go({dlg:null,tab:'installed',st:setSt('${k}','installing')})">Install ${esc(p.title)}</button>`;
+  return dlgWrap(`<h3>Install ${esc(p.title)} ${p.ver}</h3>
+    <div class="sub">Into <b>${ORG.name}</b>, from <span class="mono" style="font-size:11.5px;word-break:break-all">${esc(p.src)}</span></div>
+    ${missing.length ? `<div class="alert bad">${I.alert}<div><b>${esc(p.title)} cannot be installed yet:</b> it needs ${missing.map(d => PL[d].title).join(", ")}.</div></div>` : ""}
+    <div class="dsec">Checks</div>${checks}${what}<div class="ft">${ft}</div>`);
+}
+function dlgDisable() {
+  const p = PL[S.target];
+  return dlgWrap(`<h3>Disable ${esc(p.title)}?</h3>
+    <div class="sub">For everyone in <b>${ORG.name}</b>.</div>
+    <ul class="bul"><li>Its sections leave the tree: ${p.tree.map(esc).join(", ")}.</li><li>Its data stays as it is. Enabling it brings everything back.</li></ul>
+    <div class="ft"><button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 pri" onclick="go({dlg:null,st:setSt('${S.target}','disabled'),toast:'disabled:${S.target}'})">Disable</button></div>`);
+}
+function dlgBlocked() {
+  const p = PL[S.target], ds = dependents(S.target);
+  return dlgWrap(`<h3>${esc(p.title)} cannot be removed yet</h3>
+    <div class="sub">${ds.map(d => `<b>${PL[d].title}</b>`).join(", ")} ${ds.length > 1 ? "depend" : "depends"} on ${esc(p.title)} and ${ds.length > 1 ? "are" : "is"} installed in ${ORG.name}. Remove ${ds.length > 1 ? "them" : "it"} first, one by one.</div>
+    ${ds.map(d => `<div class="dep">${tile(d)}<div class="dn"><b>${PL[d].title}</b> ${PL[d].ver}<div>${S.st[d]} · needs ${esc(p.title)}</div></div><button class="btn2 danger" onclick="askRemove('${d}')">Remove ${PL[d].title}</button></div>`).join("")}
+    <div class="ft"><button class="btn2 pri" onclick="go({dlg:null})">Close</button></div>`);
+}
+function dlgRemove() {
+  const k = S.target, p = PL[k], v = p.ver.replace(/\./g, "_");
+  const t = S.typed, ok = t === p.name;
+  const cls = ok ? " ok" : t ? " focus" : " focus";
+  const nxt = t === "" ? p.name.slice(0, -1) : t === p.name.slice(0, -1) ? p.name : "";
+  return dlgWrap(`<h3>Remove ${esc(p.title)} from ${ORG.name}?</h3>
+    <div class="sub">This cannot be undone.</div>
+    <div class="alert bad">${I.alert}<div>Every row of ${ORG.name} in <code>${p.name}_${v}</code> is deleted — ${p.tables.map(x => `<code>${x}</code>`).join(", ")} — the current rows and all their past versions.</div></div>
+    <ul class="bul"><li>Other organizations on ${esc(p.title)} ${p.ver} keep their data.</li><li>${esc(p.title)} stays in ${ORG.name}'s history as removed; it can be installed again, empty.</li></ul>
+    <div class="lab" style="margin-top:14px;display:block">Type <span class="mono" style="color:var(--ink)">${p.name}</span> to confirm</div>
+    <div class="inp mono${cls}" title="Mockup: click to type" onclick="go({typed:'${nxt}'})">${t ? esc(t) : '<span class="ph2">' + p.name + "</span>"}${ok ? `<span class="st ok">${I.check}matches</span>` : ""}</div>
+    <div class="ft"><button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 dpri${ok ? "" : " dis"}" onclick="${ok ? `go({dlg:null,st:setSt('${k}','removing')})` : ""}">Remove ${esc(p.title)}</button></div>`);
+}
+function dlgPrivate() {
+  const s = S.priv;
+  const purl = { empty: "", ok: PL.reports.src, pypi: "pkg:pypi/sv-reports@0.3.0", nofile: "pkg:github/severny-veter/maxitor-reports@v0.3.0", badsha: PL.reports.src }[s];
+  const sha = { empty: "", ok: "9d1f02c7e4b8a6013f5c2d9e8b7a6f4c3d2e1b0a9f8e7d6c5b4a3f2e1d0ca8e5", pypi: "9d1f02c7e4b8a6013f5c2d9e8b7a6f4c3d2e1b0a9f8e7d6c5b4a3f2e1d0ca8e5", nofile: "9d1f02c7e4b8a6013f5c2d9e8b7a6f4c3d2e1b0a9f8e7d6c5b4a3f2e1d0ca8e5", badsha: "9d1f02c7e4b8" }[s];
+  const purlBad = s === "pypi" || s === "nofile", shaBad = s === "badsha";
+  let purlHint = `<div class="hintl">A release on GitHub or GitLab that downloads without signing in, with the wheel's file name:<br><code>pkg:github/&lt;owner&gt;/&lt;repo&gt;@&lt;tag&gt;?file=&lt;wheel&gt;</code> or <code>pkg:gitlab/…</code></div>`;
+  if (s === "pypi") purlHint = `<div class="hintl bad">A package on PyPI is the public marketplace's. A private plugin comes from GitHub or GitLab: <code>pkg:github/…</code> or <code>pkg:gitlab/…</code>.</div>`;
+  if (s === "nofile") purlHint = `<div class="hintl bad">Name the wheel: add <code>?file=&lt;name&gt;.whl</code> — a release can carry several files.</div>`;
+  const shaHint = shaBad ? `<div class="hintl bad">64 hexadecimal characters; this has 12.</div>` : `<div class="hintl">Of the <code>.whl</code> file: <code>shasum -a 256 &lt;wheel&gt;</code>. Maxitor installs only a wheel with this hash.</div>`;
+  const byFile = ["fempty", "file", "big"].includes(s);
+  const seg = `<div class="seg"><button class="${byFile ? "" : "on"}" onclick="go({priv:'empty'})">From a release</button><button class="${byFile ? "on" : ""}" onclick="go({priv:'fempty'})">Upload a wheel</button></div>`;
+  const head = `<h3>Add a private plugin</h3>
+    <div class="sub">A wheel of your own. Only <b>${ORG.name}</b> sees it; it goes through the same checks as the marketplace's plugins.</div>${seg}`;
+  if (byFile) {
+    let body = `<div class="drop" title="Mockup: click to choose a file" onclick="go({priv:'file'})">${I.plus} <b>Choose a .whl file</b> or drop it here<br><span style="font-size:11.5px">Up to 50 MB. For a closed repository, a CI artifact or any other source.</span></div>`;
+    if (s === "file") body = `<div class="frow">${I.page}<div class="fn"><b>sv_reports-0.3.0-py3-none-any.whl</b><div>184 KB · uploaded</div></div><button class="btn2" onclick="go({priv:'fempty'})">Change</button></div>
+      <div class="lab">SHA-256, computed by Maxitor</div><div class="inp mono ok">9d1f02c7e4b8a6013f5c2d9e8b7a6f4c3d2e1b0a9f8e7d6c5b4a3f2e1d0ca8e5</div>
+      <div class="hintl">Compare it with the hash of your build. It becomes part of the plugin's name: <code>pkg:generic/sv-reports@0.3.0?checksum=sha256:9d1f…</code></div>`;
+    if (s === "big") body = `<div class="frow bad">${I.alert}<div class="fn"><b>sv_reports-0.3.0-py3-none-any.whl</b><div>73.4 MB — larger than the 50 MB a plugin's wheel may be</div></div><button class="btn2" onclick="go({priv:'fempty'})">Change</button></div>`;
+    const ok = s === "file";
+    return dlgWrap(`${head}${body}
+      <div class="ft"><button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 pri${ok ? "" : " dis"}" onclick="${ok ? "go({dlg:null,tab:'market',privRow:'checking'})" : ""}">Add and check</button></div>`);
+  }
+  const ready = s === "ok";
+  return dlgWrap(`${head}
+    <div class="lab">Package URL</div>
+    <div class="inp mono${purlBad ? " bad" : s === "empty" ? " focus" : " ok"}">${purl ? esc(purl) : '<span class="ph2">pkg:github/acme/maxitor-notes@v1.2.0?file=…whl</span>'}</div>
+    ${purlHint}
+    <div class="lab">SHA-256 of the wheel</div>
+    <div class="inp mono${shaBad ? " bad" : sha ? " ok" : ""}">${sha ? esc(sha) : '<span class="ph2">64 hexadecimal characters</span>'}</div>
+    ${shaHint}
+    <div class="ft"><button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 pri${ready ? "" : " dis"}" onclick="${ready ? "go({dlg:null,tab:'market',privRow:'checking'})" : ""}">Add and check</button></div>`);
+}
+function panelDetail() {
+  const k = S.target, p = PL[k], v = p.ver.replace(/\./g, "_"), s = S.st[k];
+  const isLive = live(k);
+  const coreOk = p.core.startsWith(">=1");
+  let ft = "";
+  if (!isLive) ft = coreOk ? `<button class="btn2" onclick="go({dlg:null})">Close</button><button class="btn2 pri" onclick="askInstall('${k}')">Install</button>` : `<button class="btn2 pri" onclick="go({dlg:null})">Close</button>`;
+  else if (s === "enabled") ft = `<button class="btn2 danger" onclick="askRemove('${k}')">Remove</button><button class="btn2" onclick="askDisable('${k}')">Disable</button>`;
+  else if (s === "disabled") ft = `<button class="btn2 danger" onclick="askRemove('${k}')">Remove</button><button class="btn2 pri" onclick="go({dlg:null,st:setSt('${k}','enabled'),toast:'enabled:${k}'})">Enable</button>`;
+  else ft = `<button class="btn2 pri" onclick="go({dlg:null})">Close</button>`;
+  const deps = p.deps.length ? p.deps.map(d => `${PL[d].title} <span style="color:var(--muted)">(${installedAs(d) ? "installed" : "not installed"})</span>`).join(", ") : "none";
+  return `<div class="scrim" onclick="go({dlg:null})"></div><div class="panel">
+    <div class="pb">
+      <span class="pback" onclick="go({dlg:null})">${I.left}Plugins</span>
+      <div class="phd">${tile(k, "lg")}<div><h3>${esc(p.title)}</h3><div class="ver">${p.ver} ${isLive ? stateBadge(s) : ""} ${p.private ? '<span class="stt private">private</span>' : ""}</div></div>
+        <button class="close" aria-label="Close" onclick="go({dlg:null})">${I.x}</button></div>
+      <div class="desc">${esc(p.desc)}</div>
+      ${p.withdrawn ? `<div class="pnote warn" style="margin-bottom:6px">${I.info}<div>Withdrawn from the marketplace: installed copies keep working, new installs are closed.</div></div>` : ""}
+      <div class="dsec">From its passport</div>
+      <dl class="kv">
+        <dt>Id</dt><dd class="mono">${esc(p.id)}</dd>
+        <dt>Name</dt><dd class="mono">${esc(p.name)}</dd>
+        <dt>Core</dt><dd><span class="mono">${esc(p.core)}</span> ${coreOk ? `<span style="color:var(--ok)">— fits ${CORE}</span>` : `<span style="color:var(--bad)">— does not fit ${CORE}</span>`}</dd>
+        <dt>Needs</dt><dd>${deps}</dd>
+        <dt>Owner</dt><dd>${p.private ? `${ORG.name} — private` : "Maxitor marketplace — public"}</dd>
+      </dl>
+      <div class="dsec">Its wheel</div>
+      <dl class="kv">
+        <dt>Source</dt><dd class="mono">${esc(p.src)}</dd>
+        <dt>SHA-256</dt><dd class="mono">${esc(p.sha)}</dd>
+      </dl>
+      <div class="dsec">Its tables, from schema.yaml</div>
+      <dl class="kv">
+        <dt>Tables</dt><dd><div class="tbl">${p.tables.map(t => `<span>${t}</span>`).join("")}</div></dd>
+        <dt>Schema</dt><dd class="mono">${p.name}_${v}</dd>
+        <dt>Database user</dt><dd class="mono">plg_${p.name}_${v}</dd>
+        <dt>Deployed</dt><dd>${p.deployed || isLive ? "Yes — shared by every organization on this version" : "Not yet — the first install builds it"}</dd>
+      </dl>
+      <div class="dsec">In the tree</div>
+      <div class="tbl" style="font-size:12.5px">${p.tree.map(t => `<span style="font-family:var(--font)">${esc(t)}</span>`).join("")}</div>
+    </div>
+    <div class="pf">${ft}</div>
+  </div>`;
+}
+const TOASTS = {
+  installed: k => `${PL[k].title} ${PL[k].ver} is installed and enabled. Its sections are in the tree.`,
+  enabled: k => `${PL[k].title} is enabled again.`,
+  disabled: k => `${PL[k].title} is disabled. Its data stays.`,
+  removed: k => `${PL[k].title} is removed from ${ORG.name}.`,
+};
+function toast() {
+  if (!S.toast) return "";
+  const [t, k] = S.toast.split(":");
+  return `<div class="toast">${I.check}<span>${esc(TOASTS[t](k))}</span><a onclick="go({toast:null})">Close</a></div>`;
+}
+
+/* ======================= render ======================= */
+function render() {
+  const app = document.getElementById("app");
+  let html = "";
+  const inSettings = S.screen === "plugins" && S.user === "admin";
+  if (S.screen === "plugins") html = urlbar(`/w/${ORG.code}/settings/plugins`) + header() + `<div class="body">${inSettings ? settingsNav() + viewPlugins() : sidebar() + `<div class="content">${viewPlugins()}</div>`}</div>`;
+  else html = urlbar(`/w/${ORG.code}`) + header() + `<div class="body">${sidebar()}${viewOrgPage()}</div>`;
+  if (S.dlg === "install") html += dlgInstall();
+  else if (S.dlg === "disable") html += dlgDisable();
+  else if (S.dlg === "dblocked") html += dlgDisableBlocked();
+  else if (S.dlg === "blocked") html += dlgBlocked();
+  else if (S.dlg === "remove") html += dlgRemove();
+  else if (S.dlg === "private") html += dlgPrivate();
+  else if (S.dlg === "detail") html += panelDetail();
+  if (S.drawer && S.phone) html += `<div class="scrim" onclick="go({drawer:false})"></div>` + (inSettings ? settingsNav("drawer") : sidebar("drawer"));
+  html += toast();
+  app.classList.toggle("phone", !!S.phone);
+  app.innerHTML = html;
+  renderNav(); renderNotes(); fit();
+}
+
+/* ======================= navigator and notes ======================= */
+const SCREENS = [
+  ["The plugins page", [
+    ["1.1", "Installed plugins", {}],
+    ["1.2", "The marketplace", { tab: "market" }],
+    ["1.3", "A plugin's details", { tab: "market", dlg: "detail", target: "graph" }],
+    ["1.4", "Nothing installed yet", { st: {} }],
+    ["1.5", "The tree with plugins", { screen: "org", sel: "tasks:My tasks" }],
+  ]],
+  ["Searching", [
+    ["1.6", "Among the installed", { q: "note" }],
+    ["1.7", "In the marketplace", { tab: "market", q: "task" }],
+    ["1.8", "Nothing found", { tab: "market", q: "crm" }],
+  ]],
+  ["Installing", [
+    ["2.1", "First install of a version", { tab: "market", st: { notes: "enabled", glossary: "disabled" }, dlg: "install", target: "tasks" }],
+    ["2.2", "The version is already deployed", { tab: "market", dlg: "install", target: "graph" }],
+    ["2.3", "A dependency is missing", { tab: "market", st: { notes: "enabled", glossary: "disabled" }, dlg: "install", target: "timesheets" }],
+    ["2.4", "Installing", { st: { notes: "enabled", tasks: "installing", glossary: "disabled" } }],
+    ["2.5", "Installed and enabled", { toast: "installed:tasks" }],
+    ["2.6", "The install failed", { st: { graph: "failed", notes: "enabled", tasks: "enabled", glossary: "disabled" } }],
+  ]],
+  ["Disabling and enabling", [
+    ["3.1", "Disabling", { dlg: "disable", target: "tasks" }],
+    ["3.2", "Disabled", { st: { notes: "enabled", tasks: "disabled", glossary: "disabled" }, toast: "disabled:tasks" }],
+    ["3.3", "Enabled again", { st: { notes: "enabled", tasks: "enabled", glossary: "enabled" }, toast: "enabled:glossary" }],
+    ["3.4", "An enabled plugin needs it", { dlg: "dblocked", target: "notes" }],
+  ]],
+  ["Removing", [
+    ["4.1", "Another plugin depends on it", { dlg: "blocked", target: "notes" }],
+    ["4.2", "Typing the name", { dlg: "remove", target: "tasks", typed: "" }],
+    ["4.3", "The name is typed", { dlg: "remove", target: "tasks", typed: "tasks" }],
+    ["4.4", "Removing", { st: { notes: "enabled", tasks: "removing", glossary: "disabled" } }],
+    ["4.5", "Removed: the history", { st: { notes: "enabled", tasks: "removed", glossary: "disabled" }, toast: "removed:tasks" }],
+  ]],
+  ["A private plugin", [
+    ["5.1", "Its address and hash", { dlg: "private", priv: "ok" }],
+    ["5.2", "A PyPI address", { dlg: "private", priv: "pypi" }],
+    ["5.3", "No wheel named", { dlg: "private", priv: "nofile" }],
+    ["5.4", "A malformed hash", { dlg: "private", priv: "badsha" }],
+    ["5.5", "Checking", { tab: "market", privRow: "checking" }],
+    ["5.6", "Rejected: the hash differs", { tab: "market", privRow: "sha" }],
+    ["5.7", "Rejected: the id is taken", { tab: "market", privRow: "id" }],
+    ["5.8", "Ready to install", { tab: "market", privRow: "active" }],
+    ["5.9", "Uploading a wheel", { dlg: "private", priv: "file" }],
+    ["5.10", "A wheel too large", { dlg: "private", priv: "big" }],
+    ["5.11", "Rejected: a closed repository", { tab: "market", privRow: "closed" }],
+  ]],
+  ["Access", [
+    ["6.1", "A user who is not an administrator", { user: "member" }],
+  ]],
+  ["Phone only", [
+    ["7.1", "The tree in a drawer", { screen: "org", sel: "notes:All notes", drawer: true, phone: true }],
+    ["7.2", "Settings in a drawer", { drawer: true, phone: true }],
+  ]],
+];
+const PATHS = [
+  ["Install with a dependency", "Timesheets needs Tasks, which is not there yet", [["Marketplace", "2.3"], ["Tasks", "2.1"], ["Installing", "2.4"], ["Enabled", "2.5"]]],
+  ["Remove a plugin", "Notes is needed by Tasks: Tasks goes first", [["Refused", "4.1"], ["Type", "4.2"], ["Typed", "4.3"], ["Removing", "4.4"], ["History", "4.5"]]],
+  ["A private plugin", "From GitHub to the organization", [["Address", "5.1"], ["Checking", "5.5"], ["Ready", "5.8"]]],
+];
+const NOTES = {
+  "1.1": ["Installed plugins", [
+    "<code>/w/severny-veter/settings/plugins</code>: Plugins is one item of the organization's Settings. “Settings” is a quiet link at the foot of the tree, drawn only for an administrator.",
+    "In Settings the tree gives way to the settings' own column, drawn like the tree: the group “Settings” and its items. Plugins is the only item of this issue; later settings join it there.",
+    "The header reads “Severny Veter / Settings”; the organization's name leads back to its tree. The column repeats no way back.",
+    "One row per <code>OrganizationPluginCoreEntity</code> not <code>removed</code>: the version, its state, its source as a Package URL, who installed it and when, what it needs.",
+    "Enabled: Disable and Remove. Disabled: Enable and Remove — enabling needs no dialog, since nothing is lost either way.",
+    "Glossary is withdrawn from the marketplace: the row says so, and it keeps working here.",
+    "The title opens the plugin's details (1.3).",
+  ]],
+  "1.2": ["The marketplace", [
+    "Active versions of listed plugins this organization does not have. A plugin installed here leaves this tab; a removed one comes back.",
+    "Each card checks what installing would check: the core's range and every dependency installed in this organization. Calendar needs core 2 — its card is greyed and Install is off.",
+    "Withdrawn plugins and versions in <code>draft</code>, <code>rejected</code> or <code>withdrawn</code> are not shown.",
+  ]],
+  "1.3": ["A plugin's details", [
+    "What the passport and <code>schema.yaml</code> of this version say: id, name, core range, dependencies, owner; the wheel's purl and SHA-256; the tables it declares and the schema and user they live in.",
+    "“Deployed” says whether the next install builds the schema or only adds the plugin to the organization. It names no other organization.",
+    "On a phone the panel takes the whole screen with a way back at the top.",
+  ]],
+  "1.4": ["Nothing installed yet", ["A new organization: the tree is empty, and the Installed tab leads to the marketplace."]],
+  "1.5": ["The tree with plugins", [
+    "Each enabled plugin adds its group to the tree; a disabled or removed one has none. The plugin's pages are its own (#75).",
+    "“Settings” stays at the foot for an administrator: a quiet link, apart from the plugins' sections.",
+  ]],
+  "1.6": ["Searching among the installed", [
+    "One field above the list on both tabs. It looks through the title, the name, the passport's id and the description, case aside, and marks what matched.",
+    "The query is one for both tabs: the counts in the tabs show how many plugins match on each, so a match on the other tab is seen without switching. Here “note” finds Notes among the installed and Tasks, whose description says “notes”; the marketplace has none.",
+    "Removed plugins in the history are searched too.",
+  ]],
+  "1.7": ["Searching the marketplace", [
+    "“task” finds Timesheets by its description; Tasks itself is installed, so it counts on the other tab. A private plugin is searched with the rest.",
+    "The marketplace is searched by the core's action over the active versions, not in the browser: it grows with the marketplace.",
+  ]],
+  "1.8": ["Nothing found", ["The page says so, names the query and offers to clear it. The cross clears it too."]],
+  "2.1": ["First install of a version", [
+    "Tasks 0.4.1 is not deployed anywhere yet: installing builds the schema <code>tasks_0_4_1</code>, the user <code>plg_tasks_0_4_1</code> and the tables from <code>schema.yaml</code> with their version tables, then gives the user its rights.",
+    "Both checks pass: the core's range and Notes, which Tasks needs, installed here.",
+  ]],
+  "2.2": ["The version is already deployed", ["Another organization runs Code graph 1.0.0, so the schema exists: installing only adds a row for this organization. The dialog does not say who else runs it."]],
+  "2.3": ["A dependency is missing", [
+    "Timesheets needs Tasks, which this organization does not have. Install is replaced by “Install Tasks first”, which opens Tasks' own dialog (2.1).",
+    "Nothing is installed in passing: every dependency is installed by hand, with its own checks.",
+  ]],
+  "2.4": ["Installing", [
+    "The row is <code>installing</code> and shows the steps: compatibility, schema and user, tables, rights. A version already deployed shows “skipped” instead of building.",
+    "In the mockup a click on the steps finishes the install.",
+  ]],
+  "2.5": ["Installed and enabled", ["A plugin is enabled as soon as it is installed; its groups appear in the tree at once."]],
+  "2.6": ["The install failed", [
+    "<code>failed</code> says what stopped and that nothing of the organization was changed.",
+    "Retry starts <code>installing</code> again; Remove makes it <code>removed</code> — the two ways out of <code>failed</code> in the lifecycle.",
+  ]],
+  "3.1": ["Disabling", ["The plugin leaves the tree for everyone in the organization; its data stays."]],
+  "3.2": ["Disabled", ["The row offers Enable. Removing is still possible."]],
+  "3.3": ["Enabled again", ["Glossary is back in the tree with everything it had."]],
+  "3.4": ["An enabled plugin needs it", [
+    "Notes cannot be disabled while Tasks, which needs it, is enabled. The dialog names every such plugin and offers to disable it first.",
+    "A disabled dependent does not stop it: only an enabled plugin needs its dependency running.",
+  ]],
+  "4.1": ["Another plugin depends on it", [
+    "Notes cannot be removed while Tasks, installed here, needs it. The dialog names every such plugin; each is removed by hand, one by one.",
+    "A disabled plugin counts too: it is still installed.",
+  ]],
+  "4.2": ["Typing the name", [
+    "Removing deletes the organization's rows in the version's schema, current rows and versions alike. The person types the plugin's <code>name</code> to confirm; the button stays off until it matches.",
+    "In the mockup each click on the field types more of the name.",
+  ]],
+  "4.3": ["The name is typed", ["The field says it matches and the red button turns on."]],
+  "4.4": ["Removing", ["<code>removing</code>: the rows are deleted under the organization's lock. The schema and its user stay — other organizations use them."]],
+  "4.5": ["Removed: the history", ["The row stays under “Removed” in the history. Tasks is back in the marketplace and can be installed again, empty."]],
+  "5.1": ["A private plugin: its address and hash", [
+    "From a release: the administrator gives the wheel's Package URL and SHA-256 — a release that downloads without signing in. A closed repository goes by uploading (5.9). “Add and check” creates a plugin owned by this organization and its version in <code>draft</code>, and starts the check (5.5).",
+    "Other organizations never see it.",
+  ]],
+  "5.2": ["A PyPI address", ["<code>pkg:pypi</code> is the public marketplace's source. A private plugin comes from GitHub or GitLab."]],
+  "5.3": ["No wheel named", ["A release can carry several files, so the purl must name the wheel with <code>?file=</code>."]],
+  "5.4": ["A malformed hash", ["A SHA-256 is 64 hexadecimal characters; the field says what it got."]],
+  "5.5": ["Checking", [
+    "The version is in <code>draft</code>: Maxitor downloads the wheel, compares its SHA-256, reads the passport and <code>schema.yaml</code>, and checks compatibility with the core.",
+    "In the mockup a click on the steps finishes the check.",
+  ]],
+  "5.6": ["Rejected: the hash differs", ["<code>rejected</code> with the reason: the downloaded wheel hashes to something else. “Add again” opens the dialog."]],
+  "5.7": ["Rejected: the id is taken", ["A plugin's passport id is unique across the marketplace, private plugins included; so is its name, because the schema's name is built from it."]],
+  "5.9": ["Uploading a wheel", [
+    "The second way in the same dialog: the administrator uploads the <code>.whl</code> itself. It serves a closed repository, a CI artifact or a file from a laptop, and Maxitor needs no access to anything.",
+    "Maxitor computes the SHA-256 and shows it; the plugin's purl becomes <code>pkg:generic/&lt;name&gt;@&lt;version&gt;?checksum=sha256:&lt;hash&gt;</code>. The file goes to the wheel store, and the check runs as for any version.",
+  ]],
+  "5.10": ["A wheel too large", ["A wheel may be at most 50 MB, a setting of the server; a larger one is refused before it is kept."]],
+  "5.11": ["Rejected: a closed repository", [
+    "The release asked for signing in. Maxitor stores no access tokens, so the version is <code>rejected</code> and the card offers to upload the wheel instead.",
+  ]],
+  "5.8": ["Ready to install", ["The version is <code>active</code>: the card is installed like any other, with the same checks."]],
+  "6.1": ["A user who is not an administrator", [
+    "No “Settings” at the foot of the tree, and <code>/w/severny-veter/settings/plugins</code> answers 404 — the same as a page that does not exist.",
+    "The tree shows the enabled plugins' sections as for everyone.",
+  ]],
+  "7.2": ["Settings in a drawer", [
+    "In Settings the same button opens the settings' column; the way back is the organization's name in the header.",
+  ]],
+  "7.1": ["The tree in a drawer", [
+    "On a phone the tree is not beside the page: the button left of the logo opens it as a drawer over the page; a tap outside closes it.",
+    "Choosing an item closes the drawer and opens the page. “Settings” at the foot leads to the settings.",
+  ]],
+};
+function norm(o) { const st = {}; Object.keys(o.st).sort().forEach(k => st[k] = o.st[k]); return JSON.stringify(Object.assign({}, o, { st, phone: false })); }
+function full(n) { for (const [, items] of SCREENS) for (const [k, , st] of items) if (k === n) return Object.assign(JSON.parse(JSON.stringify(DEF)), st); return null; }
+function curNum() { const me = norm(S); for (const [, items] of SCREENS) for (const [n] of items) if (norm(full(n)) === me) return n; return null; }
+function openNum(n) { const ph = S.phone; go(Object.assign(full(n), n.startsWith("7.") ? {} : { phone: ph })); }
+function renderNav() {
+  const cur = curNum();
+  let h = `<h1>Maxitor core: plugins in an organization</h1><div class="sub">The screens of issue #82: the marketplace, installing, disabling, enabling and removing a plugin, and adding a private one. Every screen is live and has a phone version.</div>`;
+  h += `<div class="seg"><button class="${S.phone ? "" : "on"}" onclick="go({phone:false,drawer:false})">Desktop</button><button class="${S.phone ? "on" : ""}" onclick="go({phone:true})">Phone</button></div>`;
+  for (const [g, items] of SCREENS) {
+    h += `<div class="group">${g}</div>`;
+    for (const [n, t] of items) h += `<button class="screen${cur === n ? " on" : ""}" onclick="openNum('${n}')"><span class="n">${n}</span>${t}</button>`;
+  }
+  h += `<div class="group">Paths</div>`;
+  for (const [t, f, steps] of PATHS) h += `<div class="path"><div class="pt">${t}</div><div class="pf">${f}</div><div class="steps">${steps.map(([s, n], i) => `${i ? "<span>→</span>" : ""}<button onclick="openNum('${n}')">${s}</button>`).join("")}</div></div>`;
+  document.getElementById("nav").innerHTML = h;
+}
+function renderNotes() {
+  const n = curNum(), note = NOTES[n], dev = S.phone ? "phone, 375 × 812" : "desktop, 1360 × 840";
+  document.getElementById("cap").innerHTML = note ? `<b>${n} · ${note[0]}</b> — ${dev}, the screen is live` : `Free navigation through the mockup — ${dev}`;
+  document.getElementById("notes").innerHTML = note ? `<h2>${n} · ${note[0]}</h2><ul>${note[1].map(x => `<li>${x}</li>`).join("")}</ul>` : `<h2>Free navigation</h2><ul><li>You got here by moving through the screens themselves.</li></ul>`;
+}
+function fit() {
+  const stage = document.getElementById("stage"), sc = document.getElementById("scale"), box = document.getElementById("box");
+  const w = S.phone ? 375 : 1360, h = S.phone ? 812 : 840;
+  const k = Math.min(1, (stage.clientWidth - 48) / w);
+  sc.style.transform = `scale(${k})`; box.style.height = h * k + "px";
+}
+window.addEventListener("resize", fit);
+document.addEventListener("keydown", e => { if (e.key === "Escape") go({ dlg: null, drawer: false }); });
+render();
+</script>
+</body>
+</html>

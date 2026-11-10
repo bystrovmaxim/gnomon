@@ -1,16 +1,16 @@
 # maxitor-plugin.yaml — the passport of the plugin: who it is and what it needs.
 # Maxitor's installer reads it from the wheel before installing anything.
-passport: 1
+passport: 2
 
 # The global identifier: reverse domain notation, never changes.
 id: io.github.bystrovmaxim.notes
-# The name in one Maxitor installation: the database schema, the role plg_notes and the path /p/notes.
+# The name in one Maxitor installation: each version's schema notes_<version>, its user plg_notes_<version>, the path /p/notes.
 name: notes
 title: Notes
 description: >
   Notes on catalog items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.3.0
+version: 0.4.0
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 
@@ -39,13 +39,12 @@ roles:
 
 backend:
   app: maxitor_notes.app:create_app
-  migrate: maxitor_notes.migrate:upgrade
 
 frontend:
   build: maxitor_notes/_web
   navigation: maxitor_notes/navigation.yaml
 
+# The plugin carries no SQL and no migrations: it declares its tables, and Maxitor builds them.
 database:
-  # Tables of mechanics, kept without versions.
-  mechanics: [migration_ledger]
+  schema: maxitor_notes/schema.yaml
   foreign_keys: maxitor_notes/foreign-keys.yaml

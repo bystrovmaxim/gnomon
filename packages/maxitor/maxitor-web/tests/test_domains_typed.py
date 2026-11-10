@@ -21,6 +21,7 @@ DOMAINS = [
     ("maxitor.web.model.diagrams.diagrams_domain", "DiagramsDomain"),
     ("maxitor.web.model.rooms.rooms_domain", "RoomsDomain"),
     ("maxitor.repo_graph_port.repo_graph_domain", "RepoGraphDomain"),
+    ("maxitor.core.plugins.plugins_domain", "PluginsDomain"),
 ]
 
 

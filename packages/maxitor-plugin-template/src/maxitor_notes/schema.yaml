@@ -1,0 +1,13 @@
+# schema.yaml — the plugin's tables. No SQL: Maxitor's installer builds each table with its version table, the service
+# fields (id, organization_id, created_at, updated_at), the overlap constraint and the indexes, by the rules of
+# versioned storage. The keys to the core are in foreign-keys.yaml.
+schema: 1
+tables:
+  note:
+    description: A note on a catalog item. Read only by changing actions; screens read note_versions.
+    columns:
+      item_id: {type: uuid, nullable: false, description: The catalog item the note is about.}
+      writer_id: {type: uuid, nullable: false, description: The account of the member who wrote the note.}
+      body: {type: text, nullable: false, description: The text of the note.}
+    indexes:
+      - [item_id]

@@ -24,13 +24,14 @@ class CoreSchemas:
     """
     AI-CORE-BEGIN
     ROLE: The names of the core's schemas in this database.
-    CONTRACT: ``from_environment`` reads MAXITOR_SCHEMA_PLATFORM, MAXITOR_SCHEMA_ORGANIZATION and
-        MAXITOR_SCHEMA_EXTENSIONS, defaulting to the logical names.
+    CONTRACT: ``from_environment`` reads MAXITOR_SCHEMA_PLATFORM, MAXITOR_SCHEMA_ORGANIZATION,
+        MAXITOR_SCHEMA_PLUGINS and MAXITOR_SCHEMA_EXTENSIONS, defaulting to the logical names.
     AI-CORE-END
     """
 
     platform: str = "platform"
     organization: str = "organization"
+    plugins: str = "plugins"
     extensions: str = "extensions"
 
     @classmethod
@@ -39,6 +40,7 @@ class CoreSchemas:
         return cls(
             platform=os.environ.get("MAXITOR_SCHEMA_PLATFORM", "platform"),
             organization=os.environ.get("MAXITOR_SCHEMA_ORGANIZATION", "organization"),
+            plugins=os.environ.get("MAXITOR_SCHEMA_PLUGINS", "plugins"),
             extensions=os.environ.get("MAXITOR_SCHEMA_EXTENSIONS", "extensions"),
         )
 
@@ -48,6 +50,8 @@ class CoreSchemas:
             names = [self.platform, self.extensions]
         elif folder == "organization":
             names = [self.organization, self.platform, self.extensions]
+        elif folder == "plugins":
+            names = [self.plugins, self.organization, self.platform, self.extensions]
         else:
             raise ValueError(f"Unknown migration folder {folder!r}.")
         return ", ".join(identifier(name) for name in names)

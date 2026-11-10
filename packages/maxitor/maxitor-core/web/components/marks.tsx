@@ -22,6 +22,18 @@ export const Icon = {
   out: () => <Line small d={<path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />} />,
   key: () => <Line small d={<><circle cx="8" cy="15" r="4" /><path d="M11 12l9-9M16 7l3 3" /></>} />,
   globe: () => <Line small d={<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></>} />,
+  chevron: () => <Line d={<path d="M6 9l6 6 6-6" />} />,
+  page: () => <Line small d={<><rect x="5" y="4" width="14" height="16" rx="2" /><path d="M9 9h6M9 13h6M9 17h3" /></>} />,
+  puzzle: () => <Line small d={<path d="M9 4h3a2 2 0 114 0h0v4a2 2 0 110 4v4h-4a2 2 0 10-4 0H4v-4a2 2 0 100-4V4h5z" />} />,
+  gear: () => (
+    <Line
+      small
+      d={<><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></>}
+    />
+  ),
+  search: () => <Line d={<><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></>} />,
+  menu: () => <Line d={<path d="M4 7h16M4 12h16M4 17h16" />} />,
+  lock: () => <Line small d={<><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 018 0v3" /></>} />,
 };
 
 /** Each way in: its mark's class and letter, and its name as people know it. */

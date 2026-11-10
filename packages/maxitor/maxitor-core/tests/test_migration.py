@@ -32,8 +32,8 @@ def _tables(sql: str) -> dict[str, list[str]]:
     return tables
 
 
-def test_there_are_migrations_for_both_schemas() -> None:
-    assert {path.parent.name for path in FILES} == {"platform", "organization"}
+def test_there_are_migrations_for_every_schema() -> None:
+    assert {path.parent.name for path in FILES} == {"platform", "organization", "plugins"}
 
 
 @pytest.mark.parametrize("path", FILES, ids=lambda p: f"{p.parent.name}/{p.name}")
@@ -53,7 +53,7 @@ def test_no_default_no_cascade_no_schema(path: Path) -> None:
     assert "CASCADE" not in code.upper()
     # A COMMENT names table.column, and the table organization shares its name with its schema: skip comments.
     statements = "\n".join(line for line in code.splitlines() if not line.lstrip().startswith("COMMENT ON"))
-    assert not re.search(r"\b(platform|organization|extensions|public)\.\w", statements), "a name says its schema"
+    assert not re.search(r"\b(platform|organization|plugins|extensions|public)\.\w", statements), "a name says its schema"
 
 
 @pytest.mark.parametrize("path", FILES, ids=lambda p: f"{p.parent.name}/{p.name}")
@@ -89,6 +89,31 @@ def test_bootstrap_closes_public_and_makes_the_role() -> None:
     assert "PASSWORD :'core_password'" in sql
 
 
+def test_bootstrap_makes_the_installer_and_the_plugins_group() -> None:
+    sql = BOOTSTRAP.read_text(encoding="utf-8")
+    assert "CREATE ROLE maxitor_installer LOGIN NOSUPERUSER NOCREATEDB CREATEROLE PASSWORD :'installer_password'" in sql
+    assert "GRANT CREATE ON DATABASE %I TO maxitor_installer" in sql
+    assert "CREATE ROLE maxitor_plugin NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE" in sql
+    assert "GRANT maxitor_plugin TO maxitor_installer WITH ADMIN OPTION" in sql
+    assert "CREATE SCHEMA plugins AUTHORIZATION maxitor_core" in sql
+    # The core's everyday role never gets to create a role or a schema in the database.
+    assert "CREATE ROLE maxitor_core LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE" in sql
+    assert "TO maxitor_core;" not in sql.split("GRANT CREATE ON DATABASE")[1].split("\n")[0]
+
+
+def test_the_installer_may_write_only_the_schema_plugins() -> None:
+    sql = (MIGRATIONS / "plugins" / "0001_plugins.sql").read_text(encoding="utf-8")
+    grants = [line for line in sql.splitlines() if line.startswith("GRANT")]
+    assert "GRANT USAGE ON SCHEMA plugins TO maxitor_installer;" in grants
+    assert "GRANT SELECT ON organization_versions, user_versions, boundary_versions, boundary_user_versions TO maxitor_installer;" in grants
+    assert not any("DELETE" in line for line in grants)
+
+
+def test_one_live_row_per_organization_and_plugin() -> None:
+    sql = (MIGRATIONS / "plugins" / "0001_plugins.sql").read_text(encoding="utf-8")
+    assert "CREATE UNIQUE INDEX organization_plugin_one_live ON organization_plugin (organization_id, plugin_id) WHERE state <> 'removed';" in sql
+
+
 def test_identifier_quotes() -> None:
     assert identifier("organization") == '"organization"'
     assert identifier('we"ird') == '"we""ird"'
@@ -103,11 +128,18 @@ async def test_the_migrator_runs_platform_then_organization_under_their_schemas(
     pool, connection = recording_pool(answer)
     storage = MigrationsStorage(pool=pool)
     ran = await apply_migrations(storage, CoreSchemas())
-    assert ran == ["platform/0001_platform.sql", "organization/0001_organization.sql"]
+    assert ran == [
+        "platform/0001_platform.sql",
+        "organization/0001_organization.sql",
+        "organization/0002_plugin_functions.sql",
+        "plugins/0001_plugins.sql",
+    ]
     paths = [q for q in connection.queries() if q.startswith("SET LOCAL search_path")]
     assert paths[0] == 'SET LOCAL search_path TO "platform", "extensions"'
     assert paths[1] == 'SET LOCAL search_path TO "platform", "extensions"'
     assert paths[2] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
+    assert paths[3] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
+    assert paths[4] == 'SET LOCAL search_path TO "plugins", "organization", "platform", "extensions"'
     recorded = [params for query, params in connection.statements if query.startswith("INSERT INTO migration")]
     assert [name for name, _digest in recorded] == ran
 
@@ -125,3 +157,17 @@ async def test_an_edited_migration_stops_the_run() -> None:
 
 def test_storage_is_a_postgres_storage() -> None:
     assert issubclass(MigrationsStorage, PostgresStorage)
+
+
+def test_the_plugins_functions_run_as_their_owner_for_the_plugins_group_only() -> None:
+    sql = (MIGRATIONS / "organization" / "0002_plugin_functions.sql").read_text(encoding="utf-8")
+    created = re.findall(r"CREATE FUNCTION (\w+)\(", sql)
+    assert created == ["change_time", "watermark", "is_member", "member_organization", "member_name"]
+    for header in re.findall(r"CREATE FUNCTION .*?AS \$\$", sql, re.S):
+        assert "SECURITY DEFINER SET search_path = " in header, header
+    statements = " ".join(sql.split())
+    assert "REVOKE ALL ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid), member_organization(text, uuid), member_name(uuid, uuid, timestamptz) FROM PUBLIC;" in statements
+    assert "GRANT EXECUTE ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid), member_organization(text, uuid), member_name(uuid, uuid, timestamptz) TO maxitor_plugin;" in statements
+    grants = [line for line in sql.splitlines() if line.startswith("GRANT")]
+    assert not any("SELECT" in line or "INSERT" in line for line in grants)
+    assert "status = 'active'" in sql
