@@ -49,8 +49,8 @@ from maxitor_notes.actions.publish_notes_action import PublishNotesAction
 from maxitor_notes.history.list_note_history_action import ListNoteHistoryAction
 from maxitor_notes.history.note_milestone_card_action import NoteMilestoneCardAction
 from maxitor_notes.notes_editor_role import NotesEditorRole
-from maxitor_notes.notes_refusal_error import NotesRefusalError
 from maxitor_notes.notes_reader_role import NotesReaderRole
+from maxitor_notes.notes_refusal_error import NotesRefusalError
 from maxitor_notes.organization_auth_coordinator import OrganizationAuthCoordinator
 from maxitor_notes.passport import read_passport
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage

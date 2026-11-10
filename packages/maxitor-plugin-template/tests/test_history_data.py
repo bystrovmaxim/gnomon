@@ -99,14 +99,14 @@ async def test_the_reading_action_answers_bars_over_a_stretch_and_notes_at_a_mom
             self.calls.append(("note_versions_between", organization_id, item_id, start, end, writer_id))
             return end, [sdk_history.Version("n1", "2026-11-08T10:00:00.000000Z", None)]
 
-    params = ListItemNotesParams(item_id=ITEM, from_at="2026-11-08T00:00:00.000000Z", to_at="2026-11-09T00:00:00.000000Z", bar=3600, author=ANN)
+    params = ListItemNotesParams(item_id=ITEM, from_at="2026-11-08T00:00:00.000000Z", to_at="2026-11-09T00:00:00.000000Z", width=3600, author=ANN)
     result, storage = await _run(ListItemNotesAction(), params, storage=StretchStorage())
     assert storage.calls[-1] == ("note_versions_between", ACME, ITEM, params.from_at, params.to_at, ANN)
     assert [(bar.start, bar.added) for bar in result.bars] == [("2026-11-08T10:00:00.000000Z", 1)]
     assert result.notes == []
 
 
-@pytest.mark.parametrize("extra", [{"from_at": "2026-11-08T00:00:00.000000Z"}, {"from_at": "2026-11-08T00:00:00.000000Z", "to_at": "2026-11-09T00:00:00.000000Z", "bar": 3600, "at": "2026-11-08T00:00:00.000000Z"}, {"from_at": "2026-11-09T00:00:00.000000Z", "to_at": "2026-11-08T00:00:00.000000Z", "bar": 3600}])
+@pytest.mark.parametrize("extra", [{"from_at": "2026-11-08T00:00:00.000000Z"}, {"from_at": "2026-11-08T00:00:00.000000Z", "to_at": "2026-11-09T00:00:00.000000Z", "width": 3600, "at": "2026-11-08T00:00:00.000000Z"}, {"from_at": "2026-11-09T00:00:00.000000Z", "to_at": "2026-11-08T00:00:00.000000Z", "width": 3600}])
 def test_a_stretch_comes_whole_never_with_a_moment_and_ends_after_it_starts(extra) -> None:
     with pytest.raises(ValueError):
         ListItemNotesParams(item_id=ITEM, **extra)

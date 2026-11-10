@@ -567,15 +567,6 @@
       "type": "field"
     },
     {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams|field|maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:bar",
-      "is_dag": false,
-      "properties": {},
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams",
-      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:bar",
-      "type": "field"
-    },
-    {
       "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams|field|maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:from_at",
       "is_dag": false,
       "properties": {},
@@ -600,6 +591,15 @@
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams",
       "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:to_at",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams|field|maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:width",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams",
+      "target_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:width",
       "type": "field"
     },
     {
@@ -2820,17 +2820,6 @@
       "type": "Field"
     },
     {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:bar",
-      "label": "bar",
-      "properties": {
-        "description": "A bar's width in seconds",
-        "entity_schema": false,
-        "json_schema_value": false,
-        "required": false
-      },
-      "type": "Field"
-    },
-    {
       "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:from_at",
       "label": "from_at",
       "properties": {
@@ -2857,6 +2846,17 @@
       "label": "to_at",
       "properties": {
         "description": "The stretch's end; cut to the watermark",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:width",
+      "label": "width",
+      "properties": {
+        "description": "A bar's width in seconds",
         "entity_schema": false,
         "json_schema_value": false,
         "required": false

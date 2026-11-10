@@ -3,7 +3,6 @@
 import re
 
 import pytest
-
 from maxitor_plugin_sdk.moments import MOMENT_PATTERN, in_force, moment_text, overlaps
 
 

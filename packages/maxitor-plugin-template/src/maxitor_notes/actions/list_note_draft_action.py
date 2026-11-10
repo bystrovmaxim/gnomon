@@ -36,8 +36,6 @@ from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 
-
-
 class ListNoteDraftParams(BaseParams):
     """Which item, at which moment."""
 

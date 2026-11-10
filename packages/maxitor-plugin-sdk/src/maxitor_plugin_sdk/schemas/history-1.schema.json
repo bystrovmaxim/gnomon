@@ -18,7 +18,7 @@
         "parameters",
         "from_at",
         "to_at",
-        "bar"
+        "width"
       ],
       "description": "What every question carries: the address, never what is on the screen.",
       "properties": {
@@ -42,7 +42,7 @@
         "to_at": {
           "$ref": "#/$defs/moment"
         },
-        "bar": {
+        "width": {
           "type": "integer",
           "minimum": 60,
           "maximum": 2592000

@@ -34,7 +34,6 @@ from maxitor_notes.notes_editor_role import NotesEditorRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 
-
 class DeleteNoteParams(BaseParams):
     """Which note, and the moment the editor saw it."""
 

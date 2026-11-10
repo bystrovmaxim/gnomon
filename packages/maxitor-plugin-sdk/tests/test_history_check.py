@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import yaml
-
 from maxitor_plugin_sdk.checks import check_plugin
 
 PASSPORT = {

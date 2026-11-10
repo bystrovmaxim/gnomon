@@ -35,7 +35,6 @@ from maxitor_notes.notes_editor_role import NotesEditorRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 
-
 class EditNoteParams(BaseParams):
     """Which note, its new text, and the moment the editor saw it."""
 

@@ -131,9 +131,9 @@ from aoa.action_machine.domain import (
     Specialization,
     value,
 )
+from aoa.action_machine.intents.entities import entities
 from aoa.action_machine.intents.entity import entity
 from aoa.action_machine.intents.meta import meta
-from aoa.action_machine.intents.entities import entities
 from aoa.action_machine.resources import BaseStorage
 
 

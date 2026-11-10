@@ -33,7 +33,6 @@ from maxitor_notes.notes_editor_role import NotesEditorRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 
-
 class PublishNotesParams(BaseParams):
     """Which item, and what the revision says."""
 

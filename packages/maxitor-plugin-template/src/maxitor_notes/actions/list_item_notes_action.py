@@ -9,7 +9,7 @@ page's bars for the core's time scale.
         ├─ organization_access_decide: the person is a member of {organization}
         └─ list_summary: the organization's id again; note_versions at the moment (the watermark without one)
 
-    GET …/notes?from_at=…&to_at=…&bar=…&author=… ──► the same action, the same query and filter over the stretch:
+    GET …/notes?from_at=…&to_at=…&width=…&author=… ──► the same action, the same query and filter over the stretch:
         the versions it finds grouped into bars by maxitor_plugin_sdk.history.bars_of
 
 The page declares this action as its ``read`` in navigation.yaml and names no bars of its own: its bars count
@@ -44,7 +44,6 @@ from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 
-
 class ListItemNotesParams(BaseParams):
     """Which item, at which moment, of which writer."""
 
@@ -53,14 +52,14 @@ class ListItemNotesParams(BaseParams):
     author: str | None = Field(default=None, max_length=64, description="The author filter: one writer's id; none means every writer")
     from_at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The stretch's start, for the scale's bars")
     to_at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The stretch's end; cut to the watermark")
-    bar: int | None = Field(default=None, ge=60, le=2592000, description="A bar's width in seconds")
+    width: int | None = Field(default=None, ge=60, le=2592000, description="A bar's width in seconds")
 
     @model_validator(mode="after")
     def _one_question(self) -> ListItemNotesParams:
-        """Either a moment or a whole stretch: from_at, to_at and bar come together, and never with at."""
-        stretch = (self.from_at, self.to_at, self.bar)
+        """Either a moment or a whole stretch: from_at, to_at and width come together, and never with at."""
+        stretch = (self.from_at, self.to_at, self.width)
         if any(value is not None for value in stretch) and (any(value is None for value in stretch) or self.at is not None):
-            raise ValueError("from_at, to_at and bar come together, and never with at")
+            raise ValueError("from_at, to_at and width come together, and never with at")
         if self.from_at is not None and self.to_at is not None and self.from_at >= self.to_at:
             raise ValueError("A stretch ends after it starts")
         return self
@@ -100,9 +99,9 @@ class ListItemNotesAction(BaseAction[ListItemNotesParams, ListItemNotesResult]):
         _ = (state, box)
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
         organization_id = await member_organization_id(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
-        if params.from_at is not None and params.to_at is not None and params.bar is not None:
+        if params.from_at is not None and params.to_at is not None and params.width is not None:
             end, versions = await storage.note_versions_between(organization_id, params.item_id, params.from_at, params.to_at, params.author)
-            bars = bars_of(versions, params.from_at, end, params.bar) if params.from_at < end else []
-            return ListItemNotesResult(bars=[BarCoreEntity(start=bar.start, added=bar.added, changed=bar.changed, removed=bar.removed) for bar in bars])
+            bars = bars_of(versions, params.from_at, end, params.width) if params.from_at < end else []
+            return ListItemNotesResult(bars=[BarCoreEntity(start=found.start, added=found.added, changed=found.changed, removed=found.removed) for found in bars])
         notes = await storage.notes_of_item(organization_id, params.item_id, params.at, params.author)
         return ListItemNotesResult(notes=notes)

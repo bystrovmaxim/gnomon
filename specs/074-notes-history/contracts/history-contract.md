@@ -24,11 +24,11 @@ The check refuses: a page's `compare` wider than the passport's; `bars`, `milest
 
 ## The context every question carries
 
-`organization` (from the address), the node, the page's address parameters, `from_at`, `to_at` (moments), `bar` (seconds).
+`organization` (from the address), the node, the page's address parameters, `from_at`, `to_at` (moments), `width` (a bar's width in seconds).
 
 ## Answers (`history-1.schema.json`)
 
-- **Bars** — the reading action with `from_at`, `to_at`, `bar`: `{"bars": [{"start", "added", "changed", "removed"}]}`; only bars with a change are listed.
+- **Bars** — the reading action with `from_at`, `to_at`, `width`: `{"bars": [{"start", "added", "changed", "removed"}]}`; only bars with a change are listed.
 - **Milestones** — `{"milestones": [{"id", "at", "kind", "ref", "title", "minor", "release", "link"}]}` in time order; a `proposal` last.
 - **Card** — `{"id", "at", "kind", "ref", "title", "minor", "release", "link", "author_id", "author_name", "summary": {"added", "changed", "removed"}, "chips": [..], "comment"}`.
 
@@ -38,7 +38,7 @@ A moment is `YYYY-MM-DDTHH:MM:SS.ffffffZ`. A moment or `to_at` later than the wa
 
 | Method | Path | Action |
 |---|---|---|
-| GET | `/items/{item_id}/notes` (+ `at`, `author`, or `from_at`, `to_at`, `bar`) | `ListItemNotesAction` |
+| GET | `/items/{item_id}/notes` (+ `at`, `author`, or `from_at`, `to_at`, `width`) | `ListItemNotesAction` |
 | PATCH | `/notes/{note_id}` `{body, base_moment}` | `EditNoteAction` |
 | DELETE | `/notes/{note_id}?base_moment=` | `DeleteNoteAction` |
 | POST | `/items/{item_id}/revisions` `{title, comment, release?}` | `PublishNotesAction` |

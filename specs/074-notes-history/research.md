@@ -2,7 +2,7 @@
 
 ## 1. How "the SDK runs a page's reading action over a stretch"
 
-- **Decision**: the page's reading action takes, beside `at`, an optional stretch — `from_at`, `to_at` and `bar` (the bar's width in seconds). With a stretch it runs the same query, the same filters, with the SDK's interval condition at every version table instead of the moment condition, gets the versions in force at some time in the stretch, and answers `bars` grouped by the SDK's `bars_of`. Without a stretch it answers as today.
+- **Decision**: the page's reading action takes, beside `at`, an optional stretch — `from_at`, `to_at` and `width` (a bar's width in seconds). With a stretch it runs the same query, the same filters, with the SDK's interval condition at every version table instead of the moment condition, gets the versions in force at some time in the stretch, and answers `bars` grouped by the SDK's `bars_of`. Without a stretch it answers as today.
 - **Rationale**: one query and one set of filters for the page and its bars, so the bars count exactly what the page shows; the core asks one action of the page, the one `navigation.yaml` names as `read`. The SDK owns the condition and the grouping, so a plugin writes nothing for bars beyond accepting the stretch.
 - **Alternatives considered**: a generic SDK action that introspects any reading SQL — too clever, breaks with any query the SDK did not foresee; a separate bars action per page — the duplicated filters drift from the page's.
 

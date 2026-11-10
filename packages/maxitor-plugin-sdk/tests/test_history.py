@@ -1,7 +1,6 @@
 """The bars a page's own reading query gives: added, changed and removed, from what the versions say."""
 
 import pytest
-
 from maxitor_plugin_sdk.history import Bar, Version, bars_of
 
 START = "2026-11-08T00:00:00.000000Z"

@@ -24,6 +24,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 #: The folder of a plugin's package holding its history actions, one per file: ``history/<name>_action.py``.
 HISTORY_FOLDER = "history"
@@ -81,7 +82,7 @@ def bars_of(versions: Iterable[Version], start: str, end: str, width: int) -> li
     ]
 
 
-def history_problems(passport_history: dict | None, node_id: str, node_history: dict, actions: set[str]) -> list[str]:
+def history_problems(passport_history: dict[str, Any] | None, node_id: str, node_history: dict[str, Any], actions: set[str]) -> list[str]:
     """
     The faults of one page's history: comparisons wider than the passport's, and history names with no action in
     the plugin's folder ``history/``. ``actions`` holds the names found there, without ``_action``.

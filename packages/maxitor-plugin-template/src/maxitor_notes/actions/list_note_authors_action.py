@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from typing import cast
 
+from maxitor_plugin_sdk.moments import MOMENT_PATTERN
 from pydantic import Field
 
 from aoa.action_machine.context.context_view import ContextView
@@ -31,7 +32,6 @@ from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseSta
 from aoa.action_machine.model.base_schema import BaseSchema
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from maxitor_notes.actions.list_item_notes_action import MOMENT_PATTERN
 from maxitor_notes.membership import member_organization_id, organization_access
 from maxitor_notes.notes_domain import NotesDomain
 from maxitor_notes.notes_reader_role import NotesReaderRole
