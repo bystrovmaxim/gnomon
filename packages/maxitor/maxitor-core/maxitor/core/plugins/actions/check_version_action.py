@@ -37,7 +37,12 @@ from maxitor.core.plugins.gateways.wheel_source_gateway import (
 from maxitor.core.plugins.installer_role import InstallerRole
 from maxitor.core.plugins.plugins_domain import PluginsDomain
 from maxitor.core.plugins.storage.deploy_storage import DEPLOY_CONNECTION_KEY, DeployStorage
-from maxitor.core.plugins.storage.wheel_storage import WHEELS_CONNECTION_KEY, WheelHashError, WheelStorage
+from maxitor.core.plugins.storage.wheel_storage import (
+    WHEELS_CONNECTION_KEY,
+    WheelHashError,
+    WheelStorage,
+    WheelTooLargeError,
+)
 from maxitor.core.plugins.wheel import WheelContents, WheelRefusedError, read_wheel
 from maxitor_plugin_sdk.plugin_schema import PluginSchemaError, parse_plugin_schema
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
@@ -202,6 +207,8 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
             wheels.put(data, found["sha256"])
         except WheelHashError as error:
             raise VersionRejectedError("hash", str(error)) from None
+        except WheelTooLargeError as error:
+            raise VersionRejectedError("too_large", str(error)) from None
         return data
 
     async def _activate(

@@ -294,7 +294,7 @@ class KeptLogger(BaseLogger):
 class World:
     """The backend with its doubles."""
 
-    def __init__(self) -> None:
+    def __init__(self, wheel_max_bytes: int = 50 * 1024 * 1024) -> None:
         self.storage = MemoryCoreStorage()
         self.geo = ChosenCountryGateway()
         self.mail = KeptMailGateway()
@@ -308,7 +308,7 @@ class World:
         self.plugins = MemoryPluginsStorage(self.storage)
         self.wheels = Path(tempfile.mkdtemp(prefix="wheels-"))
         app = create_app(
-            CoreSettings(session_secret=SECRET, wheel_store=self.wheels),
+            CoreSettings(session_secret=SECRET, wheel_store=self.wheels, wheel_max_bytes=wheel_max_bytes),
             resources={"core": self.storage, "plugins": self.plugins, "geoip": self.geo, "mail": self.mail, **self.providers},
             machine=machine,
         )

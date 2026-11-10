@@ -50,8 +50,8 @@ Paths: `core` = `packages/maxitor/maxitor-core`, `py` = `core/maxitor/core`, `pl
 
 ## Phase 6: A private plugin (issue phase 6)
 
-- [ ] T025 [US4] Write `AddPrivatePluginAction` (`pypi_is_public`, `no_file`, `not_a_purl`, `sha256_form`) and `UploadPrivatePluginAction` (`content_base64` at most 50 MB decoded, checked by length first; `not_a_wheel`; `pkg:generic/<dist>@<version>?checksum=sha256:<hash>`) in `plugins/actions/` (FR-012, FR-013)
-- [ ] T026 [US4] Tests: each refusal of the dialog; an upload stores the wheel once under its hash and creates a `draft` version owned by the organization
+- [x] T025 [US4] Write `AddPrivatePluginAction` (`pypi_is_public`, `no_file`, `not_a_purl`, `sha256_form`) and `UploadPrivatePluginAction` (`content_base64` at most 50 MB decoded, checked by length first; `not_a_wheel`; `pkg:generic/<dist>@<version>?checksum=sha256:<hash>`) in `plugins/actions/` (FR-012, FR-013)
+- [x] T026 [US4] Tests: each refusal of the dialog; an upload stores the wheel once under its hash and creates a `draft` version owned by the organization
 
 ## Phase 7: The page (issue phase 7)
 

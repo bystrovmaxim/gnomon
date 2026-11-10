@@ -25,8 +25,8 @@ Every address is declared by the chain of `FastApiAdapter` in `maxitor/core/serv
 
 | Method and address | Action | Auth | Body → answer |
 |---|---|---|---|
-| `POST /api/v1/organizations/{code}/private-plugins` | `AddPrivatePluginAction` | admin | `{purl, sha256}` → `{passport_id: null, version_id, state: "draft"}` or `422 pypi_is_public`, `422 no_file`, `422 not_a_purl`, `422 sha256_form` |
-| `POST /api/v1/organizations/{code}/private-plugins/upload` | `UploadPrivatePluginAction` | admin | `{file_name, content_base64}` → `{version_id, sha256, purl, state: "draft"}` or `413 too_large`, `422 not_a_wheel` |
+| `POST /api/v1/plugins/private` | `AddPrivatePluginAction` | admin | `{code, purl, sha256}` → `{version_id, sha256, purl, state: "draft"}` or `422 pypi_is_public`, `422 no_file`, `422 not_a_purl`, `422 sha256_form` |
+| `POST /api/v1/plugins/private/upload` | `UploadPrivatePluginAction` | admin | `{code, file_name, content_base64}` → `{version_id, sha256, purl, state: "draft"}` or `413 too_large`, `422 not_a_wheel` |
 
 ## The installer's actions (no address)
 

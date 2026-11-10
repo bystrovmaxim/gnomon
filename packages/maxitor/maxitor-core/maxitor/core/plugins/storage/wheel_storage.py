@@ -23,8 +23,16 @@ WHEELS_CONNECTION_KEY = "wheels"
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 
+#: A wheel may be at most this many bytes unless the process sets another limit (MAXITOR_WHEEL_MAX_BYTES).
+MAX_WHEEL_BYTES = 50 * 1024 * 1024
+
+
 class WheelHashError(ValueError):
     """The bytes given do not hash to the name they are stored under."""
+
+
+class WheelTooLargeError(ValueError):
+    """The bytes given are more than a wheel may be."""
 
 
 @meta(description="The plugin wheels Maxitor received, one file per SHA-256, never replaced")
@@ -33,12 +41,14 @@ class WheelStorage(BaseStorage):
     AI-CORE-BEGIN
     ROLE: Keep wheels by their hash.
     CONTRACT: ``put`` writes the bytes once under their SHA-256 and answers it; ``read`` answers them or ``None``.
-    INVARIANTS: A file's name is the hash of its bytes; an existing file is never overwritten.
+    INVARIANTS: A file's name is the hash of its bytes; an existing file is never overwritten; no file is larger
+        than ``max_bytes``.
     AI-CORE-END
     """
 
-    def __init__(self, directory: Path) -> None:
+    def __init__(self, directory: Path, max_bytes: int = MAX_WHEEL_BYTES) -> None:
         self._directory = directory
+        self.max_bytes = max_bytes
 
     @classmethod
     def get_wrapper_class(cls) -> type[BaseResource] | None:
@@ -52,6 +62,8 @@ class WheelStorage(BaseStorage):
 
     def put(self, data: bytes, sha256: str | None = None) -> str:
         """Store ``data`` under its hash, checked against ``sha256`` when given; answer the hash."""
+        if len(data) > self.max_bytes:
+            raise WheelTooLargeError(f"the wheel is {len(data)} bytes, more than {self.max_bytes}")
         digest = hashlib.sha256(data).hexdigest()
         if sha256 is not None and sha256 != digest:
             raise WheelHashError(f"the bytes hash to {digest}, not {sha256}")

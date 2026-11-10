@@ -34,7 +34,7 @@ async def run(settings: InstallerSettings | None = None) -> None:
                 factory=lambda: DeployStorage(pool=pool, schemas=CoreSchemas.from_environment()),
                 finalize=lambda storage: cast(DeployStorage, storage).close(),
             ),
-            WHEELS_CONNECTION_KEY: WheelStorage(settings.wheel_store),
+            WHEELS_CONNECTION_KEY: WheelStorage(settings.wheel_store, settings.wheel_max_bytes),
             RUNTIME_CONNECTION_KEY: PluginRuntimeStorage(settings.runtime, settings.dsn),
             WHEEL_SOURCE_CONNECTION_KEY: WheelSourceGateway(settings.wheel_max_bytes, settings.wheel_timeout_seconds),
         }
