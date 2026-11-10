@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# scripts/core-stand.sh — Maxitor's core on this machine: its database, its backend and its application.
+# scripts/core-stand.sh — Maxitor's core on this machine: its database, its backend, its plugin installer and its
+# application.
 #
-#   ./scripts/core-stand.sh up      PostgreSQL 16 in Docker on 55432, the role and schemas once, the migrations,
-#                                   then the backend on 127.0.0.1:8020 and the application on http://localhost:3000
-#                                   in the foreground; Ctrl+C stops both, the database keeps running
+#   ./scripts/core-stand.sh up      PostgreSQL 16 in Docker on 55432, the roles and schemas once, the migrations,
+#                                   the marketplace filled with the plugin template's wheel once, then the backend on
+#                                   127.0.0.1:8020, the installer and the application on http://localhost:3000 in the
+#                                   foreground; Ctrl+C stops them, the database keeps running
 #   ./scripts/core-stand.sh down    stops the database
 #   ./scripts/core-stand.sh reset   removes the database and everything in it
 #
@@ -12,16 +14,20 @@
 # The session secret is made once in .core-stand/secret.
 # MAXITOR_GEOIP_DATABASE, if set, is passed to the backend; else .private/geoip/country.mmdb of the main checkout is used
 # when it exists; without a country database every address counts as Russia.
+# Plugin wheels are kept in .core-stand/wheels, each deployed version's environment file in .core-stand/plugins.
+# MAXITOR_STAND_CONTAINER, MAXITOR_STAND_DB_PORT, MAXITOR_STAND_API_PORT and MAXITOR_STAND_WEB_PORT run a second stand
+# beside a first one.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STAND="$ROOT/.core-stand"
-CONTAINER="maxitor-core-pg"
+CONTAINER="${MAXITOR_STAND_CONTAINER:-maxitor-core-pg}"
 DB_PORT="${MAXITOR_STAND_DB_PORT:-55432}"
 API_PORT="${MAXITOR_STAND_API_PORT:-8020}"
 WEB_PORT="${MAXITOR_STAND_WEB_PORT:-3000}"
 ADMIN_PASSWORD="admin-local"
 CORE_PASSWORD="core-local"
+INSTALLER_PASSWORD="installer-local"
 WEB="$ROOT/packages/maxitor/maxitor-core/web"
 
 say() { printf '\033[1m%s\033[0m\n' "$*"; }
@@ -41,20 +47,23 @@ database_up() {
   done
   # The role, its schemas and the extensions, once, as the administrator (bootstrap.sql).
   if [ -z "$(docker exec "$CONTAINER" psql -U postgres -d maxitor -tAc "SELECT 1 FROM pg_roles WHERE rolname = 'maxitor_core'")" ]; then
-    say "Creating the role maxitor_core and its schemas"
-    docker exec -i "$CONTAINER" psql -U postgres -d maxitor -v ON_ERROR_STOP=1 -v core_password="$CORE_PASSWORD" -q -f - \
+    say "Creating the roles maxitor_core and maxitor_installer and the core's schemas"
+    docker exec -i "$CONTAINER" psql -U postgres -d maxitor -v ON_ERROR_STOP=1 -v core_password="$CORE_PASSWORD" \
+      -v installer_password="$INSTALLER_PASSWORD" -q -f - \
       < "$ROOT/packages/maxitor/maxitor-core/maxitor/core/bootstrap.sql"
   fi
 }
 
 up() {
-  mkdir -p "$STAND/outbox"
+  mkdir -p "$STAND/outbox" "$STAND/wheels" "$STAND/plugins"
   [ -s "$STAND/secret" ] || { python3 -c 'import secrets; print(secrets.token_urlsafe(48))' > "$STAND/secret"; chmod 600 "$STAND/secret"; }
   database_up
   export MAXITOR_CORE_DSN="postgresql://maxitor_core:$CORE_PASSWORD@127.0.0.1:$DB_PORT/maxitor"
   export MAXITOR_SESSION_SECRET
   MAXITOR_SESSION_SECRET="$(cat "$STAND/secret")"
   export MAXITOR_PUBLIC_URL="http://localhost:$WEB_PORT"
+  export MAXITOR_WHEEL_STORE="$STAND/wheels" MAXITOR_PLUGIN_RUNTIME="$STAND/plugins"
+  local installer_dsn="postgresql://maxitor_installer:$INSTALLER_PASSWORD@127.0.0.1:$DB_PORT/maxitor"
   # The country database and the Postbox key live outside git, in .private of the main checkout.
   local main_checkout
   main_checkout="$(cd "$(git -C "$ROOT" rev-parse --git-common-dir)/.." && pwd)"
@@ -74,22 +83,31 @@ up() {
   say "Running the core's migrations as maxitor_core"
   (cd "$ROOT" && uv run --all-extras --all-packages maxitor-core migrate)
   [ -d "$WEB/node_modules" ] || (cd "$WEB" && npm ci --no-audit --no-fund)
+  if [ "$(docker exec "$CONTAINER" psql -U postgres -d maxitor -tAc "SELECT count(*) FROM plugins.plugin")" = "0" ]; then
+    say "Filling the marketplace with the plugin template's wheel"
+    rm -rf "$STAND/dist"
+    (cd "$ROOT" && uv build --wheel -q -o "$STAND/dist" packages/maxitor-plugin-template)
+    (cd "$ROOT" && MAXITOR_INSTALLER_DSN="$installer_dsn" uv run --all-extras --all-packages maxitor-plugin-installer add-wheel "$STAND"/dist/*.whl)
+  fi
 
-  say "The backend on 127.0.0.1:$API_PORT, the application on http://localhost:$WEB_PORT — Ctrl+C stops both"
+  say "The backend on 127.0.0.1:$API_PORT, the installer, the application on http://localhost:$WEB_PORT — Ctrl+C stops them"
   (cd "$ROOT" && exec uv run --all-extras --all-packages maxitor-core serve --port "$API_PORT") &
   local api=$!
+  (cd "$ROOT" && MAXITOR_CORE_DSN="" MAXITOR_INSTALLER_DSN="$installer_dsn" MAXITOR_INSTALLER_PERIOD_SECONDS=5 \
+    exec uv run --all-extras --all-packages maxitor-plugin-installer run) &
+  local installer=$!
   (cd "$WEB" && MAXITOR_CORE_API="http://127.0.0.1:$API_PORT" exec npx next dev --port "$WEB_PORT") &
   local web=$!
-  trap 'kill "$api" "$web" 2>/dev/null; wait "$api" "$web" 2>/dev/null; exit 0' INT TERM
-  # Until either stops (bash 3.2 on macOS has no wait -n).
-  while kill -0 "$api" 2>/dev/null && kill -0 "$web" 2>/dev/null; do sleep 1; done
-  kill "$api" "$web" 2>/dev/null || true
-  wait "$api" "$web" 2>/dev/null || true
+  trap 'kill "$api" "$installer" "$web" 2>/dev/null; wait "$api" "$installer" "$web" 2>/dev/null; exit 0' INT TERM
+  # Until one stops (bash 3.2 on macOS has no wait -n).
+  while kill -0 "$api" 2>/dev/null && kill -0 "$installer" 2>/dev/null && kill -0 "$web" 2>/dev/null; do sleep 1; done
+  kill "$api" "$installer" "$web" 2>/dev/null || true
+  wait "$api" "$installer" "$web" 2>/dev/null || true
 }
 
 case "${1:-}" in
   up) up ;;
   down) docker stop "$CONTAINER" >/dev/null 2>&1 && say "The database is stopped" || say "The database was not running" ;;
-  reset) docker rm -f -v "$CONTAINER" >/dev/null 2>&1 || true; rm -rf "$STAND/outbox"; say "The database is removed" ;;
+  reset) docker rm -f -v "$CONTAINER" >/dev/null 2>&1 || true; rm -rf "$STAND/outbox" "$STAND/wheels" "$STAND/plugins" "$STAND/dist"; say "The database is removed" ;;
   *) echo "usage: $0 up|down|reset" >&2; exit 2 ;;
 esac

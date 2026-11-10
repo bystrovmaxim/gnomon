@@ -15,8 +15,14 @@ from __future__ import annotations
 
 import re
 
-from maxitor.core.plugins.actions.administrator import administered, administrator_verdict
-from maxitor.core.plugins.actions.private_plugin import PrivatePluginRefusedError, add_waiting, refuse, version_of
+from maxitor.core.plugins.actions.administrator import administered, administrator_verdict, plugins
+from maxitor.core.plugins.actions.private_plugin import (
+    PrivatePluginRefusedError,
+    add_waiting,
+    added,
+    refuse,
+    version_of,
+)
 from maxitor.core.plugins.events import PrivatePluginAddedEvent, PrivatePluginRefusedEvent
 from maxitor.core.plugins.plugins_domain import PluginsDomain
 from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
@@ -107,15 +113,14 @@ class AddPrivatePluginAction(BaseAction[AddPrivateParams, PrivateAddedResult]):
             )
         purl = parsed.to_string()
         version_id = await add_waiting(
-            connections,
-            box,
-            organization,
+            plugins(connections),
+            organization["id"],
             account_id,
             title=parsed.name,
             version=version_of(parsed.version),
             purl=purl,
             sha256=sha256,
-            uploaded=False,
             operation=type(self).__name__,
         )
+        await added(box, organization["id"], account_id, version_id, purl, sha256, uploaded=False)
         return PrivateAddedResult(version_id=version_id, sha256=sha256, purl=purl, state="draft")

@@ -20,11 +20,12 @@ import hashlib
 from typing import cast
 
 from maxitor.core.plugins.actions.add_private_plugin_action import PrivateAddedResult
-from maxitor.core.plugins.actions.administrator import administered, administrator_verdict
+from maxitor.core.plugins.actions.administrator import administered, administrator_verdict, plugins
 from maxitor.core.plugins.actions.private_plugin import (
     PrivatePluginRefusedError,
     WheelTooLargeRefusedError,
     add_waiting,
+    added,
     refuse,
     version_of,
 )
@@ -119,15 +120,14 @@ class UploadPrivatePluginAction(BaseAction[UploadParams, PrivateAddedResult]):
         version = version_of(contents.dist_version)
         purl = PackageURL(type="generic", name=name, version=version, qualifiers={"checksum": f"sha256:{sha256}"}).to_string()
         version_id = await add_waiting(
-            connections,
-            box,
-            organization,
+            plugins(connections),
+            organization["id"],
             account_id,
             title=name,
             version=version,
             purl=purl,
             sha256=sha256,
-            uploaded=True,
             operation=type(self).__name__,
         )
+        await added(box, organization["id"], account_id, version_id, purl, sha256, uploaded=True)
         return PrivateAddedResult(version_id=version_id, sha256=sha256, purl=purl, state="draft")

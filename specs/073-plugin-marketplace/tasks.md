@@ -58,18 +58,18 @@ Paths: `core` = `packages/maxitor/maxitor-core`, `py` = `core/maxitor/core`, `pl
 - [x] T027 [US1] In `web/`: the Settings link at the foot of the tree (administrators only), the settings column, the header crumb "<organization> / Settings" with the name leading back, the tree's groups of enabled plugins (FR-027, FR-028)
 - [x] T028 [US1] `web/app/w/[code]/settings/plugins/page.tsx` and its components: tabs Installed and Marketplace, rows, cards, the details panel, the install dialog with its checks, the disable dialog and the disable refusal, the private plugin dialog (release and upload), the search with counts and the empty result; server actions calling the routes (FR-029, FR-030)
 - [x] T029 [US1] The phone layout of every screen at 375 px: drawer for the tree and the settings column, sheets for dialogs, cards for rows, the details as a whole screen (FR-031)
-- [ ] T030 [US1] Check: `next build`; browser checks in `web/scripts/check-core.mjs` of the mockup's 1.1–3.4 and 5.1–7.2 at 1360 × 840 and 375 × 812, no horizontal scrollbar on the phone
+- [x] T030 [US1] Check: `next build`; browser checks in `web/scripts/check-core.mjs` of the mockup's 1.1–3.4 and 5.1–7.2 at 1360 × 840 and 375 × 812, no horizontal scrollbar on the phone
 
 ## Phase 8: On the stand (issue phase 8)
 
-- [ ] T031 Write `AddMarketplaceVersionAction` (writes `VersionAddedEvent`) and the installer's command `maxitor-plugin-installer add-version <purl> <sha256>` that runs it; extend `scripts/core-stand.sh`: the extended bootstrap, the installer process, the wheel store and runtime dirs, the marketplace filled with the template's wheel through `add-version`
-- [ ] T032 Run the quickstart's scenarios on the stand: Notes in two organizations, disabled in one, working in the other (SC-010)
+- [x] T031 Write `AddMarketplaceVersionAction` (writes `VersionAddedEvent`) and the installer's command `maxitor-plugin-installer add-version <purl> <sha256>` that runs it; extend `scripts/core-stand.sh`: the extended bootstrap, the installer process, the wheel store and runtime dirs, the marketplace filled with the template's wheel through `add-version`
+- [x] T032 Run the quickstart's scenarios on the stand: Notes in two organizations, disabled in one, working in the other (SC-010)
 
 ## Phase 9: The template in step (issue phase 9)
 
 - [x] T033 [P] [US7] `sdk/schemas/plugin-passport-2.schema.json` and the core's passport reading formats `passport: [2]`, `schema: [1]` (R5); the SDK's time and watermark helper over the core's functions (R6)
 - [x] T034 [US7] In `template/`: `schema.yaml` replaces `migrations/0001_note.sql` and `migrate.py`; passport 2, version 0.4.0; `foreign-keys.yaml` to `core.user (organization_id, id)`; the storage and `membership.py` use the SDK's helper and `is_member` (R12)
-- [ ] T035 [US7] Tests: the template's tests pass against the new storage; marked `stand`: on the stand it deploys as `notes_0_4_0` with `plg_notes_0_4_0`
+- [x] T035 [US7] Tests: the template's tests pass against the new storage; marked `stand`: on the stand it deploys as `notes_0_4_0` with `plg_notes_0_4_0`
 
 ## Phase 10: Documentation, changelog, versions (issue phase 10)
 

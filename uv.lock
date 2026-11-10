@@ -1468,7 +1468,7 @@ requires-dist = [
 
 [[package]]
 name = "maxitor-plugin-template"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "packages/maxitor-plugin-template" }
 dependencies = [
     { name = "aoa-action-machine", extra = ["jwt", "postgres"] },

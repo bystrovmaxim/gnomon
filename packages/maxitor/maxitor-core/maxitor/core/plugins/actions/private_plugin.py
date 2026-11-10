@@ -11,14 +11,12 @@ from __future__ import annotations
 
 import re
 import uuid
-from typing import Any
 
 from maxitor.core.errors import CoreRefusalError
-from maxitor.core.plugins.actions.administrator import plugins
 from maxitor.core.plugins.events import PrivatePluginAddedEvent, PrivatePluginRefusedEvent
+from maxitor.core.plugins.storage.plugins_storage import PluginsStorage
 
 from aoa.action_machine.logging import Channel
-from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 
 _VERSION = re.compile(r"^v?([0-9]+\.[0-9]+\.[0-9]+)$")
@@ -55,20 +53,17 @@ async def refuse(
 
 
 async def add_waiting(
-    connections: Connections,
-    box: ToolsBox,
-    organization: dict[str, Any],
-    account_id: str,
+    store: PluginsStorage,
+    owner_id: str | None,
+    author: str | None,
     *,
     title: str,
     version: str,
     purl: str,
     sha256: str,
-    uploaded: bool,
     operation: str,
 ) -> str:
-    """The organization's waiting plugin and its draft version, in one change; answer the version's id."""
-    store = plugins(connections)
+    """A waiting plugin — the organization's, or public with no owner — and its draft version; answer the version's id."""
     plugin_id, version_id = str(uuid.uuid4()), str(uuid.uuid4())
 
     async def work() -> None:
@@ -81,13 +76,13 @@ async def add_waiting(
                 "name": "pending_" + version_id.replace("-", "")[:24],
                 "title": title[:200],
                 "description": "",
-                "owner_organization_id": organization["id"],
+                "owner_organization_id": owner_id,
                 "state": "listed",
                 "created_at": changed,
                 "updated_at": None,
             },
             changed,
-            account_id,
+            author,
             operation,
         )
         await store.insert(
@@ -109,16 +104,21 @@ async def add_waiting(
                 "updated_at": None,
             },
             changed,
-            account_id,
+            author,
             operation,
         )
 
     await store.in_transaction(work)
+    return version_id
+
+
+async def added(box: ToolsBox, organization_id: str, account_id: str, version_id: str, purl: str, sha256: str, *, uploaded: bool) -> None:
+    """Write that a private plugin was added."""
     await box.info(
         Channel.business,
         "A private plugin {%var.purl} added in {%var.organization_id}, waiting for its check",
         PrivatePluginAddedEvent(
-            organization_id=organization["id"],
+            organization_id=organization_id,
             account_id=account_id,
             version_id=version_id,
             purl=purl,
@@ -126,4 +126,3 @@ async def add_waiting(
             uploaded=uploaded,
         ),
     )
-    return version_id
