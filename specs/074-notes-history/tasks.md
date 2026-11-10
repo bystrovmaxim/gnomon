@@ -12,12 +12,12 @@
 
 **Independent test**: `uv run pytest SDK/tests/test_moments.py TPL/tests/test_notes_storage.py TPL/tests/test_reading_sql.py TPL/tests/test_notes_actions.py`.
 
-- [ ] T001 [US1] Add `SDK/src/maxitor_plugin_sdk/moments.py`: `MOMENT_PATTERN` (`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$`), `moment_text(expr)` (the `to_char` form the template uses today), `in_force(alias, moment)` = `{a}.valid_from_at <= {m} AND ({a}.valid_to_at IS NULL OR {a}.valid_to_at > {m})`, and `overlaps(alias, start, end)` = `{a}.valid_from_at <= {end} AND ({a}.valid_to_at IS NULL OR {a}.valid_to_at > {start})`; aliases checked like table names.
-- [ ] T002 [P] [US1] Tests of the two forms and of a refused alias in `SDK/tests/test_moments.py`.
-- [ ] T003 [US1] Add `TPL/src/maxitor_notes/notes_refusal_error.py`: `NotesRefusalError(reason, status, **details)` with `body`, as the core's `CoreRefusalError`; register its handler in `TPL/src/maxitor_notes/app.py`.
-- [ ] T004 [US1] In `TPL/src/maxitor_notes/storage/notes_storage.py`: replace `_in_force` and `_MOMENT` by the SDK's; add `_moment(organization_id, at)` — the watermark when `at` is `None`, `NotesRefusalError("moment_not_come", 422, watermark=…)` when `at` is later than it; use it in `notes_of_item` and `note_authors`; `ListItemNotesParams.at` uses the SDK's `MOMENT_PATTERN`.
-- [ ] T005 [P] [US1] `TPL/tests/test_reading_sql.py`: run every reading method of `NotesStorage` on the recording connection and parse each reading query: every `*_versions` alias has the moment (or interval) condition from the SDK and `organization_id`; a query built without them fails the test.
-- [ ] T006 [P] [US1] In `TPL/tests/test_notes_storage.py`: a moment later than the watermark is refused with its watermark and reads nothing.
+- [X] T001 [US1] Add `SDK/src/maxitor_plugin_sdk/moments.py`: `MOMENT_PATTERN` (`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$`), `moment_text(expr)` (the `to_char` form the template uses today), `in_force(alias, moment)` = `{a}.valid_from_at <= {m} AND ({a}.valid_to_at IS NULL OR {a}.valid_to_at > {m})`, and `overlaps(alias, start, end)` = `{a}.valid_from_at <= {end} AND ({a}.valid_to_at IS NULL OR {a}.valid_to_at > {start})`; aliases checked like table names.
+- [X] T002 [P] [US1] Tests of the two forms and of a refused alias in `SDK/tests/test_moments.py`.
+- [X] T003 [US1] Add `TPL/src/maxitor_notes/notes_refusal_error.py`: `NotesRefusalError(reason, status, **details)` with `body`, as the core's `CoreRefusalError`; register its handler in `TPL/src/maxitor_notes/app.py`.
+- [X] T004 [US1] In `TPL/src/maxitor_notes/storage/notes_storage.py`: replace `_in_force` and `_MOMENT` by the SDK's; add `_moment(organization_id, at)` — the watermark when `at` is `None`, `NotesRefusalError("moment_not_come", 422, watermark=…)` when `at` is later than it; use it in `notes_of_item` and `note_authors`; `ListItemNotesParams.at` uses the SDK's `MOMENT_PATTERN`.
+- [X] T005 [P] [US1] `TPL/tests/test_reading_sql.py`: run every reading method of `NotesStorage` on the recording connection and parse each reading query: every `*_versions` alias has the moment (or interval) condition from the SDK and `organization_id`; a query built without them fails the test.
+- [X] T006 [P] [US1] In `TPL/tests/test_notes_storage.py`: a moment later than the watermark is refused with its watermark and reads nothing.
 
 ## Phase 2: Editing and deleting (US2, P1) — issue phase 2
 

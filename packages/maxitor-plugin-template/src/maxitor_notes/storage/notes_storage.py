@@ -29,6 +29,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from maxitor_plugin_sdk.core_functions import MEMBER_ORGANIZATION_SQL, change_time_sql, member_name, watermark_sql
+from maxitor_plugin_sdk.moments import in_force, moment_text
 
 from aoa.action_machine.graph.core.exclude_graph_model import exclude_graph_model
 from aoa.action_machine.intents.entities import entities
@@ -37,6 +38,7 @@ from aoa.action_machine.resources.postgres import PostgresStorage
 from aoa.action_machine.resources.sql import SqlStorageWrapper
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
+from maxitor_notes.notes_refusal_error import NotesRefusalError
 
 #: The plugin's version tables: its change time and watermark follow them.
 VERSION_TABLES = ("note_versions",)
@@ -44,15 +46,6 @@ VERSION_TABLES = ("note_versions",)
 
 #: Connection key under which actions receive the storage.
 NOTES_CONNECTION_KEY = "notes"
-
-#: A time as the client sees it: ISO 8601 in UTC with microseconds, compared as a string, never as a Date.
-_MOMENT = "to_char({} AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"')"
-
-
-def _in_force(alias: str, moment: str) -> str:
-    """The moment condition of one version table, in the form a B-tree serves."""
-    return f"{alias}.valid_from_at <= {moment} AND ({alias}.valid_to_at IS NULL OR {alias}.valid_to_at > {moment})"
-
 
 @meta(description="The plugin's own schema, written as its version's user; the core reached only by its functions")
 @entities(NoteCoreEntity, NoteAuthorCoreEntity)
@@ -96,7 +89,7 @@ class NotesStorage(PostgresStorage):
                 " FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
                 (organization_id, note_id, changed_at, writer_id, operation),
             )
-            moment = await self._fetchval(f"SELECT {_MOMENT.format('$1::timestamptz')}", (changed_at,))
+            moment = await self._fetchval(f"SELECT {moment_text('$1::timestamptz')}", (changed_at,))
             await self.commit()
         except BaseException:
             await self.rollback()
@@ -105,16 +98,16 @@ class NotesStorage(PostgresStorage):
 
     async def notes_of_item(self, organization_id: str, item_id: str, moment: str | None, writer_id: str | None) -> list[NoteCoreEntity]:
         """The notes of ``item_id`` at ``moment`` (the watermark when ``None``), of one writer when ``writer_id`` is given."""
-        at = moment or await self._watermark(organization_id)
+        at = await self._moment(organization_id, moment)
         if at is None:
             return []
         when = "$3::text::timestamptz"
         rows = await self._fetch(
             f"SELECT n.id::text AS id, n.item_id::text AS item_id, n.writer_id::text AS writer_id,"
             f" {member_name('n.organization_id', 'n.writer_id', when)} AS writer_name, n.body AS body,"
-            f" {_MOMENT.format('n.updated_at')} AS updated_at"
+            f" {moment_text('n.updated_at')} AS updated_at"
             f" FROM note_versions n"
-            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {_in_force('n', when)}"
+            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {in_force('n', when)}"
             f" AND ($4::text IS NULL OR n.writer_id = $4::text::uuid)"
             f" ORDER BY n.updated_at, n.id",
             (organization_id, item_id, at, writer_id),
@@ -123,25 +116,37 @@ class NotesStorage(PostgresStorage):
 
     async def note_authors(self, organization_id: str, item_id: str, moment: str | None, limit: int, after: str | None) -> list[NoteAuthorCoreEntity]:
         """The writers of the notes of ``item_id`` at ``moment``, ordered by id, ``limit`` of them after ``after``."""
-        at = moment or await self._watermark(organization_id)
+        at = await self._moment(organization_id, moment)
         if at is None:
             return []
         when = "$3::text::timestamptz"
         rows = await self._fetch(
             f"SELECT DISTINCT n.writer_id::text AS id, {member_name('n.organization_id', 'n.writer_id', when)} AS name"
             f" FROM note_versions n"
-            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {_in_force('n', when)}"
+            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {in_force('n', when)}"
             f" AND ($4::text IS NULL OR n.writer_id > $4::text::uuid)"
             f" ORDER BY id LIMIT $5",
             (organization_id, item_id, at, after, limit),
         )
         return [NoteAuthorCoreEntity(**_mapping(row)) for row in rows]
 
+    async def _moment(self, organization_id: str, moment: str | None) -> str | None:
+        """
+        The moment a read answers at: the watermark when none is given; a given moment later than the watermark is
+        refused, because its answer could still change. ``None`` before the organization's first change.
+        """
+        watermark = await self._watermark(organization_id)
+        if moment is None:
+            return watermark
+        if watermark is None or moment > watermark:
+            raise NotesRefusalError("moment_not_come", 422, watermark=watermark)
+        return moment
+
     async def _watermark(self, organization_id: str) -> str | None:
         """The last change of the organization in the core's tables and this schema, as a moment string; ``None``
         before the first."""
         value = await self._fetchval(
-            f"SELECT {_MOMENT.format('w')} FROM ({watermark_sql(VERSION_TABLES)} AS w) AS mark", (organization_id,)
+            f"SELECT {moment_text('w')} FROM ({watermark_sql(VERSION_TABLES)} AS w) AS mark", (organization_id,)
         )
         return None if value is None else str(value)
 

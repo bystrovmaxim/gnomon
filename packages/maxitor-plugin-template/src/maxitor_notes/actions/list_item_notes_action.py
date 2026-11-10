@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import cast
 
+from maxitor_plugin_sdk.moments import MOMENT_PATTERN
 from pydantic import Field
 
 from aoa.action_machine.context.context_view import ContextView
@@ -33,8 +34,6 @@ from maxitor_notes.notes_domain import NotesDomain
 from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
-#: A moment as the address carries it: ISO 8601 in UTC with microseconds.
-MOMENT_PATTERN = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$"
 
 
 class ListItemNotesParams(BaseParams):

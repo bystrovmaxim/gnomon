@@ -28,7 +28,8 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from aoa.action_machine.auth.jwt_auth.jwt_auth_coordinator import JwtAuthCoordinator
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
@@ -41,6 +42,7 @@ from maxitor_notes.actions.add_note_action import AddNoteAction
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction
 from maxitor_notes.actions.list_note_authors_action import ListNoteAuthorsAction
 from maxitor_notes.notes_editor_role import NotesEditorRole
+from maxitor_notes.notes_refusal_error import NotesRefusalError
 from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.organization_auth_coordinator import OrganizationAuthCoordinator
 from maxitor_notes.passport import read_passport
@@ -93,4 +95,11 @@ def create_app(dsn: str | None = None, core_public_key: str | None = None) -> Fa
     adapter.post(f"{prefix}/notes", AddNoteAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/notes", ListItemNotesAction, connections=connections)
     adapter.get(f"{prefix}/lists/list_note_authors", ListNoteAuthorsAction, connections=connections)
-    return adapter.build(lifespan=lifespan)
+    app = adapter.build(lifespan=lifespan)
+
+    @app.exception_handler(NotesRefusalError)
+    async def refused(_request: Request, error: NotesRefusalError) -> JSONResponse:
+        """A refusal of an action becomes its status and its reason, as the core's refusals do."""
+        return JSONResponse(status_code=error.status, content=error.body)
+
+    return app
