@@ -53,21 +53,23 @@ def _safe(name: str) -> bool:
     return not path.is_absolute() and ".." not in path.parts and "\\" not in name and not name.startswith("/")
 
 
-def _archive(data: bytes, max_expanded: int) -> zipfile.ZipFile:
-    """The archive, when it is a zip of safe paths that expands within the limit."""
+def _open(data: bytes) -> zipfile.ZipFile:
+    """The archive, when ``data`` is a zip."""
     try:
-        archive = zipfile.ZipFile(io.BytesIO(data))
+        return zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile:
         raise WheelRefusedError("not_a_wheel", "the file is not a zip archive") from None
+
+
+def _check_entries(archive: zipfile.ZipFile, max_expanded: int) -> set[str]:
+    """The archive's names, when every path is safe and the archive expands within the limit."""
     entries = archive.infolist()
     unsafe = [e.filename for e in entries if not _safe(e.filename)]
     if unsafe:
-        archive.close()
         raise WheelRefusedError("unsafe_path", f"a path outside the archive's root: {unsafe[0]}")
     if sum(e.file_size for e in entries) > max_expanded:
-        archive.close()
         raise WheelRefusedError("too_large", f"the archive expands beyond {max_expanded} bytes")
-    return archive
+    return {e.filename for e in entries}
 
 
 def _top_level(names: set[str], suffix: str) -> list[str]:
@@ -92,8 +94,8 @@ def _named_files(passport: dict[str, Any]) -> list[str]:
 
 def read_wheel(data: bytes, max_expanded: int = MAX_EXPANDED_BYTES) -> WheelContents:
     """Read ``data`` as a plugin's wheel; raise ``WheelRefusedError`` with the reason."""
-    with _archive(data, max_expanded) as archive:
-        names = {e.filename for e in archive.infolist()}
+    with _open(data) as archive:
+        names = _check_entries(archive, max_expanded)
         metadata = _top_level(names, ".dist-info/METADATA")
         if not metadata:
             raise WheelRefusedError("not_a_wheel", "no .dist-info/METADATA")
