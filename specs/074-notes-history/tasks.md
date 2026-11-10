@@ -50,11 +50,11 @@
 
 **Independent test**: `uv run pytest SDK/tests/test_history.py SDK/tests/test_history_check.py`.
 
-- [ ] T018 [US4] `SDK/src/maxitor_plugin_sdk/schemas/plugin-passport-2.schema.json`: optional `history` `{compare: [diff|side_by_side], unique}`; `navigation-1.schema.json`: optional per-node `history` `{compare, read, bars, milestones, card}` (names `^[a-z][a-z0-9_]{0,62}$`).
-- [ ] T019 [P] [US4] `SDK/src/maxitor_plugin_sdk/schemas/history-1.schema.json`: `$defs` `context`, `bar`, `milestone`, `card` as in the contract.
-- [ ] T020 [US4] `SDK/src/maxitor_plugin_sdk/history.py`: `Change(entity_id, at, opened, closed)`, `bars_of(versions, start, end, width)` grouping openings and closings into added / changed / removed by research §2, only times in (start, end], only bars with a change; `HISTORY_FOLDER = "history"`.
-- [ ] T021 [US4] `SDK/src/maxitor_plugin_sdk/checks.py`: read the passport's `history`; for each node's `history`, refuse `compare` outside the passport's (no passport history → only none) and `bars`/`milestones`/`card` with no `src/<package>/history/<name>_action.py`, naming the node and the fault.
-- [ ] T022 [P] [US4] `SDK/tests/test_history.py` (bars from known versions: added, changed, removed, edges of the stretch, empty) and `SDK/tests/test_history_check.py` (accepted, wider compare refused, missing action refused, no history accepted).
+- [X] T018 [US4] `SDK/src/maxitor_plugin_sdk/schemas/plugin-passport-2.schema.json`: optional `history` `{compare: [diff|side_by_side], unique}`; `navigation-1.schema.json`: optional per-node `history` `{compare, read, bars, milestones, card}` (names `^[a-z][a-z0-9_]{0,62}$`).
+- [X] T019 [P] [US4] `SDK/src/maxitor_plugin_sdk/schemas/history-1.schema.json`: `$defs` `context`, `bar`, `milestone`, `card` as in the contract.
+- [X] T020 [US4] `SDK/src/maxitor_plugin_sdk/history.py`: `Change(entity_id, at, opened, closed)`, `bars_of(versions, start, end, width)` grouping openings and closings into added / changed / removed by research §2, only times in (start, end], only bars with a change; `HISTORY_FOLDER = "history"`.
+- [X] T021 [US4] `SDK/src/maxitor_plugin_sdk/checks.py`: read the passport's `history`; for each node's `history`, refuse `compare` outside the passport's (no passport history → only none) and `bars`/`milestones`/`card` with no `src/<package>/history/<name>_action.py`, naming the node and the fault.
+- [X] T022 [P] [US4] `SDK/tests/test_history.py` (bars from known versions: added, changed, removed, edges of the stretch, empty) and `SDK/tests/test_history_check.py` (accepted, wider compare refused, missing action refused, no history accepted).
 
 ## Phase 5: The template's data of the scale (US5, P2) — issue phase 5
 

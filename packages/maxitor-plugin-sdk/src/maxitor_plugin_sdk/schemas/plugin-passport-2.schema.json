@@ -153,6 +153,27 @@
           "$ref": "#/$defs/path"
         }
       }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compare"
+      ],
+      "properties": {
+        "compare": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "diff",
+              "side_by_side"
+            ]
+          },
+          "description": "The comparisons the pages can draw beside one moment; one moment is always offered."
+        }
+      },
+      "description": "Optional: the comparisons the plugin's pages can draw. Without it every page offers one moment only; reading any past moment needs no declaration."
     }
   },
   "$defs": {
