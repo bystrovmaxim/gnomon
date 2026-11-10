@@ -4,14 +4,223 @@
     {
       "name": "maxitor",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "--extra", "dev", "uvicorn", "maxitor.web.api.app:app", "--host", "127.0.0.1", "--port", "8000"],
+      "runtimeArgs": [
+        "run",
+        "--extra",
+        "dev",
+        "uvicorn",
+        "maxitor.web.api.app:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000"
+      ],
       "port": 8000
     },
     {
       "name": "maxitor-client",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "packages/maxitor/maxitor-web/client"],
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "packages/maxitor/maxitor-web/client"
+      ],
       "port": 5173
+    },
+    {
+      "name": "maxitor-history",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run",
+        "uvicorn",
+        "maxitor.web.api.app:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8010"
+      ],
+      "port": 8010,
+      "autoPort": false,
+      "env": {
+        "MAXITOR_PUBLIC_PORT": "https://repo-graph-port.aoa.run",
+        "MAXITOR_MAP_CACHE": "/tmp/maxitor-map-cache",
+        "MAXITOR_ROOM_ORIGINS": "http://localhost:5180"
+      }
+    },
+    {
+      "name": "maxitor-client-history",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "--port",
+        "5180",
+        "--strictPort"
+      ],
+      "cwd": "packages/maxitor/maxitor-web/client",
+      "port": 5180,
+      "autoPort": false,
+      "env": {
+        "VITE_MAXITOR_API_BASE_URL": "http://127.0.0.1:8010"
+      }
+    },
+    {
+      "name": "mockup-73",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8873",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/Users/bystrovmaxim/PythonDev/gnomon-issue-73/specs/072-maxitor-core/mockup"
+      ],
+      "port": 8873,
+      "autoPort": false
+    },
+    {
+      "name": "model-73",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8872",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/Users/bystrovmaxim/PythonDev/gnomon-issue-73/specs/072-maxitor-core/model"
+      ],
+      "port": 8872,
+      "autoPort": false
+    },
+    {
+      "name": "specs-73",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8871",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/Users/bystrovmaxim/PythonDev/gnomon-issue-73/specs"
+      ],
+      "port": 8871,
+      "autoPort": false
+    },
+    {
+      "name": "core-api-73",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "/Users/bystrovmaxim/PythonDev/gnomon-issue-73",
+        "--all-extras",
+        "--all-packages",
+        "maxitor-core",
+        "serve",
+        "--port",
+        "8020"
+      ],
+      "port": 8020,
+      "autoPort": false,
+      "env": {
+        "MAXITOR_CORE_DSN": "postgresql://maxitor_core:core-local@127.0.0.1:55432/maxitor",
+        "MAXITOR_SESSION_SECRET": "local-stand-0e5f21101306d8baea110bce0093185f80c6af2bb4615302",
+        "MAXITOR_MAIL_OUTBOX": "/Users/bystrovmaxim/PythonDev/gnomon-issue-73/.core-stand/outbox",
+        "MAXITOR_PUBLIC_URL": "http://localhost:3000"
+      }
+    },
+    {
+      "name": "core-web-73",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "/Users/bystrovmaxim/PythonDev/gnomon-issue-73/packages/maxitor/maxitor-core/web"
+      ],
+      "port": 3000,
+      "autoPort": false,
+      "env": {
+        "MAXITOR_CORE_API": "http://127.0.0.1:8020"
+      }
+    },
+    {
+      "name": "core-stand-73",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "/Users/bystrovmaxim/PythonDev/gnomon-issue-73/scripts/core-stand.sh",
+        "up"
+      ],
+      "port": 3000,
+      "autoPort": false,
+      "env": {
+        "MAXITOR_STAND_MAIL": "postbox"
+      }
+    },
+    {
+      "name": "mockup-82",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8882",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/Users/bystrovmaxim/PythonDev/gnomon/specs/073-plugin-marketplace/mockup"
+      ],
+      "port": 8882,
+      "autoPort": false
+    },
+    {
+      "name": "core-stand-82",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": [
+        "/Users/bystrovmaxim/PythonDev/gnomon/scripts/core-stand.sh",
+        "up"
+      ],
+      "port": 3001,
+      "autoPort": false,
+      "env": {
+        "MAXITOR_STAND_CONTAINER": "maxitor-plugins-pg",
+        "MAXITOR_STAND_DB_PORT": "55433",
+        "MAXITOR_STAND_API_PORT": "8021",
+        "MAXITOR_STAND_WEB_PORT": "3001",
+        "MAXITOR_STAND_MAIL": "postbox"
+      }
+    },
+    {
+      "name": "mockup-97",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8897",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/Users/bystrovmaxim/PythonDev/gnomon/specs/074-notes-history/mockup"
+      ],
+      "port": 8897,
+      "autoPort": false
+    },
+    {
+      "name": "graph-maxitor",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8890",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/Users/bystrovmaxim/PythonDev/gnomon/packages/maxitor/maxitor-web"
+      ],
+      "port": 8890,
+      "autoPort": false
     }
   ]
 }
