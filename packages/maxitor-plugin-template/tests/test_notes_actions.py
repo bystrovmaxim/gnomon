@@ -73,6 +73,14 @@ class ScriptedNotesStorage(NotesStorage):
         self.calls.append(("draft", organization_id, item_id, moment))
         return None, []
 
+    async def milestones(self, organization_id, item_id, start, end):
+        self.calls.append(("milestones", organization_id, item_id, start, end))
+        return []
+
+    async def milestone_card(self, organization_id, item_id, milestone_id, moment):
+        self.calls.append(("milestone_card", organization_id, item_id, milestone_id, moment))
+        raise AssertionError("not asked in these tests")
+
     async def notes_of_item(self, organization_id, item_id, moment, writer_id):
         self.calls.append(("notes_of_item", organization_id, item_id, moment, writer_id))
         return [NoteCoreEntity(id="n1", item_id=item_id, writer_id=ANN, writer_name="Ann", body="Check", updated_at=MOMENT, since=MOMENT)]

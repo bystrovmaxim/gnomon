@@ -37,6 +37,11 @@ roles:
   - name: editor
     description: Writes notes.
 
+# Every page reads any past moment; that needs no declaration. The comparisons its pages can draw are declared here;
+# a page may narrow them in navigation.yaml, never widen them.
+history:
+  compare: [diff, side_by_side]
+
 backend:
   app: maxitor_notes.app:create_app
 

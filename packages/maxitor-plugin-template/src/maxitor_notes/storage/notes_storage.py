@@ -29,6 +29,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from maxitor_plugin_sdk.core_functions import MEMBER_ORGANIZATION_SQL, change_time_sql, member_name, watermark_sql
+from maxitor_plugin_sdk.history import Version
 from maxitor_plugin_sdk.moments import in_force, moment_text, overlaps
 
 from aoa.action_machine.graph.core.exclude_graph_model import exclude_graph_model
@@ -36,6 +37,8 @@ from aoa.action_machine.intents.entities import entities
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.postgres import PostgresStorage
 from aoa.action_machine.resources.sql import SqlStorageWrapper
+from maxitor_notes.entities.milestone_card_entity import MilestoneCardCoreEntity
+from maxitor_notes.entities.milestone_entity import MilestoneCoreEntity
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_change_entity import NoteChangeCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
@@ -50,7 +53,7 @@ VERSION_TABLES = ("note_versions", "revision_versions")
 NOTES_CONNECTION_KEY = "notes"
 
 @meta(description="The plugin's own schema, written as its version's user; the core reached only by its functions")
-@entities(NoteCoreEntity, NoteAuthorCoreEntity, RevisionCoreEntity, NoteChangeCoreEntity)
+@entities(NoteCoreEntity, NoteAuthorCoreEntity, RevisionCoreEntity, NoteChangeCoreEntity, MilestoneCoreEntity, MilestoneCardCoreEntity)
 class NotesStorage(PostgresStorage):
     """
     AI-CORE-BEGIN
@@ -329,6 +332,84 @@ class NotesStorage(PostgresStorage):
         )
         return {row["id"]: (row["by_name"], row["at"]) for row in rows}
 
+    async def note_versions_between(self, organization_id: str, item_id: str, start: str, end: str, writer_id: str | None) -> tuple[str, list[Version]]:
+        """
+        Every version of the item's notes in force at some time between ``start`` and ``end`` — the same query and
+        filter as the notes page, with the stretch form of the moment condition — and the end the stretch was cut to:
+        the watermark when ``end`` is later.
+        """
+        watermark = await self._watermark(organization_id)
+        if watermark is None:
+            return start, []
+        end = min(end, watermark)
+        rows = await self._fetch(
+            f"SELECT n.id::text AS id, {moment_text('n.valid_from_at')} AS valid_from, {moment_text('n.valid_to_at')} AS valid_to"
+            f" FROM note_versions n"
+            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid"
+            f" AND {overlaps('n', '$3::text::timestamptz', '$4::text::timestamptz')}"
+            f" AND ($5::text IS NULL OR n.writer_id = $5::text::uuid)",
+            (organization_id, item_id, start, end, writer_id),
+        )
+        return end, [Version(entity_id=row["id"], valid_from=row["valid_from"], valid_to=row["valid_to"]) for row in rows]
+
+    async def milestones(self, organization_id: str, item_id: str, start: str, end: str) -> list[MilestoneCoreEntity]:
+        """The revisions published in the stretch, in order, and the draft last as a proposal when anything changed since the last one."""
+        cards = await self._cards(organization_id, item_id, end)
+        return [MilestoneCoreEntity(**card.model_dump(include=set(MilestoneCoreEntity.model_fields))) for card in cards if start < card.at or card.kind == "proposal"]
+
+    async def milestone_card(self, organization_id: str, item_id: str, milestone_id: str, moment: str | None) -> MilestoneCardCoreEntity:
+        """The card of one milestone as it read at ``moment`` (the watermark when ``None``)."""
+        at = await self._moment(organization_id, moment)
+        for card in await self._cards(organization_id, item_id, at) if at is not None else []:
+            if card.id == milestone_id:
+                return card
+        raise NotesRefusalError("no_such_milestone", 404)
+
+    async def _cards(self, organization_id: str, item_id: str, end: str) -> list[MilestoneCardCoreEntity]:
+        """
+        Every revision of the item published by ``end`` with what it changed against the one before, and the draft
+        at ``end`` as a proposal when it holds any change. ``end`` is cut to the watermark.
+        """
+        watermark = await self._watermark(organization_id)
+        if watermark is None:
+            return []
+        end = min(end, watermark)
+        rows = await self._fetch(
+            f"SELECT r.number AS number, 'v' || r.number AS ref, r.title AS title, r.comment AS comment, r.release AS release,"
+            f" r.publisher_id::text AS publisher_id,"
+            f" {member_name('r.organization_id', 'r.publisher_id', 'r.created_at')} AS publisher_name,"
+            f" {moment_text('r.created_at')} AS at"
+            f" FROM revision_versions r"
+            f" WHERE r.organization_id = $1::text::uuid AND r.item_id = $2::text::uuid AND {in_force('r', '$3::text::timestamptz')}"
+            f" ORDER BY r.number",
+            (organization_id, item_id, end),
+        )
+        cards: list[MilestoneCardCoreEntity] = []
+        before: dict[str, str] = {}
+        for row in rows:
+            revision = RevisionCoreEntity(**_mapping(row))
+            notes = {note.id: note.body for note in await self.notes_of_item(organization_id, item_id, revision.at, None)}
+            summary = _summary(before, notes)
+            cards.append(
+                MilestoneCardCoreEntity(
+                    id=revision.ref, at=revision.at, kind="revision", ref=revision.ref, title=revision.title,
+                    minor=summary["added"] == 0 and summary["removed"] == 0, release=revision.release,
+                    author_id=revision.publisher_id, author_name=revision.publisher_name, summary=summary,
+                    chips=[f"{len(notes)} notes"], comment=revision.comment,
+                )
+            )
+            before = notes
+        now = {note.id: note.body for note in await self.notes_of_item(organization_id, item_id, end, None)}
+        draft = _summary(before, now)
+        if any(draft.values()):
+            cards.append(
+                MilestoneCardCoreEntity(
+                    id="draft", at=end, kind="proposal", ref="draft", title="Draft — waiting to be published", minor=False,
+                    link=f"/items/{item_id}/draft", summary=draft, chips=[f"{len(now)} notes"], comment="",
+                )
+            )
+        return cards
+
     async def note_authors(self, organization_id: str, item_id: str, moment: str | None, limit: int, after: str | None) -> list[NoteAuthorCoreEntity]:
         """The writers of the notes of ``item_id`` at ``moment``, ordered by id, ``limit`` of them after ``after``."""
         at = await self._moment(organization_id, moment)
@@ -364,6 +445,15 @@ class NotesStorage(PostgresStorage):
             f"SELECT {moment_text('w')} FROM ({watermark_sql(VERSION_TABLES)} AS w) AS mark", (organization_id,)
         )
         return None if value is None else str(value)
+
+
+def _summary(before: dict[str, str], after: dict[str, str]) -> dict[str, int]:
+    """Notes added, changed and removed from ``before`` to ``after`` (note id → text)."""
+    return {
+        "added": sum(1 for note in after if note not in before),
+        "changed": sum(1 for note, body in after.items() if note in before and before[note] != body),
+        "removed": sum(1 for note in before if note not in after),
+    }
 
 
 def _mapping(row: Any) -> dict[str, Any]:
@@ -406,6 +496,18 @@ class NotesStorageWrapper(SqlStorageWrapper):
     async def draft(self, organization_id: str, item_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteChangeCoreEntity]]:
         """Pass on the wrapped storage's read of the draft."""
         return await self._storage().draft(organization_id, item_id, moment)
+
+    async def note_versions_between(self, organization_id: str, item_id: str, start: str, end: str, writer_id: str | None) -> tuple[str, list[Version]]:
+        """Pass on the wrapped storage's read over a stretch."""
+        return await self._storage().note_versions_between(organization_id, item_id, start, end, writer_id)
+
+    async def milestones(self, organization_id: str, item_id: str, start: str, end: str) -> list[MilestoneCoreEntity]:
+        """Pass on the wrapped storage's milestones."""
+        return await self._storage().milestones(organization_id, item_id, start, end)
+
+    async def milestone_card(self, organization_id: str, item_id: str, milestone_id: str, moment: str | None) -> MilestoneCardCoreEntity:
+        """Pass on the wrapped storage's milestone card."""
+        return await self._storage().milestone_card(organization_id, item_id, milestone_id, moment)
 
     async def note_authors(self, organization_id: str, item_id: str, moment: str | None, limit: int, after: str | None) -> list[NoteAuthorCoreEntity]:
         """Pass on the wrapped storage's read of an item's writers."""

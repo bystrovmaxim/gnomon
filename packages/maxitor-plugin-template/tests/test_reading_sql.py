@@ -19,6 +19,8 @@ READS = {
     "revision_at": lambda storage: storage.revision_at(ORG, ITEM, MOMENT),
     "published_notes": lambda storage: storage.published_notes(ORG, ITEM, MOMENT),
     "draft": lambda storage: storage.draft(ORG, ITEM, MOMENT),
+    "note_versions_between": lambda storage: storage.note_versions_between(ORG, ITEM, MOMENT, LATER, None),
+    "milestones": lambda storage: storage.milestones(ORG, ITEM, MOMENT, LATER),
 }
 
 _VERSIONS = re.compile(r'(?:FROM|JOIN) (?:"?\w+"?\.)?"?(\w+_versions)"? (\w+)')
@@ -42,8 +44,9 @@ def _answer(query, params):
     if "watermark($1::text::uuid)" in query:
         return LATER
     if "FROM revision_versions r" in query:
-        return {"number": 1, "ref": "v1", "title": "T", "comment": "C", "release": None, "publisher_id": ORG, "publisher_name": "", "at": MOMENT}
-    if "FROM note_versions n" in query and "closed_by" not in query and "DISTINCT" not in query and params[2] == MOMENT:
+        revision = {"number": 1, "ref": "v1", "title": "T", "comment": "C", "release": None, "publisher_id": ORG, "publisher_name": "", "at": MOMENT}
+        return revision if "LIMIT 1" in query else [revision]
+    if "FROM note_versions n" in query and "closed_by" not in query and "DISTINCT" not in query and "AS valid_from," not in query and params[2] == MOMENT:
         return [{"id": "gone", "item_id": ITEM, "writer_id": ORG, "writer_name": "", "body": "B", "updated_at": MOMENT, "since": MOMENT, "changed_by": ""}]
     return None
 

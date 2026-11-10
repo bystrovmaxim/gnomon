@@ -19,6 +19,8 @@ def test_every_route_lies_under_the_plugins_path_and_the_organization() -> None:
         ("POST", "/p/notes/api/{organization}/items/{item_id}/revisions"),
         ("GET", "/p/notes/api/{organization}/items/{item_id}/published"),
         ("GET", "/p/notes/api/{organization}/items/{item_id}/draft"),
+        ("GET", "/p/notes/api/{organization}/history/list_note_history"),
+        ("GET", "/p/notes/api/{organization}/history/note_milestone_card"),
     }
 
 
