@@ -110,44 +110,6 @@
       "autoPort": false
     },
     {
-      "name": "core-api-73",
-      "runtimeExecutable": "uv",
-      "runtimeArgs": [
-        "run",
-        "--project",
-        "/Users/bystrovmaxim/PythonDev/gnomon-issue-73",
-        "--all-extras",
-        "--all-packages",
-        "maxitor-core",
-        "serve",
-        "--port",
-        "8020"
-      ],
-      "port": 8020,
-      "autoPort": false,
-      "env": {
-        "MAXITOR_CORE_DSN": "postgresql://maxitor_core:core-local@127.0.0.1:55432/maxitor",
-        "MAXITOR_SESSION_SECRET": "local-stand-0e5f21101306d8baea110bce0093185f80c6af2bb4615302",
-        "MAXITOR_MAIL_OUTBOX": "/Users/bystrovmaxim/PythonDev/gnomon-issue-73/.core-stand/outbox",
-        "MAXITOR_PUBLIC_URL": "http://localhost:3000"
-      }
-    },
-    {
-      "name": "core-web-73",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--prefix",
-        "/Users/bystrovmaxim/PythonDev/gnomon-issue-73/packages/maxitor/maxitor-core/web"
-      ],
-      "port": 3000,
-      "autoPort": false,
-      "env": {
-        "MAXITOR_CORE_API": "http://127.0.0.1:8020"
-      }
-    },
-    {
       "name": "core-stand-73",
       "runtimeExecutable": "bash",
       "runtimeArgs": [
