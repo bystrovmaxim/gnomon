@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **The administrator's `bootstrap.sql`** also creates `maxitor_installer` (`CREATEROLE`, `CREATE` on the database; psql variable `installer_password`), the group `maxitor_plugin` and the schema `plugins`; a database made by the earlier script needs these three before `maxitor-core migrate`. New settings: `MAXITOR_WHEEL_STORE`, `MAXITOR_WHEEL_MAX_BYTES`, `MAXITOR_SCHEMA_PLUGINS`. The core reads plugin passport 2 and `schema.yaml` format 1, no longer passport 1. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+- **maxitor-web 1.23.0**: its graph shows the core's domain `plugins` and the installer.
 
 ### Changed
 
