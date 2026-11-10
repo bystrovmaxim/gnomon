@@ -42,9 +42,9 @@ def test_a_version_table_is_refused(plugin, edit) -> None:
 
 def test_a_key_into_the_plugins_own_schema_is_refused(plugin, edit) -> None:
     edit("foreign-keys.yaml", lambda doc: _key(doc)["to"].update(schema="notes"))
-    assert check_plugin(plugin) == ["foreign key 1: a key inside the plugin's own schema belongs to its migrations"]
+    assert check_plugin(plugin) == ["foreign key 1: a key inside the plugin's own schema belongs to its schema.yaml"]
 
 
 def test_column_lists_of_different_length_are_refused(plugin, edit) -> None:
-    edit("foreign-keys.yaml", lambda doc: _key(doc)["to"].update(columns=["id", "organization_id"]))
-    assert check_plugin(plugin) == ["foreign key 1: 1 columns refer to 2"]
+    edit("foreign-keys.yaml", lambda doc: _key(doc)["to"].update(columns=["id"]))
+    assert check_plugin(plugin) == ["foreign key 1: 2 columns refer to 1"]

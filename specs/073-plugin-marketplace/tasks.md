@@ -67,8 +67,8 @@ Paths: `core` = `packages/maxitor/maxitor-core`, `py` = `core/maxitor/core`, `pl
 
 ## Phase 9: The template in step (issue phase 9)
 
-- [ ] T033 [P] [US7] `sdk/schemas/plugin-passport-2.schema.json` and the core's passport reading formats `passport: [2]`, `schema: [1]` (R5); the SDK's time and watermark helper over the core's functions (R6)
-- [ ] T034 [US7] In `template/`: `schema.yaml` replaces `migrations/0001_note.sql` and `migrate.py`; passport 2, version 0.4.0; `foreign-keys.yaml` to `core.user (organization_id, id)`; the storage and `membership.py` use the SDK's helper and `is_member` (R12)
+- [x] T033 [P] [US7] `sdk/schemas/plugin-passport-2.schema.json` and the core's passport reading formats `passport: [2]`, `schema: [1]` (R5); the SDK's time and watermark helper over the core's functions (R6)
+- [x] T034 [US7] In `template/`: `schema.yaml` replaces `migrations/0001_note.sql` and `migrate.py`; passport 2, version 0.4.0; `foreign-keys.yaml` to `core.user (organization_id, id)`; the storage and `membership.py` use the SDK's helper and `is_member` (R12)
 - [ ] T035 [US7] Tests: the template's tests pass against the new storage; marked `stand`: on the stand it deploys as `notes_0_4_0` with `plg_notes_0_4_0`
 
 ## Phase 10: Documentation, changelog, versions (issue phase 10)

@@ -3,7 +3,7 @@
 The keys a plugin version may have to the core, read from its ``foreign-keys.yaml`` and checked before any SQL.
 
 In this work a key may point only at what the core keeps for plugins to refer to: an organization's user
-(``core.user (organization_id, id)``) and an organization (``core.organization (id)``). A key to a dependency's table
+(``core.user (organization_id, id)`` or ``(organization_id, account_id)``) and an organization (``core.organization (id)``). A key to a dependency's table
 would bind one version's schema to another's, and moving an organization between versions is not decided yet, so it
 is refused (``foreign_keys``).
 """
@@ -20,8 +20,11 @@ from jsonschema import Draft202012Validator
 from maxitor.core.plugins.storage.deploy_storage import CoreKey
 from maxitor_plugin_sdk.plugin_schema import SERVICE_COLUMNS, PluginSchema
 
-#: The tables of the core a plugin may refer to, and the key each offers.
-CORE_TARGETS: dict[str, tuple[str, ...]] = {"user": ("organization_id", "id"), "organization": ("id",)}
+#: The tables of the core a plugin may refer to, and the keys each offers: a user by its id or by its account.
+CORE_TARGETS: dict[str, tuple[tuple[str, ...], ...]] = {
+    "user": (("organization_id", "id"), ("organization_id", "account_id")),
+    "organization": (("id",),),
+}
 
 
 class CoreKeysError(ValueError):
@@ -46,7 +49,7 @@ def core_keys(text: str | None, plugin_schema: PluginSchema) -> tuple[CoreKey, .
         source, target = item["from"], item["to"]
         if target["schema"] != "core":
             raise CoreKeysError(f"a key to {target['schema']}.{target['table']}: only keys to the core are built")
-        if tuple(target["columns"]) != CORE_TARGETS.get(target["table"]):
+        if tuple(target["columns"]) not in CORE_TARGETS.get(target["table"], ()):
             raise CoreKeysError(f"a key to core.{target['table']} {target['columns']}: not a key the core offers")
         table = plugin_schema.table(source["table"])
         if table is None:

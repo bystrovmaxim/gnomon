@@ -54,11 +54,30 @@ $$;
 COMMENT ON FUNCTION is_member(uuid, uuid) IS
     'Whether the account has an active user in the organization now; false for a blocked or removed user and for an organization that does not exist.';
 
-REVOKE ALL ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid) FROM PUBLIC;
+CREATE FUNCTION member_organization(p_code text, p_account_id uuid) RETURNS uuid
+    LANGUAGE sql STABLE SECURITY DEFINER SET search_path = organization, platform, extensions AS $$
+    SELECT o.id FROM organization o JOIN "user" u ON u.organization_id = o.id
+    WHERE o.code = p_code AND u.account_id = p_account_id AND u.status = 'active'
+$$;
+COMMENT ON FUNCTION member_organization(text, uuid) IS
+    'The organization of an address code when the account has an active user there now; NULL otherwise, alike for a code that does not exist.';
+
+CREATE FUNCTION member_name(p_organization_id uuid, p_account_id uuid, p_at timestamptz) RETURNS text
+    LANGUAGE sql STABLE SECURITY DEFINER SET search_path = organization, platform, extensions AS $$
+    SELECT name FROM user_versions
+    WHERE organization_id = p_organization_id AND account_id = p_account_id
+        AND valid_from_at <= p_at AND (valid_to_at IS NULL OR valid_to_at > p_at)
+$$;
+COMMENT ON FUNCTION member_name(uuid, uuid, timestamptz) IS
+    'The name of the account''s user in the organization at a moment; NULL when it had none then.';
+
+REVOKE ALL ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid), member_organization(text, uuid),
+    member_name(uuid, uuid, timestamptz) FROM PUBLIC;
 GRANT USAGE ON SCHEMA organization TO maxitor_plugin;
-GRANT EXECUTE ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid) TO maxitor_plugin;
+GRANT EXECUTE ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid), member_organization(text, uuid),
+    member_name(uuid, uuid, timestamptz) TO maxitor_plugin;
 
 -- The installer builds a plugin's keys to the core's users and organizations (foreign-keys.yaml): the database checks
 -- such a key as the owner of the target table, so the plugin's user needs no right here at all.
-GRANT REFERENCES (organization_id, id) ON "user" TO maxitor_installer;
+GRANT REFERENCES (organization_id, id, account_id) ON "user" TO maxitor_installer;
 GRANT REFERENCES (id) ON organization TO maxitor_installer;

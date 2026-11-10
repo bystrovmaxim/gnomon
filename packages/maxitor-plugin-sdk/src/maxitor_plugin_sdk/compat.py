@@ -23,7 +23,7 @@ from packaging.version import InvalidVersion, Version
 from maxitor_plugin_sdk.checks import find_cycle
 
 #: The names of the plugin files a core may read, as the core passport lists them.
-FILE_KINDS = ("plugin-passport", "navigation", "foreign-keys")
+FILE_KINDS = ("plugin-passport", "plugin-schema", "navigation", "foreign-keys")
 
 Kind = Literal["format", "core_range", "two_versions", "cycle", "sdk_major", "dependency"]
 

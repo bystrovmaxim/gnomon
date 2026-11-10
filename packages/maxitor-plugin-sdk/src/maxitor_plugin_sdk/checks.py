@@ -24,6 +24,8 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator
 
+from maxitor_plugin_sdk.plugin_schema import PluginSchemaError, read_plugin_schema
+
 SCHEMAS = Path(__file__).parent / "schemas"
 PASSPORT_FILE = "maxitor-plugin.yaml"
 # A plugin's YAML is read before anything is installed; a larger file is refused unread.
@@ -47,29 +49,47 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     package = _package_folder(root, problems)
     if package is None:
         return None, problems
-    passport = _read(package / PASSPORT_FILE, "plugin-passport-1", problems)
+    passport = _read(package / PASSPORT_FILE, "plugin-passport-2", problems)
     if passport is None:
         return None, problems
     _check_version(root, passport, problems)
     navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-1", problems)
     if navigation is not None:
         problems.extend(navigation_problems(navigation))
+    schema_file = passport.get("database", {}).get("schema")
+    if schema_file is not None:
+        problems.extend(_schema_problems(package.parent / schema_file))
     keys_file = passport.get("database", {}).get("foreign_keys")
     if keys_file is not None:
         keys = _read(package.parent / keys_file, "foreign-keys-1", problems)
         if keys is not None:
             problems.extend(foreign_key_problems(keys, own_schema=passport["name"]))
-    return {**passport, "formats": _formats(passport, navigation, keys_file)}, problems
+    return {**passport, "formats": _formats(passport, navigation, keys_file, schema_file)}, problems
 
 
-def _formats(passport: Mapping[str, Any], navigation: Mapping[str, Any] | None, keys_file: object) -> dict[str, int]:
+def _schema_problems(path: Path) -> list[str]:
+    """Every fault of the plugin's schema.yaml: Maxitor builds its tables only from a file that keeps every rule."""
+    if not path.is_file():
+        return [f"{path.name}: the file the passport's database.schema names is missing"]
+    try:
+        read_plugin_schema(path)
+    except PluginSchemaError as error:
+        return [f"{path.name}: {problem}" for problem in error.problems]
+    return []
+
+
+def _formats(
+    passport: Mapping[str, Any], navigation: Mapping[str, Any] | None, keys_file: object, schema_file: object
+) -> dict[str, int]:
     """
     The format of each of the plugin's files Maxitor reads.
 
-    The passport and navigation.yaml name their format; foreign-keys.yaml names none and is read by the one
-    schema there is, format 1.
+    The passport, navigation.yaml and schema.yaml name their format; foreign-keys.yaml names none and is read by the
+    one schema there is, format 1.
     """
     formats = {"plugin-passport": int(passport["passport"])}
+    if schema_file is not None:
+        formats["plugin-schema"] = 1
     if navigation is not None:
         formats["navigation"] = int(navigation["navigation"])
     if keys_file is not None:
@@ -169,7 +189,7 @@ def foreign_key_problems(keys: Mapping[str, Any], own_schema: str) -> list[str]:
     problems: list[str] = []
     for number, key in enumerate(keys["foreign_keys"], start=1):
         if key["to"]["schema"] == own_schema:
-            problems.append(f"foreign key {number}: a key inside the plugin's own schema belongs to its migrations")
+            problems.append(f"foreign key {number}: a key inside the plugin's own schema belongs to its schema.yaml")
         if len(key["from"]["columns"]) != len(key["to"]["columns"]):
             problems.append(
                 f"foreign key {number}: {len(key['from']['columns'])} columns refer to {len(key['to']['columns'])}"

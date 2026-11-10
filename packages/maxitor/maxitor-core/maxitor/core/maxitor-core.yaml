@@ -7,7 +7,8 @@ id: maxitor
 
 # The formats of a plugin's files this core reads; a plugin written in another format is refused.
 reads:
-  plugin-passport: [1]
+  plugin-passport: [2]
+  plugin-schema: [1]
   navigation: [1]
   foreign-keys: [1]
 

@@ -162,11 +162,12 @@ def test_storage_is_a_postgres_storage() -> None:
 def test_the_plugins_functions_run_as_their_owner_for_the_plugins_group_only() -> None:
     sql = (MIGRATIONS / "organization" / "0002_plugin_functions.sql").read_text(encoding="utf-8")
     created = re.findall(r"CREATE FUNCTION (\w+)\(", sql)
-    assert created == ["change_time", "watermark", "is_member"]
+    assert created == ["change_time", "watermark", "is_member", "member_organization", "member_name"]
     for header in re.findall(r"CREATE FUNCTION .*?AS \$\$", sql, re.S):
         assert "SECURITY DEFINER SET search_path = " in header, header
-    assert "REVOKE ALL ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid) FROM PUBLIC;" in sql
+    statements = " ".join(sql.split())
+    assert "REVOKE ALL ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid), member_organization(text, uuid), member_name(uuid, uuid, timestamptz) FROM PUBLIC;" in statements
+    assert "GRANT EXECUTE ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid), member_organization(text, uuid), member_name(uuid, uuid, timestamptz) TO maxitor_plugin;" in statements
     grants = [line for line in sql.splitlines() if line.startswith("GRANT")]
-    assert "GRANT EXECUTE ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid) TO maxitor_plugin;" in grants
     assert not any("SELECT" in line or "INSERT" in line for line in grants)
     assert "status = 'active'" in sql
