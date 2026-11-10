@@ -36,9 +36,9 @@ Paths: `core` = `packages/maxitor/maxitor-core`, `py` = `core/maxitor/core`, `pl
 
 ## Phase 4: Checking a version (issue phase 4)
 
-- [ ] T017 [US4] Write `plugins/gateways/wheel_source_gateway.py` (purl → https address on the allowed hosts only, redirects checked, 50 MB and 60 s, "needs signing in" on 401/403/404) and `plugins/storage/wheel_store.py` (`WheelStore`: `put(sha256, bytes)` atomic and once, `open(sha256)`) (FR-010a, FR-013a, FR-026d, FR-026f)
-- [ ] T018 [US4] Write `plugins/actions/check_version_action.py` (`CheckVersionAction`: read the wheel as a zip only — no path outside its root, at most 200 MB expanded; `sha256`, passport 2, `schema.yaml`, `navigation.yaml` top level into `plugin_section`, core range, `passport_id` and `name` unique; `active`, `rejected` with reason, or `draft` with reason) and `plugins/actions/take_up_pending_action.py` (claims each row by `pg_try_advisory_xact_lock`) (FR-009a, FR-010, FR-011, FR-026e)
-- [ ] T019 [US4] Tests with a fake gateway: every reason of `rejected` (hash, passport 1, bad `schema.yaml`, core range, `id` taken, `name` taken, closed repository, too large, not a wheel, a path outside the root), a timeout leaving `draft`, a redirect to another host stopped; two takers never take the same row
+- [x] T017 [US4] Write `plugins/gateways/wheel_source_gateway.py` (purl → https address on the allowed hosts only, redirects checked, 50 MB and 60 s, "needs signing in" on 401/403/404) and `plugins/storage/wheel_store.py` (`WheelStore`: `put(sha256, bytes)` atomic and once, `open(sha256)`) (FR-010a, FR-013a, FR-026d, FR-026f)
+- [x] T018 [US4] Write `plugins/actions/check_version_action.py` (`CheckVersionAction`: read the wheel as a zip only — no path outside its root, at most 200 MB expanded; `sha256`, passport 2, `schema.yaml`, `navigation.yaml` top level into `plugin_section`, core range, `passport_id` and `name` unique; `active`, `rejected` with reason, or `draft` with reason) and `plugins/actions/take_up_pending_action.py` (claims each row by `pg_try_advisory_xact_lock`) (FR-009a, FR-010, FR-011, FR-026e)
+- [x] T019 [US4] Tests with a fake gateway: every reason of `rejected` (hash, passport 1, bad `schema.yaml`, core range, `id` taken, `name` taken, closed repository, too large, not a wheel, a path outside the root), a timeout leaving `draft`, a redirect to another host stopped; two takers never take the same row
 
 ## Phase 5: Installing, disabling, enabling (issue phase 5)
 

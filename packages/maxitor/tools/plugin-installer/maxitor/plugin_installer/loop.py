@@ -17,6 +17,7 @@ import asyncio
 from collections.abc import Mapping
 from typing import Any
 
+from maxitor.core.plugins.actions.check_version_action import CheckParams, CheckVersionAction
 from maxitor.core.plugins.actions.deploy_and_install_action import DeployAndInstallAction, DeployParams
 from maxitor.core.plugins.actions.take_up_pending_action import TakeUpParams, TakeUpPendingAction
 from maxitor.core.plugins.installer_role import InstallerRole
@@ -44,6 +45,8 @@ async def run_action(machine: ActionProductMachine, connections: Mapping[str, An
 async def one_round(machine: ActionProductMachine, connections: Mapping[str, Any], *, started: bool) -> int:
     """Take up the queue once and finish every row; answer how many rows were worked on."""
     queue = await run_action(machine, connections, TakeUpPendingAction(), TakeUpParams(started=started))
+    for version_id in queue.versions:
+        await run_action(machine, connections, CheckVersionAction(), CheckParams(version_id=version_id))
     for install in queue.installs:
         await run_action(
             machine,

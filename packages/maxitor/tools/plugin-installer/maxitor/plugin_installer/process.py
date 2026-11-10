@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
+from maxitor.core.plugins.gateways.wheel_source_gateway import WHEEL_SOURCE_CONNECTION_KEY, WheelSourceGateway
 from maxitor.core.plugins.storage.deploy_storage import DEPLOY_CONNECTION_KEY, DeployStorage
 from maxitor.core.plugins.storage.plugin_runtime_storage import RUNTIME_CONNECTION_KEY, PluginRuntimeStorage
 from maxitor.core.plugins.storage.wheel_storage import WHEELS_CONNECTION_KEY, WheelStorage
@@ -35,5 +36,6 @@ async def run(settings: InstallerSettings | None = None) -> None:
             ),
             WHEELS_CONNECTION_KEY: WheelStorage(settings.wheel_store),
             RUNTIME_CONNECTION_KEY: PluginRuntimeStorage(settings.runtime, settings.dsn),
+            WHEEL_SOURCE_CONNECTION_KEY: WheelSourceGateway(settings.wheel_max_bytes, settings.wheel_timeout_seconds),
         }
         await run_forever(machine, connections, settings.period_seconds)

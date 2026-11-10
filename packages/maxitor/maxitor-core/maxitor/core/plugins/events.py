@@ -115,8 +115,8 @@ class VersionRejectedEvent(BaseEvent):
     version_id: str = Field(description="The version checked")
     purl: str = Field(description="The version's source")
     reason: str = Field(
-        description="hash, passport, schema, navigation, core_range, id_taken, name_taken, closed_repository,"
-        " too_large, not_a_wheel or unsafe_path",
+        description="hash, passport, schema, navigation, foreign_keys, core_range, id_taken, name_taken,"
+        " closed_repository, too_large, not_a_wheel or unsafe_path",
     )
 
 

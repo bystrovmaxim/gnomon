@@ -9,8 +9,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from maxitor.core.plugins.actions.check_version_action import CheckResult, CheckVersionAction
 from maxitor.core.plugins.actions.deploy_and_install_action import DeployAndInstallAction, DeployResult
 from maxitor.core.plugins.actions.take_up_pending_action import PendingInstallSchema, TakeUpPendingAction, TakeUpResult
+from maxitor.core.plugins.gateways.wheel_source_gateway import WheelSourceGateway
 from maxitor.core.plugins.installer_role import InstallerRole
 from maxitor.core.plugins.storage.deploy_storage import DeployStorage
 from maxitor.core.plugins.storage.plugin_runtime_storage import PluginRuntimeStorage
@@ -32,6 +34,8 @@ class Machine:
                 versions=["v1"],
                 installs=[PendingInstallSchema(organization_id="o1", row_id="r1"), PendingInstallSchema(organization_id="o2", row_id="r2")],
             )
+        if isinstance(action, CheckVersionAction):
+            return CheckResult(state="active")
         return DeployResult(state="enabled")
 
 
@@ -41,14 +45,16 @@ async def test_a_round_takes_up_the_queue_then_each_install(tmp_path: Path) -> N
         "deploy": DeployStorage(connection_params="postgresql://unused"),
         "wheels": WheelStorage(tmp_path / "wheels"),
         "runtime": PluginRuntimeStorage(tmp_path / "runtime", "postgresql://u@db/maxitor"),
+        "wheel_source": WheelSourceGateway(1024, 1.0),
         "unused": WheelStorage(tmp_path / "unused"),
     }
     assert await one_round(machine, connections, started=True) == 3  # type: ignore[arg-type]
     actions = [type(action) for _ctx, action, _params, _keys in machine.runs]
-    assert actions == [TakeUpPendingAction, DeployAndInstallAction, DeployAndInstallAction]
-    assert machine.runs[0][2].started is True
-    assert [(p.organization_id, p.row_id) for _c, _a, p, _k in machine.runs[1:]] == [("o1", "r1"), ("o2", "r2")]
-    assert machine.runs[0][3] == {"deploy"} and machine.runs[1][3] == {"deploy", "wheels", "runtime"}
+    assert actions == [TakeUpPendingAction, CheckVersionAction, DeployAndInstallAction, DeployAndInstallAction]
+    assert machine.runs[0][2].started is True and machine.runs[1][2].version_id == "v1"
+    assert [(p.organization_id, p.row_id) for _c, _a, p, _k in machine.runs[2:]] == [("o1", "r1"), ("o2", "r2")]
+    assert machine.runs[0][3] == {"deploy"} and machine.runs[2][3] == {"deploy", "wheels", "runtime"}
+    assert machine.runs[1][3] == {"deploy", "wheels", "wheel_source"}
     assert all(context is INSTALLER for context, *_ in machine.runs)
     assert INSTALLER.user.roles == (InstallerRole,)
 
