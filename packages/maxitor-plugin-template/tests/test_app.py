@@ -16,6 +16,9 @@ def test_every_route_lies_under_the_plugins_path_and_the_organization() -> None:
         ("DELETE", "/p/notes/api/{organization}/notes/{note_id}"),
         ("GET", "/p/notes/api/{organization}/items/{item_id}/notes"),
         ("GET", "/p/notes/api/{organization}/lists/list_note_authors"),
+        ("POST", "/p/notes/api/{organization}/items/{item_id}/revisions"),
+        ("GET", "/p/notes/api/{organization}/items/{item_id}/published"),
+        ("GET", "/p/notes/api/{organization}/items/{item_id}/draft"),
     }
 
 

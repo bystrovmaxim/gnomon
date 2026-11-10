@@ -5,6 +5,9 @@ import pytest
 from maxitor_notes.actions.add_note_action import AddNoteAction, AddNoteParams
 from maxitor_notes.actions.delete_note_action import DeleteNoteAction, DeleteNoteParams
 from maxitor_notes.actions.edit_note_action import EditNoteAction, EditNoteParams
+from maxitor_notes.actions.list_note_draft_action import ListNoteDraftAction, ListNoteDraftParams
+from maxitor_notes.actions.list_published_notes_action import ListPublishedNotesAction, ListPublishedNotesParams
+from maxitor_notes.actions.publish_notes_action import PublishNotesAction, PublishNotesParams
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction, ListItemNotesParams
 from maxitor_notes.actions.list_note_authors_action import ListNoteAuthorsAction, ListNoteAuthorsParams
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
@@ -58,6 +61,18 @@ class ScriptedNotesStorage(NotesStorage):
         self.calls.append(("delete_note", organization_id, note_id, base_moment, editor_id, operation))
         return MOMENT
 
+    async def publish_notes(self, organization_id, item_id, title, comment, release, publisher_id, operation):
+        self.calls.append(("publish_notes", organization_id, item_id, title, comment, release, publisher_id, operation))
+        return 1, MOMENT
+
+    async def published_notes(self, organization_id, item_id, moment):
+        self.calls.append(("published_notes", organization_id, item_id, moment))
+        return None, []
+
+    async def draft(self, organization_id, item_id, moment):
+        self.calls.append(("draft", organization_id, item_id, moment))
+        return None, []
+
     async def notes_of_item(self, organization_id, item_id, moment, writer_id):
         self.calls.append(("notes_of_item", organization_id, item_id, moment, writer_id))
         return [NoteCoreEntity(id="n1", item_id=item_id, writer_id=ANN, writer_name="Ann", body="Check", updated_at=MOMENT, since=MOMENT)]
@@ -85,6 +100,9 @@ ACTION_CALLS = [
     (ListNoteAuthorsAction(), ListNoteAuthorsParams(item_id=ITEM)),
     (EditNoteAction(), EditNoteParams(note_id="n1", body="Check", base_moment=MOMENT)),
     (DeleteNoteAction(), DeleteNoteParams(note_id="n1", base_moment=MOMENT)),
+    (PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="First review", comment="Agreed")),
+    (ListPublishedNotesAction(), ListPublishedNotesParams(item_id=ITEM)),
+    (ListNoteDraftAction(), ListNoteDraftParams(item_id=ITEM)),
 ]
 
 
@@ -176,3 +194,18 @@ async def test_a_reader_cannot_edit_or_delete(action, params) -> None:
     with pytest.raises(AccessDenied) as refusal:
         await _run(action, params, roles=(NotesReaderRole,))
     assert refusal.value.verdict.gate is Gate.CHECK_ROLES
+
+
+async def test_an_editor_publishes_as_themselves_and_a_reader_cannot() -> None:
+    result, storage = await _run(PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="First review", comment="Agreed", release="handbook 2026.11"))
+    assert (result.number, result.changed_at) == (1, MOMENT)
+    assert storage.calls[-1] == ("publish_notes", ACME, ITEM, "First review", "Agreed", "handbook 2026.11", ANN, "PublishNotesAction")
+    with pytest.raises(AccessDenied):
+        await _run(PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="T", comment="C"), roles=(NotesReaderRole,))
+
+
+async def test_the_published_notes_and_the_draft_are_read_at_the_moment_of_the_address() -> None:
+    _result, storage = await _run(ListPublishedNotesAction(), ListPublishedNotesParams(item_id=ITEM, at=MOMENT))
+    assert storage.calls[-1] == ("published_notes", ACME, ITEM, MOMENT)
+    _result, storage = await _run(ListNoteDraftAction(), ListNoteDraftParams(item_id=ITEM, at=MOMENT))
+    assert storage.calls[-1] == ("draft", ACME, ITEM, MOMENT)

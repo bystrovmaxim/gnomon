@@ -29,7 +29,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from maxitor_plugin_sdk.core_functions import MEMBER_ORGANIZATION_SQL, change_time_sql, member_name, watermark_sql
-from maxitor_plugin_sdk.moments import in_force, moment_text
+from maxitor_plugin_sdk.moments import in_force, moment_text, overlaps
 
 from aoa.action_machine.graph.core.exclude_graph_model import exclude_graph_model
 from aoa.action_machine.intents.entities import entities
@@ -37,18 +37,20 @@ from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.postgres import PostgresStorage
 from aoa.action_machine.resources.sql import SqlStorageWrapper
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
+from maxitor_notes.entities.note_change_entity import NoteChangeCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
+from maxitor_notes.entities.revision_entity import RevisionCoreEntity
 from maxitor_notes.notes_refusal_error import NotesRefusalError
 
 #: The plugin's version tables: its change time and watermark follow them.
-VERSION_TABLES = ("note_versions",)
+VERSION_TABLES = ("note_versions", "revision_versions")
 
 
 #: Connection key under which actions receive the storage.
 NOTES_CONNECTION_KEY = "notes"
 
 @meta(description="The plugin's own schema, written as its version's user; the core reached only by its functions")
-@entities(NoteCoreEntity, NoteAuthorCoreEntity)
+@entities(NoteCoreEntity, NoteAuthorCoreEntity, RevisionCoreEntity, NoteChangeCoreEntity)
 class NotesStorage(PostgresStorage):
     """
     AI-CORE-BEGIN
@@ -206,7 +208,8 @@ class NotesStorage(PostgresStorage):
         rows = await self._fetch(
             f"SELECT n.id::text AS id, n.item_id::text AS item_id, n.writer_id::text AS writer_id,"
             f" {member_name('n.organization_id', 'n.writer_id', when)} AS writer_name, n.body AS body,"
-            f" {moment_text('n.updated_at')} AS updated_at, {moment_text('n.valid_from_at')} AS since"
+            f" {moment_text('n.updated_at')} AS updated_at, {moment_text('n.valid_from_at')} AS since,"
+            f" {member_name('n.organization_id', 'n.author_id', 'n.valid_from_at')} AS changed_by"
             f" FROM note_versions n"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {in_force('n', when)}"
             f" AND ($4::text IS NULL OR n.writer_id = $4::text::uuid)"
@@ -214,6 +217,117 @@ class NotesStorage(PostgresStorage):
             (organization_id, item_id, at, writer_id),
         )
         return [NoteCoreEntity(**_mapping(row)) for row in rows]
+
+    async def publish_notes(
+        self, organization_id: str, item_id: str, title: str, comment: str, release: str | None, publisher_id: str, operation: str
+    ) -> tuple[int, str]:
+        """
+        Publish the item's notes as its next revision; return its number and the change time.
+
+        Under the organization's lock the last number is read from the current table, so two editors publishing at
+        once get two consecutive numbers. With no note added, changed or deleted since the last revision there is
+        nothing to publish.
+        """
+        await self.begin()
+        try:
+            changed_at = await self._fetchval(change_time_sql(VERSION_TABLES), (organization_id,))
+            last = await self._fetchrow(
+                "SELECT number, created_at FROM revision WHERE organization_id = $1::text::uuid AND item_id = $2::text::uuid"
+                " ORDER BY number DESC LIMIT 1",
+                (organization_id, item_id),
+            )
+            since = None if last is None else last["created_at"]
+            changed = await self._fetchval(
+                "SELECT EXISTS (SELECT 1 FROM note_versions"
+                " WHERE organization_id = $1::text::uuid AND item_id = $2::text::uuid"
+                " AND ($3::timestamptz IS NULL OR valid_from_at > $3 OR valid_to_at > $3))",
+                (organization_id, item_id, since),
+            )
+            if not changed:
+                raise NotesRefusalError("nothing_to_publish", 409, revision=0 if last is None else last["number"])
+            number = 1 if last is None else int(last["number"]) + 1
+            revision_id = str(uuid4())
+            await self._execute(
+                "INSERT INTO revision (id, organization_id, item_id, number, title, comment, release, publisher_id, created_at, updated_at)"
+                " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4, $5, $6, $7, $8::text::uuid, $9, $9)",
+                (revision_id, organization_id, item_id, number, title, comment, release, publisher_id, changed_at),
+            )
+            await self._execute(
+                "INSERT INTO revision_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
+                " item_id, number, title, comment, release, publisher_id, created_at, updated_at)"
+                " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, number, title, comment, release,"
+                " publisher_id, created_at, updated_at FROM revision WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
+                (organization_id, revision_id, changed_at, publisher_id, operation),
+            )
+            moment = await self._fetchval(f"SELECT {moment_text('$1::timestamptz')}", (changed_at,))
+            await self.commit()
+        except BaseException:
+            await self.rollback()
+            raise
+        return number, str(moment)
+
+    async def revision_at(self, organization_id: str, item_id: str, moment: str | None) -> RevisionCoreEntity | None:
+        """The revision of the item in force at ``moment`` (the watermark when ``None``): the last one published by then."""
+        at = await self._moment(organization_id, moment)
+        if at is None:
+            return None
+        when = "$3::text::timestamptz"
+        row = await self._fetchrow(
+            f"SELECT r.number AS number, 'v' || r.number AS ref, r.title AS title, r.comment AS comment, r.release AS release,"
+            f" r.publisher_id::text AS publisher_id,"
+            f" {member_name('r.organization_id', 'r.publisher_id', 'r.created_at')} AS publisher_name,"
+            f" {moment_text('r.created_at')} AS at"
+            f" FROM revision_versions r"
+            f" WHERE r.organization_id = $1::text::uuid AND r.item_id = $2::text::uuid AND {in_force('r', when)}"
+            f" ORDER BY r.number DESC LIMIT 1",
+            (organization_id, item_id, at),
+        )
+        return None if row is None else RevisionCoreEntity(**_mapping(row))
+
+    async def published_notes(self, organization_id: str, item_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteCoreEntity]]:
+        """The revision in force at ``moment`` and its notes as they read when it was published; none before the first."""
+        revision = await self.revision_at(organization_id, item_id, moment)
+        if revision is None:
+            return None, []
+        return revision, await self.notes_of_item(organization_id, item_id, revision.at, None)
+
+    async def draft(self, organization_id: str, item_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteChangeCoreEntity]]:
+        """
+        The draft at ``moment``: every note added, changed or removed between the revision in force and the moment,
+        with who made the last change and when.
+        """
+        at = await self._moment(organization_id, moment)
+        if at is None:
+            return None, []
+        revision = await self.revision_at(organization_id, item_id, at)
+        now = {note.id: note for note in await self.notes_of_item(organization_id, item_id, at, None)}
+        then = {} if revision is None else {note.id: note for note in await self.notes_of_item(organization_id, item_id, revision.at, None)}
+        changes: list[NoteChangeCoreEntity] = []
+        for note_id, note in now.items():
+            if note_id not in then:
+                changes.append(NoteChangeCoreEntity(note_id=note_id, kind="added", body=note.body, by_name=note.changed_by, at=note.since))
+            elif then[note_id].body != note.body:
+                changes.append(NoteChangeCoreEntity(note_id=note_id, kind="changed", body=note.body, before=then[note_id].body, by_name=note.changed_by, at=note.since))
+        gone = [note_id for note_id in then if note_id not in now]
+        if gone:
+            deletions = await self._deletions(organization_id, item_id, revision.at if revision else at, at)
+            for note_id in gone:
+                by_name, deleted_at = deletions.get(note_id, ("", at))
+                changes.append(NoteChangeCoreEntity(note_id=note_id, kind="removed", body=then[note_id].body, before=then[note_id].body, by_name=by_name, at=deleted_at))
+        return revision, sorted(changes, key=lambda change: change.at)
+
+    async def _deletions(self, organization_id: str, item_id: str, start: str, end: str) -> dict[str, tuple[str, str]]:
+        """Who deleted each note of the item between ``start`` and ``end``, and when: the versions closed with no successor."""
+        rows = await self._fetch(
+            f"SELECT n.id::text AS id, {member_name('n.organization_id', 'n.closed_by', 'n.valid_to_at')} AS by_name,"
+            f" {moment_text('n.valid_to_at')} AS at"
+            f" FROM note_versions n"
+            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid"
+            f" AND {overlaps('n', '$3::text::timestamptz', '$4::text::timestamptz')}"
+            f" AND n.valid_to_at <= $4::text::timestamptz AND n.closed_by IS NOT NULL",
+            (organization_id, item_id, start, end),
+        )
+        return {row["id"]: (row["by_name"], row["at"]) for row in rows}
 
     async def note_authors(self, organization_id: str, item_id: str, moment: str | None, limit: int, after: str | None) -> list[NoteAuthorCoreEntity]:
         """The writers of the notes of ``item_id`` at ``moment``, ordered by id, ``limit`` of them after ``after``."""
@@ -280,6 +394,18 @@ class NotesStorageWrapper(SqlStorageWrapper):
     async def notes_of_item(self, organization_id: str, item_id: str, moment: str | None, writer_id: str | None) -> list[NoteCoreEntity]:
         """Pass on the wrapped storage's read of an item's notes."""
         return await self._storage().notes_of_item(organization_id, item_id, moment, writer_id)
+
+    async def publish_notes(self, organization_id: str, item_id: str, title: str, comment: str, release: str | None, publisher_id: str, operation: str) -> tuple[int, str]:
+        """Pass on the wrapped storage's publication."""
+        return await self._storage().publish_notes(organization_id, item_id, title, comment, release, publisher_id, operation)
+
+    async def published_notes(self, organization_id: str, item_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteCoreEntity]]:
+        """Pass on the wrapped storage's read of the published notes."""
+        return await self._storage().published_notes(organization_id, item_id, moment)
+
+    async def draft(self, organization_id: str, item_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteChangeCoreEntity]]:
+        """Pass on the wrapped storage's read of the draft."""
+        return await self._storage().draft(organization_id, item_id, moment)
 
     async def note_authors(self, organization_id: str, item_id: str, moment: str | None, limit: int, after: str | None) -> list[NoteAuthorCoreEntity]:
         """Pass on the wrapped storage's read of an item's writers."""

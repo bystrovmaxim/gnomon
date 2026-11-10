@@ -43,6 +43,9 @@ from maxitor_notes.actions.delete_note_action import DeleteNoteAction
 from maxitor_notes.actions.edit_note_action import EditNoteAction
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction
 from maxitor_notes.actions.list_note_authors_action import ListNoteAuthorsAction
+from maxitor_notes.actions.list_note_draft_action import ListNoteDraftAction
+from maxitor_notes.actions.list_published_notes_action import ListPublishedNotesAction
+from maxitor_notes.actions.publish_notes_action import PublishNotesAction
 from maxitor_notes.notes_editor_role import NotesEditorRole
 from maxitor_notes.notes_refusal_error import NotesRefusalError
 from maxitor_notes.notes_reader_role import NotesReaderRole
@@ -99,6 +102,9 @@ def create_app(dsn: str | None = None, core_public_key: str | None = None) -> Fa
     adapter.delete(f"{prefix}/notes/{{note_id}}", DeleteNoteAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/notes", ListItemNotesAction, connections=connections)
     adapter.get(f"{prefix}/lists/list_note_authors", ListNoteAuthorsAction, connections=connections)
+    adapter.post(f"{prefix}/items/{{item_id}}/revisions", PublishNotesAction, connections=connections)
+    adapter.get(f"{prefix}/items/{{item_id}}/published", ListPublishedNotesAction, connections=connections)
+    adapter.get(f"{prefix}/items/{{item_id}}/draft", ListNoteDraftAction, connections=connections)
     app = adapter.build(lifespan=lifespan)
 
     @app.exception_handler(NotesRefusalError)

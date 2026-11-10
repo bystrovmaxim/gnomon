@@ -37,12 +37,12 @@
 
 **Independent test**: `uv run pytest TPL/tests/test_revisions.py TPL/tests/test_notes_actions.py TPL/tests/test_passport.py`.
 
-- [ ] T012 [US3] `TPL/src/maxitor_notes/schema.yaml`: table `revision` — `item_id` uuid not null, `number` integer not null, `title` text not null, `comment` text not null, `release` text nullable ("empty when the revision carries none"), `publisher_id` uuid not null; unique `[item_id, number]`; index `[item_id]`. `VERSION_TABLES` gains `revision_versions`.
-- [ ] T013 [P] [US3] Entities `RevisionCoreEntity` and `NoteChangeCoreEntity` in `TPL/src/maxitor_notes/entities/` (fields of data-model.md).
-- [ ] T014 [US3] `NotesStorage.publish_notes(organization_id, item_id, title, comment, release, publisher_id, operation)`: under `change_time`, the last number from `revision`; no note changed since the last revision's moment → `nothing_to_publish` (409); else insert `revision` and its version with `number + 1`; return the number and the change time.
-- [ ] T015 [US3] `NotesStorage.revision_at(organization_id, item_id, moment)`, `published_notes(…)` (the notes at the revision's moment) and `draft(organization_id, item_id, moment)` (the changes between the revision in force and the moment: added, changed, removed with who and when), each with the SDK's moment condition.
-- [ ] T016 [P] [US3] Actions `PublishNotesAction` (editor; `title` 1–200, `comment` 1–2000, `release` 0–80 or none), `ListPublishedNotesAction` and `ListNoteDraftAction` (reader; `at`) in `TPL/src/maxitor_notes/actions/`; routes in `app.py`.
-- [ ] T017 [P] [US3] `TPL/tests/test_revisions.py`: consecutive numbers; nothing to publish refused; published notes between two revisions are the earlier one's; the draft lists added, changed and removed; release kept or empty; no action but publishing writes to `revision`, and no route changes a published revision (FR-015).
+- [X] T012 [US3] `TPL/src/maxitor_notes/schema.yaml`: table `revision` — `item_id` uuid not null, `number` integer not null, `title` text not null, `comment` text not null, `release` text nullable ("empty when the revision carries none"), `publisher_id` uuid not null; unique `[item_id, number]`; index `[item_id]`. `VERSION_TABLES` gains `revision_versions`.
+- [X] T013 [P] [US3] Entities `RevisionCoreEntity` and `NoteChangeCoreEntity` in `TPL/src/maxitor_notes/entities/` (fields of data-model.md).
+- [X] T014 [US3] `NotesStorage.publish_notes(organization_id, item_id, title, comment, release, publisher_id, operation)`: under `change_time`, the last number from `revision`; no note changed since the last revision's moment → `nothing_to_publish` (409); else insert `revision` and its version with `number + 1`; return the number and the change time.
+- [X] T015 [US3] `NotesStorage.revision_at(organization_id, item_id, moment)`, `published_notes(…)` (the notes at the revision's moment) and `draft(organization_id, item_id, moment)` (the changes between the revision in force and the moment: added, changed, removed with who and when), each with the SDK's moment condition.
+- [X] T016 [P] [US3] Actions `PublishNotesAction` (editor; `title` 1–200, `comment` 1–2000, `release` 0–80 or none), `ListPublishedNotesAction` and `ListNoteDraftAction` (reader; `at`) in `TPL/src/maxitor_notes/actions/`; routes in `app.py`.
+- [X] T017 [P] [US3] `TPL/tests/test_revisions.py`: consecutive numbers; nothing to publish refused; published notes between two revisions are the earlier one's; the draft lists added, changed and removed; release kept or empty; no action but publishing writes to `revision`, and no route changes a published revision (FR-015).
 
 ## Phase 4: The history contract in the SDK (US4, P1) — issue phase 4
 
