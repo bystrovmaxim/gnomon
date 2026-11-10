@@ -4,7 +4,7 @@ EditNoteAction — an editor changes the text of a note they saw at ``base_momen
 
 ::
 
-    PATCH /p/notes/api/{organization}/notes/{note_id} {body, base_moment} ──► EditNoteAction
+    PATCH /p/notes/api/{organization}/notes {note_id, body, base_moment} ──► EditNoteAction
         ├─ organization_access_decide: the person is a member of {organization}
         └─ edit_summary: the organization's id again; the note's open version closed and a new one opened, or a refusal:
            changed by someone else after base_moment (409), deleted (409), base_moment not come (422)

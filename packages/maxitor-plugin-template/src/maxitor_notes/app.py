@@ -100,11 +100,11 @@ def create_app(dsn: str | None = None, core_public_key: str | None = None) -> Fa
     )
     prefix = f"/p/{passport['name']}/api/{{organization}}"
     adapter.post(f"{prefix}/notes", AddNoteAction, connections=connections)
-    adapter.patch(f"{prefix}/notes/{{note_id}}", EditNoteAction, connections=connections)
+    adapter.patch(f"{prefix}/notes", EditNoteAction, connections=connections)
     adapter.delete(f"{prefix}/notes/{{note_id}}", DeleteNoteAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/notes", ListItemNotesAction, connections=connections)
     adapter.get(f"{prefix}/lists/list_note_authors", ListNoteAuthorsAction, connections=connections)
-    adapter.post(f"{prefix}/items/{{item_id}}/revisions", PublishNotesAction, connections=connections)
+    adapter.post(f"{prefix}/revisions", PublishNotesAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/published", ListPublishedNotesAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/draft", ListNoteDraftAction, connections=connections)
     adapter.get(f"{prefix}/history/list_note_history", ListNoteHistoryAction, connections=connections)

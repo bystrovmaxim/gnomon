@@ -39,9 +39,9 @@ A moment is `YYYY-MM-DDTHH:MM:SS.ffffffZ`. A moment or `to_at` later than the wa
 | Method | Path | Action |
 |---|---|---|
 | GET | `/items/{item_id}/notes` (+ `at`, `author`, or `from_at`, `to_at`, `width`) | `ListItemNotesAction` |
-| PATCH | `/notes/{note_id}` `{body, base_moment}` | `EditNoteAction` |
+| PATCH | `/notes` `{note_id, body, base_moment}` | `EditNoteAction` |
 | DELETE | `/notes/{note_id}?base_moment=` | `DeleteNoteAction` |
-| POST | `/items/{item_id}/revisions` `{title, comment, release?}` | `PublishNotesAction` |
+| POST | `/revisions` `{item_id, title, comment, release?}` | `PublishNotesAction` |
 | GET | `/items/{item_id}/published` (+ `at`) | `ListPublishedNotesAction` |
 | GET | `/items/{item_id}/draft` (+ `at`) | `ListNoteDraftAction` |
 | GET | `/history/list_note_history` (`item_id`, `from_at`, `to_at`) | `ListNoteHistoryAction` |

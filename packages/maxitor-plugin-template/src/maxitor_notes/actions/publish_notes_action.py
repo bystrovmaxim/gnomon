@@ -4,7 +4,7 @@ PublishNotesAction — an editor publishes an item's notes as its next revision.
 
 ::
 
-    POST /p/notes/api/{organization}/items/{item_id}/revisions {title, comment, release?} ──► PublishNotesAction
+    POST /p/notes/api/{organization}/revisions {item_id, title, comment, release?} ──► PublishNotesAction
         ├─ organization_access_decide: the person is a member of {organization}
         └─ publish_summary: the organization's id again; the next number under the lock, or nothing to publish (409)
 """

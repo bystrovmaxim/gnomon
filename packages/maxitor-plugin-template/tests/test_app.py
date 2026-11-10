@@ -12,16 +12,28 @@ def test_every_route_lies_under_the_plugins_path_and_the_organization() -> None:
     routes = {(next(iter(route.methods)), route.path) for route in app.routes if getattr(route, "methods", None) and route.path.startswith("/p/")}
     assert routes == {
         ("POST", "/p/notes/api/{organization}/notes"),
-        ("PATCH", "/p/notes/api/{organization}/notes/{note_id}"),
+        ("PATCH", "/p/notes/api/{organization}/notes"),
         ("DELETE", "/p/notes/api/{organization}/notes/{note_id}"),
         ("GET", "/p/notes/api/{organization}/items/{item_id}/notes"),
         ("GET", "/p/notes/api/{organization}/lists/list_note_authors"),
-        ("POST", "/p/notes/api/{organization}/items/{item_id}/revisions"),
+        ("POST", "/p/notes/api/{organization}/revisions"),
         ("GET", "/p/notes/api/{organization}/items/{item_id}/published"),
         ("GET", "/p/notes/api/{organization}/items/{item_id}/draft"),
         ("GET", "/p/notes/api/{organization}/history/list_note_history"),
         ("GET", "/p/notes/api/{organization}/history/note_milestone_card"),
     }
+
+
+def test_a_route_with_a_body_takes_no_id_from_its_path() -> None:
+    """AOA's adapter builds a POST or PATCH action's params from the body alone: an id in such a path never reaches the action."""
+    import re
+
+    key = Ed25519PrivateKey.generate().public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()
+    app = create_app(dsn="postgresql://plg_notes@db.invalid/maxitor", core_public_key=key)
+    for route in app.routes:
+        methods = getattr(route, "methods", None) or set()
+        if route.path.startswith("/p/") and methods & {"POST", "PATCH", "PUT"}:
+            assert set(re.findall(r"\{(\w+)\}", route.path)) == {"organization"}, route.path
 
 
 def test_an_organization_in_a_request_body_is_refused_not_used() -> None:
