@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 
 import asyncpg
 from maxitor.core.entities import (
@@ -93,6 +93,9 @@ class CoreStorage(PostgresStorage):
     INVARIANTS: Names no schema in SQL; a versioned row never changes without its version; public stays empty.
     AI-CORE-END
     """
+
+    #: The version table of each table this storage writes, and the columns that name one row of it.
+    versioned: ClassVar[Mapping[str, tuple[str, tuple[str, ...]]]] = VERSIONED
 
     async def lock(self, key: str, versions: Sequence[tuple[str, str, Any]]) -> datetime:
         """
@@ -170,7 +173,7 @@ class CoreStorage(PostgresStorage):
     async def _open_version(
         self, table: str, row: Mapping[str, Any], changed_at: datetime, author: str | None, operation: str
     ) -> None:
-        versions, version_key = VERSIONED[table]
+        versions, version_key = self.versioned[table]
         row_key = _ROW_KEY.get(table, version_key)
         skip = _UNVERSIONED.get(table, frozenset())
         data = {c: v for c, v in row.items() if c not in skip and c not in row_key}
@@ -185,7 +188,7 @@ class CoreStorage(PostgresStorage):
     async def _close_version(
         self, table: str, key: Mapping[str, Any], changed_at: datetime, author: str | None, operation: str
     ) -> None:
-        versions, version_key = VERSIONED[table]
+        versions, version_key = self.versioned[table]
         row_key = _ROW_KEY.get(table, version_key)
         mapped = dict(zip(version_key, (key[c] for c in row_key), strict=True))
         where = " AND ".join(f"{column} = ${i}" for i, column in enumerate(mapped, start=4))

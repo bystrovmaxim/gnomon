@@ -46,9 +46,15 @@ core = [
     "botocore>=1.34,<2",
     "geoip2>=4.8,<6",
     "httpx>=0.28,<1.0",
+    "packageurl-python>=0.16,<1",
     "packaging>=24",
     "PyYAML>=6.0,<7",
     "uvicorn>=0.30",
+]
+# The plugin installer: checks and deploys plugin versions as the database role maxitor_installer.
+plugin-installer = [
+    "maxitor[core]",
+    "scramp>=1.4,<2",
 ]
 # maxitor plugin check: the SDK holds the schemas of a plugin's files and the compatibility decision. It joins
 # ``all`` once maxitor-plugin-sdk is published, so that installing ``all`` never asks for what an index lacks.
@@ -56,7 +62,7 @@ plugins = [
     "maxitor-plugin-sdk>=1.0,<2",
     "PyYAML>=6.0,<7",
 ]
-all = ["maxitor[web]", "maxitor[repo-graph-port]", "maxitor[core]"]
+all = ["maxitor[web]", "maxitor[repo-graph-port]", "maxitor[core]", "maxitor[plugin-installer]"]
 
 # AOA is external code: the submodule external/aoa, fixed to one commit (update-aoa.sh moves it).
 [tool.uv.sources]
@@ -73,19 +79,21 @@ Issues = "https://github.com/bystrovmaxim/gnomon/issues"
 graph-builder = "maxitor.graph_builder.cli:main"
 maxitor = "maxitor.web.launch:main"
 maxitor-core = "maxitor.core.launch:main"
+maxitor-plugin-installer = "maxitor.plugin_installer.launch:main"
 repo-graph-port = "maxitor.repo_graph_port.launch:main"
 
 # One package from several folders: the web part (maxitor-web/), the tools and services (tools/<name>/), the
 # code they share (core/<name>/) and the skills (skills/). ``maxitor`` is a namespace package; each part keeps its code in ``<part>/maxitor/<name>/``.
 [tool.hatch.build.targets.wheel]
-only-include = ["maxitor-core/maxitor", "maxitor-web/maxitor", "tools/repo-graph-port/maxitor", "tools/graph-builder/maxitor", "core/graph_compare/maxitor", "core/graph_map/maxitor"]
+only-include = ["maxitor-core/maxitor", "maxitor-web/maxitor", "tools/repo-graph-port/maxitor", "tools/plugin-installer/maxitor", "tools/graph-builder/maxitor", "core/graph_compare/maxitor", "core/graph_map/maxitor"]
 artifacts = ["maxitor-web/maxitor/web/static/**/*"]
-dev-mode-dirs = ["maxitor-core", "maxitor-web", "tools/repo-graph-port", "tools/graph-builder", "core/graph_compare", "core/graph_map"]
+dev-mode-dirs = ["maxitor-core", "maxitor-web", "tools/repo-graph-port", "tools/plugin-installer", "tools/graph-builder", "core/graph_compare", "core/graph_map"]
 
 [tool.hatch.build.targets.wheel.sources]
 "maxitor-core" = ""
 "maxitor-web" = ""
 "tools/repo-graph-port" = ""
+"tools/plugin-installer" = ""
 "tools/graph-builder" = ""
 "core/graph_compare" = ""
 "core/graph_map" = ""
