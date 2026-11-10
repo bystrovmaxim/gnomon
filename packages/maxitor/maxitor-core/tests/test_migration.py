@@ -128,12 +128,18 @@ async def test_the_migrator_runs_platform_then_organization_under_their_schemas(
     pool, connection = recording_pool(answer)
     storage = MigrationsStorage(pool=pool)
     ran = await apply_migrations(storage, CoreSchemas())
-    assert ran == ["platform/0001_platform.sql", "organization/0001_organization.sql", "plugins/0001_plugins.sql"]
+    assert ran == [
+        "platform/0001_platform.sql",
+        "organization/0001_organization.sql",
+        "organization/0002_plugin_functions.sql",
+        "plugins/0001_plugins.sql",
+    ]
     paths = [q for q in connection.queries() if q.startswith("SET LOCAL search_path")]
     assert paths[0] == 'SET LOCAL search_path TO "platform", "extensions"'
     assert paths[1] == 'SET LOCAL search_path TO "platform", "extensions"'
     assert paths[2] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
-    assert paths[3] == 'SET LOCAL search_path TO "plugins", "organization", "platform", "extensions"'
+    assert paths[3] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
+    assert paths[4] == 'SET LOCAL search_path TO "plugins", "organization", "platform", "extensions"'
     recorded = [params for query, params in connection.statements if query.startswith("INSERT INTO migration")]
     assert [name for name, _digest in recorded] == ran
 
@@ -151,3 +157,16 @@ async def test_an_edited_migration_stops_the_run() -> None:
 
 def test_storage_is_a_postgres_storage() -> None:
     assert issubclass(MigrationsStorage, PostgresStorage)
+
+
+def test_the_plugins_functions_run_as_their_owner_for_the_plugins_group_only() -> None:
+    sql = (MIGRATIONS / "organization" / "0002_plugin_functions.sql").read_text(encoding="utf-8")
+    created = re.findall(r"CREATE FUNCTION (\w+)\(", sql)
+    assert created == ["change_time", "watermark", "is_member"]
+    for header in re.findall(r"CREATE FUNCTION .*?AS \$\$", sql, re.S):
+        assert "SECURITY DEFINER SET search_path = " in header, header
+    assert "REVOKE ALL ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid) FROM PUBLIC;" in sql
+    grants = [line for line in sql.splitlines() if line.startswith("GRANT")]
+    assert "GRANT EXECUTE ON FUNCTION change_time(uuid), watermark(uuid), is_member(uuid, uuid) TO maxitor_plugin;" in grants
+    assert not any("SELECT" in line or "INSERT" in line for line in grants)
+    assert "status = 'active'" in sql

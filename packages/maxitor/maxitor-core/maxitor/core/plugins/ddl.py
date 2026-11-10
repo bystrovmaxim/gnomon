@@ -1,4 +1,4 @@
-# packages/maxitor/tools/plugin-installer/maxitor/plugin_installer/ddl.py
+# packages/maxitor/maxitor-core/maxitor/core/plugins/ddl.py
 """
 The statements that build a plugin version's tables from its ``schema.yaml``, by the rules of versioned storage.
 

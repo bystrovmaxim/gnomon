@@ -1,4 +1,4 @@
-# packages/maxitor/tools/plugin-installer/tests/test_ddl.py
+# packages/maxitor/maxitor-core/tests/test_plugins_ddl.py
 """
 The statements built from a schema.yaml keep versioned storage by construction: every table has its version table,
 the service fields, the overlap constraint and a key that begins with the organization; a table of mechanics has no
@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 
 import pytest
-from maxitor.plugin_installer.ddl import build_statements, literal
+from maxitor.core.plugins.ddl import build_statements, literal
 from maxitor_plugin_sdk.plugin_schema import parse_plugin_schema
 
 SCHEMA = """
