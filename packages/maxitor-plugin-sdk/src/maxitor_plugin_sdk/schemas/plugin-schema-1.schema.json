@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/plugin-schema-1.schema.json",
+  "title": "Maxitor plugin schema, format 1",
+  "description": "schema.yaml: the tables a plugin declares. No SQL: Maxitor's installer builds every table with its version table, the service fields, the overlap constraint and the indexes. The columns id, organization_id, created_at and updated_at are always added and never declared.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "tables"],
+  "properties": {
+    "schema": { "const": 1 },
+    "tables": { "$ref": "#/$defs/tables", "minProperties": 1 },
+    "mechanics": { "$ref": "#/$defs/tables", "description": "Tables of mechanics: kept without versions." }
+  },
+  "$defs": {
+    "table_name": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,39}$", "not": { "pattern": "_versions$" } },
+    "column_name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,47}$",
+      "not": { "enum": ["id", "organization_id", "created_at", "updated_at", "valid_from_at", "valid_to_at", "valid_during", "author_id", "operation", "closed_by", "closed_operation"] }
+    },
+    "any_column": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,47}$" },
+    "columns_list": { "type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": { "$ref": "#/$defs/any_column" } },
+    "description": { "type": "string", "minLength": 1, "maxLength": 500, "pattern": "^[^\\u0000]*$" },
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "nullable", "description"],
+      "properties": {
+        "type": { "enum": ["uuid", "text", "integer", "bigint", "numeric", "boolean", "date", "timestamptz", "jsonb"] },
+        "nullable": { "type": "boolean", "description": "Whether the column may be empty; the description says what empty means." },
+        "description": { "$ref": "#/$defs/description" }
+      }
+    },
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns", "table", "references"],
+      "properties": {
+        "columns": { "$ref": "#/$defs/columns_list" },
+        "table": { "$ref": "#/$defs/table_name" },
+        "references": { "$ref": "#/$defs/columns_list" }
+      }
+    },
+    "table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["description", "columns"],
+      "properties": {
+        "description": { "$ref": "#/$defs/description" },
+        "columns": {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 64,
+          "propertyNames": { "$ref": "#/$defs/column_name" },
+          "additionalProperties": { "$ref": "#/$defs/column" }
+        },
+        "primary_key": { "$ref": "#/$defs/columns_list", "description": "The row's key inside the organization; id when absent." },
+        "unique": { "type": "array", "maxItems": 16, "items": { "$ref": "#/$defs/columns_list" } },
+        "indexes": { "type": "array", "maxItems": 16, "items": { "$ref": "#/$defs/columns_list" } },
+        "keys": { "type": "array", "maxItems": 16, "items": { "$ref": "#/$defs/key" }, "description": "Keys to other tables of the same plugin." }
+      }
+    },
+    "tables": {
+      "type": "object",
+      "maxProperties": 64,
+      "propertyNames": { "$ref": "#/$defs/table_name" },
+      "additionalProperties": { "$ref": "#/$defs/table" }
+    }
+  }
+}

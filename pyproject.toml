@@ -57,7 +57,7 @@ show_error_codes = true
 namespace_packages = true
 explicit_package_bases = true
 exclude = "collect_python_files\\.py$"
-mypy_path = "external/aoa/packages/aoa-action-machine/src:external/aoa/packages/aoa-fastapi-adapter/src:packages/maxitor/maxitor-core:packages/maxitor/maxitor-web:packages/maxitor/tools/repo-graph-port:packages/maxitor/tools/graph-builder:packages/maxitor/core/graph_compare:packages/maxitor/core/graph_map:packages/maxitor-plugin-sdk/src:packages/maxitor-plugin-template/src"
+mypy_path = "external/aoa/packages/aoa-action-machine/src:external/aoa/packages/aoa-fastapi-adapter/src:packages/maxitor/maxitor-core:packages/maxitor/maxitor-web:packages/maxitor/tools/repo-graph-port:packages/maxitor/tools/plugin-installer:packages/maxitor/tools/graph-builder:packages/maxitor/core/graph_compare:packages/maxitor/core/graph_map:packages/maxitor-plugin-sdk/src:packages/maxitor-plugin-template/src"
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -143,7 +143,7 @@ exclude = ["tests/"]
 [tool.taskipy.tasks]
 maxitor = "uv run uvicorn maxitor.web.api.app:app --reload --host 127.0.0.1 --port 8000"
 lint = "ruff check packages/ tests/ scripts/"
-typecheck = "mypy packages/maxitor/maxitor-core/maxitor packages/maxitor/maxitor-web/maxitor packages/maxitor/tools/repo-graph-port/maxitor packages/maxitor/tools/graph-builder/maxitor packages/maxitor/core/graph_compare/maxitor packages/maxitor/core/graph_map/maxitor packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk packages/maxitor-plugin-template/src/maxitor_notes"
+typecheck = "mypy packages/maxitor/maxitor-core/maxitor packages/maxitor/maxitor-web/maxitor packages/maxitor/tools/repo-graph-port/maxitor packages/maxitor/tools/plugin-installer/maxitor packages/maxitor/tools/graph-builder/maxitor packages/maxitor/core/graph_compare/maxitor packages/maxitor/core/graph_map/maxitor packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk packages/maxitor-plugin-template/src/maxitor_notes"
 pylint = "pylint packages/maxitor packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk packages/maxitor-plugin-template/src/maxitor_notes"
 dead = "vulture"
 cc = "python scripts/check_radon.py cc"

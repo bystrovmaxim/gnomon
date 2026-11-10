@@ -262,6 +262,7 @@ STEPS: tuple[Step, ...] = (
             "maxitor/maxitor-core",
             "maxitor/maxitor-web",
             "maxitor/tools/repo-graph-port",
+            "maxitor/tools/plugin-installer",
             "maxitor/tools/graph-builder",
             "maxitor/core/graph_compare",
             "maxitor/core/graph_map",
