@@ -53,8 +53,8 @@ class NotesStorage(PostgresStorage):
     """
     AI-CORE-BEGIN
     ROLE: The database of the plugin ``notes``.
-    CONTRACT: ``organization_of`` asks the core's membership function; ``add_note`` writes a note and its
-    version in one transaction and returns the change time; ``notes_of_item`` and ``note_authors`` read the
+    CONTRACT: ``organization_of`` asks the core's membership function; ``add_note``, ``edit_note`` and
+    ``delete_note`` write a note and its versions in one transaction and return the change time; ``notes_of_item`` and ``note_authors`` read the
     version tables at one moment, the watermark when no moment is given.
     INVARIANTS: Reads and writes only its own schema; ``organization_id`` in every condition; a moment travels as a
         string.
@@ -96,6 +96,107 @@ class NotesStorage(PostgresStorage):
             raise
         return str(moment)
 
+    async def edit_note(self, organization_id: str, note_id: str, body: str, base_moment: str, editor_id: str, operation: str) -> str:
+        """
+        Change the text of a note the editor saw at ``base_moment``; return the change time.
+
+        One transaction after the organization's lock: the current row is locked; a note deleted since, or changed by
+        someone else after ``base_moment``, is refused and nothing is written; the same text writes nothing. Otherwise
+        the open version closes and the new one opens, both at the change time.
+        """
+        await self.begin()
+        try:
+            changed_at, now = await self._change_time(organization_id, base_moment)
+            since = await self._open_version(organization_id, note_id, base_moment)
+            if since["body"] == body:
+                await self.rollback()
+                return str(since["since"])
+            await self._execute(
+                "UPDATE note SET body = $3, updated_at = $4 WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
+                (organization_id, note_id, body, changed_at),
+            )
+            await self._close_version(organization_id, note_id, changed_at, editor_id, operation)
+            await self._execute(
+                "INSERT INTO note_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
+                " item_id, writer_id, body, created_at, updated_at)"
+                " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, writer_id, body, created_at, updated_at"
+                " FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid"
+                " ON CONFLICT (organization_id, id, valid_from_at) DO UPDATE SET body = EXCLUDED.body, updated_at = EXCLUDED.updated_at",
+                (organization_id, note_id, changed_at, editor_id, operation),
+            )
+            await self.commit()
+        except BaseException:
+            await self.rollback()
+            raise
+        return now
+
+    async def delete_note(self, organization_id: str, note_id: str, base_moment: str, editor_id: str, operation: str) -> str:
+        """
+        Delete a note the editor saw at ``base_moment``; return the change time.
+
+        The same checks as an edit; the current row is deleted and its open version closed with who deleted it and by
+        which action — no new version. At every earlier moment the note is still there.
+        """
+        await self.begin()
+        try:
+            changed_at, now = await self._change_time(organization_id, base_moment)
+            await self._open_version(organization_id, note_id, base_moment)
+            await self._execute(
+                "DELETE FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid", (organization_id, note_id)
+            )
+            await self._close_version(organization_id, note_id, changed_at, editor_id, operation)
+            await self.commit()
+        except BaseException:
+            await self.rollback()
+            raise
+        return now
+
+    async def _change_time(self, organization_id: str, base_moment: str) -> tuple[Any, str]:
+        """The change time after the organization's lock, and it as a moment; a ``base_moment`` not come yet is refused."""
+        changed_at = await self._fetchval(change_time_sql(VERSION_TABLES), (organization_id,))
+        now = str(await self._fetchval(f"SELECT {moment_text('$1::timestamptz')}", (changed_at,)))
+        if base_moment >= now:
+            raise NotesRefusalError("moment_not_come", 422, watermark=now)
+        return changed_at, now
+
+    async def _open_version(self, organization_id: str, note_id: str, base_moment: str) -> Any:
+        """
+        The note's open version, its current row locked; refused when the note is deleted, or changed by someone
+        else after ``base_moment``. A changing action reads the current table; the version tells only when and who.
+        """
+        row = await self._fetchrow(
+            "SELECT id FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid FOR UPDATE",
+            (organization_id, note_id),
+        )
+        if row is None:
+            closed = await self._fetchrow(
+                f"SELECT {member_name('organization_id', 'closed_by', 'valid_to_at')} AS deleted_by,"
+                f" {moment_text('valid_to_at')} AS deleted_at FROM note_versions"
+                " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND closed_by IS NOT NULL"
+                " ORDER BY valid_to_at DESC LIMIT 1",
+                (organization_id, note_id),
+            )
+            if closed is None:
+                raise NotesRefusalError("no_such_note", 404)
+            raise NotesRefusalError("deleted", 409, deleted_by=closed["deleted_by"], deleted_at=closed["deleted_at"])
+        version = await self._fetchrow(
+            f"SELECT {moment_text('valid_from_at')} AS since, body,"
+            f" {member_name('organization_id', 'author_id', 'valid_from_at')} AS changed_by FROM note_versions"
+            " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND valid_to_at IS NULL",
+            (organization_id, note_id),
+        )
+        if version["since"] > base_moment:
+            raise NotesRefusalError("changed_since", 409, changed_by=version["changed_by"], changed_at=version["since"])
+        return version
+
+    async def _close_version(self, organization_id: str, note_id: str, changed_at: Any, editor_id: str, operation: str) -> None:
+        """Close the note's open version at the change time, with who closed it and by which action."""
+        await self._execute(
+            "UPDATE note_versions SET valid_to_at = $3, closed_by = $4::text::uuid, closed_operation = $5"
+            " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND valid_to_at IS NULL AND valid_from_at < $3",
+            (organization_id, note_id, changed_at, editor_id, operation),
+        )
+
     async def notes_of_item(self, organization_id: str, item_id: str, moment: str | None, writer_id: str | None) -> list[NoteCoreEntity]:
         """The notes of ``item_id`` at ``moment`` (the watermark when ``None``), of one writer when ``writer_id`` is given."""
         at = await self._moment(organization_id, moment)
@@ -105,7 +206,7 @@ class NotesStorage(PostgresStorage):
         rows = await self._fetch(
             f"SELECT n.id::text AS id, n.item_id::text AS item_id, n.writer_id::text AS writer_id,"
             f" {member_name('n.organization_id', 'n.writer_id', when)} AS writer_name, n.body AS body,"
-            f" {moment_text('n.updated_at')} AS updated_at"
+            f" {moment_text('n.updated_at')} AS updated_at, {moment_text('n.valid_from_at')} AS since"
             f" FROM note_versions n"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {in_force('n', when)}"
             f" AND ($4::text IS NULL OR n.writer_id = $4::text::uuid)"
@@ -167,6 +268,14 @@ class NotesStorageWrapper(SqlStorageWrapper):
     async def organization_of(self, code: str, user_id: str) -> str | None:
         """Pass on the wrapped storage's membership check."""
         return await self._storage().organization_of(code, user_id)
+
+    async def edit_note(self, organization_id: str, note_id: str, body: str, base_moment: str, editor_id: str, operation: str) -> str:
+        """Pass on the wrapped storage's edit."""
+        return await self._storage().edit_note(organization_id, note_id, body, base_moment, editor_id, operation)
+
+    async def delete_note(self, organization_id: str, note_id: str, base_moment: str, editor_id: str, operation: str) -> str:
+        """Pass on the wrapped storage's deletion."""
+        return await self._storage().delete_note(organization_id, note_id, base_moment, editor_id, operation)
 
     async def notes_of_item(self, organization_id: str, item_id: str, moment: str | None, writer_id: str | None) -> list[NoteCoreEntity]:
         """Pass on the wrapped storage's read of an item's notes."""

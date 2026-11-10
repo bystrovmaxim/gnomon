@@ -28,7 +28,7 @@ def _answer(query, params):
     if query.startswith("SELECT to_char($1::timestamptz"):
         return MOMENT
     if "FROM note_versions n" in query and "DISTINCT" not in query:
-        return [{"id": "n1", "item_id": ITEM, "writer_id": WRITER, "writer_name": "Ann", "body": "Check the limits", "updated_at": MOMENT}]
+        return [{"id": "n1", "item_id": ITEM, "writer_id": WRITER, "writer_name": "Ann", "body": "Check the limits", "updated_at": MOMENT, "since": MOMENT}]
     if "DISTINCT n.writer_id" in query:
         return [{"id": WRITER, "name": "Ann"}]
     return None

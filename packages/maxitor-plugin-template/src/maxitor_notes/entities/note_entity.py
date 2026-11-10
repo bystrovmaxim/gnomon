@@ -26,3 +26,4 @@ class NoteCoreEntity(BaseCoreEntity):
     writer_name: str = Field(description="The writer's name as it read at the same moment")
     body: str = Field(min_length=1, description="The text of the note")
     updated_at: str = Field(description="When the note was last changed, ISO 8601 with microseconds")
+    since: str = Field(description="When the version read began: the base_moment an editor sends back with a change")

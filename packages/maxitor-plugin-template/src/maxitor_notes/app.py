@@ -39,6 +39,8 @@ from aoa.action_machine.resources.postgres import PostgresPool
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 from aoa.fastapi import FastApiAdapter
 from maxitor_notes.actions.add_note_action import AddNoteAction
+from maxitor_notes.actions.delete_note_action import DeleteNoteAction
+from maxitor_notes.actions.edit_note_action import EditNoteAction
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction
 from maxitor_notes.actions.list_note_authors_action import ListNoteAuthorsAction
 from maxitor_notes.notes_editor_role import NotesEditorRole
@@ -93,6 +95,8 @@ def create_app(dsn: str | None = None, core_public_key: str | None = None) -> Fa
     )
     prefix = f"/p/{passport['name']}/api/{{organization}}"
     adapter.post(f"{prefix}/notes", AddNoteAction, connections=connections)
+    adapter.patch(f"{prefix}/notes/{{note_id}}", EditNoteAction, connections=connections)
+    adapter.delete(f"{prefix}/notes/{{note_id}}", DeleteNoteAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/notes", ListItemNotesAction, connections=connections)
     adapter.get(f"{prefix}/lists/list_note_authors", ListNoteAuthorsAction, connections=connections)
     app = adapter.build(lifespan=lifespan)

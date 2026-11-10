@@ -12,6 +12,8 @@ def test_every_route_lies_under_the_plugins_path_and_the_organization() -> None:
     routes = {(next(iter(route.methods)), route.path) for route in app.routes if getattr(route, "methods", None) and route.path.startswith("/p/")}
     assert routes == {
         ("POST", "/p/notes/api/{organization}/notes"),
+        ("PATCH", "/p/notes/api/{organization}/notes/{note_id}"),
+        ("DELETE", "/p/notes/api/{organization}/notes/{note_id}"),
         ("GET", "/p/notes/api/{organization}/items/{item_id}/notes"),
         ("GET", "/p/notes/api/{organization}/lists/list_note_authors"),
     }
