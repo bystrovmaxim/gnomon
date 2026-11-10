@@ -1,12 +1,13 @@
 # Maxitor core
 
-Maxitor's own core: people sign in, register organizations and land in an organization's frame. It has its own PostgreSQL database, a backend of AOA actions and a Next.js application.
+Maxitor's own core: people sign in, register organizations and land in an organization's frame, and an organization's administrator installs plugins into it. It has its own PostgreSQL database, a backend of AOA actions, a plugin installer and a Next.js application.
 
 | Part | Where | What it does |
 |---|---|---|
-| The database | `maxitor/core/bootstrap.sql`, `maxitor/core/migrations/` | Two schemas owned by the role `maxitor_core`: `platform` (accounts, their ways in, one-time codes) and `organization` (organizations, their users, boundaries). Every table except the codes and the attempts keeps its history in a `*_versions` table; a password's hash never enters it. |
+| The database | `maxitor/core/bootstrap.sql`, `maxitor/core/migrations/` | Three schemas owned by the role `maxitor_core`: `platform` (accounts, their ways in, one-time codes), `organization` (organizations, their users, boundaries) and `plugins` (the marketplace and the plugins of each organization). Every table except the codes and the attempts keeps its history in a `*_versions` table; a password's hash never enters it. Each deployed plugin version has a schema and a database user of its own. |
 | The backend | `maxitor/core/` | Every address is an AOA action declared by the `FastApiAdapter` chain. Mail, the country of an IP and each sign-in provider are typed gateways, passed to each call. Every step writes a typed event. |
-| The application | `web/` | The pages of the [mockup](../../../specs/072-maxitor-core/mockup/index.html), for desktop and phone. Its server keeps the session in the HttpOnly cookie `__Host-maxitor_session`; the page's scripts never see a token. |
+| The plugins | `maxitor/core/plugins/` | The domain `plugins`: its actions, storage and typed events. The installer [`maxitor-plugin-installer`](../tools/plugin-installer/README.md) runs its checking and deploying actions in a process of its own. |
+| The application | `web/` | The pages of the mockups [072](../../../specs/072-maxitor-core/mockup/index.html) and [073](../../../specs/073-plugin-marketplace/mockup/index.html), for desktop and phone. Its server keeps the session in the HttpOnly cookie `__Host-maxitor_session`; the page's scripts never see a token. |
 
 ## Signing in
 
@@ -18,9 +19,15 @@ A new person ticks the consent box before the account exists. A session lasts ei
 
 The addresses and their answers are in [contracts/actions.md](../../../specs/072-maxitor-core/contracts/actions.md).
 
+## Plugins
+
+An organization's administrator finds them in Settings at the foot of the organization's tree → Plugins (`/w/<code>/settings/plugins`): the installed plugins and the marketplace, one search over both, the details of a plugin, installing, disabling and enabling, and adding a private plugin by a release's Package URL and `sha256` or by uploading its wheel. The page only asks; the installer checks versions and deploys them every minute. Nobody else sees Settings: its address answers 404.
+
+A plugin carries no SQL: it declares its tables in `schema.yaml`, and the installer builds each version once — the schema `<name>_<x>_<y>_<z>`, the user `plg_<name>_<x>_<y>_<z>`, the tables with their version tables, the rights. The user sees nothing but its schema and reaches the core through five functions of the schema `organization`. Every line the domain writes is a typed event. The concept is in [plugins](../../maxitor-plugin-template/docs/plugins.md); the addresses in [contracts/actions.md](../../../specs/073-plugin-marketplace/contracts/actions.md).
+
 ## The core's passport
 
-`maxitor/core/maxitor-core.yaml` names the formats of a plugin's files the core reads and the major version of `maxitor-plugin-sdk` it is built with. `GET /api/v1/core/passport` answers it with the version of the `maxitor` package. `maxitor plugin check <path> --core <version>` (`pip install "maxitor[plugins]"`) checks a plugin against it.
+`maxitor/core/maxitor-core.yaml` names the formats of a plugin's files the core reads (passport 2, `schema.yaml` 1, navigation 1, foreign keys 1) and the major version of `maxitor-plugin-sdk` it is built with. `GET /api/v1/core/passport` answers it with the version of the `maxitor` package. `maxitor plugin check <path> --core <version>` (`pip install "maxitor[plugins]"`) checks a plugin against it.
 
 ## Running it
 
@@ -37,4 +44,7 @@ The addresses and their answers are in [contracts/actions.md](../../../specs/072
 | `MAXITOR_MAIL_FROM` | The sender, `Maxitor <no-reply@maxitor.aoa.run>` by default. |
 | `MAXITOR_<PROVIDER>_CLIENT_ID`, `MAXITOR_<PROVIDER>_CLIENT_SECRET` | Each provider's application: `GOOGLE`, `GITHUB`, `FACEBOOK`, `YANDEX`, `MAILRU`. A provider without them is not offered. |
 | `MAXITOR_POLICY_VERSION` | The version of the privacy policy a person accepts; raising it asks everyone again. |
+| `MAXITOR_WHEEL_STORE` | The directory of plugin wheels, kept by `sha256`; shared with the installer. |
+| `MAXITOR_WHEEL_MAX_BYTES` | The largest wheel an administrator may upload, 50 MB by default. |
+| `MAXITOR_SCHEMA_PLATFORM`, `MAXITOR_SCHEMA_ORGANIZATION`, `MAXITOR_SCHEMA_PLUGINS` | The schemas' names when they are not the logical ones. |
 | `MAXITOR_CORE_API` | For the application: the backend's inner address, `http://127.0.0.1:8020` by default. |

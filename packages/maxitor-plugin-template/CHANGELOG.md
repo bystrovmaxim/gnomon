@@ -5,6 +5,13 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-11-10
+
+### Changed
+
+- **The template declares its table and carries no SQL.** `schema.yaml` replaces `migrations/0001_note.sql`, `migrate.py` and the ledger of migrations; the passport is format 2. Maxitor deploys it as the schema `notes_0_4_0` with the user `plg_notes_0_4_0`, which sees nothing but that schema. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+- **It reaches the core only through the core's functions**: the change time under the organization's lock, the watermark, membership by the address and a writer's name at a moment. Its `foreign-keys.yaml` keeps one key, a note's writer to the core's user of that account. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
+
 ## [0.3.0] — 2026-11-10
 
 ### Changed

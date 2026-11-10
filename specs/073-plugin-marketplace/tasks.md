@@ -73,9 +73,9 @@ Paths: `core` = `packages/maxitor/maxitor-core`, `py` = `core/maxitor/core`, `pl
 
 ## Phase 10: Documentation, changelog, versions (issue phase 10)
 
-- [ ] T036 The closing check run taken to zero
-- [ ] T037 Documentation: `template/docs/plugins.md` (roles, a schema and user per version, `schema.yaml`, the installer, the page), `template/docs/versioned-storage.md` (the core's functions), the template's README, `core/README.md`, `installer/README.md`, `docs/how-to/run-the-core-locally.md`; issue #82's wording on identifiers
-- [ ] T038 Changelogs of `maxitor`, the installer, the SDK and the template; versions raised for every level changed; graphs rebuilt
+- [x] T036 The closing check run taken to zero
+- [x] T037 Documentation: `template/docs/plugins.md` (roles, a schema and user per version, `schema.yaml`, the installer, the page), `template/docs/versioned-storage.md` (the core's functions), the template's README, `core/README.md`, `installer/README.md`, `docs/how-to/run-the-core-locally.md`; issue #82's wording on identifiers
+- [x] T038 Changelogs of `maxitor`, the installer, the SDK and the template; versions raised for every level changed; graphs rebuilt
 
 ## Dependencies
 

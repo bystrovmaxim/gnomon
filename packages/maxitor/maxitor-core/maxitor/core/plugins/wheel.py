@@ -53,41 +53,56 @@ def _safe(name: str) -> bool:
     return not path.is_absolute() and ".." not in path.parts and "\\" not in name and not name.startswith("/")
 
 
-def read_wheel(data: bytes, max_expanded: int = MAX_EXPANDED_BYTES) -> WheelContents:
-    """Read ``data`` as a plugin's wheel; raise ``WheelRefusedError`` with the reason."""
+def _archive(data: bytes, max_expanded: int) -> zipfile.ZipFile:
+    """The archive, when it is a zip of safe paths that expands within the limit."""
     try:
         archive = zipfile.ZipFile(io.BytesIO(data))
     except zipfile.BadZipFile:
         raise WheelRefusedError("not_a_wheel", "the file is not a zip archive") from None
-    with archive:
-        entries = archive.infolist()
-        unsafe = [e.filename for e in entries if not _safe(e.filename)]
-        if unsafe:
-            raise WheelRefusedError("unsafe_path", f"a path outside the archive's root: {unsafe[0]}")
-        if sum(e.file_size for e in entries) > max_expanded:
-            raise WheelRefusedError("too_large", f"the archive expands beyond {max_expanded} bytes")
-        names = {e.filename for e in entries}
-        metadata = next((n for n in names if n.count("/") == 1 and n.endswith(".dist-info/METADATA")), None)
-        if metadata is None:
+    entries = archive.infolist()
+    unsafe = [e.filename for e in entries if not _safe(e.filename)]
+    if unsafe:
+        archive.close()
+        raise WheelRefusedError("unsafe_path", f"a path outside the archive's root: {unsafe[0]}")
+    if sum(e.file_size for e in entries) > max_expanded:
+        archive.close()
+        raise WheelRefusedError("too_large", f"the archive expands beyond {max_expanded} bytes")
+    return archive
+
+
+def _top_level(names: set[str], suffix: str) -> list[str]:
+    """The names one folder deep that end with ``suffix``."""
+    return sorted(n for n in names if n.count("/") == 1 and n.endswith(suffix))
+
+
+def _text(archive: zipfile.ZipFile, name: str) -> str:
+    """A small text file of the archive; a larger one is refused unread."""
+    if archive.getinfo(name).file_size > MAX_YAML_BYTES:
+        raise WheelRefusedError("too_large", f"{name} is larger than {MAX_YAML_BYTES} bytes")
+    return archive.read(name).decode("utf-8")
+
+
+def _named_files(passport: dict[str, Any]) -> list[str]:
+    """The files the passport names: schema.yaml, foreign-keys.yaml, navigation.yaml."""
+    database = passport.get("database") or {}
+    frontend = passport.get("frontend") or {}
+    named = [database.get("schema"), database.get("foreign_keys"), frontend.get("navigation")]
+    return [path for path in named if isinstance(path, str) and _safe(path)]
+
+
+def read_wheel(data: bytes, max_expanded: int = MAX_EXPANDED_BYTES) -> WheelContents:
+    """Read ``data`` as a plugin's wheel; raise ``WheelRefusedError`` with the reason."""
+    with _archive(data, max_expanded) as archive:
+        names = {e.filename for e in archive.infolist()}
+        metadata = _top_level(names, ".dist-info/METADATA")
+        if not metadata:
             raise WheelRefusedError("not_a_wheel", "no .dist-info/METADATA")
-        headers = HeaderParser().parsestr(archive.read(metadata).decode("utf-8", "replace"))
-        passports = sorted(n for n in names if n.count("/") == 1 and n.endswith("/" + PASSPORT_FILE))
+        headers = HeaderParser().parsestr(archive.read(metadata[0]).decode("utf-8", "replace"))
+        passports = _top_level(names, "/" + PASSPORT_FILE)
         if len(passports) != 1:
             raise WheelRefusedError("passport", f"{len(passports)} passports in the wheel; one is needed")
-
-        def text(name: str) -> str:
-            info = archive.getinfo(name)
-            if info.file_size > MAX_YAML_BYTES:
-                raise WheelRefusedError("too_large", f"{name} is larger than {MAX_YAML_BYTES} bytes")
-            return archive.read(name).decode("utf-8")
-
-        passport = yaml.safe_load(text(passports[0]))
+        passport = yaml.safe_load(_text(archive, passports[0]))
         if not isinstance(passport, dict):
             raise WheelRefusedError("passport", "the passport is not a mapping")
-        named = [
-            (passport.get("database") or {}).get("schema"),
-            (passport.get("database") or {}).get("foreign_keys"),
-            (passport.get("frontend") or {}).get("navigation"),
-        ]
-        files = {path: text(path) for path in named if isinstance(path, str) and _safe(path) and path in names}
+        files = {path: _text(archive, path) for path in _named_files(passport) if path in names}
         return WheelContents(str(headers["Name"] or ""), str(headers["Version"] or ""), passport, files)

@@ -1,6 +1,6 @@
 # Run Maxitor core locally
 
-Maxitor's core ([its README](../../packages/maxitor/maxitor-core/README.md)) on your machine: its database, its backend and its application, with letters written to a folder instead of being sent. You need Docker, Node.js 22 or later, `uv` and this repository's checkout.
+Maxitor's core ([its README](../../packages/maxitor/maxitor-core/README.md)) on your machine: its database, its backend, its plugin installer and its application, with letters written to a folder instead of being sent. You need Docker, Node.js 22 or later, `uv` and this repository's checkout.
 
 ## Start it
 
@@ -8,7 +8,9 @@ Maxitor's core ([its README](../../packages/maxitor/maxitor-core/README.md)) on 
 ./scripts/core-stand.sh up
 ```
 
-The first time it starts PostgreSQL 16 in Docker on `127.0.0.1:55432`, creates the role `maxitor_core` and its schemas as the administrator, and runs the migrations as `maxitor_core`. Then it starts the backend on `127.0.0.1:8020` and the application on `http://localhost:3000`, both in the foreground; Ctrl+C stops them, and the database keeps running.
+The first time it starts PostgreSQL 16 in Docker on `127.0.0.1:55432`, creates the roles `maxitor_core` and `maxitor_installer` and the core's schemas as the administrator, runs the migrations as `maxitor_core`, and fills the marketplace with the plugin template's wheel. Then it starts the backend on `127.0.0.1:8020`, the plugin installer and the application on `http://localhost:3000`, in the foreground; Ctrl+C stops them, and the database keeps running. Plugin wheels are kept in `.core-stand/wheels/`, each deployed version's environment file in `.core-stand/plugins/`.
+
+A second stand beside a first one: `MAXITOR_STAND_CONTAINER=maxitor-plugins-pg MAXITOR_STAND_DB_PORT=55433 MAXITOR_STAND_API_PORT=8021 MAXITOR_STAND_WEB_PORT=3001 ./scripts/core-stand.sh up`.
 
 Open `http://localhost:3000`. A letter with a code is a file in `.core-stand/outbox/`; its subject begins with the code.
 
@@ -20,6 +22,8 @@ To send the letters for real, through Yandex Cloud Postbox from `no-reply@maxito
 - **Sign out and in** from the icon's menu, with a wrong password and with the right one.
 - **Reset the password** with "Forgot password?": the old password stops working, and a letter says it changed.
 - **Someone else's organization**: `/w/orbita` answers "No such organization", like any address that does not exist.
+- **Install a plugin**: Settings at the foot of the tree → Plugins → Marketplace → Notes → Install. Within seconds it is enabled and its section is in the tree; in `psql` the schema `notes_0_4_0` and the user `plg_notes_0_4_0` exist once, however many organizations install it.
+- **Disable and enable** it, and **add a private plugin** by a release's Package URL or by uploading a wheel.
 
 Without a country database every address counts as Russia, so only email and password, Yandex ID and Mail.ru ID are offered. To see all six from a foreign address, give it a country database (DB-IP's IP to Country Lite or GeoLite2 Country, `.mmdb`): put it at `.private/geoip/country.mmdb` of the main checkout, which git never takes, or name it in `MAXITOR_GEOIP_DATABASE`. The providers' buttons sign in only with their applications' keys in `MAXITOR_<PROVIDER>_CLIENT_ID` and `MAXITOR_<PROVIDER>_CLIENT_SECRET`, and with `http://localhost:3000/api/v1/sign-in/<provider>/callback` allowed in each application.
 
@@ -31,7 +35,11 @@ With the stand running:
 node packages/maxitor/maxitor-core/web/scripts/check-core.mjs
 ```
 
-It walks the scenarios above in Chromium and prints `OK` or `FAIL` for each.
+It walks the scenarios above in Chromium and prints `OK` or `FAIL` for each. `MAXITOR_STAND_URL` points it at a second stand. With a version deployed, the isolation of its database user is checked by
+
+```bash
+MAXITOR_STAND_DSN=postgresql://maxitor_core:core-local@127.0.0.1:55432/maxitor MAXITOR_STAND_PLUGIN_ENV=.core-stand/plugins/notes_0_4_0/plugin.env uv run --extra dev pytest packages/maxitor/tools/plugin-installer/tests/test_stand.py
+```
 
 ## Stop it
 
@@ -39,4 +47,4 @@ It walks the scenarios above in Chromium and prints `OK` or `FAIL` for each.
 ./scripts/core-stand.sh down
 ```
 
-`./scripts/core-stand.sh reset` removes the database and its letters; the next `up` starts from nothing.
+`./scripts/core-stand.sh reset` removes the database, its letters, its wheels and its environment files; the next `up` starts from nothing.
