@@ -8,6 +8,7 @@ untracked = ["packages/maxitor/maxitor-web/client"]
 ignore = [
   "**/CHANGELOG.md",
   "packages/maxitor/**/README.md",
+  "packages/maxitor-plugin-template/README.md",
   "packages/open-gnomon-protocol/README.md",
   "**/tests/**",
 ]
