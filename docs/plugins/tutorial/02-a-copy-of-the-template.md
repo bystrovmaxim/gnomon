@@ -32,7 +32,7 @@ title: Notes
 description: >
   Notes on catalog items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.6.0
+version: 0.6.1
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 ```
@@ -82,5 +82,5 @@ the plugin fits maxitor 4.2.0
 and against one outside `requires.maxitor`, with exit 1:
 
 ```text
-core_range: io.github.bystrovmaxim.notes 0.6.0 needs maxitor >=4.0,<5; this core is maxitor 3.29.0
+core_range: io.github.bystrovmaxim.notes 0.6.1 needs maxitor >=4.0,<5; this core is maxitor 3.29.0
 ```

@@ -5,6 +5,12 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] — 2026-11-11
+
+### Changed
+
+- **Its README** leads to the step-by-step tutorial written on this template, and says what runs now: its backend in its own container behind Maxitor's gateway. ([#99](https://github.com/bystrovmaxim/gnomon/issues/99))
+
 ## [0.6.0] — 2026-11-11
 
 ### Changed
