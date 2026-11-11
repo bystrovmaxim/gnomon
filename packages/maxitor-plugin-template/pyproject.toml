@@ -20,7 +20,7 @@ classifiers = ["Private :: Do Not Upload"]
 dependencies = [
     "aoa-action-machine[postgres,jwt]>=1.6.0b2",
     "aoa-fastapi-adapter>=1.5.0",
-    "maxitor-plugin-sdk>=1.0,<2",
+    "maxitor-plugin-sdk>=1.3,<2",
     "PyYAML>=6.0,<7",
     "uvicorn>=0.30",
 ]

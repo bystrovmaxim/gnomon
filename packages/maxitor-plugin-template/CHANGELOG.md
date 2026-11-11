@@ -5,6 +5,12 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-11-11
+
+### Changed
+
+- **The core's roles, the core's keys.** The template declares no roles: every action checks the core's `member`, which the gateway's token carries for every active user of the organization; `reader` and `editor` are gone. It checks the token by the core's JWKS (`MAXITOR_CORE_JWKS_URL`) instead of a public key file, and answers a missing role with 403 and another organization's object with 404. On the local stand Maxitor's runner starts it in a container of its own, and its API answers through the gateway at `/p/notes/api/<organization>/…`. ([#75](https://github.com/bystrovmaxim/gnomon/issues/75))
+
 ## [0.5.0] — 2026-11-11
 
 ### Added

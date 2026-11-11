@@ -1,5 +1,9 @@
 # Changelog — maxitor-plugin-sdk
 
+## 1.3.0 — 2026-11-11
+
+A plugin works with the core's roles as they are. `roles` gives `MemberRole` for every active user of the organization of the address, `AdministratorRole` for its administrators and `ServiceRole` for the plugin's own call with no person, and `CORE_ROLES` for a token coordinator's registry. `checks` refuses a passport that declares `roles` and a node of `navigation.yaml` that asks for anything but `member` or `administrator`. The SDK now needs `aoa-action-machine`. ([#75](https://github.com/bystrovmaxim/gnomon/issues/75))
+
 ## 1.2.0 — 2026-11-11
 
 The history contract between a plugin and the core's time scale. `moments` writes the moment condition of versioned storage in its two forms — at a moment and over a stretch — and the moment's string form, so every reading query takes them from one place. `history.bars_of` turns the versions a page's own reading query finds over a stretch into bars of changes: added, changed, removed, as the versions themselves say. The passport gains an optional `history.compare` and each node of `navigation.yaml` an optional `history` (its comparisons, its reading action, bars, milestones and card); `history-1.schema.json` describes the context, bars, milestones and card that pass between the scale and a plugin; and `checks` refuses a page offering more comparisons than its passport or naming a history action the plugin's folder `history/` does not hold. ([#97](https://github.com/bystrovmaxim/gnomon/issues/97))
