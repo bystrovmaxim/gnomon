@@ -71,13 +71,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-The page's controls are its own, and it does not draw them. It gives them to the shell — `PanelPage` of `@maxitor/panel` — as data when it opens: the item's writers for the filter at the top left, and the choice of a list or a table for the bottom bar. The shell draws them in the same places as on every page of Maxitor and writes each into the address:
+The page's controls are its own, and it does not draw them. It gives them to the shell — `PanelPage` of `@maxitor/panel` — as data when it opens: the item's writers for the filter at the top left, each with initials in a disk of a palette colour, and the choice of cards or a table for the bottom bar. The shell draws them in the same places as on every page of Maxitor and writes each into the address:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/page.tsx -->
 ```tsx
-  const filters: FilterSection[] = [{ title: "Author", param: "author", rows: authors.map((author) => ({ key: author.key, label: author.title })) }];
+  const filters: FilterSection[] = [
+    { title: "Authors", param: "author", rows: authors.map((author) => ({ key: author.key, label: author.title, mark: initials(author.title), colour: paletteOf(author.key) })) },
+  ];
   const bar: BarSection[] = [
-    { kind: "choice", param: "view", default: "list", options: [{ value: "list", title: "List", icon: "list" }, { value: "table", title: "Table", icon: "table" }] },
+    { kind: "choice", param: "view", default: "cards", options: [{ value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" }] },
   ];
 ```
 
@@ -87,7 +89,7 @@ The page then reads the view like any parameter of its address:
 ```tsx
   // The view is the page's own choice in the shell's bottom bar: the shell writes ?view= into the address, and the
   // page reads it and rebuilds when the address changes.
-  const { view = "list" } = usePanelQuery();
+  const { view = "cards" } = usePanelQuery();
 ```
 
 A page may name any parameter but the core's: `at`, `mode`, `from` and every name starting with `_`. The panel router refuses to change them, and in development the refusal is an error naming the parameter.
@@ -100,4 +102,4 @@ The address is everything the panel shows. A reload, a link to a colleague, Back
 2. Break it: change `source: list_items` to `source: list_things` and run the check again. It answers `'item' reads 'list_things', which is no action of the plugin`. Put it back.
 3. On the local stand, install Notes in your organization and open `http://localhost:3000/w/<code>`. The tree shows Notes; open it and its items load under it. Add an item if there is none: `POST /p/notes/api/<code>/items` with `{"title": "Payments"}`.
 4. Open an item, then Notes under it. The notes page opens in the right panel at `/w/<code>/notes/items/<item_id>`, and the top row reads Notes › Payments › Notes.
-5. Switch the view to Table in the bottom bar: the address gets `?view=table`; switch a writer off in the filters at the top left: the address lists the writers still on. Reload, open the address in another tab, press Back: each time the screen is what the address says.
+5. Switch the view to Table in the bottom bar after the hairline: the address gets `?view=table`; switch a writer off in the filters at the top left: the address lists the writers still on. Reload, open the address in another tab, press Back: each time the screen is what the address says.

@@ -22,6 +22,7 @@ const GLYPHS = {
   event: <path d="M13 3L5 14h6l-1 7 8-11h-6z" />,
   action: <path d="M5 4l14 8-14 8z" />,
   note: <path d="M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h5" />,
+  chevron: <path d="M6 9l6 6 6-6" />,
   dot: <circle cx="12" cy="12" r="2.5" />,
 } satisfies Record<string, ReactNode>;
 

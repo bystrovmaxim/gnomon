@@ -245,12 +245,17 @@ await scenario("the notes page opens in the right panel from the tree, with its 
   // The core draws nothing over the panel: the filters and the view are the page's, in its shell.
   expect((await page.locator(".mx-pill, .mx-filters, .mx-views, .mx-legend, .mx-bar").count()) === 0, "the core draws controls over the panel");
   await frame.locator(".mx-filters .mx-filter-row").first().waitFor();
+  // The filters are the mockup's 148 px and stand clear of the page's content.
+  const filters = await frame.locator(".mx-filters").boundingBox();
+  const card = await frame.locator(".mx-card").first().boundingBox();
+  expect(Math.round(filters.width) === 148, `the filters are ${filters.width} px wide, not 148`);
+  expect(card.x >= filters.x + filters.width + 8, `the notes touch the filters: ${card.x} against ${filters.x + filters.width}`);
   await frame.getByRole("radio", { name: "Table" }).click();
   await page.waitForURL(/view=table/);
   await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
   await frame.locator(".mx-filter-row").first().click();
   await page.waitForURL(/author=/);
-  await frame.locator(".mx-empty").waitFor();
+  await frame.locator(".mx-empty-state", { hasText: "No notes yet" }).waitFor();
   await page.goBack();
   await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
   await page.goBack();
@@ -322,7 +327,7 @@ await scenario("the test drawing: layers with counts, filters, the bottom bar an
   const actions = await place(".mx-actions");
   expect(actions.x > panel.x + panel.width / 2 && actions.y < panel.y + panel.height / 4, "the actions are not at the top right");
   const labels = await frame.locator(".mx-bar").getByRole("button").evaluateAll((all) => all.map((b) => b.getAttribute("aria-label")));
-  expect(labels[0] === "Zoom out" && labels.includes("Close every port"), `the zoom does not come first: ${labels}`);
+  expect(labels[0] === "Zoom in" && labels.includes("Close every port"), `the zoom does not come first: ${labels}`);
   expect((await frame.getByRole("radio", { name: "Domains" }).innerText()).includes("2"), "the layer has no count");
   await frame.getByRole("radio", { name: "Events" }).click();
   await page.waitForURL(/layer=events/);

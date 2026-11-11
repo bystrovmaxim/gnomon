@@ -1,5 +1,5 @@
 // @maxitor/panel — the bottom bar at the bottom left, made from maxitor-web's ZoomToolbar (spec 078, FR-005, FR-006,
-// FR-009): zoom out, the percentage, zoom in and fit first on a canvas, then the page's sections, each behind a
+// FR-009): zoom in, zoom out, fit and the percentage first on a canvas, then the page's sections, each behind a
 // hairline. On a phone, sections that would not fit fold into one "⋯" menu.
 "use client";
 
@@ -68,10 +68,10 @@ export function BottomBar({ zoom, sections, query, write }: { zoom: Zoom | null;
     <div className={`mx-bar${folds ? " folds" : ""}`} role="toolbar" aria-label="View controls" data-shell="bar">
       {zoom ? (
         <>
-          <button type="button" aria-label="Zoom out" title="Zoom out" onClick={zoom.zoomOut}>−</button>
-          <span className="mx-bar-value" aria-live="polite">{Math.round(zoom.zoom * 100)}%</span>
           <button type="button" aria-label="Zoom in" title="Zoom in" onClick={zoom.zoomIn}>+</button>
-          <button type="button" aria-label="Fit" title="Fit" onClick={zoom.fit}>⤢</button>
+          <button type="button" aria-label="Zoom out" title="Zoom out" onClick={zoom.zoomOut}>−</button>
+          <button type="button" aria-label="Fit" title="Fit" onClick={zoom.fit}>⊡</button>
+          <span className="mx-bar-value" aria-live="polite">{Math.round(zoom.zoom * 100)}%</span>
         </>
       ) : null}
       <span className="mx-bar-sections">{drawn}</span>

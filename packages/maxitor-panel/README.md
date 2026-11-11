@@ -24,7 +24,7 @@ export default function RootLayout({ children }) {
 import { PanelPage, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 
 export function Notes() {
-  const { view = "list", at } = usePanelQuery();   // at: the moment, an opaque string; absent means now
+  const { view = "cards", at } = usePanelQuery();   // at: the moment, an opaque string; absent means now
   const router = usePanelRouter();
   return (
     <PanelPage title="Notes">
@@ -47,7 +47,8 @@ export function Notes() {
 | `MaxitorCanvas {bounds}`, `useCanvas()` | the canvas: moving and zooming, fit, the field of dots, the camera; its zoom stands first in the shell's bottom bar |
 | `Icon`, `hasIcon` | the shell's icon set, which every control draws with |
 | `LAYER`, `PAINT`, `isReserved` | the layer pills' and the paint switch's parameters, and the core's names |
-| `Card`, `DataTable` | the common content, drawn with the tokens |
+| `Card`, `DataTable` | the common content, drawn with the tokens; `mx-cards` lays cards in a grid |
+| `EmptyState {title}` | what a page shows when it has nothing to show: a dashed card with a title and a line, never bare text |
 | `pageMessage`, `coreMessage`, `trusted` | the protocol's shape checks, for whoever speaks it by hand |
 
 A page builds its view from its address only: on the server from `searchParams`, after a change from the new address. It never answers a change of address it did not ask for.
@@ -60,8 +61,8 @@ Every page's root is `PanelPage`. A page gives it what it offers now, as data, a
 <PanelPage
   title="Notes"
   filters={[{ title: "Author", param: "author", rows: authors.map((a) => ({ key: a.key, label: a.title })) }]}
-  bar={[{ kind: "choice", param: "view", default: "list", options: [
-    { value: "list", title: "List", icon: "list" },
+  bar={[{ kind: "choice", param: "view", default: "cards", options: [
+    { value: "cards", title: "Cards", icon: "cards" },
     { value: "table", title: "Table", icon: "table" },
   ] }]}
 >

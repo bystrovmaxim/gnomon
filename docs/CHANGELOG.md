@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026-11-12] — The page shell looks like the mockup
+
+The shell every plugin's page lies in now looks the way the mockup and maxitor-web draw it. The filters are 148 px and stand clear of the page: each section opens with an arrow, and a person is a disk of a palette colour with their initials. The bottom bar is flat, with zoom in, zoom out, fit and the percentage before the page's own buttons. A page with nothing to show says so in a dashed card in the middle instead of bare text, and the template's notes show as cards in a grid by default, or as a table. The browser check now measures the filters' width and their distance from the page.
+
 ## [2026-11-11] — Every page draws its own controls, in one shell for every plugin
 
 A page in Maxitor now sets its own controls: the filters at the top left, the layer pills at the top centre, the bar at the bottom left with the zoom and the page's own buttons, and its actions at the top right. What a page offers depends on its data — a drawing of events has three layers with counts read from its graph, a filter section that appears only in a comparison — so no file written in advance could describe it, and the core, drawing over the page from such a file, split one toolbar in two. Now the page gives what it offers when it opens, and one shell in `@maxitor/panel` draws it in the same places and with the same look for every plugin, writing every choice into the address, so a reload, a link, Back and following still give what was on screen. The core draws nothing over the page any more, and a plugin's `navigation.yaml` says nothing of controls: it is format 2, and format 1 is refused by name.

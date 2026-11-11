@@ -5,6 +5,12 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] — 2026-11-12
+
+### Changed
+
+- **Its pages look like the mockup.** The writers in the filter carry their initials in a disk of one palette colour each; the notes show as cards in a grid by default, or as a table; an item with no notes and the section's own page say so in an empty state instead of bare text. Its pages 0.3.1.
+
 ## [0.9.0] — 2026-11-11
 
 ### Changed
