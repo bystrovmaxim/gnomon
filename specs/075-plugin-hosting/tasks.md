@@ -18,13 +18,13 @@ One phase is one commit. After each phase only that phase's tests run; the closi
 
 ## Phase 2 — Tokens, JWKS, exchange, service key and the core's roles (issue phase 2)
 
-- [ ] T010 `PluginTokensController` in `plugins/plugin_tokens.py`: the Ed25519 key from `MAXITOR_GATEWAY_KEY_FILE`, `issue`, `read`, `jwks`; `CoreSettings` reads the file and the core refuses to start without it.
-- [ ] T011 `PassRequestAction` answers the plugin token; `proxy.ts` puts it in `Authorization`.
-- [ ] T012 `CoreJwksAction` (`GET /api/v1/jwks`).
-- [ ] T013 `ExchangeTokenAction` (`POST /api/v1/gateway/exchange`): the caller from `aud`, its direct dependencies, the callee enabled; `proxy.ts` exchanges a bearer request.
-- [ ] T014 The service key: written by `DeployAndInstallAction` into the environment file, its hash on the version; `ServiceTokenAction` (`POST /api/v1/gateway/service-token`).
-- [ ] T015 `maxitor-plugin-sdk`: `roles.py` with `MemberRole`, `AdministratorRole`, `ServiceRole`; `checks.py` refuses a passport's `roles` and a node's role other than `member`/`administrator`; the core's `CheckVersionAction` the same.
-- [ ] T016 Tests: tokens for a member and an administrator, an expired one, one with another key; the JWKS checks a token through AOA's `JwtAuthCoordinator`; exchange to a dependency, refused to a non-dependency; service token by key, refused by another key or organization; the SDK's refusals.
+- [x] T010 `PluginTokensController` in `plugins/plugin_tokens.py`: the Ed25519 key from `MAXITOR_GATEWAY_KEY_FILE`, `issue`, `read`, `jwks`; `CoreSettings` reads the file and the core refuses to start without it.
+- [x] T011 `PassRequestAction` answers the plugin token; `proxy.ts` puts it in `Authorization`.
+- [x] T012 `CoreJwksAction` (`GET /api/v1/jwks`).
+- [x] T013 `ExchangeTokenAction` (`POST /api/v1/gateway/exchange`): the caller from `aud`, its direct dependencies, the callee enabled; `proxy.ts` exchanges a bearer request.
+- [x] T014 The service key: written by `DeployAndInstallAction` into the environment file, its hash on the version; `ServiceTokenAction` (`POST /api/v1/gateway/service-token`).
+- [x] T015 `maxitor-plugin-sdk`: `roles.py` with `MemberRole`, `AdministratorRole`, `ServiceRole`; `checks.py` refuses a passport's `roles` and a node's role other than `member`/`administrator`; the core's `CheckVersionAction` the same.
+- [x] T016 Tests: tokens for a member and an administrator, an expired one, one with another key; the JWKS checks a token through AOA's `JwtAuthCoordinator`; exchange to a dependency, refused to a non-dependency; service token by key, refused by another key or organization; the SDK's refusals.
 
 ## Phase 3 — The template in step (issue phase 3)
 

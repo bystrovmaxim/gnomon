@@ -16,9 +16,6 @@ sdk: 1
 requires:
   maxitor: ">=4.0,<5"
 dependencies: []
-roles:
-  - name: reader
-    description: Reads notes.
 backend:
   app: maxitor_notes.app:create_app
 frontend:

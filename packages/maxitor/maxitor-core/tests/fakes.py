@@ -16,6 +16,8 @@ from maxitor.core.gateways.geoip import GeoIpGateway
 from maxitor.core.gateways.letters import Letter
 from maxitor.core.gateways.mail import MailGateway
 from maxitor.core.gateways.providers import GATEWAYS, ProviderPerson, ProviderRefusedError
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from maxitor.core.server import create_app
 from maxitor.core.settings import CoreSettings
 from maxitor.core.storage.core_storage import VERSIONED, CoreStorage, UniqueRowError
@@ -307,8 +309,17 @@ class World:
 
         self.plugins = MemoryPluginsStorage(self.storage)
         self.wheels = Path(tempfile.mkdtemp(prefix="wheels-"))
+        self.gateway_key = Ed25519PrivateKey.generate()
+        key_file = Path(tempfile.mkdtemp(prefix="gateway-")) / "gateway-key.pem"
+        key_file.write_bytes(
+            self.gateway_key.private_bytes(
+                serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()
+            )
+        )
         app = create_app(
-            CoreSettings(session_secret=SECRET, wheel_store=self.wheels, wheel_max_bytes=wheel_max_bytes),
+            CoreSettings(
+                session_secret=SECRET, wheel_store=self.wheels, wheel_max_bytes=wheel_max_bytes, gateway_key_file=key_file
+            ),
             resources={"core": self.storage, "plugins": self.plugins, "geoip": self.geo, "mail": self.mail, **self.providers},
             machine=machine,
         )

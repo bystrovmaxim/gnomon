@@ -288,3 +288,32 @@ class MemoryPluginsStorage(PluginsStorage):
                         "version": self._version_of(row["plugin_version_id"])["version"],
                         "address": process["address"] if process else None}
         return None
+
+    async def exchange_target(self, code: str, caller: str, name: str, kind: str) -> dict[str, Any] | None:
+        organization = next((o for o in self.core.tables["organization"] if o["code"] == code), None)
+        if organization is None:
+            return None
+        enabled = [r for r in self.tables["organization_plugin"] if r["organization_id"] == organization["id"] and r["state"] == "enabled"]
+        mine = next((r for r in enabled if self._plugin_by("id", r["plugin_id"])["passport_id"] == caller), None)
+        if mine is None:
+            return None
+        needs = {d["passport_id"] for d in self.tables["plugin_dependency"] if d["plugin_version_id"] == mine["plugin_version_id"]}
+        for row in enabled:
+            plugin = self._plugin_by("id", row["plugin_id"])
+            if plugin["name"] == name and plugin["passport_id"] in needs:
+                process = next(
+                    (p for p in self.tables["plugin_process"] if p["version_id"] == row["plugin_version_id"] and p["kind"] == kind),
+                    None,
+                )
+                return {"passport_id": plugin["passport_id"], "address": process["address"] if process else None}
+        return None
+
+    async def service_target(self, key_hash: str, code: str) -> dict[str, Any] | None:
+        organization = next((o for o in self.core.tables["organization"] if o["code"] == code), None)
+        for version in self.tables["plugin_version"]:
+            if version.get("service_key_hash") != key_hash or organization is None:
+                continue
+            if any(r["plugin_version_id"] == version["id"] and r["organization_id"] == organization["id"] and r["state"] == "enabled"
+                   for r in self.tables["organization_plugin"]):
+                return {"passport_id": self._plugin_by("id", version["plugin_id"])["passport_id"]}
+        return None

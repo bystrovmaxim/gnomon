@@ -19,6 +19,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import jwt
 import pytest
 import uvicorn
 from maxitor.core.plugins.actions.run_version_action import RunVersionAction, RunVersionParams, pause_after
@@ -238,8 +239,13 @@ def ask(world: World, **params: str) -> Any:
 def test_an_administrator_passes_to_an_enabled_plugin_with_the_cores_roles(world: World) -> None:
     answer = ask(world)
     assert answer.status_code == 200, answer.text
-    assert answer.json() == {"address": "http://127.0.0.1:41873", "passport_id": "io.x.notes", "organization": CODE,
-                             "roles": ["member", "administrator"]}
+    body = answer.json()
+    token = body.pop("token")
+    assert body == {"address": "http://127.0.0.1:41873", "passport_id": "io.x.notes", "organization": CODE,
+                    "roles": ["member", "administrator"]}
+    claims = jwt.decode(token, world.gateway_key.public_key(), algorithms=["EdDSA"], audience="io.x.notes", issuer="maxitor")
+    assert claims["org"] == CODE and claims["roles"] == ["member", "administrator"] and claims["exp"] - claims["iat"] == 60
+    assert claims["sub"] == world.storage.tables["account"][0]["id"]
 
 
 def test_a_plain_member_carries_member_only(world: World) -> None:
@@ -329,7 +335,7 @@ async def test_the_controller_starts_a_wheels_backend_and_frontend_on_the_loopba
     wheels = WheelStorage(tmp_path / "wheels")
     sha256 = wheels.put(probe_wheel())
     runtime = PluginRuntimeStorage(tmp_path / "runtime", "postgresql://u@127.0.0.1:5432/maxitor")
-    runtime.write_env("probe_0_1_0", "plg_probe_0_1_0", "secret")
+    runtime.write_env("probe_0_1_0", "plg_probe_0_1_0", "secret", "service-key")
     processes = PluginProcessesController(
         runtime, wheels, jwks_url="http://127.0.0.1:8020/api/v1/jwks", gateway_url="http://127.0.0.1:3000"
     )
@@ -345,7 +351,7 @@ async def test_the_controller_starts_a_wheels_backend_and_frontend_on_the_loopba
         frontend = await processes.start("v1", "frontend", "probe_0_1_0", ["node", str(server)], backend.address)
         assert backend.address.startswith("http://127.0.0.1:") and frontend.address.startswith("http://127.0.0.1:")
         seen = set(json.loads(fetch(backend.address).replace("'", '"')))
-        assert {"MAXITOR_PLUGIN_DSN", "MAXITOR_CORE_JWKS_URL", "MAXITOR_GATEWAY_URL", "MAXITOR_PLUGIN_API"} <= seen
+        assert {"MAXITOR_PLUGIN_DSN", "MAXITOR_PLUGIN_SERVICE_KEY", "MAXITOR_CORE_JWKS_URL", "MAXITOR_GATEWAY_URL", "MAXITOR_PLUGIN_API"} <= seen
         assert "MAXITOR_SESSION_SECRET" not in seen
         assert fetch(frontend.address) == f"frontend {backend.address}"
         assert processes.exit_code("v1", "backend") is None

@@ -31,7 +31,8 @@ class CoreSettings:
     """
     AI-CORE-BEGIN
     ROLE: What the core's process is configured with.
-    CONTRACT: ``from_environment`` reads every MAXITOR_* variable the core uses; ``session_secret`` is required.
+    CONTRACT: ``from_environment`` reads every MAXITOR_* variable the core uses; ``session_secret`` and
+        ``gateway_key_file`` (the Ed25519 private key that signs plugin tokens) are required.
     INVARIANTS: Secrets are never in the ``repr``.
     AI-CORE-END
     """
@@ -47,6 +48,7 @@ class CoreSettings:
     geoip_database: Path | None = None
     wheel_store: Path = Path(".core-stand/wheels")
     wheel_max_bytes: int = 50 * 1024 * 1024
+    gateway_key_file: Path | None = None
     providers: dict[str, ProviderKeys] = field(default_factory=dict, repr=False)
 
     @classmethod
@@ -76,6 +78,7 @@ class CoreSettings:
             geoip_database=Path(env["MAXITOR_GEOIP_DATABASE"]) if env.get("MAXITOR_GEOIP_DATABASE") else None,
             wheel_store=Path(env.get("MAXITOR_WHEEL_STORE", ".core-stand/wheels")),
             wheel_max_bytes=int(env.get("MAXITOR_WHEEL_MAX_BYTES", str(50 * 1024 * 1024))),
+            gateway_key_file=Path(env["MAXITOR_GATEWAY_KEY_FILE"]),
             providers=providers,
         )
 

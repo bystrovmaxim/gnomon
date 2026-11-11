@@ -5,8 +5,8 @@ PassRequestAction — the gateway's question for every request to a plugin: may 
 ::
 
     POST /api/v1/gateway/pass   {plugin, organization, kind}   (the session cookie)
-        an active user of the organization, the plugin enabled there ──► its process's inner address and the
-                                                                         person's roles in the core there
+        an active user of the organization, the plugin enabled there ──► the plugin token, with the person's roles in
+                                                                         the core there, and the process's inner address
         anything else ──► 404, the same as for an organization that does not exist
         enabled, but its process does not accept ──► 502 not_running
 
@@ -17,9 +17,11 @@ organization's administrator.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Literal, cast
 
 from maxitor.core.errors import PluginNotRunningError
+from maxitor.core.plugins.plugin_tokens import PLUGIN_TOKENS_CONNECTION_KEY, PluginTokensController
 from maxitor.core.plugins.plugins_domain import PluginsDomain
 from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
 from maxitor.core.roles import AccountRole
@@ -56,6 +58,7 @@ class PassParams(BaseParams):
 class PassResult(BaseResult):
     """Where the request goes and as whom."""
 
+    token: str = Field(description="The plugin token: the person, the organization and the roles, for 60 seconds")
     address: str = Field(description="The process's inner address, http://127.0.0.1:<port>")
     passport_id: str = Field(description="The plugin's id from its passport, the token's audience")
     organization: str = Field(description="The organization's address code")
@@ -67,9 +70,10 @@ def roles_of(is_admin: bool) -> list[str]:
     return ["member", "administrator"] if is_admin else ["member"]
 
 
-@meta(description="Decide whether a request may pass to a plugin and give its inner address", domain=PluginsDomain)
+@meta(description="Decide whether a request may pass to a plugin and give its token and inner address", domain=PluginsDomain)
 @check_roles(AccountRole)
 @connection(PluginsStorage, key=PLUGINS_CONNECTION_KEY, description="The schema plugins")
+@connection(PluginTokensController, key=PLUGIN_TOKENS_CONNECTION_KEY, description="The core's signing key")
 class PassRequestAction(BaseAction[PassParams, PassResult]):
     """
     AI-CORE-BEGIN
@@ -91,22 +95,31 @@ class PassRequestAction(BaseAction[PassParams, PassResult]):
         target = await store.pass_target(params.organization, str(ctx.get(Ctx.User.user_id)), params.plugin, params.kind)
         return Allowed() if target is not None else FORBIDDEN_OBJECT
 
-    @summary_aspect("Read the target again and answer its address and the person's roles")
-    @context_requires(Ctx.User.user_id)
+    @summary_aspect("Read the target again and answer the plugin token and the address")
+    @context_requires(Ctx.User.user_id, Ctx.User.session_id)
     async def pass_summary(
         self, params: PassParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView
     ) -> PassResult:
         """The membership or the plugin may end between the decision and here: read again."""
         _ = (state, box)
         store = cast(PluginsStorage, connections[PLUGINS_CONNECTION_KEY])
-        target = await store.pass_target(params.organization, str(ctx.get(Ctx.User.user_id)), params.plugin, params.kind)
+        account_id = str(ctx.get(Ctx.User.user_id))
+        target = await store.pass_target(params.organization, account_id, params.plugin, params.kind)
         if target is None:
             raise AccessDenied(FORBIDDEN_OBJECT)
         if not target["address"]:
             raise PluginNotRunningError("not_running")
+        roles = roles_of(bool(target["is_admin"]))
+        tokens = cast(PluginTokensController, connections[PLUGIN_TOKENS_CONNECTION_KEY])
+        session = ctx.get(Ctx.User.session_id)
+        token = tokens.issue(
+            str(target["passport_id"]), account_id, str(session) if session else None, params.organization, roles,
+            datetime.now(UTC),
+        )
         return PassResult(
+            token=token,
             address=str(target["address"]),
             passport_id=str(target["passport_id"]),
             organization=params.organization,
-            roles=roles_of(bool(target["is_admin"])),
+            roles=roles,
         )

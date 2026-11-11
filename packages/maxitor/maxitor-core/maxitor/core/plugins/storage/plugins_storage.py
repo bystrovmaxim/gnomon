@@ -383,3 +383,34 @@ class PluginsStorage(CoreStorage):
             (code, account_id, name, kind),
         )
         return None if row is None else dict(row)
+
+    async def exchange_target(self, code: str, caller: str, name: str, kind: str) -> dict[str, Any] | None:
+        """
+        The plugin ``name`` when the organization ``code`` has it enabled and it is a direct dependency of the version
+        of ``caller`` (a passport id) enabled there, with the address of its ``kind`` process; ``None`` otherwise.
+        """
+        row = await self._fetchrow(
+            "SELECT callee.passport_id, pr.address"
+            " FROM organization o"
+            " JOIN organization_plugin mine ON mine.organization_id = o.id AND mine.state = 'enabled'"
+            " JOIN plugin caller ON caller.id = mine.plugin_id AND caller.passport_id = $2"
+            " JOIN plugin_dependency d ON d.plugin_version_id = mine.plugin_version_id"
+            " JOIN plugin callee ON callee.passport_id = d.passport_id AND callee.name = $3"
+            " JOIN organization_plugin theirs ON theirs.organization_id = o.id AND theirs.plugin_id = callee.id"
+            " AND theirs.state = 'enabled'"
+            " LEFT JOIN plugin_process pr ON pr.plugin_version_id = theirs.plugin_version_id AND pr.kind = $4"
+            " WHERE o.code = $1",
+            (code, caller, name, kind),
+        )
+        return None if row is None else dict(row)
+
+    async def service_target(self, key_hash: str, code: str) -> dict[str, Any] | None:
+        """The plugin whose version has the service key ``key_hash`` when that version is the one enabled in ``code``."""
+        row = await self._fetchrow(
+            "SELECT p.passport_id FROM plugin_version v JOIN plugin p ON p.id = v.plugin_id"
+            " JOIN organization_plugin op ON op.plugin_version_id = v.id AND op.state = 'enabled'"
+            " JOIN organization o ON o.id = op.organization_id AND o.code = $2"
+            " WHERE v.service_key_hash = $1",
+            (key_hash, code),
+        )
+        return None if row is None else dict(row)
