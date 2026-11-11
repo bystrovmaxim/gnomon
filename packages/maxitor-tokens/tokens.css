@@ -1,0 +1,84 @@
+/* @maxitor/tokens — Maxitor's look as CSS custom properties.
+   The core's frame, its controls and every plugin's page take colours and sizes only from here, so all of Maxitor
+   looks the same and a later dark theme changes one file. The values are those of Maxitor's screens today: the
+   core's application (mockups 059, 072, 073) and the graph viewer's floating panels. */
+:root {
+  /* Ink and surfaces. */
+  --mx-ink: #0f172a;
+  --mx-ink-2: #1e293b;
+  --mx-ink-3: #334155;
+  --mx-muted: #64748b;
+  --mx-faint: #94a3b8;
+  --mx-on-ink: #ffffff;
+  --mx-surface: #ffffff;
+  --mx-surface-glass: rgba(255, 255, 255, 0.88);
+  --mx-page: #e9edf1;
+  --mx-sidebar: #ebf2f5;
+  --mx-workspace: #f4f5f7;
+  --mx-canvas: #f6f8fa;
+  --mx-dot: rgba(15, 23, 42, 0.13);
+  --mx-line: rgba(15, 23, 42, 0.1);
+  --mx-line-2: rgba(15, 23, 42, 0.06);
+  --mx-line-3: rgba(15, 23, 42, 0.14);
+  --mx-hover: rgba(15, 23, 42, 0.06);
+  --mx-selected: rgba(15, 23, 42, 0.09);
+  --mx-ok: #16a34a;
+  --mx-bad: #b91c1c;
+  --mx-warn: #b45309;
+
+  /* The palette: the colours a plugin names in navigation.yaml (colour: green), never by code. */
+  --mx-palette-grey: #94a3b8;
+  --mx-palette-blue: #2563eb;
+  --mx-palette-green: #16a34a;
+  --mx-palette-amber: #d97706;
+  --mx-palette-red: #dc2626;
+  --mx-palette-violet: #7c3aed;
+  --mx-palette-teal: #0d9488;
+  --mx-palette-pink: #db2777;
+
+  /* Radii. */
+  --mx-radius-xs: 4px;
+  --mx-radius-sm: 6px;
+  --mx-radius-md: 8px;
+  --mx-radius-lg: 12px;
+  --mx-radius-round: 999px;
+
+  /* Shadows and blur. */
+  --mx-shadow-float: 0 2px 10px rgba(0, 0, 0, 0.07);
+  --mx-shadow-card: 0 8px 30px rgba(15, 23, 42, 0.08);
+  --mx-shadow-pop: 0 12px 32px rgba(15, 23, 42, 0.16);
+  --mx-blur: blur(8px);
+
+  /* Type. */
+  --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mx-text-xs: 10.5px;
+  --mx-text-sm: 11.5px;
+  --mx-text-md: 13px;
+  --mx-text-lg: 14px;
+  --mx-text-xl: 19px;
+  --mx-weight-medium: 500;
+  --mx-weight-bold: 600;
+  --mx-weight-heavy: 700;
+  --mx-tracking-caps: 0.05em;
+
+  /* Spacing and sizes of the frame. */
+  --mx-space-1: 2px;
+  --mx-space-2: 4px;
+  --mx-space-3: 6px;
+  --mx-space-4: 8px;
+  --mx-space-5: 12px;
+  --mx-space-6: 16px;
+  --mx-space-7: 24px;
+  --mx-line-width: 1px;
+  --mx-control: 28px;
+  --mx-control-sm: 22px;
+  --mx-row: 30px;
+  --mx-icon: 16px;
+  --mx-icon-sm: 14px;
+  --mx-top-row: 44px;
+  --mx-tree-width: 255px;
+  --mx-filter-width: 148px;
+  --mx-dot-step: 18px;
+  --mx-dot-size: 1px;
+  --mx-phone: 520px;
+}
