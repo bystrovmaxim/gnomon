@@ -34,7 +34,7 @@ class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
         self.core = core
         self.tables: dict[str, list[dict[str, Any]]] = {
             t: []
-            for t in ("plugin", "plugin_version", "plugin_dependency", "plugin_section", "organization_plugin", "plugin_process")
+            for t in ("plugin", "plugin_version", "plugin_dependency", "plugin_node", "organization_plugin", "plugin_process")
         }
         self.versions: dict[str, list[dict[str, Any]]] = {v: [] for v, _k in PLUGIN_VERSIONED.values()}
         self.clock = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
@@ -56,6 +56,7 @@ class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
         version_state: str = "active",
         deployed: bool = False,
         sections: tuple[tuple[str, str], ...] = (),
+        nodes: tuple[dict[str, Any], ...] = (),
     ) -> str:
         """A plugin and one version of it; answer the version's id."""
         plugin_id, version_id = str(uuid.uuid4()), str(uuid.uuid4())
@@ -72,8 +73,14 @@ class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
         )
         for dependency in needs:
             self.tables["plugin_dependency"].append({"plugin_version_id": version_id, "passport_id": dependency, "version_range": ">=0"})
-        for position, (section_title, path) in enumerate(sections, start=1):
-            self.tables["plugin_section"].append({"plugin_version_id": version_id, "position": position, "title": section_title, "path": path})
+        # A section is a node attached to the root; ``nodes`` are rows as PluginsStorage.nodes reads them.
+        rows = [
+            {"full_name": f"{name}:section-{position}", "parent": "root", "node_order": position * 100, "title": section_title,
+             "icon": None, "page": path, "each_source": None, "each_key": None, "roles": [], "controls": None, "room": None}
+            for position, (section_title, path) in enumerate(sections, start=1)
+        ] + list(nodes)
+        for position, row in enumerate(rows, start=1):
+            self.tables["plugin_node"].append({"plugin_version_id": version_id, "position": position, **row})
         return version_id
 
     def set_state(self, organization_id: str, passport_id: str, state: str, reason: str | None = None) -> None:
@@ -221,8 +228,13 @@ class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
                 for d in self.tables["plugin_dependency"] if d["plugin_version_id"] in version_ids]
 
     async def sections(self, version_ids: list[str]) -> list[dict[str, Any]]:
-        return [{"version_id": s["plugin_version_id"], "position": s["position"], "title": s["title"], "path": s["path"]}
-                for s in self.tables["plugin_section"] if s["plugin_version_id"] in version_ids]
+        return [{"version_id": n["plugin_version_id"], "position": n["position"], "title": n["title"] or "", "path": n["page"] or ""}
+                for n in self.tables["plugin_node"]
+                if n["plugin_version_id"] in version_ids and n["parent"].partition(":")[0] != n["full_name"].partition(":")[0]]
+
+    async def nodes(self, version_ids: list[str]) -> list[dict[str, Any]]:
+        return [{"version_id": n["plugin_version_id"], **{k: v for k, v in n.items() if k != "plugin_version_id"}}
+                for n in self.tables["plugin_node"] if n["plugin_version_id"] in version_ids]
 
     async def live_states(self, organization_id: str) -> dict[str, str]:
         return {self._plugin_by("id", r["plugin_id"])["passport_id"]: r["state"]

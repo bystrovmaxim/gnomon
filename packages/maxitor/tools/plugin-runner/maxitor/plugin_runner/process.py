@@ -41,6 +41,7 @@ def connections_of(settings: RunnerSettings, pool: PostgresPool) -> dict[str, An
             find_links=settings.find_links,
             memory=settings.memory,
             cpus=settings.cpus,
+            runner=settings.name,
         ),
     }
 

@@ -42,6 +42,8 @@ class WheelContents:
     dist_version: str
     passport: dict[str, Any]
     files: dict[str, str] = field(default_factory=dict)
+    #: The actions the plugin's package holds, one per file actions/<name>_action.py or history/<name>_action.py.
+    actions: frozenset[str] = frozenset()
 
     def file(self, path: str | None) -> str | None:
         """The text of ``path`` inside the wheel, as the passport names it; ``None`` when absent."""
@@ -107,4 +109,17 @@ def read_wheel(data: bytes, max_expanded: int = MAX_EXPANDED_BYTES) -> WheelCont
         if not isinstance(passport, dict):
             raise WheelRefusedError("passport", "the passport is not a mapping")
         files = {path: _text(archive, path) for path in _named_files(passport) if path in names}
-        return WheelContents(str(headers["Name"] or ""), str(headers["Version"] or ""), passport, files)
+        return WheelContents(
+            str(headers["Name"] or ""), str(headers["Version"] or ""), passport, files, _actions(names, passports[0])
+        )
+
+
+def _actions(names: set[str], passport_path: str) -> frozenset[str]:
+    """The names of ``<package>/actions/<name>_action.py`` and ``<package>/history/<name>_action.py`` in the wheel."""
+    package = passport_path.split("/", 1)[0]
+    found: set[str] = set()
+    for name in names:
+        parts = name.split("/")
+        if len(parts) == 3 and parts[0] == package and parts[1] in ("actions", "history") and parts[2].endswith("_action.py"):
+            found.add(parts[2].removesuffix("_action.py"))
+    return frozenset(found)

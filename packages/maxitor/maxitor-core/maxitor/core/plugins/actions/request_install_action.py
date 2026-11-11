@@ -18,8 +18,10 @@ import uuid
 from maxitor.core.errors import ConflictError, OrganizationNotFoundError
 from maxitor.core.plugins.actions.administrator import administered, administrator_verdict, fits_core, plugins
 from maxitor.core.plugins.events import InstallRefusedEvent
+from maxitor.core.plugins.organization_tree import organization_tree
 from maxitor.core.plugins.plugins_domain import PluginsDomain
 from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
+from maxitor.core.plugins.tree_builder import TreeRefusedError
 from maxitor.core.roles import AccountRole
 from maxitor.core.storage.core_storage import UniqueRowError
 from pydantic import Field
@@ -111,6 +113,10 @@ class RequestInstallAction(BaseAction[PluginParams, PluginStateResult]):
         missing = [d["passport_id"] for d in needed if states.get(d["passport_id"]) not in ("enabled", "disabled")]
         if missing:
             raise await refuse("missing_dependency", missing=missing)
+        try:
+            await organization_tree(store, organization["id"], found)
+        except TreeRefusedError as error:
+            raise await refuse("navigation", detail=error.reason) from None
         row_id = str(uuid.uuid4())
 
         async def work() -> None:

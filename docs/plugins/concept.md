@@ -308,11 +308,12 @@ The site is one origin. The core's gateway takes every request and hands it on b
 | `/api/**` | the core's backend |
 | `/p/<name>/api/<organization>/**` | a plugin's backend |
 | `/p/<name>/<organization>/**` | a plugin's frontend (Next.js) — only inside the right panel |
+| `/p/<name>/_next/**` | the scripts and styles of a plugin's page, for the organization of the page that asks for them (its `Referer`) |
 | `/**`, including `/w/<organization>/**` | the core's frontend (Next.js): the frame and the core's pages |
 
 The core's processes listen on `127.0.0.1`; each plugin version's backend and frontend run in Docker containers of their own, whose ports are published on `127.0.0.1` of the host only. From outside only the gateway is reachable.
 
-**Running.** The core's process `maxitor-plugin-runner` keeps every deployed version that is enabled in at least one organization running. For each it builds two images once — the backend on `python:<x.y>-slim` with the wheel and its requirements, the frontend on `node:22-slim` with the wheel's built pages — and runs a container of each: as user 65534, with no capabilities, no new privileges, a read-only file system, limits of memory, CPU and processes, and a network of its own version. A container reaches the database at `MAXITOR_PLUGIN_DB_ADDRESS` and the gateway at `MAXITOR_PLUGIN_GATEWAY_URL`, as the containers see them; it gets nothing of the core's settings. The runner records each container's address in `plugins.plugin_process` for the gateway, starts again a container that exited after a pause that doubles up to five minutes, removes the containers of a version no organization runs, and on its own start removes every container a stopped runner left.
+**Running.** The core's process `maxitor-plugin-runner` keeps every deployed version that is enabled in at least one organization running. For each it builds two images once — the backend on `python:<x.y>-slim` with the wheel and its requirements, the frontend on `node:22-slim` with the wheel's built pages — and runs a container of each: as user 65534, with no capabilities, no new privileges, a read-only file system, limits of memory, CPU and processes, and a network of its own version. A container reaches the database at `MAXITOR_PLUGIN_DB_ADDRESS` and the gateway at `MAXITOR_PLUGIN_GATEWAY_URL`, as the containers see them; it gets nothing of the core's settings. A runner has a name, `MAXITOR_RUNNER_NAME` (`maxitor` by default): its containers carry the label `maxitor.plugin.runner=<name>`, and it starts, watches and removes only those, so two stands on one host never stop each other's plugins. The runner records each container's address in `plugins.plugin_process` for the gateway, starts again a container that exited after a pause that doubles up to five minutes, removes the containers of a version no organization runs, and on its own start removes every container of its name a stopped runner left.
 
 Each plugin has its own Next.js application with its own `basePath`, its own Next.js version and its own build. The browser's address bar always holds a core address `/w/<organization>/...`; a plugin's page lives in the right panel (section 7). Today the core's frontend is built with Vite; moving it to Next.js is separate work that comes before the first plugin.
 
@@ -360,7 +361,7 @@ The gateway lets changing requests through only with its own site's `Origin` hea
 
 ### 6.3. A plugin's frontend and its backend
 
-- A Next.js **server component** takes the `authorization` header of the incoming request and goes with it to its own backend at the inner address from the environment (`MAXITOR_PLUGIN_API`). The token is issued for this plugin; the backend accepts it.
+- A Next.js **server component** takes the `authorization` header of the incoming request and goes with it to its own backend at the inner address from the environment (`MAXITOR_PLUGIN_API`), under the same route prefix as the gateway's: `${MAXITOR_PLUGIN_API}/p/<name>/api/<organization>/...`. The token is issued for this plugin; the backend accepts it.
 - A **client component** calls `/p/notes/api/<organization>/...` by a relative path: the page in the panel is opened from the same origin, the browser sends the cookie, and the gateway replaces it with a token.
 
 A plugin's frontend keeps and receives no secrets.
@@ -519,9 +520,15 @@ The rules of attachment:
 
 ### 7.3. The tree builder
 
-The tree is built neither in the browser nor on every request, but by the installer — on installing, upgrading, enabling, disabling and removing a plugin and on the core's upgrade, in the same operation. A build error cancels the whole operation.
+The tree is built neither in the browser nor from YAML on every request. Every node of a version's `navigation.yaml` is read once, when the version is checked for the marketplace, into the table `plugins.plugin_node`: its full name, the node it stands under, its order, title, icon, page template, list source and key, roles, controls and behaviour in a room. An organization's tree is the core's nodes and the nodes of the versions enabled in it, joined in dependency order; each node gets the scope of parameters the list nodes above it define. At run time nobody reads YAML.
 
-The input is the `navigation.yaml` of the core and of every enabled plugin, in dependency order. The output is the built tree in the mechanics table `platform.navigation_tree`: every node with its full name, owner, scope of parameters, page template, roles, controls and behaviour in a room. At run time nobody reads YAML.
+The builder runs three times, and a refusal cancels the operation that asked for it:
+
+- **when a version is checked**, on its file alone: the rules one file shows (1–4, 6–9 below) and an attachment to the core;
+- **when a plugin is installed or enabled** in an organization, on the organization's enabled plugins with it added: the attachments to a dependency (2) and the parameters an attachment gives (4); the refusal is `navigation` with the reason in words;
+- **when the core starts**, on the core's own file: a core whose tree does not hold does not start.
+
+Disabling and removing only take nodes away, and an enabled plugin that needs another already keeps it from being disabled.
 
 The builder refuses when:
 
@@ -533,7 +540,7 @@ The builder refuses when:
 6. two nodes of one owner have the same `page` template — an address must point at one node;
 7. a name in `room.shared` or a control's parameter is reserved (`at` or starts with `_`), equals a parameter of the path, or is taken by another control of the same page;
 8. a control's `default` is not one of its options, or a filter has neither `options` nor `source`, or both;
-9. a `source` action (of a list or a control) or `counts` is not declared by the owner's backend with the needed contract; this is checked after the backend starts, before the routes are switched on.
+9. a `source` (of a list or a control) or `counts` names no action of the owner: no file `actions/<name>_action.py` or `history/<name>_action.py` in its package; this is checked from the wheel, before any organization can install it.
 
 ### 7.4. List nodes at run time
 
@@ -549,7 +556,7 @@ Ordinary nodes come to the browser from the built tree, filtered by roles, in on
 - The core calls a list at `GET /p/<name>/api/<organization>/lists/<source>?<scope parameters>&at=…&limit=…&after=…`; a control's `source` is called the same way.
 - Titles are plain text; the tree has no markup.
 - A list is read **at the panel's moment**: at a past moment the tree holds the records that existed then.
-- A long list comes in parts; its last node is "More…".
+- A long list comes in parts of 50; its last row is "More…", which reads the next part with `after`.
 - A parent with no visible children and no `page` is hidden.
 - If a plugin's list does not answer, only its branch shows the error; the rest of the tree works.
 
@@ -572,6 +579,7 @@ Every page in the right panel has one address in the browser's address bar:
 - No `at` means "now": the page reads at the watermark and rereads itself when it moves ([versioned-storage, section 4](versioned-storage.md)). The moment's string is opaque and never passes through `Date`.
 - From the address the core finds the node by matching the templates backwards, opens the path to it in the tree, highlights it and loads the titles of the instances on the way.
 - The address is **the only source of the panel's state**: a reload, a link to a colleague, Back and Forward give exactly what was there.
+- The core's own pages live under the owner `core`: Settings → Plugins is `/w/<organization>/core/settings/plugins`.
 
 **History entries.** A discrete change is a new entry (`push`): the mode changed, a filter was applied, a record opened, a tab chosen. A continuous one replaces the entry as it goes (`replace`) and adds one new entry at the end: typing a search, zooming, dragging.
 
@@ -596,6 +604,8 @@ The core and the plugin's page exchange `postMessage` messages. Each side accept
 | `panel.location {path, query, at}` | core → plugin | the address changed not by this page's action: Back, a tree node of the same plugin, a change of moment, following in a room, a control |
 | `panel.watermark {at}` | core → plugin | the watermark moved; a page without `at` rereads its data |
 
+**"Now" moves for a plugin's changes too.** Every change a plugin writes takes its time from the core's `change_time(organization)`, which keeps that time in the core's table `organization_clock` within the same transaction; `watermark(organization)` reads it beside the core's own tables. The frame asks for the watermark every 5 seconds while a page without `at` is open and sends `panel.watermark` when it moved, so a note a colleague wrote reaches the page once it is committed.
+
 Rules:
 
 - **Inside the `iframe` a plugin creates no history entries.** The router of `@maxitor/panel` (`usePanelRouter`) changes the `iframe`'s address only by replacing, and the core creates the history entry in the window's address. Otherwise each action would give two entries, and Back would have to be pressed twice.
@@ -603,6 +613,8 @@ Rules:
 - A tree node of the same plugin — `panel.location` without a reload; a node of another owner — a new `iframe` address.
 - A page builds its view **from its address only**: on the server from `searchParams`, after `panel.location` from the new address.
 - `/p/<name>/<organization>/...` opened outside the panel (the gateway sees `Sec-Fetch-Dest: document`) is redirected to `/w/<organization>/<name>/...`. Responses of `/p/**` carry `Content-Security-Policy: frame-ancestors 'self'`.
+- A page that has not said `panel.ready` within 15 seconds is shown as not answering, with Try again; the tree and the top row keep working.
+- `panel.open` opens a page of the core or of a direct dependency of the page's plugin, and nothing else.
 - The core draws its own pages in the panel itself, without an `iframe`, by the same rules of the address.
 
 ```tsx
@@ -624,7 +636,7 @@ A plugin has no canvas of its own. There is one canvas for all of Maxitor — th
 The core's canvas gives everything that belongs to the canvas itself:
 
 - **moving and zooming** — dragging, the wheel, pinching, keys, zoom limits, inertia; a plugin writes no gestures of its own and cannot change them;
-- **fit** and the zoom bar at the bottom right;
+- **fit** and the zoom bar at the bottom right; the keys `+` and `-` zoom, `0` fits, the arrows move; the zoom stays between 10% and 400%;
 - **the field of dots**, moving with the canvas;
 - **the camera**: converting screen coordinates into canvas coordinates and back;
 - **the room**: others' pointers, clicks, selections and the viewport for a follower (section 8) — with no code in the plugin.
@@ -698,12 +710,12 @@ The rules of controls:
 
 - **Each control is an address parameter.** The pill is `?mode=jobs`, the view `?view=table`, a filter `?state=running,stopped` (the options switched on are listed; no parameter — everything is on). So Back, a link and a room work for controls by themselves (7.5, section 8), and a parameter in `room.shared` switches for every participant at once. The default value (`default`) is not written into the address.
 - **A page does not draw controls.** It reads their parameters from its address like any others and builds its view by them; on a change of a control it gets `panel.location`.
-- **Options are in the YAML or come from data.** Fixed ones as an `options` list; data-dependent ones by a reading action `source` with the same contract as the tree's lists (7.4), at the panel's moment. The pill's numbers come from the action `counts`.
+- **Options are in the YAML or come from data.** Fixed ones as an `options` list; data-dependent ones by a reading action `source` with the same contract as the tree's lists (7.4), at the panel's moment: each entry's `key` is the option's value, its `title` the label, an optional `colour` a name of the palette. The pill's numbers come from the action `counts`, which answers `{"counts": {"<option>": <number>}}` for the page's scope and parameters.
 - **The set of controls is closed.** A plugin does not move a control, does not recolour it, does not put up a second pill and does not invent a new kind. A control many need is added to the core — and appears for everyone at once; one a single screen needs is the page's content, not a control.
 - **Colours come from the core's palette** (`colour: green`), not as codes: shades, contrast and the dark theme are one for all of Maxitor.
 - **On a phone** controls fold the same way for everyone: filters into a button, the view into a menu; the core decides.
 
-**Styles come from one place.** The package `@maxitor/tokens` holds colours, radii, shadows, blur, type sizes and spacing; the core's controls and the components of `@maxitor/panel`, with which a plugin draws its content (cards, tables, nodes on the canvas), draw with them. Neither the core nor a plugin writes colour or size numbers in code.
+**Styles come from one place.** The package `@maxitor/tokens` holds colours, the palette (`grey`, `blue`, `green`, `amber`, `red`, `violet`, `teal`, `pink`), radii, shadows, blur, type sizes and spacing as CSS custom properties `--mx-*`; the core's frame and controls and the components of `@maxitor/panel`, with which a plugin draws its content (cards, tables, nodes on the canvas), draw with them. Neither the core nor a plugin writes colour or size numbers in code, and the core's check `check-tokens.mjs` holds the frame, the controls and `@maxitor/panel` to it.
 
 If a filter row must highlight something on the canvas on hover, a message `panel.control.hover` from the core to the page will be needed; it is introduced when the first plugin needs it.
 
@@ -996,7 +1008,7 @@ export default async function ItemNotesPage({ params, searchParams }) {
   const { org, item_id } = await params;
   const query = await searchParams;                       // view, author, at
   const auth = (await headers()).get("authorization") ?? "";
-  const url = new URL(`${process.env.MAXITOR_PLUGIN_API}/${org}/items/${item_id}/notes`);
+  const url = new URL(`${process.env.MAXITOR_PLUGIN_API}/p/notes/api/${org}/items/${item_id}/notes`);
   url.searchParams.set("at", momentFrom(query));
   if (query.author) url.searchParams.set("author", query.author);
   const notes = await fetch(url, { headers: { authorization: auth } }).then((r) => r.json());

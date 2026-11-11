@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "maxitor-plugin-template"
-version = "0.7.0"
+version = "0.8.0"
 description = "The Maxitor plugin template: a small complete plugin, notes on its own items."
 readme = "README.md"
 license = "Apache-2.0"
@@ -38,3 +38,5 @@ maxitor-plugin-sdk = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/maxitor_notes"]
+# The frontend's build (npm run build in web/) is kept out of git, so it is named here to travel in the wheel.
+artifacts = ["src/maxitor_notes/_web/**"]

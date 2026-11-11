@@ -1,5 +1,9 @@
 # Changelog — maxitor-plugin-sdk
 
+## 1.4.0 — 2026-11-11
+
+`checks` refuses a `navigation.yaml` whose list node, filter, legend or mode pill reads an action the plugin does not have: every `source` and `counts` names a file `actions/<name>_action.py` or `history/<name>_action.py`. `source_problems`, `named_actions` and `action_names` give the same check to the core. ([#74](https://github.com/bystrovmaxim/gnomon/issues/74))
+
 ## 1.3.0 — 2026-11-11
 
 A plugin works with the core's roles as they are. `roles` gives `MemberRole` for every active user of the organization of the address, `AdministratorRole` for its administrators and `ServiceRole` for the plugin's own call with no person, and `CORE_ROLES` for a token coordinator's registry. `checks` refuses a passport that declares `roles` and a node of `navigation.yaml` that asks for anything but `member` or `administrator`. The SDK now needs `aoa-action-machine`. ([#75](https://github.com/bystrovmaxim/gnomon/issues/75))

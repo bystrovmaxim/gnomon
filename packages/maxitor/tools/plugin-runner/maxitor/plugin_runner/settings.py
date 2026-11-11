@@ -20,7 +20,8 @@ class RunnerSettings:
     ROLE: What the runner's process is configured with.
     CONTRACT: ``from_environment`` reads MAXITOR_CORE_DSN (required), MAXITOR_PLUGIN_GATEWAY_URL,
         MAXITOR_PLUGIN_DB_ADDRESS, MAXITOR_PLUGIN_DB_CONTAINER, MAXITOR_PLUGIN_MEMORY, MAXITOR_PLUGIN_CPUS,
-        MAXITOR_PLUGIN_RUNTIME, MAXITOR_WHEEL_STORE, MAXITOR_PLUGIN_FIND_LINKS and MAXITOR_RUNNER_PERIOD_SECONDS.
+        MAXITOR_PLUGIN_RUNTIME, MAXITOR_WHEEL_STORE, MAXITOR_PLUGIN_FIND_LINKS, MAXITOR_RUNNER_PERIOD_SECONDS and
+        MAXITOR_RUNNER_NAME (the runner's own containers on a host shared by two stands).
     INVARIANTS: The DSN is never in the ``repr``.
     AI-CORE-END
     """
@@ -35,6 +36,7 @@ class RunnerSettings:
     wheel_store: Path = Path(".core-stand/wheels")
     find_links: Path | None = None
     period_seconds: float = 10.0
+    name: str = "maxitor"
 
     @classmethod
     def from_environment(cls) -> RunnerSettings:
@@ -52,4 +54,5 @@ class RunnerSettings:
             wheel_store=Path(env.get("MAXITOR_WHEEL_STORE", ".core-stand/wheels")),
             find_links=Path(links) if links else None,
             period_seconds=float(env.get("MAXITOR_RUNNER_PERIOD_SECONDS", "10")),
+            name=env.get("MAXITOR_RUNNER_NAME") or "maxitor",
         )

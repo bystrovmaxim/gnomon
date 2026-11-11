@@ -5,6 +5,12 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] — 2026-11-11
+
+### Changed
+
+- **Its pages live in Maxitor's frame.** The frontend is built with `@maxitor/panel` and `@maxitor/tokens`, and its build travels in the wheel. The notes page opens in the core's right panel and shows an item's notes as cards or a table by the view switch, of the writers the writer filter keeps, both drawn by the core from `navigation.yaml`; Published notes and Draft open there too and say what they will show. The pages draw no frame, header, background or control of their own. A list or a filter the navigation reads is one of the template's actions, as Maxitor now checks. ([#74](https://github.com/bystrovmaxim/gnomon/issues/74))
+
 ## [0.7.0] — 2026-11-11
 
 ### Added

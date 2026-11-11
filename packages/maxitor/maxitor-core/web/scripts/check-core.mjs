@@ -2,10 +2,12 @@
 // The scenarios of specs/072-maxitor-core/quickstart.md and specs/073-plugin-marketplace/quickstart.md in Chromium
 // against the local stand (./scripts/core-stand.sh up): signing up with the code from the outbox, the consent step,
 // registering an organization, Settings → Plugins — the marketplace, the search, installing the plugin template and
-// seeing its sections in the tree, its items added, renamed and listed through the gateway (specs/076-template-own-items
-// /quickstart.md), a second organization on the deployed version, disabling and enabling, a private
-// plugin's dialog — signing out and in, a wrong password, resetting the password, someone else's organization, an
-// organization's address without a session, and the same pages on a phone.
+// seeing its nodes in the tree, its items added, renamed and listed through the gateway (specs/076-template-own-items
+// /quickstart.md), its notes page in the right panel with the controls the core draws, Back and Forward, the panel's
+// test page with the protocol, the canvas and every control (specs/077-core-frame/quickstart.md), a second
+// organization on the deployed version, disabling and enabling, a private plugin's dialog — signing out and in, a
+// wrong password, resetting the password, someone else's organization, an organization's address without a session,
+// and the same pages and the frame on a phone.
 //
 //   node packages/maxitor/maxitor-core/web/scripts/check-core.mjs
 //
@@ -25,6 +27,8 @@ const EMAIL = `check-${RUN}@example.com`;
 const PASSWORD = `Check-Horse-${RUN}`;
 const NEW_PASSWORD = `Reset-Horse-${RUN}`;
 const ORG = `Check ${RUN}`;
+// The template's item the notes scenarios open, set when it is added.
+let ITEM = "";
 const CODE = `check-${RUN}`;
 // The template's version, as the marketplace shows it: the passport's own.
 const TEMPLATE_VERSION = readFileSync(join(ROOT, "packages/maxitor-plugin-template/src/maxitor_notes/maxitor-plugin.yaml"), "utf8").match(/^version: (\S+)$/m)[1];
@@ -136,8 +140,8 @@ await scenario("sign up by email, confirm with the letter's code, consent, regis
   expect((await page.getByLabel("Address").inputValue()) === CODE, "the code is not suggested from the name");
   await page.getByRole("button", { name: "Register and enter" }).click();
   await page.waitForURL(`**/w/${CODE}`);
-  await page.getByText(`${ORG} is ready`).waitFor();
-  expect((await page.locator(".avatar").innerText()) === "CP", "the icon shows no initials");
+  await page.getByText("Choose a section in the tree").waitFor();
+  expect((await page.locator(".mx-avatar").innerText()) === "CP", "the icon shows no initials");
 });
 
 await scenario("a taken address and one with characters not allowed are named", async () => {
@@ -164,9 +168,10 @@ async function waitForState(title, state) {
 
 await scenario("Settings at the foot of the tree leads to Plugins; the marketplace offers the template", async () => {
   await page.goto(`${BASE}/w/${CODE}`);
-  await page.locator(".sb-foot a", { hasText: "Settings" }).click();
-  await page.waitForURL(`**/w/${CODE}/settings/plugins`);
-  expect((await page.locator(".crumb").innerText()).includes("Settings"), "the header does not say Settings");
+  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).click();
+  await page.locator(".mx-tree-foot .mx-node", { hasText: "Plugins" }).click();
+  await page.waitForURL(`**/w/${CODE}/core/settings/plugins`);
+  expect((await page.locator(".mx-path").innerText()).includes("Settings"), "the top row's path does not say Settings");
   await page.getByRole("tab", { name: /Marketplace/ }).click();
   await page.locator(".mcard", { hasText: "Notes" }).waitFor();
   await page.getByLabel("Search plugins").fill("nothing-like-it");
@@ -175,8 +180,8 @@ await scenario("Settings at the foot of the tree leads to Plugins; the marketpla
   await page.locator(".mcard", { hasText: "Notes" }).waitFor();
 });
 
-await scenario("installing the template builds its version and its sections join the tree", async () => {
-  await page.goto(`${BASE}/w/${CODE}/settings/plugins`);
+await scenario("installing the template builds its version and its nodes join the tree", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
   await page.getByRole("tab", { name: /Marketplace/ }).click();
   await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
   await page.getByText(`Install Notes ${TEMPLATE_VERSION}`).waitFor();
@@ -186,7 +191,7 @@ await scenario("installing the template builds its version and its sections join
   await page.getByRole("tab", { name: /Installed/ }).waitFor();
   await waitForState("Notes", "enabled");
   await page.goto(`${BASE}/w/${CODE}`);
-  await page.locator(".tree .tg", { hasText: "Notes" }).waitFor();
+  await page.locator(".mx-node", { hasText: "Notes" }).first().waitFor();
 });
 
 await scenario("the template's items are added, renamed and listed through the gateway, and a note needs one", async () => {
@@ -216,6 +221,91 @@ await scenario("the template's items are added, renamed and listed through the g
   expect(nowhere.status() === 404, `a note on no item answers ${nowhere.status()}`);
   const written = await page.request.post(`${api}/notes`, { ...send, data: { item_id: itemId, body: "Retry three times" } });
   expect(written.status() === 200, `a note on the item answers ${written.status()}`);
+  ITEM = itemId;
+});
+
+await scenario("the notes page opens in the right panel from the tree, with the core's controls, Back and Forward", async () => {
+  // The runner may still be starting the frontend's container just after the backend answered.
+  for (let i = 0; i < 300; i += 1) {
+    const answer = await page.request.get(`${BASE}/p/notes/${CODE}`, { headers: { "Sec-Fetch-Dest": "iframe" } });
+    if (answer.status() === 200) break;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  await page.goto(`${BASE}/w/${CODE}`);
+  await page.locator(".mx-node", { hasText: "Notes" }).first().click();
+  await page.locator(".mx-node", { hasText: "Payments" }).click();
+  // The item's own Notes page: its address ends with the item, where Published notes and Draft go on.
+  await page.locator(`a.mx-node[href$="/items/${ITEM}"]`).click();
+  await page.waitForURL(`**/w/${CODE}/notes/items/${ITEM}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Payments › Notes", "the path does not name the item");
+  await frame.locator(".mx-card", { hasText: "Retry three times" }).waitFor();
+  await page.getByRole("radio", { name: "Table" }).first().click();
+  await page.waitForURL(/view=table/);
+  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await page.locator(".mx-filter-row").first().click();
+  await page.waitForURL(/author=/);
+  await frame.locator(".mx-empty").waitFor();
+  await page.goBack();
+  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await page.goBack();
+  await frame.locator(".mx-card", { hasText: "Retry three times" }).waitFor();
+  await page.goForward();
+  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await page.reload();
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  await page.frameLocator("iframe.mx-panel-frame").locator("table tr", { hasText: "Retry three times" }).waitFor();
+});
+
+await scenario("a plugin's page opened by itself goes to its panel address", async () => {
+  await page.goto(`${BASE}/p/notes/${CODE}/items/${ITEM}?view=table`);
+  await page.waitForURL(`**/w/${CODE}/notes/items/${ITEM}?view=table`);
+});
+
+await scenario("an address with no moment or a moment to come says so and offers now", async () => {
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}?view=table&at=garbage`);
+  await page.getByText("This address names no moment").waitFor();
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}?view=table&at=2099-01-01T00:00:00Z`);
+  await page.getByText("This moment has not come yet").waitFor();
+  await page.getByRole("link", { name: "Show now" }).click();
+  await page.waitForURL((url) => url.search === "?view=table");
+});
+
+await scenario("the panel's test page: the protocol, the controls in their places, the canvas", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  const before = await page.evaluate(() => history.length);
+  await frame.getByRole("button", { name: "Push a step" }).click();
+  await page.waitForURL(/step=1/);
+  await frame.getByRole("button", { name: "Type a letter" }).click();
+  await page.waitForURL(/search=a/);
+  expect((await page.evaluate(() => history.length)) - before === 1, "a push and a replace did not make exactly one entry");
+  await frame.getByRole("button", { name: "Open a stranger's page" }).click();
+  await page.waitForTimeout(500);
+  expect(page.url().includes("/core/panel-test"), "a stranger's page was opened");
+  const panel = await page.locator(".mx-panel").boundingBox();
+  const place = async (selector) => page.locator(selector).boundingBox();
+  const pill = await place(".mx-pill");
+  expect(Math.abs(pill.x + pill.width / 2 - (panel.x + panel.width / 2)) < 2, "the mode pill is not at the top centre");
+  expect((await place(".mx-views")).x > panel.x + panel.width / 2, "the view switch is not on the right");
+  expect((await place(".mx-legend")).y > panel.y + panel.height / 2, "the legend is not at the bottom");
+  await page.locator(".mx-filter-row", { hasText: "Beta" }).click();
+  await page.waitForURL(/kind=a%2Cc/);
+  await page.locator(".mx-filter-row", { hasText: "Beta" }).click();
+  await page.waitForURL((url) => !url.search.includes("kind="));
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/canvas`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  const canvas = page.frameLocator("iframe.mx-panel-frame").locator(".mx-canvas");
+  const zoom = async () => Number(await canvas.getAttribute("data-zoom"));
+  const fitted = await zoom();
+  await canvas.getByRole("button", { name: "Zoom in" }).click();
+  expect((await zoom()) > fitted, "zoom in does not zoom");
+  for (let i = 0; i < 20; i += 1) await canvas.getByRole("button", { name: "Zoom in" }).click();
+  expect((await zoom()) === 4, `the zoom passes its limit: ${await zoom()}`);
+  await canvas.getByRole("button", { name: "Fit" }).click();
+  expect((await zoom()) === fitted, "fit does not show the scene again");
 });
 
 await scenario("a second organization installs the deployed version without building it", async () => {
@@ -224,7 +314,7 @@ await scenario("a second organization installs the deployed version without buil
   await page.getByText("free").waitFor();
   await page.getByRole("button", { name: "Register and enter" }).click();
   await page.waitForURL(`**/w/${SECOND}`);
-  await page.goto(`${BASE}/w/${SECOND}/settings/plugins`);
+  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
   await page.getByRole("tab", { name: /Marketplace/ }).click();
   await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
   await page.getByText("is already deployed in Maxitor").waitFor();
@@ -233,21 +323,21 @@ await scenario("a second organization installs the deployed version without buil
 });
 
 await scenario("disabling keeps the plugin, enabling brings its sections back", async () => {
-  await page.goto(`${BASE}/w/${SECOND}/settings/plugins`);
+  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
   await page.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Disable" }).click();
   await page.getByRole("button", { name: "Disable", exact: true }).last().click();
   await waitForState("Notes", "disabled");
   await page.goto(`${BASE}/w/${SECOND}`);
-  expect((await page.locator(".tree .tg", { hasText: "Notes" }).count()) === 0, "a disabled plugin stays in the tree");
-  await page.goto(`${BASE}/w/${SECOND}/settings/plugins`);
+  expect((await page.locator(".mx-node", { hasText: "Notes" }).count()) === 0, "a disabled plugin stays in the tree");
+  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
   await page.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Enable" }).click();
   await waitForState("Notes", "enabled");
-  await page.goto(`${BASE}/w/${CODE}/settings/plugins`);
+  await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
   await page.locator(".prow", { hasText: "Notes" }).locator(".stt.enabled").waitFor(); // the first organization untouched
 });
 
 await scenario("the private plugin dialog refuses a PyPI address before sending it", async () => {
-  await page.goto(`${BASE}/w/${CODE}/settings/plugins`);
+  await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
   await page.getByRole("button", { name: "Add a private plugin" }).click();
   await page.getByLabel("Package URL").fill("pkg:pypi/sv-reports@0.3.0");
   await page.getByText("A package on PyPI is the public marketplace's.").waitFor();
@@ -256,20 +346,22 @@ await scenario("the private plugin dialog refuses a PyPI address before sending 
   await page.getByText("Choose a .whl file").waitFor();
 });
 
-await scenario("the settings of an organization one is not in answer No such page", async () => {
+await scenario("the settings of an organization one is not in answer alike, at the old address too", async () => {
+  await page.goto(`${BASE}/w/orbita-${RUN}/core/settings/plugins`);
+  await page.getByText("No such organization").waitFor();
   await page.goto(`${BASE}/w/orbita-${RUN}/settings/plugins`);
-  await page.getByText("No such page").waitFor();
+  await page.getByText("No such organization").waitFor();
 });
 
 await scenario("someone else's organization and a made-up one answer alike", async () => {
   await page.goto(`${BASE}/w/orbita-${RUN}`);
   await page.getByText("No such organization").waitFor();
-  expect((await page.locator(".crumb").count()) === 0, "the header names an organization");
+  expect((await page.locator(".mx-org").count()) === 0, "the top row names an organization");
 });
 
 await scenario("sign out, then a wrong password is one message and the right one signs in", async () => {
   await page.goto(`${BASE}/w/${CODE}`);
-  await page.locator(".avatar").click();
+  await page.locator(".mx-avatar").click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.waitForURL(`${BASE}/`);
   await signIn(EMAIL, "Wrong-Password-1");
@@ -337,7 +429,7 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
   await phone.addCookies(await context.cookies());
   const p = await phone.newPage();
-  await p.goto(`${BASE}/w/${CODE}/settings/plugins`);
+  await p.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
   await p.locator(".prow", { hasText: "Notes" }).waitFor();
   const wide = () => p.evaluate(() => document.documentElement.scrollWidth);
   expect((await wide()) <= 375, `the installed tab is ${await wide()} px wide`);
@@ -348,7 +440,21 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   expect(sheet && Math.round(sheet.y + sheet.height) >= 811 && sheet.width >= 370, "the dialog is not a sheet from the bottom");
   await p.getByRole("button", { name: "Cancel" }).click();
   await p.getByRole("button", { name: "The organization's tree" }).click();
-  await p.locator(".sb.drawer a", { hasText: "Plugins" }).waitFor();
+  await p.locator(".mx-tree.drawer .mx-node", { hasText: "Plugins" }).waitFor();
+  await phone.close();
+});
+
+await scenario("on a phone the panel's controls fold: filters into a button, the view into a menu", async () => {
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+  await phone.addCookies(await context.cookies());
+  const p = await phone.newPage();
+  await p.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await p.locator(".mx-filters-button").waitFor();
+  expect(!(await p.locator(".mx-filters-body").isVisible()), "the filters are not folded");
+  await p.locator("select.mx-views-narrow").selectOption("table");
+  await p.waitForURL(/view=table/);
+  expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the frame is wider than the phone");
   await phone.close();
 });
 

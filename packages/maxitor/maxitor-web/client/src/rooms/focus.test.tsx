@@ -1,5 +1,5 @@
 // src/rooms/focus.test.tsx
-import { act, renderHook } from "@testing-library/react";
+import { act, cleanup, renderHook } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useFollow } from "@/rooms/follow";
@@ -52,6 +52,9 @@ function hoverTrusted(target: Element): void {
 }
 
 afterEach(() => {
+  // Without vitest's globals Testing Library does not unmount by itself: a hook left mounted keeps its tooltip's
+  // timer, which would fire after the test's window is gone.
+  cleanup();
   clearFocus();
   document.body.innerHTML = "";
   vi.useRealTimers();

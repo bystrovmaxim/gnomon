@@ -1,26 +1,29 @@
 # packages/maxitor/maxitor-core/maxitor/core/actions/organizations.py
 """
-Organizations: CheckAddressCodeAction, RegisterOrganizationAction, OpenOrganizationAction.
+Organizations: CheckAddressCodeAction, RegisterOrganizationAction, OpenOrganizationAction, ReadWatermarkAction.
 
 ::
 
     GET  /api/v1/organizations/code-check?code=&name=   free | taken | not_allowed, with suggestions
     POST /api/v1/organizations                          the organization and its administrator in one change
-    GET  /api/v1/organizations/{code}                   the organization and its enabled plugins' sections, or 404 alike
-                                                        for a stranger and a made-up code
+    GET  /api/v1/organizations/{code}                   the organization, the user and its tree, or 404 alike for a
+                                                        stranger and a made-up code
+    GET  /api/v1/organizations/{code}/watermark         the organization's watermark: "now" for every page
 """
 
 from __future__ import annotations
 
 import uuid
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 from maxitor.core import address
 from maxitor.core.actions.common import storage
 from maxitor.core.domains import OrganizationDomain
 from maxitor.core.errors import ConflictError, CoreRefusalError
 from maxitor.core.events import AddressCodeLostRaceEvent, ForeignOrganizationRefusedEvent, OrganizationRegisteredEvent
+from maxitor.core.plugins.organization_tree import organization_tree
 from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
+from maxitor.core.plugins.tree_builder import visible
 from maxitor.core.roles import AccountRole
 from maxitor.core.storage.core_storage import CORE_CONNECTION_KEY, CoreStorage, UniqueRowError
 from pydantic import Field
@@ -228,20 +231,19 @@ class OrganizationUserSchema(BaseSchema):
     is_admin: bool = Field(description="Whether the user administers the organization")
 
 
-class TreeSectionSchema(BaseSchema):
-    """A row a plugin adds to the organization's tree."""
+class TreeNodeSchema(BaseSchema):
+    """One node of the organization's tree as the frame draws it (specs/077-core-frame/data-model.md)."""
 
-    title: str = Field(description="The section's title")
-    path: str = Field(description="Its path inside the plugin's pages")
-
-
-class TreePluginSchema(BaseSchema):
-    """An enabled plugin: one group of the organization's tree."""
-
-    passport_id: str = Field(description="The plugin's passport id")
-    name: str = Field(description="The plugin's name")
-    title: str = Field(description="The group's title")
-    sections: list[TreeSectionSchema] = Field(description="The group's rows, in their order")
+    name: str = Field(description="Its full name, <owner>:<id>")
+    owner: str = Field(description="core or the plugin's name")
+    parent: str = Field(description="root or the full name of the node it stands under")
+    order: int = Field(description="Its order among its parent's children")
+    title: str = Field(description="An ordinary node's title; empty for a list node")
+    icon: str = Field(description="A name of the core's icon set; empty for none")
+    page: str | None = Field(description="Its page's path template inside its owner; empty for a node that only groups")
+    each: dict[str, str] | None = Field(description="A list node's source and key; empty for an ordinary node")
+    scope: list[str] = Field(description="The parameters the list nodes above it define")
+    controls: dict[str, Any] | None = Field(description="Its page's controls; empty for none")
 
 
 class OpenedResult(BaseResult):
@@ -250,13 +252,17 @@ class OpenedResult(BaseResult):
     code: str = Field(description="The address code")
     name: str = Field(description="The organization's name")
     user: OrganizationUserSchema = Field(description="The account's user in it")
-    plugins: list[TreePluginSchema] = Field(default_factory=list, description="The enabled plugins, by title")
+    tree: list[TreeNodeSchema] = Field(default_factory=list, description="The nodes of its tree the user may see")
+    owners: list[str] = Field(default_factory=list, description="Its enabled plugins in dependency order")
+    dependencies: dict[str, list[str]] = Field(
+        default_factory=dict, description="Each enabled plugin's direct dependencies: the plugins a page of it may open"
+    )
 
 
 @meta(description="Open an organization the account has an active user in", domain=OrganizationDomain)
 @check_roles(AccountRole)
 @connection(CoreStorage, key=CORE_CONNECTION_KEY, description="The core's database")
-@connection(PluginsStorage, key=PLUGINS_CONNECTION_KEY, description="The schema plugins: the enabled plugins' sections")
+@connection(PluginsStorage, key=PLUGINS_CONNECTION_KEY, description="The schema plugins: the enabled plugins' nodes")
 class OpenOrganizationAction(BaseAction[OpenParams, OpenedResult]):
     """
     AI-CORE-BEGIN
@@ -294,23 +300,67 @@ class OpenOrganizationAction(BaseAction[OpenParams, OpenedResult]):
         if found is None:
             raise AccessDenied(FORBIDDEN_OBJECT)
         store = cast(PluginsStorage, connections[PLUGINS_CONNECTION_KEY])
-        enabled = await store.enabled_plugins(found["id"])
-        sections = await store.sections([p["version_id"] for p in enabled])
+        nodes, files = await organization_tree(store, found["id"])
+        roles = frozenset({"member", "administrator"} if found["is_admin"] else {"member"})
         return OpenedResult(
             code=found["code"],
             name=found["name"],
             user=OrganizationUserSchema(name=found["user_name"], is_admin=found["is_admin"]),
-            plugins=[
-                TreePluginSchema(
-                    passport_id=p["passport_id"],
-                    name=p["name"],
-                    title=p["title"],
-                    sections=[
-                        TreeSectionSchema(title=s["title"], path=s["path"])
-                        for s in sections
-                        if s["version_id"] == p["version_id"]
-                    ],
+            tree=[
+                TreeNodeSchema(
+                    name=node.full_name,
+                    owner=node.owner,
+                    parent=node.parent,
+                    order=node.order,
+                    title=node.title or "",
+                    icon=node.icon or "",
+                    page=node.page,
+                    each=None if node.each_source is None else {"source": node.each_source, "key": str(node.each_key)},
+                    scope=list(node.scope),
+                    controls=None if node.controls is None else dict(node.controls),
                 )
-                for p in enabled
+                for node in visible(nodes, roles)
             ],
+            owners=[file.owner for file in files],
+            dependencies={file.owner: sorted(file.dependencies) for file in files},
         )
+
+
+class WatermarkResult(BaseResult):
+    """The organization's "now"."""
+
+    at: str | None = Field(description="Its watermark to the microsecond, in UTC; empty when it never changed")
+
+
+@meta(description="Read an organization's watermark, the latest moment whose answer no longer changes", domain=OrganizationDomain)
+@check_roles(AccountRole)
+@connection(CoreStorage, key=CORE_CONNECTION_KEY, description="The core's database")
+class ReadWatermarkAction(BaseAction[OpenParams, WatermarkResult]):
+    """
+    AI-CORE-BEGIN
+    ROLE: Tell the frame when "now" moved, so a page without a moment reads again (spec 077, FR-020).
+    CONTRACT: Refuses a stranger exactly as OpenOrganizationAction does.
+    AI-CORE-END
+    """
+
+    @access_decide("Refuse an account with no active user in the organization, alike for a code that does not exist")
+    @context_requires(Ctx.User.user_id)
+    async def membership_access_decide(
+        self, params: OpenParams, box: ToolsBox, connections: Connections, ctx: ContextView
+    ) -> Verdict:
+        """An active user of the account in the organization of the address."""
+        _ = box
+        found = await storage(connections).organization_for(params.code, str(ctx.get(Ctx.User.user_id)))
+        return Allowed() if found is not None else FORBIDDEN_OBJECT
+
+    @summary_aspect("Read the organization's watermark")
+    @context_requires(Ctx.User.user_id)
+    async def watermark_summary(
+        self, params: OpenParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView
+    ) -> WatermarkResult:
+        """The membership may end between the decision and this step; then it refuses alike."""
+        _ = (state, box)
+        found = await storage(connections).organization_for(params.code, str(ctx.get(Ctx.User.user_id)))
+        if found is None:
+            raise AccessDenied(FORBIDDEN_OBJECT)
+        return WatermarkResult(at=await storage(connections).watermark(found["id"]))

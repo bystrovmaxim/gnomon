@@ -43,6 +43,10 @@ KINDS = ("backend", "frontend")
 #: The labels every plugin container carries: the version it runs and its kind.
 VERSION_LABEL = "maxitor.plugin.version"
 KIND_LABEL = "maxitor.plugin.kind"
+#: The runner a container belongs to: two runners on one host, two stands, never touch each other's containers.
+RUNNER_LABEL = "maxitor.plugin.runner"
+#: The name of the one runner of a host that runs one stand.
+DEFAULT_RUNNER = "maxitor"
 #: The port each kind listens on inside its container.
 INNER_PORTS = {"backend": 8000, "frontend": 3000}
 #: Nobody: the user every plugin container runs as.
@@ -157,9 +161,11 @@ class PluginProcessesController(BaseController):
     ROLE: Every Docker step of running a plugin version.
     CONTRACT: ``plan`` reads how a version runs from its wheel; ``ensure_images`` builds its images once; ``start``
         runs one container and answers its name and address once it answers HTTP, or raises; ``exit_code`` tells
-        whether a container runs; ``stop`` removes a version's containers; ``stop_all`` every plugin container.
+        whether a container runs; ``stop`` removes a version's containers; ``stop_all`` every plugin container of
+        this runner.
     INVARIANTS: A container runs unprivileged, with its limits and its own network, its port on 127.0.0.1 only, and
-        gets no setting of the core.
+        gets no setting of the core. A runner sees, starts and removes only the containers and networks of its own
+        name, so a second stand on the same host is left alone.
     AI-CORE-END
     """
 
@@ -175,7 +181,11 @@ class PluginProcessesController(BaseController):
         memory: str = "512m",
         cpus: str = "1",
         start_timeout: float = 60.0,
+        runner: str = DEFAULT_RUNNER,
     ) -> None:
+        self._runner = runner
+        # The default runner keeps the names it always had; another one puts its name in front of them.
+        self._prefix = "maxitor" if runner == DEFAULT_RUNNER else f"maxitor-{runner}"
         self._runtime = runtime
         self._wheels = wheels
         self._gateway_url = gateway_url.rstrip("/")
@@ -218,13 +228,14 @@ class PluginProcessesController(BaseController):
 
     async def start(self, version_id: str, kind: str, schema: str, image: str) -> Started:
         """Run one container and wait until it answers HTTP; raise ``RuntimeError`` otherwise."""
-        name = f"maxitor-{schema}-{kind}"
+        name = f"{self._prefix}-{schema}-{kind}"
         await docker("rm", "--force", name)
         network = await self._network(schema)
         inner = INNER_PORTS[kind]
         command = [
             "run", "--detach", "--name", name,
             "--label", f"{VERSION_LABEL}={version_id}", "--label", f"{KIND_LABEL}={kind}",
+            "--label", f"{RUNNER_LABEL}={self._runner}",
             "--network", network, "--add-host", "host.docker.internal:host-gateway",
             "--user", UNPRIVILEGED, "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
             "--read-only", "--tmpfs", "/tmp",
@@ -270,23 +281,27 @@ class PluginProcessesController(BaseController):
 
     async def running_versions(self) -> set[str]:
         """The versions with a plugin container on this host."""
-        code, output = await docker("ps", "--all", "--filter", f"label={VERSION_LABEL}", "--format", f'{{{{.Label "{VERSION_LABEL}"}}}}')
+        code, output = await docker(
+            "ps", "--all", "--filter", f"label={VERSION_LABEL}", "--filter", f"label={RUNNER_LABEL}={self._runner}",
+            "--format", f'{{{{.Label "{VERSION_LABEL}"}}}}',
+        )
         return set(output.split()) if code == 0 else set()
 
     async def stop_all(self) -> None:
-        """Remove every plugin container: the runner starts from nothing, or it is stopping."""
+        """Remove every plugin container of this runner: it starts from nothing, or it is stopping."""
         await self._remove(f"label={VERSION_LABEL}")
 
     # ── inside ────────────────────────────────────────────────────────────────
 
     async def _container(self, version_id: str, kind: str) -> str | None:
         code, output = await docker(
-            "ps", "--all", "--quiet", "--filter", f"label={VERSION_LABEL}={version_id}", "--filter", f"label={KIND_LABEL}={kind}"
+            "ps", "--all", "--quiet", "--filter", f"label={VERSION_LABEL}={version_id}", "--filter", f"label={KIND_LABEL}={kind}",
+            "--filter", f"label={RUNNER_LABEL}={self._runner}",
         )
         return output.split()[0] if code == 0 and output else None
 
     async def _remove(self, label: str) -> None:
-        code, output = await docker("ps", "--all", "--quiet", "--filter", label)
+        code, output = await docker("ps", "--all", "--quiet", "--filter", label, "--filter", f"label={RUNNER_LABEL}={self._runner}")
         if code == 0 and output:
             await docker("rm", "--force", *output.split())
 
@@ -341,7 +356,7 @@ class PluginProcessesController(BaseController):
 
     async def _network(self, schema: str) -> str:
         """The version's own network; the database's container joins it under the name ``maxitor-db``."""
-        name = f"maxitor-{schema}"
+        name = f"{self._prefix}-{schema}"
         if (await docker("network", "inspect", name))[0] != 0:
             await docker("network", "create", name)
         if self._db_container:
@@ -354,7 +369,7 @@ class PluginProcessesController(BaseController):
         values["MAXITOR_PLUGIN_DSN"] = moved_dsn(values.get("MAXITOR_PLUGIN_DSN", ""), self._db_address)
         values["MAXITOR_GATEWAY_URL"] = self._gateway_url
         values["MAXITOR_CORE_JWKS_URL"] = f"{self._gateway_url}/api/v1/jwks"
-        values["MAXITOR_PLUGIN_API"] = f"http://maxitor-{schema}-backend:{INNER_PORTS['backend']}"
+        values["MAXITOR_PLUGIN_API"] = f"http://{self._prefix}-{schema}-backend:{INNER_PORTS['backend']}"
         if kind == "frontend":
             # The frontend talks to its backend with the incoming token; it keeps no secret of its own.
             values.pop("MAXITOR_PLUGIN_DSN", None)

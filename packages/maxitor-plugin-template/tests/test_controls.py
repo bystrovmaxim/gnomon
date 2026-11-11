@@ -28,9 +28,15 @@ MODE = {
 }
 
 
-def test_a_mode_pill_with_counts_passes(plugin, edit) -> None:
+def test_a_mode_pill_with_counts_passes(plugin, edit, action) -> None:
+    action("count_notes_by_mode")
     edit("navigation.yaml", lambda doc: _controls(doc).update(mode=MODE))
     assert check_plugin(plugin) == []
+
+
+def test_counts_that_are_no_action_of_the_plugin_are_refused(plugin, edit) -> None:
+    edit("navigation.yaml", lambda doc: _controls(doc).update(mode=MODE))
+    assert any("reads 'count_notes_by_mode', which is no action of the plugin" in p for p in check_plugin(plugin))
 
 
 def test_counts_belong_to_the_mode_pill_only(plugin, edit) -> None:

@@ -47,10 +47,23 @@ def _reason(files: dict[str, str | None]) -> str:
 # ── what a wheel alone shows ──────────────────────────────────────────────────
 
 
-def test_the_templates_wheel_passes_with_its_sections_in_order() -> None:
-    passport, sections = inspect(read_wheel(wheel()))
+def test_the_templates_wheel_passes_with_its_nodes_in_the_files_order() -> None:
+    passport, nodes = inspect(read_wheel(wheel()))
     assert passport["id"] == "run.aoa.maxitor.notes"
-    assert sections == [{"title": "All notes", "path": "/"}, {"title": "Tags", "path": "/tags"}]
+    assert [(n.full_name, n.parent, n.order, n.page) for n in nodes] == [("notes:tags", "root", 20, "/tags"), ("notes:notes", "root", 10, "/")]
+
+
+LIST_NODE = NAVIGATION + """    children:
+      - id: item
+        each: { source: list_items, key: item_id }
+        children:
+          - { id: item-page, title: Item, page: "/items/{item_id}" }
+"""
+
+
+def test_a_list_reads_an_action_the_wheel_carries() -> None:
+    _passport, nodes = inspect(read_wheel(wheel({"maxitor_notes/navigation.yaml": LIST_NODE, "maxitor_notes/actions/list_items_action.py": ""})))
+    assert [n.each_source for n in nodes if n.each_source] == ["list_items"]
 
 
 @pytest.mark.parametrize(
@@ -67,6 +80,10 @@ def test_the_templates_wheel_passes_with_its_sections_in_order() -> None:
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace('">=4.0,<5"', '">=5.0,<6"')}, "core_range"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT + "roles:\n  - name: reader\n    description: Reads.\n"}, "passport"),
         ({"maxitor_notes/navigation.yaml": NAVIGATION + "    roles: [reader]\n"}, "navigation"),
+        # A list whose source is no action of the wheel.
+        ({"maxitor_notes/navigation.yaml": LIST_NODE}, "navigation"),
+        # A node attached to a node the core does not have.
+        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("attach: root\n    title: Tags", "attach: core:item\n    title: Tags")}, "navigation"),
     ],
 )
 def test_each_fault_of_a_wheel_rejects_it(files: dict[str, str | None], reason: str) -> None:
@@ -230,8 +247,8 @@ async def test_a_good_version_becomes_active_under_its_passports_identity(tmp_pa
     plugin = world.updates("plugin")
     assert plugin[0][0].startswith("UPDATE plugin SET passport_id = $1, name = $2, title = $3, description = $4")
     assert plugin[0][1][:2] == ("run.aoa.maxitor.notes", "notes")
-    sections = [p for q, p in world.connection.statements if q.startswith("INSERT INTO plugin_section (")]
-    assert [p[3] for p in sections] == ["All notes", "Tags"]
+    nodes = [p for q, p in world.connection.statements if q.startswith("INSERT INTO plugin_node (")]
+    assert [(p[2], p[6]) for p in nodes] == [("notes:tags", "Tags"), ("notes:notes", "All notes")]
     version = world.updates("plugin_version")[-1]
     assert "state = $4" in version[0] and version[1][:4] == (PLACEHOLDER, "0.4.0", ">=4.0,<5", "active")
 

@@ -22,6 +22,16 @@ What a plugin must prove so far:
         assert call("io.github.bystrovmaxim.notes", ["member"]) == 404
 ```
 
+6. **Its place in the tree holds.** `test_navigation.py` and `test_controls.py` run Maxitor's own check of `navigation.yaml` on a copy of the plugin: the template passes, and every fault of chapter 7 — a list or a filter reading an action the plugin does not have, a parameter no list node above defines, a control on `at` or on a parameter of the path — is refused with its reason. A test that adds a source gives the copy its action file first:
+
+<!-- quote: packages/maxitor-plugin-template/tests/test_controls.py -->
+```python
+def test_a_mode_pill_with_counts_passes(plugin, edit, action) -> None:
+    action("count_notes_by_mode")
+    edit("navigation.yaml", lambda doc: _controls(doc).update(mode=MODE))
+    assert check_plugin(plugin) == []
+```
+
 ## Run them
 
 ```bash
@@ -29,5 +39,5 @@ uv run --extra dev pytest packages/maxitor-plugin-template/tests -q
 ```
 
 ```text
-244 passed
+245 passed
 ```

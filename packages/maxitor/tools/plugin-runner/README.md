@@ -34,5 +34,6 @@ Its version's environment file — the database address as its own role, `MAXITO
 | `MAXITOR_PLUGIN_FIND_LINKS` | A folder of wheels a version's requirements are taken from when PyPI does not have them yet. |
 | `MAXITOR_PLUGIN_MEMORY`, `MAXITOR_PLUGIN_CPUS` | A container's limits: `512m` and `1`. |
 | `MAXITOR_RUNNER_PERIOD_SECONDS` | How often it takes its round: 10 s. |
+| `MAXITOR_RUNNER_NAME` | The runner's name, `maxitor` by default. Its containers carry the label `maxitor.plugin.runner=<name>`, and a runner of another name puts its name in front of its containers' and networks' names: it starts, watches and removes only its own, so two stands share a host. |
 
 The runner needs Docker on its host and reads the environment files of the versions, so it runs as the operating-system user the installer writes them as. Running it all locally: [Run Maxitor core locally](../../../../docs/how-to/run-the-core-locally.md).

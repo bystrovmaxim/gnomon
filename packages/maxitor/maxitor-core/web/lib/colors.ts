@@ -1,11 +1,14 @@
 // packages/maxitor/maxitor-core/web/lib/colors.ts
-// An organization's colour, chosen from its code so it stays the same everywhere.
-const PALETTE = ["#0d9488", "#7c3aed", "#2563eb", "#db2777", "#ea580c", "#0891b2", "#65a30d", "#9333ea"];
+// An organization's colour, a colour of the palette of @maxitor/tokens chosen from its code, so it stays the same
+// everywhere.
+import { paletteColour, type PaletteColour } from "@maxitor/tokens";
+
+const ORGANIZATION_COLOURS: PaletteColour[] = ["teal", "violet", "blue", "pink", "amber", "green", "red", "grey"];
 
 export function colorOf(code: string): string {
   let h = 0;
   for (const ch of code) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return PALETTE[h % PALETTE.length];
+  return paletteColour(ORGANIZATION_COLOURS[h % ORGANIZATION_COLOURS.length]);
 }
 
 export function initials(name: string): string {

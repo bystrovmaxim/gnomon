@@ -1,6 +1,6 @@
 # 6. The backend
 
-**Builds on**: [5. Writing](05-writing.md). **Next**: chapter 7, written with bystrovmaxim/gnomon#103.
+**Builds on**: [5. Writing](05-writing.md). **Next**: [7. A place in the tree](07-a-place-in-the-tree.md).
 
 `app.py` is the passport's `backend.app`: every route is an action under `/p/<name>/api/{organization}`, and every request comes through Maxitor's gateway with a token the core issued for this plugin alone.
 
@@ -51,4 +51,4 @@ A missing role is answered 403; another organization's object 404, as if it did 
 
 ## Check it
 
-On the local stand, signed in as a member: the reading of chapter 4 answers `200`. Signed out: `401`. With another organization's code: `404`. Maxitor's runner keeps the backend running in its container: `docker kill maxitor-notes_0_7_0-backend`, and within a round it answers again.
+On the local stand, signed in as a member: the reading of chapter 4 answers `200`. Signed out: `401`. With another organization's code: `404`. Maxitor's runner keeps the backend running in its container: `docker kill maxitor-notes_0_8_0-backend`, and within a round it answers again.

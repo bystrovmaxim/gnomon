@@ -33,3 +33,13 @@ def edit(plugin: Path) -> Callable[[str, Callable[[dict[str, Any]], None]], None
         path.write_text(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), encoding="utf-8")
 
     return change
+
+
+@pytest.fixture
+def action(plugin: Path) -> Callable[[str], None]:
+    """Give the copied plugin an action file ``actions/<name>_action.py``, so its navigation may read it."""
+
+    def add(name: str) -> None:
+        (plugin / PACKAGE / "actions" / f"{name}_action.py").write_text("", encoding="utf-8")
+
+    return add

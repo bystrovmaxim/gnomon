@@ -77,11 +77,14 @@ def test_an_install_waits_for_the_installer_then_shows_in_the_tree(world: World)
     rows = page(world)["installed"]
     assert [(r["passport_id"], r["state"], r["installed_by"]) for r in rows] == [(NOTES, "installing", "Anna")]
     assert NOTES not in [c["passport_id"] for c in page(world)["marketplace"]]
-    assert world.client.get(f"/api/v1/organizations/{CODE}").json()["plugins"] == []
+    def plugin_nodes() -> list[tuple[str, str, str | None]]:
+        tree = world.client.get(f"/api/v1/organizations/{CODE}").json()["tree"]
+        return [(n["name"], n["title"], n["page"]) for n in tree if n["owner"] != "core"]
+
+    assert plugin_nodes() == []
     world.plugins.set_state(org_id(world), NOTES, "enabled")
-    tree = world.client.get(f"/api/v1/organizations/{CODE}").json()["plugins"]
-    assert tree == [{"passport_id": NOTES, "name": "notes", "title": "Notes",
-                     "sections": [{"title": "All notes", "path": "/"}, {"title": "Tags", "path": "/tags"}]}]
+    assert plugin_nodes() == [("notes:section-1", "All notes", "/"), ("notes:section-2", "Tags", "/tags")]
+    assert world.client.get(f"/api/v1/organizations/{CODE}").json()["owners"] == ["notes"]
 
 
 def test_disable_and_enable_keep_dependencies_whole(world: World) -> None:

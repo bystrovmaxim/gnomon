@@ -372,6 +372,14 @@ class CoreStorage(PostgresStorage):
         )
         return None if row is None else dict(row)
 
+    async def watermark(self, organization_id: str) -> str | None:
+        """The organization's watermark to the microsecond, in UTC; ``None`` when it never changed."""
+        value = await self._fetchval(
+            "SELECT to_char(watermark($1::text::uuid) AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"')",
+            (organization_id,),
+        )
+        return None if value is None else str(value)
+
     async def code_taken(self, code: str) -> bool:
         """Whether an organization has the address code ``code``."""
         return bool(await self._fetchval("SELECT EXISTS (SELECT 1 FROM organization WHERE code = $1)", (code,)))
