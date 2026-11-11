@@ -460,7 +460,7 @@
   /* maxitor-web's ErdFilterPanel: 148 px, a strict accordion, the gear shift at its foot */
   .fp { position: absolute; top: 12px; left: 12px; z-index: 6; width: 148px; max-height: calc(100% - 68px); display: flex; flex-direction: column; overflow: hidden; cursor: default;
         background: rgba(255,255,255,.88); backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,.08); border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,.07); padding: 0 10px; }
-  .fp .secs { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 0; }
+  .fp .secs { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0; }
   .fp .sh { display: flex; align-items: center; gap: 4px; padding: 6px 0; cursor: pointer; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: rgba(0,0,0,.6); }
   .fp .sh svg { width: 16px; height: 16px; transition: transform 120ms ease; }
   .fp .sh.closed svg { transform: rotate(-90deg); }
@@ -593,8 +593,8 @@
   .show-anchors .vrow { outline: 1px dashed #db2777; outline-offset: -2px; }
 
   /* The list of @maxitor/panel: 10,000 rows, only those in view drawn; an arrow at the edge towards a row out of view. */
-  .vt { position: absolute; left: 0; top: 0; width: 600px; display: flex; flex-direction: column; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 10px; overflow: hidden; }
-  .vt .vh { flex-shrink: 0; height: 32px; display: grid; grid-template-columns: 46px 16px 86px 1fr 78px; align-items: center; gap: 8px; padding: 0 12px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid rgba(15,23,42,.1); }
+  .vt { position: absolute; left: 0; top: 0; width: 820px; display: flex; flex-direction: column; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 10px; overflow: hidden; }
+  .vt .vh { flex-shrink: 0; height: 32px; display: grid; grid-template-columns: 46px 16px 86px 1fr 128px 64px 78px; align-items: center; gap: 8px; padding: 0 12px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid rgba(15,23,42,.1); }
   .vt .vs { position: relative; }
   .vt .vhw { position: relative; z-index: 2; background: #fff; border-radius: 10px 10px 0 0; box-shadow: 0 1px 0 rgba(15,23,42,.1); }
   .vt .vhw .vh { border-bottom: 0; box-shadow: none; }
@@ -610,7 +610,7 @@
   .fp .frow { cursor: text; }
   .fp .frow[onclick] { cursor: pointer; }
   .fp .bd.mg { width: 20px; height: 20px; background: #fff; color: #64748b; border: 1px solid rgba(0,0,0,.12); }
-  .fp .frow.on .bd.mg { color: #0f172a; border-color: #475569; }
+  .fp .frow.on .bd.mg { color: #0f172a; }
   .fp .fin { flex: 1; min-width: 0; height: 20px; border: 0; border-bottom: 1px solid transparent; padding: 0; font-size: 11px; color: rgba(0,0,0,.87); background: transparent; outline: none; }
   .fp .fin::placeholder { color: rgba(0,0,0,.38); }
   .fp .fin:focus { border-bottom-color: #94a3b8; }
@@ -632,7 +632,7 @@
   .fp .clrl:hover { background: rgba(15,23,42,.08); color: #0f172a; }
   .vt .vempty { padding: 18px 12px; font-size: 12.5px; color: var(--muted); }
   .vt .vsp { position: relative; }
-  .vrow { position: absolute; left: 0; right: 0; height: 30px; display: grid; grid-template-columns: 46px 16px 86px 1fr 78px; align-items: center; gap: 8px; padding: 0 12px; font-size: 12.5px; white-space: nowrap; color: #334155; border-bottom: 1px solid rgba(15,23,42,.05); cursor: default; }
+  .vrow { position: absolute; left: 0; right: 0; height: 30px; display: grid; grid-template-columns: 46px 16px 86px 1fr 128px 64px 78px; align-items: center; gap: 8px; padding: 0 12px; font-size: 12.5px; white-space: nowrap; color: #334155; border-bottom: 1px solid rgba(15,23,42,.05); cursor: default; }
   .vrow .ix { color: var(--faint); font-variant-numeric: tabular-nums; font-size: 11.5px; }
   .vrow .id { font-family: var(--mono); font-size: 11.5px; }
   .vrow .em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -744,6 +744,41 @@
   .calpop .cft button { justify-self: end; height: 28px; line-height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; font-size: 12px; color: #475569; cursor: pointer; }
   .calpop .cft button:hover { background: rgba(15,23,42,.06); }
   .calpop .cft button.done { background: var(--ink); color: #fff; }
+  .vrow .mg2 { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: #334155; }
+  .vrow .mg2 .pd { width: 16px; height: 16px; border: 0; flex-shrink: 0; }
+  .vrow .mg2 i { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .vrow .bl2, .vt .vh .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .vrow .bl2 { font-family: var(--mono); font-size: 11.5px; color: #334155; }
+  .fp .pd { border: 1px solid rgba(0,0,0,.12); border-radius: 50%; box-sizing: border-box; flex-shrink: 0; }
+  .fp .more { align-self: flex-start; border: 0; background: none; padding: 0 0 0 28px; font-size: 11px; color: #2563eb; cursor: pointer; }
+  .fp .fnone { font-size: 11px; color: #94a3b8; padding-left: 28px; }
+  .fp .n123 { font-size: 7px; font-weight: 700; letter-spacing: -.03em; color: inherit; }
+  .fp .nin { text-align: right; font-variant-numeric: tabular-nums; }
+  .fbtn { position: absolute; top: 10px; left: 10px; z-index: 6; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px 0 10px; border: 1px solid rgba(15,23,42,.12); border-radius: 17px; background: #fff; box-shadow: 0 2px 10px rgba(15,23,42,.1); font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer; }
+  .fbtn .fchev { transform: rotate(-90deg); color: #64748b; }
+  .fbtn .fn { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #0f172a; color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+  .fscrim { position: absolute; inset: 0; z-index: 45; background: rgba(15,23,42,.32); }
+  .fsheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; max-height: 80%; display: flex; flex-direction: column; background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(15,23,42,.18); }
+  .fsheet .fgrab { width: 36px; height: 4px; border-radius: 2px; background: #cbd5e1; margin: 8px auto 0; }
+  .fsheet .fsh { display: flex; align-items: center; justify-content: space-between; padding: 6px 16px 4px; }
+  .fsheet .fsh b { font-size: 15px; }
+  .fsheet .fsh button { border: 0; background: #0f172a; color: #fff; border-radius: 8px; height: 30px; padding: 0 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .fsheet .fp { position: static; width: auto; max-height: none; flex: 0 1 auto; min-height: 0; overflow-y: auto; box-shadow: none; border: 0; border-radius: 0; background: transparent; padding: 0 16px 18px; }
+  .fsheet .fp .lb, .fsheet .fp .fin { font-size: 13px; }
+  .fsheet .fp .rows { gap: 10px; }
+  .fsheet .fp .secs { flex: 0 0 auto; overflow: visible; }
+  .device.phone .fsheet .fp { display: flex !important; flex-direction: column; }
+  .device.phone .calpop { left: 0 !important; right: 0 !important; top: auto !important; bottom: 0; max-height: 94%; overflow-y: auto; border-radius: 16px 16px 0 0; border: 0; box-shadow: 0 -10px 30px rgba(15,23,42,.22); }
+  .device.phone .calpop .cbody { flex-direction: column; width: 100%; min-width: 0; }
+  .device.phone .calpop .cq, .device.phone .calpop .cpr { min-width: 0; max-width: 100%; }
+  .device.phone .calpop .cq { width: auto; flex-direction: row; overflow-x: auto; gap: 6px; padding: 12px 14px 10px; border-right: 0; border-bottom: 1px solid var(--sep); background: #fff; scrollbar-width: none; }
+  .device.phone .calpop .cq::-webkit-scrollbar { display: none; }
+  .device.phone .calpop .cq button { flex-shrink: 0; height: 30px; padding: 0 12px; border: 1px solid rgba(15,23,42,.12); border-radius: 15px; white-space: nowrap; }
+  .device.phone .calpop .cq .qsep { width: 1px; height: 22px; margin: 4px 2px; flex-shrink: 0; }
+  .device.phone .calpop .cpr, .device.phone .calpop.one .cpr { width: auto; }
+  .device.phone .calpop .cms { grid-template-columns: 1fr; }
+  .device.phone .calpop .cgrid .d { height: 40px; }
+  .device.phone .calpop .cgrid .d span { width: 36px; height: 36px; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -823,6 +858,8 @@ const EW = 210, EH = 30, FH = 24;
 const N_B = 10000, ADDED0 = 6000, ADDED1 = 6032, N_A = N_B - (ADDED1 - ADDED0 + 1), RH = 30;
 const pad = n => String(n).padStart(5, "0");
 const FIRST = ["anna", "boris", "dina", "egor", "farida", "gleb", "inna", "kirill", "lena", "maxim", "nadia", "oleg", "polina", "roman", "sofia", "timur"];
+/* Forty-six account managers: the first ones hold most accounts, the last ones a handful — a long choice. */
+const MANAGERS = (() => { const f = ["Anna", "Boris", "Dina", "Egor", "Farida", "Gleb", "Inna", "Kirill", "Lena", "Maxim", "Nadia", "Oleg", "Polina", "Roman", "Sofia", "Timur", "Ulyana", "Vadim", "Yana", "Zakhar", "Alina", "Denis", "Eva"], l = ["Petrova", "Orlov", "Sokolova", "Volkov", "Lebedeva", "Kozlov", "Novikova", "Morozov", "Pavlova", "Fedorov"]; const out = []; for (let i = 0; out.length < 46; i++) out.push(`${f[i % f.length]} ${l[(i * 3) % l.length]}`); return out; })();
 function rowOf(side, i) {
   const id = side === "b" ? i + 1 : (i + 1 < ADDED0 ? i + 1 : i + 1 + (ADDED1 - ADDED0 + 1));
   const nm = FIRST[id % FIRST.length], dom = ["mail.ru", "gmail.com", "yandex.ru", "proton.me"][id % 4];
@@ -830,7 +867,8 @@ function rowOf(side, i) {
   if (side === "b" && id >= ADDED0 && id <= ADDED1) k = "a";
   if (id === 6213) { k = "c"; if (side === "b") { was = email; email = `${nm}.billing@${dom}`; } }
   const span = Date.UTC(2026, 10, 10) - Date.UTC(2019, 0, 1), d = new Date(Date.UTC(2019, 0, 1) + span * Math.sqrt(id / (N_B + 1)) + (id % 7) * 36e5);
-  return { id, key: `acc-${pad(id)}`, email, was, k, dom: email.split("@")[1], date: id % 101 === 0 ? "" : d.toISOString().slice(0, 10), blocked: id % 37 === 0 };
+  const mgr = MANAGERS[Math.floor(MANAGERS.length * Math.pow(((id * 7919) % 1000) / 1000, 2.2))], bal = ((id * 104729) % 100000) / 100;
+  return { id, key: `acc-${pad(id)}`, email, was, k, mgr, bal, dom: email.split("@")[1], date: id % 101 === 0 ? "" : d.toISOString().slice(0, 10), blocked: id % 37 === 0 };
 }
 function indexOf(side, id) {
   if (side === "b") return id - 1;
@@ -840,7 +878,7 @@ function indexOf(side, id) {
 const NROWS = { a: N_A, b: N_B };
 
 /* ======================= state ======================= */
-const DEF = { one: null, review: null, cal: null, tf: null, fsec: null, paintL: null, paintC: null, fsecC: null, hideKc: [], view: "canvas", hover: null, sel: null, fold: [], hideS: [], cam: { a: null, b: null }, side: "b", note: {}, glide: false };
+const DEF = { mq: "", mexp: false, fs: null, one: null, review: null, cal: null, tf: null, fsec: null, paintL: null, paintC: null, fsecC: null, hideKc: [], view: "canvas", hover: null, sel: null, fold: [], hideS: [], cam: { a: null, b: null }, side: "b", note: {}, glide: false };
 const S = Object.assign(JSON.parse(JSON.stringify(DEF)), { phone: false, anchors: false });
 function go(patch) { Object.assign(S, patch); render(); }
 function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
@@ -960,7 +998,7 @@ const zoombar = () => `<div class="zoombar"><button data-z="in">+</button><butto
 function camOf(side) {
   if (S.cam[side]) return S.cam[side];
   const cv = document.querySelector(`.cv[data-side="${side}"]`), left = S.phone ? 16 : 172, w = cv ? cv.offsetWidth : 560;
-  const sw = S.view === "table" ? 600 : 250 + EW;
+  const sw = S.view === "table" ? 820 : 250 + EW;
   const k = Math.min(1, (w - left - 24) / sw);
   return { x: left, y: S.view === "table" ? 50 : 56, k };
 }
@@ -971,7 +1009,7 @@ function half(side) {
     : side === "b" ? `<button class="trk on" role="switch" aria-checked="true">Track</button>` : "";
   const body = S.view === "canvas"
     ? `<div class="cv" data-side="${side}"><div class="world" data-side="${side}">${worldHtml(side)}</div>${S.phone ? "" : fpanel(side)}${zoombar()}<div class="hnote" data-note="${side}" style="display:none"></div></div>`
-    : `<div class="cv" data-side="${side}"><div class="world" data-side="${side}"><div class="vt"><div class="vhw"><div class="vcap"><b>Accounts</b><span data-count="${side}">${listCount(side)}</span><button class="rvw" data-rvw="${side}" onclick="event.stopPropagation();openOne('${side}')">${CAL}<span>${S.review ? `Review on ${dLab(bd(S.review, false))}` : "Review on…"}</span></button></div><div class="vh"><span>#</span><span></span><span>Account</span><span>Email</span><span>Created</span></div></div><div class="vs" data-side="${side}" style="height:${Math.max(1, listOf(side).length) * RH}px"></div></div></div>${S.phone ? "" : listPanel(side)}${zoombar()}
+    : `<div class="cv" data-side="${side}"><div class="world" data-side="${side}"><div class="vt"><div class="vhw"><div class="vcap"><b>Accounts</b><span data-count="${side}">${listCount(side)}</span><button class="rvw" data-rvw="${side}" onclick="event.stopPropagation();openOne('${side}')">${CAL}<span>${S.review ? `Review on ${dLab(bd(S.review, false))}` : "Review on…"}</span></button></div><div class="vh"><span>#</span><span></span><span>Account</span><span>Email</span><span>Manager</span><span class="r">Balance</span><span>Created</span></div></div><div class="vs" data-side="${side}" style="height:${Math.max(1, listOf(side).length) * RH}px"></div></div></div>${S.phone ? phoneFilterButton(side) : listPanel(side)}${zoombar()}
         <div class="hnote" data-note="${side}" style="display:none"></div></div>`;
   return `<div class="half"><div class="hh"><span class="sd ${side}">${side.toUpperCase()}</span><b>${lab}</b>${head}</div>${body}</div>`;
 }
@@ -987,7 +1025,7 @@ function render() {
   app.className = "device" + (S.phone ? " phone" : "") + (S.anchors ? " show-anchors" : "");
   app.innerHTML = `${urlbar()}${header()}<div class="body">${S.phone ? "" : sidebar()}<div class="content">${content()}</div></div>`;
   if (S.view === "canvas" || S.view === "table") { applyCams(); bindCanvas(); }
-  if (S.view === "table") { bindLists(); renderCal(); renderOne(); }
+  if (S.view === "table") { bindLists(); renderFS(); renderCal(); renderOne(); }
   applyMarks();
   renderNav(); renderNotes(); fit();
 }
@@ -1057,7 +1095,7 @@ function bindCanvas() {
     window.addEventListener("mousemove", e => { if (!drag) return; const k = cv.getBoundingClientRect().width / cv.offsetWidth; S.cam[side] = { ...drag.c, x: drag.c.x + (e.clientX - drag.x) / k, y: drag.c.y + (e.clientY - drag.y) / k }; S.glide = false; applyCams(); });
     window.addEventListener("mouseup", () => { drag = null; });
     cv.addEventListener("wheel", e => {
-      if (e.target.closest(".calpop")) return;
+      if (e.target.closest(".calpop, .fp, .fsheet")) return;  // the filters scroll themselves
       const c = camOf(side), r = cv.getBoundingClientRect(), k0 = r.width / cv.offsetWidth;
       if (!(e.ctrlKey || e.metaKey)) {
         e.preventDefault();
@@ -1085,7 +1123,7 @@ function select(side, chain) {
   }
   if (r.mark && cv && S.view === "table") {
     const i = posOf(other, +r.mark.slice(8));
-    if (i >= 0 && !rowInView(other, i)) { const x = c.x + 600 * c.k > 0 && c.x < cv.offsetWidth ? c.x : camOf(null).x; to = { k: c.k, x, y: cv.offsetHeight / 2 - (HEADH + i * RH + RH / 2) * c.k }; }
+    if (i >= 0 && !rowInView(other, i)) { const x = c.x + 820 * c.k > 0 && c.x < cv.offsetWidth ? c.x : camOf(null).x; to = { k: c.k, x, y: cv.offsetHeight / 2 - (HEADH + i * RH + RH / 2) * c.k }; }
   }
   if (to) note[other] = r.note || "Brought to the centre";
   else if (r.note) note[other] = r.note;
@@ -1113,12 +1151,12 @@ function drawRows(side) {
   if (!L.length) h = `<div class="vempty">No rows pass the filters.</div>`;
   for (let i = i0; i < Math.min(i1, L.length); i++) {
     const r = rowOf(side, L[i]);
-    h += `<div class="vrow" data-anchor="row:${r.key}" style="top:${i * RH}px"><span class="ix">${(L[i] + 1).toLocaleString("en")}</span><span>${rowDot(r)}</span><span class="id">${r.key}</span><span class="em">${r.was ? `<s>${esc(r.was)}</s>` : ""}${esc(r.email)}${r.blocked ? `<span class="bl">blocked</span>` : ""}</span><span class="dt">${r.date || "—"}</span></div>`;
+    h += `<div class="vrow" data-anchor="row:${r.key}" style="top:${i * RH}px"><span class="ix">${(L[i] + 1).toLocaleString("en")}</span><span>${rowDot(r)}</span><span class="id">${r.key}</span><span class="em">${r.was ? `<s>${esc(r.was)}</s>` : ""}${esc(r.email)}${r.blocked ? `<span class="bl">blocked</span>` : ""}</span><span class="mg2">${pdisk(r.mgr, 16)}<i>${esc(r.mgr)}</i></span><span class="bl2">${r.bal.toFixed(2)}</span><span class="dt">${r.date || "—"}</span></div>`;
   }
   vs.innerHTML = h;
 }
 const HEADH = 72;
-const TF0 = { k: [], dom: [], q: "", from: "", to: "", hideBlocked: false };
+const TF0 = { k: [], dom: [], mgr: [], bmin: "", bmax: "", q: "", from: "", to: "", hideBlocked: false };
 const DOMS = { "gmail.com": "#0284c7", "yandex.ru": "#ca8a04", "mail.ru": "#7c3aed", "proton.me": "#0f766e" };
 function tf() { return Object.assign({}, TF0, S.tf || {}); }
 const LISTS = {};
@@ -1127,6 +1165,10 @@ function passes(r, skip) {
   const f = tf();
   if (skip !== "k" && f.k.includes(r.k)) return false;
   if (f.dom.includes(r.dom)) return false;
+  if (f.mgr.includes(r.mgr)) return false;
+  const bmin = parseFloat(f.bmin), bmax = parseFloat(f.bmax);
+  if (!isNaN(bmin) && r.bal < bmin) return false;
+  if (!isNaN(bmax) && r.bal > bmax) return false;
   if (f.q && !(r.key.includes(f.q.toLowerCase()) || r.email.toLowerCase().includes(f.q.toLowerCase()))) return false;
   if (!r.date) { if (f.from || f.to) return false; }
   else { const lo = bd(f.from, false), hi = bd(f.to, true); if (lo && r.date < lo) return false; if (hi && r.date > hi) return false; }
@@ -1174,10 +1216,12 @@ function listPanel(side) {
   const status = [["a", "+", "Added", "#16a34a"], ["c", "~", "Changed", "#d97706"], ["u", "=", "Unchanged", "#94a3b8"]].filter(r => side === "b" || r[0] !== "a")
     .map(([k, sg, l, c]) => `<div class="row${f.k.includes(k) ? " off" : ""}" data-k="${k}" onclick="tglK('${k}')">${disk(c, k)}<span class="lb">${l}</span></div>`).join("");
   const domain = Object.entries(DOMS).map(([d, c]) => `<div class="row${f.dom.includes(d) ? " off" : ""}" onclick="tglDom('${d}')">${disk(c, "none")}<span class="lb">${d}</span></div>`).join("");
+  const manager = managerSection();
+  const balance = numRow("bmin", "From", f.bmin, "the lowest") + numRow("bmax", "To", f.bmax, "the highest");
   const search = `<label class="row frow${f.q ? " on" : ""}"><span class="bd mg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></span><input class="fin" data-f="q" placeholder="Account or email" value="${esc(f.q)}" oninput="setTf('q', this.value)"></label>`;
   const created = rangeRow(side, "from", "From", f.from) + rangeRow(side, "to", "To", f.to);
   const blocked = `<div class="row${f.hideBlocked ? " off" : ""}" onclick="setTf('hideBlocked', !tf().hideBlocked)">${disk("#dc2626", "bl")}<span class="lb">Blocked accounts</span></div>`;
-  return `<div class="fp" data-lp="${side}"><div class="secs">${sec("search", "Search", search)}${sec("status", "Status", status)}${sec("domain", "Domain", domain)}${sec("created", "Created", created)}${sec("blocked", "Blocked", blocked)}</div>${gear([["status", "Status"], ["domain", "Domain"]], paint, "paintList")}</div>`;
+  return `<div class="fp" data-lp="${side}"><div class="secs">${sec("search", "Search", search)}${sec("status", "Status", status)}${sec("domain", "Domain", domain)}${sec("manager", "Manager", manager)}${sec("balance", "Balance", balance)}${sec("created", "Created", created)}${sec("blocked", "Blocked", blocked)}</div>${gear([["status", "Status"], ["domain", "Domain"]], paint, "paintList")}</div>`;
 }
 /* A range of dates: the distribution of the rows by month, the chosen stretch dark. */
 const CAL = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>';
@@ -1187,6 +1231,31 @@ function rangeRow(side, which, pre, v) {
 }
 /* The months of the page's span, a year to a line of four rows; the months the other bound rules out are pale. */
 function openSec(id) { S.fsec = S.fsec === id || (!S.fsec && id === "status") ? "none" : id; redrawPanels(); }
+/* A person's disk: the initials on a colour of the palette, as ErdFilterPanel draws a person. */
+const PCOL = ["#0284c7", "#7c3aed", "#ca8a04", "#0f766e", "#db2777", "#475569", "#16a34a", "#ea580c"];
+function pdisk(name, size = 20) { const ini = name.split(" ").map(w => w[0]).join("").slice(0, 2), c = PCOL[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % PCOL.length]; return `<svg class="dk pd" width="${size}" height="${size}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${c}"/><text x="12" y="15.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif">${ini}</text></svg>`; }
+/* The managers by how many accounts each holds, most first: the order a long choice shows its first values in. */
+let MGR_ORDER = null;
+function managerOrder() { if (!MGR_ORDER) { const c = {}; for (let i = 0; i < N_B; i++) { const m = rowOf("b", i).mgr; c[m] = (c[m] || 0) + 1; } MGR_ORDER = MANAGERS.slice().sort((a, b) => (c[b] || 0) - (c[a] || 0)); } return MGR_ORDER; }
+const MGR_SHOW = 8;
+/* A long choice: a search inside the section, the first values, then "N more"; every row turns on and off as any row does. */
+function managerSection() {
+  const f = tf(), q = (S.mq || "").trim().toLowerCase(), all = managerOrder();
+  let list = q ? all.filter(n => n.toLowerCase().includes(q)) : all;
+  const more = !q && !S.mexp && list.length > MGR_SHOW ? list.length - MGR_SHOW : 0;
+  if (more) list = list.slice(0, MGR_SHOW);
+  const find = `<label class="row frow${q ? " on" : ""}"><span class="bd mg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></span><input class="fin" data-f="mq" placeholder="Find a manager" value="${esc(S.mq || "")}" oninput="S.mq=this.value;redrawPanels()"></label>`;
+  const rows = list.map(n => `<div class="row${f.mgr.includes(n) ? " off" : ""}" onclick="tglMgr(${JSON.stringify(n).replace(/"/g, "&quot;")})">${pdisk(n)}<span class="lb" title="${esc(n)}">${esc(n)}</span></div>`).join("");
+  const tail = more ? `<button class="more" onclick="S.mexp=true;redrawPanels()">${more} more</button>`
+    : !q && S.mexp ? `<button class="more" onclick="S.mexp=false;redrawPanels()">Show fewer</button>`
+    : q && !list.length ? `<div class="fnone">No manager matches</div>` : "";
+  return find + rows + tail;
+}
+function tglMgr(n) { const f = tf(); f.mgr = f.mgr.includes(n) ? f.mgr.filter(x => x !== n) : f.mgr.concat(n); S.tf = f; refilter(); }
+/* A range of numbers: two rows like the others, the bound typed in the label's place. */
+function numRow(key, pre, v, hint) {
+  return `<label class="row frow${v ? " on" : ""}"><span class="bd mg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.5 4L7.5 20M16.5 4l-2 16M4.5 9h16M3.5 15h16"/></svg></span><span class="lb"><span class="pre">${pre}</span></span><input class="fin nin" data-f="${key}" inputmode="decimal" placeholder="${hint}" value="${esc(v)}" oninput="setTf('${key}', this.value)"></label>`;
+}
 function tglDom(d) { const f = tf(); f.dom = f.dom.includes(d) ? f.dom.filter(x => x !== d) : f.dom.concat(d); S.tf = f; refilter(); }
 /* Moving the paint switch repaints the rows and opens the section it paints by. */
 function paintList(id) { S.paintL = id; S.fsec = id; for (const side of ["a", "b"]) { const vs = document.querySelector(`.vs[data-side="${side}"]`); if (vs) vs.dataset.range = ""; } redrawPanels(); applyCams(); applyMarks(); }
@@ -1279,7 +1348,7 @@ function calHtml() {
     return `<div class="cf${act === w ? " on" : ""}"><label>${w === "from" ? "From" : "To"}</label><div class="cfb"><input data-cf="${w}" value="${val ? dLab(bd(val, w === "to")) : ""}" placeholder="${w === "from" ? "the start" : "the end"}" onfocus="calFocus('${w}')" onkeydown="if(event.key==='Enter'){calType('${w}',this.value);this.blur()}" onblur="calType('${w}',this.value)"><button class="rl${rel ? " on" : ""}" title="${rel ? "Moves with today — click to fix the date" : "A fixed date — click to make it move with today"}" ${val ? `onclick="calToggleRel('${w}')"` : "disabled"}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div><i>${rel ? boundLabel(val, w) : ""}</i></div>`;
   };
   const editor = `<div class="cfs">${field("from")}<span class="car">→</span>${field("to")}</div>
-    <div class="cms${c.jump ? " j" : ""}" onmouseleave="calHover(null)">${c.jump ? jumpHtml(c, CALOPT, "calJump") : monthGridHtml(c.view, lo, hi, a, b) + monthGridHtml(next, lo, hi, a, b, S.cal, "calPick", "calHover", "calJump", navHtml(canPrev, canNext, "calMove"))}</div>`;
+    <div class="cms${c.jump ? " j" : ""}" onmouseleave="calHover(null)">${c.jump ? jumpHtml(c, CALOPT, "calJump") : (S.phone ? monthGridHtml(c.view, lo, hi, a, b, S.cal, "calPick", "calHover", "calJump", navHtml(canPrev, c.view < CALOPT.max, "calMove")) : monthGridHtml(c.view, lo, hi, a, b) + monthGridHtml(next, lo, hi, a, b, S.cal, "calPick", "calHover", "calJump", navHtml(canPrev, canNext, "calMove")))}</div>`;
   const days = a && b ? Math.round((ms0(b) - ms0(a)) / 864e5) + 1 : null;
   return `<div class="calpop" role="dialog" aria-label="Choose dates"><div class="cbody"><div class="cq">${quick(QUICK)}<div class="qsep"></div>${quick(PAGE_QUICK)}</div>
     <div class="cpr">${editor}
@@ -1428,6 +1497,16 @@ function navHtml(canPrev, canNext, fn) {
   const arrow = d => `<svg width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
   return `<span class="cnav"><button ${canPrev ? `onclick="${fn}(-1)"` : "disabled"} aria-label="Previous month">${arrow("M7 2L2 7l5 5")}</button><button ${canNext ? `onclick="${fn}(1)"` : "disabled"} aria-label="Next month">${arrow("M2 2l5 5-5 5")}</button></span>`;
 }
+function activeFilters() { const f = tf(); return [f.k.length, f.dom.length, f.mgr.length, f.q, f.bmin || f.bmax, f.from || f.to, f.hideBlocked].filter(Boolean).length; }
+function phoneFilterButton(side) { const n = activeFilters(); return `<button class="fbtn" onclick="event.stopPropagation();S.fs='${side}';renderFS()">${I.chev.replace('class="ico sm"', 'class="ico sm fchev"')}Filters${n ? `<span class="fn">${n}</span>` : ""}</button>`; }
+/* On a phone the filters are one button; it opens them in a sheet from below, the same sections as on a desktop. */
+function renderFS() {
+  document.querySelectorAll(".fsheet, .fscrim").forEach(e => e.remove());
+  if (!S.fs || !S.phone) return;
+  const app = document.getElementById("app");
+  app.insertAdjacentHTML("beforeend", `<div class="fscrim" onclick="closeFS()"></div><div class="fsheet"><div class="fgrab"></div><div class="fsh"><b>Filters</b><button onclick="closeFS()">Done</button></div>${listPanel(S.fs)}</div>`);
+}
+function closeFS() { S.fs = null; renderFS(); const b = document.querySelector(".fbtn"); if (b) b.outerHTML = phoneFilterButton(S.side); }
 function redrawPanels() {
   for (const side of ["a", "b"]) {
     const fp = document.querySelector(`.fp[data-lp="${side}"]`); if (!fp) continue;
@@ -1457,7 +1536,7 @@ function markRow(side, a) {
 }
 function rowInView(side, i) {
   const cv = document.querySelector(`.cv[data-side="${side}"]`), c = camOf(side), y = c.y + (HEADH + i * RH) * c.k;
-  return y >= HEADH * c.k && y + RH * c.k <= cv.offsetHeight && c.x + 600 * c.k > 0 && c.x < cv.offsetWidth;
+  return y >= HEADH * c.k && y + RH * c.k <= cv.offsetHeight && c.x + 820 * c.k > 0 && c.x < cv.offsetWidth;
 }
 
 /* ======================= the screens ======================= */
@@ -1483,6 +1562,12 @@ const SCREENS = [
     ["2.8", "Filters: one value", { view: "table", fsec: "blocked", tf: { hideBlocked: true } }],
     ["2.9", "Painted by the domain", { view: "table", paintL: "domain" }],
     ["2.10", "Date picker", { view: "table", review: "2026-11-24", one: { side: "b", draft: "2026-11-24", view: "2026-11", hover: null } }],
+    ["2.11", "A long choice", { view: "table", fsec: "manager" }],
+    ["2.12", "A long choice, searched", { view: "table", fsec: "manager", mq: "ol", tf: { mgr: ["Oleg Volkov"] } }],
+    ["2.13", "A range of numbers", { view: "table", fsec: "balance", tf: { bmin: "100", bmax: "250" } }],
+    ["2.14", "Phone: the filters", { view: "table", phone: true, fs: "b", fsec: "manager", tf: { k: ["u"] } }],
+    ["2.15", "Phone: the date range picker", { view: "table", phone: true, fs: "b", fsec: "created", cal: { side: "b", active: "from", view: "2026-03", hover: null, draft: { from: "2026-03-05", to: "now" } }, tf: { from: "2026-03-05", to: "now" } }],
+    ["2.16", "Phone: the date picker", { view: "table", phone: true, review: "2026-11-24", one: { side: "b", draft: "2026-11-24", view: "2026-11", hover: null } }],
   ]],
 ];
 const NOTES = {
@@ -1547,6 +1632,21 @@ const NOTES = {
     "The second control of the pair: <b>the date picker of <code>@maxitor/panel</code></b> for one date, with the range picker's look. On the left, ready dates — the core's (today, yesterday, a week ago, the start of this month, quarter and year), then under a hairline the page's own (here “Next release”); on the right, one field that takes typing like the range's fields, with the same arrow between a fixed date and one that moves with today; under it one month; at the foot the date with its weekday, Cancel and Apply.",
     "The core's test page calls it from the list's head, “Review on…”, as a plugin would: <code>await openDatePicker({ anchor, unit, min, max, value, presets })</code> gives the date as written — <code>2026-11-24</code> or <code>now-7d</code> — or <code>null</code> when it is closed without a choice. Here <code>max</code> lies in the future: a page's bounds are its own.",
   ]],
+  "2.11": ["A long choice", [
+    "<b>Where to click:</b> open “Manager” in the filters on the left.",
+    "A choice of many values — 46 managers here — shows a search at the top of its section, then its first eight values, the ones that hold the most rows, then “38 more”. Every row turns on and off as any row does; a person's disk carries their initials.",
+    "“38 more” shows them all, and the panel scrolls inside itself; “Show fewer” folds them back. The search and the folding are the panel's own, never in the address: the address holds only the values switched off.",
+  ]],
+  "2.12": ["A long choice, searched", ["Typing in the section's search keeps only the values that hold it, all of them, folded or not; “Oleg Volkov” is switched off and stays so while searched. “No manager matches” when none does."]],
+  "2.13": ["A range of numbers", [
+    "<b>Where to click:</b> open “Balance” in the filters on the left.",
+    "A range of numbers is the range's two rows, From and To, with the number typed in the label's place; an empty row is no bound. The address holds <code>balance=100..250</code>.",
+  ]],
+  "2.14": ["Phone: the filters", [
+    "On a phone the filters are one button at the top left of the panel, with how many are on; it opens them in a sheet from below — the same sections, the same rows, larger — and Done closes it. The rows change as they are switched, behind the sheet.",
+  ]],
+  "2.15": ["Phone: the date range picker", ["On a phone the date range picker is a sheet from below: the ready stretches as a row of chips that scrolls sideways, the two fields, one month with its arrows, and the foot with Cancel and Apply."]],
+  "2.16": ["Phone: the date picker", ["The date picker the same way: the ready dates as chips, the field, one month, the date with its weekday, Cancel and Apply."]],
   "2.9": ["Painted by the domain", ["The list's sections Status and Domain can both paint: the switch at the foot of the filters chooses what colours the disk of every row. Here the rows are painted by their email's domain."]],
   "2.4": ["A row added after A", ["<b>acc-06010</b> was added after A: A's camera stays, A says “Not in A”."]],
 };
@@ -1556,7 +1656,7 @@ function openNum(n) {
   for (const [, items] of SCREENS) for (const [k, , st] of items) if (k === n) {
     const ph = S.phone, an = S.anchors;
     for (const key of Object.keys(S)) delete S[key];
-    Object.assign(S, base(st), { phone: ph, anchors: an });
+    Object.assign(S, base(st), { phone: st.phone === undefined ? ph : st.phone, anchors: an });
     if (S.phone && (S.view === "canvas" || S.view === "table") && S.hover) S.side = S.hover.side === "b" ? "a" : "b";
     if (S.phone && S.sel) S.side = S.sel.side === "b" ? "a" : "b";
     CUR = n;
