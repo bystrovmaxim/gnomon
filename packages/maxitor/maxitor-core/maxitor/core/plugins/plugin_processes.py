@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import io
+import re
 import shutil
 import sys
 import zipfile
@@ -67,8 +68,14 @@ CMD ["node", "/app/server.js"]
 """
 
 
+#: A line a build step printed, with its step number and time: ``#5 0.825 ERROR: No matching distribution …``.
+_STEP_ERROR = re.compile(r"^#\d+ \d+(?:\.\d+)? (ERROR: .*)$")
+#: Any line of Docker's own that says what failed: ``#5 ERROR: process … did not complete successfully``.
+_ANY_ERROR = re.compile(r"(ERROR: .*)$")
+
+
 class EnvironmentInstallError(RuntimeError):
-    """A version's image could not be built; ``reason`` is the last line Docker answered."""
+    """A version's image could not be built; ``reason`` says why, in the words of the step that failed."""
 
     def __init__(self, reason: str) -> None:
         super().__init__(reason)
@@ -152,6 +159,23 @@ async def docker(*args: str) -> tuple[int, str]:
     out, err = await process.communicate()
     code = process.returncode if process.returncode is not None else -1
     return code, (out if code == 0 else err or out).decode("utf-8", "replace").strip()
+
+
+def build_failure(output: str, code: int) -> str:
+    """
+    Why ``docker build --progress=plain`` failed: the first error the failing step printed — pip's
+    ``ERROR: No matching distribution found for …`` — else the first error Docker printed, else its last line
+    other than Docker Desktop's ``View build details`` link; at most 500 characters.
+    """
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    for line in lines:
+        if found := _STEP_ERROR.match(line):
+            return found.group(1)[:500]
+    for line in lines:
+        if found := _ANY_ERROR.search(line):
+            return found.group(1)[:500]
+    rest = [line for line in lines if not line.startswith("View build details")]
+    return (rest[-1] if rest else f"exit {code}")[:500]
 
 
 @meta(description="Builds a deployed version's Docker images and starts, watches and stops its containers")
@@ -349,10 +373,10 @@ class PluginProcessesController(BaseController):
         return (await docker("image", "inspect", tag))[0] == 0
 
     async def _build(self, tag: str, context: Path) -> None:
-        code, output = await docker("build", "--quiet", "--tag", tag, str(context))
+        # Plain progress: when a step fails, its own output — pip's error — is in what Docker answers.
+        code, output = await docker("build", "--progress=plain", "--tag", tag, str(context))
         if code != 0:
-            lines = output.splitlines()
-            raise EnvironmentInstallError((lines[-1] if lines else f"exit {code}")[:500])
+            raise EnvironmentInstallError(build_failure(output, code))
 
     async def _network(self, schema: str) -> str:
         """The version's own network; the database's container joins it under the name ``maxitor-db``."""
