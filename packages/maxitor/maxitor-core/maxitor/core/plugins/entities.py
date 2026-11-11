@@ -200,10 +200,10 @@ class PluginVersionCoreEntity(BaseCoreEntity):
         Inverse(PluginDependencyCoreEntity, "plugin_version"),
     ] = Field(description="The plugins it needs, from its passport")
 
-    sections: Annotated[
-        CompositeMany[PluginSectionCoreEntity],
-        Inverse(PluginSectionCoreEntity, "plugin_version"),
-    ] = Field(description="The top level of its navigation, drawn in the organization's tree")
+    nodes: Annotated[
+        CompositeMany[PluginNodeCoreEntity],
+        Inverse(PluginNodeCoreEntity, "plugin_version"),
+    ] = Field(description="Every node of its navigation, joined into an organization's tree while it is enabled")
 
     created_at: datetime = Field(description="When the version was added")
     updated_at: datetime | None = Field(default=None, description="When it last changed; empty if never")
@@ -226,18 +226,27 @@ class PluginDependencyCoreEntity(BaseCoreEntity):
     updated_at: datetime | None = Field(default=None, description="When it last changed; empty if never")
 
 
-@entity(description="One top-level section of a version's navigation", domain=PluginsDomain)
-class PluginSectionCoreEntity(BaseCoreEntity):
-    """A row of the organization's tree a plugin adds while it is enabled."""
+@entity(description="One node of a version's navigation, with its full name and the node it stands under", domain=PluginsDomain)
+class PluginNodeCoreEntity(BaseCoreEntity):
+    """A node a plugin adds to the organization's tree while it is enabled (specs/077-core-frame/data-model.md)."""
 
-    id: str = Field(description="Section id")
-    position: int = Field(description="Its place among the version's sections, from 1")
-    title: str = Field(description="The section's title in the tree")
-    path: str = Field(description="The section's path inside the plugin's pages")
+    id: str = Field(description="Node row id")
+    full_name: str = Field(description="Its full name, <plugin name>:<node id>, unique within the version")
+    parent: str = Field(description="root, a node of the core, of a dependency or of its own plugin")
+    position: int = Field(description="Its place in the file, from 1: the order among equal order values")
+    node_order: int = Field(description="Its order among the children of its parent; 0 when the file names none")
+    title: str | None = Field(default=None, description="An ordinary node's title; empty for a list node")
+    icon: str | None = Field(default=None, description="A name of the core's icon set; empty for none")
+    page: str | None = Field(default=None, description="The page's path template inside the plugin; empty for a group")
+    each_source: str | None = Field(default=None, description="A list node's reading action; empty for an ordinary node")
+    each_key: str | None = Field(default=None, description="The parameter a list node's instance adds; empty otherwise")
+    roles: list[str] = Field(description="The core's roles needed to see it; empty for every member")
+    controls: str | None = Field(default=None, description="The page's controls as the file writes them, as JSON")
+    room: str | None = Field(default=None, description="The page's behaviour with other people as the file writes it, as JSON")
 
     plugin_version: Annotated[
         AssociationOne[PluginVersionCoreEntity],
-        Inverse(PluginVersionCoreEntity, "sections"),
+        Inverse(PluginVersionCoreEntity, "nodes"),
     ] = Field(description="The version whose navigation it comes from")
 
     created_at: datetime = Field(description="When it was read from the navigation")
@@ -303,4 +312,4 @@ class PluginProcessCoreEntity(BaseCoreEntity):
 PluginCoreEntity.model_rebuild()
 PluginVersionCoreEntity.model_rebuild()
 PluginDependencyCoreEntity.model_rebuild()
-PluginSectionCoreEntity.model_rebuild()
+PluginNodeCoreEntity.model_rebuild()

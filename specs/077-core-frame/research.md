@@ -43,8 +43,8 @@ Decisions taken for spec 077, each with why and what else was weighed.
 
 ## R7. The watermark
 
-- **Decision**: a core action `ReadWatermarkAction` (`GET /api/v1/organizations/{code}/watermark`) reads the database function `watermark(organization)`; `Frame` asks it every 5 seconds while a page without `at` is open, and sends `panel.watermark` when it changed.
-- **Why**: every endpoint is an action; the presence connection of bystrovmaxim/gnomon#76 can carry it later.
+- **Decision**: a core action `ReadWatermarkAction` (`GET /api/v1/organizations/{code}/watermark`) reads the database function `watermark(organization)`; `Frame` asks it every 5 seconds while a page without `at` is open, and sends `panel.watermark` when it changed. `change_time(organization)`, which every plugin's change takes its time from, keeps that time in a mechanics table `organization.organization_clock` in the same transaction, and `watermark` reads it beside the core's version tables: a plugin's committed change moves "now" for the frame.
+- **Why**: every endpoint is an action; the core cannot read a plugin's tables, but every change of a plugin passes through `change_time`, under the organization's lock. The presence connection of bystrovmaxim/gnomon#76 can carry the same signal later.
 - **Alternatives**: a WebSocket now — it comes with presence.
 
 ## R8. List nodes and control sources from the browser

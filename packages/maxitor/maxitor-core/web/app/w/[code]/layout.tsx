@@ -9,23 +9,7 @@ import { Icon } from "@/components/marks";
 import { core, me } from "@/lib/core";
 import type { TreeNode } from "@/lib/tree";
 
-type Opened = { code: string; name: string; user: { name: string; is_admin: boolean }; plugins: { name: string; title: string; sections: { title: string; path: string }[] }[] };
-
-/** The tree of an organization: the core's Settings for an administrator and each enabled plugin's sections. */
-function treeOf(org: Opened): { nodes: TreeNode[]; owners: string[] } {
-  const nodes: TreeNode[] = [];
-  const blank: Pick<TreeNode, "each" | "scope" | "controls"> = { each: null, scope: [], controls: null };
-  org.plugins.forEach((plugin, index) => {
-    plugin.sections.forEach((section, position) =>
-      nodes.push({ ...blank, name: `${plugin.name}:${position}`, owner: plugin.name, parent: "root", order: index * 100 + position, title: section.title, icon: "page", page: section.path }),
-    );
-  });
-  if (org.user.is_admin) {
-    nodes.push({ ...blank, name: "core:settings", owner: "core", parent: "root", order: 10000, title: "Settings", icon: "settings", page: null });
-    nodes.push({ ...blank, name: "core:settings.plugins", owner: "core", parent: "core:settings", order: 100, title: "Plugins", icon: "puzzle", page: "/settings/plugins" });
-  }
-  return { nodes, owners: org.plugins.map((p) => p.name) };
-}
+type Opened = { code: string; name: string; user: { name: string; is_admin: boolean }; tree: TreeNode[]; owners: string[] };
 
 export default async function OrganizationLayout({ children, params }: { children: ReactNode; params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -48,9 +32,8 @@ export default async function OrganizationLayout({ children, params }: { childre
     );
   }
   const org = answer.data;
-  const { nodes, owners } = treeOf(org);
   return (
-    <Frame account={account} current={{ code: org.code, name: org.name }} nodes={nodes} owners={owners}>
+    <Frame account={account} current={{ code: org.code, name: org.name }} nodes={org.tree} owners={org.owners}>
       {children}
     </Frame>
   );

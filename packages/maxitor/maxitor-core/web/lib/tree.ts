@@ -9,7 +9,7 @@ export type Controls = {
   mode?: { param: string; default: string; options: Choice[]; counts?: string };
   views?: { param: string; default: string; options: Choice[] };
   filters?: { title: string; param: string; options?: { value: string; label: string; colour?: string }[]; source?: string }[];
-  legend?: { title: string; rows?: { label: string; colour: string }[]; source?: string };
+  legend?: { title: string; items?: { label: string; colour: string }[]; source?: string };
 };
 
 export type TreeNode = {

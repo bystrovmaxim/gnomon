@@ -14,8 +14,10 @@ from maxitor.core.plugins.actions.administrator import administered, administrat
 from maxitor.core.plugins.actions.change_plugin_state import live_row, move
 from maxitor.core.plugins.actions.request_install_action import PluginParams, PluginStateResult
 from maxitor.core.plugins.events import PluginEnabledEvent
+from maxitor.core.plugins.organization_tree import organization_tree
 from maxitor.core.plugins.plugins_domain import PluginsDomain
 from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
+from maxitor.core.plugins.tree_builder import TreeRefusedError
 from maxitor.core.roles import AccountRole
 
 from aoa.action_machine.context.context_view import ContextView
@@ -70,6 +72,10 @@ class EnablePluginAction(BaseAction[PluginParams, PluginStateResult]):
         disabled = [d["passport_id"] for d in needed if states.get(d["passport_id"]) != "enabled"]
         if disabled:
             raise ConflictError("dependency_disabled", dependencies=disabled)
+        try:
+            await organization_tree(plugins(connections), organization["id"], row)
+        except TreeRefusedError as error:
+            raise ConflictError("navigation", detail=error.reason) from None
         await move(connections, organization["id"], row["row_id"], "enabled", account_id, type(self).__name__)
         await box.info(
             Channel.business,

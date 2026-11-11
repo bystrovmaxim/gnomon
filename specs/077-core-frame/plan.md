@@ -6,7 +6,7 @@
 
 ## Summary
 
-The core's Next.js application becomes the frame every plugin lives in. Two new npm packages of this repository carry what plugins draw with: `@maxitor/tokens` (the CSS custom properties of colours, palette, radii, shadows, blur, type and spacing, from maxitor-web's styles) and `@maxitor/panel` (the page document, the panel router and address parameters, `<MaxitorCanvas>`, `Card`, `DataTable`). The core keeps every node of a version's `navigation.yaml` in `plugins.plugin_node`, checked by one tree builder when the version is checked, when it is installed or enabled in an organization, and at the core's start for the core's own file; `ReadOrganizationTreeAction` gives an organization's tree filtered by roles, list nodes load through the gateway at the panel's moment, and `ReadWatermarkAction` lets the frame tell a page that "now" moved. The frame is a persistent Next.js layout at `/w/<code>`: the tree, the top row and the right panel, which shows the core's own pages directly and a plugin's page in a transparent `iframe`, talking to it by the panel protocol, with the controls a node declares drawn over it. The gateway redirects a plugin page opened outside the panel and forbids framing it elsewhere. The template's frontend is built with both packages, and its notes page opens in the panel.
+The core's Next.js application becomes the frame every plugin lives in. Two new npm packages of this repository carry what plugins draw with: `@maxitor/tokens` (the CSS custom properties of colours, palette, radii, shadows, blur, type and spacing, from maxitor-web's styles) and `@maxitor/panel` (the page document, the panel router and address parameters, `<MaxitorCanvas>`, `Card`, `DataTable`). The core keeps every node of a version's `navigation.yaml` in `plugins.plugin_node`, checked by one tree builder when the version is checked, when it is installed or enabled in an organization, and at the core's start for the core's own file; `OpenOrganizationAction` gives the organization with its tree filtered by roles, list nodes load through the gateway at the panel's moment, and `ReadWatermarkAction` lets the frame tell a page that "now" moved. The frame is a persistent Next.js layout at `/w/<code>`: the tree, the top row and the right panel, which shows the core's own pages directly and a plugin's page in a transparent `iframe`, talking to it by the panel protocol, with the controls a node declares drawn over it. The gateway redirects a plugin page opened outside the panel and forbids framing it elsewhere. The template's frontend is built with both packages, and its notes page opens in the panel.
 
 ## Technical Context
 
@@ -26,7 +26,7 @@ The core's Next.js application becomes the frame every plugin lives in. Two new 
 
 **Constraints**: every endpoint is an action (rules 41–46, 66); the address is the only state of the panel; no colour or size number outside `@maxitor/tokens` in the frame, the controls and `@maxitor/panel`; no change to maxitor-web.
 
-**Scale/Scope**: two packages, one migration, two new core actions, the tree builder, the frame (tree, top row, panel, controls), the test page, the gateway's two rules, the template in step, the documentation of the tutorial's chapter 7 and of the concept's section 7.
+**Scale/Scope**: two packages, one migration, one new core action and the tree in the organization's, the tree builder, the frame (tree, top row, panel, controls), the test page, the gateway's two rules, the template in step, the documentation of the tutorial's chapter 7 and of the concept's section 7.
 
 ## Constitution Check
 
@@ -85,7 +85,9 @@ packages/maxitor/maxitor-core/maxitor/core/
 ├── plugins/entities.py                       # PluginNodeCoreEntity replaces PluginSectionCoreEntity
 ├── plugins/actions/check_version_action.py   # nodes written, one-file rules
 ├── plugins/actions/request_install_action.py, enable_plugin_action.py   # the organization's tree built
-├── actions/organization_tree.py              # ReadOrganizationTreeAction, ReadWatermarkAction
+├── plugins/organization_tree.py              # an organization's tree, built for the frame, installing and enabling
+├── actions/organizations.py                  # OpenOrganizationAction with the tree, ReadWatermarkAction
+├── migrations/organization/0003_organization_clock.sql   # the watermark follows a plugin's changes
 └── migrations/plugins/0003_plugin_nodes.sql
 
 packages/maxitor/maxitor-core/web/

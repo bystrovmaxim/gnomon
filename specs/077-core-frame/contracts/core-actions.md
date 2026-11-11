@@ -2,10 +2,14 @@
 
 | Route | Action | Who | Answer |
 |---|---|---|---|
-| `GET /api/v1/organizations/{code}/tree` | `ReadOrganizationTreeAction` | a member of `code` | `{ nodes: TreeNode[] }` (data-model), filtered by the person's roles |
-| `GET /api/v1/organizations/{code}/watermark` | `ReadWatermarkAction` | a member of `code` | `{ at: string }`, the organization's watermark to the microsecond |
+| `GET /api/v1/organizations/{code}` | `OpenOrganizationAction` | a member of `code` | `{ code, name, user, tree: TreeNode[], owners: string[] }`: the tree filtered by the person's roles (data-model), the enabled plugins in dependency order |
+| `GET /api/v1/organizations/{code}/watermark` | `ReadWatermarkAction` | a member of `code` | `{ at: string \| null }`, the organization's watermark to the microsecond, in UTC |
 
-`OpenOrganizationAction` keeps answering the organization and the user; its `plugins` list is gone, as the tree answers it.
+The frame reads the organization and its ordinary nodes in one action, as it opens.
+
+## The watermark
+
+`watermark(organization)` is the latest committed change time of the organization: the core's version tables and every time `change_time(organization)` gave, which it keeps in `organization.organization_clock` within the same transaction. A plugin's change therefore moves "now" for every page of the organization once it is committed.
 
 ## Refusals
 

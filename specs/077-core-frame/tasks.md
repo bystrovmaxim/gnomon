@@ -26,7 +26,7 @@ One phase is one commit and one numbered phase of issue bystrovmaxim/gnomon#74. 
 - [ ] T012 `plugins/tree_builder.py`: `resolve_nodes` (one version's nodes with full names, parents and scope) and `build_tree` (the organization's set: attachments found, direct dependencies only, scope defined, no nested equal keys, order ties); `TreeRefusedError`; tests per refusal and for the template's file.
 - [ ] T013 Migration `plugins/0003_plugin_nodes.sql` and `PluginNodeCoreEntity` replacing `plugin_section`; `PluginsStorage.nodes(version_ids)`.
 - [ ] T014 `CheckVersionAction` writes the version's nodes and refuses by the one-file rules; `RequestInstallAction` and `EnablePluginAction` build the organization's tree and refuse `navigation`; `PluginDetailsAction` reads its sections from the top nodes; tests.
-- [ ] T015 `ReadOrganizationTreeAction` (`GET /api/v1/organizations/{code}/tree`) and `ReadWatermarkAction` (`GET …/watermark`); `OpenOrganizationAction` without `plugins`; tests.
+- [ ] T015 `OpenOrganizationAction` answers the organization's tree and its plugins in dependency order; `ReadWatermarkAction` (`GET …/watermark`); the organization's clock that makes a plugin's change move the watermark; tests.
 - [ ] T016 The frame's tree from the tree action: roles, hidden empty parents, list nodes loaded through the gateway at the panel's moment in parts of 50 with "More…", the error of one branch with Try again, the path opened from an address.
 
 ## Phase 4: the panel protocol and `@maxitor/panel` (issue phase 4)

@@ -59,6 +59,7 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-1", problems)
     if navigation is not None:
         problems.extend(navigation_problems(navigation))
+        problems.extend(source_problems(navigation, action_names(package)))
         problems.extend(_history_problems(package, passport, navigation))
     schema_file = passport.get("database", {}).get("schema")
     if schema_file is not None:
@@ -194,6 +195,46 @@ def navigation_problems(navigation: Mapping[str, Any]) -> list[str]:
                             f"navigation: {node_id!r} uses {{{name}}}, which neither it nor a list node above it defines"
                         )
     return problems
+
+
+def named_actions(navigation: Mapping[str, Any]) -> list[tuple[str, str]]:
+    """Every reading action the navigation names, with the node that names it: lists, filters, legends and counts."""
+    named: list[tuple[str, str]] = []
+    for node, _scope in _walk(navigation["nodes"]):
+        each = node.get("each")
+        if each is not None:
+            named.append((node["id"], each["source"]))
+        controls = node.get("controls", {})
+        if "counts" in controls.get("mode", {}):
+            named.append((node["id"], controls["mode"]["counts"]))
+        for control in [*controls.get("filters", []), controls.get("legend", {})]:
+            if "source" in control:
+                named.append((node["id"], control["source"]))
+    return named
+
+
+def source_problems(navigation: Mapping[str, Any], actions: Iterable[str]) -> list[str]:
+    """
+    Every list, filter, legend and count of the navigation names an action of the plugin.
+
+    ``actions`` are the names the plugin's folders ``actions/`` and ``history/`` hold, one action per file
+    ``<name>_action.py``; Maxitor calls a source at ``/p/<plugin>/api/<organization>/lists/<name>``.
+    """
+    known = set(actions)
+    return [
+        f"navigation: {node_id!r} reads {source!r}, which is no action of the plugin (actions/{source}_action.py)"
+        for node_id, source in named_actions(navigation)
+        if source not in known
+    ]
+
+
+def action_names(package: Path) -> set[str]:
+    """The actions a plugin's package holds: ``actions/<name>_action.py`` and ``history/<name>_action.py``."""
+    return {
+        path.name.removesuffix("_action.py")
+        for folder in ("actions", HISTORY_FOLDER)
+        for path in (package / folder).glob("*_action.py")
+    }
 
 
 def _control_problems(node_id: str, controls: Mapping[str, Any], path_params: frozenset[str]) -> list[str]:

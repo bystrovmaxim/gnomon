@@ -7,7 +7,8 @@ CheckVersionAction — the installer checks one draft version: active, rejected 
     the wheel ──► in the store by its sha256? ── no ──► download it (limits, allowed hosts) ──► store it
         │                                                    └── timeout / unreachable ──► stays draft, with the reason
         ▼
-    read it as a zip only ──► passport 2 ──► schema.yaml ──► navigation ──► keys to the core ──► the core's range
+    read it as a zip only ──► passport 2 ──► schema.yaml ──► navigation, its sources and its attachments to the core
+        ──► keys to the core ──► the core's range
         ──► its id and name are free, or the plugin is the same owner's ──► active
     any fault ──► rejected, with its reason
 
@@ -43,8 +44,9 @@ from maxitor.core.plugins.storage.wheel_storage import (
     WheelStorage,
     WheelTooLargeError,
 )
+from maxitor.core.plugins.tree_builder import Node, TreeRefusedError, check_version
 from maxitor.core.plugins.wheel import WheelContents, WheelRefusedError, read_wheel
-from maxitor_plugin_sdk.checks import node_role_problems, passport_role_problems
+from maxitor_plugin_sdk.checks import passport_role_problems
 from maxitor_plugin_sdk.plugin_schema import PluginSchemaError, parse_plugin_schema
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from pydantic import Field
@@ -93,25 +95,19 @@ def _validator(name: str) -> Draft202012Validator:
     return Draft202012Validator(json.loads((SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8")))
 
 
-def _sections(contents: WheelContents) -> list[dict[str, Any]]:
-    """The top level of the navigation: the nodes attached to the root, by their order."""
+def _nodes(contents: WheelContents) -> list[Node]:
+    """Every node of the version's navigation, when the rules one file shows hold; raise ``VersionRejectedError``."""
     text = contents.file((contents.passport.get("frontend") or {}).get("navigation"))
     if text is None:
         raise VersionRejectedError("navigation", "the passport's navigation file is not in the wheel")
-    navigation = yaml.safe_load(text)
-    problems = [e.message for e in _validator("navigation-1").iter_errors(navigation)]
-    if problems:
-        raise VersionRejectedError("navigation", problems[0])
-    roles = node_role_problems(navigation)
-    if roles:
-        raise VersionRejectedError("navigation", roles[0])
-    nodes = [n for n in navigation.get("nodes") or [] if n.get("attach") == "root"]
-    nodes.sort(key=lambda n: (n.get("order", 0), n.get("id", "")))
-    return [{"title": str(n["title"]), "path": str(n.get("page") or "")} for n in nodes]
+    try:
+        return check_version(str(contents.passport["name"]), yaml.safe_load(text), contents.actions)
+    except TreeRefusedError as error:
+        raise VersionRejectedError("navigation", error.reason) from None
 
 
-def inspect(contents: WheelContents) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    """The passport and the sections of a wheel that passes every rule a wheel alone can show; raise ``VersionRejectedError``."""
+def inspect(contents: WheelContents) -> tuple[dict[str, Any], list[Node]]:
+    """The passport and the navigation's nodes of a wheel that passes every rule a wheel alone can show; raise ``VersionRejectedError``."""
     passport = contents.passport
     if passport.get("passport") == 1:
         raise VersionRejectedError("passport", "passport 1 carries migrations; Maxitor builds tables from schema.yaml since passport 2")
@@ -130,7 +126,7 @@ def inspect(contents: WheelContents) -> tuple[dict[str, Any], list[dict[str, Any
         raise VersionRejectedError("schema", error.problems[0]) from None
     except CoreKeysError as error:
         raise VersionRejectedError("foreign_keys", str(error)) from None
-    sections = _sections(contents)
+    nodes = _nodes(contents)
     core = package_version("maxitor")
     try:
         fits = SpecifierSet(passport["requires"]["maxitor"]).contains(core, prereleases=True)
@@ -138,7 +134,7 @@ def inspect(contents: WheelContents) -> tuple[dict[str, Any], list[dict[str, Any
         fits = False
     if not fits:
         raise VersionRejectedError("core_range", f"the plugin needs core {passport['requires']['maxitor']}; this core is {core}")
-    return passport, sections
+    return passport, nodes
 
 
 @meta(description="Check a draft plugin version: its wheel, passport, tables, navigation and the core's range", domain=PluginsDomain)
@@ -181,8 +177,8 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
             return CheckResult(state="gone")
         try:
             data = await self._wheel(found, connections)
-            passport, sections = inspect(read_wheel(data))
-            await self._activate(store, found, passport, sections)
+            passport, nodes = inspect(read_wheel(data))
+            await self._activate(store, found, passport, nodes)
         except WheelSourceError as error:
             await self._record(store, found, "draft", f"{error.reason}: {error.detail}")
             await box.warning(
@@ -231,9 +227,9 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
         return data
 
     async def _activate(
-        self, store: DeployStorage, found: dict[str, Any], passport: dict[str, Any], sections: list[dict[str, Any]]
+        self, store: DeployStorage, found: dict[str, Any], passport: dict[str, Any], nodes: list[Node]
     ) -> None:
-        """Give the version its plugin, dependencies and sections, and make it active — or raise ``VersionRejectedError``."""
+        """Give the version its plugin, dependencies and navigation's nodes, and make it active — or raise ``VersionRejectedError``."""
         owner = found["owner_organization_id"]
         same_id = await store.plugin_by_passport(passport["id"])
         target = found["plugin_id"]
@@ -285,15 +281,24 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
                     None,
                     operation,
                 )
-            for position, section in enumerate(sections, start=1):
+            for node in nodes:
                 await store.insert(
-                    "plugin_section",
+                    "plugin_node",
                     {
                         "id": str(uuid.uuid4()),
                         "plugin_version_id": found["id"],
-                        "position": position,
-                        "title": section["title"],
-                        "path": section["path"],
+                        "full_name": node.full_name,
+                        "parent": node.parent,
+                        "position": node.position,
+                        "node_order": node.order,
+                        "title": node.title,
+                        "icon": node.icon,
+                        "page": node.page,
+                        "each_source": node.each_source,
+                        "each_key": node.each_key,
+                        "roles": list(node.roles),
+                        "controls": None if node.controls is None else json.dumps(node.controls),
+                        "room": None if node.room is None else json.dumps(node.room),
                         "created_at": changed,
                         "updated_at": None,
                     },

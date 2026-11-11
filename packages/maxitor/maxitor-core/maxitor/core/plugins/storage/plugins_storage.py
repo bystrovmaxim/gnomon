@@ -24,8 +24,8 @@ from maxitor.core.plugins.entities import (
     OrganizationPluginCoreEntity,
     PluginCoreEntity,
     PluginDependencyCoreEntity,
+    PluginNodeCoreEntity,
     PluginProcessCoreEntity,
-    PluginSectionCoreEntity,
     PluginVersionCoreEntity,
 )
 from maxitor.core.storage.core_storage import VERSIONED, CoreStorage
@@ -42,7 +42,7 @@ PLUGIN_VERSIONED: Mapping[str, tuple[str, tuple[str, ...]]] = {
     "plugin": ("plugin_versions", ("id",)),
     "plugin_version": ("plugin_version_versions", ("id",)),
     "plugin_dependency": ("plugin_dependency_versions", ("id",)),
-    "plugin_section": ("plugin_section_versions", ("id",)),
+    "plugin_node": ("plugin_node_versions", ("id",)),
     "organization_plugin": ("organization_plugin_versions", ("organization_id", "id")),
 }
 
@@ -82,7 +82,7 @@ def like_pattern(query: str) -> str:
     PluginCoreEntity,
     PluginVersionCoreEntity,
     PluginDependencyCoreEntity,
-    PluginSectionCoreEntity,
+    PluginNodeCoreEntity,
     OrganizationPluginCoreEntity,
     PluginProcessCoreEntity,
 )
@@ -210,11 +210,26 @@ class PluginsStorage(CoreStorage):
         return [dict(row) for row in rows]
 
     async def sections(self, version_ids: list[str]) -> list[dict[str, Any]]:
-        """The top-level sections of the versions ``version_ids``, in their order."""
+        """The nodes the versions ``version_ids`` attach outside their own plugin, by their order: what each adds."""
         if not version_ids:
             return []
         rows = await self._fetch(
-            "SELECT plugin_version_id::text AS version_id, position, title, path FROM plugin_section"
+            "SELECT n.plugin_version_id::text AS version_id, n.position, coalesce(n.title, '') AS title,"
+            " coalesce(n.page, '') AS path FROM plugin_node n JOIN plugin_version v ON v.id = n.plugin_version_id"
+            " JOIN plugin p ON p.id = v.plugin_id"
+            " WHERE n.plugin_version_id = ANY($1::text[]::uuid[]) AND split_part(n.parent, ':', 1) <> p.name"
+            " ORDER BY n.plugin_version_id, n.node_order, n.position",
+            (version_ids,),
+        )
+        return [dict(row) for row in rows]
+
+    async def nodes(self, version_ids: list[str]) -> list[dict[str, Any]]:
+        """Every node of the versions ``version_ids``, each version's in the order of its file."""
+        if not version_ids:
+            return []
+        rows = await self._fetch(
+            "SELECT plugin_version_id::text AS version_id, full_name, parent, position, node_order, title, icon, page,"
+            " each_source, each_key, roles, controls::text AS controls, room::text AS room FROM plugin_node"
             " WHERE plugin_version_id = ANY($1::text[]::uuid[]) ORDER BY plugin_version_id, position",
             (version_ids,),
         )

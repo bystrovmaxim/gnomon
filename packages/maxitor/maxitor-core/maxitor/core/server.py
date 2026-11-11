@@ -27,6 +27,7 @@ from maxitor.core.actions.email_sign_in import ConfirmEmailAction, SignInWithPas
 from maxitor.core.actions.organizations import (
     CheckAddressCodeAction,
     OpenOrganizationAction,
+    ReadWatermarkAction,
     RegisterOrganizationAction,
 )
 from maxitor.core.actions.passport import CorePassportAction
@@ -55,6 +56,7 @@ from maxitor.core.plugins.actions.upload_private_plugin_action import UploadPriv
 from maxitor.core.plugins.plugin_tokens import PLUGIN_TOKENS_CONNECTION_KEY, PluginTokensController
 from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
 from maxitor.core.plugins.storage.wheel_storage import WHEELS_CONNECTION_KEY, WheelStorage
+from maxitor.core.plugins.tree_builder import core_nodes
 from maxitor.core.settings import CoreSettings
 from maxitor.core.storage.core_storage import CORE_CONNECTION_KEY, CoreStorage
 from maxitor.core.tokens import TOKENS_CONNECTION_KEY, SessionTokensController
@@ -91,6 +93,7 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("get", "/api/v1/organizations/code-check", CheckAddressCodeAction),
     ("post", "/api/v1/organizations", RegisterOrganizationAction),
     ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
+    ("get", "/api/v1/organizations/{code}/watermark", ReadWatermarkAction),
     ("get", "/api/v1/core/passport", CorePassportAction),
     ("get", "/api/v1/organizations/{code}/plugins", ListPluginsAction),
     ("get", "/api/v1/organizations/{code}/plugins/{passport_id}", PluginDetailsAction),
@@ -135,6 +138,8 @@ def create_app(
     AI-CORE-END
     """
     settings = settings or CoreSettings.from_environment()
+    # The core's own navigation.yaml is checked before anything serves: a core whose tree does not hold never starts.
+    core_nodes()
     pools: dict[str, PostgresPool] = {}
     given = dict(resources or {})
 

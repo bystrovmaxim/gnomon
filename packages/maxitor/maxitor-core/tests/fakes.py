@@ -191,6 +191,13 @@ class MemoryCoreStorage(CoreStorage):
                 out.append({"code": o["code"], "name": o["name"], "is_admin": u["is_admin"], "user_name": u["name"]})
         return sorted(out, key=lambda o: (o["name"], o["code"]))
 
+    async def watermark(self, organization_id: str) -> str | None:
+        """The organization's last change: its latest version opened, as the database's function reads it."""
+        moments = [v["valid_from_at"] for rows in self.versions.values() for v in rows
+                   if str(v.get("organization_id", v.get("id"))) == organization_id]
+        latest = max(moments, default=None)
+        return None if latest is None else latest.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
     async def organization_for(self, code: str, account_id: str) -> dict[str, Any] | None:
         for o in self.tables["organization"]:
             if o["code"] == code:

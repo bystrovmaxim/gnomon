@@ -11,7 +11,7 @@ One node of a plugin version's `navigation.yaml`, resolved when the version is c
 | `full_name` | text | `<plugin name>:<node id>`, unique within the version |
 | `parent` | text | `root`, `core:<id>`, `<dependency>:<id>`, or the full name of the owner's node it stands under |
 | `position` | int | its place in the file, from 1: keeps the file's order among equal `order` values |
-| `order` | int | the order among the parent's children; 0 when the file names none |
+| `node_order` | int | the `order` of the file: the order among the parent's children; 0 when the file names none |
 | `title` | text, empty | an ordinary node's title; a list node's instances take theirs from `source` |
 | `icon` | text, empty | a name of the core's icon set |
 | `page` | text, empty | the page's path template inside the owner; empty for a node that only groups |
@@ -28,7 +28,7 @@ Rows are written once, by `CheckVersionAction`, in the same transaction that mak
 
 The core's own `maxitor/core/navigation.yaml`, read and checked once at the core's start, held in memory: `core:settings` (Settings, administrators, order 10000) with `core:settings.plugins` (Plugins, page `/settings/plugins`).
 
-## Tree node (the answer of `ReadOrganizationTreeAction`)
+## Tree node (in the answer of `OpenOrganizationAction`)
 
 | Field | Meaning |
 |---|---|

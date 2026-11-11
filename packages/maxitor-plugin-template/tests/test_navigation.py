@@ -64,7 +64,8 @@ def test_a_parameter_no_list_node_defines_is_refused(plugin, edit) -> None:
     assert "navigation: 'notes' uses {author_id}, which neither it nor a list node above it defines" in check_plugin(plugin)
 
 
-def test_a_parameter_a_list_node_above_defines_passes(plugin, edit) -> None:
+def test_a_parameter_a_list_node_above_defines_passes(plugin, edit, action) -> None:
+    action("list_authors")
     child = {"id": "author", "each": {"source": "list_authors", "key": "author_id"}, "page": "/authors/{author_id}"}
     edit("navigation.yaml", lambda doc: _root_section(doc).update(children=[child]))
     assert check_plugin(plugin) == []
