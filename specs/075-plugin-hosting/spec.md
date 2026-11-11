@@ -20,7 +20,7 @@ Words used below:
 
 - **Gateway** — the part of the core's site that takes every request and hands it on by its path.
 - **Inner address** — `127.0.0.1:<port>`, where a plugin's process listens; only the gateway reaches it.
-- **Plugin process** — a plugin version's backend or frontend, started and watched by the core.
+- **Plugin process** — a plugin version's backend or frontend, running in a Docker container of its own, started and watched by the core.
 - **Runner** — the core's process that starts, watches and stops the plugin processes.
 - **Plugin token** — a JWT the core signs with its private key (EdDSA) for one plugin: the person, the organization, the person's role in the core there, the plugin's id in `aud`, 60 seconds of life.
 - **JWKS** — the core's public key, published so that a plugin checks a token.
@@ -37,7 +37,8 @@ Decided with the maintainer while the epic bystrovmaxim/gnomon#72 was put in ord
 - Q: Which roles does a plugin get? → A: The person's role in the core in the organization of the address, as it is: `member` for every active user, `administrator` added for an administrator; `service` for a call with no person. A plugin declares no roles; the passport's `roles` section is refused. The role is read from the core's tables when the token is issued, never from the request.
 - Q: What is the gateway? → A: The core's Next.js application, which already passes `/api/**` to the core's backend. It asks the core's backend, by an action, whether a request may pass and with which token; the decision and the signing are actions, the passing on is the application's.
 - Q: Who starts the plugin processes? → A: A process of the core's own, `maxitor-plugin-runner`, beside `maxitor-plugin-installer`; it runs the actions of the domain `plugins` in itself, with no HTTP route, and records where each process listens.
-- Q: Where does a plugin's Python environment come from? → A: From the version's wheel and its requirements; a requirement not on the package index yet is taken from a folder of wheels the operator names. The local stand fills that folder from the AOA submodule and the workspace.
+- Q: Where does a plugin's Python environment come from? → A: From the version's wheel and its requirements, built once into the version's own Docker image; a requirement not on the package index yet is taken from a folder of wheels the operator names. The local stand fills that folder from the AOA submodule and the workspace.
+- Q: Why containers rather than processes of the runner's user? → A: Processes of one operating-system user could read each other's environment files and the runner's own environment, the core's database password included. A container runs as an unprivileged user with only its own file, its limits and its version's own network.
 - Q: Does the template's frontend run here? → A: No: it needs `@maxitor/panel`, which comes with the frame (bystrovmaxim/gnomon#74). The frontend process is proved on a test plugin whose wheel carries a small built page; the template's frontend runs from bystrovmaxim/gnomon#74 on.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -134,7 +135,7 @@ The plugin template guards its actions with the core's role `member`, declares n
 - Two runners start at once: each version's processes are owned by one runner, by a database lock; the other leaves them alone.
 - The core's private key is missing at start: the core's backend refuses to start, naming the setting; it never makes up a key.
 - A version is upgraded: the old version's processes stop once no organization has it enabled; the new one's start; requests of an organization go to the version that organization has.
-- A port the runner chose is taken when the process starts: the runner chooses another and records it.
+- A port: Docker chooses a free one on `127.0.0.1`, and the runner records it.
 - A token is used after the session ended: it lives at most 60 seconds; the next request gets no new token.
 - A plugin's frontend asks its own backend: a server component goes to its inner address from `MAXITOR_PLUGIN_API` with the incoming `authorization`, never through the browser.
 
@@ -167,11 +168,11 @@ The plugin template guards its actions with the core's role `member`, declares n
 **The processes**
 
 - **FR-014**: The runner MUST, on start and every round, run one backend and, when its wheel carries a frontend build, one frontend for every deployed version enabled in at least one organization, each listening on an inner address it records for the gateway.
-- **FR-015**: Each version's backend MUST run in its own Python environment installed from its wheel; requirements not on the package index MUST be taken from a folder of wheels named by the environment.
-- **FR-016**: A process's environment MUST hold only its version's environment file, the JWKS address, its own inner address and the gateway's inner address — no setting or secret of the core.
+- **FR-015**: Each version's backend and frontend MUST run in Docker containers of their own from images built from its wheel — as user 65534, with no capabilities, no new privileges, a read-only file system, limits of memory, CPU and processes, a network of the version's own, the port published on `127.0.0.1` only; requirements not on the package index MUST be taken from a folder of wheels named by the environment.
+- **FR-016**: A container's environment MUST hold only its version's environment file (the frontend not even that), the database and the gateway as the containers reach them, the JWKS through the gateway and its backend's address — no setting or secret of the core.
 - **FR-017**: A process that exits MUST be started again on a later round, with a growing pause after repeated failures; every start, exit and stop MUST be a typed event of the domain `plugins`.
 - **FR-018**: A version enabled in no organization MUST have its processes stopped and their addresses removed.
-- **FR-019**: One version's processes MUST be owned by one runner at a time, by a database lock.
+- **FR-019**: One runner MUST work at a time, by a database lock; on its start it MUST remove every plugin container a stopped runner left.
 
 **Roles and the template**
 

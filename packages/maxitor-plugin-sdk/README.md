@@ -7,6 +7,7 @@ What a Maxitor plugin and Maxitor itself share.
 | `maxitor_plugin_sdk.schemas` | The JSON schemas of a plugin's files: the passport `maxitor-plugin.yaml`, `navigation.yaml` and `foreign-keys.yaml`, format 1 each. |
 | `maxitor_plugin_sdk.checks` | One plugin's files against their schemas, and the rules across fields a schema cannot express. |
 | `maxitor_plugin_sdk.compat` | Whether plugins fit a core and each other. It is the only code that decides it. |
+| `maxitor_plugin_sdk.roles` | The core's roles a plugin's actions check: `MemberRole`, `AdministratorRole`, `ServiceRole`, and `CORE_ROLES` for a token coordinator's registry. A plugin declares no roles of its own; the check refuses a passport with `roles` and a node asking for anything but `member` or `administrator`. |
 
 ## Checking one plugin's files
 

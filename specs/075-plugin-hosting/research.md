@@ -14,15 +14,15 @@
 
 **Rationale**: the core's web process may run in several workers and must not own children; the installer holds the privileged role `maxitor_installer` and must not start untrusted code.
 
-## R3. A version's environment
+## R3. A version's images and containers
 
-**Decision**: `<runtime>/<schema>/venv`, made by `uv venv` and filled by `uv pip install <wheel>` with `--find-links <folder>` when `MAXITOR_PLUGIN_FIND_LINKS` names one. The frontend build is found under the environment's `purelib` at the passport's `frontend.build`; the backend runs as `<venv>/bin/python -m uvicorn <backend.app> --factory --host 127.0.0.1 --port <p>`, the frontend as `node <build>/server.js` with `PORT` and `HOSTNAME=127.0.0.1`.
+**Decision**: two images per version, built once: `maxitor-plugin/<schema>-backend:<sha>` from `python:<x.y>-slim` with `pip install --find-links /wheels <wheel>` (the folder `MAXITOR_PLUGIN_FIND_LINKS` copied in), run as `python -m uvicorn <backend.app> --factory` on port 8000; `maxitor-plugin/<schema>-frontend:<sha>` from `node:22-slim` with the wheel's `frontend.build`, run as `node /app/server.js` on 3000. A container `maxitor-<schema>-<kind>`: `--user 65534:65534 --cap-drop ALL --security-opt no-new-privileges --read-only --tmpfs /tmp`, memory, CPU and pids limits, the network `maxitor-<schema>`, `--publish 127.0.0.1::<port>`.
 
-**Rationale**: a plugin's requirements must not mix with the core's or another plugin's; `uv` is already the repository's tool.
+**Rationale**: processes of one operating-system user read each other's environment files and the runner's environment; a container sees only its own. Docker is already on the stand and the local stand (PostgreSQL).
 
 ## R4. Ports and addresses
 
-**Decision**: the runner asks the system for a free port (bind to port 0), starts the process with it, waits up to 30 s for the port to accept, and records `http://127.0.0.1:<port>` in `plugin_process`. A process that does not come up is stopped, its failures counted, and the next start waits `min(5 s · 2^failures, 300 s)`.
+**Decision**: Docker publishes the container's port on a free port of `127.0.0.1`; the runner waits up to 60 s for an HTTP answer there and records `http://127.0.0.1:<port>` and the container's name in `plugin_process`. A container that does not come up is removed, its failures counted, and the next start waits `min(5 s · 2^(failures−1), 300 s)`.
 
 ## R5. Signing
 
@@ -44,4 +44,4 @@
 
 ## R9. Testing the frontend process
 
-**Decision**: the runner's test builds a test wheel whose backend is a tiny ASGI factory and whose frontend build is a `server.js` of a few lines answering on `PORT`; the wheel declares no requirement, and the test points the environment at the tests' own `uvicorn` by a `.pth` file.
+**Decision**: the test builds a probe wheel whose backend is a tiny ASGI factory requiring `uvicorn` and whose frontend build is a `server.js` of a few lines; it builds both images, runs both containers and reads from the backend its environment and its user id. It runs where Docker is.

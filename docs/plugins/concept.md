@@ -35,13 +35,13 @@ In short: a plugin is a Python package (pip or a ready wheel) that carries a pas
 
 A plugin is an independent application with three parts:
 
-- **backend** — an AOA service: actions, the resource of its database, roles; runs as a process of its own;
-- **frontend** — a Next.js site with its own `basePath`, whose pages are shown in the frame's right panel; runs as a Node process of its own;
+- **backend** — an AOA service: actions and the resource of its database, guarded by the core's roles; runs in a Docker container of its own;
+- **frontend** — a Next.js site with its own `basePath`, whose pages are shown in the frame's right panel; runs in a Docker container of its own;
 - **database schema** — a PostgreSQL schema of its own per version in the core's shared database, built by the core from the plugin's `schema.yaml` by the rules of versioned storage; a plugin that keeps no state has none (section 5).
 
 A plugin depends on the core and possibly on other plugins. The core and the plugins it depends on know nothing of it. A plugin does not import another plugin's code and never reads another schema: it calls the other plugin's actions through the gateway. So plugins are installed, upgraded and removed one by one.
 
-Separate processes are not a convenience but a condition of isolation. If all plugins lived in one Python process, any of them would read the database passwords of all the others from memory, and separate database roles would mean nothing.
+Separate containers are not a convenience but a condition of isolation. If all plugins lived in one Python process — or as processes of one operating-system user — any of them would read the database passwords of all the others, from memory or from their files, and separate database roles would mean nothing. Each version runs in containers of its own, as an unprivileged user, with its own network and only its own environment file.
 
 ## 2. The passport
 
@@ -71,12 +71,6 @@ dependencies:
       wheel: https://github.com/acme/maxitor-people/releases/download/v1.4.0/acme_maxitor_people-1.4.0-py3-none-any.whl
       sha256: 3f5a0c...e91
 
-roles:
-  - name: reader
-    description: Reads notes.
-  - name: editor
-    description: Writes and deletes notes.
-
 backend:
   app: acme_notes.app:create_app     # the AOA application factory
 
@@ -97,7 +91,6 @@ database:
 | `version` | strictly `x.y.z` (SemVer); equal to the version in the package's `pyproject.toml` |
 | `requires.maxitor` | the range of core versions — an edge to the node `maxitor` of the dependency graph (section 3.1) |
 | `dependencies` | the plugins this one cannot work without: `id`, a `version` range and a `source` — a pip package or a wheel at an address with a mandatory `sha256` |
-| `roles` | the plugin's roles; the core's administrator assigns them to people |
 | `frontend.navigation` | the file with the plugin's tree nodes, pages, controls and behaviour in a room |
 | `history.compare` | optional: the comparisons its pages can draw beside one moment, out of `diff` and `side_by_side`; without it every page offers one moment only (section 7.9) |
 
@@ -307,7 +300,9 @@ The site is one origin. The core's gateway takes every request and hands it on b
 | `/p/<name>/<organization>/**` | a plugin's frontend (Next.js) — only inside the right panel |
 | `/**`, including `/w/<organization>/**` | the core's frontend (Next.js): the frame and the core's pages |
 
-The processes of the core and the plugins listen only on an inner address the core assigns them; from outside only the gateway is reachable.
+The core's processes listen on `127.0.0.1`; each plugin version's backend and frontend run in Docker containers of their own, whose ports are published on `127.0.0.1` of the host only. From outside only the gateway is reachable.
+
+**Running.** The core's process `maxitor-plugin-runner` keeps every deployed version that is enabled in at least one organization running. For each it builds two images once — the backend on `python:<x.y>-slim` with the wheel and its requirements, the frontend on `node:22-slim` with the wheel's built pages — and runs a container of each: as user 65534, with no capabilities, no new privileges, a read-only file system, limits of memory, CPU and processes, and a network of its own version. A container reaches the database at `MAXITOR_PLUGIN_DB_ADDRESS` and the gateway at `MAXITOR_PLUGIN_GATEWAY_URL`, as the containers see them; it gets nothing of the core's settings. The runner records each container's address in `plugins.plugin_process` for the gateway, starts again a container that exited after a pause that doubles up to five minutes, removes the containers of a version no organization runs, and on its own start removes every container a stopped runner left.
 
 Each plugin has its own Next.js application with its own `basePath`, its own Next.js version and its own build. The browser's address bar always holds a core address `/w/<organization>/...`; a plugin's page lives in the right panel (section 7). Today the core's frontend is built with Vite; moving it to Next.js is separate work that comes before the first plugin.
 
@@ -332,21 +327,23 @@ export default {
   "sub": "user:7f3c…",
   "sid": "…",
   "org": "acme",
-  "roles": ["reader", "editor"],
+  "roles": ["member"],
   "iat": 1794211200,
   "exp": 1794211260
 }
 ```
 
-4. The plugin's backend checks the token with the standard `JwtAuthCoordinator` against the core's public key, with `EdDSA` in the list of algorithms and its own `id` in `aud`. It does not go to the database for the session.
+4. The plugin's backend checks the token with the standard `JwtAuthCoordinator` by the core's JWKS (`MAXITOR_CORE_JWKS_URL`, `/api/v1/jwks` through the gateway), with `EdDSA` as the algorithm and its own `id` in `aud`. It does not go to the database for the session. The core's own session token stays `HS256`: only the core checks it (constitution 1.7.0, rule 56).
+
+The decision is the core's action `PassRequestAction` (`POST /api/v1/gateway/pass`); the gateway — the core's Next.js application, `proxy.ts` — asks it at the backend's inner address and refuses that address from outside the site.
 
 What this gives:
 
 - **a plugin cannot forge a token** — it has only the public key; that is why the signature is asymmetric and not a shared `HS256` secret;
 - **a plugin cannot use someone else's token** — a token for `notes` does not pass `aud` in `tags`;
 - **a plugin does not see the session** — the cookie never reaches it, and a person's sign-in cannot be stolen from a request;
-- **the organization is the address's, checked** — `org` is the organization of the address the gateway has checked membership in; the plugin's roles in the token are the roles in that organization;
-- **roles are its own** — a token for a plugin carries only that plugin's roles assigned to the person in this organization;
+- **the organization is the address's, checked** — `org` is the organization of the address the gateway has checked membership in;
+- **the roles are the core's** — a plugin has no roles of its own: the token carries the person's role in the core in that organization, read from the core's tables when it is issued — `member` for every active user, `administrator` added for its administrators, `service` for a plugin's own call with no person. A plugin guards its actions with `MemberRole`, `AdministratorRole` and `ServiceRole` of `maxitor-plugin-sdk`; its passport declares no roles;
 - **sign-out** — the core deletes the session; issued tokens expire within a minute.
 
 The gateway lets changing requests through only with its own site's `Origin` header — protection against request forgery together with `SameSite=Lax`.
@@ -360,7 +357,7 @@ A plugin's frontend keeps and receives no secrets.
 
 ### 6.4. A plugin calls another plugin or the core
 
-On a person's behalf: a plugin's backend calls `/p/<dependency>/api/<organization>/...` or `/api/<organization>/...` through the gateway's inner address and passes on its incoming token. The gateway checks that the callee is the core or a direct dependency of the caller and issues a token for the callee with the same person and organization. Without a person (background work) a plugin presents its service key, issued on installation, and gets a token with `sub: "plugin:<id>"` and service roles.
+On a person's behalf: a plugin's backend calls `/p/<dependency>/api/<organization>/...` through the gateway (`MAXITOR_GATEWAY_URL`) and passes on its incoming token. The gateway exchanges it by `ExchangeTokenAction`: the caller is the token's `aud`, the callee must be a direct dependency of the caller's version enabled in that organization, and the new token keeps the person, session, organization and roles. Without a person (background work) a plugin presents its service key — `MAXITOR_PLUGIN_SERVICE_KEY`, written on deployment into its environment file only — to `POST /api/v1/gateway/service-token` and gets a token with `sub: "plugin:<id>"` and the role `service`. A plugin's calls to the core's own actions come with the first core action a plugin needs (bystrovmaxim/gnomon#95).
 
 ### 6.5. The organization in the address
 
@@ -493,7 +490,7 @@ nodes:
     icon: note
     order: 300
     page: /items/{item_id}
-    roles: [reader]
+    roles: [member]
     room:
       shared: [view]
       surface: document
@@ -821,7 +818,7 @@ Here `at` is a surface coordinate, `view` the viewport in its units. The core ad
 What isolation gives:
 
 - a plugin with a bug, or broken into on the server, **reads and writes only its own version's schema** and does not touch, or even see, the data of the core or of other plugins;
-- it has no passwords of other roles, no token signing key and no sessions of people;
+- it has no passwords of other roles, no token signing key and no sessions of people: its container holds only its own environment file, and it cannot read another version's file or the core's processes;
 - its Python dependencies do not break anyone else's;
 - removing it from an organization (bystrovmaxim/gnomon#94) deletes only that organization's rows in its schema.
 
@@ -875,8 +872,6 @@ acme-maxitor-notes/
         foreign-keys.yaml
         navigation.yaml
         notes_domain.py
-        notes_reader_role.py
-        notes_editor_role.py
         organization_member.py
         organization_auth_coordinator.py
         membership.py
@@ -918,7 +913,7 @@ maxitor plugin new notes --id io.github.acme.notes --package acme-maxitor-notes
 
 Creates the tree of files of section 11, a passport with no dependencies, a `navigation.yaml` with one node, and `web/` with `@maxitor/panel` wired in.
 
-**2. The passport.** Fill in `title`, `description`, `roles`, `frontend.navigation`. There are no dependencies — only `requires.maxitor`.
+**2. The passport.** Fill in `title`, `description`, `frontend.navigation`. There are no dependencies — only `requires.maxitor` — and no roles: the actions check the core's.
 
 **3. The schema.** The tables, declared — the core builds each with its version table, the service fields and the indexes:
 
@@ -961,7 +956,7 @@ class NotesStorage(PostgresStorage):
 
 ```python
 @meta("Adds a note to a catalog item.", domain=NotesDomain)
-@check_roles(NotesEditor)
+@check_roles(MemberRole)
 class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
     @access_decide("Refuse a person who is not a member of the organization of the address.")
     @context_requires("user.user_id", "user.organization")
@@ -1062,7 +1057,7 @@ maxitor plugin check dist/acme_maxitor_notes-1.0.0-py3-none-any.whl
 9. Without all its dependencies a plugin is not installed; the whole closure is installed whole or not at all.
 10. A dependency cycle is forbidden and is checked on building and on installing.
 11. A plugin does not import another plugin's code and does not read its tables: it calls its actions through the gateway.
-12. A plugin's backend and frontend are processes of their own; Python runs in its own environment.
+12. A plugin's backend and frontend run in unprivileged Docker containers of their own version, with limits and a network of their own; Python runs in the version's own image.
 13. A plugin's data is in its version's schema `<name>_<x>_<y>_<z>` of the shared database, under its version's user `plg_<name>_<x>_<y>_<z>`, which reads and writes only that schema; a plugin without a `database` section gets neither a schema nor a user.
 14. A plugin carries no SQL and no migrations: it declares its tables in `schema.yaml`, and the core builds every table except the mechanics with its version table.
 15. A plugin reaches the core only through its five functions: change time, watermark, membership, the organization of an address, a member's name.
@@ -1071,7 +1066,7 @@ maxitor plugin check dist/acme_maxitor_notes-1.0.0-py3-none-any.whl
 18. A transaction does not cross schemas of different owners; a change in two schemas is two changes glued by an action.
 19. A plugin works with the database through its own resource and with the outside world through AOA actions.
 20. A plugin's frontend is a Next.js application with `basePath: /p/<name>` on `@maxitor/panel`; its pages are shown only in the right panel.
-21. A plugin accepts only the core's token with `EdDSA` and its own `id` in `aud`; it does not see the person's session.
+21. A plugin accepts only the core's token with `EdDSA`, checked by the core's JWKS, with its own `id` in `aud`; it does not see the person's session, and it declares no roles of its own: it works with `member`, `administrator` and `service`.
 22. Only the core draws the frame — the tree, the row, the panel's look; a plugin only adds nodes to the tree by a declaration in `navigation.yaml`.
 23. A plugin's node attaches to the root, to a node of the core or to a node of a direct dependency; the installer builds the tree, and a build error cancels the operation.
 24. Everything a person sees on a page is in the panel address; a page builds its view from its address only.
@@ -1123,9 +1118,8 @@ Code breaks — a test catches it, each of these:
 
 ## 15. What changes in the constitution
 
-Proposals to the maintainer, not edits:
+Rule 56 already says it (1.7.0): the session token stays `HS256`, a token one service issues for another is signed with `EdDSA` and checked by the issuer's JWKS. Proposals to the maintainer, not edits:
 
-- rule 56 — signing a token with a shared `HS256` secret does not work when plugins check the token: each of them could issue any token. Tokens plugins see get an asymmetric signature (`EdDSA`) with the core's private key;
 - a new section "Maxitor plugins" — the rules of section 13 of this document, including the core's contract and the rule of the major version (section 3.4);
 - rule 24 does not change but gains an example: a plugin's schema is a resource of its own, and a transaction between resources is impossible by the way roles are set up.
 
@@ -1133,5 +1127,4 @@ Proposals to the maintainer, not edits:
 
 - The extension point "may this be deleted" and the other points through which the core asks plugins.
 - Row-level security (RLS) by `organization_id`, if reading every schema by every plugin turns out to be too much.
-- Running plugins as separate containers instead of processes under the core.
 - A plugin catalog: where to find plugins and who signs their releases.

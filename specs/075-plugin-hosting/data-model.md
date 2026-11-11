@@ -7,7 +7,7 @@
 | `plugin_version_id` | uuid | no | The deployed version the process runs; key to `plugin_version` |
 | `kind` | text | no | `backend` or `frontend` |
 | `address` | text | yes | `http://127.0.0.1:<port>` once the process accepts; empty while it starts or waits |
-| `pid` | integer | yes | The process's id on the runner's host |
+| `container` | text | yes | The Docker container that runs it, `maxitor-<schema>-<kind>` |
 | `started_at` | timestamptz | yes | When the running process started |
 | `failures` | integer | no | Failures in a row since the last good start |
 | `next_start_at` | timestamptz | yes | The earliest next start after a failure |
@@ -39,6 +39,6 @@ The same column on `plugin_version_versions`.
 
 `<runtime>/<schema>/plugin.env`, mode 0600: `MAXITOR_PLUGIN_DSN`, `MAXITOR_PLUGIN_SCHEMA` and, new, `MAXITOR_PLUGIN_SERVICE_KEY`.
 
-## A process's environment
+## A container's environment
 
-The environment file's three variables, and `MAXITOR_CORE_JWKS_URL`, `MAXITOR_PLUGIN_API` (its backend's inner address), `MAXITOR_GATEWAY_URL`, `PATH`, `LANG`; for a frontend also `PORT` and `HOSTNAME`. Nothing else.
+The environment file's three variables — the DSN with the database's address as the containers reach it — and `MAXITOR_GATEWAY_URL`, `MAXITOR_CORE_JWKS_URL` (the JWKS through the gateway), `MAXITOR_PLUGIN_API` (its backend at `http://maxitor-<schema>-backend:8000`). The frontend gets no DSN and no service key. Nothing else.
