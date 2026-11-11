@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# scripts/core-stand.sh — Maxitor's core on this machine: its database, its backend, its plugin installer and its
-# application.
+# scripts/core-stand.sh — Maxitor's core on this machine: its database, its backend, its plugin installer, its plugin
+# runner and its application with the gateway.
 #
 #   ./scripts/core-stand.sh up      PostgreSQL 16 in Docker on 55432, the roles and schemas once, the migrations,
 #                                   the marketplace filled with the plugin template's wheel once, then the backend on
-#                                   127.0.0.1:8020, the installer and the application on http://localhost:3000 in the
-#                                   foreground; Ctrl+C stops them, the database keeps running
+#                                   127.0.0.1:8020, the installer, the runner and the application on
+#                                   http://localhost:3000 in the foreground; Ctrl+C stops them, the database keeps running
 #   ./scripts/core-stand.sh down    stops the database
 #   ./scripts/core-stand.sh reset   removes the database and everything in it
 #
@@ -15,6 +15,10 @@
 # MAXITOR_GEOIP_DATABASE, if set, is passed to the backend; else .private/geoip/country.mmdb of the main checkout is used
 # when it exists; without a country database every address counts as Russia.
 # Plugin wheels are kept in .core-stand/wheels, each deployed version's environment file in .core-stand/plugins.
+# The gateway's Ed25519 key is made once in .core-stand/gateway-key.pem. The wheels a plugin needs that are not on
+# PyPI yet — AOA's and the plugin SDK's — are built once into .core-stand/find-links. Each enabled plugin version runs
+# in Docker containers of its own; they reach the database as maxitor-db on their version's network and the gateway
+# as host.docker.internal.
 # MAXITOR_STAND_CONTAINER, MAXITOR_STAND_DB_PORT, MAXITOR_STAND_API_PORT and MAXITOR_STAND_WEB_PORT run a second stand
 # beside a first one.
 set -euo pipefail
@@ -57,12 +61,29 @@ database_up() {
 up() {
   mkdir -p "$STAND/outbox" "$STAND/wheels" "$STAND/plugins"
   [ -s "$STAND/secret" ] || { python3 -c 'import secrets; print(secrets.token_urlsafe(48))' > "$STAND/secret"; chmod 600 "$STAND/secret"; }
+  if [ ! -s "$STAND/gateway-key.pem" ]; then
+    (cd "$ROOT" && uv run --all-extras --all-packages python -c '
+import sys
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+pem = Ed25519PrivateKey.generate().private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())
+open(sys.argv[1], "wb").write(pem)
+' "$STAND/gateway-key.pem")
+    chmod 600 "$STAND/gateway-key.pem"
+  fi
+  if [ -z "$(ls "$STAND/find-links"/*.whl 2>/dev/null)" ]; then
+    say "Building the wheels plugins need that PyPI does not have yet"
+    for package in external/aoa/packages/aoa-action-machine external/aoa/packages/aoa-fastapi-adapter packages/maxitor-plugin-sdk; do
+      (cd "$ROOT" && uv build --wheel -q -o "$STAND/find-links" "$package")
+    done
+  fi
   database_up
   export MAXITOR_CORE_DSN="postgresql://maxitor_core:$CORE_PASSWORD@127.0.0.1:$DB_PORT/maxitor"
   export MAXITOR_SESSION_SECRET
   MAXITOR_SESSION_SECRET="$(cat "$STAND/secret")"
   export MAXITOR_PUBLIC_URL="http://localhost:$WEB_PORT"
   export MAXITOR_WHEEL_STORE="$STAND/wheels" MAXITOR_PLUGIN_RUNTIME="$STAND/plugins"
+  export MAXITOR_GATEWAY_KEY_FILE="$STAND/gateway-key.pem"
   local installer_dsn="postgresql://maxitor_installer:$INSTALLER_PASSWORD@127.0.0.1:$DB_PORT/maxitor"
   # The country database and the Postbox key live outside git, in .private of the main checkout.
   local main_checkout
@@ -90,24 +111,33 @@ up() {
     (cd "$ROOT" && MAXITOR_INSTALLER_DSN="$installer_dsn" uv run --all-extras --all-packages maxitor-plugin-installer add-wheel "$STAND"/dist/*.whl)
   fi
 
-  say "The backend on 127.0.0.1:$API_PORT, the installer, the application on http://localhost:$WEB_PORT — Ctrl+C stops them"
+  say "The backend on 127.0.0.1:$API_PORT, the installer, the runner, the application on http://localhost:$WEB_PORT — Ctrl+C stops them"
   (cd "$ROOT" && exec uv run --all-extras --all-packages maxitor-core serve --port "$API_PORT") &
   local api=$!
   (cd "$ROOT" && MAXITOR_CORE_DSN="" MAXITOR_INSTALLER_DSN="$installer_dsn" MAXITOR_INSTALLER_PERIOD_SECONDS=5 \
     exec uv run --all-extras --all-packages maxitor-plugin-installer run) &
   local installer=$!
+  (cd "$ROOT" && MAXITOR_PLUGIN_FIND_LINKS="$STAND/find-links" MAXITOR_PLUGIN_DB_ADDRESS="maxitor-db:5432" \
+    MAXITOR_PLUGIN_DB_CONTAINER="$CONTAINER" MAXITOR_PLUGIN_GATEWAY_URL="http://host.docker.internal:$WEB_PORT" \
+    MAXITOR_RUNNER_PERIOD_SECONDS=5 exec uv run --all-extras --all-packages maxitor-plugin-runner run) &
+  local runner=$!
   (cd "$WEB" && MAXITOR_CORE_API="http://127.0.0.1:$API_PORT" exec npx next dev --port "$WEB_PORT") &
   local web=$!
-  trap 'kill "$api" "$installer" "$web" 2>/dev/null; wait "$api" "$installer" "$web" 2>/dev/null; exit 0' INT TERM
+  trap 'kill "$api" "$installer" "$runner" "$web" 2>/dev/null; wait "$api" "$installer" "$runner" "$web" 2>/dev/null; exit 0' INT TERM
   # Until one stops (bash 3.2 on macOS has no wait -n).
-  while kill -0 "$api" 2>/dev/null && kill -0 "$installer" 2>/dev/null && kill -0 "$web" 2>/dev/null; do sleep 1; done
-  kill "$api" "$installer" "$web" 2>/dev/null || true
-  wait "$api" "$installer" "$web" 2>/dev/null || true
+  while kill -0 "$api" 2>/dev/null && kill -0 "$installer" 2>/dev/null && kill -0 "$runner" 2>/dev/null \
+    && kill -0 "$web" 2>/dev/null; do sleep 1; done
+  kill "$api" "$installer" "$runner" "$web" 2>/dev/null || true
+  wait "$api" "$installer" "$runner" "$web" 2>/dev/null || true
 }
 
 case "${1:-}" in
   up) up ;;
   down) docker stop "$CONTAINER" >/dev/null 2>&1 && say "The database is stopped" || say "The database was not running" ;;
-  reset) docker rm -f -v "$CONTAINER" >/dev/null 2>&1 || true; rm -rf "$STAND/outbox" "$STAND/wheels" "$STAND/plugins" "$STAND/dist"; say "The database is removed" ;;
+  reset)
+    docker ps -aq --filter label=maxitor.plugin.version | xargs docker rm -f >/dev/null 2>&1 || true
+    docker rm -f -v "$CONTAINER" >/dev/null 2>&1 || true
+    rm -rf "$STAND/outbox" "$STAND/wheels" "$STAND/plugins" "$STAND/dist" "$STAND/find-links"
+    say "The database and the plugin containers are removed" ;;
   *) echo "usage: $0 up|down|reset" >&2; exit 2 ;;
 esac

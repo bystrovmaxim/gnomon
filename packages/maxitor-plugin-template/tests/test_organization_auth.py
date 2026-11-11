@@ -7,10 +7,9 @@ import jwt
 import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from maxitor_notes.notes_editor_role import NotesEditorRole
-from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.organization_auth_coordinator import OrganizationAuthCoordinator
 from maxitor_notes.organization_member import OrganizationMember
+from maxitor_plugin_sdk.roles import CORE_ROLES, MemberRole
 from starlette.requests import Request
 
 from aoa.action_machine.auth.jwt_auth.jwt_auth_coordinator import JwtAuthCoordinator
@@ -22,7 +21,7 @@ CORE_PUBLIC_PEM = CORE_KEY.public_key().public_bytes(serialization.Encoding.PEM,
 
 def _token(key=CORE_KEY, algorithm="EdDSA", **claims) -> str:
     now = int(time.time())
-    body = {"iss": "maxitor", "aud": PLUGIN_ID, "sub": "33333333-3333-3333-3333-333333333333", "sid": "s1", "org": "acme", "roles": ["reader"], "iat": now, "exp": now + 60}
+    body = {"iss": "maxitor", "aud": PLUGIN_ID, "sub": "33333333-3333-3333-3333-333333333333", "sid": "s1", "org": "acme", "roles": ["member"], "iat": now, "exp": now + 60}
     body.update(claims)
     return jwt.encode(body, key, algorithm=algorithm)
 
@@ -36,7 +35,7 @@ def _request(path_params: dict, token: str | None) -> Request:
 def _coordinator() -> OrganizationAuthCoordinator:
     tokens = JwtAuthCoordinator(
         secret_key=CORE_PUBLIC_PEM, algorithm="EdDSA", audience=PLUGIN_ID, issuer="maxitor",
-        role_registry={"reader": NotesReaderRole, "editor": NotesEditorRole}, session_id_claim="sid",
+        role_registry=CORE_ROLES, session_id_claim="sid",
     )
     return OrganizationAuthCoordinator(tokens)
 
@@ -46,7 +45,7 @@ async def test_the_cores_token_gives_the_person_in_the_organization_of_the_addre
     assert isinstance(context.user, OrganizationMember)
     assert context.user.organization == "acme"
     assert context.user.user_id == "33333333-3333-3333-3333-333333333333"
-    assert context.user.roles == (NotesReaderRole,)
+    assert context.user.roles == (MemberRole,)
 
 
 async def test_the_organization_comes_from_the_address_not_from_the_token() -> None:

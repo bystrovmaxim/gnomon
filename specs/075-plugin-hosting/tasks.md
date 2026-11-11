@@ -35,9 +35,9 @@ One phase is one commit. After each phase only that phase's tests run; the closi
 
 ## Phase 4 — The template in step (issue phase 4)
 
-- [ ] T017 The template: passport without `roles`, actions guarded by `MemberRole`, the role registry of the core's roles, tokens checked by `MAXITOR_CORE_JWKS_URL`, nodes naming `member`; its version 0.6.0.
-- [ ] T018 `scripts/core-stand.sh`: the gateway's key, the wheels folder built from `external/aoa` and the workspace, the runner started, `MAXITOR_GATEWAY_URL` and the JWKS address given.
-- [ ] T019 Tests: the template accepts a token the core issued for it and refuses one for another plugin; the walk of the quickstart on the local stand.
+- [x] T017 The template: passport without `roles`, actions guarded by `MemberRole`, the role registry of the core's roles, tokens checked by `MAXITOR_CORE_JWKS_URL`, nodes naming `member`; its version 0.6.0.
+- [x] T018 `scripts/core-stand.sh`: the gateway's key, the wheels folder built from `external/aoa` and the workspace, the runner started, `MAXITOR_GATEWAY_URL` and the JWKS address given.
+- [x] T019 Tests: the template accepts a token the core issued for it and refuses one for another plugin; the walk of the quickstart on the local stand.
 
 ## Phase 5 — The tail
 

@@ -9,9 +9,7 @@ settings in their environment.
 
 from __future__ import annotations
 
-import asyncio
 import io
-import json
 import shutil
 import urllib.request
 import zipfile

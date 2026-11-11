@@ -11,14 +11,15 @@ ARCHITECTURE / DATA FLOW
     gateway ──► /p/notes/api/{organization}/...  (the core's token in Authorization)
                    │
                    ▼
-    OrganizationAuthCoordinator ── the token checked against the core's public key; the address's organization
+    OrganizationAuthCoordinator ── the token checked by the core's JWKS; the address's organization
                    │
                    ▼
     an action ── NotesStorage, one per call, from the pool opened in the lifespan
 
-The process gets two settings from Maxitor, through its environment and nothing else: the address of
-the plugin's database as the role ``plg_notes`` (``MAXITOR_PLUGIN_DSN``) and the file of the core's public
-key (``MAXITOR_CORE_PUBLIC_KEY``). Run: ``uvicorn maxitor_notes.app:create_app --factory``.
+The process gets its settings from Maxitor, through its environment and nothing else: the address of the
+plugin's database as its version's own role (``MAXITOR_PLUGIN_DSN``) and the address of the core's JWKS
+(``MAXITOR_CORE_JWKS_URL``), through the gateway. Maxitor's runner starts it in a container of its own as
+``uvicorn maxitor_notes.app:create_app --factory``.
 """
 
 from __future__ import annotations
@@ -26,13 +27,15 @@ from __future__ import annotations
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from maxitor_plugin_sdk.roles import CORE_ROLES
 
 from aoa.action_machine.auth.jwt_auth.jwt_auth_coordinator import JwtAuthCoordinator
+from aoa.action_machine.exceptions.access_denied import AccessDenied
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
+from aoa.action_machine.intents.access_control import Gate
 from aoa.action_machine.resources.base_resource import BaseResource
 from aoa.action_machine.resources.per_call_connection import PerCallConnection
 from aoa.action_machine.resources.postgres import PostgresPool
@@ -48,26 +51,25 @@ from maxitor_notes.actions.list_published_notes_action import ListPublishedNotes
 from maxitor_notes.actions.publish_notes_action import PublishNotesAction
 from maxitor_notes.history.list_note_history_action import ListNoteHistoryAction
 from maxitor_notes.history.note_milestone_card_action import NoteMilestoneCardAction
-from maxitor_notes.notes_editor_role import NotesEditorRole
-from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.notes_refusal_error import NotesRefusalError
 from maxitor_notes.organization_auth_coordinator import OrganizationAuthCoordinator
 from maxitor_notes.passport import read_passport
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 
-def create_app(dsn: str | None = None, core_public_key: str | None = None) -> FastAPI:
+def create_app(dsn: str | None = None, jwks_url: str | None = None) -> FastAPI:
     """
     AI-CORE-BEGIN
     ROLE: Build the plugin's backend.
-    CONTRACT: ``dsn`` defaults to ``$MAXITOR_PLUGIN_DSN``, ``core_public_key`` to the text of the file ``$MAXITOR_CORE_PUBLIC_KEY``;
+    CONTRACT: ``dsn`` defaults to ``$MAXITOR_PLUGIN_DSN``, ``jwks_url`` to ``$MAXITOR_CORE_JWKS_URL``;
     every route lies under ``/p/<name>/api/{organization}`` and is an action.
-    INVARIANTS: Accepts only the core's EdDSA token issued for this plugin's id; one storage per call, from one pool.
+    INVARIANTS: Accepts only the core's EdDSA token issued for this plugin's id, with the core's roles; one storage per
+        call, from one pool.
     AI-CORE-END
     """
     passport = read_passport()
     address = dsn or os.environ["MAXITOR_PLUGIN_DSN"]
-    key = core_public_key or Path(os.environ["MAXITOR_CORE_PUBLIC_KEY"]).read_text(encoding="utf-8")
+    keys = jwks_url or os.environ["MAXITOR_CORE_JWKS_URL"]
     pools: dict[str, PostgresPool] = {}
 
     @asynccontextmanager
@@ -85,11 +87,11 @@ def create_app(dsn: str | None = None, core_public_key: str | None = None) -> Fa
 
     connections = {NOTES_CONNECTION_KEY: PerCallConnection(factory=open_storage, finalize=close_storage)}
     tokens = JwtAuthCoordinator(
-        secret_key=key,
+        jwks_url=keys,
         algorithm="EdDSA",
         audience=passport["id"],
         issuer="maxitor",
-        role_registry={NotesReaderRole.name: NotesReaderRole, NotesEditorRole.name: NotesEditorRole},
+        role_registry=CORE_ROLES,
         session_id_claim="sid",
     )
     adapter = FastApiAdapter(
@@ -115,5 +117,12 @@ def create_app(dsn: str | None = None, core_public_key: str | None = None) -> Fa
     async def refused(_request: Request, error: NotesRefusalError) -> JSONResponse:
         """A refusal of an action becomes its status and its reason, as the core's refusals do."""
         return JSONResponse(status_code=error.status, content=error.body)
+
+    @app.exception_handler(AccessDenied)
+    async def denied(_request: Request, error: AccessDenied) -> JSONResponse:
+        """A role the token lacks is 403; another organization's object is 404, as if it did not exist."""
+        if error.verdict.gate == Gate.ACCESS_DECIDE:
+            return JSONResponse(status_code=404, content={"error": "not_found"})
+        return JSONResponse(status_code=403, content={"error": "forbidden"})
 
     return app
