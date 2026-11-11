@@ -10,7 +10,7 @@ An action names its role, its organization check and its main step. `@access_dec
 
 <!-- quote: packages/maxitor-plugin-template/src/maxitor_notes/actions/list_item_notes_action.py -->
 ```python
-@meta(description="List the notes of a catalog item at one moment", domain=NotesDomain)
+@meta(description="List the notes of an item at one moment", domain=NotesDomain)
 @check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class ListItemNotesAction(BaseAction[ListItemNotesParams, ListItemNotesResult]):

@@ -39,7 +39,7 @@ from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStora
 class NoteMilestoneCardParams(BaseParams):
     """Which item, which milestone, at which moment."""
 
-    item_id: str = Field(min_length=1, max_length=64, description="The catalog item")
+    item_id: str = Field(min_length=1, max_length=64, description="The item")
     id: str = Field(pattern=r"^(v[1-9][0-9]{0,8}|draft)$", description="v<number> for a revision, draft for the draft")
     at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The moment the card is read at; none means now")
 

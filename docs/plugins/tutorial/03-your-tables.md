@@ -8,14 +8,22 @@ A plugin carries no SQL and no migrations. It declares its tables in `schema.yam
 ```yaml
 schema: 1
 tables:
-  note:
-    description: A note on a catalog item. Read only by changing actions; screens read note_versions.
+  item:
+    description: 'What notes are written on, like a folder: a title in one organization. Items do not nest. Screens read item_versions.'
     columns:
-      item_id: {type: uuid, nullable: false, description: The catalog item the note is about.}
+      title: {type: text, nullable: false, description: 'The item''s title: 1–200 characters, no spaces at its ends, unique among the organization''s items now.'}
+    unique:
+      - [title]
+  note:
+    description: A note on an item. Read only by changing actions; screens read note_versions.
+    columns:
+      item_id: {type: uuid, nullable: false, description: The item the note is about.}
       writer_id: {type: uuid, nullable: false, description: The account of the member who wrote the note.}
       body: {type: text, nullable: false, description: The text of the note.}
     indexes:
       - [item_id]
+    keys:
+      - {columns: [item_id], table: item, references: [id]}
 ```
 
 Each column has a type from a closed list, `nullable` and a description. You write what is yours; what every table needs, Maxitor adds. A note is never changed in place: an edit closes its version and opens a new one in `note_versions`, so every past moment can be read.

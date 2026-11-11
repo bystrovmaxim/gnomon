@@ -39,7 +39,7 @@ from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStora
 class ListNoteHistoryParams(BaseParams):
     """Which item, over which stretch."""
 
-    item_id: str = Field(min_length=1, max_length=64, description="The catalog item")
+    item_id: str = Field(min_length=1, max_length=64, description="The item")
     from_at: str = Field(pattern=MOMENT_PATTERN, description="The stretch's start")
     to_at: str = Field(pattern=MOMENT_PATTERN, description="The stretch's end; cut to the watermark")
 

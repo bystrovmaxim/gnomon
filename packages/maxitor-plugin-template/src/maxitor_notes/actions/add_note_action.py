@@ -1,11 +1,11 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/actions/add_note_action.py
 """
-AddNoteAction — a member writes a note on a catalog item.
+AddNoteAction — a member writes a note on an item.
 
 ::
 
     POST /p/notes/api/{organization}/notes {item_id, body} ──► AddNoteAction
-        ├─ organization_access_decide: the person is a member of {organization}, which the context carries
+        ├─ item_access_decide: the person is a member of {organization}, and the item is an item of it now
         └─ write_summary: the organization's id again; the note and its version in one transaction, the change time back
 """
 
@@ -28,7 +28,7 @@ from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from maxitor_notes.membership import member_organization_id, organization_access
+from maxitor_notes.membership import item_access, member_organization_id
 from maxitor_notes.notes_domain import NotesDomain
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
@@ -36,7 +36,7 @@ from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStora
 class AddNoteParams(BaseParams):
     """Where the note goes and what it says."""
 
-    item_id: str = Field(min_length=1, max_length=64, description="The catalog item the note is about")
+    item_id: str = Field(min_length=1, max_length=64, description="The item the note is about")
     body: str = Field(min_length=1, max_length=10000, description="The text of the note")
 
 
@@ -46,25 +46,25 @@ class AddNoteResult(BaseResult):
     changed_at: str = Field(description="The change time, ISO 8601 with microseconds; the client rereads at it")
 
 
-@meta(description="Write a note on a catalog item", domain=NotesDomain)
+@meta(description="Write a note on an item", domain=NotesDomain)
 @check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class AddNoteAction(BaseAction[AddNoteParams, AddNoteResult]):
     """
     AI-CORE-BEGIN
-    ROLE: Write one note of a member on a catalog item.
+    ROLE: Write one note of a member on an item.
     CONTRACT: The organization is the one of the address; the writer is the person of the token; the answer is the change time.
     INVARIANTS: One transaction, one change; nothing is written for a person outside the organization.
     AI-CORE-END
     """
 
-    @access_decide("Refuse a person who is not a member of the organization of the address")
+    @access_decide("Refuse a person who is not a member of the organization of the address, and an item that is not one of it")
     @context_requires(Ctx.User.user_id, "user.organization")
-    async def organization_access_decide(self, params: AddNoteParams, box: ToolsBox, connections: Connections, ctx: ContextView) -> Verdict:
-        """The organization of the address must be one the person of the token belongs to."""
-        _ = (params, box)
+    async def item_access_decide(self, params: AddNoteParams, box: ToolsBox, connections: Connections, ctx: ContextView) -> Verdict:
+        """The organization of the address must be the person's, and the item one of its items now."""
+        _ = box
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
-        return await organization_access(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
+        return await item_access(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id), params.item_id)
 
     @summary_aspect("Write the note and its version, and return the change time")
     @context_requires(Ctx.User.user_id, "user.organization")

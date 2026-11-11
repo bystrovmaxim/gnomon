@@ -41,7 +41,7 @@ from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStora
 class ListNoteAuthorsParams(BaseParams):
     """The list's input: the scope's parameters, the moment and a page."""
 
-    item_id: str = Field(min_length=1, max_length=64, description="The catalog item, a parameter of the page's scope")
+    item_id: str = Field(min_length=1, max_length=64, description="The item, a parameter of the page's scope")
     at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The panel's moment; none means now, the watermark")
     limit: int = Field(default=50, ge=1, le=200, description="How many options one page holds")
     after: str | None = Field(default=None, max_length=64, description="The key the previous page ended with")
@@ -61,7 +61,7 @@ class ListNoteAuthorsResult(BaseResult):
     next: str | None = Field(default=None, description="The key to ask the next page after; none on the last page")
 
 
-@meta(description="List the writers of a catalog item's notes for the page's author filter", domain=NotesDomain)
+@meta(description="List the writers of an item's notes for the page's author filter", domain=NotesDomain)
 @check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class ListNoteAuthorsAction(BaseAction[ListNoteAuthorsParams, ListNoteAuthorsResult]):
