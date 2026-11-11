@@ -54,12 +54,14 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
     [bounds, shell, size],
   );
 
-  // The scene opens fitted, once; later the person's camera is theirs.
+  // The scene opens fitted, once; later the person's camera is theirs. The shell draws its bottom bar only once the
+  // canvas gave it the zoom, so the first fit waits a frame and keeps the scene clear of the bar, as Fit later does.
+  const latestFit = useRef(fitTo);
+  latestFit.current = fitTo;
   useEffect(() => {
-    if (!fitted.current && size().width) {
-      fitted.current = true;
-      fitTo();
-    }
+    if (fitted.current || !size().width) return;
+    fitted.current = true;
+    requestAnimationFrame(() => latestFit.current());
   }, [fitTo, size]);
 
   // The wheel is listened to directly: React's listener is passive and could not keep the page from scrolling.

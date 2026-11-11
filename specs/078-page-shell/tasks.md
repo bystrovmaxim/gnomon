@@ -25,9 +25,9 @@ One phase is one commit and one numbered phase of issue bystrovmaxim/gnomon#109.
 
 ## Phase 4: the template and the test page (issue phase 4)
 
-- [ ] T011 The template's notes page gives its authors (read by the page) to the shell's filters and list/table as a bottom-bar choice; its other pages in the shell; its tests.
-- [ ] T012 The core's test page: the drawing with three layers, counts, a comparison-only filter section, two bar sections; the page without the shell.
-- [ ] T013 `check-core.mjs`: the shell's parts on the notes page and the drawing, desktop and phone; the router's refusals; the red strip; the tree's head.
+- [x] T011 The template's notes page gives its authors (read by the page) to the shell's filters and list/table as a bottom-bar choice; its other pages in the shell; its tests.
+- [x] T012 The core's test page: the drawing with three layers, counts, a comparison-only filter section, two bar sections; the page without the shell.
+- [x] T013 `check-core.mjs`: the shell's parts on the notes page and the drawing, desktop and phone; the router's refusals; the red strip; the tree's head.
 
 ## Phase 5: documentation, changelog, versions (issue phase 5)
 
