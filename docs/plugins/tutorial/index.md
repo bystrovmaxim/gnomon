@@ -6,9 +6,9 @@ The [plugin concept](../concept.md) explains how plugins are built and why; [ver
 
 | # | Chapter | What it gives | Written by |
 |---|---|---|---|
-| 1 | What you will build | The plugin, the tools, the local stand running | bystrovmaxim/gnomon#99 |
-| 2 | A copy of the template | Your plugin's name and passport, checked | bystrovmaxim/gnomon#99 |
-| 3 | Your tables | `schema.yaml`, the keys to the core | bystrovmaxim/gnomon#99 |
+| 1 | [What you will build](01-what-you-will-build.md) | The plugin, the tools, the local stand running | bystrovmaxim/gnomon#99 |
+| 2 | [A copy of the template](02-a-copy-of-the-template.md) | Your plugin's name and passport, checked | bystrovmaxim/gnomon#99 |
+| 3 | [Your tables](03-your-tables.md) | `schema.yaml`, the keys to the core | bystrovmaxim/gnomon#99 |
 | 4 | Reading | A reading action at any moment | bystrovmaxim/gnomon#99 |
 | 5 | Writing | A changing action in one transaction, its conflict | bystrovmaxim/gnomon#99 |
 | 6 | The backend | `app.py`, the gateway's token, the core's roles | bystrovmaxim/gnomon#99 |
