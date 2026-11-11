@@ -22,7 +22,6 @@ from maxitor.core.settings import CoreSettings
 from aoa.action_machine.auth.jwt_auth.jwt_auth_coordinator import JwtAuthCoordinator
 from tests.fakes import World
 
-NOW = datetime.now(UTC)
 CODE = "severny-veter"
 
 
@@ -35,7 +34,7 @@ def tokens() -> PluginTokensController:
 
 def test_a_token_names_its_plugin_person_organization_and_roles_for_a_minute() -> None:
     signer = tokens()
-    claims = signer.read(signer.issue("io.x.notes", "a1", "s1", "acme", ["member"], NOW))
+    claims = signer.read(signer.issue("io.x.notes", "a1", "s1", "acme", ["member"], datetime.now(UTC)))
     assert claims is not None
     assert {k: claims[k] for k in ("iss", "aud", "sub", "sid", "org", "roles")} == {
         "iss": "maxitor", "aud": "io.x.notes", "sub": "a1", "sid": "s1", "org": "acme", "roles": ["member"]
@@ -44,9 +43,9 @@ def test_a_token_names_its_plugin_person_organization_and_roles_for_a_minute() -
 
 
 def test_a_token_of_another_key_or_expired_is_not_read() -> None:
-    assert tokens().read(tokens().issue("io.x.notes", "a1", "s1", "acme", ["member"], NOW)) is None
+    assert tokens().read(tokens().issue("io.x.notes", "a1", "s1", "acme", ["member"], datetime.now(UTC))) is None
     signer = tokens()
-    assert signer.read(signer.issue("io.x.notes", "a1", "s1", "acme", ["member"], NOW - timedelta(minutes=2))) is None
+    assert signer.read(signer.issue("io.x.notes", "a1", "s1", "acme", ["member"], datetime.now(UTC) - timedelta(minutes=2))) is None
     assert signer.read("not a token") is None
 
 
@@ -75,9 +74,9 @@ async def test_a_plugin_checks_its_token_by_the_jwks_and_refuses_another_plugins
         jwks_url="http://127.0.0.1:8020/api/v1/jwks", algorithm="EdDSA", audience="io.x.notes", issuer="maxitor",
         role_registry={}, session_id_claim="sid",
     )
-    mine = await coordinator.process(Request(signer.issue("io.x.notes", "a1", "s1", "acme", ["member"], NOW)))
+    mine = await coordinator.process(Request(signer.issue("io.x.notes", "a1", "s1", "acme", ["member"], datetime.now(UTC))))
     assert mine is not None and mine.user.user_id == "a1"
-    theirs = await coordinator.process(Request(signer.issue("io.x.tasks", "a1", "s1", "acme", ["member"], NOW)))
+    theirs = await coordinator.process(Request(signer.issue("io.x.tasks", "a1", "s1", "acme", ["member"], datetime.now(UTC))))
     assert theirs is None
 
 
@@ -128,7 +127,7 @@ def exchange(world: World, token: str, plugin: str, organization: str = CODE) ->
 
 
 def test_a_plugin_calls_its_dependency_as_the_same_person(world: World) -> None:
-    caller = signer_of(world).issue("io.x.tasks", "a1", "s1", CODE, ["member"], NOW)
+    caller = signer_of(world).issue("io.x.tasks", "a1", "s1", CODE, ["member"], datetime.now(UTC))
     answer = exchange(world, caller, "notes")
     assert answer.status_code == 200, answer.text
     claims = signer_of(world).read(answer.json()["token"])
@@ -138,15 +137,15 @@ def test_a_plugin_calls_its_dependency_as_the_same_person(world: World) -> None:
 
 
 def test_a_plugin_that_is_not_a_dependency_is_out_of_reach(world: World) -> None:
-    caller = signer_of(world).issue("io.x.tasks", "a1", "s1", CODE, ["member"], NOW)
+    caller = signer_of(world).issue("io.x.tasks", "a1", "s1", CODE, ["member"], datetime.now(UTC))
     assert exchange(world, caller, "calendar").status_code == 404
-    notes = signer_of(world).issue("io.x.notes", "a1", "s1", CODE, ["member"], NOW)
+    notes = signer_of(world).issue("io.x.notes", "a1", "s1", CODE, ["member"], datetime.now(UTC))
     assert exchange(world, notes, "tasks").status_code == 404
 
 
 def test_a_foreign_or_mismatched_token_is_unauthorized(world: World) -> None:
-    assert exchange(world, tokens().issue("io.x.tasks", "a1", "s1", CODE, ["member"], NOW), "notes").status_code == 401
-    other = signer_of(world).issue("io.x.tasks", "a1", "s1", "beta", ["member"], NOW)
+    assert exchange(world, tokens().issue("io.x.tasks", "a1", "s1", CODE, ["member"], datetime.now(UTC)), "notes").status_code == 401
+    other = signer_of(world).issue("io.x.tasks", "a1", "s1", "beta", ["member"], datetime.now(UTC))
     assert exchange(world, other, "notes").status_code == 401
 
 
