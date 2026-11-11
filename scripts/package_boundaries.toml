@@ -38,6 +38,13 @@ future_roots = ["packages/maxitor/tools/plugin-installer/maxitor/plugin_installe
 import_prefixes = ["maxitor.plugin_installer"]
 may_import = ["action_machine", "core", "plugins"]
 
+# The runner: a process of its own that starts, watches and stops plugin processes by running the domain plugins' actions.
+[packages.plugin_runner]
+current_roots = ["packages/maxitor/tools/plugin-runner/maxitor/plugin_runner"]
+future_roots = ["packages/maxitor/tools/plugin-runner/maxitor/plugin_runner"]
+import_prefixes = ["maxitor.plugin_runner"]
+may_import = ["action_machine", "core", "plugins"]
+
 # The repo-graph-port service: it never imports the front, and the front reads it over HTTP, never imports it.
 [packages.repo_graph_port]
 current_roots = ["packages/maxitor/tools/repo-graph-port/maxitor/repo_graph_port"]

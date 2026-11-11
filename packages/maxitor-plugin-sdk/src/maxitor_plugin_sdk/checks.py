@@ -26,6 +26,7 @@ from jsonschema import Draft202012Validator
 
 from maxitor_plugin_sdk.history import HISTORY_FOLDER, history_problems
 from maxitor_plugin_sdk.plugin_schema import PluginSchemaError, read_plugin_schema
+from maxitor_plugin_sdk.roles import NODE_ROLES
 
 SCHEMAS = Path(__file__).parent / "schemas"
 PASSPORT_FILE = "maxitor-plugin.yaml"
@@ -54,6 +55,7 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     if passport is None:
         return None, problems
     _check_version(root, passport, problems)
+    problems.extend(passport_role_problems(passport))
     navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-1", problems)
     if navigation is not None:
         problems.extend(navigation_problems(navigation))
@@ -141,11 +143,29 @@ def find_cycle(dependencies: Mapping[str, Iterable[str]]) -> list[str] | None:
     return None
 
 
+def passport_role_problems(passport: Mapping[str, Any]) -> list[str]:
+    """A plugin declares no roles: it works with the core's roles member, administrator and service as they are."""
+    if "roles" in passport:
+        return ["passport: a plugin declares no roles of its own; its actions check the core's member, administrator or service"]
+    return []
+
+
+def node_role_problems(navigation: Mapping[str, Any]) -> list[str]:
+    """A node asks only for the core's member or administrator: a plugin has no roles of its own."""
+    return [
+        f"navigation: {node['id']!r} asks for the role {role!r}; a node asks for member or administrator"
+        for node, _scope in _walk(navigation["nodes"])
+        for role in node.get("roles", [])
+        if role not in NODE_ROLES
+    ]
+
+
 def navigation_problems(navigation: Mapping[str, Any]) -> list[str]:
     """Rules of ``navigation.yaml`` across nodes, which a schema cannot express."""
     problems: list[str] = []
     seen_ids: set[str] = set()
     seen_pages: dict[str, str] = {}
+    problems.extend(node_role_problems(navigation))
     for node, scope in _walk(navigation["nodes"]):
         node_id = node["id"]
         if node_id in seen_ids:

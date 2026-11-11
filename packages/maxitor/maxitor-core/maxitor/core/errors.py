@@ -76,3 +76,9 @@ class MailNotSentError(CoreRefusalError):
     """The mail could not be sent; try again."""
 
     status = 503
+
+
+class PluginNotRunningError(CoreRefusalError):
+    """A plugin enabled in the organization whose process does not accept now; the gateway answers 502."""
+
+    status = 502

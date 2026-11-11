@@ -1,5 +1,5 @@
 # packages/maxitor/maxitor-core/maxitor/core/plugins/plugins_domain.py
-"""PluginsDomain — the marketplace, the plugins of each organization, checking and deploying versions."""
+"""PluginsDomain — the marketplace, the plugins of each organization, checking, deploying and running versions."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from maxitor.core.plugins.events import (
     DeploySkippedEvent,
     DisableRefusedEvent,
     DownloadTimedOutEvent,
+    EnvironmentFailedEvent,
     FailedInstallDroppedEvent,
     InstallerConnectionRefusedEvent,
     InstallerStartedEvent,
@@ -17,7 +18,11 @@ from maxitor.core.plugins.events import (
     PluginInstalledEvent,
     PrivatePluginAddedEvent,
     PrivatePluginRefusedEvent,
+    ProcessExitedEvent,
+    ProcessStartedEvent,
+    ProcessStoppedEvent,
     RowTakenUpEvent,
+    RunnerStartedEvent,
     VersionActivatedEvent,
     VersionAddedEvent,
     VersionDeployedEvent,
@@ -31,7 +36,7 @@ class PluginsDomain(BaseDomain):
     """The core's domain of plugins: the marketplace outside any organization and the plugins inside each."""
 
     name = "plugins"
-    description = "The marketplace of plugins and their versions, the plugins of each organization, the installer"
+    description = "The marketplace of plugins and their versions, the plugins of each organization, the installer and the runner"
     events = (
         VersionAddedEvent,
         PrivatePluginAddedEvent,
@@ -51,4 +56,9 @@ class PluginsDomain(BaseDomain):
         PrivatePluginRefusedEvent,
         DeployFailedEvent,
         InstallerConnectionRefusedEvent,
+        RunnerStartedEvent,
+        ProcessStartedEvent,
+        ProcessStoppedEvent,
+        ProcessExitedEvent,
+        EnvironmentFailedEvent,
     )

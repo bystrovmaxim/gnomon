@@ -1,5 +1,15 @@
 <!-- Sync Impact Report
-  Version change: 1.5.0 → 1.6.0 (MINOR: an amended rule).
+  Version change: 1.6.0 → 1.7.0 (MINOR: an amended rule).
+  Amended rule 56 in Authentication: the session token stays HS256; a token
+    one service issues for another — the gateway's token for a plugin — is
+    signed with EdDSA by a private key from the environment, carries its
+    recipient in `aud`, lives at most a minute and is checked with the public
+    key the issuer publishes as a JWKS; written for issue #75 at the
+    maintainer's instruction.
+  Templates: none need an update; plan-template's Constitution Check reads the
+    constitution at run time.
+
+  Version 1.6.0: 1.5.0 → 1.6.0 (MINOR: an amended rule).
   Amended rule 55 in Authentication: a browser client may carry the JWT in an
     HttpOnly, Secure, SameSite cookie with the __Host- prefix instead of the
     Authorization header; the authentication action's response sets it, signing
@@ -685,8 +695,13 @@ an ordinary table.
     refreshed within the same session), `roles` — the list of role names,
     `iat`, `exp`. The signing secret is a process setting: it comes from the
     environment, is not stored in the code and is not entity data. The lifetime
-    is a parameter of issuing. Check: the password is compared with the hash;
-    the secret is not read in the code.
+    is a parameter of issuing. A token one service issues for another — the
+    gateway's token for a plugin — is signed asymmetrically (EdDSA) with a
+    private key from the environment, names its recipient in `aud` and lives
+    no longer than a minute; the recipient checks it with the public key,
+    which the issuer publishes as a JWKS, so no recipient can issue a token.
+    Check: the password is compared with the hash; the secret and the private
+    key are not read in the code; a recipient holds no signing key.
 
 57. **Roles are named classes; access is by role.** A role is an
     `ApplicationRole` class with a name and a description. The `roles` claim (a
@@ -919,4 +934,4 @@ an ordinary table.
 - The sources of truth about the data structure are the constitution, `specs/`
   and `schema/`. There are no others.
 
-**Version**: 1.6.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-10
+**Version**: 1.7.0 | **Ratified**: 2026-11-05 | **Last Amended**: 2026-11-11

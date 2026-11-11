@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "maxitor-plugin-sdk"
-version = "1.2.0"
+version = "1.3.0"
 description = "The Maxitor plugin SDK: the schemas of a plugin's files, its checks, and the compatibility decision."
 readme = "README.md"
 license = "Apache-2.0"
@@ -14,6 +14,7 @@ requires-python = ">=3.12"
 authors = [{ name = "@Bystrov.Maxim" }]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
+    "aoa-action-machine>=1.6.0b2",
     "jsonschema>=4.17,<5",
     "packaging>=24",
     "PyYAML>=6.0,<7",
@@ -24,3 +25,7 @@ maxitor-plugin-check = "maxitor_plugin_sdk.checks:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/maxitor_plugin_sdk"]
+
+# Inside the gnomon repository AOA comes from the submodule external/aoa.
+[tool.uv.sources]
+aoa-action-machine = { path = "../../external/aoa/packages/aoa-action-machine", editable = true }

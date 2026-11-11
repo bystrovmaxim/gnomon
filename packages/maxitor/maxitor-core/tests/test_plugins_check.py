@@ -65,6 +65,8 @@ def test_the_templates_wheel_passes_with_its_sections_in_order() -> None:
         ({"maxitor_notes/navigation.yaml": None}, "navigation"),
         ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 1", "navigation: 7")}, "navigation"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace('">=4.0,<5"', '">=5.0,<6"')}, "core_range"),
+        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT + "roles:\n  - name: reader\n    description: Reads.\n"}, "passport"),
+        ({"maxitor_notes/navigation.yaml": NAVIGATION + "    roles: [reader]\n"}, "navigation"),
     ],
 )
 def test_each_fault_of_a_wheel_rejects_it(files: dict[str, str | None], reason: str) -> None:

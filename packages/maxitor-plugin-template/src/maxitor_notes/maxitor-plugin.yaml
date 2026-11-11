@@ -10,7 +10,7 @@ title: Notes
 description: >
   Notes on catalog items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.5.0
+version: 0.6.0
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 
@@ -31,11 +31,8 @@ requires:
 #       sha256: <64 hex digits>
 dependencies: []
 
-roles:
-  - name: reader
-    description: Reads notes.
-  - name: editor
-    description: Writes notes.
+# A plugin has no roles of its own: its actions check the core's roles the gateway's token carries — member for
+# every active user of the organization, administrator for its administrators, service for the plugin itself.
 
 # Every page reads any past moment; that needs no declaration. The comparisons its pages can draw are declared here;
 # a page may narrow them in navigation.yaml, never widen them.

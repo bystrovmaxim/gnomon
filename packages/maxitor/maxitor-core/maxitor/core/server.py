@@ -40,14 +40,19 @@ from maxitor.core.gateways.geoip import GEOIP_CONNECTION_KEY, GeoIpGateway
 from maxitor.core.gateways.mail import MAIL_CONNECTION_KEY, MailGateway, OutboxMailGateway, YandexCloudPostboxGateway
 from maxitor.core.gateways.providers import GATEWAYS
 from maxitor.core.plugins.actions.add_private_plugin_action import AddPrivatePluginAction
+from maxitor.core.plugins.actions.core_jwks_action import CoreJwksAction
 from maxitor.core.plugins.actions.disable_plugin_action import DisablePluginAction
 from maxitor.core.plugins.actions.drop_failed_install_action import DropFailedInstallAction
 from maxitor.core.plugins.actions.enable_plugin_action import EnablePluginAction
+from maxitor.core.plugins.actions.exchange_token_action import ExchangeTokenAction
 from maxitor.core.plugins.actions.list_plugins_action import ListPluginsAction
+from maxitor.core.plugins.actions.pass_request_action import PassRequestAction
 from maxitor.core.plugins.actions.plugin_details_action import PluginDetailsAction
 from maxitor.core.plugins.actions.request_install_action import RequestInstallAction
 from maxitor.core.plugins.actions.retry_install_action import RetryInstallAction
+from maxitor.core.plugins.actions.service_token_action import ServiceTokenAction
 from maxitor.core.plugins.actions.upload_private_plugin_action import UploadPrivatePluginAction
+from maxitor.core.plugins.plugin_tokens import PLUGIN_TOKENS_CONNECTION_KEY, PluginTokensController
 from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
 from maxitor.core.plugins.storage.wheel_storage import WHEELS_CONNECTION_KEY, WheelStorage
 from maxitor.core.settings import CoreSettings
@@ -96,6 +101,10 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/plugins/enable", EnablePluginAction),
     ("post", "/api/v1/plugins/private", AddPrivatePluginAction),
     ("post", "/api/v1/plugins/private/upload", UploadPrivatePluginAction),
+    ("post", "/api/v1/gateway/pass", PassRequestAction),
+    ("post", "/api/v1/gateway/exchange", ExchangeTokenAction),
+    ("post", "/api/v1/gateway/service-token", ServiceTokenAction),
+    ("get", "/api/v1/jwks", CoreJwksAction),
 ]
 
 
@@ -156,6 +165,10 @@ def create_app(
         MAIL_CONNECTION_KEY: mail_gateway(settings),
         TOKENS_CONNECTION_KEY: SessionTokensController(settings.session_secret, settings.policy_version),
     }
+    if PLUGIN_TOKENS_CONNECTION_KEY not in given:
+        if settings.gateway_key_file is None:
+            raise ValueError("MAXITOR_GATEWAY_KEY_FILE is not set: the core signs plugin tokens with that key")
+        shared[PLUGIN_TOKENS_CONNECTION_KEY] = PluginTokensController.from_file(settings.gateway_key_file)
     for name, gateway in GATEWAYS.items():
         keys = settings.providers.get(name)
         shared[name] = gateway(

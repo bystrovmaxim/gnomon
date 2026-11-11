@@ -3000,6 +3000,128 @@
       "type": "entity_relation"
     },
     {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|domain|maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_field|maxitor.core.plugins.entities.PluginProcessCoreEntity:address",
+      "is_dag": false,
+      "properties": {
+        "field_name": "address",
+        "ordinal": 2
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:address",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_field|maxitor.core.plugins.entities.PluginProcessCoreEntity:container",
+      "is_dag": false,
+      "properties": {
+        "field_name": "container",
+        "ordinal": 3
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:container",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_field|maxitor.core.plugins.entities.PluginProcessCoreEntity:failures",
+      "is_dag": false,
+      "properties": {
+        "field_name": "failures",
+        "ordinal": 5
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:failures",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_field|maxitor.core.plugins.entities.PluginProcessCoreEntity:id",
+      "is_dag": false,
+      "properties": {
+        "field_name": "id",
+        "ordinal": 0
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:id",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_field|maxitor.core.plugins.entities.PluginProcessCoreEntity:kind",
+      "is_dag": false,
+      "properties": {
+        "field_name": "kind",
+        "ordinal": 1
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:kind",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_field|maxitor.core.plugins.entities.PluginProcessCoreEntity:next_start_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "next_start_at",
+        "ordinal": 6
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:next_start_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_field|maxitor.core.plugins.entities.PluginProcessCoreEntity:started_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "started_at",
+        "ordinal": 4
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:started_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_field|maxitor.core.plugins.entities.PluginProcessCoreEntity:updated_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "updated_at",
+        "ordinal": 7
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:updated_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|entity_relation|plugin_version",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "one",
+        "deprecated": false,
+        "description": "The deployed version the process runs",
+        "field_name": "plugin_version",
+        "has_inverse": false,
+        "optional": false,
+        "relation_type": "association"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
+      "type": "entity_relation"
+    },
+    {
       "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|domain|maxitor.core.plugins.plugins_domain.PluginsDomain",
       "is_dag": true,
       "properties": {},
@@ -3277,7 +3399,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "created_at",
-        "ordinal": 11
+        "ordinal": 12
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3357,6 +3479,18 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginVersionCoreEntity:service_key_hash",
+      "is_dag": false,
+      "properties": {
+        "field_name": "service_key_hash",
+        "ordinal": 11
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity:service_key_hash",
+      "type": "entity_field"
+    },
+    {
       "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginVersionCoreEntity:sha256",
       "is_dag": false,
       "properties": {
@@ -3385,7 +3519,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "updated_at",
-        "ordinal": 12
+        "ordinal": 13
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3596,6 +3730,33 @@
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.events.DownloadTimedOutEvent",
       "target_id": "maxitor.core.plugins.events.DownloadTimedOutEvent:version_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.EnvironmentFailedEvent|field|maxitor.core.plugins.events.EnvironmentFailedEvent:passport_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.EnvironmentFailedEvent",
+      "target_id": "maxitor.core.plugins.events.EnvironmentFailedEvent:passport_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.EnvironmentFailedEvent|field|maxitor.core.plugins.events.EnvironmentFailedEvent:reason",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.EnvironmentFailedEvent",
+      "target_id": "maxitor.core.plugins.events.EnvironmentFailedEvent:reason",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.EnvironmentFailedEvent|field|maxitor.core.plugins.events.EnvironmentFailedEvent:version",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.EnvironmentFailedEvent",
+      "target_id": "maxitor.core.plugins.events.EnvironmentFailedEvent:version",
       "type": "field"
     },
     {
@@ -3851,6 +4012,105 @@
       "type": "field"
     },
     {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent|field|maxitor.core.plugins.events.ProcessExitedEvent:failures",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessExitedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessExitedEvent:failures",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent|field|maxitor.core.plugins.events.ProcessExitedEvent:kind",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessExitedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessExitedEvent:kind",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent|field|maxitor.core.plugins.events.ProcessExitedEvent:passport_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessExitedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessExitedEvent:passport_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent|field|maxitor.core.plugins.events.ProcessExitedEvent:reason",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessExitedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessExitedEvent:reason",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent|field|maxitor.core.plugins.events.ProcessExitedEvent:version",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessExitedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessExitedEvent:version",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent|field|maxitor.core.plugins.events.ProcessStartedEvent:address",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessStartedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessStartedEvent:address",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent|field|maxitor.core.plugins.events.ProcessStartedEvent:kind",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessStartedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessStartedEvent:kind",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent|field|maxitor.core.plugins.events.ProcessStartedEvent:passport_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessStartedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessStartedEvent:passport_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent|field|maxitor.core.plugins.events.ProcessStartedEvent:version",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessStartedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessStartedEvent:version",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStoppedEvent|field|maxitor.core.plugins.events.ProcessStoppedEvent:passport_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessStoppedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessStoppedEvent:passport_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStoppedEvent|field|maxitor.core.plugins.events.ProcessStoppedEvent:version",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.ProcessStoppedEvent",
+      "target_id": "maxitor.core.plugins.events.ProcessStoppedEvent:version",
+      "type": "field"
+    },
+    {
       "id": "maxitor.core.plugins.events.RowTakenUpEvent|field|maxitor.core.plugins.events.RowTakenUpEvent:kind",
       "is_dag": false,
       "properties": {},
@@ -3866,6 +4126,15 @@
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.events.RowTakenUpEvent",
       "target_id": "maxitor.core.plugins.events.RowTakenUpEvent:row_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.RunnerStartedEvent|field|maxitor.core.plugins.events.RunnerStartedEvent:versions",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.events.RunnerStartedEvent",
+      "target_id": "maxitor.core.plugins.events.RunnerStartedEvent:versions",
       "type": "field"
     },
     {
@@ -4031,6 +4300,15 @@
       "type": "domain_event"
     },
     {
+      "id": "maxitor.core.plugins.plugins_domain.PluginsDomain|domain_event|maxitor.core.plugins.events.EnvironmentFailedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "target_id": "maxitor.core.plugins.events.EnvironmentFailedEvent",
+      "type": "domain_event"
+    },
+    {
       "id": "maxitor.core.plugins.plugins_domain.PluginsDomain|domain_event|maxitor.core.plugins.events.FailedInstallDroppedEvent",
       "is_dag": false,
       "properties": {},
@@ -4112,12 +4390,48 @@
       "type": "domain_event"
     },
     {
+      "id": "maxitor.core.plugins.plugins_domain.PluginsDomain|domain_event|maxitor.core.plugins.events.ProcessExitedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "target_id": "maxitor.core.plugins.events.ProcessExitedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.plugins.plugins_domain.PluginsDomain|domain_event|maxitor.core.plugins.events.ProcessStartedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "target_id": "maxitor.core.plugins.events.ProcessStartedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.plugins.plugins_domain.PluginsDomain|domain_event|maxitor.core.plugins.events.ProcessStoppedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "target_id": "maxitor.core.plugins.events.ProcessStoppedEvent",
+      "type": "domain_event"
+    },
+    {
       "id": "maxitor.core.plugins.plugins_domain.PluginsDomain|domain_event|maxitor.core.plugins.events.RowTakenUpEvent",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
       "target_id": "maxitor.core.plugins.events.RowTakenUpEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.plugins.plugins_domain.PluginsDomain|domain_event|maxitor.core.plugins.events.RunnerStartedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "target_id": "maxitor.core.plugins.events.RunnerStartedEvent",
       "type": "domain_event"
     },
     {
@@ -4181,6 +4495,15 @@
       "relationship": "Aggregation",
       "source_id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage",
       "target_id": "maxitor.core.plugins.entities.PluginDependencyCoreEntity",
+      "type": "resource_entity"
+    },
+    {
+      "id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage|resource_entity|maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage",
+      "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
       "type": "resource_entity"
     },
     {
@@ -4281,6 +4604,33 @@
       "source_id": "maxitor.core.storage.core_storage.CoreStorage",
       "target_id": "maxitor.core.entities.UserCoreEntity",
       "type": "resource_entity"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.AdministratorRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.AdministratorRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.MemberRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.MemberRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.ServiceRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.ServiceRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
     }
   ],
   "nodes": [
@@ -6473,6 +6823,104 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
+      "label": "PluginProcessCoreEntity",
+      "properties": {
+        "description": "A running backend or frontend of a deployed version, kept by the runner",
+        "entity_kind": "core",
+        "entity_kind_label": "Core"
+      },
+      "type": "Entity"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:address",
+      "label": "address",
+      "properties": {
+        "description": "The inner address http://127.0.0.1:<port> once it accepts; empty while it starts or waits",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:container",
+      "label": "container",
+      "properties": {
+        "description": "The Docker container that runs it; empty while it waits",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:failures",
+      "label": "failures",
+      "properties": {
+        "description": "Starts that failed or exits in a row since the last good start",
+        "field_annotation": "int",
+        "field_type": "int",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:id",
+      "label": "id",
+      "properties": {
+        "description": "Process row id",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": true
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:kind",
+      "label": "kind",
+      "properties": {
+        "description": "backend or frontend",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:next_start_at",
+      "label": "next_start_at",
+      "properties": {
+        "description": "The earliest next start after a failure; empty when it may start at once",
+        "field_annotation": "Union[datetime, NoneType]",
+        "field_type": "datetime | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:started_at",
+      "label": "started_at",
+      "properties": {
+        "description": "When the running process started; empty while it waits",
+        "field_annotation": "Union[datetime, NoneType]",
+        "field_type": "datetime | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity:updated_at",
+      "label": "updated_at",
+      "properties": {
+        "description": "When the row last changed",
+        "field_annotation": "datetime",
+        "field_type": "datetime",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
       "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
       "label": "PluginSectionCoreEntity",
       "properties": {
@@ -6723,6 +7171,17 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity:service_key_hash",
+      "label": "service_key_hash",
+      "properties": {
+        "description": "The SHA-256 of its service key, 64 lower-case hexadecimal characters; empty until deployed",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
       "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity:sha256",
       "label": "sha256",
       "properties": {
@@ -6938,6 +7397,45 @@
       "label": "version_id",
       "properties": {
         "description": "The version",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.EnvironmentFailedEvent",
+      "label": "EnvironmentFailedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.plugins.events.EnvironmentFailedEvent:passport_id",
+      "label": "passport_id",
+      "properties": {
+        "description": "The plugin's id from its passport",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.EnvironmentFailedEvent:reason",
+      "label": "reason",
+      "properties": {
+        "description": "The last line Docker answered, without any secret",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.EnvironmentFailedEvent:version",
+      "label": "version",
+      "properties": {
+        "description": "The version, x.y.z",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -7307,6 +7805,145 @@
       "type": "Field"
     },
     {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent",
+      "label": "ProcessExitedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent:failures",
+      "label": "failures",
+      "properties": {
+        "description": "Failures in a row, this one included",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent:kind",
+      "label": "kind",
+      "properties": {
+        "description": "backend or frontend",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent:passport_id",
+      "label": "passport_id",
+      "properties": {
+        "description": "The plugin's id from its passport",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent:reason",
+      "label": "reason",
+      "properties": {
+        "description": "exited, not_listening or not_started, with the exit code when there is one",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessExitedEvent:version",
+      "label": "version",
+      "properties": {
+        "description": "The version, x.y.z",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent",
+      "label": "ProcessStartedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent:address",
+      "label": "address",
+      "properties": {
+        "description": "The inner address, http://127.0.0.1:<port>",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent:kind",
+      "label": "kind",
+      "properties": {
+        "description": "backend or frontend",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent:passport_id",
+      "label": "passport_id",
+      "properties": {
+        "description": "The plugin's id from its passport",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStartedEvent:version",
+      "label": "version",
+      "properties": {
+        "description": "The version, x.y.z",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStoppedEvent",
+      "label": "ProcessStoppedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStoppedEvent:passport_id",
+      "label": "passport_id",
+      "properties": {
+        "description": "The plugin's id from its passport",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.ProcessStoppedEvent:version",
+      "label": "version",
+      "properties": {
+        "description": "The version, x.y.z",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor.core.plugins.events.RowTakenUpEvent",
       "label": "RowTakenUpEvent",
       "properties": {},
@@ -7328,6 +7965,23 @@
       "label": "row_id",
       "properties": {
         "description": "The row's id",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.plugins.events.RunnerStartedEvent",
+      "label": "RunnerStartedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.plugins.events.RunnerStartedEvent:versions",
+      "label": "versions",
+      "properties": {
+        "description": "Deployed versions enabled in at least one organization",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -7511,7 +8165,7 @@
       "id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
       "label": "PluginsDomain",
       "properties": {
-        "description": "The marketplace of plugins and their versions, the plugins of each organization, the installer",
+        "description": "The marketplace of plugins and their versions, the plugins of each organization, the installer and the runner",
         "name": "plugins",
         "typed_events": true
       },
@@ -7556,6 +8210,33 @@
         "description": "The core's database: the schemas platform and organization, written as the role maxitor_core"
       },
       "type": "Resource"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.AdministratorRole",
+      "label": "AdministratorRole",
+      "properties": {
+        "description": "An administrator of the organization of the address",
+        "role_mode": "alive"
+      },
+      "type": "Role"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.MemberRole",
+      "label": "MemberRole",
+      "properties": {
+        "description": "An active user of the organization of the address",
+        "role_mode": "alive"
+      },
+      "type": "Role"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.ServiceRole",
+      "label": "ServiceRole",
+      "properties": {
+        "description": "The plugin itself, with no person behind the call",
+        "role_mode": "alive"
+      },
+      "type": "Role"
     }
   ],
   "schema_version": "2.0"

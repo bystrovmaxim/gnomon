@@ -44,6 +44,7 @@ from maxitor.core.plugins.storage.wheel_storage import (
     WheelTooLargeError,
 )
 from maxitor.core.plugins.wheel import WheelContents, WheelRefusedError, read_wheel
+from maxitor_plugin_sdk.checks import node_role_problems, passport_role_problems
 from maxitor_plugin_sdk.plugin_schema import PluginSchemaError, parse_plugin_schema
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from pydantic import Field
@@ -101,6 +102,9 @@ def _sections(contents: WheelContents) -> list[dict[str, Any]]:
     problems = [e.message for e in _validator("navigation-1").iter_errors(navigation)]
     if problems:
         raise VersionRejectedError("navigation", problems[0])
+    roles = node_role_problems(navigation)
+    if roles:
+        raise VersionRejectedError("navigation", roles[0])
     nodes = [n for n in navigation.get("nodes") or [] if n.get("attach") == "root"]
     nodes.sort(key=lambda n: (n.get("order", 0), n.get("id", "")))
     return [{"title": str(n["title"]), "path": str(n.get("page") or "")} for n in nodes]
@@ -114,6 +118,9 @@ def inspect(contents: WheelContents) -> tuple[dict[str, Any], list[dict[str, Any
     problems = [e.message for e in _validator("plugin-passport-2").iter_errors(passport)]
     if problems:
         raise VersionRejectedError("passport", problems[0])
+    roles = passport_role_problems(passport)
+    if roles:
+        raise VersionRejectedError("passport", roles[0])
     if contents.dist_version and contents.dist_version != passport["version"]:
         raise VersionRejectedError("passport", f"the passport says {passport['version']}, the wheel {contents.dist_version}")
     try:

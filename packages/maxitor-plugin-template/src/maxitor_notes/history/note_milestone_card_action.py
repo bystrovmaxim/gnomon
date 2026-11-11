@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import cast
 
 from maxitor_plugin_sdk.moments import MOMENT_PATTERN
+from maxitor_plugin_sdk.roles import MemberRole
 from pydantic import Field
 
 from aoa.action_machine.context.context_view import ContextView
@@ -32,7 +33,6 @@ from aoa.action_machine.runtime.tools_box import ToolsBox
 from maxitor_notes.entities.milestone_card_entity import MilestoneCardCoreEntity
 from maxitor_notes.membership import member_organization_id, organization_access
 from maxitor_notes.notes_domain import NotesDomain
-from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 
@@ -51,7 +51,7 @@ class NoteMilestoneCardResult(BaseResult):
 
 
 @meta(description="Answer one milestone's card of an item's notes, for the core's time scale", domain=NotesDomain)
-@check_roles(NotesReaderRole)
+@check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class NoteMilestoneCardAction(BaseAction[NoteMilestoneCardParams, NoteMilestoneCardResult]):
     """

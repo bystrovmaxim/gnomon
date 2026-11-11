@@ -12,7 +12,7 @@ nodes:
     order: 300
     # The page's path inside the plugin; Maxitor opens it in the right panel at /w/notes/items/<item_id>.
     page: /items/{item_id}
-    roles: [reader]
+    roles: [member]
     # The page's controls. Maxitor draws them over the right panel, in the same places for every plugin; each is
     # an address parameter, which the page reads like any other.
     controls:
@@ -47,7 +47,7 @@ nodes:
     icon: note
     order: 500
     page: /
-    roles: [reader]
+    roles: [member]
 
   # The item's notes as the revision in force holds them: milestones alone on the scale, a point per revision.
   - id: item-published
@@ -56,7 +56,7 @@ nodes:
     icon: note
     order: 310
     page: /items/{item_id}/published
-    roles: [reader]
+    roles: [member]
     history:
       milestones: list_note_history
       card: note_milestone_card
@@ -68,6 +68,6 @@ nodes:
     icon: note
     order: 320
     page: /items/{item_id}/draft
-    roles: [reader]
+    roles: [member]
     history:
       compare: []

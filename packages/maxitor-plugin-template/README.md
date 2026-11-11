@@ -16,12 +16,12 @@ Maxitor installs this plugin: an organization's administrator finds it in Settin
 | File | What it is |
 |---|---|
 | `pyproject.toml` | The pip package; the entry point `maxitor.plugins` leads the installer to the passport. |
-| `src/maxitor_notes/maxitor-plugin.yaml` | The passport: id, name, version, required Maxitor version, dependencies on other plugins, roles, backend, frontend, database, and the comparisons its pages can draw (`history.compare`). |
+| `src/maxitor_notes/maxitor-plugin.yaml` | The passport: id, name, version, required Maxitor version, dependencies on other plugins, backend, frontend, database, and the comparisons its pages can draw (`history.compare`). It declares no roles: the actions check the core's `member`. |
 | `src/maxitor_notes/navigation.yaml` | The plugin's nodes in Maxitor's left tree: the item's notes, its published notes and its draft under every catalog item, one in the root; the address of each page, how it behaves in a room, and how it answers the time scale (`history`). |
 | `src/maxitor_notes/foreign-keys.yaml` | The keys from a note's writer and a revision's publisher to the core's user of that account, as identifiers only; the installer creates them. |
 | `src/maxitor_notes/schema.yaml` | The plugin's tables: `note` and `revision`. Maxitor builds them with `note_versions` and `revision_versions`, the service fields and the indexes. |
-| `src/maxitor_notes/app.py` | The passport's `backend.app`: the backend Maxitor runs behind its gateway; every route lies under `/p/notes/api/{organization}` and is an action. |
-| `src/maxitor_notes/organization_auth_coordinator.py` | Checks the core's EdDSA token for this plugin and puts the address's organization into the context beside the person. |
+| `src/maxitor_notes/app.py` | The passport's `backend.app`: the backend Maxitor's runner runs in a container of its own behind the gateway; every route lies under `/p/notes/api/{organization}` and is an action; a missing role answers 403, another organization's object 404. |
+| `src/maxitor_notes/organization_auth_coordinator.py` | Checks the core's EdDSA token for this plugin by the core's JWKS (`MAXITOR_CORE_JWKS_URL`) and puts the address's organization into the context beside the person and the core's roles. |
 | `src/maxitor_notes/membership.py` | The second lock: each action's `@access_decide` lets only a member of the organization of the address in, and its main step finds the organization's id again. |
 | `src/maxitor_notes/storage/notes_storage.py` | The plugin's own schema: a write is one transaction whose change time comes from the core's `change_time`, an edit or a deletion refused when the note changed after `base_moment`; a read is bound to one organization and one moment, written through the SDK's moment condition, a moment later than the watermark refused. |
 | `src/maxitor_notes/actions/` | Add, edit and delete a note; list an item's notes at a moment, or its bars over a stretch; publish a revision; the published notes and the draft at a moment; the writers for the page's author filter (Maxitor's list contract). |

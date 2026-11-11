@@ -11,6 +11,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi.testclient import TestClient
 from maxitor.core.gateways.geoip import GeoIpGateway
 from maxitor.core.gateways.letters import Letter
@@ -307,8 +309,17 @@ class World:
 
         self.plugins = MemoryPluginsStorage(self.storage)
         self.wheels = Path(tempfile.mkdtemp(prefix="wheels-"))
+        self.gateway_key = Ed25519PrivateKey.generate()
+        key_file = Path(tempfile.mkdtemp(prefix="gateway-")) / "gateway-key.pem"
+        key_file.write_bytes(
+            self.gateway_key.private_bytes(
+                serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()
+            )
+        )
         app = create_app(
-            CoreSettings(session_secret=SECRET, wheel_store=self.wheels, wheel_max_bytes=wheel_max_bytes),
+            CoreSettings(
+                session_secret=SECRET, wheel_store=self.wheels, wheel_max_bytes=wheel_max_bytes, gateway_key_file=key_file
+            ),
             resources={"core": self.storage, "plugins": self.plugins, "geoip": self.geo, "mail": self.mail, **self.providers},
             machine=machine,
         )

@@ -2,9 +2,9 @@
 """
 PluginRuntimeStorage — the directory where each deployed version keeps the environment file its process starts with.
 
-The file ``<runtime>/<schema>/plugin.env`` holds the version's connection string with its user's password, readable by
-its owner only (mode 0600). It is the only place that password exists (FR-026); bystrovmaxim/gnomon#75 starts the
-version's process with it.
+The file ``<runtime>/<schema>/plugin.env`` holds the version's connection string with its user's password and its
+service key, readable by its owner only (mode 0600). It is the only place they exist (FR-026); the runner starts the
+version's processes with it.
 """
 
 from __future__ import annotations
@@ -28,8 +28,8 @@ class PluginRuntimeStorage(BaseStorage):
     """
     AI-CORE-BEGIN
     ROLE: Write and remove a version's environment file.
-    CONTRACT: ``write_env`` makes ``<schema>/plugin.env`` with mode 0600 from the database's address and the version's
-        user and password; ``remove_env`` deletes it.
+    CONTRACT: ``write_env`` makes ``<schema>/plugin.env`` with mode 0600 from the database's address, the version's
+        user and password and its service key; ``remove_env`` deletes it.
     INVARIANTS: The password is written nowhere else; the repr names no password.
     AI-CORE-END
     """
@@ -55,7 +55,7 @@ class PluginRuntimeStorage(BaseStorage):
             raise ValueError(f"not a schema name: {schema!r}")
         return self._directory / schema / "plugin.env"
 
-    def write_env(self, schema: str, user: str, password: str) -> Path:
+    def write_env(self, schema: str, user: str, password: str, service_key: str) -> Path:
         """Write the version's environment file, readable by its owner only; answer its path."""
         path = self.env_path(schema)
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -63,7 +63,7 @@ class PluginRuntimeStorage(BaseStorage):
         url = urlunsplit(("postgresql", netloc, self._database, "", ""))
         descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
         with os.fdopen(descriptor, "w", encoding="utf-8") as out:
-            out.write(f"MAXITOR_PLUGIN_DSN={url}\nMAXITOR_PLUGIN_SCHEMA={schema}\n")
+            out.write(f"MAXITOR_PLUGIN_DSN={url}\nMAXITOR_PLUGIN_SCHEMA={schema}\nMAXITOR_PLUGIN_SERVICE_KEY={service_key}\n")
         os.chmod(path, 0o600)
         return path
 

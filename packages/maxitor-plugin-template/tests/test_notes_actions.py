@@ -13,10 +13,9 @@ from maxitor_notes.actions.publish_notes_action import PublishNotesAction, Publi
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
 from maxitor_notes.membership import organization_access
-from maxitor_notes.notes_editor_role import NotesEditorRole
-from maxitor_notes.notes_reader_role import NotesReaderRole
 from maxitor_notes.organization_member import OrganizationMember
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
+from maxitor_plugin_sdk.roles import MemberRole, ServiceRole
 
 from aoa.action_machine.context import Context
 from aoa.action_machine.exceptions.access_denied import AccessDenied
@@ -94,7 +93,7 @@ def _context(organization: str, roles: tuple) -> Context:
     return Context(user=OrganizationMember(user_id=ANN, session_id="s1", roles=roles, organization=organization))
 
 
-async def _run(action, params, organization="acme", roles=(NotesReaderRole, NotesEditorRole), storage=None):
+async def _run(action, params, organization="acme", roles=(MemberRole,), storage=None):
     storage = storage or ScriptedNotesStorage()
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     result = await machine.run(_context(organization, roles), action, params, {NOTES_CONNECTION_KEY: storage})
@@ -154,14 +153,14 @@ async def test_a_membership_ended_after_the_decision_is_refused_the_same_way_and
 async def test_access_is_answered_without_running_the_action(action, params, organization, answer) -> None:
     storage = ScriptedNotesStorage()
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
-    verdict = await machine.check_access_decide(_context(organization, (NotesReaderRole, NotesEditorRole)), type(action), params, connections={NOTES_CONNECTION_KEY: storage})
+    verdict = await machine.check_access_decide(_context(organization, (MemberRole,)), type(action), params, connections={NOTES_CONNECTION_KEY: storage})
     assert verdict == answer
     assert storage.calls == [("organization_of", organization, ANN)]
 
 
-async def test_a_reader_cannot_write() -> None:
+async def test_a_call_without_member_cannot_write() -> None:
     with pytest.raises(AccessDenied) as refusal:
-        await _run(AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check"), roles=(NotesReaderRole,))
+        await _run(AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check"), roles=(ServiceRole,))
     assert refusal.value.verdict.gate is Gate.CHECK_ROLES
 
 
@@ -198,18 +197,18 @@ async def test_an_editor_edits_and_deletes_with_the_moment_they_saw_as_themselve
 
 
 @pytest.mark.parametrize(("action", "params"), [(EditNoteAction(), EditNoteParams(note_id="n1", body="Check", base_moment=MOMENT)), (DeleteNoteAction(), DeleteNoteParams(note_id="n1", base_moment=MOMENT))])
-async def test_a_reader_cannot_edit_or_delete(action, params) -> None:
+async def test_a_call_without_member_cannot_edit_or_delete(action, params) -> None:
     with pytest.raises(AccessDenied) as refusal:
-        await _run(action, params, roles=(NotesReaderRole,))
+        await _run(action, params, roles=(ServiceRole,))
     assert refusal.value.verdict.gate is Gate.CHECK_ROLES
 
 
-async def test_an_editor_publishes_as_themselves_and_a_reader_cannot() -> None:
+async def test_a_member_publishes_as_themselves_and_a_call_without_member_cannot() -> None:
     result, storage = await _run(PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="First review", comment="Agreed", release="handbook 2026.11"))
     assert (result.number, result.changed_at) == (1, MOMENT)
     assert storage.calls[-1] == ("publish_notes", ACME, ITEM, "First review", "Agreed", "handbook 2026.11", ANN, "PublishNotesAction")
     with pytest.raises(AccessDenied):
-        await _run(PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="T", comment="C"), roles=(NotesReaderRole,))
+        await _run(PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="T", comment="C"), roles=(ServiceRole,))
 
 
 async def test_the_published_notes_and_the_draft_are_read_at_the_moment_of_the_address() -> None:

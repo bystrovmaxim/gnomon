@@ -17,6 +17,7 @@ from maxitor.core.storage.core_storage import UniqueRowError
 
 from aoa.action_machine.intents.meta import meta
 from tests.fakes import MemoryCoreStorage
+from tests.plugin_runtime_fakes import MemoryRuntimeReadings
 
 
 def _matches(query: str, *words: str) -> bool:
@@ -25,14 +26,15 @@ def _matches(query: str, *words: str) -> bool:
 
 
 @meta(description="The schema plugins in memory, for tests")
-class MemoryPluginsStorage(PluginsStorage):
+class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
     """Lists for the five tables; the core's organizations and users read from the core's memory."""
 
     def __init__(self, core: MemoryCoreStorage) -> None:
         super().__init__(connection_params="postgresql://unused")
         self.core = core
         self.tables: dict[str, list[dict[str, Any]]] = {
-            t: [] for t in ("plugin", "plugin_version", "plugin_dependency", "plugin_section", "organization_plugin")
+            t: []
+            for t in ("plugin", "plugin_version", "plugin_dependency", "plugin_section", "organization_plugin", "plugin_process")
         }
         self.versions: dict[str, list[dict[str, Any]]] = {v: [] for v, _k in PLUGIN_VERSIONED.values()}
         self.clock = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)

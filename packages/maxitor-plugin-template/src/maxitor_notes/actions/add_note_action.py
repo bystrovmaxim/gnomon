@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import cast
 
+from maxitor_plugin_sdk.roles import MemberRole
 from pydantic import Field
 
 from aoa.action_machine.context.context_view import ContextView
@@ -29,7 +30,6 @@ from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 from maxitor_notes.membership import member_organization_id, organization_access
 from maxitor_notes.notes_domain import NotesDomain
-from maxitor_notes.notes_editor_role import NotesEditorRole
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
 
@@ -47,7 +47,7 @@ class AddNoteResult(BaseResult):
 
 
 @meta(description="Write a note on a catalog item", domain=NotesDomain)
-@check_roles(NotesEditorRole)
+@check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class AddNoteAction(BaseAction[AddNoteParams, AddNoteResult]):
     """

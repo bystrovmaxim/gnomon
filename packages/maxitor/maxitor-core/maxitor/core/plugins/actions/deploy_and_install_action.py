@@ -13,6 +13,7 @@ the version's environment file is written inside it and removed if it rolls back
 
 from __future__ import annotations
 
+import hashlib
 import secrets
 from typing import Literal, cast
 
@@ -101,6 +102,7 @@ class DeployAndInstallAction(BaseAction[DeployParams, DeployResult]):
             return DeployResult(state="gone")
         schema_name = schema_name_of(version["name"], version["version"])
         user, password = f"plg_{schema_name}", secrets.token_urlsafe(32)
+        service_key = secrets.token_urlsafe(32)
         operation = type(self).__name__
         wrote_env = False
 
@@ -119,14 +121,20 @@ class DeployAndInstallAction(BaseAction[DeployParams, DeployResult]):
                 database = contents.passport.get("database") or {}
                 plugin_schema = parse_plugin_schema(contents.file(database.get("schema")) or "")
                 keys = core_keys(contents.file(database.get("foreign_keys")), plugin_schema)
-                runtime.write_env(schema_name, user, password)
+                runtime.write_env(schema_name, user, password, service_key)
                 wrote_env = True
                 await store.build_version(schema_name, user, scram_verifier(password), plugin_schema, keys)
                 changed = await store.plugin_lock(version["plugin_id"])
                 await store.update(
                     "plugin_version",
                     {"id": version["id"]},
-                    {"schema_name": schema_name, "database_user": user, "deployed_at": changed, "updated_at": changed},
+                    {
+                        "schema_name": schema_name,
+                        "database_user": user,
+                        "service_key_hash": hashlib.sha256(service_key.encode("utf-8")).hexdigest(),
+                        "deployed_at": changed,
+                        "updated_at": changed,
+                    },
                     changed,
                     None,
                     operation,
