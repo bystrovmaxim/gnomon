@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import type { Query } from "../protocol";
 import { chosen, filterOn, PAINT, toggleFilter, writeChoice } from "./address";
+import { Icon } from "./icons";
 import type { FilterSection } from "./types";
 
 type Write = (name: string, value: string | null) => void;
@@ -31,6 +32,7 @@ export function Filters({ sections, query, write }: { sections: FilterSection[];
         {sections.map((section, index) => (
           <section key={section.param} className="mx-filter">
             <button type="button" className="mx-filter-title" aria-expanded={index === open} onClick={() => setOpen(index === open ? -1 : index)}>
+              <Icon name="chevron" />
               {section.title}
             </button>
             {index === open ? <Rows section={section} listed={query[section.param]} write={write} /> : null}
@@ -63,7 +65,7 @@ function Rows({ section, listed, write }: { section: FilterSection; listed: stri
   const keys = section.rows.map((row) => row.key);
   const on = filterOn(listed, keys);
   return (
-    <>
+    <div className="mx-filter-rows">
       {section.rows.map((row) => (
         <button
           key={row.key}
@@ -73,11 +75,10 @@ function Rows({ section, listed, write }: { section: FilterSection; listed: stri
           className={`mx-filter-row${on.has(row.key) ? "" : " off"}${row.absent ? " absent" : ""}`}
           onClick={() => write(section.param, toggleFilter(listed, keys, row.key))}
         >
-          <span className="mx-disk" style={{ background: colourOf(row.colour) }} />
+          <span className="mx-disk" style={{ background: colourOf(row.colour) }}>{row.mark ?? ""}</span>
           <span className="mx-filter-label">{row.label}</span>
-          {on.has(row.key) ? null : <span className="mx-filter-off">off</span>}
         </button>
       ))}
-    </>
+    </div>
   );
 }

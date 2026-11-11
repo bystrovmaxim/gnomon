@@ -7,6 +7,9 @@ const backend = process.env.MAXITOR_CORE_API ?? "http://127.0.0.1:8020";
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Next.js's own badge sits at the bottom left of every page in development, over the tree's foot and the shell's
+  // bottom bar; the stand shows Maxitor as it is built.
+  devIndicators: false,
   // Maxitor's own packages ship their TypeScript and CSS; the application compiles them with its own code.
   transpilePackages: ["@maxitor/panel", "@maxitor/tokens"],
   // A server action's arguments include passwords: the development terminal never prints them.

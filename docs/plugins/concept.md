@@ -1004,8 +1004,8 @@ export default async function ItemNotesPage({ params, searchParams }) {
     <PanelPage
       title="Notes"
       filters={[{ title: "Author", param: "author", rows: authors.entries.map((a) => ({ key: a.key, label: a.title })) }]}
-      bar={[{ kind: "choice", param: "view", default: "list", options: [
-        { value: "list", title: "List", icon: "list" }, { value: "table", title: "Table", icon: "table" },
+      bar={[{ kind: "choice", param: "view", default: "cards", options: [
+        { value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" },
       ] }]}
     >
       <NotesView notes={notes} />
@@ -1021,7 +1021,7 @@ import { usePanelQuery, RoomLayer, NoteCard, DataTable } from "@maxitor/panel";
 
 export function NotesView({ notes }) {
   // the shell writes ?view= when the choice in its bottom bar changes; the page only reads it
-  const { view = "list" } = usePanelQuery();
+  const { view = "cards" } = usePanelQuery();
   return (
     <>
       {view === "table"

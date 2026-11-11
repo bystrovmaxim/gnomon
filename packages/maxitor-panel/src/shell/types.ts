@@ -7,6 +7,8 @@ export type FilterRow = {
   label: string;
   /** A palette name of @maxitor/tokens; grey when absent. */
   colour?: string;
+  /** A short mark inside the disk — a person's initials; the disk is plain without it. */
+  mark?: string;
   /** The row is in the page's choice but not in its data now: drawn faint. */
   absent?: boolean;
 };

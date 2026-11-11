@@ -1,5 +1,9 @@
 # Changelog of @maxitor/tokens
 
+## 0.3.0
+
+The sizes of the shell after the mockup: the filters' padding, a person's disk and its letters, the bottom bar's buttons and hairline, the empty state's card, a card's least width in a grid.
+
 ## 0.2.0
 
 `--mx-layer-shell` (30) and `--mx-layer-shell-pop` (35): the shell's layers over a page's own content, which a plugin's layers stay below. ([#109](https://github.com/bystrovmaxim/gnomon/issues/109))

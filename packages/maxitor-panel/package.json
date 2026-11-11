@@ -1,6 +1,6 @@
 {
   "name": "@maxitor/panel",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "What a Maxitor plugin's page draws with in the core's right panel: the page document, the panel router, the address parameters, the canvas and the common content",
   "license": "Apache-2.0",
   "type": "module",

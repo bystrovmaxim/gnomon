@@ -9,5 +9,6 @@ export { momentFrom } from "./moment";
 export { MaxitorCanvas, useCanvas } from "./canvas/MaxitorCanvas";
 export type { Bounds, Camera, Insets, Point } from "./canvas/camera";
 export { Card } from "./content/Card";
+export { EmptyState } from "./content/EmptyState";
 export { DataTable, type Column } from "./content/DataTable";
 export { coreMessage, pageMessage, trusted, type CoreMessage, type PageMessage, type Query } from "./protocol";

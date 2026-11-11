@@ -4,6 +4,7 @@
 // the shell draws them in the same places as every page of Maxitor and writes them into the address.
 import { headers } from "next/headers";
 import { PanelPage, momentFrom, type BarSection, type FilterSection } from "@maxitor/panel";
+import { initials, paletteOf } from "./people";
 import { NotesView, type Note } from "./NotesView";
 
 type Props = {
@@ -29,9 +30,11 @@ export default async function ItemNotesPage({ params, searchParams }: Props) {
   if (at) authorsUrl.searchParams.set("at", at);
   const authorsAnswer = await fetch(authorsUrl, { headers: { authorization }, cache: "no-store" });
   const authors: { key: string; title: string }[] = authorsAnswer.ok ? (await authorsAnswer.json()).entries : [];
-  const filters: FilterSection[] = [{ title: "Author", param: "author", rows: authors.map((author) => ({ key: author.key, label: author.title })) }];
+  const filters: FilterSection[] = [
+    { title: "Authors", param: "author", rows: authors.map((author) => ({ key: author.key, label: author.title, mark: initials(author.title), colour: paletteOf(author.key) })) },
+  ];
   const bar: BarSection[] = [
-    { kind: "choice", param: "view", default: "list", options: [{ value: "list", title: "List", icon: "list" }, { value: "table", title: "Table", icon: "table" }] },
+    { kind: "choice", param: "view", default: "cards", options: [{ value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" }] },
   ];
 
   // The author filter lists the writers switched on, or is absent when every writer is. One writer is asked of
