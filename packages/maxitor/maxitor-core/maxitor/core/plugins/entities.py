@@ -21,6 +21,7 @@ from aoa.action_machine.domain import (
     CompositeMany,
     Inverse,
     Lifecycle,
+    NoInverse,
     value,
 )
 from aoa.action_machine.intents.entity import entity
@@ -185,6 +186,9 @@ class PluginVersionCoreEntity(BaseCoreEntity):
     database_user: str | None = Field(default=None, description="Its database user once deployed; empty before")
     deployed_at: datetime | None = Field(default=None, description="When it was deployed; empty before")
     checked_at: datetime | None = Field(default=None, description="When its check ended; empty while draft")
+    service_key_hash: str | None = Field(
+        default=None, description="The SHA-256 of its service key, 64 lower-case hexadecimal characters; empty until deployed"
+    )
 
     plugin: Annotated[
         AssociationOne[PluginCoreEntity],
@@ -263,6 +267,36 @@ class OrganizationPluginCoreEntity(BaseCoreEntity):
 
     created_at: datetime = Field(description="When the install was asked for")
     updated_at: datetime | None = Field(default=None, description="When it last changed; empty if never")
+
+
+@entity(description="A running backend or frontend of a deployed version, kept by the runner", domain=PluginsDomain)
+class PluginProcessCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: Where a version's process listens, for the gateway, and how its starts went, for the runner.
+    CONTRACT: Written only by the runner; one row per version and kind; its address is empty until the process accepts.
+    INVARIANTS: Mechanics of work: kept without versions; the address is always on 127.0.0.1.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Process row id")
+    kind: str = Field(description="backend or frontend")
+    address: str | None = Field(
+        default=None, description="The inner address http://127.0.0.1:<port> once it accepts; empty while it starts or waits"
+    )
+    pid: int | None = Field(default=None, description="The process id on the runner's host; empty while it waits")
+    started_at: datetime | None = Field(default=None, description="When the running process started; empty while it waits")
+    failures: int = Field(description="Starts that failed or exits in a row since the last good start")
+    next_start_at: datetime | None = Field(
+        default=None, description="The earliest next start after a failure; empty when it may start at once"
+    )
+
+    plugin_version: Annotated[
+        AssociationOne[PluginVersionCoreEntity],
+        NoInverse(),
+    ] = Field(description="The deployed version the process runs")
+
+    updated_at: datetime = Field(description="When the row last changed")
 
 
 # Relations name classes declared later in the module; resolve them now.

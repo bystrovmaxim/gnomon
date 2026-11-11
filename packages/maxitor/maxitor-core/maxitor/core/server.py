@@ -44,6 +44,7 @@ from maxitor.core.plugins.actions.disable_plugin_action import DisablePluginActi
 from maxitor.core.plugins.actions.drop_failed_install_action import DropFailedInstallAction
 from maxitor.core.plugins.actions.enable_plugin_action import EnablePluginAction
 from maxitor.core.plugins.actions.list_plugins_action import ListPluginsAction
+from maxitor.core.plugins.actions.pass_request_action import PassRequestAction
 from maxitor.core.plugins.actions.plugin_details_action import PluginDetailsAction
 from maxitor.core.plugins.actions.request_install_action import RequestInstallAction
 from maxitor.core.plugins.actions.retry_install_action import RetryInstallAction
@@ -96,6 +97,7 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/plugins/enable", EnablePluginAction),
     ("post", "/api/v1/plugins/private", AddPrivatePluginAction),
     ("post", "/api/v1/plugins/private/upload", UploadPrivatePluginAction),
+    ("post", "/api/v1/gateway/pass", PassRequestAction),
 ]
 
 

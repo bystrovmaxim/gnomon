@@ -32,7 +32,8 @@ class MemoryPluginsStorage(PluginsStorage):
         super().__init__(connection_params="postgresql://unused")
         self.core = core
         self.tables: dict[str, list[dict[str, Any]]] = {
-            t: [] for t in ("plugin", "plugin_version", "plugin_dependency", "plugin_section", "organization_plugin")
+            t: []
+            for t in ("plugin", "plugin_version", "plugin_dependency", "plugin_section", "organization_plugin", "plugin_process")
         }
         self.versions: dict[str, list[dict[str, Any]]] = {v: [] for v, _k in PLUGIN_VERSIONED.values()}
         self.clock = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
@@ -244,3 +245,46 @@ class MemoryPluginsStorage(PluginsStorage):
                 found.append({"passport_id": plugin["passport_id"], "name": plugin["name"], "title": plugin["title"],
                               "version_id": r["plugin_version_id"]})
         return sorted(found, key=lambda p: p["title"])
+
+    # ── the runner and the gateway ────────────────────────────────────────────
+
+    async def runnable_versions(self) -> list[dict[str, Any]]:
+        enabled = {r["plugin_version_id"] for r in self.tables["organization_plugin"] if r["state"] == "enabled"}
+        found = []
+        for version in self.tables["plugin_version"]:
+            if version["id"] in enabled and version["schema_name"]:
+                plugin = self._plugin_by("id", version["plugin_id"])
+                found.append(
+                    {"version_id": version["id"], "version": version["version"], "sha256": version["sha256"],
+                     "schema_name": version["schema_name"], "passport_id": plugin["passport_id"], "name": plugin["name"]}
+                )
+        return found
+
+    async def processes(self) -> list[dict[str, Any]]:
+        return [dict(row) for row in self.tables["plugin_process"]]
+
+    async def put_process(self, row: Any) -> None:
+        rows = self.tables["plugin_process"]
+        rows[:] = [r for r in rows if (r["version_id"], r["kind"]) != (row["version_id"], row["kind"])]
+        rows.append(dict(row))
+
+    async def forget_processes(self, version_id: str | None = None) -> None:
+        rows = self.tables["plugin_process"]
+        rows[:] = [r for r in rows if version_id is not None and r["version_id"] != version_id]
+
+    async def pass_target(self, code: str, account_id: str, name: str, kind: str) -> dict[str, Any] | None:
+        organization = await self.core.organization_for(code, account_id)
+        if organization is None:
+            return None
+        for row in self.tables["organization_plugin"]:
+            plugin = self._plugin_by("id", row["plugin_id"])
+            if row["organization_id"] == organization["id"] and row["state"] == "enabled" and plugin["name"] == name:
+                process = next(
+                    (p for p in self.tables["plugin_process"] if p["version_id"] == row["plugin_version_id"] and p["kind"] == kind),
+                    None,
+                )
+                return {"organization_id": organization["id"], "is_admin": organization["is_admin"],
+                        "passport_id": plugin["passport_id"], "version_id": row["plugin_version_id"],
+                        "version": self._version_of(row["plugin_version_id"])["version"],
+                        "address": process["address"] if process else None}
+        return None

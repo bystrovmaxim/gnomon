@@ -6,15 +6,15 @@ One phase is one commit. After each phase only that phase's tests run; the closi
 
 ## Phase 1 — The gateway and the plugin processes (issue phase 1)
 
-- [ ] T001 Migration `packages/maxitor/maxitor-core/maxitor/core/migrations/plugins/0002_plugin_processes.sql`: table `plugin_process` with its comments and grants to `maxitor_core`; column `service_key_hash` on `plugin_version` and `plugin_version_versions` (filled in phase 2).
-- [ ] T002 `PluginProcessCoreEntity` in `plugins/entities.py`, declared by `PluginsStorage`; storage reads and writes: `runnable_versions`, `processes_of`, `record_process`, `clear_process`, `pass_target` (membership, `is_admin`, enabled version, process address).
-- [ ] T003 Typed events in `plugins/events.py`: a process started, exited, failed to come up, stopped; a pass refused is not written (it would log people's addresses).
-- [ ] T004 `PluginProcessesController` in `plugins/plugin_processes.py`: the version's environment (`uv venv`, `uv pip install` with find-links), a free port, starting the backend and the frontend with the cleaned environment, waiting for the port, telling whether a process lives, stopping it.
-- [ ] T005 Runner actions in `plugins/actions/`: `ListRunnableAction`, `RunVersionAction` (start what is missing, restart what exited with the growing pause, record addresses), `StopVersionAction`; role `RunnerRole`.
-- [ ] T006 The tool `packages/maxitor/tools/plugin-runner/` (`maxitor-plugin-runner run`): settings, the single-runner lock, the loop, launch, README, `version.toml`, `graph.json`, `pytest.ini`; the `maxitor` extra `plugin-runner` and its script.
-- [ ] T007 `PassRequestAction` (`POST /api/v1/gateway/pass`) with `@access_decide` on membership; a temporary token is not issued here — phase 2 signs it; in this phase the action answers the address and the roles only, and the gateway passes the request without a token.
-- [ ] T008 `web/proxy.ts`: `/p/<name>/**` routed by `pass`; cookies and incoming `Authorization` removed; the `Origin` check for changing requests; `/api/v1/gateway/pass` and `/exchange` refused from outside; `502` when the plugin does not answer.
-- [ ] T009 Tests: the storage's reads on the recording connection; `RunVersionAction`'s start, restart with pause and stop with a fake controller; a real start of a test wheel's backend and frontend (R9); `PassRequestAction`'s `404`/`401`/`502`.
+- [x] T001 Migration `packages/maxitor/maxitor-core/maxitor/core/migrations/plugins/0002_plugin_processes.sql`: table `plugin_process` with its comments and grants to `maxitor_core`; column `service_key_hash` on `plugin_version` and `plugin_version_versions` (filled in phase 2).
+- [x] T002 `PluginProcessCoreEntity` in `plugins/entities.py`, declared by `PluginsStorage`; storage reads and writes: `runnable_versions`, `processes_of`, `record_process`, `clear_process`, `pass_target` (membership, `is_admin`, enabled version, process address).
+- [x] T003 Typed events in `plugins/events.py`: a process started, exited, failed to come up, stopped; a pass refused is not written (it would log people's addresses).
+- [x] T004 `PluginProcessesController` in `plugins/plugin_processes.py`: the version's environment (`uv venv`, `uv pip install` with find-links), a free port, starting the backend and the frontend with the cleaned environment, waiting for the port, telling whether a process lives, stopping it.
+- [x] T005 Runner actions in `plugins/actions/`: `ListRunnableAction`, `RunVersionAction` (start what is missing, restart what exited with the growing pause, record addresses), `StopVersionAction`; role `RunnerRole`.
+- [x] T006 The tool `packages/maxitor/tools/plugin-runner/` (`maxitor-plugin-runner run`): settings, the single-runner lock, the loop, launch, README, `version.toml`, `graph.json`, `pytest.ini`; the `maxitor` extra `plugin-runner` and its script.
+- [x] T007 `PassRequestAction` (`POST /api/v1/gateway/pass`) with `@access_decide` on membership; a temporary token is not issued here — phase 2 signs it; in this phase the action answers the address and the roles only, and the gateway passes the request without a token.
+- [x] T008 `web/proxy.ts`: `/p/<name>/**` routed by `pass`; cookies and incoming `Authorization` removed; the `Origin` check for changing requests; `/api/v1/gateway/pass` and `/exchange` refused from outside; `502` when the plugin does not answer.
+- [x] T009 Tests: the storage's reads on the recording connection; `RunVersionAction`'s start, restart with pause and stop with a fake controller; a real start of a test wheel's backend and frontend (R9); `PassRequestAction`'s `404`/`401`/`502`.
 
 ## Phase 2 — Tokens, JWKS, exchange, service key and the core's roles (issue phase 2)
 

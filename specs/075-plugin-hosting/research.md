@@ -44,4 +44,4 @@
 
 ## R9. Testing the frontend process
 
-**Decision**: the runner's test builds a test wheel whose backend is a tiny ASGI factory and whose frontend build is a `server.js` of a few lines answering on `PORT`; the environment is made with `--system-site-packages` so `uvicorn` comes from the test environment, and the wheel declares no requirement.
+**Decision**: the runner's test builds a test wheel whose backend is a tiny ASGI factory and whose frontend build is a `server.js` of a few lines answering on `PORT`; the wheel declares no requirement, and the test points the environment at the tests' own `uvicorn` by a `.pth` file.

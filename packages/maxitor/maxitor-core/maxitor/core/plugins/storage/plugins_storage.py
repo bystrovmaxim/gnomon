@@ -24,6 +24,7 @@ from maxitor.core.plugins.entities import (
     OrganizationPluginCoreEntity,
     PluginCoreEntity,
     PluginDependencyCoreEntity,
+    PluginProcessCoreEntity,
     PluginSectionCoreEntity,
     PluginVersionCoreEntity,
 )
@@ -83,6 +84,7 @@ def like_pattern(query: str) -> str:
     PluginDependencyCoreEntity,
     PluginSectionCoreEntity,
     OrganizationPluginCoreEntity,
+    PluginProcessCoreEntity,
 )
 class PluginsStorage(CoreStorage):
     """
@@ -91,7 +93,7 @@ class PluginsStorage(CoreStorage):
     CONTRACT: ``plugin_lock`` and ``organization_lock`` take the lock and answer the change time; the core's
         ``insert`` and ``update`` write a row with its version; the readers answer what one page or one step needs.
     INVARIANTS: Names no schema in SQL; every reading of organization_plugin names its organization; a private plugin
-        is read only for its owner.
+        is read only for its owner; plugin_process is mechanics of work, written without versions by the runner only.
     AI-CORE-END
     """
 
@@ -309,3 +311,75 @@ class PluginsStorage(CoreStorage):
             (),
         )
         return [(row["organization_id"], row["id"]) for row in rows]
+
+    # ── the runner ────────────────────────────────────────────────────────────
+
+    async def runnable_versions(self) -> list[dict[str, Any]]:
+        """The deployed versions enabled in at least one organization: what the runner keeps running."""
+        rows = await self._fetch(
+            "SELECT v.id::text AS version_id, v.version, v.sha256, v.schema_name, p.passport_id, p.name"
+            " FROM plugin_version v JOIN plugin p ON p.id = v.plugin_id"
+            " WHERE v.schema_name IS NOT NULL AND EXISTS (SELECT 1 FROM organization_plugin op"
+            " WHERE op.plugin_version_id = v.id AND op.state = 'enabled')"
+            " ORDER BY p.passport_id, v.version",
+            (),
+        )
+        return [dict(row) for row in rows]
+
+    async def processes(self) -> list[dict[str, Any]]:
+        """Every process row the runner keeps."""
+        rows = await self._fetch(
+            "SELECT id::text AS id, plugin_version_id::text AS version_id, kind, address, pid, started_at, failures,"
+            " next_start_at FROM plugin_process ORDER BY plugin_version_id, kind",
+            (),
+        )
+        return [dict(row) for row in rows]
+
+    async def put_process(self, row: Mapping[str, Any]) -> None:
+        """Write a version's process row: its address, its pid and how its starts went."""
+        await self._execute(
+            "INSERT INTO plugin_process (id, plugin_version_id, kind, address, pid, started_at, failures,"
+            " next_start_at, updated_at) VALUES ($1::text::uuid, $2::text::uuid, $3, $4, $5, $6, $7, $8, $9)"
+            " ON CONFLICT (plugin_version_id, kind) DO UPDATE SET address = EXCLUDED.address, pid = EXCLUDED.pid,"
+            " started_at = EXCLUDED.started_at, failures = EXCLUDED.failures, next_start_at = EXCLUDED.next_start_at,"
+            " updated_at = EXCLUDED.updated_at",
+            (
+                row["id"],
+                row["version_id"],
+                row["kind"],
+                row["address"],
+                row["pid"],
+                row["started_at"],
+                row["failures"],
+                row["next_start_at"],
+                row["updated_at"],
+            ),
+        )
+
+    async def forget_processes(self, version_id: str | None = None) -> None:
+        """Remove the process rows of one version, or of every version when ``version_id`` is empty."""
+        if version_id is None:
+            await self._execute("DELETE FROM plugin_process", ())
+        else:
+            await self._execute("DELETE FROM plugin_process WHERE plugin_version_id = $1::text::uuid", (version_id,))
+
+    # ── the gateway ───────────────────────────────────────────────────────────
+
+    async def pass_target(self, code: str, account_id: str, name: str, kind: str) -> dict[str, Any] | None:
+        """
+        The plugin ``name`` enabled in the organization ``code`` for an active user of ``account_id`` there, with the
+        user's administration and the address of the version's ``kind`` process; ``None`` when any of it is missing.
+        """
+        row = await self._fetchrow(
+            "SELECT o.id::text AS organization_id, u.is_admin, p.passport_id, v.id::text AS version_id, v.version,"
+            " pr.address"
+            ' FROM organization o JOIN "user" u ON u.organization_id = o.id'
+            " AND u.account_id = $2::text::uuid AND u.status = 'active'"
+            " JOIN organization_plugin op ON op.organization_id = o.id AND op.state = 'enabled'"
+            " JOIN plugin p ON p.id = op.plugin_id AND p.name = $3"
+            " JOIN plugin_version v ON v.id = op.plugin_version_id"
+            " LEFT JOIN plugin_process pr ON pr.plugin_version_id = v.id AND pr.kind = $4"
+            " WHERE o.code = $1",
+            (code, account_id, name, kind),
+        )
+        return None if row is None else dict(row)

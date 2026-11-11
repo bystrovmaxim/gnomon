@@ -122,6 +122,6 @@ def test_the_lifecycles_allow_only_their_transitions(lifecycle: Any, state: str,
     assert set(lifecycle(state).available_transitions) == targets
 
 
-def test_the_domain_lists_its_eighteen_events() -> None:
-    assert len(PluginsDomain.events) == 18
-    assert len(set(PluginsDomain.events)) == 18
+def test_the_domain_lists_its_twenty_three_events() -> None:
+    assert len(PluginsDomain.events) == 23
+    assert len(set(PluginsDomain.events)) == 23

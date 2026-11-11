@@ -21,3 +21,8 @@ file = "packages/maxitor-plugin-template/graph.json"
 name = "plugin-installer"
 build = "uv run --extra dev python -m maxitor.plugin_installer.build_graph"
 file = "packages/maxitor/tools/plugin-installer/graph.json"
+
+[[graph]]
+name = "plugin-runner"
+build = "uv run --extra dev python -m maxitor.plugin_runner.build_graph"
+file = "packages/maxitor/tools/plugin-runner/graph.json"

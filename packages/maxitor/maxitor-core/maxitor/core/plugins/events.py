@@ -104,6 +104,28 @@ class RowTakenUpEvent(BaseEvent):
     row_id: str = Field(description="The row's id")
 
 
+class RunnerStartedEvent(BaseEvent):
+    """The runner started, forgot the processes a stopped runner left, and found the versions to run (info)."""
+
+    versions: int = Field(description="Deployed versions enabled in at least one organization")
+
+
+class ProcessStartedEvent(BaseEvent):
+    """A version's backend or frontend accepts on its inner address (info)."""
+
+    passport_id: str = Field(description="The plugin's id from its passport")
+    version: str = Field(description="The version, x.y.z")
+    kind: str = Field(description="backend or frontend")
+    address: str = Field(description="The inner address, http://127.0.0.1:<port>")
+
+
+class ProcessStoppedEvent(BaseEvent):
+    """A version enabled in no organization any more had its processes stopped (info)."""
+
+    passport_id: str = Field(description="The plugin's id from its passport")
+    version: str = Field(description="The version, x.y.z")
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # warning
 # ════════════════════════════════════════════════════════════════════════════
@@ -154,6 +176,16 @@ class PrivatePluginRefusedEvent(BaseEvent):
     reason: str = Field(description="pypi_is_public, no_file, not_a_purl, sha256_form, too_large or not_a_wheel")
 
 
+class ProcessExitedEvent(BaseEvent):
+    """A version's process exited or never came up; it is started again after a pause (warning)."""
+
+    passport_id: str = Field(description="The plugin's id from its passport")
+    version: str = Field(description="The version, x.y.z")
+    kind: str = Field(description="backend or frontend")
+    reason: str = Field(description="exited, not_listening or not_started, with the exit code when there is one")
+    failures: int = Field(description="Failures in a row, this one included")
+
+
 # ════════════════════════════════════════════════════════════════════════════
 # critical
 # ════════════════════════════════════════════════════════════════════════════
@@ -172,3 +204,11 @@ class InstallerConnectionRefusedEvent(BaseEvent):
     """The database refused the installer's connection; nothing was taken up (critical)."""
 
     reason: str = Field(description="What the database answered, without the connection string")
+
+
+class EnvironmentFailedEvent(BaseEvent):
+    """A version's Python environment could not be installed from its wheel; its processes wait (critical)."""
+
+    passport_id: str = Field(description="The plugin's id from its passport")
+    version: str = Field(description="The version, x.y.z")
+    reason: str = Field(description="The last line uv answered, without any secret")
