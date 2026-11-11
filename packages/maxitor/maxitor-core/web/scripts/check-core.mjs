@@ -2,7 +2,8 @@
 // The scenarios of specs/072-maxitor-core/quickstart.md and specs/073-plugin-marketplace/quickstart.md in Chromium
 // against the local stand (./scripts/core-stand.sh up): signing up with the code from the outbox, the consent step,
 // registering an organization, Settings → Plugins — the marketplace, the search, installing the plugin template and
-// seeing its sections in the tree, a second organization on the deployed version, disabling and enabling, a private
+// seeing its sections in the tree, its items added, renamed and listed through the gateway (specs/076-template-own-items
+// /quickstart.md), a second organization on the deployed version, disabling and enabling, a private
 // plugin's dialog — signing out and in, a wrong password, resetting the password, someone else's organization, an
 // organization's address without a session, and the same pages on a phone.
 //
@@ -25,6 +26,8 @@ const PASSWORD = `Check-Horse-${RUN}`;
 const NEW_PASSWORD = `Reset-Horse-${RUN}`;
 const ORG = `Check ${RUN}`;
 const CODE = `check-${RUN}`;
+// The template's version, as the marketplace shows it: the passport's own.
+const TEMPLATE_VERSION = readFileSync(join(ROOT, "packages/maxitor-plugin-template/src/maxitor_notes/maxitor-plugin.yaml"), "utf8").match(/^version: (\S+)$/m)[1];
 
 let failures = 0;
 async function scenario(name, run) {
@@ -176,7 +179,7 @@ await scenario("installing the template builds its version and its sections join
   await page.goto(`${BASE}/w/${CODE}/settings/plugins`);
   await page.getByRole("tab", { name: /Marketplace/ }).click();
   await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
-  await page.getByText("Install Notes 0.4.0").waitFor();
+  await page.getByText(`Install Notes ${TEMPLATE_VERSION}`).waitFor();
   // The stand's first run deploys the version; a later run finds it deployed by an earlier one.
   await page.locator(".dlg", { hasText: /is deployed for the first time|is already deployed in Maxitor/ }).waitFor();
   await page.getByRole("button", { name: "Install Notes" }).click();
@@ -184,6 +187,35 @@ await scenario("installing the template builds its version and its sections join
   await waitForState("Notes", "enabled");
   await page.goto(`${BASE}/w/${CODE}`);
   await page.locator(".tree .tg", { hasText: "Notes" }).waitFor();
+});
+
+await scenario("the template's items are added, renamed and listed through the gateway, and a note needs one", async () => {
+  const api = `${BASE}/p/notes/api/${CODE}`;
+  const send = { headers: { Origin: BASE } };
+  // The runner may still be building the backend's image just after the plugin turned enabled: on a fresh stand the
+  // first build installs every dependency and takes minutes.
+  let added;
+  for (let i = 0; i < 300; i += 1) {
+    added = await page.request.post(`${api}/items`, { ...send, data: { title: "  Payment service " } });
+    if (added.status() !== 502 && added.status() !== 503) break;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  expect(added.status() === 200, `adding an item answers ${added.status()}`);
+  const { item_id: itemId, changed_at: addedAt } = await added.json();
+  const listed = await (await page.request.get(`${api}/lists/list_items`)).json();
+  expect(listed.entries.some((e) => e.key === itemId && e.title === "Payment service" && e.icon === "folder"), `the list holds ${JSON.stringify(listed)}`);
+  const taken = await page.request.post(`${api}/items`, { ...send, data: { title: "Payment service" } });
+  expect(taken.status() === 409 && (await taken.json()).error === "title_taken", `a taken title answers ${taken.status()}`);
+  const renamed = await page.request.patch(`${api}/items`, { ...send, data: { item_id: itemId, title: "Payments", base_moment: addedAt } });
+  expect(renamed.status() === 200, `renaming answers ${renamed.status()}`);
+  const now = await (await page.request.get(`${api}/lists/list_items`)).json();
+  const then = await (await page.request.get(`${api}/lists/list_items?at=${encodeURIComponent(addedAt)}`)).json();
+  expect(now.entries.find((e) => e.key === itemId)?.title === "Payments", "the list now does not read the new title");
+  expect(then.entries.find((e) => e.key === itemId)?.title === "Payment service", "the list at the moment of adding does not read the old title");
+  const nowhere = await page.request.post(`${api}/notes`, { ...send, data: { item_id: "00000000-0000-4000-8000-000000000001", body: "x" } });
+  expect(nowhere.status() === 404, `a note on no item answers ${nowhere.status()}`);
+  const written = await page.request.post(`${api}/notes`, { ...send, data: { item_id: itemId, body: "Retry three times" } });
+  expect(written.status() === 200, `a note on the item answers ${written.status()}`);
 });
 
 await scenario("a second organization installs the deployed version without building it", async () => {

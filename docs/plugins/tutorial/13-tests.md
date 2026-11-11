@@ -9,7 +9,8 @@ What a plugin must prove so far:
 1. **Every reading reads at a moment and in one organization.** `test_reading_sql.py` reads the SQL of every reading method and refuses one without the moment condition or the organization.
 2. **The past never changes.** `test_notes_changes.py` writes, edits and deletes, and reads each moment between them.
 3. **A conflict loses nothing.** An edit with an old `base_moment` writes nothing and names who changed the note.
-4. **Only the core's token for this plugin passes.** `test_app.py` sends a token for another plugin, one signed with another key and one with the role `service`, and gets 403 for each:
+4. **A note stands only on an item of its organization.** `test_items.py` writes a note, a revision and a rename on an item that does not exist and on another organization's, and each is refused before anything is written; a title another item has is refused only after the organization's lock.
+5. **Only the core's token for this plugin passes.** `test_app.py` sends a token for another plugin, one signed with another key and one with the role `service`, and gets 403 for each:
 
 <!-- quote: packages/maxitor-plugin-template/tests/test_app.py -->
 ```python
@@ -28,5 +29,5 @@ uv run --extra dev pytest packages/maxitor-plugin-template/tests -q
 ```
 
 ```text
-193 passed
+244 passed
 ```

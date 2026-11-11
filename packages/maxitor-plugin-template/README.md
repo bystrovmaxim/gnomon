@@ -1,6 +1,6 @@
 # Maxitor plugin template
 
-A small but complete Maxitor plugin, `notes`: notes on catalog items. It holds every part a real plugin has, so a new plugin starts as a copy of this package with the names changed.
+A small but complete Maxitor plugin, `notes`: notes on its own items, kept like folders. It needs nothing but the core. It holds every part a real plugin has, so a new plugin starts as a copy of this package with the names changed.
 
 A Maxitor plugin is an independent application that installs into Maxitor: a pip package or a ready wheel carrying a passport, an AOA backend, a built Next.js frontend and the declaration of its tables. It carries no SQL and no migrations. Maxitor's installer reads the passport, checks the dependencies, and deploys each version once: its schema `notes_<version>` and database user `plg_notes_<version>`, the tables of `schema.yaml` with their version tables, its key to the core. The plugin's user sees only its own schema; what it needs of the core — the organization's lock and change time, the watermark, membership, a member's name — it gets from the core's functions.
 
@@ -18,16 +18,17 @@ Maxitor installs this plugin: an organization's administrator finds it in Settin
 |---|---|
 | `pyproject.toml` | The pip package; the entry point `maxitor.plugins` leads the installer to the passport. |
 | `src/maxitor_notes/maxitor-plugin.yaml` | The passport: id, name, version, required Maxitor version, dependencies on other plugins, backend, frontend, database, and the comparisons its pages can draw (`history.compare`). It declares no roles: the actions check the core's `member`. |
-| `src/maxitor_notes/navigation.yaml` | The plugin's nodes in Maxitor's left tree: the item's notes, its published notes and its draft under every catalog item, one in the root; the address of each page, how it behaves in a room, and how it answers the time scale (`history`). |
+| `src/maxitor_notes/navigation.yaml` | The plugin's nodes in Maxitor's left tree: its section "Notes" in the root, under it one node per item from `list_items`, and under every item its notes, its published notes and its draft; the address of each page, how it behaves in a room, and how it answers the time scale (`history`). |
 | `src/maxitor_notes/foreign-keys.yaml` | The keys from a note's writer and a revision's publisher to the core's user of that account, as identifiers only; the installer creates them. |
-| `src/maxitor_notes/schema.yaml` | The plugin's tables: `note` and `revision`. Maxitor builds them with `note_versions` and `revision_versions`, the service fields and the indexes. |
+| `src/maxitor_notes/schema.yaml` | The plugin's tables: `item`, what notes are written on, with a title unique in the organization; `note` and `revision`, each with a key to its item. Maxitor builds them with `item_versions`, `note_versions` and `revision_versions`, the service fields, the keys and the indexes. |
 | `src/maxitor_notes/app.py` | The passport's `backend.app`: the backend Maxitor's runner runs in a container of its own behind the gateway; every route lies under `/p/notes/api/{organization}` and is an action; a missing role answers 403, another organization's object 404. |
 | `src/maxitor_notes/organization_auth_coordinator.py` | Checks the core's EdDSA token for this plugin by the core's JWKS (`MAXITOR_CORE_JWKS_URL`) and puts the address's organization into the context beside the person and the core's roles. |
-| `src/maxitor_notes/membership.py` | The second lock: each action's `@access_decide` lets only a member of the organization of the address in, and its main step finds the organization's id again. |
+| `src/maxitor_notes/membership.py` | The second lock: each action's `@access_decide` lets only a member of the organization of the address in — and, for an action about an item, only an item of that organization — and its main step finds the organization's id again. |
 | `src/maxitor_notes/storage/notes_storage.py` | The plugin's own schema: a write is one transaction whose change time comes from the core's `change_time`, an edit or a deletion refused when the note changed after `base_moment`; a read is bound to one organization and one moment, written through the SDK's moment condition, a moment later than the watermark refused. |
-| `src/maxitor_notes/actions/` | Add, edit and delete a note; list an item's notes at a moment, or its bars over a stretch; publish a revision; the published notes and the draft at a moment; the writers for the page's author filter (Maxitor's list contract). |
-| `src/maxitor_notes/history/` | What the core's time scale asks: the milestones of a stretch (`list_note_history`) and one milestone's card (`note_milestone_card`). |
-| `src/maxitor_notes/notes_refusal_error.py` | The refusals and their HTTP answers: a moment not come, a note changed or deleted since, nothing to publish. |
+| `src/maxitor_notes/actions/` | Add and rename an item, and list the items at a moment for the tree's list node; add, edit and delete a note; list an item's notes at a moment, or its bars over a stretch; publish a revision; the published notes and the draft at a moment; the writers for the page's author filter (Maxitor's list contract). |
+| `src/maxitor_notes/history/` | What the core's time scale asks: the milestones of a stretch (`list_note_history`) and one milestone's card (`note_milestone_card`). An item's notes are published together under a number with a draft between: the simplest model of a release; a lifecycle of every record is the plugin common data environment (bystrovmaxim/gnomon#106). |
+| `src/maxitor_notes/events.py` | The typed events the actions write: an item added, an item renamed. |
+| `src/maxitor_notes/notes_refusal_error.py` | The refusals and their HTTP answers: a moment not come, a note or an item changed since, a note deleted, a title taken, nothing to publish. |
 | `graph.json` | The plugin's graph, built by `graph-builder write` from its code. |
 | `web/` | The frontend: a Next.js application under `/p/notes` whose pages keep every view setting in their address. |
 | `web/scripts/copy-build.mjs` | Puts the standalone build into `src/maxitor_notes/_web`, where the wheel carries it. |

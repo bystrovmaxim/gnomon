@@ -1,4 +1,4 @@
-// web/app/[org]/items/[item_id]/page.tsx — the notes of one catalog item, opened at /w/<org>/notes/items/<item_id>.
+// web/app/[org]/items/[item_id]/page.tsx — the notes of one item, opened at /w/<org>/notes/items/<item_id>.
 // Everything the page shows comes from its address: the organization, the item, the view, the author filter and the moment.
 import { headers } from "next/headers";
 import { PanelPage, momentFrom } from "@maxitor/panel";

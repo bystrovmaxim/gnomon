@@ -93,7 +93,7 @@ uv run --extra dev pytest packages/maxitor-plugin-template/tests/test_reading_sq
 ```
 
 ```text
-16 passed
+17 passed
 ```
 
-On the local stand the reading is `GET /p/notes/api/<code>/items/<item>/notes`, and `?at=<moment>` reads the past.
+On the local stand the reading is `GET /p/notes/api/<code>/items/<item>/notes`, and `?at=<moment>` reads the past. The list of items reads the same way, `GET /p/notes/api/<code>/lists/list_items?at=<moment>`: it is the source of the list node `item` in Maxitor's tree, so the tree at a past moment holds the items as they were then.

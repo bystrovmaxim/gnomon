@@ -23,7 +23,7 @@ With the stand of bystrovmaxim/gnomon#75 running and a member signed in to organ
 1. `POST /p/notes/api/acme/items {"title": "Payment service"}` → `200` with `item_id`.
 2. `GET /p/notes/api/acme/lists/list_items` → one entry `{"key": <item_id>, "title": "Payment service", "icon": "folder"}`.
 3. `PATCH /p/notes/api/acme/items {"item_id": …, "title": "Payments", "base_moment": …}` → `200`; the list now reads "Payments", and at a moment before reads "Payment service".
-4. `POST /p/notes/api/acme/notes {"item_id": <a random uuid>, "body": "x"}` → `403`.
+4. `POST /p/notes/api/acme/notes {"item_id": <a random uuid>, "body": "x"}` → `404`, as for an item of another organization.
 
 ## The documentation
 

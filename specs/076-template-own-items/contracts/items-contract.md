@@ -1,6 +1,6 @@
 # Contract: the template's items
 
-Every route lies under `/p/notes/api/{organization}`, is an action under the core's role `member`, and answers a person who is not a member of `{organization}` with `403 FORBIDDEN_OBJECT`.
+Every route lies under `/p/notes/api/{organization}`, is an action under the core's role `member`, and answers a person who is not a member of `{organization}` with `404 not_found`, as if the organization did not exist (a refused `FORBIDDEN_OBJECT`); a call without the role `member` gets `403`.
 
 | Method | Path | Action | In | Out |
 |---|---|---|---|---|
@@ -12,7 +12,7 @@ Every route lies under `/p/notes/api/{organization}`, is an action under the cor
 
 | Reason | Status | When |
 |---|---|---|
-| `FORBIDDEN_OBJECT` | 403 | not a member; the item is not a current item of the organization (rename, a note, a revision) |
+| `not_found` (`FORBIDDEN_OBJECT`) | 404 | not a member; the item is not a current item of the organization (rename, a note, a revision) |
 | `title_taken` | 409 | another item of the organization has the title now |
 | `changed_since` | 409 | a rename based on a moment after which the item changed; with `changed_by`, `changed_at` |
 | `moment_not_come` | 422 | a `base_moment` later than the watermark, as for a note |
@@ -20,7 +20,7 @@ Every route lies under `/p/notes/api/{organization}`, is an action under the cor
 
 ## Changed
 
-`POST /notes` and `POST /revisions` refuse `403 FORBIDDEN_OBJECT` for an `item_id` that is not a current item of the organization.
+`POST /notes` and `POST /revisions` refuse `404 not_found` for an `item_id` that is not a current item of the organization.
 
 ## The tree
 

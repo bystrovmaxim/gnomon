@@ -19,25 +19,171 @@
       "type": "application"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.organization",
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary|@emits|maxitor_notes.events.ItemAddedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary",
+      "target_id": "maxitor_notes.events.ItemAddedEvent",
+      "type": "@emits"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary|@required_context|maxitor_notes.actions.add_item_action.AddItemAction:add_summary:reqctx:user.organization",
       "is_dag": false,
       "properties": {
         "key": "user.organization"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
-      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.organization",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary:reqctx:user.organization",
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary|@required_context|maxitor_notes.actions.add_item_action.AddItemAction:add_summary:reqctx:user.user_id",
       "is_dag": false,
       "properties": {
         "key": "user.user_id"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
-      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.user_id",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide|@required_context|maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide|@required_context|maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction|@access_decide|maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide",
+      "type": "@access_decide"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
+      "type": "@check_roles"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction|@connection|maxitor_notes.storage.notes_storage.NotesStorage",
+      "is_dag": true,
+      "properties": {
+        "description": "The plugin's own schema notes",
+        "key": "notes"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction",
+      "target_id": "maxitor_notes.storage.notes_storage.NotesStorage",
+      "type": "@connection"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction|@summary_aspect|maxitor_notes.actions.add_item_action.AddItemAction:add_summary",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary",
+      "type": "@summary_aspect"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction|domain|maxitor_notes.notes_domain.NotesDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction",
+      "target_id": "maxitor_notes.notes_domain.NotesDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction|generic:params|maxitor_notes.actions.add_item_action.AddItemParams",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemParams",
+      "type": "generic:params"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction|generic:result|maxitor_notes.actions.add_item_action.AddItemResult",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemAction",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemResult",
+      "type": "generic:result"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemParams|field|maxitor_notes.actions.add_item_action.AddItemParams:title",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemParams",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemParams:title",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemResult|field|maxitor_notes.actions.add_item_action.AddItemResult:changed_at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemResult",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemResult:changed_at",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemResult|field|maxitor_notes.actions.add_item_action.AddItemResult:item_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_item_action.AddItemResult",
+      "target_id": "maxitor_notes.actions.add_item_action.AddItemResult:item_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide",
+      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide|@required_context|maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide",
+      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide:reqctx:user.user_id",
       "type": "@required_context"
     },
     {
@@ -63,12 +209,12 @@
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction|@access_decide|maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction|@access_decide|maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction",
-      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide",
       "type": "@access_decide"
     },
     {
@@ -639,6 +785,170 @@
       "type": "field"
     },
     {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary|@required_context|maxitor_notes.actions.list_items_action.ListItemsAction:list_summary:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary|@required_context|maxitor_notes.actions.list_items_action.ListItemsAction:list_summary:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide|@required_context|maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide|@required_context|maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction|@access_decide|maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide",
+      "type": "@access_decide"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
+      "type": "@check_roles"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction|@connection|maxitor_notes.storage.notes_storage.NotesStorage",
+      "is_dag": true,
+      "properties": {
+        "description": "The plugin's own schema notes",
+        "key": "notes"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction",
+      "target_id": "maxitor_notes.storage.notes_storage.NotesStorage",
+      "type": "@connection"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction|@summary_aspect|maxitor_notes.actions.list_items_action.ListItemsAction:list_summary",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary",
+      "type": "@summary_aspect"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction|domain|maxitor_notes.notes_domain.NotesDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction",
+      "target_id": "maxitor_notes.notes_domain.NotesDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction|generic:params|maxitor_notes.actions.list_items_action.ListItemsParams",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsParams",
+      "type": "generic:params"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction|generic:result|maxitor_notes.actions.list_items_action.ListItemsResult",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsAction",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsResult",
+      "type": "generic:result"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsParams|field|maxitor_notes.actions.list_items_action.ListItemsParams:after",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsParams",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsParams:after",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsParams|field|maxitor_notes.actions.list_items_action.ListItemsParams:at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsParams",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsParams:at",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsParams|field|maxitor_notes.actions.list_items_action.ListItemsParams:limit",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsParams",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsParams:limit",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsResult:entries|entity_schema|maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsResult:entries",
+      "target_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "type": "entity_schema"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsResult|field|maxitor_notes.actions.list_items_action.ListItemsResult:entries",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsResult",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsResult:entries",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsResult|field|maxitor_notes.actions.list_items_action.ListItemsResult:next",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_items_action.ListItemsResult",
+      "target_id": "maxitor_notes.actions.list_items_action.ListItemsResult:next",
+      "type": "field"
+    },
+    {
       "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary|@required_context|maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction:list_summary:reqctx:user.organization",
       "is_dag": false,
       "properties": {
@@ -1131,25 +1441,25 @@
       "type": "field"
     },
     {
-      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide|@required_context|maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide:reqctx:user.organization",
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide|@required_context|maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide:reqctx:user.organization",
       "is_dag": false,
       "properties": {
         "key": "user.organization"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide",
-      "target_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide:reqctx:user.organization",
+      "source_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide",
+      "target_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide:reqctx:user.organization",
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide|@required_context|maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide|@required_context|maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide:reqctx:user.user_id",
       "is_dag": false,
       "properties": {
         "key": "user.user_id"
       },
       "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide",
-      "target_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide:reqctx:user.user_id",
+      "source_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide",
+      "target_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide:reqctx:user.user_id",
       "type": "@required_context"
     },
     {
@@ -1175,12 +1485,12 @@
       "type": "@required_context"
     },
     {
-      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction|@access_decide|maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide",
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction|@access_decide|maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction",
-      "target_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide",
       "type": "@access_decide"
     },
     {
@@ -1295,6 +1605,161 @@
       "type": "field"
     },
     {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide|@required_context|maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide|@required_context|maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary|@emits|maxitor_notes.events.ItemRenamedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary",
+      "target_id": "maxitor_notes.events.ItemRenamedEvent",
+      "type": "@emits"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary|@required_context|maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary|@required_context|maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction|@access_decide|maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide",
+      "type": "@access_decide"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
+      "type": "@check_roles"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction|@connection|maxitor_notes.storage.notes_storage.NotesStorage",
+      "is_dag": true,
+      "properties": {
+        "description": "The plugin's own schema notes",
+        "key": "notes"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction",
+      "target_id": "maxitor_notes.storage.notes_storage.NotesStorage",
+      "type": "@connection"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction|@summary_aspect|maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary",
+      "type": "@summary_aspect"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction|domain|maxitor_notes.notes_domain.NotesDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction",
+      "target_id": "maxitor_notes.notes_domain.NotesDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction|generic:params|maxitor_notes.actions.rename_item_action.RenameItemParams",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemParams",
+      "type": "generic:params"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction|generic:result|maxitor_notes.actions.rename_item_action.RenameItemResult",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemAction",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemResult",
+      "type": "generic:result"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemParams|field|maxitor_notes.actions.rename_item_action.RenameItemParams:base_moment",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemParams",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemParams:base_moment",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemParams|field|maxitor_notes.actions.rename_item_action.RenameItemParams:item_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemParams",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemParams:item_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemParams|field|maxitor_notes.actions.rename_item_action.RenameItemParams:title",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemParams",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemParams:title",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemResult|field|maxitor_notes.actions.rename_item_action.RenameItemResult:changed_at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rename_item_action.RenameItemResult",
+      "target_id": "maxitor_notes.actions.rename_item_action.RenameItemResult:changed_at",
+      "type": "field"
+    },
+    {
       "id": "maxitor_notes.entities.bar_entity.BarCoreEntity|domain|maxitor_notes.notes_domain.NotesDomain",
       "is_dag": true,
       "properties": {},
@@ -1361,6 +1826,63 @@
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.bar_entity.BarCoreEntity",
       "target_id": "maxitor_notes.entities.bar_entity.BarCoreEntity:start",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity|domain|maxitor_notes.notes_domain.NotesDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "target_id": "maxitor_notes.notes_domain.NotesDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity|entity_field|maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:icon",
+      "is_dag": false,
+      "properties": {
+        "field_name": "icon",
+        "ordinal": 3
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "target_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:icon",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity|entity_field|maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:id",
+      "is_dag": false,
+      "properties": {
+        "field_name": "id",
+        "ordinal": 0
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "target_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:id",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity|entity_field|maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:key",
+      "is_dag": false,
+      "properties": {
+        "field_name": "key",
+        "ordinal": 1
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "target_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:key",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity|entity_field|maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:title",
+      "is_dag": false,
+      "properties": {
+        "field_name": "title",
+        "ordinal": 2
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "target_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:title",
       "type": "entity_field"
     },
     {
@@ -1982,6 +2504,51 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor_notes.events.ItemAddedEvent|field|maxitor_notes.events.ItemAddedEvent:item_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.events.ItemAddedEvent",
+      "target_id": "maxitor_notes.events.ItemAddedEvent:item_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.events.ItemAddedEvent|field|maxitor_notes.events.ItemAddedEvent:title",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.events.ItemAddedEvent",
+      "target_id": "maxitor_notes.events.ItemAddedEvent:title",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.events.ItemRenamedEvent|field|maxitor_notes.events.ItemRenamedEvent:item_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.events.ItemRenamedEvent",
+      "target_id": "maxitor_notes.events.ItemRenamedEvent:item_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.events.ItemRenamedEvent|field|maxitor_notes.events.ItemRenamedEvent:new_title",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.events.ItemRenamedEvent",
+      "target_id": "maxitor_notes.events.ItemRenamedEvent:new_title",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.events.ItemRenamedEvent|field|maxitor_notes.events.ItemRenamedEvent:old_title",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.events.ItemRenamedEvent",
+      "target_id": "maxitor_notes.events.ItemRenamedEvent:old_title",
+      "type": "field"
+    },
+    {
       "id": "maxitor_notes.history.list_note_history_action.ListNoteHistoryAction:list_summary|@required_context|maxitor_notes.history.list_note_history_action.ListNoteHistoryAction:list_summary:reqctx:user.organization",
       "is_dag": false,
       "properties": {
@@ -2301,6 +2868,33 @@
       "type": "application"
     },
     {
+      "id": "maxitor_notes.notes_domain.NotesDomain|domain_event|maxitor_notes.events.ItemAddedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.notes_domain.NotesDomain",
+      "target_id": "maxitor_notes.events.ItemAddedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor_notes.notes_domain.NotesDomain|domain_event|maxitor_notes.events.ItemRenamedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.notes_domain.NotesDomain",
+      "target_id": "maxitor_notes.events.ItemRenamedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor_notes.storage.notes_storage.NotesStorage|resource_entity|maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.storage.notes_storage.NotesStorage",
+      "target_id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "type": "resource_entity"
+    },
+    {
       "id": "maxitor_notes.storage.notes_storage.NotesStorage|resource_entity|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
       "is_dag": true,
       "properties": {},
@@ -2431,23 +3025,23 @@
       "type": "Resource"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction",
-      "label": "AddNoteAction",
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction",
+      "label": "AddItemAction",
       "properties": {
-        "description": "Write a note on a catalog item"
+        "description": "Add an item, what notes are written on"
       },
       "type": "Action"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide",
-      "label": "organization_access_decide",
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary",
+      "label": "add_summary",
       "properties": {
-        "description": "Refuse a person who is not a member of the organization of the address"
+        "description": "Write the item and its version, and return its id and the change time"
       },
-      "type": "AccessDecide"
+      "type": "SummaryAspect"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.organization",
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary:reqctx:user.organization",
       "label": "user.organization",
       "properties": {
         "key": "user.organization"
@@ -2455,7 +3049,108 @@
       "type": "RequiredContext"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:organization_access_decide:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:add_summary:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide",
+      "label": "organization_access_decide",
+      "properties": {
+        "description": "Refuse a person who is not a member of the organization of the address"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemAction:organization_access_decide:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemParams",
+      "label": "AddItemParams",
+      "properties": {},
+      "type": "Params"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemParams:title",
+      "label": "title",
+      "properties": {
+        "description": "The item's title; the spaces at its ends are dropped",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemResult",
+      "label": "AddItemResult",
+      "properties": {},
+      "type": "Result"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemResult:changed_at",
+      "label": "changed_at",
+      "properties": {
+        "description": "The change time, ISO 8601 with microseconds; the client rereads at it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.add_item_action.AddItemResult:item_id",
+      "label": "item_id",
+      "properties": {
+        "description": "The new item",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction",
+      "label": "AddNoteAction",
+      "properties": {
+        "description": "Write a note on an item"
+      },
+      "type": "Action"
+    },
+    {
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide",
+      "label": "item_access_decide",
+      "properties": {
+        "description": "Refuse a person who is not a member of the organization of the address, and an item that is not one of it"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction:item_access_decide:reqctx:user.user_id",
       "label": "user.user_id",
       "properties": {
         "key": "user.user_id"
@@ -2507,7 +3202,7 @@
       "id": "maxitor_notes.actions.add_note_action.AddNoteParams:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item the note is about",
+        "description": "The item the note is about",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -2748,7 +3443,7 @@
       "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction",
       "label": "ListItemNotesAction",
       "properties": {
-        "description": "List the notes of a catalog item at one moment"
+        "description": "List the notes of an item at one moment"
       },
       "type": "Action"
     },
@@ -2843,7 +3538,7 @@
       "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item",
+        "description": "The item",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -2901,10 +3596,133 @@
       "type": "Field"
     },
     {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction",
+      "label": "ListItemsAction",
+      "properties": {
+        "description": "List the organization's items at one moment, the source of the tree's list of items"
+      },
+      "type": "Action"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary",
+      "label": "list_summary",
+      "properties": {
+        "description": "Read the organization's items at the moment, a part of them"
+      },
+      "type": "SummaryAspect"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:list_summary:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide",
+      "label": "organization_access_decide",
+      "properties": {
+        "description": "Refuse a person who is not a member of the organization of the address"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsAction:organization_access_decide:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsParams",
+      "label": "ListItemsParams",
+      "properties": {},
+      "type": "Params"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsParams:after",
+      "label": "after",
+      "properties": {
+        "description": "The key of the last entry of the part before",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsParams:at",
+      "label": "at",
+      "properties": {
+        "description": "The panel's moment; none means now, the watermark",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsParams:limit",
+      "label": "limit",
+      "properties": {
+        "description": "How many entries one part holds",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsResult",
+      "label": "ListItemsResult",
+      "properties": {},
+      "type": "Result"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsResult:entries",
+      "label": "entries",
+      "properties": {
+        "description": "The items of the part, by title",
+        "entity_schema": true,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_items_action.ListItemsResult:next",
+      "label": "next",
+      "properties": {
+        "description": "The ``after`` of the next part; none when this part is the last",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction",
       "label": "ListNoteAuthorsAction",
       "properties": {
-        "description": "List the writers of a catalog item's notes for the page's author filter"
+        "description": "List the writers of an item's notes for the page's author filter"
       },
       "type": "Action"
     },
@@ -2988,7 +3806,7 @@
       "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsParams:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item, a parameter of the page's scope",
+        "description": "The item, a parameter of the page's scope",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -3038,7 +3856,7 @@
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftAction",
       "label": "ListNoteDraftAction",
       "properties": {
-        "description": "The draft of a catalog item's notes at one moment"
+        "description": "The draft of an item's notes at one moment"
       },
       "type": "Action"
     },
@@ -3111,7 +3929,7 @@
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item",
+        "description": "The item",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -3150,7 +3968,7 @@
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesAction",
       "label": "ListPublishedNotesAction",
       "properties": {
-        "description": "The published notes of a catalog item at one moment"
+        "description": "The published notes of an item at one moment"
       },
       "type": "Action"
     },
@@ -3223,7 +4041,7 @@
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item",
+        "description": "The item",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -3267,15 +4085,15 @@
       "type": "Action"
     },
     {
-      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide",
-      "label": "organization_access_decide",
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide",
+      "label": "item_access_decide",
       "properties": {
-        "description": "Refuse a person who is not a member of the organization of the address"
+        "description": "Refuse a person who is not a member of the organization of the address, and an item that is not one of it"
       },
       "type": "AccessDecide"
     },
     {
-      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide:reqctx:user.organization",
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide:reqctx:user.organization",
       "label": "user.organization",
       "properties": {
         "key": "user.organization"
@@ -3283,7 +4101,7 @@
       "type": "RequiredContext"
     },
     {
-      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:organization_access_decide:reqctx:user.user_id",
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:item_access_decide:reqctx:user.user_id",
       "label": "user.user_id",
       "properties": {
         "key": "user.user_id"
@@ -3335,7 +4153,7 @@
       "id": "maxitor_notes.actions.publish_notes_action.PublishNotesParams:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item whose notes are published",
+        "description": "The item whose notes are published",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -3386,6 +4204,118 @@
       "label": "number",
       "properties": {
         "description": "The revision's number for its item",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction",
+      "label": "RenameItemAction",
+      "properties": {
+        "description": "Give an item a new title, refusing when someone changed it after the member saw it"
+      },
+      "type": "Action"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide",
+      "label": "item_access_decide",
+      "properties": {
+        "description": "Refuse a person who is not a member of the organization of the address, and an item that is not one of it"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:item_access_decide:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary",
+      "label": "rename_summary",
+      "properties": {
+        "description": "Close the item's open version and open the new one, and return the change time"
+      },
+      "type": "SummaryAspect"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemAction:rename_summary:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemParams",
+      "label": "RenameItemParams",
+      "properties": {},
+      "type": "Params"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemParams:base_moment",
+      "label": "base_moment",
+      "properties": {
+        "description": "The moment the member saw the item; a later change is a conflict",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemParams:item_id",
+      "label": "item_id",
+      "properties": {
+        "description": "The item",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemParams:title",
+      "label": "title",
+      "properties": {
+        "description": "The item's new title; the spaces at its ends are dropped",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemResult",
+      "label": "RenameItemResult",
+      "properties": {},
+      "type": "Result"
+    },
+    {
+      "id": "maxitor_notes.actions.rename_item_action.RenameItemResult:changed_at",
+      "label": "changed_at",
+      "properties": {
+        "description": "The change time, ISO 8601 with microseconds; the open version's start when nothing changed",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -3450,6 +4380,59 @@
       "label": "start",
       "properties": {
         "description": "When the bar starts, ISO 8601 with microseconds",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity",
+      "label": "ItemEntryCoreEntity",
+      "properties": {
+        "description": "An item, what notes are written on, as one entry of the tree's list of items",
+        "entity_kind": "core",
+        "entity_kind_label": "Core"
+      },
+      "type": "Entity"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:icon",
+      "label": "icon",
+      "properties": {
+        "description": "The icon the tree draws beside the title",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:id",
+      "label": "id",
+      "properties": {
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": true
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:key",
+      "label": "key",
+      "properties": {
+        "description": "The item's id: the value of item_id beneath it",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.item_entry_entity.ItemEntryCoreEntity:title",
+      "label": "title",
+      "properties": {
+        "description": "The item's title at the panel's moment",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false
@@ -3711,7 +4694,7 @@
       "id": "maxitor_notes.entities.note_author_entity.NoteAuthorCoreEntity",
       "label": "NoteAuthorCoreEntity",
       "properties": {
-        "description": "A person who has written notes on a catalog item",
+        "description": "A person who has written notes on an item",
         "entity_kind": "core",
         "entity_kind_label": "Core"
       },
@@ -3829,7 +4812,7 @@
       "id": "maxitor_notes.entities.note_entity.NoteCoreEntity",
       "label": "NoteCoreEntity",
       "properties": {
-        "description": "A note a person wrote on a catalog item",
+        "description": "A note a person wrote on an item",
         "entity_kind": "core",
         "entity_kind_label": "Core"
       },
@@ -3872,7 +4855,7 @@
       "id": "maxitor_notes.entities.note_entity.NoteCoreEntity:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item the note is about",
+        "description": "The item the note is about",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false
@@ -4032,6 +5015,73 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor_notes.events.ItemAddedEvent",
+      "label": "ItemAddedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor_notes.events.ItemAddedEvent:item_id",
+      "label": "item_id",
+      "properties": {
+        "description": "The item added",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.events.ItemAddedEvent:title",
+      "label": "title",
+      "properties": {
+        "description": "Its title",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.events.ItemRenamedEvent",
+      "label": "ItemRenamedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor_notes.events.ItemRenamedEvent:item_id",
+      "label": "item_id",
+      "properties": {
+        "description": "The item renamed",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.events.ItemRenamedEvent:new_title",
+      "label": "new_title",
+      "properties": {
+        "description": "The title it has now",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.events.ItemRenamedEvent:old_title",
+      "label": "old_title",
+      "properties": {
+        "description": "The title it had",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.history.list_note_history_action.ListNoteHistoryAction",
       "label": "ListNoteHistoryAction",
       "properties": {
@@ -4108,7 +5158,7 @@
       "id": "maxitor_notes.history.list_note_history_action.ListNoteHistoryParams:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item",
+        "description": "The item",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -4231,7 +5281,7 @@
       "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardParams:item_id",
       "label": "item_id",
       "properties": {
-        "description": "The catalog item",
+        "description": "The item",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -4259,7 +5309,7 @@
       "id": "maxitor_notes.notes_domain.NotesDomain",
       "label": "NotesDomain",
       "properties": {
-        "description": "Notes people write on catalog items",
+        "description": "Notes people write on the plugin's own items",
         "name": "notes",
         "typed_events": true
       },

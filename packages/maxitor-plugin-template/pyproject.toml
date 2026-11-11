@@ -7,8 +7,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "maxitor-plugin-template"
-version = "0.6.1"
-description = "The Maxitor plugin template: a small complete plugin, notes on catalog items."
+version = "0.7.0"
+description = "The Maxitor plugin template: a small complete plugin, notes on its own items."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.12"

@@ -26,18 +26,18 @@ def test_a_node_with_no_attachment_at_the_top_is_refused(plugin, edit) -> None:
 
 
 def test_a_child_node_cannot_attach_elsewhere(plugin, edit) -> None:
-    child = {"id": "inner", "title": "Inner", "page": "/inner", "attach": "core:catalog"}
+    child = {"id": "inner", "title": "Inner", "page": "/inner", "attach": "core:settings"}
     edit("navigation.yaml", lambda doc: _root_section(doc).update(children=[child]))
     assert any("'attach' was unexpected" in problem for problem in check_plugin(plugin))
 
 
-@pytest.mark.parametrize("field", [{"hide": ["core:item.overview"]}, {"rename": {"core:catalog": "Mine"}}, {"before": "core:item"}])
+@pytest.mark.parametrize("field", [{"hide": ["core:settings.plugins"]}, {"rename": {"core:settings": "Mine"}}, {"before": "core:settings"}])
 def test_there_is_no_field_to_change_a_node_the_plugin_does_not_own(plugin, edit, field) -> None:
     edit("navigation.yaml", lambda doc: doc["nodes"][0].update(field))
     assert any("was unexpected" in problem for problem in check_plugin(plugin))
 
 
-@pytest.mark.parametrize("attach", ["core", "core:", ":item", "Core:item", "core:item;drop"])
+@pytest.mark.parametrize("attach", ["core", "core:", ":settings", "Core:settings", "core:settings;drop"])
 def test_an_attachment_that_is_not_a_node_name_is_refused(plugin, edit, attach) -> None:
     edit("navigation.yaml", lambda doc: doc["nodes"][0].update(attach=attach))
     assert any("nodes/0/attach" in problem for problem in check_plugin(plugin))

@@ -36,7 +36,7 @@
 - [X] T015 [US3] `PKG/navigation.yaml`: the root node `notes` (`attach: root`, page `/`) holds the list node `item` (`each: {source: list_items, key: item_id}`, no page) and under it `item-notes`, `item-published`, `item-draft` with their pages, controls, room and history; no `attach: core:item`; the comments say what each node is without a catalog.
 - [X] T016 [US3] `TPL/tests/test_navigation.py` and `TPL/tests/test_controls.py`: the tests that pointed at a node attached to `core:item` point at the item's pages; a new test asserts no node of the template is attached outside the root, and that `{item_id}` in the three pages is defined by the list node above them.
 - [X] T017 [US3] `maxitor-plugin-check` on the template and the core's installer check (`CheckVersionAction`'s reading of the navigation) accept it.
-- [ ] T018 [US3] On the local stand of bystrovmaxim/gnomon#75, once the template's version is raised (T024): the steps of [quickstart.md](quickstart.md), "Through the gateway", walked by `check-core.mjs`, each answering as written.
+- [X] T018 [US3] On the local stand of bystrovmaxim/gnomon#75, once the template's version is raised (T024): the steps of [quickstart.md](quickstart.md), "Through the gateway", walked by `check-core.mjs`, each answering as written.
 - [X] T019 Adversarial check: attach `item-notes` to `core:item` again and drop `each` from `item`, one at a time; the new navigation test fails each time and no other test of the phase does; restore.
 
 ## Phase 3: Documentation (US4 P3) — issue phase 3
@@ -45,11 +45,11 @@
 
 **Independent test**: the search of [quickstart.md](quickstart.md), "The documentation"; `uv run pytest tests/scripts/test_tutorial_quotes.py`.
 
-- [ ] T020 [US4] `docs/plugins/concept.md`: the glossary's list node example; the core's tree in 7.1 holds only the nodes the core has; 7.2's example of a plugin's node attached to the template's root, not `core:item`; section 12 — the template's own items, its table `item`, its root node; one sentence on the simplest model of a release and bystrovmaxim/gnomon#106.
-- [ ] T021 [P] [US4] `docs/plugins/tutorial/01-what-you-will-build.md`, `02-a-copy-of-the-template.md`, `03-your-tables.md`, `04-reading.md`: the prose around the quotes speaks of the template's own items; 03 shows the table `item` and its key; 02's passport description.
-- [ ] T022 [P] [US4] `PKG/maxitor-plugin.yaml` description ("Notes on the template's own items …"), `TPL/README.md`, `TPL/pyproject.toml` description.
-- [ ] T023 [US4] The closing check run taken to zero.
-- [ ] T024 `TPL/graph.json` rebuilt by `graph-builder write`; the template's version raised in `TPL/pyproject.toml` (minor: new actions); `TPL/CHANGELOG.md` and `docs/CHANGELOG.md` — one article on what the work created.
+- [X] T020 [US4] `docs/plugins/concept.md`: the glossary's list node example; the core's tree in 7.1 holds only the nodes the core has; 7.2's example of a plugin's node attached to the template's root, not `core:item`; section 12 — the template's own items, its table `item`, its root node; one sentence on the simplest model of a release and bystrovmaxim/gnomon#106.
+- [X] T021 [P] [US4] `docs/plugins/tutorial/01-what-you-will-build.md`, `02-a-copy-of-the-template.md`, `03-your-tables.md`, `04-reading.md`: the prose around the quotes speaks of the template's own items; 03 shows the table `item` and its key; 02's passport description.
+- [X] T022 [P] [US4] `PKG/maxitor-plugin.yaml` description ("Notes on the template's own items …"), `TPL/README.md`, `TPL/pyproject.toml` description.
+- [X] T023 [US4] The closing check run taken to zero.
+- [X] T024 `TPL/graph.json` rebuilt by `graph-builder write`; the template's version raised in `TPL/pyproject.toml` (minor: new actions); `TPL/CHANGELOG.md` and `docs/CHANGELOG.md` — one article on what the work created.
 
 ## Dependencies
 
