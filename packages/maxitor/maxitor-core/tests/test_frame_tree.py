@@ -26,7 +26,6 @@ ITEM = {
     "each_source": "list_items",
     "each_key": "item_id",
     "roles": ["member"],
-    "controls": None,
     "room": None,
 }
 ITEM_NOTES = {
@@ -39,7 +38,6 @@ ITEM_NOTES = {
     "each_source": None,
     "each_key": None,
     "roles": ["member"],
-    "controls": '{"views": {"param": "view", "default": "list", "options": [{"value": "list", "label": "List"}]}}',
     "room": None,
 }
 ROOT = {
@@ -52,7 +50,6 @@ ROOT = {
     "each_source": None,
     "each_key": None,
     "roles": ["member"],
-    "controls": None,
     "room": None,
 }
 
@@ -68,7 +65,6 @@ def _reviews(parent: str) -> dict[str, Any]:
         "each_source": None,
         "each_key": None,
         "roles": [],
-        "controls": None,
         "room": None,
     }
 
@@ -103,7 +99,7 @@ def test_an_administrator_sees_settings_and_the_enabled_plugins_nodes_with_their
     assert tree["core:settings.plugins"]["page"] == "/settings/plugins"
     assert tree["notes:item"]["each"] == {"source": "list_items", "key": "item_id"}
     assert tree["notes:item-notes"]["scope"] == ["item_id"]
-    assert tree["notes:item-notes"]["controls"]["views"]["default"] == "list"
+    assert "controls" not in tree["notes:item-notes"]
 
 
 def test_a_plugin_attached_to_a_plugin_it_does_not_depend_on_is_refused(world: World) -> None:

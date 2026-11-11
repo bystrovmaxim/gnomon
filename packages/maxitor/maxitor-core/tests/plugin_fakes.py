@@ -76,7 +76,7 @@ class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
         # A section is a node attached to the root; ``nodes`` are rows as PluginsStorage.nodes reads them.
         rows = [
             {"full_name": f"{name}:section-{position}", "parent": "root", "node_order": position * 100, "title": section_title,
-             "icon": None, "page": path, "each_source": None, "each_key": None, "roles": [], "controls": None, "room": None}
+             "icon": None, "page": path, "each_source": None, "each_key": None, "roles": [], "room": None}
             for position, (section_title, path) in enumerate(sections, start=1)
         ] + list(nodes)
         for position, row in enumerate(rows, start=1):

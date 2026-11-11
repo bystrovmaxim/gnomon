@@ -6,7 +6,8 @@ export type Query = Record<string, string>;
 
 /** From the page to the core. */
 export type PageMessage =
-  | { type: "panel.ready"; build: string; surface: "document" | "canvas" }
+  /** `shell`: the page renders the shell of @maxitor/panel, `shellVersion` its version (spec 078, FR-020). */
+  | { type: "panel.ready"; build: string; surface: "document" | "canvas"; shell: boolean; shellVersion: string }
   | { type: "panel.navigate"; path: string; query: Query; mode: "push" | "replace" }
   | { type: "panel.title"; text: string }
   | { type: "panel.open"; owner: string; path: string; query: Query };
@@ -27,7 +28,10 @@ export function pageMessage(data: unknown): PageMessage | null {
   const m = data as Record<string, unknown>;
   switch (m.type) {
     case "panel.ready":
-      return text(m.build) && (m.surface === "document" || m.surface === "canvas") ? { type: m.type, build: m.build, surface: m.surface } : null;
+      // A page built before the shell sends neither field: it is a page without the shell.
+      if (!text(m.build) || (m.surface !== "document" && m.surface !== "canvas")) return null;
+      if ((m.shell !== undefined && typeof m.shell !== "boolean") || (m.shellVersion !== undefined && !text(m.shellVersion))) return null;
+      return { type: m.type, build: m.build, surface: m.surface, shell: m.shell === true, shellVersion: text(m.shellVersion) ? m.shellVersion : "" };
     case "panel.navigate":
       return path(m.path) && query(m.query) && (m.mode === "push" || m.mode === "replace") ? { type: m.type, path: m.path, query: m.query, mode: m.mode } : null;
     case "panel.title":

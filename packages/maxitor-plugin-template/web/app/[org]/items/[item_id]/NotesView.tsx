@@ -5,8 +5,8 @@ import { Card, DataTable, usePanelQuery } from "@maxitor/panel";
 export type Note = { id: string; item_id: string; writer_id: string; writer_name: string; body: string; updated_at: string };
 
 export function NotesView({ notes }: { notes: Note[] }) {
-  // The view switch is Maxitor's control, declared in navigation.yaml. Maxitor draws it and writes ?view= into the
-  // address; the page only reads it, and rebuilds when Maxitor says the address changed.
+  // The view is the page's own choice in the shell's bottom bar: the shell writes ?view= into the address, and the
+  // page reads it and rebuilds when the address changes.
   const { view = "list" } = usePanelQuery();
 
   if (view === "table") {

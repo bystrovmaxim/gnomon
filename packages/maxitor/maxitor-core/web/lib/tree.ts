@@ -3,15 +3,6 @@
 // full name, owner, parent and the scope of parameters at its place. The frame draws it; it never decides it.
 import { fillPage, matchPage } from "@/lib/address";
 
-export type Choice = { value: string; label: string; icon?: string };
-
-export type Controls = {
-  mode?: { param: string; default: string; options: Choice[]; counts?: string };
-  views?: { param: string; default: string; options: Choice[] };
-  filters?: { title: string; param: string; options?: { value: string; label: string; colour?: string }[]; source?: string }[];
-  legend?: { title: string; items?: { label: string; colour: string }[]; source?: string };
-};
-
 export type TreeNode = {
   name: string;
   owner: string;
@@ -22,7 +13,6 @@ export type TreeNode = {
   page: string | null;
   each: { source: string; key: string } | null;
   scope: string[];
-  controls: Controls | null;
 };
 
 /** One instance of a list node, from its owner's source at the panel's moment. */
@@ -61,4 +51,17 @@ export function lineOf(nodes: TreeNode[], node: TreeNode): TreeNode[] {
 /** The page path of a node in a scope, or null when the scope lacks a parameter. */
 export function pathOf(node: TreeNode, scope: Record<string, string>): string | null {
   return node.page === null ? null : fillPage(node.page, scope);
+}
+
+/**
+ * The page "up" opens from the open node (spec 078, FR-018): the nearest node above it that has a page, its path
+ * filled from the open node's scope; null at a node with none above.
+ */
+export function upOf(nodes: TreeNode[], opened: { node: TreeNode; scope: Record<string, string> }): { node: TreeNode; path: string } | null {
+  const line = lineOf(nodes, opened.node);
+  for (let i = line.length - 2; i >= 0; i -= 1) {
+    const path = pathOf(line[i], opened.scope);
+    if (path !== null) return { node: line[i], path };
+  }
+  return null;
 }

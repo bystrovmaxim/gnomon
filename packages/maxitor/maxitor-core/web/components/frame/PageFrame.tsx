@@ -5,7 +5,8 @@
 // only when another owner's page opens.
 "use client";
 
-import { coreMessage, pageMessage, trusted, type CoreMessage } from "@maxitor/panel/protocol";
+import { changedReserved } from "@maxitor/panel/address";
+import { coreMessage, pageMessage, trusted, type CoreMessage, type Query } from "@maxitor/panel/protocol";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -17,6 +18,18 @@ const READY_MS = 15000;
 const WATERMARK_MS = 5000;
 
 type State = "waiting" | "ready" | "silent";
+
+/** A page without the shell is marked on the local stand and in development; elsewhere it is only logged. */
+const MARK_UNFRAMED = process.env.NEXT_PUBLIC_MAXITOR_MARK_UNFRAMED === "1" || process.env.NODE_ENV !== "production";
+
+/**
+ * What a page may not ask the window's address for (spec 078, FR-012): a change of the core's names, and a parameter
+ * named like one of the open node's path parameters. Empty when the request may go on.
+ */
+export function refusedNames(next: Query, current: Query, pathNames: readonly string[]): string[] {
+  const path = new Set(pathNames.map((name) => name.toLowerCase()));
+  return [...changedReserved(next, current), ...Object.keys(next).filter((name) => path.has(name.toLowerCase()))];
+}
 
 /** The key of what a page shows: its path, parameters and moment. */
 function keyOf(path: string, query: Record<string, string>, at: string | null): string {
@@ -30,6 +43,7 @@ export function PageFrame({
   base,
   title,
   canOpen,
+  pathNames = [],
   onTitle,
 }: {
   code: string;
@@ -41,12 +55,15 @@ export function PageFrame({
   title: string;
   /** Whether the page may open a page of this owner: the core and its plugin's direct dependencies. */
   canOpen: (owner: string) => boolean;
+  /** The open node's path parameters: a page may not put them in its query. */
+  pathNames?: readonly string[];
   onTitle: (title: string | null) => void;
 }) {
   const router = useRouter();
   const frame = useRef<HTMLIFrameElement>(null);
   const [state, setState] = useState<State>("waiting");
   const [attempt, setAttempt] = useState(0);
+  const [unframed, setUnframed] = useState(false);
   // The address the frame was opened at: it changes only when the owner does, or on Try again.
   const [src] = useState(() => `${base}${address.path === "/" ? "" : address.path}${queryString(address.query, address.at)}`);
   // What the page shows now: what it asked for, or what it was last told.
@@ -71,20 +88,29 @@ export function PageFrame({
       if (!trusted(event, frame.current?.contentWindow)) return;
       const message = pageMessage(event.data);
       if (!message) return;
-      if (message.type === "panel.ready") setState("ready");
+      if (message.type === "panel.ready") {
+        setState("ready");
+        setUnframed(!message.shell);
+        if (!message.shell) console.warn(`Maxitor: the page ${address.path} of ${owner} has no Maxitor frame: it does not render the shell of @maxitor/panel`);
+      }
       else if (message.type === "panel.title") onTitle(message.text);
       else if (message.type === "panel.navigate") {
+        const refused = refusedNames(message.query, address.query, pathNames);
+        if (refused.length) {
+          console.error(`Maxitor: the page of ${owner} may not write ${refused.map((name) => JSON.stringify(name)).join(", ")}; the address is unchanged`);
+          return;
+        }
         shown.current = keyOf(message.path, message.query, address.at);
         const href = windowAddress(code, owner, message.path, message.query, address.at);
         if (message.mode === "push") router.push(href, { scroll: false });
         else router.replace(href, { scroll: false });
-      } else if (message.type === "panel.open" && canOpen(message.owner)) {
+      } else if (message.type === "panel.open" && canOpen(message.owner) && changedReserved(message.query, {}).length === 0) {
         router.push(windowAddress(code, message.owner, message.path, message.query, address.at));
       }
     };
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [address.at, canOpen, code, onTitle, owner, router]);
+  }, [address.at, address.path, address.query, canOpen, code, onTitle, owner, pathNames, router]);
 
   // A page that never says it is ready is shown as not answering.
   useEffect(() => {
@@ -125,6 +151,9 @@ export function PageFrame({
         title={title}
         src={src}
       />
+      {unframed && MARK_UNFRAMED ? (
+        <div className="mx-unframed" role="alert">This page has no Maxitor frame</div>
+      ) : null}
       {state === "silent" ? (
         <div className="mx-panel-note" role="alert">
           <b>This page does not answer</b>

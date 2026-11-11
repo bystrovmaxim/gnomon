@@ -24,7 +24,7 @@ def _plugin(tmp_path: Path, passport_history=None, page_history=None, actions=("
     node = {"id": "item-notes", "attach": "core:item", "title": "Notes", "page": "/items/{item_id}"}
     if page_history is not None:
         node["history"] = page_history
-    (package / "navigation.yaml").write_text(yaml.safe_dump({"navigation": 1, "nodes": [node]}))
+    (package / "navigation.yaml").write_text(yaml.safe_dump({"navigation": 2, "nodes": [node]}))
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "notes"\nversion = "1.0.0"\n')
     return tmp_path
 

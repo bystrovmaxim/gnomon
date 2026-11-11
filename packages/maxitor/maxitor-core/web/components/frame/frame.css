@@ -40,6 +40,12 @@
 
 /* the tree */
 .mx-tree { width: var(--mx-tree-width); flex-shrink: 0; background: var(--mx-sidebar); border-right: var(--mx-line-width) solid var(--mx-line); display: flex; flex-direction: column; }
+.mx-tree.collapsed { width: auto; }
+.mx-tree-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-2); padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-1); }
+.mx-tree-button { width: var(--mx-tree-slot); height: var(--mx-tree-slot); border: 0; padding: 0; border-radius: var(--mx-radius-sm); background: transparent; color: var(--mx-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.mx-tree-button:hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-tree-button.off { opacity: 0.4; cursor: default; }
+.mx-tree-button.off:hover { background: transparent; color: var(--mx-muted); }
 .mx-tree-scroll { flex: 1; overflow-y: auto; padding: var(--mx-space-3) var(--mx-space-4) var(--mx-space-2); }
 .mx-tree-foot { padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-4); }
 .mx-tree-empty { margin: var(--mx-space-6); font-size: var(--mx-text-sm); color: var(--mx-faint); line-height: 1.5; border: var(--mx-line-width) dashed var(--mx-line-3); border-radius: var(--mx-radius-md); padding: var(--mx-space-5); text-align: center; }
@@ -63,6 +69,7 @@
 /* A page that has not said panel.ready is see-through, never hidden: a hidden frame gets no animation frames, and
    React reveals a streamed page in one, so it would never become ready. */
 .mx-panel-frame.waiting { opacity: 0; }
+.mx-unframed { position: absolute; left: 0; right: 0; top: 0; z-index: 40; padding: var(--mx-space-3) var(--mx-space-5); background: var(--mx-bad); color: var(--mx-on-ink); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); text-align: center; }
 .mx-panel-note { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; color: var(--mx-muted); font-size: var(--mx-text-md); line-height: 1.55; max-width: 90%; }
 .mx-panel-note b { display: block; color: var(--mx-ink-2); font-size: var(--mx-text-lg); }
 .mx-panel-note .mx-big { font-size: var(--mx-text-huge); font-weight: var(--mx-weight-heavy); color: var(--mx-line-3); }
@@ -75,38 +82,4 @@
   .mx-tree.drawer { display: flex; position: fixed; z-index: 60; top: var(--mx-top-row); left: 0; bottom: 0; width: var(--mx-drawer-width); box-shadow: var(--mx-shadow-pop); }
   .mx-node { min-height: var(--mx-tree-row-phone); font-size: var(--mx-text-lg); }
   .mx-menu, .mx-menu.left { width: auto; left: var(--mx-space-5); right: var(--mx-space-5); }
-}
-
-/* the controls over the panel: the same places for every plugin (the plugin concept, 7.8) */
-.mx-pill, .mx-views-wide { display: inline-flex; gap: var(--mx-space-1); padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); box-shadow: var(--mx-shadow-float); }
-.mx-pill { position: absolute; top: var(--mx-space-5); left: 50%; transform: translateX(-50%); z-index: 30; }
-.mx-views { position: absolute; top: var(--mx-space-5); right: var(--mx-space-5); z-index: 30; }
-.mx-pill button, .mx-views-wide button { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); }
-.mx-pill button.on, .mx-views-wide button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
-.mx-pill button:not(.on):hover, .mx-views-wide button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
-.mx-count { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); opacity: 0.8; }
-.mx-views-narrow { display: none; height: var(--mx-control); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-sm); background: var(--mx-surface); font-size: var(--mx-text-md); }
-.mx-filters { position: absolute; top: var(--mx-space-5); left: var(--mx-space-5); z-index: 30; width: var(--mx-filter-width); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); box-shadow: var(--mx-shadow-float); padding: var(--mx-space-3); }
-.mx-filters-button { display: none; }
-.mx-filter-title { display: block; width: 100%; text-align: left; border: 0; background: none; padding: var(--mx-space-2) var(--mx-space-2); font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); color: var(--mx-muted); cursor: pointer; }
-.mx-filter-row { display: flex; align-items: center; gap: var(--mx-space-4); width: 100%; border: 0; background: none; padding: var(--mx-space-2); border-radius: var(--mx-radius-xs); font-size: var(--mx-text-sm); color: var(--mx-ink-2); cursor: pointer; text-align: left; }
-.mx-filter-row:hover { background: var(--mx-hover); }
-.mx-filter-row.off { color: var(--mx-faint); }
-.mx-filter-row.off .mx-disk { opacity: 0.35; }
-.mx-filter-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mx-filter-off { font-size: var(--mx-text-xs); color: var(--mx-faint); }
-.mx-filter-note { font-size: var(--mx-text-sm); color: var(--mx-faint); padding: var(--mx-space-2); }
-.mx-disk { width: var(--mx-icon-sm); height: var(--mx-icon-sm); border-radius: var(--mx-radius-round); flex-shrink: 0; border: var(--mx-line-width) solid var(--mx-line-3); }
-.mx-legend { position: absolute; left: var(--mx-space-5); bottom: var(--mx-space-5); z-index: 30; background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); box-shadow: var(--mx-shadow-float); padding: var(--mx-space-4) var(--mx-space-5); display: flex; flex-direction: column; gap: var(--mx-space-2); font-size: var(--mx-text-sm); }
-.mx-legend-title { font-size: var(--mx-text-tiny); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); color: var(--mx-muted); }
-.mx-legend-row { display: flex; align-items: center; gap: var(--mx-space-4); }
-
-@media (max-width: 520px) {
-  .mx-views-wide { display: none; }
-  .mx-views-narrow { display: inline-block; }
-  .mx-filters { width: auto; padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
-  .mx-filters-button { display: inline-flex; align-items: center; gap: var(--mx-space-3); height: var(--mx-control); padding: 0 var(--mx-space-5); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); background: var(--mx-surface); font-size: var(--mx-text-md); cursor: pointer; }
-  .mx-filters.folded .mx-filters-body { display: none; }
-  .mx-filters:not(.folded) .mx-filters-body { margin-top: var(--mx-space-3); width: var(--mx-filter-width); background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); box-shadow: var(--mx-shadow-pop); padding: var(--mx-space-3); }
-  .mx-pill { top: auto; bottom: var(--mx-space-5); }
 }

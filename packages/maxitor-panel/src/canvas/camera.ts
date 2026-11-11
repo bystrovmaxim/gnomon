@@ -54,6 +54,16 @@ export function fit(bounds: Bounds, width: number, height: number, margin = FIT_
   };
 }
 
+/** The room a fit keeps clear at the panel's edges: the shell's filters, pills and bottom bar. */
+export type Insets = { left: number; top: number; bottom: number };
+
+/** The camera that shows ``bounds`` whole inside the part of the viewport the insets leave free. */
+export function fitInside(bounds: Bounds, width: number, height: number, insets: Insets, margin = FIT_MARGIN): Camera {
+  const free = { width: Math.max(1, width - insets.left), height: Math.max(1, height - insets.top - insets.bottom) };
+  const camera = fit(bounds, free.width, free.height, margin);
+  return { ...camera, x: camera.x + insets.left, y: camera.y + insets.top };
+}
+
 /** The camera that brings a canvas point to the middle of the viewport, at the same zoom. */
 export function centreOn(camera: Camera, point: Point, width: number, height: number): Camera {
   return { ...camera, x: width / 2 - point.x * camera.zoom, y: height / 2 - point.y * camera.zoom };

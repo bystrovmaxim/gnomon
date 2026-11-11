@@ -5,16 +5,19 @@ import { useEffect } from "react";
 
 import { usePanel } from "./PanelProvider";
 import type { Query } from "./protocol";
+import { checkWrite } from "./shell/address";
 
 type Change = { path?: string; query: Query };
 
 /**
  * The panel's router. One `push` is one history entry in the window's address; `replace` changes it in place, for a
- * change that goes on (typing a search, dragging). Inside the frame the address is only replaced.
+ * change that goes on (typing a search, dragging). Inside the frame the address is only replaced. A write that
+ * changes one of the core's names — at, mode, from, _… — is refused and leaves the address (spec 078, FR-012).
  */
 export function usePanelRouter() {
   const panel = usePanel();
   const go = (mode: "push" | "replace") => (change: Change) => {
+    if (!checkWrite(change.query, panel.query, process.env.NODE_ENV === "production")) return;
     const path = change.path ?? panel.path;
     panel.send({ type: "panel.navigate", path, query: change.query, mode });
     panel.show(path, change.query, panel.at);

@@ -297,7 +297,6 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
                         "each_source": node.each_source,
                         "each_key": node.each_key,
                         "roles": list(node.roles),
-                        "controls": None if node.controls is None else json.dumps(node.controls),
                         "room": None if node.room is None else json.dumps(node.room),
                         "created_at": changed,
                         "updated_at": None,
