@@ -1,0 +1,12 @@
+/* @maxitor/panel — the canvas: a field of dots that moves and scales with the picture, and the zoom bar. */
+.mx-canvas { position: fixed; inset: 0; overflow: hidden; touch-action: none; cursor: grab; outline: none; background-image: radial-gradient(var(--mx-dot) var(--mx-dot-size), transparent var(--mx-dot-size)); }
+.mx-canvas:active { cursor: grabbing; }
+.mx-canvas:focus-visible { box-shadow: inset 0 0 0 var(--mx-ring) var(--mx-line-3); }
+.mx-canvas-scene { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.mx-zoom { position: absolute; right: var(--mx-space-5); bottom: var(--mx-space-5); display: flex; align-items: center; gap: var(--mx-space-1); padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); box-shadow: var(--mx-shadow-float); z-index: 40; cursor: default; }
+.mx-zoom button { width: var(--mx-control); height: var(--mx-control); border: 0; border-radius: var(--mx-radius-sm); background: transparent; color: var(--mx-muted); font-size: var(--mx-text-lg); cursor: pointer; }
+.mx-zoom button:hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-zoom-value { min-width: var(--mx-control); text-align: center; font-size: var(--mx-text-sm); color: var(--mx-muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) {
+  .mx-zoom button { width: var(--mx-tree-row-phone); height: var(--mx-tree-row-phone); }
+}

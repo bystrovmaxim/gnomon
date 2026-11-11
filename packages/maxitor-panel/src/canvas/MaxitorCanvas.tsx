@@ -1,0 +1,168 @@
+// @maxitor/panel — one canvas for every plugin (the plugin concept, 7.7): moving and zooming by drag, the wheel, a
+// two-finger swipe, a pinch, Ctrl/⌘ with the wheel and keys, within limits; fit; the zoom bar; the field of dots
+// moving with the picture; the camera. A page puts only its content in canvas coordinates; it cannot change the
+// gestures. The viewport is never written into the address: everyone has their own screen.
+"use client";
+
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+
+import "./canvas.css";
+import { centreOn, fit, key, pinch, toCanvas, toScreen, wheel, zoomAround, ZOOM_STEP, type Bounds, type Camera, type Point } from "./camera";
+
+type CanvasApi = {
+  camera: Camera;
+  /** Show ``bounds`` whole, or the whole scene. */
+  fit: (bounds?: Bounds) => void;
+  /** Bring a canvas point to the middle. */
+  show: (point: Point) => void;
+  toCanvas: (screen: Point) => Point;
+  toScreen: (point: Point) => Point;
+};
+
+const CanvasContext = createContext<CanvasApi | null>(null);
+
+/** The canvas the page's content lies on: its camera and what a page may ask of it. */
+export function useCanvas(): CanvasApi {
+  const canvas = useContext(CanvasContext);
+  if (!canvas) throw new Error("@maxitor/panel: useCanvas is called inside MaxitorCanvas");
+  return canvas;
+}
+
+export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: Bounds; children: ReactNode; label?: string }) {
+  const field = useRef<HTMLDivElement>(null);
+  const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 1 });
+  const fitted = useRef(false);
+  const pointers = useRef(new Map<number, Point>());
+  const gesture = useRef<{ camera: Camera; from: Point[] } | null>(null);
+
+  const size = useCallback(() => {
+    const box = field.current?.getBoundingClientRect();
+    return { width: box?.width ?? 0, height: box?.height ?? 0, left: box?.left ?? 0, top: box?.top ?? 0 };
+  }, []);
+
+  const fitTo = useCallback(
+    (target?: Bounds) => {
+      const { width, height } = size();
+      if (width && height) setCamera(fit(target ?? bounds, width, height));
+    },
+    [bounds, size],
+  );
+
+  // The scene opens fitted, once; later the person's camera is theirs.
+  useEffect(() => {
+    if (!fitted.current && size().width) {
+      fitted.current = true;
+      fitTo();
+    }
+  }, [fitTo, size]);
+
+  // The wheel is listened to directly: React's listener is passive and could not keep the page from scrolling.
+  useEffect(() => {
+    const element = field.current;
+    if (!element) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const { left, top, height } = size();
+      setCamera((was) => wheel(was, event, { x: event.clientX - left, y: event.clientY - top }, height));
+    };
+    element.addEventListener("wheel", onWheel, { passive: false });
+    return () => element.removeEventListener("wheel", onWheel);
+  }, [size]);
+
+  const local = (event: { clientX: number; clientY: number }): Point => {
+    const { left, top } = size();
+    return { x: event.clientX - left, y: event.clientY - top };
+  };
+
+  const begin = () => {
+    gesture.current = { camera, from: [...pointers.current.values()] };
+  };
+
+  const api = useMemo<CanvasApi>(
+    () => ({
+      camera,
+      fit: fitTo,
+      show: (point) => {
+        const { width, height } = size();
+        setCamera((was) => centreOn(was, point, width, height));
+      },
+      toCanvas: (screen) => toCanvas(camera, screen),
+      toScreen: (point) => toScreen(camera, point),
+    }),
+    [camera, fitTo, size],
+  );
+
+  const middle = () => {
+    const { width, height } = size();
+    return { x: width / 2, y: height / 2 };
+  };
+
+  return (
+    <CanvasContext.Provider value={api}>
+      <div
+        ref={field}
+        className="mx-canvas"
+        role="application"
+        aria-label={label}
+        tabIndex={0}
+        data-zoom={camera.zoom.toFixed(3)}
+        style={{
+          backgroundPosition: `${camera.x}px ${camera.y}px`,
+          backgroundSize: `calc(var(--mx-dot-step) * ${camera.zoom}) calc(var(--mx-dot-step) * ${camera.zoom})`,
+        }}
+        onKeyDown={(event) => {
+          const { width, height } = size();
+          const next = key(camera, event.key, middle(), bounds, width, height);
+          if (next) {
+            event.preventDefault();
+            setCamera(next);
+          }
+        }}
+        onPointerDown={(event) => {
+          if ((event.target as HTMLElement).closest("button, a, input, textarea, select")) return;
+          field.current?.setPointerCapture(event.pointerId);
+          pointers.current.set(event.pointerId, local(event));
+          begin();
+        }}
+        onPointerMove={(event) => {
+          if (!pointers.current.has(event.pointerId) || !gesture.current) return;
+          pointers.current.set(event.pointerId, local(event));
+          const now = [...pointers.current.values()];
+          const { camera: was, from } = gesture.current;
+          if (now.length >= 2 && from.length >= 2) setCamera(pinch(was, [from[0], from[1]], [now[0], now[1]]));
+          else if (now.length === 1 && from.length === 1) setCamera({ ...was, x: was.x + now[0].x - from[0].x, y: was.y + now[0].y - from[0].y });
+        }}
+        onPointerUp={(event) => {
+          pointers.current.delete(event.pointerId);
+          begin();
+        }}
+        onPointerCancel={(event) => {
+          pointers.current.delete(event.pointerId);
+          begin();
+        }}
+      >
+        <div className="mx-canvas-scene" style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})` }}>
+          {children}
+        </div>
+        <ZoomBar
+          zoom={camera.zoom}
+          onIn={() => setCamera((was) => zoomAround(was, middle(), ZOOM_STEP))}
+          onOut={() => setCamera((was) => zoomAround(was, middle(), 1 / ZOOM_STEP))}
+          onFit={() => fitTo()}
+        />
+      </div>
+    </CanvasContext.Provider>
+  );
+}
+
+/** The zoom bar at the bottom right, the same on every canvas. */
+function ZoomBar({ zoom, onIn, onOut, onFit }: { zoom: number; onIn: () => void; onOut: () => void; onFit: () => void }) {
+  return (
+    <div className="mx-zoom" role="toolbar" aria-label="Zoom">
+      <button type="button" aria-label="Zoom out" onClick={onOut}>−</button>
+      <span className="mx-zoom-value" aria-live="polite">{Math.round(zoom * 100)}%</span>
+      <button type="button" aria-label="Zoom in" onClick={onIn}>+</button>
+      <button type="button" aria-label="Fit" onClick={onFit}>⤢</button>
+    </div>
+  );
+}

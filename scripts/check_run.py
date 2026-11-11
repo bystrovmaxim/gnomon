@@ -205,6 +205,13 @@ STEPS: tuple[Step, ...] = (
         "client",
         after=(AUTO_FIX,),
     ),
+    # @maxitor/panel: the canvas's camera and the panel protocol's shape checks (spec 077, FR-024 – FR-032).
+    Step(
+        "@maxitor/panel: the camera and the protocol",
+        "node --experimental-strip-types --test packages/maxitor-panel/tests/*.test.ts",
+        "client",
+        after=(AUTO_FIX,),
+    ),
     # The frame, its controls and @maxitor/panel take every colour and size from @maxitor/tokens (spec 077, SC-007).
     Step(
         "Maxitor core: the frame draws with @maxitor/tokens only",

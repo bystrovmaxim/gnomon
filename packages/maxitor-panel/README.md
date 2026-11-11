@@ -44,6 +44,7 @@ export function Notes() {
 | `useWatermark(listener)` | called when "now" moved: a page without `at` reads again |
 | `useOpenPanel()` | opens a page of the core or of a direct dependency |
 | `momentFrom(query)` | the moment of a server component's `searchParams`, or `null` for now |
+| `MaxitorCanvas {bounds}`, `useCanvas()` | the canvas: moving and zooming, fit, the zoom bar, the field of dots, the camera |
 | `Card`, `DataTable` | the common content, drawn with the tokens |
 | `pageMessage`, `coreMessage`, `trusted` | the protocol's shape checks, for whoever speaks it by hand |
 
@@ -51,4 +52,4 @@ A page builds its view from its address only: on the server from `searchParams`,
 
 ## Installing it
 
-Inside this repository the core's application and the plugin template take the package by path, installed as a copy (`install-links=true` in their `.npmrc`): a linked package would look for React beside itself. After changing the package, run `npm install` in the application that uses it.
+Inside this repository the core's application and the plugin template take the package by path, installed as a copy (`install-links=true` in their `.npmrc`): a linked package would look for React beside itself. After changing the package, remove `node_modules/@maxitor` and run `npm install` again in the application that uses it: npm keeps a copy until then.
