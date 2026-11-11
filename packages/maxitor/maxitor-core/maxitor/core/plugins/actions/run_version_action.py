@@ -48,7 +48,8 @@ STEADY = timedelta(minutes=1)
 
 def pause_after(failures: int) -> timedelta:
     """The pause before the next start after ``failures`` failures in a row."""
-    return min(FIRST_PAUSE * (2 ** max(failures - 1, 0)), LONGEST_PAUSE)
+    pause: timedelta = FIRST_PAUSE * (2 ** max(failures - 1, 0))
+    return min(pause, LONGEST_PAUSE)
 
 
 class RunVersionParams(BaseParams):

@@ -72,12 +72,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.actions.add_note_action.AddNoteAction|@check_roles|maxitor_notes.notes_editor_role.NotesEditorRole",
+      "id": "maxitor_notes.actions.add_note_action.AddNoteAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.actions.add_note_action.AddNoteAction",
-      "target_id": "maxitor_notes.notes_editor_role.NotesEditorRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -209,12 +209,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteAction|@check_roles|maxitor_notes.notes_editor_role.NotesEditorRole",
+      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.actions.delete_note_action.DeleteNoteAction",
-      "target_id": "maxitor_notes.notes_editor_role.NotesEditorRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -346,12 +346,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.actions.edit_note_action.EditNoteAction|@check_roles|maxitor_notes.notes_editor_role.NotesEditorRole",
+      "id": "maxitor_notes.actions.edit_note_action.EditNoteAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.actions.edit_note_action.EditNoteAction",
-      "target_id": "maxitor_notes.notes_editor_role.NotesEditorRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -492,12 +492,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction|@check_roles|maxitor_notes.notes_reader_role.NotesReaderRole",
+      "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesAction",
-      "target_id": "maxitor_notes.notes_reader_role.NotesReaderRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -692,12 +692,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction|@check_roles|maxitor_notes.notes_reader_role.NotesReaderRole",
+      "id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.actions.list_note_authors_action.ListNoteAuthorsAction",
-      "target_id": "maxitor_notes.notes_reader_role.NotesReaderRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -856,12 +856,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftAction|@check_roles|maxitor_notes.notes_reader_role.NotesReaderRole",
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftAction",
-      "target_id": "maxitor_notes.notes_reader_role.NotesReaderRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -1020,12 +1020,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesAction|@check_roles|maxitor_notes.notes_reader_role.NotesReaderRole",
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesAction",
-      "target_id": "maxitor_notes.notes_reader_role.NotesReaderRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -1184,12 +1184,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction|@check_roles|maxitor_notes.notes_editor_role.NotesEditorRole",
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction",
-      "target_id": "maxitor_notes.notes_editor_role.NotesEditorRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -2035,12 +2035,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.history.list_note_history_action.ListNoteHistoryAction|@check_roles|maxitor_notes.notes_reader_role.NotesReaderRole",
+      "id": "maxitor_notes.history.list_note_history_action.ListNoteHistoryAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.history.list_note_history_action.ListNoteHistoryAction",
-      "target_id": "maxitor_notes.notes_reader_role.NotesReaderRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -2190,12 +2190,12 @@
       "type": "@access_decide"
     },
     {
-      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardAction|@check_roles|maxitor_notes.notes_reader_role.NotesReaderRole",
+      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
       "is_dag": false,
       "properties": {},
       "relationship": "Association",
       "source_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardAction",
-      "target_id": "maxitor_notes.notes_reader_role.NotesReaderRole",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
       "type": "@check_roles"
     },
     {
@@ -2301,24 +2301,6 @@
       "type": "application"
     },
     {
-      "id": "maxitor_notes.notes_editor_role.NotesEditorRole|application|aoa.action_machine.application.application.Application",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor_notes.notes_editor_role.NotesEditorRole",
-      "target_id": "aoa.action_machine.application.application.Application",
-      "type": "application"
-    },
-    {
-      "id": "maxitor_notes.notes_reader_role.NotesReaderRole|application|aoa.action_machine.application.application.Application",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor_notes.notes_reader_role.NotesReaderRole",
-      "target_id": "aoa.action_machine.application.application.Application",
-      "type": "application"
-    },
-    {
       "id": "maxitor_notes.storage.notes_storage.NotesStorage|resource_entity|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
       "is_dag": true,
       "properties": {},
@@ -2371,6 +2353,33 @@
       "source_id": "maxitor_notes.storage.notes_storage.NotesStorage",
       "target_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
       "type": "resource_entity"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.AdministratorRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.AdministratorRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.MemberRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.MemberRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.ServiceRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.ServiceRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
     }
   ],
   "nodes": [
@@ -4257,30 +4266,39 @@
       "type": "Domain"
     },
     {
-      "id": "maxitor_notes.notes_editor_role.NotesEditorRole",
-      "label": "NotesEditorRole",
-      "properties": {
-        "description": "Writes notes",
-        "role_mode": "alive"
-      },
-      "type": "Role"
-    },
-    {
-      "id": "maxitor_notes.notes_reader_role.NotesReaderRole",
-      "label": "NotesReaderRole",
-      "properties": {
-        "description": "Reads notes",
-        "role_mode": "alive"
-      },
-      "type": "Role"
-    },
-    {
       "id": "maxitor_notes.storage.notes_storage.NotesStorage",
       "label": "NotesStorage",
       "properties": {
         "description": "The plugin's own schema, written as its version's user; the core reached only by its functions"
       },
       "type": "Resource"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.AdministratorRole",
+      "label": "AdministratorRole",
+      "properties": {
+        "description": "An administrator of the organization of the address",
+        "role_mode": "alive"
+      },
+      "type": "Role"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.MemberRole",
+      "label": "MemberRole",
+      "properties": {
+        "description": "An active user of the organization of the address",
+        "role_mode": "alive"
+      },
+      "type": "Role"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.ServiceRole",
+      "label": "ServiceRole",
+      "properties": {
+        "description": "The plugin itself, with no person behind the call",
+        "role_mode": "alive"
+      },
+      "type": "Role"
     }
   ],
   "schema_version": "2.0"

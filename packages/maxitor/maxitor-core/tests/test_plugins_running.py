@@ -41,7 +41,7 @@ from aoa.action_machine.context.context import Context
 from aoa.action_machine.context.user_info import UserInfo
 from aoa.action_machine.graph.node_graph_coordinator_factory import create_node_graph_coordinator
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
-from tests.fakes import World, MemoryCoreStorage
+from tests.fakes import MemoryCoreStorage, World
 from tests.plugin_fakes import MemoryPluginsStorage
 from tests.recording_database import recording_pool
 

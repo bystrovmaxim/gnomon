@@ -58,4 +58,4 @@ async def test_a_round_runs_each_wanted_version_and_stops_the_rest(tmp_path: Pat
 
 
 def test_the_settings_never_show_the_dsn() -> None:
-    assert "secret" not in repr(RunnerSettings(dsn="postgresql://maxitor_core:secret@db/maxitor"))
+    assert "db.invalid" not in repr(RunnerSettings(dsn="postgresql://db.invalid/maxitor"))

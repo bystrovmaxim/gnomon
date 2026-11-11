@@ -9,7 +9,7 @@ from maxitor_plugin_sdk.roles import CORE_ROLES, NODE_ROLES
 
 def test_the_core_roles_are_member_administrator_and_service() -> None:
     assert set(CORE_ROLES) == {"member", "administrator", "service"}
-    assert NODE_ROLES == {"member", "administrator"}
+    assert {"member", "administrator"} == NODE_ROLES
 
 
 def test_a_passport_with_roles_is_refused() -> None:

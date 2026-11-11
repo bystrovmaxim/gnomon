@@ -6,9 +6,9 @@ from __future__ import annotations
 from maxitor.core.plugins.events import (
     DeployFailedEvent,
     DeploySkippedEvent,
-    EnvironmentFailedEvent,
     DisableRefusedEvent,
     DownloadTimedOutEvent,
+    EnvironmentFailedEvent,
     FailedInstallDroppedEvent,
     InstallerConnectionRefusedEvent,
     InstallerStartedEvent,

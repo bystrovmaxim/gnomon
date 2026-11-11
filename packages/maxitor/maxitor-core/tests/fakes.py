@@ -11,13 +11,13 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi.testclient import TestClient
 from maxitor.core.gateways.geoip import GeoIpGateway
 from maxitor.core.gateways.letters import Letter
 from maxitor.core.gateways.mail import MailGateway
 from maxitor.core.gateways.providers import GATEWAYS, ProviderPerson, ProviderRefusedError
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from maxitor.core.server import create_app
 from maxitor.core.settings import CoreSettings
 from maxitor.core.storage.core_storage import VERSIONED, CoreStorage, UniqueRowError

@@ -40,17 +40,17 @@ from maxitor.core.gateways.geoip import GEOIP_CONNECTION_KEY, GeoIpGateway
 from maxitor.core.gateways.mail import MAIL_CONNECTION_KEY, MailGateway, OutboxMailGateway, YandexCloudPostboxGateway
 from maxitor.core.gateways.providers import GATEWAYS
 from maxitor.core.plugins.actions.add_private_plugin_action import AddPrivatePluginAction
+from maxitor.core.plugins.actions.core_jwks_action import CoreJwksAction
 from maxitor.core.plugins.actions.disable_plugin_action import DisablePluginAction
 from maxitor.core.plugins.actions.drop_failed_install_action import DropFailedInstallAction
 from maxitor.core.plugins.actions.enable_plugin_action import EnablePluginAction
-from maxitor.core.plugins.actions.list_plugins_action import ListPluginsAction
-from maxitor.core.plugins.actions.core_jwks_action import CoreJwksAction
 from maxitor.core.plugins.actions.exchange_token_action import ExchangeTokenAction
+from maxitor.core.plugins.actions.list_plugins_action import ListPluginsAction
 from maxitor.core.plugins.actions.pass_request_action import PassRequestAction
-from maxitor.core.plugins.actions.service_token_action import ServiceTokenAction
 from maxitor.core.plugins.actions.plugin_details_action import PluginDetailsAction
 from maxitor.core.plugins.actions.request_install_action import RequestInstallAction
 from maxitor.core.plugins.actions.retry_install_action import RetryInstallAction
+from maxitor.core.plugins.actions.service_token_action import ServiceTokenAction
 from maxitor.core.plugins.actions.upload_private_plugin_action import UploadPrivatePluginAction
 from maxitor.core.plugins.plugin_tokens import PLUGIN_TOKENS_CONNECTION_KEY, PluginTokensController
 from maxitor.core.plugins.storage.plugins_storage import PLUGINS_CONNECTION_KEY, PluginsStorage
