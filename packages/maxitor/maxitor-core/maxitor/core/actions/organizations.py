@@ -243,7 +243,6 @@ class TreeNodeSchema(BaseSchema):
     page: str | None = Field(description="Its page's path template inside its owner; empty for a node that only groups")
     each: dict[str, str] | None = Field(description="A list node's source and key; empty for an ordinary node")
     scope: list[str] = Field(description="The parameters the list nodes above it define")
-    controls: dict[str, Any] | None = Field(description="Its page's controls; empty for none")
 
 
 class OpenedResult(BaseResult):
@@ -317,7 +316,6 @@ class OpenOrganizationAction(BaseAction[OpenParams, OpenedResult]):
                     page=node.page,
                     each=None if node.each_source is None else {"source": node.each_source, "key": str(node.each_key)},
                     scope=list(node.scope),
-                    controls=None if node.controls is None else dict(node.controls),
                 )
                 for node in visible(nodes, roles)
             ],

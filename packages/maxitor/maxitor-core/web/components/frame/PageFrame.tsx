@@ -5,7 +5,8 @@
 // only when another owner's page opens.
 "use client";
 
-import { coreMessage, pageMessage, trusted, type CoreMessage } from "@maxitor/panel/protocol";
+import { changedReserved } from "@maxitor/panel/address";
+import { coreMessage, pageMessage, trusted, type CoreMessage, type Query } from "@maxitor/panel/protocol";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -17,6 +18,15 @@ const READY_MS = 15000;
 const WATERMARK_MS = 5000;
 
 type State = "waiting" | "ready" | "silent";
+
+/**
+ * What a page may not ask the window's address for (spec 078, FR-012): a change of the core's names, and a parameter
+ * named like one of the open node's path parameters. Empty when the request may go on.
+ */
+export function refusedNames(next: Query, current: Query, pathNames: readonly string[]): string[] {
+  const path = new Set(pathNames.map((name) => name.toLowerCase()));
+  return [...changedReserved(next, current), ...Object.keys(next).filter((name) => path.has(name.toLowerCase()))];
+}
 
 /** The key of what a page shows: its path, parameters and moment. */
 function keyOf(path: string, query: Record<string, string>, at: string | null): string {
@@ -30,6 +40,7 @@ export function PageFrame({
   base,
   title,
   canOpen,
+  pathNames = [],
   onTitle,
 }: {
   code: string;
@@ -41,6 +52,8 @@ export function PageFrame({
   title: string;
   /** Whether the page may open a page of this owner: the core and its plugin's direct dependencies. */
   canOpen: (owner: string) => boolean;
+  /** The open node's path parameters: a page may not put them in its query. */
+  pathNames?: readonly string[];
   onTitle: (title: string | null) => void;
 }) {
   const router = useRouter();
@@ -74,17 +87,22 @@ export function PageFrame({
       if (message.type === "panel.ready") setState("ready");
       else if (message.type === "panel.title") onTitle(message.text);
       else if (message.type === "panel.navigate") {
+        const refused = refusedNames(message.query, address.query, pathNames);
+        if (refused.length) {
+          console.error(`Maxitor: the page of ${owner} may not write ${refused.map((name) => JSON.stringify(name)).join(", ")}; the address is unchanged`);
+          return;
+        }
         shown.current = keyOf(message.path, message.query, address.at);
         const href = windowAddress(code, owner, message.path, message.query, address.at);
         if (message.mode === "push") router.push(href, { scroll: false });
         else router.replace(href, { scroll: false });
-      } else if (message.type === "panel.open" && canOpen(message.owner)) {
+      } else if (message.type === "panel.open" && canOpen(message.owner) && changedReserved(message.query, {}).length === 0) {
         router.push(windowAddress(code, message.owner, message.path, message.query, address.at));
       }
     };
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [address.at, canOpen, code, onTitle, owner, router]);
+  }, [address.at, address.query, canOpen, code, onTitle, owner, pathNames, router]);
 
   // A page that never says it is ready is shown as not answering.
   useEffect(() => {

@@ -11,9 +11,10 @@ import "./frame.css";
 import { Panel } from "@/components/frame/Panel";
 import { TopRow } from "@/components/frame/TopRow";
 import { Tree } from "@/components/frame/Tree";
+import { TreeHead } from "@/components/frame/TreeHead";
 import { readAddress, windowAddress } from "@/lib/address";
 import type { Me } from "@/lib/core";
-import { lineOf, nodeOf, type TreeNode } from "@/lib/tree";
+import { lineOf, nodeOf, upOf, type TreeNode } from "@/lib/tree";
 
 export function Frame({
   account,
@@ -36,6 +37,8 @@ export function Frame({
   const pathname = usePathname();
   const search = useSearchParams();
   const [drawer, setDrawer] = useState(false);
+  // Collapsed lives only in this visit: a new visit opens the tree expanded.
+  const [collapsed, setCollapsed] = useState(false);
   const [title, setTitle] = useState<string | null>(null);
   const [titles, setTitles] = useState<Record<string, string>>({});
   const keepTitles = useCallback((found: Record<string, string>) => setTitles((was) => ({ ...was, ...found })), []);
@@ -63,6 +66,12 @@ export function Frame({
   // Another organization opens the same page, or its root when the page is not there: the tree decides there.
   const switchTo = (code: string) => (address?.owner ? windowAddress(code, address.owner, address.path, address.query, address.at) : `/w/${code}`);
 
+  // Up: the nearest node above the open one with a page, at the same moment, without the page's own parameters.
+  const up = useMemo(() => {
+    const found = opened ? upOf(nodes, opened) : null;
+    return found ? windowAddress(current.code, found.node.owner, found.path, {}, address?.at ?? null) : null;
+  }, [address?.at, current.code, nodes, opened]);
+
   const tree = (
     <Tree code={current.code} nodes={nodes} owners={owners} at={address?.at ?? null} selected={opened} onChosen={() => setDrawer(false)} onTitles={keepTitles} />
   );
@@ -71,14 +80,20 @@ export function Frame({
     <div className="mx-frame">
       <TopRow account={account} current={current} path={path} methods={methods} switchTo={switchTo} onMenu={() => setDrawer(true)} />
       <div className="mx-body">
-        <aside className="mx-tree">{tree}</aside>
+        <aside className={`mx-tree${collapsed ? " collapsed" : ""}`}>
+          <TreeHead collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} up={up} />
+          {collapsed ? null : tree}
+        </aside>
         <Panel code={current.code} address={address} opened={opened} dependencies={dependencies} onTitle={setTitle}>
           {children}
         </Panel>
         {drawer ? (
           <>
             <div className="mx-scrim" onClick={() => setDrawer(false)} />
-            <aside className="mx-tree drawer">{tree}</aside>
+            <aside className="mx-tree drawer">
+              <TreeHead collapsed={null} onCollapse={() => undefined} up={up} />
+              {tree}
+            </aside>
           </>
         ) : null}
       </div>

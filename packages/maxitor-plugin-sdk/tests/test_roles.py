@@ -19,7 +19,7 @@ def test_a_passport_with_roles_is_refused() -> None:
 
 
 def test_a_node_asks_only_for_the_cores_roles() -> None:
-    navigation = {"navigation": 1, "nodes": [
+    navigation = {"navigation": 2, "nodes": [
         {"id": "notes", "attach": "root", "title": "Notes", "page": "/", "roles": ["member"],
          "children": [{"id": "admin", "title": "Admin", "page": "/admin", "roles": ["administrator", "reader"]}]},
     ]}

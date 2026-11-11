@@ -67,7 +67,7 @@ def wheel(files: dict[str, str] | None = None) -> bytes:
         "maxitor_notes/maxitor-plugin.yaml": PASSPORT,
         "maxitor_notes/schema.yaml": SCHEMA,
         "maxitor_notes/foreign-keys.yaml": KEYS,
-        "maxitor_notes/navigation.yaml": "navigation: 1\n",
+        "maxitor_notes/navigation.yaml": "navigation: 2\n",
     } | (files or {})
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:

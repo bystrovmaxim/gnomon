@@ -33,6 +33,8 @@ PASSPORT_FILE = "maxitor-plugin.yaml"
 # A plugin's YAML is read before anything is installed; a larger file is refused unread.
 MAX_YAML_BYTES = 64 * 1024
 PLACEHOLDER = re.compile(r"\{([a-z][a-z0-9_]*)\}")
+# Navigation format 1 declared a page's controls; format 2 leaves them to the page (spec 078, FR-016).
+NAVIGATION_FORMAT_1 = "navigation format 1 is not read; write format 2, without controls"
 
 
 def check_plugin(root: Path) -> list[str]:
@@ -56,7 +58,7 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
         return None, problems
     _check_version(root, passport, problems)
     problems.extend(passport_role_problems(passport))
-    navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-1", problems)
+    navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-2", problems)
     if navigation is not None:
         problems.extend(navigation_problems(navigation))
         problems.extend(source_problems(navigation, action_names(package)))
@@ -179,8 +181,6 @@ def navigation_problems(navigation: Mapping[str, Any]) -> list[str]:
             )
         # A list node's own page belongs to one instance, so it already sees the key that instance adds.
         page_scope = scope if each is None or scope is None else scope | {each["key"]}
-        path_params = frozenset(PLACEHOLDER.findall(node.get("page", "")))
-        problems.extend(_control_problems(node_id, node.get("controls", {}), path_params))
         page = node.get("page")
         if page is not None:
             # Parameter names do not matter for telling two addresses apart: /items/{a} and /items/{b} are one address.
@@ -198,24 +198,13 @@ def navigation_problems(navigation: Mapping[str, Any]) -> list[str]:
 
 
 def named_actions(navigation: Mapping[str, Any]) -> list[tuple[str, str]]:
-    """Every reading action the navigation names, with the node that names it: lists, filters, legends and counts."""
-    named: list[tuple[str, str]] = []
-    for node, _scope in _walk(navigation["nodes"]):
-        each = node.get("each")
-        if each is not None:
-            named.append((node["id"], each["source"]))
-        controls = node.get("controls", {})
-        if "counts" in controls.get("mode", {}):
-            named.append((node["id"], controls["mode"]["counts"]))
-        for control in [*controls.get("filters", []), controls.get("legend", {})]:
-            if "source" in control:
-                named.append((node["id"], control["source"]))
-    return named
+    """Every reading action the navigation names, with the node that names it: the sources of its list nodes."""
+    return [(node["id"], node["each"]["source"]) for node, _scope in _walk(navigation["nodes"]) if node.get("each") is not None]
 
 
 def source_problems(navigation: Mapping[str, Any], actions: Iterable[str]) -> list[str]:
     """
-    Every list, filter, legend and count of the navigation names an action of the plugin.
+    Every list node of the navigation names an action of the plugin.
 
     ``actions`` are the names the plugin's folders ``actions/`` and ``history/`` hold, one action per file
     ``<name>_action.py``; Maxitor calls a source at ``/p/<plugin>/api/<organization>/lists/<name>``.
@@ -235,26 +224,6 @@ def action_names(package: Path) -> set[str]:
         for folder in ("actions", HISTORY_FOLDER)
         for path in (package / folder).glob("*_action.py")
     }
-
-
-def _control_problems(node_id: str, controls: Mapping[str, Any], path_params: frozenset[str]) -> list[str]:
-    """A control's parameter is its own on the page, and a default is one of the control's options."""
-    problems: list[str] = []
-    seen: set[str] = set()
-    choices = [controls[kind] for kind in ("mode", "views") if kind in controls]
-    for control in [*choices, *controls.get("filters", [])]:
-        param = control["param"]
-        if param in seen:
-            problems.append(f"navigation: {node_id!r} has two controls on the parameter {param!r}")
-        seen.add(param)
-        if param in path_params:
-            problems.append(f"navigation: {node_id!r} has a control on {param!r}, which is a parameter of its path")
-    for control in choices:
-        if control["default"] not in {option["value"] for option in control["options"]}:
-            problems.append(
-                f"navigation: {node_id!r}: the default {control['default']!r} of {control['param']!r} is not one of its options"
-            )
-    return problems
 
 
 def foreign_key_problems(keys: Mapping[str, Any], own_schema: str) -> list[str]:
@@ -311,6 +280,9 @@ def _read(path: Path, schema: str, problems: list[str]) -> dict[str, Any] | None
         document = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError as unreadable:
         problems.append(f"{name}: not YAML ({unreadable.__class__.__name__})")
+        return None
+    if schema == "navigation-2" and isinstance(document, dict) and document.get("navigation") == 1:
+        problems.append(f"{name}: {NAVIGATION_FORMAT_1}")
         return None
     validator = Draft202012Validator(json.loads((SCHEMAS / f"{schema}.schema.json").read_text(encoding="utf-8")))
     errors = sorted(validator.iter_errors(document), key=lambda error: list(error.absolute_path))

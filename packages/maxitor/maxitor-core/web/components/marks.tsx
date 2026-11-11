@@ -33,6 +33,8 @@ export const Icon = {
   ),
   search: () => <Line d={<><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></>} />,
   menu: () => <Line d={<path d="M4 7h16M4 12h16M4 17h16" />} />,
+  sidebar: () => <Line small d={<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></>} />,
+  up: () => <Line small d={<path d="M12 19V5M6 11l6-6 6 6" />} />,
   lock: () => <Line small d={<><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 018 0v3" /></>} />,
 };
 

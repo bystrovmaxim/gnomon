@@ -9,9 +9,14 @@
   "exports": {
     ".": "./src/index.ts",
     "./protocol": "./src/protocol.ts",
-    "./panel.css": "./src/panel.css"
+    "./panel.css": "./src/panel.css",
+    "./address": "./src/shell/address.ts"
   },
-  "files": ["src", "README.md", "CHANGELOG.md"],
+  "files": [
+    "src",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "dependencies": {
     "@maxitor/tokens": "file:../maxitor-tokens"
   },
