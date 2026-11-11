@@ -1,13 +1,15 @@
 // @maxitor/panel — one canvas for every plugin (the plugin concept, 7.7): moving and zooming by drag, the wheel, a
-// two-finger swipe, a pinch, Ctrl/⌘ with the wheel and keys, within limits; fit; the zoom bar; the field of dots
-// moving with the picture; the camera. A page puts only its content in canvas coordinates; it cannot change the
+// two-finger swipe, a pinch, Ctrl/⌘ with the wheel and keys, within limits; fit; the field of dots moving with the
+// picture; the camera. Its zoom stands first in the shell's bottom bar (spec 078, FR-006), and a fit keeps the scene
+// clear of the shell's controls. A page puts only its content in canvas coordinates; it cannot change the
 // gestures. The viewport is never written into the address: everyone has their own screen.
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import "./canvas.css";
-import { centreOn, fit, key, pinch, toCanvas, toScreen, wheel, zoomAround, ZOOM_STEP, type Bounds, type Camera, type Point } from "./camera";
+import { useShell } from "../shell/ShellContext";
+import { centreOn, fitInside, key, pinch, toCanvas, toScreen, wheel, zoomAround, ZOOM_STEP, type Bounds, type Camera, type Point } from "./camera";
 
 type CanvasApi = {
   camera: Camera;
@@ -40,12 +42,16 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
     return { width: box?.width ?? 0, height: box?.height ?? 0, left: box?.left ?? 0, top: box?.top ?? 0 };
   }, []);
 
+  const shell = useShell();
   const fitTo = useCallback(
     (target?: Bounds) => {
-      const { width, height } = size();
-      if (width && height) setCamera(fit(target ?? bounds, width, height));
+      const { width, height, left, top } = size();
+      const reserve = shell?.reserve() ?? { left: 0, top: 0, bottom: 0 };
+      // The shell measures in the window; the canvas fits in its own box.
+      const insets = { left: Math.max(0, reserve.left - left), top: Math.max(0, reserve.top - top), bottom: reserve.bottom };
+      if (width && height) setCamera(fitInside(target ?? bounds, width, height, insets));
     },
-    [bounds, size],
+    [bounds, shell, size],
   );
 
   // The scene opens fitted, once; later the person's camera is theirs.
@@ -92,10 +98,21 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
     [camera, fitTo, size],
   );
 
-  const middle = () => {
+  const middle = useCallback(() => {
     const { width, height } = size();
     return { x: width / 2, y: height / 2 };
-  };
+  }, [size]);
+
+  // The shell draws the zoom first in its bottom bar; the canvas only tells it the zoom and what its buttons do.
+  useEffect(() => {
+    shell?.setZoom({
+      zoom: camera.zoom,
+      zoomIn: () => setCamera((was) => zoomAround(was, middle(), ZOOM_STEP)),
+      zoomOut: () => setCamera((was) => zoomAround(was, middle(), 1 / ZOOM_STEP)),
+      fit: () => fitTo(),
+    });
+  }, [camera.zoom, fitTo, middle, shell]);
+  useEffect(() => () => shell?.setZoom(null), [shell]);
 
   return (
     <CanvasContext.Provider value={api}>
@@ -144,25 +161,7 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
         <div className="mx-canvas-scene" style={{ transform: `translate(${camera.x}px, ${camera.y}px) scale(${camera.zoom})` }}>
           {children}
         </div>
-        <ZoomBar
-          zoom={camera.zoom}
-          onIn={() => setCamera((was) => zoomAround(was, middle(), ZOOM_STEP))}
-          onOut={() => setCamera((was) => zoomAround(was, middle(), 1 / ZOOM_STEP))}
-          onFit={() => fitTo()}
-        />
       </div>
     </CanvasContext.Provider>
-  );
-}
-
-/** The zoom bar at the bottom right, the same on every canvas. */
-function ZoomBar({ zoom, onIn, onOut, onFit }: { zoom: number; onIn: () => void; onOut: () => void; onFit: () => void }) {
-  return (
-    <div className="mx-zoom" role="toolbar" aria-label="Zoom">
-      <button type="button" aria-label="Zoom out" onClick={onOut}>−</button>
-      <span className="mx-zoom-value" aria-live="polite">{Math.round(zoom * 100)}%</span>
-      <button type="button" aria-label="Zoom in" onClick={onIn}>+</button>
-      <button type="button" aria-label="Fit" onClick={onFit}>⤢</button>
-    </div>
   );
 }

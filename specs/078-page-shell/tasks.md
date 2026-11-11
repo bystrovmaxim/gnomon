@@ -6,11 +6,11 @@ One phase is one commit and one numbered phase of issue bystrovmaxim/gnomon#109.
 
 ## Phase 1: the shell in `@maxitor/panel` (issue phase 1)
 
-- [ ] T001 `src/shell/address.ts`: the filter, choice and layer address rules, the default after a missing value, the reserved names; `tests/shell.test.ts` for each.
-- [ ] T002 `src/shell/icons.tsx`: the shell's icon set and the neutral icon; `src/shell/Filters.tsx`, `Layers.tsx`, `BottomBar.tsx`, `Actions.tsx` from maxitor-web's `ErdFilterPanel`, `ModePill`, `ZoomToolbar`; `src/shell/shell.css` with tokens only; the phone's folding.
-- [ ] T003 `PanelPage` as the shell: grid, insets, parts from its props, actions hidden at `at` or `mode`; the shell's context the canvas gives its zoom to; `<MaxitorCanvas>` without its own `ZoomBar`; the token `--mx-layer-shell`.
-- [ ] T004 `usePanelRouter` refuses the reserved names (error in development and tests, a console line in production); `tests/router.test.ts`.
-- [ ] T005 `index.ts` exports and the shell's types.
+- [x] T001 `src/shell/address.ts`: the filter, choice and layer address rules, the default after a missing value, the reserved names; `tests/shell.test.ts` for each.
+- [x] T002 `src/shell/icons.tsx`: the shell's icon set and the neutral icon; `src/shell/Filters.tsx`, `Layers.tsx`, `BottomBar.tsx`, `Actions.tsx` from maxitor-web's `ErdFilterPanel`, `ModePill`, `ZoomToolbar`; `src/shell/shell.css` with tokens only; the phone's folding.
+- [x] T003 `PanelPage` as the shell: grid, insets, parts from its props, actions hidden at `at` or `mode`; the shell's context the canvas gives its zoom to; `<MaxitorCanvas>` without its own `ZoomBar`; the token `--mx-layer-shell`.
+- [x] T004 `usePanelRouter` refuses the reserved names (error in development and tests, a console line in production); `tests/router.test.ts`.
+- [x] T005 `index.ts` exports and the shell's types.
 
 ## Phase 2: the core (issue phase 2)
 

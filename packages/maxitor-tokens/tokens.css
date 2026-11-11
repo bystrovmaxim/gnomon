@@ -79,6 +79,9 @@
   --mx-top-row: 44px;
   --mx-tree-width: 255px;
   --mx-filter-width: 148px;
+  /* The shell's layer over a page's own content: a plugin's page stays below it (spec 078, FR-019). */
+  --mx-layer-shell: 30;
+  --mx-layer-shell-pop: 35;
   --mx-dot-step: 18px;
   --mx-dot-size: 1px;
   --mx-icon-lg: 20px;
