@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A plugin that cannot be built says why, and the local stand builds it against the checkout's wheels.** The runner builds an image with plain progress and reports the first error of the step that failed — `The images of io.github.bystrovmaxim.notes 0.9.0 could not be built: ERROR: Could not find a version that satisfies the requirement maxitor-plugin-sdk<2,>=1.5 (from versions: 1.4.0)` — where it used to report Docker Desktop's `View build details` link. `scripts/core-stand.sh up` builds the wheels plugins take from `.core-stand/find-links` — AOA's and `maxitor-plugin-sdk` — from the checkout on every start, so a stand folder brought to a newer `main` no longer keeps `maxitor-plugin-sdk` 1.4.0 for a template that needs 1.5; its Python processes write their output unbuffered, so the runner's warnings reach a log file at once. Maxitor 4.4.1. ([#112](https://github.com/bystrovmaxim/gnomon/issues/112))
 - **A domain's ERD frames only its own resources.** In the physical view the ERD of one domain drew a frame for every resource of the model — on the AOA demo 29, almost all of them empty — though a resource that keeps none of the domain's tables has nothing to do with it. It now frames only the resources that keep the domain's tables or their 1-hop neighbours, and its Resources filter lists the same; the ERD of all domains still frames every resource, an empty one too. ([#78](https://github.com/bystrovmaxim/gnomon/issues/78))
 
 ### Added
