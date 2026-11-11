@@ -29,6 +29,7 @@ from maxitor.core.plugins.plugin_processes import (
     Plan,
     PluginProcessesController,
     Started,
+    build_failure,
     frontend_files,
     moved_dsn,
     wheel_file_name,
@@ -355,6 +356,47 @@ def test_the_containers_reach_the_database_under_their_own_address() -> None:
     dsn = "postgresql://plg_notes:p%40ss@127.0.0.1:55432/maxitor"
     assert moved_dsn(dsn, "maxitor-db:5432") == "postgresql://plg_notes:p%40ss@maxitor-db:5432/maxitor"
     assert moved_dsn(dsn, None) == dsn
+
+
+#: What ``docker build --progress=plain`` answers on Docker Desktop when pip finds no wheel the plugin needs.
+FAILED_BUILD = """#5 [2/3] RUN pip install --no-cache-dir --find-links /wheels /wheels/notes-0.9.0-py3-none-any.whl
+#5 0.825 ERROR: Could not find a version that satisfies the requirement maxitor-plugin-sdk<2,>=1.5 (from versions: 1.4.0)
+#5 0.825 ERROR: No matching distribution found for maxitor-plugin-sdk<2,>=1.5
+#5 ERROR: process "/bin/sh -c pip install" did not complete successfully: exit code: 1
+------
+ERROR: failed to build: failed to solve: process "/bin/sh -c pip install" did not complete successfully: exit code: 1
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/y7fr1ukioyrxjn5no7l3cq1o2"""
+
+
+async def test_an_image_that_cannot_be_built_is_reported_in_the_words_of_the_failing_step(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    async def docker(*args: str) -> tuple[int, str]:
+        calls.append(args)
+        return 1, FAILED_BUILD
+
+    monkeypatch.setattr("maxitor.core.plugins.plugin_processes.docker", docker)
+    processes = PluginProcessesController(
+        PluginRuntimeStorage(tmp_path, "postgresql://u@db/maxitor"), WheelStorage(tmp_path),
+        gateway_url="http://host.docker.internal:3000",
+    )
+    with pytest.raises(EnvironmentInstallError) as failed:
+        await processes._build("maxitor-plugin/notes_0_9_0-backend:aaaa", tmp_path)
+    assert failed.value.reason == (
+        "ERROR: Could not find a version that satisfies the requirement maxitor-plugin-sdk<2,>=1.5 (from versions: 1.4.0)"
+    )
+    assert "--progress=plain" in calls[0] and "--quiet" not in calls[0]
+
+
+def test_a_build_without_a_step_error_names_dockers_error_or_its_last_line() -> None:
+    assert build_failure('#5 ERROR: process "/bin/sh -c x" did not complete successfully: exit code: 1', 1) == (
+        'ERROR: process "/bin/sh -c x" did not complete successfully: exit code: 1'
+    )
+    assert build_failure("no space left on device\n\nView build details: docker-desktop://x", 1) == "no space left on device"
+    assert build_failure("", 125) == "exit 125"
 
 
 def fetch(address: str) -> str:
