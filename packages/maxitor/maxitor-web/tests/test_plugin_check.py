@@ -14,6 +14,8 @@ from maxitor.web import launch
 from maxitor.web.plugin_check import check
 
 TEMPLATE = Path(__file__).resolve().parents[3] / "maxitor-plugin-template"
+#: The template's version, as its passport says it: the refusals name it.
+VERSION = yaml.safe_load((TEMPLATE / "src" / "maxitor_notes" / "maxitor-plugin.yaml").read_text(encoding="utf-8"))["version"]
 PACKAGE = Path("src/maxitor_notes")
 
 
@@ -39,7 +41,7 @@ def test_the_template_fits_maxitor_4(plugin: Path) -> None:
 
 def test_a_core_outside_the_range_is_refused(plugin: Path) -> None:
     assert check(plugin, "3.29.0") == [
-        "core_range: io.github.bystrovmaxim.notes 0.7.0 needs maxitor >=4.0,<5; this core is maxitor 3.29.0"
+        f"core_range: io.github.bystrovmaxim.notes {VERSION} needs maxitor >=4.0,<5; this core is maxitor 3.29.0"
     ]
 
 
@@ -52,7 +54,7 @@ def test_a_format_the_core_does_not_read_is_refused(plugin: Path) -> None:
 def test_a_foreign_sdk_major_is_refused(plugin: Path) -> None:
     edit(plugin, "maxitor-plugin.yaml", "sdk", 2)
     assert check(plugin, "4.0.0") == [
-        "sdk_major: io.github.bystrovmaxim.notes 0.7.0 is built with SDK 2; maxitor 4.0.0 is built with SDK 1"
+        f"sdk_major: io.github.bystrovmaxim.notes {VERSION} is built with SDK 2; maxitor 4.0.0 is built with SDK 1"
     ]
 
 
