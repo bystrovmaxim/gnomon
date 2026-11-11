@@ -1,6 +1,6 @@
 # Maxitor core
 
-Maxitor's own core: people sign in, register organizations and land in an organization's frame, and an organization's administrator installs plugins into it. It has its own PostgreSQL database, a backend of AOA actions, a plugin installer and a Next.js application.
+Maxitor's own core: people sign in, register organizations and land in an organization's frame, an organization's administrator installs plugins into it, and every plugin's pages open in that frame. It has its own PostgreSQL database, a backend of AOA actions, a plugin installer and a Next.js application.
 
 | Part | Where | What it does |
 |---|---|---|
@@ -21,9 +21,21 @@ The addresses and their answers are in [contracts/actions.md](../../../specs/072
 
 ## Plugins
 
-An organization's administrator finds them in Settings at the foot of the organization's tree → Plugins (`/w/<code>/settings/plugins`): the installed plugins and the marketplace, one search over both, the details of a plugin, installing, disabling and enabling, and adding a private plugin by a release's Package URL and `sha256` or by uploading its wheel. The page only asks; the installer checks versions and deploys them every minute. Nobody else sees Settings: its address answers 404.
+An organization's administrator finds them in Settings at the foot of the organization's tree → Plugins (`/w/<code>/core/settings/plugins`): the installed plugins and the marketplace, one search over both, the details of a plugin, installing, disabling and enabling, and adding a private plugin by a release's Package URL and `sha256` or by uploading its wheel. The page only asks; the installer checks versions and deploys them every minute. Nobody else sees Settings: its address answers 404.
 
 A plugin carries no SQL: it declares its tables in `schema.yaml`, and the installer builds each version once — the schema `<name>_<x>_<y>_<z>`, the user `plg_<name>_<x>_<y>_<z>`, the tables with their version tables, the rights. The user sees nothing but its schema and reaches the core through five functions of the schema `organization`. Every line the domain writes is a typed event. The concept is in [plugins](../../../docs/plugins/concept.md); the addresses in [contracts/actions.md](../../../specs/073-plugin-marketplace/contracts/actions.md).
+
+## The frame
+
+Every page of an organization lives in one frame at `/w/<code>/...`, and only the core draws it ([the plugin concept, section 7](../../../docs/plugins/concept.md)):
+
+- **The tree** on the left is the core's `maxitor/core/navigation.yaml` and the nodes of every plugin enabled in the organization. A version's nodes are read when the version is checked and kept in `plugins.plugin_node`; installing or enabling a plugin builds the organization's tree with it and refuses it with `navigation` when it would not hold. A list node's records load when its parent opens, from the plugin's own action through the gateway, at the panel's moment, in parts of 50.
+- **The top row** holds the organization and its switch, the path to the open node, and the person's icon; the places of the time scale and of who is on the page stand there empty until those steps come.
+- **The right panel** is a grey field of dots. The core's own pages are drawn on it (`/w/<code>/core/...`); a plugin's page opens over it in a transparent frame at `/p/<name>/<code>/...` and talks to the core by the panel protocol of [`@maxitor/panel`](../../maxitor-panel/README.md). The window's address is the panel's only state: a reload, a link, Back and Forward give what was on screen.
+- **The controls** a node declares — the mode pill, the view switch, the filters and the legend — are drawn by the core over the panel, the same places for every plugin, each an address parameter.
+- **"Now"**: the frame asks `GET /api/v1/organizations/{code}/watermark` every 5 seconds while a page without a moment is open, and tells the page when it moved. A plugin's change moves it too.
+
+Everything the frame draws takes its colours and sizes from [`@maxitor/tokens`](../../maxitor-tokens/README.md); `web/scripts/check-tokens.mjs` refuses a colour code or a size number in the frame, the controls and `@maxitor/panel`.
 
 ## The core's passport
 

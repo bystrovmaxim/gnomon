@@ -1159,7 +1159,7 @@
       "id": "maxitor.core.actions.organizations.OpenOrganizationAction|@connection|maxitor.core.plugins.storage.plugins_storage.PluginsStorage",
       "is_dag": true,
       "properties": {
-        "description": "The schema plugins: the enabled plugins' sections",
+        "description": "The schema plugins: the enabled plugins' nodes",
         "key": "plugins"
       },
       "relationship": "Association",
@@ -1234,6 +1234,15 @@
       "type": "field"
     },
     {
+      "id": "maxitor.core.actions.organizations.OpenedResult|field|maxitor.core.actions.organizations.OpenedResult:dependencies",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.actions.organizations.OpenedResult",
+      "target_id": "maxitor.core.actions.organizations.OpenedResult:dependencies",
+      "type": "field"
+    },
+    {
       "id": "maxitor.core.actions.organizations.OpenedResult|field|maxitor.core.actions.organizations.OpenedResult:name",
       "is_dag": false,
       "properties": {},
@@ -1243,12 +1252,21 @@
       "type": "field"
     },
     {
-      "id": "maxitor.core.actions.organizations.OpenedResult|field|maxitor.core.actions.organizations.OpenedResult:plugins",
+      "id": "maxitor.core.actions.organizations.OpenedResult|field|maxitor.core.actions.organizations.OpenedResult:owners",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
       "source_id": "maxitor.core.actions.organizations.OpenedResult",
-      "target_id": "maxitor.core.actions.organizations.OpenedResult:plugins",
+      "target_id": "maxitor.core.actions.organizations.OpenedResult:owners",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.OpenedResult|field|maxitor.core.actions.organizations.OpenedResult:tree",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.actions.organizations.OpenedResult",
+      "target_id": "maxitor.core.actions.organizations.OpenedResult:tree",
       "type": "field"
     },
     {
@@ -1259,6 +1277,94 @@
       "source_id": "maxitor.core.actions.organizations.OpenedResult",
       "target_id": "maxitor.core.actions.organizations.OpenedResult:user",
       "type": "field"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction:membership_access_decide|@required_context|maxitor.core.actions.organizations.ReadWatermarkAction:membership_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction:membership_access_decide",
+      "target_id": "maxitor.core.actions.organizations.ReadWatermarkAction:membership_access_decide:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction:watermark_summary|@required_context|maxitor.core.actions.organizations.ReadWatermarkAction:watermark_summary:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction:watermark_summary",
+      "target_id": "maxitor.core.actions.organizations.ReadWatermarkAction:watermark_summary:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction|@access_decide|maxitor.core.actions.organizations.ReadWatermarkAction:membership_access_decide",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction",
+      "target_id": "maxitor.core.actions.organizations.ReadWatermarkAction:membership_access_decide",
+      "type": "@access_decide"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction|@check_roles|maxitor.core.roles.AccountRole",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction",
+      "target_id": "maxitor.core.roles.AccountRole",
+      "type": "@check_roles"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction|@connection|maxitor.core.storage.core_storage.CoreStorage",
+      "is_dag": true,
+      "properties": {
+        "description": "The core's database",
+        "key": "core"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction",
+      "target_id": "maxitor.core.storage.core_storage.CoreStorage",
+      "type": "@connection"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction|@summary_aspect|maxitor.core.actions.organizations.ReadWatermarkAction:watermark_summary",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction",
+      "target_id": "maxitor.core.actions.organizations.ReadWatermarkAction:watermark_summary",
+      "type": "@summary_aspect"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction|domain|maxitor.core.domains.OrganizationDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction",
+      "target_id": "maxitor.core.domains.OrganizationDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction|generic:params|maxitor.core.actions.organizations.OpenParams",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction",
+      "target_id": "maxitor.core.actions.organizations.OpenParams",
+      "type": "generic:params"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction|generic:result|maxitor.core.actions.organizations.WatermarkResult",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.actions.organizations.ReadWatermarkAction",
+      "target_id": "maxitor.core.actions.organizations.WatermarkResult",
+      "type": "generic:result"
     },
     {
       "id": "maxitor.core.actions.organizations.RegisterOrganizationAction:register_summary|@emits|maxitor.core.events.AddressCodeLostRaceEvent",
@@ -1371,6 +1477,15 @@
       "relationship": "Composition",
       "source_id": "maxitor.core.actions.organizations.RegisteredResult",
       "target_id": "maxitor.core.actions.organizations.RegisteredResult:code",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.WatermarkResult|field|maxitor.core.actions.organizations.WatermarkResult:at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.actions.organizations.WatermarkResult",
+      "target_id": "maxitor.core.actions.organizations.WatermarkResult:at",
       "type": "field"
     },
     {
@@ -7314,6 +7429,214 @@
       "type": "entity_relation"
     },
     {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|domain|maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:controls",
+      "is_dag": false,
+      "properties": {
+        "field_name": "controls",
+        "ordinal": 11
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:controls",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:created_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "created_at",
+        "ordinal": 13
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:created_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:each_key",
+      "is_dag": false,
+      "properties": {
+        "field_name": "each_key",
+        "ordinal": 9
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:each_key",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:each_source",
+      "is_dag": false,
+      "properties": {
+        "field_name": "each_source",
+        "ordinal": 8
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:each_source",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:full_name",
+      "is_dag": false,
+      "properties": {
+        "field_name": "full_name",
+        "ordinal": 1
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:full_name",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:icon",
+      "is_dag": false,
+      "properties": {
+        "field_name": "icon",
+        "ordinal": 6
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:icon",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:id",
+      "is_dag": false,
+      "properties": {
+        "field_name": "id",
+        "ordinal": 0
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:id",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:node_order",
+      "is_dag": false,
+      "properties": {
+        "field_name": "node_order",
+        "ordinal": 4
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:node_order",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:page",
+      "is_dag": false,
+      "properties": {
+        "field_name": "page",
+        "ordinal": 7
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:page",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:parent",
+      "is_dag": false,
+      "properties": {
+        "field_name": "parent",
+        "ordinal": 2
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:parent",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:position",
+      "is_dag": false,
+      "properties": {
+        "field_name": "position",
+        "ordinal": 3
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:position",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:roles",
+      "is_dag": false,
+      "properties": {
+        "field_name": "roles",
+        "ordinal": 10
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:roles",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:room",
+      "is_dag": false,
+      "properties": {
+        "field_name": "room",
+        "ordinal": 12
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:room",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:title",
+      "is_dag": false,
+      "properties": {
+        "field_name": "title",
+        "ordinal": 5
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:title",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:updated_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "updated_at",
+        "ordinal": 14
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:updated_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_relation|plugin_version",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "one",
+        "deprecated": false,
+        "description": "The version whose navigation it comes from",
+        "field_name": "plugin_version",
+        "has_inverse": true,
+        "inverse_entity_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
+        "inverse_field": "nodes",
+        "optional": false,
+        "relation_type": "association"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
+      "type": "entity_relation"
+    },
+    {
       "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity|domain|maxitor.core.plugins.plugins_domain.PluginsDomain",
       "is_dag": true,
       "properties": {},
@@ -7432,106 +7755,6 @@
       },
       "relationship": "Association",
       "source_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
-      "type": "entity_relation"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|domain|maxitor.core.plugins.plugins_domain.PluginsDomain",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "target_id": "maxitor.core.plugins.plugins_domain.PluginsDomain",
-      "type": "domain"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginSectionCoreEntity:created_at",
-      "is_dag": false,
-      "properties": {
-        "field_name": "created_at",
-        "ordinal": 4
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:created_at",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginSectionCoreEntity:id",
-      "is_dag": false,
-      "properties": {
-        "field_name": "id",
-        "ordinal": 0
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:id",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginSectionCoreEntity:path",
-      "is_dag": false,
-      "properties": {
-        "field_name": "path",
-        "ordinal": 3
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:path",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginSectionCoreEntity:position",
-      "is_dag": false,
-      "properties": {
-        "field_name": "position",
-        "ordinal": 1
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:position",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginSectionCoreEntity:title",
-      "is_dag": false,
-      "properties": {
-        "field_name": "title",
-        "ordinal": 2
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:title",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginSectionCoreEntity:updated_at",
-      "is_dag": false,
-      "properties": {
-        "field_name": "updated_at",
-        "ordinal": 5
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:updated_at",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity|entity_relation|plugin_version",
-      "is_dag": false,
-      "properties": {
-        "cardinality": "one",
-        "deprecated": false,
-        "description": "The version whose navigation it comes from",
-        "field_name": "plugin_version",
-        "has_inverse": true,
-        "inverse_entity_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
-        "inverse_field": "sections",
-        "optional": false,
-        "relation_type": "association"
-      },
-      "relationship": "Association",
-      "source_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
       "target_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
       "type": "entity_relation"
     },
@@ -7872,6 +8095,25 @@
       "type": "entity_relation"
     },
     {
+      "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity|entity_relation|nodes",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "many",
+        "deprecated": false,
+        "description": "Every node of its navigation, joined into an organization's tree while it is enabled",
+        "field_name": "nodes",
+        "has_inverse": true,
+        "inverse_entity_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+        "inverse_field": "plugin_version",
+        "optional": false,
+        "relation_type": "composition"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "type": "entity_relation"
+    },
+    {
       "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity|entity_relation|plugin",
       "is_dag": false,
       "properties": {
@@ -7888,25 +8130,6 @@
       "relationship": "Association",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
       "target_id": "maxitor.core.plugins.entities.PluginCoreEntity",
-      "type": "entity_relation"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity|entity_relation|sections",
-      "is_dag": false,
-      "properties": {
-        "cardinality": "many",
-        "deprecated": false,
-        "description": "The top level of its navigation, drawn in the organization's tree",
-        "field_name": "sections",
-        "has_inverse": true,
-        "inverse_entity_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-        "inverse_field": "plugin_version",
-        "optional": false,
-        "relation_type": "composition"
-      },
-      "relationship": "Association",
-      "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
       "type": "entity_relation"
     },
     {
@@ -8812,21 +9035,21 @@
       "type": "resource_entity"
     },
     {
+      "id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage|resource_entity|maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "type": "resource_entity"
+    },
+    {
       "id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage|resource_entity|maxitor.core.plugins.entities.PluginProcessCoreEntity",
       "is_dag": true,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage",
       "target_id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
-      "type": "resource_entity"
-    },
-    {
-      "id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage|resource_entity|maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor.core.plugins.storage.plugins_storage.PluginsStorage",
-      "target_id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
       "type": "resource_entity"
     },
     {
@@ -14798,6 +15021,33 @@
       "source_id": "maxitor.web.model.rooms.rooms_domain.RoomsDomain",
       "target_id": "maxitor.web.model.rooms.events.SeedRefusedEvent",
       "type": "domain_event"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.AdministratorRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.AdministratorRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.MemberRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.MemberRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.ServiceRole|application|aoa.action_machine.application.application.Application",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_plugin_sdk.roles.ServiceRole",
+      "target_id": "aoa.action_machine.application.application.Application",
+      "type": "application"
     }
   ],
   "nodes": [
@@ -15566,6 +15816,17 @@
       "type": "Field"
     },
     {
+      "id": "maxitor.core.actions.organizations.OpenedResult:dependencies",
+      "label": "dependencies",
+      "properties": {
+        "description": "Each enabled plugin's direct dependencies: the plugins a page of it may open",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor.core.actions.organizations.OpenedResult:name",
       "label": "name",
       "properties": {
@@ -15577,10 +15838,21 @@
       "type": "Field"
     },
     {
-      "id": "maxitor.core.actions.organizations.OpenedResult:plugins",
-      "label": "plugins",
+      "id": "maxitor.core.actions.organizations.OpenedResult:owners",
+      "label": "owners",
       "properties": {
-        "description": "The enabled plugins, by title",
+        "description": "Its enabled plugins in dependency order",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.OpenedResult:tree",
+      "label": "tree",
+      "properties": {
+        "description": "The nodes of its tree the user may see",
         "entity_schema": false,
         "json_schema_value": false,
         "required": false
@@ -15597,6 +15869,46 @@
         "required": true
       },
       "type": "Field"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction",
+      "label": "ReadWatermarkAction",
+      "properties": {
+        "description": "Read an organization's watermark, the latest moment whose answer no longer changes"
+      },
+      "type": "Action"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction:membership_access_decide",
+      "label": "membership_access_decide",
+      "properties": {
+        "description": "Refuse an account with no active user in the organization, alike for a code that does not exist"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction:membership_access_decide:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction:watermark_summary",
+      "label": "watermark_summary",
+      "properties": {
+        "description": "Read the organization's watermark"
+      },
+      "type": "SummaryAspect"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.ReadWatermarkAction:watermark_summary:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
     },
     {
       "id": "maxitor.core.actions.organizations.RegisterOrganizationAction",
@@ -15661,6 +15973,23 @@
       "label": "code",
       "properties": {
         "description": "The address code; the organization opens at /w/<code>",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.WatermarkResult",
+      "label": "WatermarkResult",
+      "properties": {},
+      "type": "Result"
+    },
+    {
+      "id": "maxitor.core.actions.organizations.WatermarkResult:at",
+      "label": "at",
+      "properties": {
+        "description": "Its watermark to the microsecond, in UTC; empty when it never changed",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -19665,6 +19994,181 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "label": "PluginNodeCoreEntity",
+      "properties": {
+        "description": "One node of a version's navigation, with its full name and the node it stands under",
+        "entity_kind": "core",
+        "entity_kind_label": "Core"
+      },
+      "type": "Entity"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:controls",
+      "label": "controls",
+      "properties": {
+        "description": "The page's controls as the file writes them, as JSON",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:created_at",
+      "label": "created_at",
+      "properties": {
+        "description": "When it was read from the navigation",
+        "field_annotation": "datetime",
+        "field_type": "datetime",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:each_key",
+      "label": "each_key",
+      "properties": {
+        "description": "The parameter a list node's instance adds; empty otherwise",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:each_source",
+      "label": "each_source",
+      "properties": {
+        "description": "A list node's reading action; empty for an ordinary node",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:full_name",
+      "label": "full_name",
+      "properties": {
+        "description": "Its full name, <plugin name>:<node id>, unique within the version",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:icon",
+      "label": "icon",
+      "properties": {
+        "description": "A name of the core's icon set; empty for none",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:id",
+      "label": "id",
+      "properties": {
+        "description": "Node row id",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": true
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:node_order",
+      "label": "node_order",
+      "properties": {
+        "description": "Its order among the children of its parent; 0 when the file names none",
+        "field_annotation": "int",
+        "field_type": "int",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:page",
+      "label": "page",
+      "properties": {
+        "description": "The page's path template inside the plugin; empty for a group",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:parent",
+      "label": "parent",
+      "properties": {
+        "description": "root, a node of the core, of a dependency or of its own plugin",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:position",
+      "label": "position",
+      "properties": {
+        "description": "Its place in the file, from 1: the order among equal order values",
+        "field_annotation": "int",
+        "field_type": "int",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:roles",
+      "label": "roles",
+      "properties": {
+        "description": "The core's roles needed to see it; empty for every member",
+        "field_annotation": "list[str]",
+        "field_type": "str[]",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:room",
+      "label": "room",
+      "properties": {
+        "description": "The page's behaviour with other people as the file writes it, as JSON",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:title",
+      "label": "title",
+      "properties": {
+        "description": "An ordinary node's title; empty for a list node",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:updated_at",
+      "label": "updated_at",
+      "properties": {
+        "description": "When it last changed; empty if never",
+        "field_annotation": "Union[datetime, NoneType]",
+        "field_type": "datetime | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
       "id": "maxitor.core.plugins.entities.PluginProcessCoreEntity",
       "label": "PluginProcessCoreEntity",
       "properties": {
@@ -19758,82 +20262,6 @@
         "description": "When the row last changed",
         "field_annotation": "datetime",
         "field_type": "datetime",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity",
-      "label": "PluginSectionCoreEntity",
-      "properties": {
-        "description": "One top-level section of a version's navigation",
-        "entity_kind": "core",
-        "entity_kind_label": "Core"
-      },
-      "type": "Entity"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:created_at",
-      "label": "created_at",
-      "properties": {
-        "description": "When it was read from the navigation",
-        "field_annotation": "datetime",
-        "field_type": "datetime",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:id",
-      "label": "id",
-      "properties": {
-        "description": "Section id",
-        "field_annotation": "str",
-        "field_type": "str",
-        "primary_key_hint": true
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:path",
-      "label": "path",
-      "properties": {
-        "description": "The section's path inside the plugin's pages",
-        "field_annotation": "str",
-        "field_type": "str",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:position",
-      "label": "position",
-      "properties": {
-        "description": "Its place among the version's sections, from 1",
-        "field_annotation": "int",
-        "field_type": "int",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:title",
-      "label": "title",
-      "properties": {
-        "description": "The section's title in the tree",
-        "field_annotation": "str",
-        "field_type": "str",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginSectionCoreEntity:updated_at",
-      "label": "updated_at",
-      "properties": {
-        "description": "When it last changed; empty if never",
-        "field_annotation": "Union[datetime, NoneType]",
-        "field_type": "datetime | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -26217,6 +26645,33 @@
         "typed_events": true
       },
       "type": "Domain"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.AdministratorRole",
+      "label": "AdministratorRole",
+      "properties": {
+        "description": "An administrator of the organization of the address",
+        "role_mode": "alive"
+      },
+      "type": "Role"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.MemberRole",
+      "label": "MemberRole",
+      "properties": {
+        "description": "An active user of the organization of the address",
+        "role_mode": "alive"
+      },
+      "type": "Role"
+    },
+    {
+      "id": "maxitor_plugin_sdk.roles.ServiceRole",
+      "label": "ServiceRole",
+      "properties": {
+        "description": "The plugin itself, with no person behind the call",
+        "role_mode": "alive"
+      },
+      "type": "Role"
     }
   ],
   "schema_version": "2.0"

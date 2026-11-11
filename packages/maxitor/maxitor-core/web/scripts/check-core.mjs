@@ -263,6 +263,15 @@ await scenario("a plugin's page opened by itself goes to its panel address", asy
   await page.waitForURL(`**/w/${CODE}/notes/items/${ITEM}?view=table`);
 });
 
+await scenario("an address with no moment or a moment to come says so and offers now", async () => {
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}?view=table&at=garbage`);
+  await page.getByText("This address names no moment").waitFor();
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}?view=table&at=2099-01-01T00:00:00Z`);
+  await page.getByText("This moment has not come yet").waitFor();
+  await page.getByRole("link", { name: "Show now" }).click();
+  await page.waitForURL((url) => url.search === "?view=table");
+});
+
 await scenario("the panel's test page: the protocol, the controls in their places, the canvas", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/panel-test`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();

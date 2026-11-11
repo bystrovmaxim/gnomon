@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-11-11] — The frame every plugin lives in
+
+An organization in Maxitor is now one screen that the core draws and every plugin lives in. On the left is the tree, built from the core's own nodes and the nodes of every plugin enabled in the organization: a plugin declares where its nodes stand, and a node that lists records — one row per item of the plugin template, for example — loads them when it opens, at the moment the screen shows. At the top are the organization, the path to the open page and the person's icon. On the right is a grey field with dots where a plugin's page opens, drawn by the plugin but laid over the core's field, so every plugin looks the same and none of them can touch the tree or the top row.
+
+The address is everything the screen shows. A plugin's page, its view, its filters and the moment are all in it, so a reload, a link to a colleague, Back and Forward give exactly what was on screen. The view switch, the filters, the mode pill and the legend are drawn by the core over the panel, in the same places for every plugin, from what the plugin declares; one canvas moves and zooms the same way on every page. A plugin's page draws with two new packages, `@maxitor/panel` and `@maxitor/tokens`, so its colours, sizes and behaviour are Maxitor's own.
+
+A plugin that would not fit the tree — attached to a plugin it does not depend on, or reading a list that is not one of its actions — is refused before anyone sees a broken screen. When anyone changes something in the organization, a plugin too, every open page learns that "now" moved. The plugin template's notes page is the first page that lives here, and the tutorial's chapter "A place in the tree" walks through it. Two stands on one machine no longer stop each other's plugins. ([#74](https://github.com/bystrovmaxim/gnomon/issues/74))
+
 ## [2026-11-11] — The plugin template keeps what its notes are written on
 
 The plugin template, which every Maxitor plugin is copied from, now needs nothing but the core. Its notes are written on items it keeps itself, like folders: a member adds an item with a title, renames it, and the title stays unique in the organization. Renaming never overwrites someone else's change, and any past moment still reads the old title. A note can be written only on an item of the member's own organization.

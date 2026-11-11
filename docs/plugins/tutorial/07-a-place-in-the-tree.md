@@ -1,0 +1,91 @@
+# 7. A place in the tree
+
+**Builds on**: [6. The backend](06-the-backend.md). **Next**: chapter 8, written with bystrovmaxim/gnomon#102.
+
+Your plugin's pages open in Maxitor's frame: the tree on the left, the top row and the right panel. You do not draw any of it. You declare your nodes in `navigation.yaml`, Maxitor joins them into the organization's tree, and your page opens in the right panel when a person chooses one.
+
+## Your nodes
+
+The template hangs a section of its own in the root of the tree. Under it is one node per item of the organization, and under every item are its three pages.
+
+<!-- quote: packages/maxitor-plugin-template/src/maxitor_notes/navigation.yaml -->
+```yaml
+  - id: notes
+    attach: root
+    title: Notes
+    icon: note
+    order: 500
+    page: /
+    roles: [member]
+    children:
+      # A list node: one instance per item of the organization, read from the plugin's action list_items at the
+      # panel's moment. Each instance shows the item's title and puts its key into the scope as item_id, for every
+      # node beneath it. It opens no page of its own: its three pages stand under it.
+      - id: item
+        each:
+          source: list_items
+          key: item_id
+        roles: [member]
+```
+
+- `attach` says where a top node stands: `root`, a node of the core (`core:settings`) or a node of a plugin you depend on directly (`notes:item`). Nothing else.
+- `page` is a path inside your plugin. Maxitor puts the organization and your name in front of it: the page `/items/{item_id}` of an item `4f1c` opens at `/w/<organization>/notes/items/4f1c`.
+- `each` makes a node a list. `source` is a reading action of your plugin, and `key` is the parameter each instance adds for every node beneath it. That is how `{item_id}` reaches the three pages.
+- `roles` asks for the core's `member` or `administrator`; a person without them does not see the node or anything under it.
+
+## The list a node reads
+
+A list node's records come from your own action, called through the gateway with the person's token, at the panel's moment, in parts:
+
+<!-- quote: packages/maxitor-plugin-template/src/maxitor_notes/actions/list_items_action.py -->
+```python
+class ListItemsParams(BaseParams):
+    """Which moment, and which part of the list."""
+
+    at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The panel's moment; none means now, the watermark")
+    limit: int = Field(default=50, ge=1, le=200, description="How many entries one part holds")
+    after: str | None = Field(default=None, pattern=UUID_PATTERN, description="The key of the last entry of the part before")
+```
+
+Maxitor calls it at `/p/notes/api/<organization>/lists/list_items` and expects `entries` of `key`, `title` and `icon`, and `next` for the part after. A filter's `source` and a mode pill's `counts` are read the same way. Every source must be an action of your plugin: a file `actions/<name>_action.py` or `history/<name>_action.py`.
+
+## What Maxitor checks
+
+The tree is built by Maxitor's installer, never in the browser. It refuses a plugin before anyone sees a broken tree:
+
+| When | What is refused |
+|---|---|
+| `python -m maxitor_plugin_sdk.checks .`, and again when the version enters the marketplace | a file that breaks the schema; an `id` used twice; two nodes opening one page; a `{name}` no list node above defines; a list key defined twice in one line; a control on `at`, on a name starting with `_` or on a parameter of the path; a default that is not one of the options; a filter with both or neither of `options` and `source`; a `source` or `counts` that is no action of the plugin; a node attached to a node the core does not have |
+| installing or enabling the plugin in an organization | a node attached to a plugin that is not a direct dependency; to a node that dependency does not have; a parameter the node it attaches to does not give |
+
+A refused installation answers `navigation` with the reason in words, and the organization's tree stays as it was.
+
+## Your page in the right panel
+
+Your frontend draws only its content. `PanelDocument` of `@maxitor/panel` gives it a transparent document over the core's field of dots and speaks the panel protocol with the core:
+
+<!-- quote: packages/maxitor-plugin-template/web/app/layout.tsx -->
+```tsx
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return <PanelDocument build={version}>{children}</PanelDocument>;
+}
+```
+
+The page's view switch and its writer filter are not the page's. It declares them as `controls` of its node, Maxitor draws them over the panel in the same places for every plugin, and each is a parameter of the address. The page only reads it:
+
+<!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/NotesView.tsx -->
+```tsx
+  // The view switch is Maxitor's control, declared in navigation.yaml. Maxitor draws it and writes ?view= into the
+  // address; the page only reads it, and rebuilds when Maxitor says the address changed.
+  const { view = "list" } = usePanelQuery();
+```
+
+The address is everything the panel shows. A reload, a link to a colleague, Back and Forward all give exactly what was on screen, so a page builds its view from its address alone and never keeps a filter in its own state.
+
+## Check it
+
+1. Check the plugin: `uv run python -m maxitor_plugin_sdk.checks packages/maxitor-plugin-template` prints nothing.
+2. Break it: change `source: list_items` to `source: list_things` and run the check again. It answers `'item' reads 'list_things', which is no action of the plugin`. Put it back.
+3. On the local stand, install Notes in your organization and open `http://localhost:3000/w/<code>`. The tree shows Notes; open it and its items load under it. Add an item if there is none: `POST /p/notes/api/<code>/items` with `{"title": "Payments"}`.
+4. Open an item, then Notes under it. The notes page opens in the right panel at `/w/<code>/notes/items/<item_id>`, and the top row reads Notes › Payments › Notes.
+5. Switch the view to Table: the address gets `?view=table`. Reload, open the address in another tab, press Back: each time the screen is what the address says.
