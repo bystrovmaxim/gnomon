@@ -5,7 +5,8 @@
 //   node scripts/check-tokens.mjs                 the folders of the frame and of @maxitor/panel
 //   node scripts/check-tokens.mjs <path> …        the given files or folders
 //
-// Comments are skipped: a comment may speak of a size. Exits 1 and lists every line found, 0 when there is none.
+// Comments are skipped: a comment may speak of a size. So is a line of @media: a media query cannot read a custom
+// property, and its width is the tokens' --mx-phone (PHONE_MEDIA of @maxitor/tokens). Exits 1 and lists every line found, 0 when there is none.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -46,6 +47,7 @@ export function problems(paths) {
     withoutComments(readFileSync(file, "utf8"))
       .split("\n")
       .forEach((line, index) => {
+        if (line.trim().startsWith("@media")) return;
         for (const { name, pattern } of FOUND) {
           if (pattern.test(line)) found.push(`${relative(REPOSITORY, file)}:${index + 1}: ${name}: ${line.trim()}`);
         }

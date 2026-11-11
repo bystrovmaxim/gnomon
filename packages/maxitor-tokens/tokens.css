@@ -56,6 +56,7 @@
   --mx-text-md: 13px;
   --mx-text-lg: 14px;
   --mx-text-xl: 19px;
+  --mx-text-tiny: 10px;
   --mx-weight-medium: 500;
   --mx-weight-bold: 600;
   --mx-weight-heavy: 700;
@@ -80,5 +81,14 @@
   --mx-filter-width: 148px;
   --mx-dot-step: 18px;
   --mx-dot-size: 1px;
+  --mx-icon-lg: 20px;
+  --mx-ring: 2px;
+  --mx-tree-row: 32px;
+  --mx-tree-group: 36px;
+  --mx-tree-slot: 32px;
+  --mx-tree-row-phone: 42px;
+  --mx-menu-width: 290px;
+  --mx-drawer-width: 296px;
+  --mx-text-huge: 56px;
   --mx-phone: 520px;
 }

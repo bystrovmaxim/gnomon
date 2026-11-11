@@ -205,6 +205,13 @@ STEPS: tuple[Step, ...] = (
         "client",
         after=(AUTO_FIX,),
     ),
+    # The frame, its controls and @maxitor/panel take every colour and size from @maxitor/tokens (spec 077, SC-007).
+    Step(
+        "Maxitor core: the frame draws with @maxitor/tokens only",
+        "node packages/maxitor/maxitor-core/web/scripts/check-tokens.mjs",
+        "client",
+        after=(AUTO_FIX,),
+    ),
     # Every diagram must be laid out to the same bits in Chromium, Firefox and WebKit, on a phone and a
     # desktop screen, or pointers in a room land on the wrong nodes (spec 028, FR-006). The same step
     # then opens a room in each engine and proves a pointer lands within 2 px of its node (SC-003).
