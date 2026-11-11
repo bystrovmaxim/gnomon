@@ -18,7 +18,7 @@ The [plugin concept](../concept.md) explains how plugins are built and why; [ver
 | 10 | History on the scale | `history` in the passport and the pages | bystrovmaxim/gnomon#100 |
 | 11 | Comparing | Diff and side by side | bystrovmaxim/gnomon#100 |
 | 12 | Presence and following | What works with no code | bystrovmaxim/gnomon#76 |
-| 13 | Tests | What a plugin must prove | bystrovmaxim/gnomon#99, grown by every step |
+| 13 | [Tests](13-tests.md) | What a plugin must prove | bystrovmaxim/gnomon#99, grown by every step |
 | 14 | A release | The wheel, the marketplace | bystrovmaxim/gnomon#92 |
 | 15 | In an organization | Installing, disabling, enabling | bystrovmaxim/gnomon#92 |
 | 16 | Versions and compatibility | `requires.maxitor`, `sdk`, the major version | bystrovmaxim/gnomon#77 |
