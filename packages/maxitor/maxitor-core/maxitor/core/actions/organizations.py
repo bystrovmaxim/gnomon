@@ -14,7 +14,7 @@ Organizations: CheckAddressCodeAction, RegisterOrganizationAction, OpenOrganizat
 from __future__ import annotations
 
 import uuid
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 from maxitor.core import address
 from maxitor.core.actions.common import storage
