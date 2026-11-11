@@ -1,5 +1,9 @@
 # Changelog — maxitor-plugin-sdk
 
+## 1.5.0 — 2026-11-11
+
+Navigation format 2: `navigation-2.schema.json` is format 1 without `controls`, and `room.shared` may not name `at`, `mode` or `from`; `checks` refuses format 1 with `NAVIGATION_FORMAT_1` and no longer checks controls or their sources — `named_actions` and `source_problems` read list nodes only. `frontend.frontend_problems`, run by `checks`, keeps the shell's boundary in a plugin's `web/`: every `page.tsx` renders `<PanelPage>`, nothing is placed `fixed`, no layer reaches the shell's (30); each refusal names the file and the line. ([#109](https://github.com/bystrovmaxim/gnomon/issues/109))
+
 ## 1.4.0 — 2026-11-11
 
 `checks` refuses a `navigation.yaml` whose list node, filter, legend or mode pill reads an action the plugin does not have: every `source` and `counts` names a file `actions/<name>_action.py` or `history/<name>_action.py`. `source_problems`, `named_actions` and `action_names` give the same check to the core. ([#74](https://github.com/bystrovmaxim/gnomon/issues/74))

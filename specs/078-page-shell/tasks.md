@@ -31,7 +31,7 @@ One phase is one commit and one numbered phase of issue bystrovmaxim/gnomon#109.
 
 ## Phase 5: documentation, changelog, versions (issue phase 5)
 
-- [ ] T014 The plugin concept: the shell, navigation format 2, the reserved names; nothing of the core drawing controls or a legend.
-- [ ] T015 The tutorial's chapter 7 on controls as built, its row in the index; chapter 13 grown by this step's tests.
-- [ ] T016 READMEs of `@maxitor/panel`, the core, `docs/how-to/run-the-core-locally.md`.
-- [ ] T017 Versions of every changed level; graph files rebuilt; one changelog entry per changed level.
+- [x] T014 The plugin concept: the shell, navigation format 2, the reserved names; nothing of the core drawing controls or a legend.
+- [x] T015 The tutorial's chapter 7 on controls as built, its row in the index; chapter 13 grown by this step's tests.
+- [x] T016 READMEs of `@maxitor/panel`, the core, `docs/how-to/run-the-core-locally.md`.
+- [x] T017 Versions of every changed level; graph files rebuilt; one changelog entry per changed level.

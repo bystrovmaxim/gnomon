@@ -47,7 +47,7 @@ class ListItemsParams(BaseParams):
     after: str | None = Field(default=None, pattern=UUID_PATTERN, description="The key of the last entry of the part before")
 ```
 
-Maxitor calls it at `/p/notes/api/<organization>/lists/list_items` and expects `entries` of `key`, `title` and `icon`, and `next` for the part after. A filter's `source` and a mode pill's `counts` are read the same way. Every source must be an action of your plugin: a file `actions/<name>_action.py` or `history/<name>_action.py`.
+Maxitor calls it at `/p/notes/api/<organization>/lists/list_items` and expects `entries` of `key`, `title` and `icon`, and `next` for the part after. Your page may read the same kind of action for the options of its own controls, as the notes page reads its authors. Every list's source must be an action of your plugin: a file `actions/<name>_action.py` or `history/<name>_action.py`.
 
 ## What Maxitor checks
 
@@ -55,7 +55,7 @@ The tree is built by Maxitor's installer, never in the browser. It refuses a plu
 
 | When | What is refused |
 |---|---|
-| `python -m maxitor_plugin_sdk.checks .`, and again when the version enters the marketplace | a file that breaks the schema; an `id` used twice; two nodes opening one page; a `{name}` no list node above defines; a list key defined twice in one line; a control on `at`, on a name starting with `_` or on a parameter of the path; a default that is not one of the options; a filter with both or neither of `options` and `source`; a `source` or `counts` that is no action of the plugin; a node attached to a node the core does not have |
+| `python -m maxitor_plugin_sdk.checks .`, and again when the version enters the marketplace | a file that breaks the schema; an `id` used twice; two nodes opening one page; a `{name}` no list node above defines; a list key defined twice in one line; a list's `source` that is no action of the plugin; a node attached to a node the core does not have; navigation format 1, which declared controls; a page that does not render `<PanelPage>`, an element placed `fixed` or a layer at the shell's (30) or above |
 | installing or enabling the plugin in an organization | a node attached to a plugin that is not a direct dependency; to a node that dependency does not have; a parameter the node it attaches to does not give |
 
 A refused installation answers `navigation` with the reason in words, and the organization's tree stays as it was.
@@ -71,14 +71,26 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-The page's view switch and its writer filter are not the page's. It declares them as `controls` of its node, Maxitor draws them over the panel in the same places for every plugin, and each is a parameter of the address. The page only reads it:
+The page's controls are its own, and it does not draw them. It gives them to the shell — `PanelPage` of `@maxitor/panel` — as data when it opens: the item's writers for the filter at the top left, and the choice of a list or a table for the bottom bar. The shell draws them in the same places as on every page of Maxitor and writes each into the address:
+
+<!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/page.tsx -->
+```tsx
+  const filters: FilterSection[] = [{ title: "Author", param: "author", rows: authors.map((author) => ({ key: author.key, label: author.title })) }];
+  const bar: BarSection[] = [
+    { kind: "choice", param: "view", default: "list", options: [{ value: "list", title: "List", icon: "list" }, { value: "table", title: "Table", icon: "table" }] },
+  ];
+```
+
+The page then reads the view like any parameter of its address:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/NotesView.tsx -->
 ```tsx
-  // The view switch is Maxitor's control, declared in navigation.yaml. Maxitor draws it and writes ?view= into the
-  // address; the page only reads it, and rebuilds when Maxitor says the address changed.
+  // The view is the page's own choice in the shell's bottom bar: the shell writes ?view= into the address, and the
+  // page reads it and rebuilds when the address changes.
   const { view = "list" } = usePanelQuery();
 ```
+
+A page may name any parameter but the core's: `at`, `mode`, `from` and every name starting with `_`. The panel router refuses to change them, and in development the refusal is an error naming the parameter.
 
 The address is everything the panel shows. A reload, a link to a colleague, Back and Forward all give exactly what was on screen, so a page builds its view from its address alone and never keeps a filter in its own state.
 
@@ -88,4 +100,4 @@ The address is everything the panel shows. A reload, a link to a colleague, Back
 2. Break it: change `source: list_items` to `source: list_things` and run the check again. It answers `'item' reads 'list_things', which is no action of the plugin`. Put it back.
 3. On the local stand, install Notes in your organization and open `http://localhost:3000/w/<code>`. The tree shows Notes; open it and its items load under it. Add an item if there is none: `POST /p/notes/api/<code>/items` with `{"title": "Payments"}`.
 4. Open an item, then Notes under it. The notes page opens in the right panel at `/w/<code>/notes/items/<item_id>`, and the top row reads Notes › Payments › Notes.
-5. Switch the view to Table: the address gets `?view=table`. Reload, open the address in another tab, press Back: each time the screen is what the address says.
+5. Switch the view to Table in the bottom bar: the address gets `?view=table`; switch a writer off in the filters at the top left: the address lists the writers still on. Reload, open the address in another tab, press Back: each time the screen is what the address says.

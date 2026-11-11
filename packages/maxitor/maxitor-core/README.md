@@ -32,10 +32,11 @@ Every page of an organization lives in one frame at `/w/<code>/...`, and only th
 - **The tree** on the left is the core's `maxitor/core/navigation.yaml` and the nodes of every plugin enabled in the organization. A version's nodes are read when the version is checked and kept in `plugins.plugin_node`; installing or enabling a plugin builds the organization's tree with it and refuses it with `navigation` when it would not hold. A list node's records load when its parent opens, from the plugin's own action through the gateway, at the panel's moment, in parts of 50.
 - **The top row** holds the organization and its switch, the path to the open node, and the person's icon; the places of the time scale and of who is on the page stand there empty until those steps come.
 - **The right panel** is a grey field of dots. The core's own pages are drawn on it (`/w/<code>/core/...`); a plugin's page opens over it in a transparent frame at `/p/<name>/<code>/...` and talks to the core by the panel protocol of [`@maxitor/panel`](../../maxitor-panel/README.md). The window's address is the panel's only state: a reload, a link, Back and Forward give what was on screen.
-- **The controls** a node declares — the mode pill, the view switch, the filters and the legend — are drawn by the core over the panel, the same places for every plugin, each an address parameter.
+- **The tree's head** has collapse, which folds the tree to its head for this visit, and up, which opens the nearest node above the open one that has a page, at the same moment.
+- **Nothing over the panel.** A page's controls are its own: it gives them to the shell of [`@maxitor/panel`](../../maxitor-panel/README.md), which draws them in the same places for every plugin. The frame refuses a page's change of the core's names (`at`, `mode`, `from`, `_…`) and of a path parameter, and marks a page that does not render the shell with a red strip on the local stand.
 - **"Now"**: the frame asks `GET /api/v1/organizations/{code}/watermark` every 5 seconds while a page without a moment is open, and tells the page when it moved. A plugin's change moves it too.
 
-Everything the frame draws takes its colours and sizes from [`@maxitor/tokens`](../../maxitor-tokens/README.md); `web/scripts/check-tokens.mjs` refuses a colour code or a size number in the frame, the controls and `@maxitor/panel`.
+Everything the frame draws takes its colours and sizes from [`@maxitor/tokens`](../../maxitor-tokens/README.md); `web/scripts/check-tokens.mjs` refuses a colour code or a size number in the frame and `@maxitor/panel`.
 
 ## The core's passport
 
