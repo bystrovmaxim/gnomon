@@ -23,6 +23,7 @@ from maxitor.core.plugins.actions.run_version_action import RunVersionAction, Ru
 from maxitor.core.plugins.actions.stop_version_action import StopVersionAction, StopVersionParams
 from maxitor.core.plugins.actions.take_up_running_action import TakeUpRunningAction, TakeUpRunningParams
 from maxitor.core.plugins.plugin_processes import (
+    RUNNER_LABEL,
     EnvironmentInstallError,
     Images,
     Plan,
@@ -67,6 +68,31 @@ async def test_the_runners_readings_name_no_schema_and_bind_every_condition() ->
     assert "u.status = 'active'" in queries[1] and "op.state = 'enabled'" in queries[1]
     assert connection.statements[2] == ("DELETE FROM plugin_process WHERE plugin_version_id = $1::text::uuid", ("v1",))
     assert not any(word in query for query in queries for word in ("plugins.", "organization.", "platform."))
+
+
+async def test_a_runner_sees_and_removes_only_its_own_containers(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    async def docker(*args: str) -> tuple[int, str]:
+        calls.append(args)
+        return 0, ""
+
+    monkeypatch.setattr("maxitor.core.plugins.plugin_processes.docker", docker)
+    processes = PluginProcessesController(
+        PluginRuntimeStorage(Path("/nowhere"), "postgresql://u@db/maxitor"), WheelStorage(Path("/nowhere")),
+        gateway_url="http://host.docker.internal:3010", runner="second",
+    )
+    await processes.running_versions()
+    await processes.stop_all()
+    await processes.stop("v1")
+    await processes.exit_code("v1", "backend")
+    listed = [call for call in calls if call[0] == "ps"]
+    assert len(listed) == 4
+    assert all(f"label={RUNNER_LABEL}=second" in call for call in listed)
+    # The frontend reaches its own runner's backend by that container's name.
+    monkeypatch.setattr(processes._runtime, "env_path", lambda schema: Path("/nowhere") / schema / ".env")
+    monkeypatch.setattr("maxitor.core.plugins.plugin_processes.read_env_file", lambda path: {})
+    assert processes._environment("notes_0_8_0", "frontend")["MAXITOR_PLUGIN_API"] == "http://maxitor-second-notes_0_8_0-backend:8000"
 
 
 # ── the runner's actions over a controller that only pretends ─────────────────
@@ -342,7 +368,10 @@ async def test_the_controller_runs_a_wheels_backend_and_frontend_in_unprivileged
     sha256 = wheels.put(probe_wheel())
     runtime = PluginRuntimeStorage(tmp_path / "runtime", "postgresql://u@127.0.0.1:5432/maxitor")
     runtime.write_env("probe_0_1_0", "plg_probe_0_1_0", "secret", "service-key")
-    processes = PluginProcessesController(runtime, wheels, gateway_url="http://host.docker.internal:3000", db_address="maxitor-db:5432")
+    # A runner of its own: the test never touches the containers of a stand running on the same host.
+    processes = PluginProcessesController(
+        runtime, wheels, gateway_url="http://host.docker.internal:3000", db_address="maxitor-db:5432", runner="tests"
+    )
     plan = processes.plan(sha256)
     images = await processes.ensure_images("probe_0_1_0", sha256, plan)
     assert images.frontend is not None
@@ -355,7 +384,7 @@ async def test_the_controller_runs_a_wheels_backend_and_frontend_in_unprivileged
         assert {"MAXITOR_PLUGIN_DSN", "MAXITOR_PLUGIN_SERVICE_KEY", "MAXITOR_CORE_JWKS_URL", "MAXITOR_GATEWAY_URL"} <= names
         assert "MAXITOR_CORE_DSN" not in names and "MAXITOR_SESSION_SECRET" not in names
         assert seen.endswith("uid=65534")
-        assert fetch(frontend.address) == "frontend http://maxitor-probe_0_1_0-backend:8000"
+        assert fetch(frontend.address) == "frontend http://maxitor-tests-probe_0_1_0-backend:8000"
         assert await processes.exit_code("v-probe", "backend") is None
         assert await processes.running_versions() >= {"v-probe"}
     finally:

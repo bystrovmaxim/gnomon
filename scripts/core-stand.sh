@@ -20,7 +20,9 @@
 # in Docker containers of its own; they reach the database as maxitor-db on their version's network and the gateway
 # as host.docker.internal.
 # MAXITOR_STAND_CONTAINER, MAXITOR_STAND_DB_PORT, MAXITOR_STAND_API_PORT and MAXITOR_STAND_WEB_PORT run a second stand
-# beside a first one.
+# beside a first one; its plugin runner takes the container's name, so each stand starts and removes only its own
+# plugin containers and networks.
+# The plugin template's wheel carries its built frontend: npm builds it before the wheel is made.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -29,6 +31,7 @@ CONTAINER="${MAXITOR_STAND_CONTAINER:-maxitor-core-pg}"
 DB_PORT="${MAXITOR_STAND_DB_PORT:-55432}"
 API_PORT="${MAXITOR_STAND_API_PORT:-8020}"
 WEB_PORT="${MAXITOR_STAND_WEB_PORT:-3000}"
+if [ "$CONTAINER" = "maxitor-core-pg" ]; then RUNNER="maxitor"; else RUNNER="$CONTAINER"; fi
 ADMIN_PASSWORD="admin-local"
 CORE_PASSWORD="core-local"
 INSTALLER_PASSWORD="installer-local"
@@ -107,6 +110,7 @@ open(sys.argv[1], "wb").write(pem)
   if [ "$(docker exec "$CONTAINER" psql -U postgres -d maxitor -tAc "SELECT count(*) FROM plugins.plugin")" = "0" ]; then
     say "Filling the marketplace with the plugin template's wheel"
     rm -rf "$STAND/dist"
+    (cd "$ROOT/packages/maxitor-plugin-template/web" && npm ci --no-audit --no-fund && npm run build)
     (cd "$ROOT" && uv build --wheel -q -o "$STAND/dist" packages/maxitor-plugin-template)
     (cd "$ROOT" && MAXITOR_INSTALLER_DSN="$installer_dsn" uv run --all-extras --all-packages maxitor-plugin-installer add-wheel "$STAND"/dist/*.whl)
   fi
@@ -119,7 +123,8 @@ open(sys.argv[1], "wb").write(pem)
   local installer=$!
   (cd "$ROOT" && MAXITOR_PLUGIN_FIND_LINKS="$STAND/find-links" MAXITOR_PLUGIN_DB_ADDRESS="maxitor-db:5432" \
     MAXITOR_PLUGIN_DB_CONTAINER="$CONTAINER" MAXITOR_PLUGIN_GATEWAY_URL="http://host.docker.internal:$WEB_PORT" \
-    MAXITOR_RUNNER_PERIOD_SECONDS=5 exec uv run --all-extras --all-packages maxitor-plugin-runner run) &
+    MAXITOR_RUNNER_PERIOD_SECONDS=5 MAXITOR_RUNNER_NAME="$RUNNER" \
+    exec uv run --all-extras --all-packages maxitor-plugin-runner run) &
   local runner=$!
   (cd "$WEB" && MAXITOR_CORE_API="http://127.0.0.1:$API_PORT" exec npx next dev --port "$WEB_PORT") &
   local web=$!
@@ -135,7 +140,7 @@ case "${1:-}" in
   up) up ;;
   down) docker stop "$CONTAINER" >/dev/null 2>&1 && say "The database is stopped" || say "The database was not running" ;;
   reset)
-    docker ps -aq --filter label=maxitor.plugin.version | xargs docker rm -f >/dev/null 2>&1 || true
+    docker ps -aq --filter label=maxitor.plugin.version --filter "label=maxitor.plugin.runner=$RUNNER" | xargs docker rm -f >/dev/null 2>&1 || true
     docker rm -f -v "$CONTAINER" >/dev/null 2>&1 || true
     rm -rf "$STAND/outbox" "$STAND/wheels" "$STAND/plugins" "$STAND/dist" "$STAND/find-links"
     say "The database and the plugin containers are removed" ;;

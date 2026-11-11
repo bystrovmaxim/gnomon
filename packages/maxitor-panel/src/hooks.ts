@@ -44,8 +44,3 @@ export function useOpenPanel() {
   const panel = usePanel();
   return (owner: string, path: string, query: Query = {}) => panel.send({ type: "panel.open", owner, path, query });
 }
-
-/** The moment an address names, as an opaque string; null for now. Never pass it through Date. */
-export function momentFrom(query: Record<string, string | undefined>): string | null {
-  return query.at ?? null;
-}

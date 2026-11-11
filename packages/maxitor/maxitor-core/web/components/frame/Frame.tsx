@@ -5,7 +5,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import "./frame.css";
 import { Panel } from "@/components/frame/Panel";
@@ -37,6 +37,8 @@ export function Frame({
   const search = useSearchParams();
   const [drawer, setDrawer] = useState(false);
   const [title, setTitle] = useState<string | null>(null);
+  const [titles, setTitles] = useState<Record<string, string>>({});
+  const keepTitles = useCallback((found: Record<string, string>) => setTitles((was) => ({ ...was, ...found })), []);
   // After linking a way in, the address asks to open the sign-in methods dialog with its notice.
   const methods = search.get("methods");
 
@@ -49,16 +51,20 @@ export function Frame({
   const path = useMemo(() => {
     if (!opened) return [];
     const line = lineOf(nodes, opened.node);
-    const titles = line.map((node) => node.title || (node.each ? opened.scope[node.each.key] ?? "" : ""));
-    if (title) titles[titles.length - 1] = title;
-    return titles;
-  }, [nodes, opened, title]);
+    const steps = line.map((node) => {
+      if (!node.each) return node.title;
+      const key = opened.scope[node.each.key] ?? "";
+      return titles[`${node.name}=${key}`] ?? key;
+    });
+    if (title) steps[steps.length - 1] = title;
+    return steps;
+  }, [nodes, opened, title, titles]);
 
   // Another organization opens the same page, or its root when the page is not there: the tree decides there.
   const switchTo = (code: string) => (address?.owner ? windowAddress(code, address.owner, address.path, address.query, address.at) : `/w/${code}`);
 
   const tree = (
-    <Tree code={current.code} nodes={nodes} owners={owners} at={address?.at ?? null} selected={opened} onChosen={() => setDrawer(false)} />
+    <Tree code={current.code} nodes={nodes} owners={owners} at={address?.at ?? null} selected={opened} onChosen={() => setDrawer(false)} onTitles={keepTitles} />
   );
 
   return (

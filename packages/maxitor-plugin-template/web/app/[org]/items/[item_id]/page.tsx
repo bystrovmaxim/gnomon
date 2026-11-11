@@ -15,14 +15,19 @@ export default async function ItemNotesPage({ params, searchParams }: Props) {
   // Maxitor's gateway put a token for this plugin here; the page passes it on to its own backend and keeps nothing.
   const authorization = (await headers()).get("authorization") ?? "";
 
-  const url = new URL(`${process.env.MAXITOR_PLUGIN_API}/${encodeURIComponent(org)}/items/${encodeURIComponent(item_id)}/notes`);
+  // MAXITOR_PLUGIN_API is the backend's inner address; its routes live under /p/notes/api/<organization>, as the gateway's do.
+  const url = new URL(`${process.env.MAXITOR_PLUGIN_API}/p/notes/api/${encodeURIComponent(org)}/items/${encodeURIComponent(item_id)}/notes`);
   // The moment stays an opaque string: it never passes through Date, which would cut it to milliseconds.
   const at = momentFrom(query);
   if (at) url.searchParams.set("at", at);
-  if (query.author) url.searchParams.set("author", query.author);
+  // Maxitor's writer filter lists the writers switched on, or is absent when every writer is. One writer is asked of
+  // the backend; several are kept from every writer's notes here.
+  const writers = query.author?.split(",").filter(Boolean);
+  if (writers?.length === 1) url.searchParams.set("author", writers[0]);
 
   const response = await fetch(url, { headers: { authorization }, cache: "no-store" });
-  const notes: Note[] = response.ok ? (await response.json()).notes : [];
+  const all: Note[] = response.ok ? (await response.json()).notes : [];
+  const notes = writers ? all.filter((note) => writers.includes(note.writer_id)) : all;
 
   return (
     <PanelPage title="Notes">

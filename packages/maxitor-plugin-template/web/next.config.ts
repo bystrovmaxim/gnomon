@@ -6,6 +6,8 @@ const config: NextConfig = {
   basePath: "/p/notes",
   // A server.js with only the files it needs: the build travels inside the wheel, and Next.js is not built on the server.
   output: "standalone",
+  // @maxitor/panel and @maxitor/tokens ship their TypeScript and CSS; the build compiles them with the page.
+  transpilePackages: ["@maxitor/panel", "@maxitor/tokens"],
 };
 
 export default config;

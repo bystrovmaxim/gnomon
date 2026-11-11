@@ -36,6 +36,7 @@ export function Tree({
   at,
   selected,
   onChosen,
+  onTitles,
 }: {
   code: string;
   nodes: TreeNode[];
@@ -47,6 +48,8 @@ export function Tree({
   selected: { node: TreeNode; scope: Scope } | null;
   /** A node was chosen: on a phone the drawer closes. */
   onChosen: () => void;
+  /** The titles of a list's instances as they load, by "<node>=<key>": the top row's path names them. */
+  onTitles: (titles: Record<string, string>) => void;
 }) {
   const [open, setOpen] = useState<Set<string>>(() => new Set());
   const [parts, setParts] = useState<Record<string, Part>>({});
@@ -57,9 +60,10 @@ export function Tree({
     const line = lineOf(nodes, selected.node);
     setOpen((was) => {
       const next = new Set(was);
-      for (const node of line.slice(0, -1)) {
+      // The open node opens too, so what stands under it shows.
+      for (const node of line) {
         next.add(placeOf(node, selected.scope));
-        if (node.each) next.add(`${placeOf(node, selected.scope)}@${selected.scope[node.each.key] ?? ""}`);
+        if (node.each && node !== selected.node) next.add(`${placeOf(node, selected.scope)}@${selected.scope[node.each.key] ?? ""}`);
       }
       return next;
     });
@@ -85,6 +89,7 @@ export function Tree({
         });
         if (!answer.ok) throw new Error(String(answer.status));
         const data = (await answer.json()) as { entries: Instance[]; next: string | null };
+        onTitles(Object.fromEntries(data.entries.map((entry) => [`${node.name}=${entry.key}`, entry.title || entry.key])));
         setParts((was) => {
           const before = after && was[place]?.state === "ready" ? (was[place] as { entries: Instance[] }).entries : [];
           return { ...was, [place]: { state: "ready", entries: [...before, ...data.entries], next: data.next, more: data.next !== null } };
@@ -93,7 +98,7 @@ export function Tree({
         setParts((was) => ({ ...was, [place]: { state: "failed" } }));
       }
     },
-    [at, code],
+    [at, code, onTitles],
   );
 
   const toggle = (place: string) =>

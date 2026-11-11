@@ -205,6 +205,13 @@ STEPS: tuple[Step, ...] = (
         "client",
         after=(AUTO_FIX,),
     ),
+    # The plugin template's frontend builds with @maxitor/panel and @maxitor/tokens into the folder its wheel carries.
+    Step(
+        "Plugin template: the frontend builds",
+        "(cd packages/maxitor-plugin-template/web && npm ci --no-audit --no-fund && npm run build)",
+        "client",
+        after=(AUTO_FIX,),
+    ),
     # @maxitor/panel: the canvas's camera and the panel protocol's shape checks (spec 077, FR-024 – FR-032).
     Step(
         "@maxitor/panel: the camera and the protocol",

@@ -17,6 +17,8 @@ const SESSION_COOKIE = "__Host-maxitor_session";
 const SESSION_SECONDS = 8 * 60 * 60;
 const API = process.env.MAXITOR_CORE_API ?? "http://127.0.0.1:8020";
 const PLUGIN_PATH = /^\/p\/([a-z][a-z0-9_]{0,30})\/(api\/)?([a-z0-9][a-z0-9-]{0,62})(?:\/|$)/;
+// A plugin page's own scripts and styles: Next.js asks them under its basePath, with no organization in the path.
+const PLUGIN_ASSET = /^\/p\/([a-z][a-z0-9_]{0,30})\/_next\//;
 const DECISIONS = new Set(["/api/v1/gateway/pass", "/api/v1/gateway/exchange"]);
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -147,9 +149,34 @@ async function keepSession(request: NextRequest): Promise<NextResponse> {
   return NextResponse.next();
 }
 
+/** The plugin page a request for its scripts or styles comes from: its Referer, on this site, under the same plugin. */
+function assetPage(request: NextRequest, plugin: string): RegExpExecArray | null {
+  const referer = request.headers.get("referer");
+  if (!referer) return null;
+  let from: URL;
+  try {
+    from = new URL(referer);
+  } catch {
+    return null;
+  }
+  if (from.origin !== siteOrigin(request) && from.origin !== request.nextUrl.origin) return null;
+  const page = PLUGIN_PATH.exec(from.pathname);
+  if (!page || page[1] !== plugin || page[2]) return null;
+  // The match keeps the asset's own path: only the plugin and the organization are taken from the page.
+  page[0] = `/p/${plugin}/${page[3]}`;
+  return page;
+}
+
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (DECISIONS.has(path)) return refused(404, "not_found");
+  const asset = PLUGIN_ASSET.exec(path);
+  if (asset) {
+    // The organization is the one of the page that asks for them, as its address names it; the gateway then checks
+    // the session and the membership as for the page itself.
+    const page = assetPage(request, asset[1]);
+    return page ? gateway(request, page) : refused(404, "not_found");
+  }
   const plugin = PLUGIN_PATH.exec(path);
   if (plugin) return gateway(request, plugin);
   if (path.startsWith("/p/")) return refused(404, "not_found");

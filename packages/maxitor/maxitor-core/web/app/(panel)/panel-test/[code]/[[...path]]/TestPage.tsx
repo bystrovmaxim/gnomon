@@ -17,6 +17,8 @@ export function TestPage() {
 
   return (
     <PanelPage title="Panel test">
+      {/* The page's own content stands clear of the core's controls: the filters on the left, the pill at the top. */}
+      <div style={{ paddingTop: "calc(var(--mx-control) * 2)", paddingLeft: "calc(var(--mx-filter-width) + var(--mx-space-7))", display: "flex", flexDirection: "column", gap: "var(--mx-space-5)" }}>
       <output data-testid="location">{JSON.stringify({ path, query: params, at: at ?? null })}</output>
       <output data-testid="watermarks">{watermarks.length}</output>
       <div>
@@ -26,6 +28,7 @@ export function TestPage() {
         <button type="button" onClick={() => open("core", "/settings/plugins")}>Open Settings → Plugins</button>{" "}
         <button type="button" onClick={() => open("stranger", "/")}>Open a stranger&apos;s page</button>{" "}
         <button type="button" onClick={() => router.push({ path: "/panel-test/canvas", query: {} })}>Open the canvas</button>
+      </div>
       </div>
     </PanelPage>
   );
