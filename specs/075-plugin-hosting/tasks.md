@@ -26,13 +26,20 @@ One phase is one commit. After each phase only that phase's tests run; the closi
 - [x] T015 `maxitor-plugin-sdk`: `roles.py` with `MemberRole`, `AdministratorRole`, `ServiceRole`; `checks.py` refuses a passport's `roles` and a node's role other than `member`/`administrator`; the core's `CheckVersionAction` the same.
 - [x] T016 Tests: tokens for a member and an administrator, an expired one, one with another key; the JWKS checks a token through AOA's `JwtAuthCoordinator`; exchange to a dependency, refused to a non-dependency; service token by key, refused by another key or organization; the SDK's refusals.
 
-## Phase 3 — The template in step (issue phase 3)
+## Phase 3 — The processes in containers (issue phase 3)
+
+- [x] T016a `PluginProcessesController` over Docker: an image per version (the wheel and its requirements on `python:<x.y>-slim`; the built pages on `node:22-slim`), a container per kind as user 65534 with no capabilities, no new privileges, read-only, memory, CPU and process limits, a network of its own version, its port on `127.0.0.1` only.
+- [x] T016b The database and the gateway as containers reach them: `MAXITOR_PLUGIN_DB_ADDRESS`, `MAXITOR_PLUGIN_DB_CONTAINER`, `MAXITOR_PLUGIN_GATEWAY_URL`; the JWKS through the gateway.
+- [x] T016c The runner removes every plugin container a stopped runner left; `plugin_process` records the container's name.
+- [x] T016d Tests: the probe wheel's backend and frontend in real containers, unprivileged, with nothing of the core's settings.
+
+## Phase 4 — The template in step (issue phase 4)
 
 - [ ] T017 The template: passport without `roles`, actions guarded by `MemberRole`, the role registry of the core's roles, tokens checked by `MAXITOR_CORE_JWKS_URL`, nodes naming `member`; its version 0.6.0.
 - [ ] T018 `scripts/core-stand.sh`: the gateway's key, the wheels folder built from `external/aoa` and the workspace, the runner started, `MAXITOR_GATEWAY_URL` and the JWKS address given.
 - [ ] T019 Tests: the template accepts a token the core issued for it and refuses one for another plugin; the walk of the quickstart on the local stand.
 
-## Phase 4 — The tail
+## Phase 5 — The tail
 
 - [ ] T020 The closing check run taken to zero; graphs rebuilt.
 - [ ] T021 Documentation: `docs/plugins/concept.md` (6.1–6.4, roles, the runner), `docs/how-to/run-the-core-locally.md`, the runner's README, the installer's README (the service key), the SDK's and the template's README.

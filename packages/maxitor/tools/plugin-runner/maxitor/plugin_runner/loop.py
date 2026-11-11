@@ -55,7 +55,7 @@ async def one_round(
         known[version.version_id] = (version.passport_id, version.version)
         await run_action(machine, connections, RunVersionAction(), RunVersionParams(**version.model_dump()))
     processes: PluginProcessesController = connections[PROCESSES_CONNECTION_KEY]
-    for version_id in sorted((processes.running_versions() | set(queue.recorded)) - wanted):
+    for version_id in sorted((await processes.running_versions() | set(queue.recorded)) - wanted):
         passport_id, version = known.pop(version_id, ("", ""))
         await run_action(
             machine,
@@ -67,10 +67,14 @@ async def one_round(
 
 
 async def run_forever(machine: ActionProductMachine, connections: Mapping[str, Any], period_seconds: float) -> None:
-    """Round after round, ``period_seconds`` apart, until the process is stopped; then end every plugin process."""
+    """
+    Round after round, ``period_seconds`` apart, until the process is stopped. It starts from nothing — every plugin
+    container a stopped runner left is removed, as its rows are forgotten — and removes them all when it stops.
+    """
     started = True
     known: dict[str, tuple[str, str]] = {}
     processes: PluginProcessesController = connections[PROCESSES_CONNECTION_KEY]
+    await processes.stop_all()
     try:
         while True:
             try:

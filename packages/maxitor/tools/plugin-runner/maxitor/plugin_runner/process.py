@@ -35,9 +35,12 @@ def connections_of(settings: RunnerSettings, pool: PostgresPool) -> dict[str, An
         PROCESSES_CONNECTION_KEY: PluginProcessesController(
             PluginRuntimeStorage(settings.runtime, settings.dsn),
             WheelStorage(settings.wheel_store),
-            jwks_url=settings.jwks_url,
             gateway_url=settings.gateway_url,
+            db_address=settings.db_address,
+            db_container=settings.db_container,
             find_links=settings.find_links,
+            memory=settings.memory,
+            cpus=settings.cpus,
         ),
     }
 

@@ -284,7 +284,7 @@ class PluginProcessCoreEntity(BaseCoreEntity):
     address: str | None = Field(
         default=None, description="The inner address http://127.0.0.1:<port> once it accepts; empty while it starts or waits"
     )
-    pid: int | None = Field(default=None, description="The process id on the runner's host; empty while it waits")
+    container: str | None = Field(default=None, description="The Docker container that runs it; empty while it waits")
     started_at: datetime | None = Field(default=None, description="When the running process started; empty while it waits")
     failures: int = Field(description="Starts that failed or exits in a row since the last good start")
     next_start_at: datetime | None = Field(

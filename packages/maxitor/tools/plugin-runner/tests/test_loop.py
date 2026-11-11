@@ -43,7 +43,7 @@ async def test_a_round_runs_each_wanted_version_and_stops_the_rest(tmp_path: Pat
     machine = Machine()
     processes = PluginProcessesController(
         PluginRuntimeStorage(tmp_path, "postgresql://u@db/maxitor"), WheelStorage(tmp_path),
-        jwks_url="http://127.0.0.1:8020/api/v1/jwks", gateway_url="http://127.0.0.1:3000",
+        gateway_url="http://host.docker.internal:3000",
     )
     connections = {"plugins": PluginsStorage(connection_params="postgresql://unused"), "processes": processes}
     known = {"v-old": ("io.x.tasks", "2.0.0")}

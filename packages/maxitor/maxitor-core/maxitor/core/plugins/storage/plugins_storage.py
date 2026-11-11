@@ -329,18 +329,18 @@ class PluginsStorage(CoreStorage):
     async def processes(self) -> list[dict[str, Any]]:
         """Every process row the runner keeps."""
         rows = await self._fetch(
-            "SELECT id::text AS id, plugin_version_id::text AS version_id, kind, address, pid, started_at, failures,"
+            "SELECT id::text AS id, plugin_version_id::text AS version_id, kind, address, container, started_at, failures,"
             " next_start_at FROM plugin_process ORDER BY plugin_version_id, kind",
             (),
         )
         return [dict(row) for row in rows]
 
     async def put_process(self, row: Mapping[str, Any]) -> None:
-        """Write a version's process row: its address, its pid and how its starts went."""
+        """Write a version's process row: its address, its container and how its starts went."""
         await self._execute(
-            "INSERT INTO plugin_process (id, plugin_version_id, kind, address, pid, started_at, failures,"
+            "INSERT INTO plugin_process (id, plugin_version_id, kind, address, container, started_at, failures,"
             " next_start_at, updated_at) VALUES ($1::text::uuid, $2::text::uuid, $3, $4, $5, $6, $7, $8, $9)"
-            " ON CONFLICT (plugin_version_id, kind) DO UPDATE SET address = EXCLUDED.address, pid = EXCLUDED.pid,"
+            " ON CONFLICT (plugin_version_id, kind) DO UPDATE SET address = EXCLUDED.address, container = EXCLUDED.container,"
             " started_at = EXCLUDED.started_at, failures = EXCLUDED.failures, next_start_at = EXCLUDED.next_start_at,"
             " updated_at = EXCLUDED.updated_at",
             (
@@ -348,7 +348,7 @@ class PluginsStorage(CoreStorage):
                 row["version_id"],
                 row["kind"],
                 row["address"],
-                row["pid"],
+                row["container"],
                 row["started_at"],
                 row["failures"],
                 row["next_start_at"],

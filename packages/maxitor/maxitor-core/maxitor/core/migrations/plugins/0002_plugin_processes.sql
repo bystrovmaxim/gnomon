@@ -6,7 +6,7 @@ CREATE TABLE plugin_process (
     plugin_version_id uuid        NOT NULL,
     kind              text        NOT NULL,
     address           text        NULL,
-    pid               integer     NULL,
+    container         text        NULL,
     started_at        timestamptz NULL,
     failures          integer     NOT NULL,
     next_start_at     timestamptz NULL,
@@ -18,12 +18,12 @@ CREATE TABLE plugin_process (
     CONSTRAINT plugin_process_address_shape CHECK (address IS NULL OR address ~ '^http://127\.0\.0\.1:[0-9]{1,5}$'),
     CONSTRAINT plugin_process_failures_count CHECK (failures >= 0)
 );
-COMMENT ON TABLE plugin_process IS 'A running backend or frontend of a deployed version, kept by the runner; mechanics of work, without versions.';
+COMMENT ON TABLE plugin_process IS 'A running backend or frontend container of a deployed version, kept by the runner; mechanics of work, without versions.';
 COMMENT ON COLUMN plugin_process.id IS 'The process row.';
 COMMENT ON COLUMN plugin_process.plugin_version_id IS 'The deployed version the process runs.';
 COMMENT ON COLUMN plugin_process.kind IS 'backend or frontend.';
 COMMENT ON COLUMN plugin_process.address IS 'The inner address http://127.0.0.1:<port> once the process accepts; NULL while it starts or waits.';
-COMMENT ON COLUMN plugin_process.pid IS 'The process id on the runner''s host; NULL while it waits.';
+COMMENT ON COLUMN plugin_process.container IS 'The Docker container that runs it, maxitor-<schema>-<kind>; NULL while it waits.';
 COMMENT ON COLUMN plugin_process.started_at IS 'When the running process started; NULL while it waits.';
 COMMENT ON COLUMN plugin_process.failures IS 'How many starts failed or exited in a row since the last good start.';
 COMMENT ON COLUMN plugin_process.next_start_at IS 'The earliest next start after a failure; NULL when it may start at once.';

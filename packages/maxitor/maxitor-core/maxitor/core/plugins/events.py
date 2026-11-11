@@ -207,8 +207,8 @@ class InstallerConnectionRefusedEvent(BaseEvent):
 
 
 class EnvironmentFailedEvent(BaseEvent):
-    """A version's Python environment could not be installed from its wheel; its processes wait (critical)."""
+    """A version's images could not be built from its wheel; its containers wait (critical)."""
 
     passport_id: str = Field(description="The plugin's id from its passport")
     version: str = Field(description="The version, x.y.z")
-    reason: str = Field(description="The last line uv answered, without any secret")
+    reason: str = Field(description="The last line Docker answered, without any secret")
