@@ -69,6 +69,7 @@
 /* A page that has not said panel.ready is see-through, never hidden: a hidden frame gets no animation frames, and
    React reveals a streamed page in one, so it would never become ready. */
 .mx-panel-frame.waiting { opacity: 0; }
+.mx-unframed { position: absolute; left: 0; right: 0; top: 0; z-index: 40; padding: var(--mx-space-3) var(--mx-space-5); background: var(--mx-bad); color: var(--mx-on-ink); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); text-align: center; }
 .mx-panel-note { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; color: var(--mx-muted); font-size: var(--mx-text-md); line-height: 1.55; max-width: 90%; }
 .mx-panel-note b { display: block; color: var(--mx-ink-2); font-size: var(--mx-text-lg); }
 .mx-panel-note .mx-big { font-size: var(--mx-text-huge); font-weight: var(--mx-weight-heavy); color: var(--mx-line-3); }

@@ -19,6 +19,9 @@ const WATERMARK_MS = 5000;
 
 type State = "waiting" | "ready" | "silent";
 
+/** A page without the shell is marked on the local stand and in development; elsewhere it is only logged. */
+const MARK_UNFRAMED = process.env.NEXT_PUBLIC_MAXITOR_MARK_UNFRAMED === "1" || process.env.NODE_ENV !== "production";
+
 /**
  * What a page may not ask the window's address for (spec 078, FR-012): a change of the core's names, and a parameter
  * named like one of the open node's path parameters. Empty when the request may go on.
@@ -60,6 +63,7 @@ export function PageFrame({
   const frame = useRef<HTMLIFrameElement>(null);
   const [state, setState] = useState<State>("waiting");
   const [attempt, setAttempt] = useState(0);
+  const [unframed, setUnframed] = useState(false);
   // The address the frame was opened at: it changes only when the owner does, or on Try again.
   const [src] = useState(() => `${base}${address.path === "/" ? "" : address.path}${queryString(address.query, address.at)}`);
   // What the page shows now: what it asked for, or what it was last told.
@@ -84,7 +88,11 @@ export function PageFrame({
       if (!trusted(event, frame.current?.contentWindow)) return;
       const message = pageMessage(event.data);
       if (!message) return;
-      if (message.type === "panel.ready") setState("ready");
+      if (message.type === "panel.ready") {
+        setState("ready");
+        setUnframed(!message.shell);
+        if (!message.shell) console.warn(`Maxitor: the page ${address.path} of ${owner} has no Maxitor frame: it does not render the shell of @maxitor/panel`);
+      }
       else if (message.type === "panel.title") onTitle(message.text);
       else if (message.type === "panel.navigate") {
         const refused = refusedNames(message.query, address.query, pathNames);
@@ -102,7 +110,7 @@ export function PageFrame({
     };
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [address.at, address.query, canOpen, code, onTitle, owner, pathNames, router]);
+  }, [address.at, address.path, address.query, canOpen, code, onTitle, owner, pathNames, router]);
 
   // A page that never says it is ready is shown as not answering.
   useEffect(() => {
@@ -143,6 +151,9 @@ export function PageFrame({
         title={title}
         src={src}
       />
+      {unframed && MARK_UNFRAMED ? (
+        <div className="mx-unframed" role="alert">This page has no Maxitor frame</div>
+      ) : null}
       {state === "silent" ? (
         <div className="mx-panel-note" role="alert">
           <b>This page does not answer</b>

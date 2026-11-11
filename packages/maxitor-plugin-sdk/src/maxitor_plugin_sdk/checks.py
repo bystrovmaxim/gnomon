@@ -24,6 +24,7 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator
 
+from maxitor_plugin_sdk.frontend import frontend_problems
 from maxitor_plugin_sdk.history import HISTORY_FOLDER, history_problems
 from maxitor_plugin_sdk.plugin_schema import PluginSchemaError, read_plugin_schema
 from maxitor_plugin_sdk.roles import NODE_ROLES
@@ -57,6 +58,7 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     if passport is None:
         return None, problems
     _check_version(root, passport, problems)
+    problems.extend(frontend_problems(root))
     problems.extend(passport_role_problems(passport))
     navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-2", problems)
     if navigation is not None:

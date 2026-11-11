@@ -20,8 +20,8 @@ One phase is one commit and one numbered phase of issue bystrovmaxim/gnomon#109.
 
 ## Phase 3: the boundary checks (issue phase 3)
 
-- [ ] T009 SDK `checks.py`: a page's root is `PanelPage`, no `fixed`, no layer of 30 or more, each refusal with file and line; tests with a faulty copy and a passing one.
-- [ ] T010 `panel.ready` with `shell` and `shellVersion`; `SHELL_VERSION` equal to `package.json` by a test; `PageFrame`'s red strip and console warning; `NEXT_PUBLIC_MAXITOR_MARK_UNFRAMED=1` in `core-stand.sh`; protocol tests.
+- [x] T009 SDK `checks.py`: a page's root is `PanelPage`, no `fixed`, no layer of 30 or more, each refusal with file and line; tests with a faulty copy and a passing one.
+- [x] T010 `panel.ready` with `shell` and `shellVersion`; `SHELL_VERSION` equal to `package.json` by a test; `PageFrame`'s red strip and console warning; `NEXT_PUBLIC_MAXITOR_MARK_UNFRAMED=1` in `core-stand.sh`; protocol tests.
 
 ## Phase 4: the template and the test page (issue phase 4)
 

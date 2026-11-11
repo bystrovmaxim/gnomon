@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import { coreMessage, trusted, type PageMessage, type Query } from "./protocol";
+import { SHELL_VERSION } from "./version";
 
 type Panel = {
   /** The page's path inside its owner, without the organization: "/items/4f1c". */
@@ -88,7 +89,8 @@ export function PanelProvider({
       else listeners.current.forEach((listener) => listener(message.at));
     };
     window.addEventListener("message", receive);
-    send({ type: "panel.ready", build, surface });
+    // The children's effects ran first: a page drawn in the shell has marked it by now.
+    send({ type: "panel.ready", build, surface, shell: shelled.current, shellVersion: shelled.current ? SHELL_VERSION : "" });
     return () => window.removeEventListener("message", receive);
   }, [build, send, show, surface]);
 

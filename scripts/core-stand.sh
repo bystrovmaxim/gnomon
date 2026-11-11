@@ -85,6 +85,8 @@ open(sys.argv[1], "wb").write(pem)
   export MAXITOR_SESSION_SECRET
   MAXITOR_SESSION_SECRET="$(cat "$STAND/secret")"
   export MAXITOR_PUBLIC_URL="http://localhost:$WEB_PORT"
+  # A page that does not render the shell of @maxitor/panel is marked by a red strip on the stand.
+  export NEXT_PUBLIC_MAXITOR_MARK_UNFRAMED=1
   export MAXITOR_WHEEL_STORE="$STAND/wheels" MAXITOR_PLUGIN_RUNTIME="$STAND/plugins"
   export MAXITOR_GATEWAY_KEY_FILE="$STAND/gateway-key.pem"
   local installer_dsn="postgresql://maxitor_installer:$INSTALLER_PASSWORD@127.0.0.1:$DB_PORT/maxitor"
