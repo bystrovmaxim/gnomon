@@ -33,11 +33,11 @@
 
 **Independent test**: `uv run pytest TPL/tests/test_navigation.py TPL/tests/test_controls.py TPL/tests/test_passport.py`, then `uv run maxitor-plugin-check TPL`, then the gateway on the local stand.
 
-- [ ] T015 [US3] `PKG/navigation.yaml`: the root node `notes` (`attach: root`, page `/`) holds the list node `item` (`each: {source: list_items, key: item_id}`, no page) and under it `item-notes`, `item-published`, `item-draft` with their pages, controls, room and history; no `attach: core:item`; the comments say what each node is without a catalog.
-- [ ] T016 [US3] `TPL/tests/test_navigation.py` and `TPL/tests/test_controls.py`: the tests that pointed at a node attached to `core:item` point at the item's pages; a new test asserts no node of the template is attached outside the root, and that `{item_id}` in the three pages is defined by the list node above them.
-- [ ] T017 [US3] `maxitor-plugin-check` on the template and the core's installer check (`CheckVersionAction`'s reading of the navigation) accept it.
-- [ ] T018 [US3] On the local stand of bystrovmaxim/gnomon#75: the steps of [quickstart.md](quickstart.md), "Through the gateway", each answering as written.
-- [ ] T019 Adversarial check: attach `item-notes` to `core:item` again and drop `each` from `item`, one at a time; the new navigation test fails each time and no other test of the phase does; restore.
+- [X] T015 [US3] `PKG/navigation.yaml`: the root node `notes` (`attach: root`, page `/`) holds the list node `item` (`each: {source: list_items, key: item_id}`, no page) and under it `item-notes`, `item-published`, `item-draft` with their pages, controls, room and history; no `attach: core:item`; the comments say what each node is without a catalog.
+- [X] T016 [US3] `TPL/tests/test_navigation.py` and `TPL/tests/test_controls.py`: the tests that pointed at a node attached to `core:item` point at the item's pages; a new test asserts no node of the template is attached outside the root, and that `{item_id}` in the three pages is defined by the list node above them.
+- [X] T017 [US3] `maxitor-plugin-check` on the template and the core's installer check (`CheckVersionAction`'s reading of the navigation) accept it.
+- [ ] T018 [US3] On the local stand of bystrovmaxim/gnomon#75, once the template's version is raised (T024): the steps of [quickstart.md](quickstart.md), "Through the gateway", walked by `check-core.mjs`, each answering as written.
+- [X] T019 Adversarial check: attach `item-notes` to `core:item` again and drop `each` from `item`, one at a time; the new navigation test fails each time and no other test of the phase does; restore.
 
 ## Phase 3: Documentation (US4 P3) — issue phase 3
 

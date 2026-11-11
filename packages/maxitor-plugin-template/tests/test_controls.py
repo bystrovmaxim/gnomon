@@ -5,8 +5,15 @@ import pytest
 from maxitor_plugin_sdk.checks import check_plugin
 
 
+def _all(nodes):
+    """Every node of the tree, at any depth."""
+    for node in nodes:
+        yield node
+        yield from _all(node.get("children", []))
+
+
 def _item_notes(doc):
-    return next(node for node in doc["nodes"] if node["id"] == "item-notes")
+    return next(node for node in _all(doc["nodes"]) if node["id"] == "item-notes")
 
 
 def _controls(doc):

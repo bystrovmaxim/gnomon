@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -57,7 +58,10 @@ def test_a_foreign_sdk_major_is_refused(plugin: Path) -> None:
 
 def test_a_domain_without_events_is_refused(plugin: Path) -> None:
     domain = plugin / PACKAGE / "notes_domain.py"
-    domain.write_text(domain.read_text(encoding="utf-8").replace("    events = ()\n", ""), encoding="utf-8")
+    text = domain.read_text(encoding="utf-8")
+    without = re.sub(r"\n    events = \(.*?\n    \)\n", "\n", text, flags=re.S)
+    assert without != text, "the template's domain lists its events"
+    domain.write_text(without, encoding="utf-8")
     assert check(plugin, "4.0.0") == ["maxitor_notes/notes_domain.py: the domain NotesDomain declares no events"]
 
 
