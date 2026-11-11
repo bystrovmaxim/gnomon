@@ -10,7 +10,7 @@ An action names its role, its organization check and its main step. `@access_dec
 
 <!-- quote: packages/maxitor-plugin-template/src/maxitor_notes/actions/list_item_notes_action.py -->
 ```python
-@meta(description="List the notes of a catalog item at one moment", domain=NotesDomain)
+@meta(description="List the notes of an item at one moment", domain=NotesDomain)
 @check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class ListItemNotesAction(BaseAction[ListItemNotesParams, ListItemNotesResult]):
@@ -93,7 +93,7 @@ uv run --extra dev pytest packages/maxitor-plugin-template/tests/test_reading_sq
 ```
 
 ```text
-16 passed
+17 passed
 ```
 
-On the local stand the reading is `GET /p/notes/api/<code>/items/<item>/notes`, and `?at=<moment>` reads the past.
+On the local stand the reading is `GET /p/notes/api/<code>/items/<item>/notes`, and `?at=<moment>` reads the past. The list of items reads the same way, `GET /p/notes/api/<code>/lists/list_items?at=<moment>`: it is the source of the list node `item` in Maxitor's tree, so the tree at a past moment holds the items as they were then.

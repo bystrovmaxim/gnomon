@@ -1,6 +1,6 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/actions/list_note_draft_action.py
 """
-ListNoteDraftAction — the draft of a catalog item's notes at one moment.
+ListNoteDraftAction — the draft of an item's notes at one moment.
 
 ::
 
@@ -39,7 +39,7 @@ from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStora
 class ListNoteDraftParams(BaseParams):
     """Which item, at which moment."""
 
-    item_id: str = Field(min_length=1, max_length=64, description="The catalog item")
+    item_id: str = Field(min_length=1, max_length=64, description="The item")
     at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The panel's moment; none means now, the watermark")
 
 
@@ -50,7 +50,7 @@ class ListNoteDraftResult(BaseResult):
     changes: list[NoteChangeCoreEntity] = Field(description="Every note added, changed or removed since it, in time order")
 
 
-@meta(description="The draft of a catalog item's notes at one moment", domain=NotesDomain)
+@meta(description="The draft of an item's notes at one moment", domain=NotesDomain)
 @check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class ListNoteDraftAction(BaseAction[ListNoteDraftParams, ListNoteDraftResult]):

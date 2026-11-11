@@ -22,7 +22,7 @@ In short: a plugin is a Python package (pip or a ready wheel) that carries a pas
 | **frame** | what is always on screen: the navigation tree on the left, the core's row at the top, the right panel; only the core draws it |
 | **tree** | the navigation tree on the left; built from the `navigation.yaml` files of the core and the plugins |
 | **attachment node** | a node of the core's or a dependency's tree under which a plugin places its nodes |
-| **list node** | a node that multiplies by records at run time: one instance per product, per catalog item and so on |
+| **list node** | a node that multiplies by records at run time: one instance per record of its source, such as one per item of the template `notes` |
 | **tree builder** | the part of the installer that builds the tree and checks the attachments |
 | **right panel** | the grey field with dots on the right; a plugin's page opens in it |
 | **canvas** | `<MaxitorCanvas>`: one field for all of Maxitor with moving, zooming and a camera; a plugin puts only its content into it |
@@ -53,7 +53,7 @@ id: io.github.acme.notes             # the global id, never changes
 name: notes                          # the name in an installation: each version's schema and user, the path
 title: Notes
 description: >
-  Notes on any catalog item: who wrote what, when, and what changed.
+  Notes on the plugin's own items: who wrote what, when, and what changed.
 version: 1.2.0
 
 requires:
@@ -243,14 +243,24 @@ A plugin carries no SQL. Its `schema.yaml` (`plugin-schema-1.schema.json`) decla
 ```yaml
 schema: 1
 tables:
-  note:
-    description: A note on a catalog item.
+  item:
+    description: What notes are written on, like a folder.
     columns:
-      item_id: {type: uuid, nullable: false, description: The catalog item the note is about.}
+      title: {type: text, nullable: false, description: The item's title, unique among the organization's items now.}
+    unique:
+      - [title]
+  note:
+    description: A note on an item.
+    columns:
+      item_id: {type: uuid, nullable: false, description: The item the note is about.}
       body: {type: text, nullable: false, description: The text of the note.}
     indexes:
       - [item_id]
+    keys:
+      - {columns: [item_id], table: item, references: [id]}   # a key inside the plugin
 ```
+
+A unique key and a key inside the plugin are built with `organization_id` in front: `UNIQUE (organization_id, title)` and `FOREIGN KEY (organization_id, item_id) REFERENCES item (organization_id, id)`, so a note can point only at an item of its own organization. The key only guards: an action checks that the item exists before it writes.
 
 The columns `id`, `organization_id`, `created_at` and `updated_at` are always added and never declared. Every table gets a primary key that begins with `organization_id` and, unless it is a table of mechanics, its `<table>_versions` with the service fields, the constraint that no two versions of a row overlap and the index of the versions in force — versioned storage holds by construction. A table's name matches `^[a-z][a-z0-9_]{0,39}$`, a column's `^[a-z][a-z0-9_]{0,47}$`; a name that does not, or a type outside the list, refuses the file before any SQL exists, and every name enters SQL only quoted as an identifier.
 
@@ -414,54 +424,36 @@ The Maxitor screen is always one: on the left the navigation tree, at the top th
 ```text
 ┌────────────────┬──────────────────────────────────────────────┐
 │ tree           │ core row: organization · moment · path · …   │
-│  Catalog       ├──────────────────────────────────────────────┤
-│   ▾ Item 17    │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
-│      Overview  │ ·  ·   a plugin's page in the right panel ·  │
-│      Notes   ◀ │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
-│  Products      │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
+│  Notes         ├──────────────────────────────────────────────┤
+│   ▾ Payments   │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
+│      Notes   ◀ │ ·  ·   a plugin's page in the right panel ·  │
+│      Draft     │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
+│  Settings      │ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  │
 └────────────────┴──────────────────────────────────────────────┘
 ```
 
 ### 7.1. The core's tree
 
-The core's file `navigation.yaml` describes the structure of the core's tree. Every node with an `id` is an attachment node: plugins' nodes may stand under it.
+The core's file `navigation.yaml` describes the structure of the core's tree. Every node with an `id` is an attachment node: plugins' nodes may stand under it. The core keeps no data of its own beyond organizations, people and plugins, so its tree is short: the organization's settings at the foot of the tree. Everything else in the tree comes from plugins, each in a section of its own or under a node of a plugin it depends on.
 
 ```yaml
 navigation: 1
 nodes:
-  - id: catalog
-    title: Catalog
-    icon: catalog
-    order: 100
-    page: /catalog
+  - id: settings
+    title: Settings
+    icon: settings
+    order: 10000                       # at the foot of the tree
+    roles: [administrator]
     children:
-      - id: item                       # a list node: one instance per catalog item
-        each:
-          source: list_items           # a reading action of the node's owner
-          key: item_id                 # the parameter each instance adds to the scope
-        page: /items/{item_id}
-        children:
-          - id: item.overview
-            title: Overview
-            order: 100
-            page: /items/{item_id}/overview
-
-  - id: products
-    title: Products
-    icon: product
-    order: 200
-    page: /products
-    children:
-      - id: product
-        each:
-          source: list_products
-          key: product_id
-        page: /products/{product_id}
+      - id: settings.plugins
+        title: Plugins
+        order: 100
+        page: /settings/plugins
 ```
 
 | Field | Rule |
 |---|---|
-| `id` | `^[a-z][a-z0-9_.-]{0,62}$`, unique within its owner; a node's full name is `<owner>:<id>`: `core:item`, `notes:item-notes` |
+| `id` | `^[a-z][a-z0-9_.-]{0,62}$`, unique within its owner at any depth; a node's full name is `<owner>:<id>`: `core:settings`, `notes:item` |
 | `title` | text for an ordinary node; a list node's instances get their titles from `source` |
 | `icon` | a name from the core's icon set; there are no pictures of one's own in the tree — the tree looks the same everywhere |
 | `order` | the order among the children of one parent; the core steps by 100 so plugins have room to stand |
@@ -472,7 +464,7 @@ nodes:
 | `room` | the page's behaviour in a room (section 8) |
 | `children` | children |
 
-**The scope of parameters.** Each instance of a list node adds its key to the scope (`item_id`, `product_id`). Every descendant sees the parameters of all list nodes above it and puts them into `page` and into the parameters of its own lists. That is how contextual items come about: "Containers" under every product knows its `product_id`.
+**The scope of parameters.** Each instance of a list node adds its key to the scope (`item_id`). Every descendant sees the parameters of all list nodes above it and puts them into `page` and into the parameters of its own lists. That is how contextual items come about: "Draft" under every item of the template knows its `item_id`.
 
 The full names of the core's nodes are its contract with plugins: renaming or removing a node is a change of the core's major version, and the plugins' `requires.maxitor` catches it.
 
@@ -484,32 +476,38 @@ A plugin describes its nodes in its own `navigation.yaml` and attaches each of i
 # acme_notes/navigation.yaml
 navigation: 1
 nodes:
-  - id: item-notes
-    attach: core:item                  # under every catalog item
-    title: Notes
-    icon: note
-    order: 300
-    page: /items/{item_id}
-    roles: [member]
-    room:
-      shared: [view]
-      surface: document
-
   - id: notes
     attach: root                       # a section of its own in the root of the tree
     title: Notes
     icon: note
     order: 500
     page: /
+    roles: [member]
     children:
-      - id: author
+      - id: item                       # a list node: one instance per item of the organization
         each:
-          source: list_authors
-          key: author_id
-        page: /authors/{author_id}
+          source: list_items           # a reading action of the node's owner
+          key: item_id                 # the parameter each instance adds to the scope
+        roles: [member]
+        children:
+          - id: item-notes
+            title: Notes
+            icon: note
+            order: 100
+            page: /items/{item_id}
+            roles: [member]
+            room:
+              shared: [view]
+              surface: document
+          - id: item-draft
+            title: Draft
+            icon: note
+            order: 120
+            page: /items/{item_id}/draft
+            roles: [member]
 ```
 
-A plugin `containers` that depends on the core inserts its list of containers into every product the same way: `attach: core:product`, `page: /products/{product_id}/containers`. A plugin that depends on `containers` may stand under its nodes — it knows them from its dependency's package.
+A plugin may have several top nodes, each attached on its own: a section in the root, a page under the core's settings, pages under a dependency's nodes. A plugin `reviews` that depends on `notes` puts a page under every item of it: `attach: notes:item`, `page: /items/{item_id}/reviews`, and gets `item_id` from the list node it stands under. It may attach to any node of `notes` that has an `id`, at any depth — it knows them from its dependency's package — and those full names are part of `notes`' contract (section 3).
 
 The rules of attachment:
 
@@ -542,10 +540,10 @@ The builder refuses when:
 Ordinary nodes come to the browser from the built tree, filtered by roles, in one action of the core. A list node's instances load when its parent opens: the core calls the owner's `source` through the gateway with the person's token, the organization, the scope's parameters and the moment.
 
 ```json
-// the input of a list action
-{ "organization": "acme", "params": { "product_id": "42" }, "at": "2026-11-08T10:15:00.123456Z", "limit": 50, "after": null }
+// the input of a list action: the list node `item` of the template stands under its root, so its scope is empty
+{ "organization": "acme", "params": {}, "at": "2026-11-08T10:15:00.123456Z", "limit": 50, "after": null }
 // the output
-{ "entries": [ { "key": "c-17", "title": "billing-api", "icon": "container" } ], "next": "c-17" }
+{ "entries": [ { "key": "4f1c…", "title": "Payments", "icon": "folder" } ], "next": "4f1c…" }
 ```
 
 - The core calls a list at `GET /p/<name>/api/<organization>/lists/<source>?<scope parameters>&at=…&limit=…&after=…`; a control's `source` is called the same way.
@@ -661,10 +659,10 @@ The controls over the right panel work like the tree: **a plugin declares, the c
 | zoom | bottom right | comes with the canvas (7.7) |
 
 ```yaml
-- id: product-containers
-  attach: core:product
+- id: containers
+  attach: root
   title: Containers
-  page: /products/{product_id}/containers
+  page: /containers
   controls:
     mode:
       param: mode
@@ -903,7 +901,7 @@ acme-maxitor-notes/
 
 ## 12. Example: the plugin "Notes"
 
-The plugin adds notes to the core's catalog items. The table `organization.items` is the example of versioned storage. The plugin template in this package is this example.
+The plugin keeps its own items, like folders, and notes on them; it needs nothing but the core. The plugin template in this package is this example.
 
 **1. The skeleton.**
 
@@ -921,17 +919,25 @@ Creates the tree of files of section 11, a passport with no dependencies, a `nav
 # schema.yaml
 schema: 1
 tables:
-  note:
-    description: A note on a catalog item.
+  item:
+    description: 'What notes are written on, like a folder: a title in one organization.'
     columns:
-      item_id: {type: uuid, nullable: false, description: The catalog item the note is about.}
+      title: {type: text, nullable: false, description: The item's title, unique among the organization's items now.}
+    unique:
+      - [title]
+  note:
+    description: A note on an item.
+    columns:
+      item_id: {type: uuid, nullable: false, description: The item the note is about.}
       writer_id: {type: uuid, nullable: false, description: The account of the member who wrote the note.}
       body: {type: text, nullable: false, description: The text of the note.}
     indexes:
       - [item_id]
+    keys:
+      - {columns: [item_id], table: item, references: [id]}
 ```
 
-The key to the core is not in `schema.yaml` — it is in `foreign-keys.yaml` (section 5.3):
+The key from a note to its item is a key inside the plugin, so it is in `schema.yaml`; the key to the core is not in `schema.yaml` — it is in `foreign-keys.yaml` (section 5.3):
 
 ```yaml
 foreign_keys:
@@ -942,7 +948,7 @@ foreign_keys:
 **4. The resource and the actions.** The resource takes its change time and watermark from the core's functions through `maxitor_plugin_sdk.core_functions` (section 5.4) and writes a row and its version; the actions call the resource. A sketch:
 
 ```python
-@meta("Notes of catalog items, in the plugin's own schema.")
+@meta("Items and their notes, in the plugin's own schema.")
 @entities(Note)
 class NotesStorage(PostgresStorage):
     async def add(self, change: Change, note: Note) -> None:
@@ -955,13 +961,13 @@ class NotesStorage(PostgresStorage):
 ```
 
 ```python
-@meta("Adds a note to a catalog item.", domain=NotesDomain)
+@meta("Adds a note to an item.", domain=NotesDomain)
 @check_roles(MemberRole)
 class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
-    @access_decide("Refuse a person who is not a member of the organization of the address.")
+    @access_decide("Refuse a person who is not a member of the organization of the address, and an item that is not one of it.")
     @context_requires("user.user_id", "user.organization")
-    async def organization_access_decide(self, params, box, connections, ctx) -> Verdict:
-        return await membership.organization_access(connections.notes, ctx.get("user.organization"), ctx.get("user.user_id"))
+    async def item_access_decide(self, params, box, connections, ctx) -> Verdict:
+        return await membership.item_access(connections.notes, ctx.get("user.organization"), ctx.get("user.user_id"), params.item_id)
 
     @summary_aspect("Writes the note and returns the change time.")
     @context_requires("user.user_id", "user.organization")
@@ -972,9 +978,11 @@ class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
         return ChangeResult(changed_at=change.changed_at)
 ```
 
-`user.organization` is the organization of the address (`/p/notes/api/<organization>/notes`): the plugin's auth coordinator takes it from the path the gateway has already checked and puts it into the context beside the token's person, so a write and a read are bound to it alike. `organization_access_decide` checks it again and answers `Allowed()` or `FORBIDDEN_OBJECT` (6.6); the role is already checked by `@check_roles`, so the step decides only about the organization. The summary looks the organization's `id` up again, because the decision passes no state on. `versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
+`user.organization` is the organization of the address (`/p/notes/api/<organization>/notes`): the plugin's auth coordinator takes it from the path the gateway has already checked and puts it into the context beside the token's person, so a write and a read are bound to it alike. `item_access_decide` checks it again, and that the item is one of the organization's now, and answers `Allowed()` or `FORBIDDEN_OBJECT` (6.6): one answer for an item that does not exist and one of another organization. The role is already checked by `@check_roles`, so the step decides only about the organization and the item. The summary looks the organization's `id` up again, because the decision passes no state on. `versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
 
-**5. Tree nodes and controls.** In `navigation.yaml` — the node "Notes" under every catalog item (`attach: core:item`, `page: /items/{item_id}`) with `room: {shared: [view], surface: document}`, as in section 7.2, and controls: the view `list`/`table` and an author filter whose options come from the action `list_note_authors` (section 7.8). `maxitor plugin check` builds the tree together with the core's tree and shows where the node stands.
+**5. Tree nodes and controls.** In `navigation.yaml` — the section "Notes" in the root of the tree, under it the list node `item` whose instances come from the action `list_items`, and under every item its pages: "Notes" (`page: /items/{item_id}`) with `room: {shared: [view], surface: document}`, "Published notes" and "Draft", as in section 7.2. The notes page has controls: the view `list`/`table` and an author filter whose options come from the action `list_note_authors` (section 7.8). `maxitor plugin check` checks every `{item_id}` against the list node above it.
+
+**History.** An item's notes are published together under a number, `v1`, `v2`, with the draft between two revisions: the simplest model of a release. A model where every record goes through a lifecycle of its own — in work, shared, published, archived — is the plugin common data environment (bystrovmaxim/gnomon#106).
 
 **6. The page.** It opens in the right panel at `/w/<organization>/notes/items/<id>?view=…&author=…&at=…`; everything that changes the view is in the address. The plugin's routes start with the organization: `app/[org]/items/[item_id]/page.tsx`.
 

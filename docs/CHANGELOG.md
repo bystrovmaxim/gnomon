@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-11-11] — The plugin template keeps what its notes are written on
+
+The plugin template, which every Maxitor plugin is copied from, now needs nothing but the core. Its notes are written on items it keeps itself, like folders: a member adds an item with a title, renames it, and the title stays unique in the organization. Renaming never overwrites someone else's change, and any past moment still reads the old title. A note can be written only on an item of the member's own organization.
+
+In Maxitor's tree the template has a section of its own, "Notes". Under it stands one node per item, read from the template at the panel's moment, and under every item its three pages: the notes, the published notes and the draft. Nothing of the template hangs under a node the core does not have.
+
+The plugin concept and the tutorial say the same: the core's tree holds only what the core has, the organization's settings; everything else comes from plugins, in sections of their own or under the nodes of plugins they depend on. A model where every record goes through its own lifecycle — in work, shared, published, archived — is the next plugin, the common data environment. ([#103](https://github.com/bystrovmaxim/gnomon/issues/103))
+
 ## [2026-11-11] — A tutorial: write a Maxitor plugin step by step
 
 Anyone who has never seen Maxitor can now write a plugin by following the plugin template, chapter by chapter, in `docs/plugins/tutorial/`. It starts from what you will build and the local stand, then copies the template and names it, declares its tables, reads notes at any moment, writes them in one change without losing someone else's, and runs the backend behind the gateway with the core's roles; a chapter on tests says what a plugin must prove. Every chapter quotes the template's own code, and a check fails the moment a quote no longer matches its file, so the tutorial cannot drift from the code. Its index lists the chapters still to come and the step that will write each, once what it describes runs. ([#99](https://github.com/bystrovmaxim/gnomon/issues/99))

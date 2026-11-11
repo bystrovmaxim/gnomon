@@ -160,7 +160,12 @@ async def test_the_history_actions_are_refused_outside_the_organization() -> Non
 
 def test_the_pages_declare_their_history_and_the_passport_its_comparisons() -> None:
     passport = yaml.safe_load((PACKAGE / "maxitor-plugin.yaml").read_text())
-    nodes = {node["id"]: node for node in yaml.safe_load((PACKAGE / "navigation.yaml").read_text())["nodes"]}
+    def every(found):
+        for node in found:
+            yield node
+            yield from every(node.get("children", []))
+
+    nodes = {node["id"]: node for node in every(yaml.safe_load((PACKAGE / "navigation.yaml").read_text())["nodes"])}
     assert passport["history"] == {"compare": ["diff", "side_by_side"]}
     assert nodes["item-notes"]["history"] == {"read": "list_item_notes", "milestones": "list_note_history", "card": "note_milestone_card"}
     assert nodes["item-published"]["history"] == {"milestones": "list_note_history", "card": "note_milestone_card"}

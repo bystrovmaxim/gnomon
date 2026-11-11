@@ -26,7 +26,7 @@ core's schema of functions.
 from __future__ import annotations
 
 from typing import Any, cast
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from maxitor_plugin_sdk.core_functions import MEMBER_ORGANIZATION_SQL, change_time_sql, member_name, watermark_sql
 from maxitor_plugin_sdk.history import Version
@@ -37,6 +37,7 @@ from aoa.action_machine.intents.entities import entities
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.postgres import PostgresStorage
 from aoa.action_machine.resources.sql import SqlStorageWrapper
+from maxitor_notes.entities.item_entry_entity import ItemEntryCoreEntity
 from maxitor_notes.entities.milestone_card_entity import MilestoneCardCoreEntity
 from maxitor_notes.entities.milestone_entity import MilestoneCoreEntity
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
@@ -46,20 +47,24 @@ from maxitor_notes.entities.revision_entity import RevisionCoreEntity
 from maxitor_notes.notes_refusal_error import NotesRefusalError
 
 #: The plugin's version tables: its change time and watermark follow them.
-VERSION_TABLES = ("note_versions", "revision_versions")
+VERSION_TABLES = ("item_versions", "note_versions", "revision_versions")
 
 
 #: Connection key under which actions receive the storage.
 NOTES_CONNECTION_KEY = "notes"
 
+#: The icon of every item in the tree.
+ITEM_ICON = "folder"
+
 @meta(description="The plugin's own schema, written as its version's user; the core reached only by its functions")
-@entities(NoteCoreEntity, NoteAuthorCoreEntity, RevisionCoreEntity, NoteChangeCoreEntity, MilestoneCoreEntity, MilestoneCardCoreEntity)
+@entities(ItemEntryCoreEntity, NoteCoreEntity, NoteAuthorCoreEntity, RevisionCoreEntity, NoteChangeCoreEntity, MilestoneCoreEntity, MilestoneCardCoreEntity)
 class NotesStorage(PostgresStorage):
     """
     AI-CORE-BEGIN
     ROLE: The database of the plugin ``notes``.
-    CONTRACT: ``organization_of`` asks the core's membership function; ``add_note``, ``edit_note`` and
-    ``delete_note`` write a note and its versions in one transaction and return the change time; ``notes_of_item`` and ``note_authors`` read the
+    CONTRACT: ``organization_of`` asks the core's membership function; ``add_item`` and ``rename_item`` write an item
+    and its versions, ``add_note``, ``edit_note`` and ``delete_note`` a note and its versions, each in one
+    transaction, and return the change time; ``items_at``, ``notes_of_item`` and ``note_authors`` read the
     version tables at one moment, the watermark when no moment is given.
     INVARIANTS: Reads and writes only its own schema; ``organization_id`` in every condition; a moment travels as a
         string.
@@ -75,6 +80,136 @@ class NotesStorage(PostgresStorage):
         """The id of the organization ``code`` if ``user_id`` is a member of it now, else ``None``."""
         value = await self._fetchval(MEMBER_ORGANIZATION_SQL, (code, user_id))
         return None if value is None else str(value)
+
+    async def item_of(self, organization_id: str, item_id: str) -> bool:
+        """Whether ``item_id`` is an item of the organization now; an id that is no uuid is none."""
+        try:
+            UUID(item_id)
+        except ValueError:
+            return False
+        return bool(
+            await self._fetchval(
+                "SELECT EXISTS (SELECT 1 FROM item WHERE organization_id = $1::text::uuid AND id = $2::text::uuid)",
+                (organization_id, item_id),
+            )
+        )
+
+    async def add_item(self, organization_id: str, title: str, author_id: str, operation: str) -> tuple[str, str]:
+        """
+        Write a new item and its first version in one transaction; return its id and the change time.
+
+        The title is read against the current items after the organization's lock, so of two members adding one title
+        at once the second is refused; the unique key only guards.
+        """
+        await self.begin()
+        try:
+            changed_at = await self._fetchval(change_time_sql(VERSION_TABLES), (organization_id,))
+            await self._title_free(organization_id, title, None)
+            item_id = str(uuid4())
+            await self._execute(
+                "INSERT INTO item (id, organization_id, title, created_at, updated_at)"
+                " VALUES ($1::text::uuid, $2::text::uuid, $3, $4, $4)",
+                (item_id, organization_id, title, changed_at),
+            )
+            await self._execute(
+                "INSERT INTO item_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
+                " title, created_at, updated_at)"
+                " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, title, created_at, updated_at"
+                " FROM item WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
+                (organization_id, item_id, changed_at, author_id, operation),
+            )
+            moment = await self._fetchval(f"SELECT {moment_text('$1::timestamptz')}", (changed_at,))
+            await self.commit()
+        except BaseException:
+            await self.rollback()
+            raise
+        return item_id, str(moment)
+
+    async def rename_item(
+        self, organization_id: str, item_id: str, title: str, base_moment: str, editor_id: str, operation: str
+    ) -> tuple[str, str, bool]:
+        """
+        Give an item the editor saw at ``base_moment`` a new title; return the old title, the change time and whether
+        anything changed.
+
+        One transaction after the organization's lock: the current row is locked; an item changed by someone else
+        after ``base_moment`` is refused; the title it has writes nothing and answers its open version's start; a
+        title another item has now is refused. Otherwise the open version closes and the new one opens.
+        """
+        await self.begin()
+        try:
+            changed_at, now = await self._change_time(organization_id, base_moment)
+            row = await self._fetchrow(
+                "SELECT title FROM item WHERE organization_id = $1::text::uuid AND id = $2::text::uuid FOR UPDATE",
+                (organization_id, item_id),
+            )
+            if row is None:
+                raise NotesRefusalError("no_such_item", 404)
+            version = await self._fetchrow(
+                f"SELECT {moment_text('valid_from_at')} AS since,"
+                f" {member_name('organization_id', 'author_id', 'valid_from_at')} AS changed_by FROM item_versions"
+                " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND valid_to_at IS NULL",
+                (organization_id, item_id),
+            )
+            if version["since"] > base_moment:
+                raise NotesRefusalError("changed_since", 409, changed_by=version["changed_by"], changed_at=version["since"])
+            old = str(row["title"])
+            if old == title:
+                await self.rollback()
+                return old, str(version["since"]), False
+            await self._title_free(organization_id, title, item_id)
+            await self._execute(
+                "UPDATE item SET title = $3, updated_at = $4 WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
+                (organization_id, item_id, title, changed_at),
+            )
+            await self._execute(
+                "UPDATE item_versions SET valid_to_at = $3, closed_by = $4::text::uuid, closed_operation = $5"
+                " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND valid_to_at IS NULL AND valid_from_at < $3",
+                (organization_id, item_id, changed_at, editor_id, operation),
+            )
+            await self._execute(
+                "INSERT INTO item_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
+                " title, created_at, updated_at)"
+                " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, title, created_at, updated_at"
+                " FROM item WHERE organization_id = $1::text::uuid AND id = $2::text::uuid"
+                " ON CONFLICT (organization_id, id, valid_from_at) DO UPDATE SET title = EXCLUDED.title, updated_at = EXCLUDED.updated_at",
+                (organization_id, item_id, changed_at, editor_id, operation),
+            )
+            await self.commit()
+        except BaseException:
+            await self.rollback()
+            raise
+        return old, now, True
+
+    async def _title_free(self, organization_id: str, title: str, item_id: str | None) -> None:
+        """Refuse ``title_taken`` when an item of the organization other than ``item_id`` has the title now."""
+        taken = await self._fetchval(
+            "SELECT EXISTS (SELECT 1 FROM item WHERE organization_id = $1::text::uuid AND title = $2"
+            " AND ($3::text IS NULL OR id <> $3::text::uuid))",
+            (organization_id, title, item_id),
+        )
+        if taken:
+            raise NotesRefusalError("title_taken", 409, title=title)
+
+    async def items_at(self, organization_id: str, moment: str | None, limit: int, after: str | None) -> list[ItemEntryCoreEntity]:
+        """
+        The organization's items at ``moment`` (the watermark when ``None``), ordered by title and then id, ``limit``
+        of them after the item ``after`` as it stood at the same moment.
+        """
+        at = await self._moment(organization_id, moment)
+        if at is None:
+            return []
+        when = "$2::text::timestamptz"
+        rows = await self._fetch(
+            f"SELECT i.id::text AS key, i.title AS title"
+            f" FROM item_versions i"
+            f" WHERE i.organization_id = $1::text::uuid AND {in_force('i', when)}"
+            f" AND ($3::text IS NULL OR (i.title, i.id) > (SELECT a.title, a.id FROM item_versions a"
+            f" WHERE a.organization_id = $1::text::uuid AND a.id = $3::text::uuid AND {in_force('a', when)}))"
+            f" ORDER BY i.title, i.id LIMIT $4",
+            (organization_id, at, after, limit),
+        )
+        return [ItemEntryCoreEntity(key=row["key"], title=row["title"], icon=ITEM_ICON) for row in rows]
 
     async def add_note(self, organization_id: str, item_id: str, writer_id: str, body: str, operation: str) -> str:
         """Write a new note and its first version in one transaction; return the change time."""
@@ -472,6 +607,22 @@ class NotesStorageWrapper(SqlStorageWrapper):
     async def organization_of(self, code: str, user_id: str) -> str | None:
         """Pass on the wrapped storage's membership check."""
         return await self._storage().organization_of(code, user_id)
+
+    async def item_of(self, organization_id: str, item_id: str) -> bool:
+        """Pass on the wrapped storage's check of an item."""
+        return await self._storage().item_of(organization_id, item_id)
+
+    async def add_item(self, organization_id: str, title: str, author_id: str, operation: str) -> tuple[str, str]:
+        """Pass on the wrapped storage's adding of an item."""
+        return await self._storage().add_item(organization_id, title, author_id, operation)
+
+    async def rename_item(self, organization_id: str, item_id: str, title: str, base_moment: str, editor_id: str, operation: str) -> tuple[str, str, bool]:
+        """Pass on the wrapped storage's renaming of an item."""
+        return await self._storage().rename_item(organization_id, item_id, title, base_moment, editor_id, operation)
+
+    async def items_at(self, organization_id: str, moment: str | None, limit: int, after: str | None) -> list[ItemEntryCoreEntity]:
+        """Pass on the wrapped storage's read of the items."""
+        return await self._storage().items_at(organization_id, moment, limit, after)
 
     async def edit_note(self, organization_id: str, note_id: str, body: str, base_moment: str, editor_id: str, operation: str) -> str:
         """Pass on the wrapped storage's edit."""

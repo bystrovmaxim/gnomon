@@ -10,7 +10,7 @@ from aoa.action_machine.intents.entity import entity
 from maxitor_notes.notes_domain import NotesDomain
 
 
-@entity(description="A person who has written notes on a catalog item", domain=NotesDomain)
+@entity(description="A person who has written notes on an item", domain=NotesDomain)
 class NoteAuthorCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN

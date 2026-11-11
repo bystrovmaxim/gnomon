@@ -1,20 +1,29 @@
 # schema.yaml — the plugin's tables. No SQL: Maxitor's installer builds each table with its version table, the service
 # fields (id, organization_id, created_at, updated_at), the overlap constraint and the indexes, by the rules of
-# versioned storage. The keys to the core are in foreign-keys.yaml.
+# versioned storage. A key between two of the plugin's tables is a table's keys here; the keys to the core are in
+# foreign-keys.yaml.
 schema: 1
 tables:
-  note:
-    description: A note on a catalog item. Read only by changing actions; screens read note_versions.
+  item:
+    description: 'What notes are written on, like a folder: a title in one organization. Items do not nest. Screens read item_versions.'
     columns:
-      item_id: {type: uuid, nullable: false, description: The catalog item the note is about.}
+      title: {type: text, nullable: false, description: 'The item''s title: 1–200 characters, no spaces at its ends, unique among the organization''s items now.'}
+    unique:
+      - [title]
+  note:
+    description: A note on an item. Read only by changing actions; screens read note_versions.
+    columns:
+      item_id: {type: uuid, nullable: false, description: The item the note is about.}
       writer_id: {type: uuid, nullable: false, description: The account of the member who wrote the note.}
       body: {type: text, nullable: false, description: The text of the note.}
     indexes:
       - [item_id]
+    keys:
+      - {columns: [item_id], table: item, references: [id]}
   revision:
     description: 'An item''s notes published under a number. Written once and never changed; its moment is when it was published, and it holds the notes as they read at that moment.'
     columns:
-      item_id: {type: uuid, nullable: false, description: The catalog item whose notes are published.}
+      item_id: {type: uuid, nullable: false, description: The item whose notes are published.}
       number: {type: integer, nullable: false, description: 'The revision''s number for its item: 1, 2, … with no gap.'}
       title: {type: text, nullable: false, description: The revision's first line.}
       comment: {type: text, nullable: false, description: 'The revision''s own words: shown under the time scale when the revision is chosen.'}
@@ -24,3 +33,5 @@ tables:
       - [item_id, number]
     indexes:
       - [item_id]
+    keys:
+      - {columns: [item_id], table: item, references: [id]}

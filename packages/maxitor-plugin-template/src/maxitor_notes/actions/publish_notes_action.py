@@ -5,7 +5,7 @@ PublishNotesAction — an editor publishes an item's notes as its next revision.
 ::
 
     POST /p/notes/api/{organization}/revisions {item_id, title, comment, release?} ──► PublishNotesAction
-        ├─ organization_access_decide: the person is a member of {organization}
+        ├─ item_access_decide: the person is a member of {organization}, and the item is an item of it now
         └─ publish_summary: the organization's id again; the next number under the lock, or nothing to publish (409)
 """
 
@@ -28,7 +28,7 @@ from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
-from maxitor_notes.membership import member_organization_id, organization_access
+from maxitor_notes.membership import item_access, member_organization_id
 from maxitor_notes.notes_domain import NotesDomain
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
 
@@ -36,7 +36,7 @@ from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStora
 class PublishNotesParams(BaseParams):
     """Which item, and what the revision says."""
 
-    item_id: str = Field(min_length=1, max_length=64, description="The catalog item whose notes are published")
+    item_id: str = Field(min_length=1, max_length=64, description="The item whose notes are published")
     title: str = Field(min_length=1, max_length=200, description="The revision's first line")
     comment: str = Field(min_length=1, max_length=2000, description="The revision's own words, shown under the time scale")
     release: str | None = Field(default=None, min_length=1, max_length=80, description="A release label; none when the revision carries none")
@@ -61,13 +61,13 @@ class PublishNotesAction(BaseAction[PublishNotesParams, PublishNotesResult]):
     AI-CORE-END
     """
 
-    @access_decide("Refuse a person who is not a member of the organization of the address")
+    @access_decide("Refuse a person who is not a member of the organization of the address, and an item that is not one of it")
     @context_requires(Ctx.User.user_id, "user.organization")
-    async def organization_access_decide(self, params: PublishNotesParams, box: ToolsBox, connections: Connections, ctx: ContextView) -> Verdict:
-        """The organization of the address must be one the person of the token belongs to."""
-        _ = (params, box)
+    async def item_access_decide(self, params: PublishNotesParams, box: ToolsBox, connections: Connections, ctx: ContextView) -> Verdict:
+        """The organization of the address must be the person's, and the item one of its items now."""
+        _ = box
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
-        return await organization_access(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
+        return await item_access(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id), params.item_id)
 
     @summary_aspect("Write the next revision and return its number and moment")
     @context_requires(Ctx.User.user_id, "user.organization")

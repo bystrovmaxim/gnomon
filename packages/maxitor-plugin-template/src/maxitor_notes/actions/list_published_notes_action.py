@@ -1,6 +1,6 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/actions/list_published_notes_action.py
 """
-ListPublishedNotesAction — the published notes of a catalog item at one moment.
+ListPublishedNotesAction — the published notes of an item at one moment.
 
 ::
 
@@ -39,7 +39,7 @@ from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStora
 class ListPublishedNotesParams(BaseParams):
     """Which item, at which moment."""
 
-    item_id: str = Field(min_length=1, max_length=64, description="The catalog item")
+    item_id: str = Field(min_length=1, max_length=64, description="The item")
     at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The panel's moment; none means now, the watermark")
 
 
@@ -50,7 +50,7 @@ class ListPublishedNotesResult(BaseResult):
     notes: list[NoteCoreEntity] = Field(description="Its notes as they read when it was published")
 
 
-@meta(description="The published notes of a catalog item at one moment", domain=NotesDomain)
+@meta(description="The published notes of an item at one moment", domain=NotesDomain)
 @check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class ListPublishedNotesAction(BaseAction[ListPublishedNotesParams, ListPublishedNotesResult]):

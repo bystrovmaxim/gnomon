@@ -41,14 +41,17 @@ from aoa.action_machine.resources.per_call_connection import PerCallConnection
 from aoa.action_machine.resources.postgres import PostgresPool
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
 from aoa.fastapi import FastApiAdapter
+from maxitor_notes.actions.add_item_action import AddItemAction
 from maxitor_notes.actions.add_note_action import AddNoteAction
 from maxitor_notes.actions.delete_note_action import DeleteNoteAction
 from maxitor_notes.actions.edit_note_action import EditNoteAction
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction
+from maxitor_notes.actions.list_items_action import ListItemsAction
 from maxitor_notes.actions.list_note_authors_action import ListNoteAuthorsAction
 from maxitor_notes.actions.list_note_draft_action import ListNoteDraftAction
 from maxitor_notes.actions.list_published_notes_action import ListPublishedNotesAction
 from maxitor_notes.actions.publish_notes_action import PublishNotesAction
+from maxitor_notes.actions.rename_item_action import RenameItemAction
 from maxitor_notes.history.list_note_history_action import ListNoteHistoryAction
 from maxitor_notes.history.note_milestone_card_action import NoteMilestoneCardAction
 from maxitor_notes.notes_refusal_error import NotesRefusalError
@@ -101,6 +104,9 @@ def create_app(dsn: str | None = None, jwks_url: str | None = None) -> FastAPI:
         version=passport["version"],
     )
     prefix = f"/p/{passport['name']}/api/{{organization}}"
+    adapter.post(f"{prefix}/items", AddItemAction, connections=connections)
+    adapter.patch(f"{prefix}/items", RenameItemAction, connections=connections)
+    adapter.get(f"{prefix}/lists/list_items", ListItemsAction, connections=connections)
     adapter.post(f"{prefix}/notes", AddNoteAction, connections=connections)
     adapter.patch(f"{prefix}/notes", EditNoteAction, connections=connections)
     adapter.delete(f"{prefix}/notes/{{note_id}}", DeleteNoteAction, connections=connections)

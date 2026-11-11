@@ -29,6 +29,9 @@ def test_every_route_lies_under_the_plugins_path_and_the_organization() -> None:
     app = create_app(dsn=DSN, jwks_url=JWKS_URL)
     routes = {(next(iter(route.methods)), route.path) for route in app.routes if getattr(route, "methods", None) and route.path.startswith("/p/")}
     assert routes == {
+        ("POST", "/p/notes/api/{organization}/items"),
+        ("PATCH", "/p/notes/api/{organization}/items"),
+        ("GET", "/p/notes/api/{organization}/lists/list_items"),
         ("POST", "/p/notes/api/{organization}/notes"),
         ("PATCH", "/p/notes/api/{organization}/notes"),
         ("DELETE", "/p/notes/api/{organization}/notes/{note_id}"),

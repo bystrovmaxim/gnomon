@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The core's browser check walks a plugin's items through the gateway.** `check-core.mjs` adds an item to the plugin template, finds it in the list the tree's list node reads, is refused a title already taken, renames the item and reads the old title at the earlier moment, and is refused a note on an item that does not exist. It reads the template's version from its passport, so a new template does not break it. ([#103](https://github.com/bystrovmaxim/gnomon/issues/103))
 - **The administrator's `bootstrap.sql`** also creates `maxitor_installer` (`CREATEROLE`, `CREATE` on the database; psql variable `installer_password`), the group `maxitor_plugin` and the schema `plugins`; a database made by the earlier script needs these three before `maxitor-core migrate`. New settings: `MAXITOR_WHEEL_STORE`, `MAXITOR_WHEEL_MAX_BYTES`, `MAXITOR_SCHEMA_PLUGINS`. The core reads plugin passport 2 and `schema.yaml` format 1, no longer passport 1. ([#82](https://github.com/bystrovmaxim/gnomon/issues/82))
 - **maxitor-web 1.23.0**: its graph shows the core's domain `plugins` and the installer.
 - **maxitor-web 1.24.0**: its graph shows the runner, the gateway's actions and the core's plugin tokens. ([#75](https://github.com/bystrovmaxim/gnomon/issues/75))

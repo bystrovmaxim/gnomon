@@ -5,6 +5,16 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] — 2026-11-11
+
+### Added
+
+- **Its own items.** What notes are written on is the template's own table `item`, like a folder: a title in one organization, unique among its items now, versioned like the notes. `AddItemAction` adds one and `RenameItemAction` renames it with the moment the member saw, refusing a change someone else made after it; both write typed events, "item added" and "item renamed". `ListItemsAction`, at `/lists/list_items`, lists the items at a moment by title and in parts: the source of the tree's list node. A note and a revision carry a key to their item, and are refused for an item that is not one of the organization's. ([#103](https://github.com/bystrovmaxim/gnomon/issues/103))
+
+### Changed
+
+- **Its own nodes in the tree.** `navigation.yaml` holds one section, "Notes", in the root of the tree; under it one node per item, and under every item its pages Notes, Published notes and Draft. Nothing hangs under a node of the core: the core has no items. No description of the template speaks of a catalog. ([#103](https://github.com/bystrovmaxim/gnomon/issues/103))
+
 ## [0.6.1] — 2026-11-11
 
 ### Changed

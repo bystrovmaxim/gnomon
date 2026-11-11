@@ -2,14 +2,18 @@
 """The actions: a person outside the organization is refused by @access_decide and gets nothing; a member reads and writes in the organization of the address."""
 
 import pytest
+from maxitor_notes.actions.add_item_action import AddItemAction, AddItemParams
 from maxitor_notes.actions.add_note_action import AddNoteAction, AddNoteParams
 from maxitor_notes.actions.delete_note_action import DeleteNoteAction, DeleteNoteParams
 from maxitor_notes.actions.edit_note_action import EditNoteAction, EditNoteParams
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction, ListItemNotesParams
+from maxitor_notes.actions.list_items_action import ListItemsAction, ListItemsParams
 from maxitor_notes.actions.list_note_authors_action import ListNoteAuthorsAction, ListNoteAuthorsParams
 from maxitor_notes.actions.list_note_draft_action import ListNoteDraftAction, ListNoteDraftParams
 from maxitor_notes.actions.list_published_notes_action import ListPublishedNotesAction, ListPublishedNotesParams
 from maxitor_notes.actions.publish_notes_action import PublishNotesAction, PublishNotesParams
+from maxitor_notes.actions.rename_item_action import RenameItemAction, RenameItemParams
+from maxitor_notes.entities.item_entry_entity import ItemEntryCoreEntity
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
 from maxitor_notes.membership import organization_access
@@ -32,14 +36,17 @@ MOMENT = "2026-11-08T10:15:00.123456Z"
 
 
 @meta(description="The notes storage answered from memory")
-@entities(NoteCoreEntity, NoteAuthorCoreEntity)
+@entities(ItemEntryCoreEntity, NoteCoreEntity, NoteAuthorCoreEntity)
 class ScriptedNotesStorage(NotesStorage):
     """The storage's methods answered from memory; every call recorded."""
 
-    def __init__(self, membership_lasts: int | None = None) -> None:
+    def __init__(self, membership_lasts: int | None = None, items: tuple[str, ...] = ("Payments",), renamed: bool = True) -> None:
         super().__init__(connection_params="postgresql://scripted.invalid/notes")
         self.calls: list[tuple] = []
         self._membership_lasts = membership_lasts
+        #: The organization's items now, by title; the first is ITEM.
+        self._items = items
+        self._renamed = renamed
 
     async def organization_of(self, code, user_id):
         self.calls.append(("organization_of", code, user_id))
@@ -47,6 +54,24 @@ class ScriptedNotesStorage(NotesStorage):
         if self._membership_lasts is not None and asked > self._membership_lasts:
             return None
         return ACME if (code, user_id) == ("acme", ANN) else None
+
+    async def item_of(self, organization_id, item_id):
+        self.calls.append(("item_of", organization_id, item_id))
+        return (organization_id, item_id) == (ACME, ITEM)
+
+    async def add_item(self, organization_id, title, author_id, operation):
+        self.calls.append(("add_item", organization_id, title, author_id, operation))
+        return ITEM, MOMENT
+
+    async def rename_item(self, organization_id, item_id, title, base_moment, editor_id, operation):
+        self.calls.append(("rename_item", organization_id, item_id, title, base_moment, editor_id, operation))
+        return "Payments", MOMENT, self._renamed
+
+    async def items_at(self, organization_id, moment, limit, after):
+        self.calls.append(("items_at", organization_id, moment, limit, after))
+        keys = [f"{n:08d}-0000-0000-0000-000000000000" for n in range(len(self._items))]
+        start = 0 if after is None else keys.index(after) + 1
+        return [ItemEntryCoreEntity(key=key, title=title, icon="folder") for key, title in zip(keys, self._items, strict=True)][start : start + limit]
 
     async def add_note(self, organization_id, item_id, writer_id, body, operation):
         self.calls.append(("add_note", organization_id, item_id, writer_id, body, operation))
@@ -102,6 +127,9 @@ async def _run(action, params, organization="acme", roles=(MemberRole,), storage
 
 #: Each action of the plugin with a valid call of it.
 ACTION_CALLS = [
+    (AddItemAction(), AddItemParams(title="Payments")),
+    (RenameItemAction(), RenameItemParams(item_id=ITEM, title="Billing", base_moment=MOMENT)),
+    (ListItemsAction(), ListItemsParams()),
     (AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check the limits")),
     (ListItemNotesAction(), ListItemNotesParams(item_id=ITEM)),
     (ListNoteAuthorsAction(), ListNoteAuthorsParams(item_id=ITEM)),
@@ -111,6 +139,17 @@ ACTION_CALLS = [
     (ListPublishedNotesAction(), ListPublishedNotesParams(item_id=ITEM)),
     (ListNoteDraftAction(), ListNoteDraftParams(item_id=ITEM)),
 ]
+
+#: The actions whose decision also asks whether the item of the call is one of the organization's now.
+DECIDES_ON_THE_ITEM = (AddNoteAction, PublishNotesAction, RenameItemAction)
+
+
+def _decision(action, organization: str) -> list[tuple]:
+    """What a decision asks the storage: the membership, then the item when the action is about one and the person is a member."""
+    asked = [("organization_of", organization, ANN)]
+    if isinstance(action, DECIDES_ON_THE_ITEM) and organization == "acme":
+        asked.append(("item_of", ACME, ITEM))
+    return asked
 
 
 async def test_a_member_writes_a_note_in_the_organization_of_the_address_as_herself() -> None:
@@ -145,7 +184,7 @@ async def test_a_membership_ended_after_the_decision_is_refused_the_same_way_and
     with pytest.raises(AccessDenied) as refusal:
         await _run(action, params, storage=storage)
     assert refusal.value.verdict == FORBIDDEN_OBJECT
-    assert storage.calls == [("organization_of", "acme", ANN), ("organization_of", "acme", ANN)]
+    assert storage.calls == [*_decision(action, "acme"), ("organization_of", "acme", ANN)]
 
 
 @pytest.mark.parametrize(("action", "params"), ACTION_CALLS)
@@ -155,7 +194,7 @@ async def test_access_is_answered_without_running_the_action(action, params, org
     machine = ActionProductMachine(graph_coordinator=create_node_graph_coordinator())
     verdict = await machine.check_access_decide(_context(organization, (MemberRole,)), type(action), params, connections={NOTES_CONNECTION_KEY: storage})
     assert verdict == answer
-    assert storage.calls == [("organization_of", organization, ANN)]
+    assert storage.calls == _decision(action, organization)
 
 
 async def test_a_call_without_member_cannot_write() -> None:

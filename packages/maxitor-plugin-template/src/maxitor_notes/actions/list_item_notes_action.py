@@ -1,6 +1,6 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/actions/list_item_notes_action.py
 """
-ListItemNotesAction — the notes of a catalog item at one moment, for the item's notes page; and, over a stretch, the
+ListItemNotesAction — the notes of an item at one moment, for the item's notes page; and, over a stretch, the
 page's bars for the core's time scale.
 
 ::
@@ -47,7 +47,7 @@ from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStora
 class ListItemNotesParams(BaseParams):
     """Which item, at which moment, of which writer."""
 
-    item_id: str = Field(min_length=1, max_length=64, description="The catalog item")
+    item_id: str = Field(min_length=1, max_length=64, description="The item")
     at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The panel's moment; none means now, the watermark")
     author: str | None = Field(default=None, max_length=64, description="The author filter: one writer's id; none means every writer")
     from_at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The stretch's start, for the scale's bars")
@@ -72,7 +72,7 @@ class ListItemNotesResult(BaseResult):
     bars: list[BarCoreEntity] = Field(default_factory=list, description="Over a stretch: the bars with a change, in time order")
 
 
-@meta(description="List the notes of a catalog item at one moment", domain=NotesDomain)
+@meta(description="List the notes of an item at one moment", domain=NotesDomain)
 @check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class ListItemNotesAction(BaseAction[ListItemNotesParams, ListItemNotesResult]):

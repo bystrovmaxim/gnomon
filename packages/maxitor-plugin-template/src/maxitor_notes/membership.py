@@ -10,6 +10,7 @@ exists (bystrovmaxim/gnomon#73).
 ::
 
     @access_decide ──► organization_access ──► Allowed | FORBIDDEN_OBJECT
+                   ──► item_access ─────────► the same, and the item must be one of the organization's now
     summary aspect ──► member_organization_id ──► the organization's id
                                                   (AccessDenied(FORBIDDEN_OBJECT) if the membership ended meanwhile)
 
@@ -34,6 +35,17 @@ async def _organization_id(storage: NotesStorage | NotesStorageWrapper, code: ob
 async def organization_access(storage: NotesStorage | NotesStorageWrapper, code: object, user_id: object) -> Verdict:
     """``Allowed`` when ``user_id`` is a member of the organization ``code``; ``FORBIDDEN_OBJECT`` otherwise."""
     return FORBIDDEN_OBJECT if await _organization_id(storage, code, user_id) is None else Allowed()
+
+
+async def item_access(storage: NotesStorage | NotesStorageWrapper, code: object, user_id: object, item_id: str) -> Verdict:
+    """
+    ``Allowed`` when ``user_id`` is a member of the organization ``code`` and ``item_id`` is one of its items now;
+    ``FORBIDDEN_OBJECT`` otherwise: one answer for an item that does not exist and one of another organization.
+    """
+    organization_id = await _organization_id(storage, code, user_id)
+    if organization_id is None or not await storage.item_of(organization_id, item_id):
+        return FORBIDDEN_OBJECT
+    return Allowed()
 
 
 async def member_organization_id(storage: NotesStorage | NotesStorageWrapper, code: object, user_id: object) -> str:

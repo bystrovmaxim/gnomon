@@ -4,7 +4,7 @@
 
 A Maxitor plugin is a Python package that installs into Maxitor. It keeps its data in its own schema of Maxitor's database, its backend answers through Maxitor's gateway with one sign-in, and Maxitor runs it in containers of its own. The core knows nothing of a plugin's code: it reads the plugin's passport and its declarations, and builds the rest.
 
-You build "Notes": members of an organization write notes on an item, edit and delete them without losing someone else's change, publish them as numbered revisions, and read them as they were at any past moment. The template is that plugin already; you copy it and make it yours.
+You build "Notes": members of an organization add items, like folders, which the plugin keeps itself and shows in Maxitor's tree, write notes on an item, edit and delete them without losing someone else's change, publish them as numbered revisions, and read them as they were at any past moment. The template is that plugin already; you copy it and make it yours.
 
 ## What you need
 

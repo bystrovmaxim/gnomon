@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -38,7 +39,7 @@ def test_the_template_fits_maxitor_4(plugin: Path) -> None:
 
 def test_a_core_outside_the_range_is_refused(plugin: Path) -> None:
     assert check(plugin, "3.29.0") == [
-        "core_range: io.github.bystrovmaxim.notes 0.6.1 needs maxitor >=4.0,<5; this core is maxitor 3.29.0"
+        "core_range: io.github.bystrovmaxim.notes 0.7.0 needs maxitor >=4.0,<5; this core is maxitor 3.29.0"
     ]
 
 
@@ -51,13 +52,16 @@ def test_a_format_the_core_does_not_read_is_refused(plugin: Path) -> None:
 def test_a_foreign_sdk_major_is_refused(plugin: Path) -> None:
     edit(plugin, "maxitor-plugin.yaml", "sdk", 2)
     assert check(plugin, "4.0.0") == [
-        "sdk_major: io.github.bystrovmaxim.notes 0.6.1 is built with SDK 2; maxitor 4.0.0 is built with SDK 1"
+        "sdk_major: io.github.bystrovmaxim.notes 0.7.0 is built with SDK 2; maxitor 4.0.0 is built with SDK 1"
     ]
 
 
 def test_a_domain_without_events_is_refused(plugin: Path) -> None:
     domain = plugin / PACKAGE / "notes_domain.py"
-    domain.write_text(domain.read_text(encoding="utf-8").replace("    events = ()\n", ""), encoding="utf-8")
+    text = domain.read_text(encoding="utf-8")
+    without = re.sub(r"\n    events = \(.*?\n    \)\n", "\n", text, flags=re.S)
+    assert without != text, "the template's domain lists its events"
+    domain.write_text(without, encoding="utf-8")
     assert check(plugin, "4.0.0") == ["maxitor_notes/notes_domain.py: the domain NotesDomain declares no events"]
 
 
