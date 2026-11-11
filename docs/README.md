@@ -4,8 +4,9 @@ How-to guides for Maxitor and its tools. Each package also has its own README: [
 
 ## Plugins
 
-- [The plugin concept](plugins/concept.md) — what a Maxitor plugin is and how it lives in the core: the passport, compatibility, delivery, the database, one sign-in, the frame, rooms, the lifecycle, the rules, and a tutorial on the plugin template.
+- [The plugin concept](plugins/concept.md) — what a Maxitor plugin is and how it lives in the core: the passport, compatibility, delivery, the database, one sign-in, the frame, rooms, the lifecycle, the rules, and an example plugin.
 - [Versioned storage](plugins/versioned-storage.md) — how tables, versions and time are kept so that any past moment reads by the same actions as the present, shown on the template's notes.
+- [Write a Maxitor plugin: a tutorial](plugins/tutorial/index.md) — the plugin template, chapter by chapter, each ending with something that runs.
 
 ## How-to guides
 

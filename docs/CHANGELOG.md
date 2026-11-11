@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026-11-11] — A tutorial: write a Maxitor plugin step by step
+
+Anyone who has never seen Maxitor can now write a plugin by following the plugin template, chapter by chapter, in `docs/plugins/tutorial/`. It starts from what you will build and the local stand, then copies the template and names it, declares its tables, reads notes at any moment, writes them in one change without losing someone else's, and runs the backend behind the gateway with the core's roles; a chapter on tests says what a plugin must prove. Every chapter quotes the template's own code, and a check fails the moment a quote no longer matches its file, so the tutorial cannot drift from the code. Its index lists the chapters still to come and the step that will write each, once what it describes runs. ([#99](https://github.com/bystrovmaxim/gnomon/issues/99))
+
 ## [2026-11-11] — The plugin template keeps its history: any moment, editing, revisions and the time scale's data
 
 The plugin template, which every Maxitor plugin is written from, now keeps its whole history. Its notes read at any past moment exactly as they were then, and the same question always gets the same answer; a moment that has not come yet is refused. A note is edited or deleted with the moment the person saw: if someone else changed or deleted it in between, nothing is overwritten and the answer says who and when. An item's notes can be published as numbered revisions — v1, v2 — each with a title, its own words and, if wanted, a release label; between two revisions the published notes do not change, and the draft shows what changed since the last one. History is only looked at: nothing restores or rewrites the past.

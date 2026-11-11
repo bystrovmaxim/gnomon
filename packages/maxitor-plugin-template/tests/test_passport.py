@@ -1,6 +1,7 @@
 # packages/maxitor-plugin-template/tests/test_passport.py
 """The passport: the template's passes; a wrong name, an unknown field, a loose version, an unpinned wheel do not."""
 
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -30,7 +31,8 @@ def test_a_version_other_than_x_y_z_is_refused(plugin, edit, version) -> None:
 
 def test_a_version_other_than_the_package_version_is_refused(plugin, edit) -> None:
     edit("maxitor-plugin.yaml", lambda doc: doc.update(version="9.9.9"))
-    assert check_plugin(plugin) == ["maxitor-plugin.yaml: version 9.9.9 differs from pyproject.toml's 0.6.0"]
+    package = tomllib.loads((plugin / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+    assert check_plugin(plugin) == [f"maxitor-plugin.yaml: version 9.9.9 differs from pyproject.toml's {package}"]
 
 
 def test_a_wheel_without_its_sha256_is_refused(plugin, edit) -> None:
