@@ -12,7 +12,7 @@ The [plugin concept](../concept.md) explains how plugins are built and why; [ver
 | 4 | [Reading](04-reading.md) | A reading action at any moment | bystrovmaxim/gnomon#99 |
 | 5 | [Writing](05-writing.md) | A changing action in one transaction, its conflict | bystrovmaxim/gnomon#99 |
 | 6 | [The backend](06-the-backend.md) | `app.py`, the gateway's token, the core's roles | bystrovmaxim/gnomon#99 |
-| 7 | [A place in the tree](07-a-place-in-the-tree.md) | `navigation.yaml`, list nodes, what Maxitor checks, the page in the right panel | bystrovmaxim/gnomon#103, bystrovmaxim/gnomon#74 |
+| 7 | [A place in the tree](07-a-place-in-the-tree.md) | `navigation.yaml`, list nodes, what Maxitor checks, the page in the right panel | bystrovmaxim/gnomon#103, bystrovmaxim/gnomon#74, bystrovmaxim/gnomon#109 |
 | 8 | The page | The Next.js frontend on `@maxitor/panel` | bystrovmaxim/gnomon#102 |
 | 9 | Now and the past | `at` in the address, `panel.watermark` | bystrovmaxim/gnomon#102, bystrovmaxim/gnomon#100 |
 | 10 | History on the scale | `history` in the passport and the pages | bystrovmaxim/gnomon#100 |

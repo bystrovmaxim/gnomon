@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/navigation-2.schema.json",
+  "title": "Maxitor navigation, format 2",
+  "description": "navigation.yaml: a plugin's nodes in Maxitor's left tree. A plugin only adds nodes: there is no field to hide, rename or move a node it does not own. A page's controls are its own: the shell of @maxitor/panel draws them from what the page gives it, so no node declares them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "navigation",
+    "nodes"
+  ],
+  "properties": {
+    "navigation": {
+      "const": 2
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/topNode"
+      }
+    }
+  },
+  "$defs": {
+    "topNode": {
+      "description": "A node the plugin attaches: to the root, to a node of Maxitor, or to a node of a direct dependency.",
+      "type": "object",
+      "required": [
+        "attach"
+      ],
+      "properties": {
+        "attach": {
+          "type": "string",
+          "pattern": "^(root|[a-z][a-z0-9_]{1,30}:[a-z][a-z0-9_.-]{0,62})$"
+        }
+      },
+      "$ref": "#/$defs/nodeBody",
+      "unevaluatedProperties": false
+    },
+    "childNode": {
+      "type": "object",
+      "$ref": "#/$defs/nodeBody",
+      "unevaluatedProperties": false
+    },
+    "nodeBody": {
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,62}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,40}$"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "page": {
+          "type": "string",
+          "maxLength": 300,
+          "pattern": "^/(?:(?:[a-z0-9_.~-]+|\\{[a-z][a-z0-9_]*\\})(?:/(?:[a-z0-9_.~-]+|\\{[a-z][a-z0-9_]*\\}))*)?$",
+          "not": {
+            "pattern": "(^|/)\\.{1,2}(/|$)"
+          },
+          "description": "The page's path inside the owner; {name} is a parameter of the scope. No . or .. segment."
+        },
+        "each": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "key"
+          ],
+          "properties": {
+            "source": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "A reading action of the owner."
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,30}$",
+              "description": "The parameter each instance adds to the scope."
+            }
+          }
+        },
+        "roles": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,30}$"
+          }
+        },
+        "room": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "shared": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/param"
+              },
+              "description": "Address parameters the whole room shares on this page; at and names starting with _ are Maxitor's."
+            },
+            "surface": {
+              "enum": [
+                "none",
+                "document",
+                "canvas"
+              ]
+            }
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/childNode"
+          }
+        },
+        "history": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Optional: how the page answers the core's time scale. bars, milestones and card name actions of the plugin's folder history/ (history/<name>_action.py).",
+          "properties": {
+            "compare": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "diff",
+                  "side_by_side"
+                ]
+              },
+              "description": "Narrows the passport's comparisons for this page; never widens them."
+            },
+            "read": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "The page's reading action; the SDK counts its bars over a stretch when the page names no bars of its own."
+            },
+            "bars": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "The plugin's own bars."
+            },
+            "milestones": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "The milestones in a stretch."
+            },
+            "card": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "One milestone's card."
+            }
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "title"
+          ],
+          "not": {
+            "required": [
+              "each"
+            ]
+          }
+        },
+        {
+          "required": [
+            "each"
+          ],
+          "not": {
+            "required": [
+              "title"
+            ]
+          }
+        }
+      ]
+    },
+    "param": {
+      "type": "string",
+      "pattern": "^(?!(at|mode|from)$)[a-z][a-z0-9_]{0,30}$",
+      "description": "An address parameter of the page; at, mode, from and names starting with _ are Maxitor's."
+    },
+    "action": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,62}$",
+      "description": "A reading action of the owner."
+    }
+  }
+}

@@ -241,7 +241,6 @@ class PluginNodeCoreEntity(BaseCoreEntity):
     each_source: str | None = Field(default=None, description="A list node's reading action; empty for an ordinary node")
     each_key: str | None = Field(default=None, description="The parameter a list node's instance adds; empty otherwise")
     roles: list[str] = Field(description="The core's roles needed to see it; empty for every member")
-    controls: str | None = Field(default=None, description="The page's controls as the file writes them, as JSON")
     room: str | None = Field(default=None, description="The page's behaviour with other people as the file writes it, as JSON")
 
     plugin_version: Annotated[

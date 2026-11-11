@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026-11-12] — The page shell looks like the mockup
+
+The shell every plugin's page lies in now looks the way the mockup and maxitor-web draw it. The filters are 148 px and stand clear of the page: each section opens with an arrow, and a person is a disk of a palette colour with their initials. The bottom bar is flat, with zoom in, zoom out, fit and the percentage before the page's own buttons. A page with nothing to show says so in a dashed card in the middle instead of bare text, and the template's notes show as cards in a grid by default, or as a table. The browser check now measures the filters' width and their distance from the page.
+
+## [2026-11-11] — Every page draws its own controls, in one shell for every plugin
+
+A page in Maxitor now sets its own controls: the filters at the top left, the layer pills at the top centre, the bar at the bottom left with the zoom and the page's own buttons, and its actions at the top right. What a page offers depends on its data — a drawing of events has three layers with counts read from its graph, a filter section that appears only in a comparison — so no file written in advance could describe it, and the core, drawing over the page from such a file, split one toolbar in two. Now the page gives what it offers when it opens, and one shell in `@maxitor/panel` draws it in the same places and with the same look for every plugin, writing every choice into the address, so a reload, a link, Back and following still give what was on screen. The core draws nothing over the page any more, and a plugin's `navigation.yaml` says nothing of controls: it is format 2, and format 1 is refused by name.
+
+A plugin cannot step out of the shell. Maxitor's check refuses a page that does not lie in it, an element pinned over the frame or a layer raised to the shell's; inside its own field a plugin draws as it likes, so the graph viewer can move into a plugin as it is. A page cannot change the core's own address parameters — the moment and the time scale's comparison. A page without the shell is marked with a red strip on the local stand. The tree's head gained two buttons: collapse, and up to the nearest page above. The plugin template's notes page is the first to live in the shell, and the tutorial and the plugin concept say how. ([#109](https://github.com/bystrovmaxim/gnomon/issues/109))
+
 ## [2026-11-11] — The frame every plugin lives in
 
 An organization in Maxitor is now one screen that the core draws and every plugin lives in. On the left is the tree, built from the core's own nodes and the nodes of every plugin enabled in the organization: a plugin declares where its nodes stand, and a node that lists records — one row per item of the plugin template, for example — loads them when it opens, at the moment the screen shows. At the top are the organization, the path to the open page and the person's icon. On the right is a grey field with dots where a plugin's page opens, drawn by the plugin but laid over the core's field, so every plugin looks the same and none of them can touch the tree or the top row.

@@ -1,0 +1,72 @@
+/* @maxitor/panel — the shell (spec 078): the page's controls in the same places and with the same look for every
+   plugin, drawn with @maxitor/tokens only. The page's content lies below the shell's layer. */
+.mx-shell-content { position: relative; z-index: 0; }
+.mx-shell-content.document { padding: var(--mx-space-7); display: flex; flex-direction: column; gap: var(--mx-space-5); }
+.mx-shell-content.document.with-filters { padding-left: calc(var(--mx-filter-width) + var(--mx-space-5) * 2); }
+.mx-shell-content.document.with-top { padding-top: calc(var(--mx-control) + var(--mx-space-5) * 2); }
+.mx-shell-content.document.with-bar { padding-bottom: calc(var(--mx-control) + var(--mx-space-5) * 2); }
+.mx-icon { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
+
+.mx-filters, .mx-pill, .mx-bar, .mx-actions { position: fixed; z-index: var(--mx-layer-shell); }
+.mx-pill, .mx-bar { display: inline-flex; align-items: center; gap: var(--mx-space-1); }
+.mx-pill { padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); box-shadow: var(--mx-shadow-float); }
+
+/* the layer pills: top centre */
+.mx-pill { top: var(--mx-space-5); left: 50%; transform: translateX(-50%); border-radius: var(--mx-radius-round); }
+.mx-pill button { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); }
+.mx-pill button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-pill button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-count { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); opacity: 0.8; }
+.mx-count:empty { display: none; }
+
+/* the filters: top left, as maxitor-web's ErdFilterPanel and the mockup of spec 074 draw them */
+.mx-filters { box-sizing: border-box; top: var(--mx-space-5); left: var(--mx-space-5); width: var(--mx-filter-width); max-height: calc(100% - var(--mx-control) * 3); overflow-y: auto; background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-xs); box-shadow: var(--mx-shadow-float); padding: var(--mx-space-2) var(--mx-filter-pad); }
+.mx-filters-button { display: none; }
+.mx-filter-title { display: flex; align-items: center; gap: var(--mx-space-2); width: 100%; text-align: left; border: 0; background: none; padding: var(--mx-space-3) 0; font-size: var(--mx-text-tiny); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); color: var(--mx-muted); cursor: pointer; }
+.mx-filter-title .mx-icon { transition: transform 120ms ease; }
+.mx-filter-title[aria-expanded="false"] .mx-icon { transform: rotate(-90deg); }
+.mx-filter-rows { display: flex; flex-direction: column; gap: var(--mx-space-3); padding-bottom: var(--mx-space-4); }
+.mx-filter-row { display: flex; align-items: center; gap: var(--mx-space-4); width: 100%; min-width: 0; border: 0; background: none; padding: 0; font-size: var(--mx-text-sm); color: var(--mx-ink); cursor: pointer; text-align: left; transition: opacity 120ms ease; }
+.mx-filter-row.off, .mx-filter-row.absent { opacity: 0.42; }
+.mx-filter-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-filter-note { font-size: var(--mx-text-sm); color: var(--mx-faint); padding-bottom: var(--mx-space-4); }
+.mx-disk { box-sizing: border-box; width: var(--mx-badge); height: var(--mx-badge); border-radius: var(--mx-radius-round); flex-shrink: 0; border: var(--mx-line-width) solid var(--mx-line); display: inline-flex; align-items: center; justify-content: center; color: var(--mx-on-ink); font-size: var(--mx-text-badge); font-weight: var(--mx-weight-heavy); }
+.mx-paint { display: flex; justify-content: center; gap: var(--mx-space-3); padding: var(--mx-space-3) 0; border-top: var(--mx-line-width) solid var(--mx-line-2); margin: 0 calc(var(--mx-filter-pad) * -1); }
+.mx-paint button { width: var(--mx-icon-sm); height: var(--mx-icon-sm); border-radius: var(--mx-radius-round); border: var(--mx-line-width) solid var(--mx-line-3); background: var(--mx-surface); padding: 0; cursor: pointer; }
+.mx-paint button.on { background: var(--mx-ink); border-color: var(--mx-ink); }
+
+/* the bottom bar: bottom left and flat, as maxitor-web's ZoomToolbar — zoom in, out, fit and the percentage, then
+   the page's sections behind hairlines */
+.mx-bar { left: var(--mx-space-5); bottom: var(--mx-space-5); padding: var(--mx-space-1) 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
+.mx-bar button { width: var(--mx-bar-button); height: var(--mx-bar-button); border: 0; border-radius: var(--mx-radius-md); background: transparent; color: var(--mx-muted); font-size: var(--mx-text-lg); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.mx-bar button:hover:not(:disabled) { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-bar button.on, .mx-bar button.on:hover { color: var(--mx-palette-blue); background: transparent; }
+.mx-bar button:disabled { opacity: 0.4; cursor: default; }
+.mx-bar-value { min-width: var(--mx-bar-button); text-align: center; font-size: var(--mx-text-sm); color: var(--mx-muted); font-variant-numeric: tabular-nums; padding: 0 var(--mx-space-3) 0 var(--mx-space-2); user-select: none; }
+.mx-bar-sections, .mx-bar-group, .mx-bar-more { display: inline-flex; align-items: center; gap: var(--mx-space-1); }
+.mx-bar-hairline { width: var(--mx-line-width); height: var(--mx-bar-hairline); background: var(--mx-line); margin: 0 var(--mx-space-1); }
+.mx-bar-more { display: none; position: relative; }
+.mx-bar-menu { position: absolute; bottom: calc(100% + var(--mx-space-3)); right: 0; z-index: var(--mx-layer-shell-pop); display: inline-flex; align-items: center; gap: var(--mx-space-1); padding: var(--mx-space-1); background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); box-shadow: var(--mx-shadow-pop); }
+
+/* the page's actions: top right */
+.mx-actions { top: var(--mx-space-5); right: var(--mx-space-5); display: flex; gap: var(--mx-space-3); }
+.mx-action { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-md); background: var(--mx-ink); color: var(--mx-on-ink); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); box-shadow: var(--mx-shadow-float); }
+
+@media (max-width: 520px) {
+  .mx-pill-label { display: none; }
+  .mx-filters { width: auto; max-height: none; overflow: visible; padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
+  .mx-filters:not(.folded) .mx-filters-body { box-sizing: border-box; }
+  .mx-filters-button { display: inline-flex; align-items: center; gap: var(--mx-space-3); height: var(--mx-control); padding: 0 var(--mx-space-5); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); background: var(--mx-surface); font-size: var(--mx-text-md); cursor: pointer; }
+  .mx-filters.folded .mx-filters-body { display: none; }
+  .mx-filters:not(.folded) .mx-filters-body { margin-top: var(--mx-space-3); width: var(--mx-filter-width); background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-xs); box-shadow: var(--mx-shadow-pop); padding: var(--mx-space-2) var(--mx-filter-pad); }
+  .mx-bar.folds > .mx-bar-sections { display: none; }
+  .mx-bar.folds > .mx-bar-more { display: inline-flex; }
+  .mx-bar button { width: var(--mx-tree-row-phone); height: var(--mx-tree-row-phone); }
+  .mx-empty-state { margin: var(--mx-space-5); }
+  .mx-actions { top: auto; bottom: var(--mx-space-5); }
+  .mx-shell-content.document.with-filters { padding-left: var(--mx-space-5); }
+}
+
+/* the empty state: a dashed card in the content field, as the mockup's "No notes yet" */
+.mx-empty-state { box-sizing: border-box; max-width: var(--mx-empty-width); margin: var(--mx-space-7) auto; background: var(--mx-surface); border: var(--mx-dashed-width) dashed var(--mx-line-3); border-radius: var(--mx-radius-lg); padding: var(--mx-empty-pad-y) var(--mx-empty-pad-x); text-align: center; color: var(--mx-muted); font-size: var(--mx-text-md); line-height: 1.55; }
+.mx-empty-state b { display: block; color: var(--mx-ink-2); font-size: var(--mx-text-lg); margin-bottom: var(--mx-space-2); }

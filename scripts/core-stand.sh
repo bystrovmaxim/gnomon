@@ -2,9 +2,9 @@
 # scripts/core-stand.sh — Maxitor's core on this machine: its database, its backend, its plugin installer, its plugin
 # runner and its application with the gateway.
 #
-#   ./scripts/core-stand.sh up      PostgreSQL 16 in Docker on 55432, the roles and schemas once, the migrations,
-#                                   the marketplace filled with the plugin template's wheel once, then the backend on
-#                                   127.0.0.1:8020, the installer, the runner and the application on
+#   ./scripts/core-stand.sh up      the wheels of find-links, PostgreSQL 16 in Docker on 55432, the roles and schemas
+#                                   once, the migrations, the marketplace filled with the plugin template's wheel once,
+#                                   then the backend on 127.0.0.1:8020, the installer, the runner and the application on
 #                                   http://localhost:3000 in the foreground; Ctrl+C stops them, the database keeps running
 #   ./scripts/core-stand.sh down    stops the database
 #   ./scripts/core-stand.sh reset   removes the database and everything in it
@@ -16,9 +16,10 @@
 # when it exists; without a country database every address counts as Russia.
 # Plugin wheels are kept in .core-stand/wheels, each deployed version's environment file in .core-stand/plugins.
 # The gateway's Ed25519 key is made once in .core-stand/gateway-key.pem. The wheels a plugin needs that are not on
-# PyPI yet — AOA's and the plugin SDK's — are built once into .core-stand/find-links. Each enabled plugin version runs
-# in Docker containers of its own; they reach the database as maxitor-db on their version's network and the gateway
-# as host.docker.internal.
+# PyPI yet — AOA's and the plugin SDK's — are built from the checkout into .core-stand/find-links on every start, so
+# they always match it. Python's output is not buffered, so a runner's warning reaches a file at once. Each enabled
+# plugin version runs in Docker containers of its own; they reach the database as maxitor-db on their version's
+# network and the gateway as host.docker.internal.
 # MAXITOR_STAND_CONTAINER, MAXITOR_STAND_DB_PORT, MAXITOR_STAND_API_PORT and MAXITOR_STAND_WEB_PORT run a second stand
 # beside a first one; its plugin runner takes the container's name, so each stand starts and removes only its own
 # plugin containers and networks.
@@ -74,17 +75,23 @@ open(sys.argv[1], "wb").write(pem)
 ' "$STAND/gateway-key.pem")
     chmod 600 "$STAND/gateway-key.pem"
   fi
-  if [ -z "$(ls "$STAND/find-links"/*.whl 2>/dev/null)" ]; then
-    say "Building the wheels plugins need that PyPI does not have yet"
-    for package in external/aoa/packages/aoa-action-machine external/aoa/packages/aoa-fastapi-adapter packages/maxitor-plugin-sdk; do
-      (cd "$ROOT" && uv build --wheel -q -o "$STAND/find-links" "$package")
-    done
-  fi
+  # Built again on every start, into a new folder that then takes the old one's place: a stand brought to a newer
+  # checkout never builds a plugin's image against the wheels of an older one.
+  say "Building the wheels plugins need that PyPI does not have yet"
+  rm -rf "$STAND/find-links.new"
+  for package in external/aoa/packages/aoa-action-machine external/aoa/packages/aoa-fastapi-adapter packages/maxitor-plugin-sdk; do
+    (cd "$ROOT" && uv build --wheel -q -o "$STAND/find-links.new" "$package")
+  done
+  rm -rf "$STAND/find-links"
+  mv "$STAND/find-links.new" "$STAND/find-links"
   database_up
+  export PYTHONUNBUFFERED=1
   export MAXITOR_CORE_DSN="postgresql://maxitor_core:$CORE_PASSWORD@127.0.0.1:$DB_PORT/maxitor"
   export MAXITOR_SESSION_SECRET
   MAXITOR_SESSION_SECRET="$(cat "$STAND/secret")"
   export MAXITOR_PUBLIC_URL="http://localhost:$WEB_PORT"
+  # A page that does not render the shell of @maxitor/panel is marked by a red strip on the stand.
+  export NEXT_PUBLIC_MAXITOR_MARK_UNFRAMED=1
   export MAXITOR_WHEEL_STORE="$STAND/wheels" MAXITOR_PLUGIN_RUNTIME="$STAND/plugins"
   export MAXITOR_GATEWAY_KEY_FILE="$STAND/gateway-key.pem"
   local installer_dsn="postgresql://maxitor_installer:$INSTALLER_PASSWORD@127.0.0.1:$DB_PORT/maxitor"
@@ -142,7 +149,7 @@ case "${1:-}" in
   reset)
     docker ps -aq --filter label=maxitor.plugin.version --filter "label=maxitor.plugin.runner=$RUNNER" | xargs docker rm -f >/dev/null 2>&1 || true
     docker rm -f -v "$CONTAINER" >/dev/null 2>&1 || true
-    rm -rf "$STAND/outbox" "$STAND/wheels" "$STAND/plugins" "$STAND/dist" "$STAND/find-links"
+    rm -rf "$STAND/outbox" "$STAND/wheels" "$STAND/plugins" "$STAND/dist" "$STAND/find-links" "$STAND/find-links.new"
     say "The database and the plugin containers are removed" ;;
   *) echo "usage: $0 up|down|reset" >&2; exit 2 ;;
 esac

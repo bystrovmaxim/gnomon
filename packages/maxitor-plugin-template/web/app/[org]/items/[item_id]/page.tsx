@@ -1,7 +1,10 @@
 // web/app/[org]/items/[item_id]/page.tsx — the notes of one item, opened at /w/<org>/notes/items/<item_id>.
 // Everything the page shows comes from its address: the organization, the item, the view, the author filter and the moment.
+// Its controls are its own: it gives the shell of @maxitor/panel the authors and the choice of a list or a table, and
+// the shell draws them in the same places as every page of Maxitor and writes them into the address.
 import { headers } from "next/headers";
-import { PanelPage, momentFrom } from "@maxitor/panel";
+import { PanelPage, momentFrom, type BarSection, type FilterSection } from "@maxitor/panel";
+import { initials, paletteOf } from "./people";
 import { NotesView, type Note } from "./NotesView";
 
 type Props = {
@@ -20,7 +23,21 @@ export default async function ItemNotesPage({ params, searchParams }: Props) {
   // The moment stays an opaque string: it never passes through Date, which would cut it to milliseconds.
   const at = momentFrom(query);
   if (at) url.searchParams.set("at", at);
-  // Maxitor's writer filter lists the writers switched on, or is absent when every writer is. One writer is asked of
+  // The authors the filter offers: the item's writers at the panel's moment, read by the page from its own action.
+  const authorsUrl = new URL(`${process.env.MAXITOR_PLUGIN_API}/p/notes/api/${encodeURIComponent(org)}/lists/list_note_authors`);
+  authorsUrl.searchParams.set("item_id", item_id);
+  authorsUrl.searchParams.set("limit", "200");
+  if (at) authorsUrl.searchParams.set("at", at);
+  const authorsAnswer = await fetch(authorsUrl, { headers: { authorization }, cache: "no-store" });
+  const authors: { key: string; title: string }[] = authorsAnswer.ok ? (await authorsAnswer.json()).entries : [];
+  const filters: FilterSection[] = [
+    { title: "Authors", param: "author", rows: authors.map((author) => ({ key: author.key, label: author.title, mark: initials(author.title), colour: paletteOf(author.key) })) },
+  ];
+  const bar: BarSection[] = [
+    { kind: "choice", param: "view", default: "cards", options: [{ value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" }] },
+  ];
+
+  // The author filter lists the writers switched on, or is absent when every writer is. One writer is asked of
   // the backend; several are kept from every writer's notes here.
   const writers = query.author?.split(",").filter(Boolean);
   if (writers?.length === 1) url.searchParams.set("author", writers[0]);
@@ -30,7 +47,7 @@ export default async function ItemNotesPage({ params, searchParams }: Props) {
   const notes = writers ? all.filter((note) => writers.includes(note.writer_id)) : all;
 
   return (
-    <PanelPage title="Notes">
+    <PanelPage title="Notes" filters={filters} bar={bar}>
       <NotesView notes={notes} />
     </PanelPage>
   );

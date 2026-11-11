@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { coreMessage, pageMessage } from "../src/protocol.ts";
 
 test("every message of the page passes in its shape", () => {
-  assert.ok(pageMessage({ type: "panel.ready", build: "0.8.0", surface: "document" }));
+  assert.ok(pageMessage({ type: "panel.ready", build: "0.8.0", surface: "document", shell: true, shellVersion: "0.2.0" }));
   assert.ok(pageMessage({ type: "panel.navigate", path: "/items/4f1c", query: { view: "table" }, mode: "push" }));
   assert.ok(pageMessage({ type: "panel.title", text: "Notes" }));
   assert.ok(pageMessage({ type: "panel.open", owner: "core", path: "/settings/plugins", query: {} }));
@@ -16,6 +16,8 @@ test("a page's message of another shape is dropped", () => {
     null,
     "panel.ready",
     { type: "panel.ready", build: "1", surface: "room" },
+    { type: "panel.ready", build: "1", surface: "document", shell: "yes" },
+    { type: "panel.ready", build: "1", surface: "document", shell: true, shellVersion: 2 },
     { type: "panel.navigate", path: "items", query: {}, mode: "push" },
     { type: "panel.navigate", path: "//evil.example/x", query: {}, mode: "push" },
     { type: "panel.navigate", path: "/x", query: { n: 1 }, mode: "push" },
@@ -37,4 +39,13 @@ test("the core's messages pass in their shape and nothing else does", () => {
 test("a moment passes as the string it is, to the microsecond", () => {
   const at = "2026-11-08T10:15:00.123456Z";
   assert.equal(coreMessage({ type: "panel.location", path: "/", query: {}, at })?.type === "panel.location" && (coreMessage({ type: "panel.location", path: "/", query: {}, at }) as { at: string }).at, at);
+});
+
+test("a page's ready says whether it renders the shell; a page built before the shell is one without it", () => {
+  assert.deepEqual(pageMessage({ type: "panel.ready", build: "1", surface: "canvas", shell: true, shellVersion: "0.2.0" }), {
+    type: "panel.ready", build: "1", surface: "canvas", shell: true, shellVersion: "0.2.0",
+  });
+  assert.deepEqual(pageMessage({ type: "panel.ready", build: "1", surface: "document" }), {
+    type: "panel.ready", build: "1", surface: "document", shell: false, shellVersion: "",
+  });
 });

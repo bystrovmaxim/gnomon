@@ -12,7 +12,7 @@ In short: a plugin is a Python package (pip or a ready wheel) that carries a pas
 |---|---|
 | **core** | Maxitor without plugins: sign-in, users, organizations, the frame, rooms, the gateway, the installer, the plugin registry; its `id` is `maxitor`, its version is the version of the `maxitor` package; its data is the schemas `platform` and `organization` |
 | **core passport** | the file `maxitor-core.yaml` in the `maxitor` package: the core's version and the formats of a plugin's files it reads |
-| **core contract** | everything a plugin relies on in the core: tree nodes, the panel and room protocols, controls, style tokens, the sign-in token, the core's functions for time, watermark and membership |
+| **core contract** | everything a plugin relies on in the core: tree nodes, the panel and room protocols, the shell and its controls, style tokens, the sign-in token, the core's functions for time, watermark and membership |
 | **plugin** | a package that installs into the core and adds data, actions and pages |
 | **passport** | the file `maxitor-plugin.yaml` in a plugin's package: who it is and what it needs |
 | **installer** | the core's process `maxitor-plugin-installer`: it checks versions and deploys them; removing is bystrovmaxim/gnomon#94 |
@@ -26,7 +26,9 @@ In short: a plugin is a Python package (pip or a ready wheel) that carries a pas
 | **tree builder** | the part of the installer that builds the tree and checks the attachments |
 | **right panel** | the grey field with dots on the right; a plugin's page opens in it |
 | **canvas** | `<MaxitorCanvas>`: one field for all of Maxitor with moving, zooming and a camera; a plugin puts only its content into it |
-| **controls** | the mode pill, the view switch, filters and the legend over the panel; a plugin declares them in `controls`, the core draws them |
+| **shell** | `PanelPage` of `@maxitor/panel`, the root of every page: it draws the page's controls from what the page gives it, in the same places for every plugin |
+| **controls** | the filters, the layer pills, the bottom bar and the page's actions; a page gives them to the shell when it opens, and each is an address parameter |
+| **reserved names** | the address parameters that belong to the core — `at`, `mode`, `from` and every name starting with `_`; a page may not change them |
 | **organization** | the area inside which data lives and changes are ordered; a person may belong to several; it is the first segment of every panel address and is checked by membership on every request |
 | **panel address** | the page's address in the browser's address bar: `/w/<organization>/<owner>/<path>?<parameters>`; the only source of the panel's state |
 | **room** | looking together: several people see each other, one moment, and can follow each other |
@@ -91,7 +93,7 @@ database:
 | `version` | strictly `x.y.z` (SemVer); equal to the version in the package's `pyproject.toml` |
 | `requires.maxitor` | the range of core versions — an edge to the node `maxitor` of the dependency graph (section 3.1) |
 | `dependencies` | the plugins this one cannot work without: `id`, a `version` range and a `source` — a pip package or a wheel at an address with a mandatory `sha256` |
-| `frontend.navigation` | the file with the plugin's tree nodes, pages, controls and behaviour in a room |
+| `frontend.navigation` | the file with the plugin's tree nodes, pages and behaviour in a room |
 | `history.compare` | optional: the comparisons its pages can draw beside one moment, out of `diff` and `side_by_side`; without it every page offers one moment only (section 7.9) |
 
 Why both `id` and `name`. `id` is unique in the world and stands in other plugins' dependencies. `name` is short and fits a schema name; two authors may both call a plugin `notes`, and then only one of them gets into one installation — the installer refuses the second and names the conflict.
@@ -174,7 +176,7 @@ The major version grows when anything others rely on changes incompatibly. For t
 |---|---|---|
 | the core's tree nodes | a node removed or renamed, a list node's `key` changed | a new node |
 | the panel and room protocols | a message removed, a field removed or its meaning changed | a new message, a new optional field |
-| controls | a kind of control removed, a field removed | a new kind, a new optional field |
+| the shell | a part or a field of its input removed, a place moved | a new part, a new optional field, a new icon |
 | style tokens and palette | a token or colour removed | a new token or colour |
 | the sign-in token | a claim removed or its meaning changed | a new claim |
 | the core's tables | a table or column removed, renamed, its type changed | a new table, a new column |
@@ -205,7 +207,7 @@ acme_notes/
     app.py               # the AOA application factory
     schema.yaml          # the plugin's tables, built by the core
     foreign-keys.yaml    # cross-plugin foreign keys
-    navigation.yaml      # tree nodes, pages, controls, behaviour in a room
+    navigation.yaml      # tree nodes, pages, behaviour in a room
     actions/ ...
     resources/ ...
     _web/                # .next/standalone + .next/static + public, built beforehand
@@ -438,7 +440,7 @@ The Maxitor screen is always one: on the left the navigation tree, at the top th
 The core's file `navigation.yaml` describes the structure of the core's tree. Every node with an `id` is an attachment node: plugins' nodes may stand under it. The core keeps no data of its own beyond organizations, people and plugins, so its tree is short: the organization's settings at the foot of the tree. Everything else in the tree comes from plugins, each in a section of its own or under a node of a plugin it depends on.
 
 ```yaml
-navigation: 1
+navigation: 2
 nodes:
   - id: settings
     title: Settings
@@ -461,7 +463,6 @@ nodes:
 | `page` | the template of the page's path inside the owner; `{name}` is a parameter of the scope; a node without `page` only groups |
 | `each` | makes the node a list: `source` is a reading action of the owner, `key` the name of the instance's parameter |
 | `roles` | the owner's roles needed to see the node |
-| `controls` | the page's controls: mode, view, filters, legend (7.8) |
 | `room` | the page's behaviour in a room (section 8) |
 | `children` | children |
 
@@ -475,7 +476,7 @@ A plugin describes its nodes in its own `navigation.yaml` and attaches each of i
 
 ```yaml
 # acme_notes/navigation.yaml
-navigation: 1
+navigation: 2
 nodes:
   - id: notes
     attach: root                       # a section of its own in the root of the tree
@@ -532,15 +533,14 @@ Disabling and removing only take nodes away, and an enabled plugin that needs an
 
 The builder refuses when:
 
-1. a file fails the JSON schema (`navigation-1.schema.json`): an unknown field, a wrong `id`, an unknown icon;
+1. a file is navigation format 1, which declared controls ("navigation format 1 is not read; write format 2, without controls"), or fails the JSON schema (`navigation-2.schema.json`): an unknown field — `controls` among them — a wrong `id`, an unknown icon;
 2. `attach` points at a node that does not exist, or at a plugin that is not a direct dependency;
 3. an `id` repeats within one owner;
 4. a `{name}` in `page` or in a list's parameters is not defined in the scope at the node's place;
 5. two list nodes with the same `key` stand one under the other;
 6. two nodes of one owner have the same `page` template — an address must point at one node;
-7. a name in `room.shared` or a control's parameter is reserved (`at` or starts with `_`), equals a parameter of the path, or is taken by another control of the same page;
-8. a control's `default` is not one of its options, or a filter has neither `options` nor `source`, or both;
-9. a `source` (of a list or a control) or `counts` names no action of the owner: no file `actions/<name>_action.py` or `history/<name>_action.py` in its package; this is checked from the wheel, before any organization can install it.
+7. a name in `room.shared` is reserved (`at`, `mode`, `from` or starts with `_`);
+8. a list's `source` names no action of the owner: no file `actions/<name>_action.py` or `history/<name>_action.py` in its package; this is checked from the wheel, before any organization can install it.
 
 ### 7.4. List nodes at run time
 
@@ -553,7 +553,7 @@ Ordinary nodes come to the browser from the built tree, filtered by roles, in on
 { "entries": [ { "key": "4f1c…", "title": "Payments", "icon": "folder" } ], "next": "4f1c…" }
 ```
 
-- The core calls a list at `GET /p/<name>/api/<organization>/lists/<source>?<scope parameters>&at=…&limit=…&after=…`; a control's `source` is called the same way.
+- The core calls a list at `GET /p/<name>/api/<organization>/lists/<source>?<scope parameters>&at=…&limit=…&after=…`; a page may read the same actions for the options of its own controls.
 - Titles are plain text; the tree has no markup.
 - A list is read **at the panel's moment**: at a past moment the tree holds the records that existed then.
 - A long list comes in parts of 50; its last row is "More…", which reads the next part with `after`.
@@ -601,7 +601,7 @@ The core and the plugin's page exchange `postMessage` messages. Each side accept
 | `panel.navigate {path, query, mode}` | plugin → core | a person changed the page's state; `mode` is `push` or `replace` |
 | `panel.title {text}` | plugin → core | the page's title for the path in the core's row and the browser tab |
 | `panel.open {owner, path, query}` | plugin → core | go to a page of the core or of a direct dependency |
-| `panel.location {path, query, at}` | core → plugin | the address changed not by this page's action: Back, a tree node of the same plugin, a change of moment, following in a room, a control |
+| `panel.location {path, query, at}` | core → plugin | the address changed not by this page's action: Back, a tree node of the same plugin, a change of moment, following in a room |
 | `panel.watermark {at}` | core → plugin | the watermark moved; a page without `at` rereads its data |
 
 **"Now" moves for a plugin's changes too.** Every change a plugin writes takes its time from the core's `change_time(organization)`, which keeps that time in the core's table `organization_clock` within the same transaction; `watermark(organization)` reads it beside the core's own tables. The frame asks for the watermark every 5 seconds while a page without `at` is open and sends `panel.watermark` when it moved, so a note a colleague wrote reaches the page once it is committed.
@@ -636,7 +636,7 @@ A plugin has no canvas of its own. There is one canvas for all of Maxitor — th
 The core's canvas gives everything that belongs to the canvas itself:
 
 - **moving and zooming** — dragging, the wheel, pinching, keys, zoom limits, inertia; a plugin writes no gestures of its own and cannot change them;
-- **fit** and the zoom bar at the bottom right; the keys `+` and `-` zoom, `0` fits, the arrows move; the zoom stays between 10% and 400%;
+- **fit** and the zoom, which stands first in the shell's bottom bar (7.8); the keys `+` and `-` zoom, `0` fits, the arrows move; the zoom stays between 10% and 400%;
 - **the field of dots**, moving with the canvas;
 - **the camera**: converting screen coordinates into canvas coordinates and back;
 - **the room**: others' pointers, clicks, selections and the viewport for a follower (section 8) — with no code in the plugin.
@@ -654,70 +654,54 @@ canvas.fit(scene.boundsOf(selected));   // show the selection; the gestures stay
 
 The viewport — position and zoom — **is not written into the address**: everyone has their own screen. In a room, following carries it.
 
-**The way out.** A plugin with its own rendering engine (WebGL, its own graph library) draws inside `<MaxitorCanvas engine={adapter}>`: the adapter gets the camera from the canvas and draws by it. The gestures, the field, the zoom bar and the room stay shared.
+**The way out.** A plugin with its own rendering engine (WebGL, its own graph library) draws inside `<MaxitorCanvas engine={adapter}>`: the adapter gets the camera from the canvas and draws by it. The gestures, the field, the zoom and the room stay shared.
 
 A document page — lists, cards, forms — takes no canvas: it lies on the still field the core draws.
 
-### 7.8. Controls: mode, view, filters, legend
+### 7.8. Controls: the shell of every page
 
-The controls over the right panel work like the tree: **a plugin declares, the core draws.** A plugin describes them in the `controls` block of a node in `navigation.yaml`; the core draws them over the `iframe` in fixed places, the same for every plugin and for the core itself.
+Every page of every plugin shows its controls in the same places and with the same look, and every page sets its own. What a page offers depends on its data — a drawing of events has three layers with counts read from its graph and a filter section only in a comparison — so no file written beforehand describes it. **The page gives, the shell draws.** `PanelPage` of `@maxitor/panel` is the root of every page; the page gives it data when it opens, and it draws each part in its place and writes each value into the address. The core draws nothing over the panel, and `navigation.yaml` says nothing of controls.
 
-| Control | Place | What it does |
-|---|---|---|
-| `mode` — the pill | top centre | what the screen starts from; each option has an icon and, if declared, a number |
-| `views` — the view | top right | how to show the same thing: a list or a table, a logical or a physical view |
-| `filters` — filters | left | sections as an accordion, one open; a row is a colour disk, a label, "off" |
-| `legend` — the legend | bottom left | what the colours mean |
-| zoom | bottom right | comes with the canvas (7.7) |
+| Part | Place | What the page gives | What the shell decides |
+|---|---|---|---|
+| filters | top left | sections, rows (a colour disk of the palette, a label, absent from the data), the paint switch when two sections paint | 148 px, an accordion with one section open, folding behind a button on a phone |
+| layer pills | top centre | options with an icon and a count | one chosen, the parameter `layer`; on a phone the icon and the count |
+| bottom bar | bottom left | sections after the zoom, each behind a hairline: a choice of one, buttons, a switch; each item an icon of the shell's set | zoom out, the percentage, zoom in and fit first on a canvas; sections that do not fit fold into "⋯" on a phone |
+| page actions | top right, bottom right on a phone | buttons such as "New note" | shown only now: in the past and in a comparison everything is read only |
+| change stepper | the page actions' place | nothing: the time scale puts it there in a comparison (7.9) | the actions and the stepper never stand together |
 
-```yaml
-- id: containers
-  attach: root
-  title: Containers
-  page: /containers
-  controls:
-    mode:
-      param: mode
-      default: services
-      options:
-        - { value: services, label: Services, icon: service }
-        - { value: jobs, label: Jobs, icon: job }
-      counts: count_by_mode              # a reading action of the plugin: a number per option
-    views:
-      param: view
-      default: graph
-      options:
-        - { value: graph, label: Graph }
-        - { value: table, label: Table }
-    filters:
-      - title: State
-        param: state
-        options:
-          - { value: running, label: Running, colour: green }
-          - { value: stopped, label: Stopped, colour: grey }
-      - title: Team
-        param: team
-        source: list_teams               # options from data, at the panel's moment
-    legend:
-      title: State
-      source: list_state_colours
-  room:
-    shared: [mode, view, state, team]
-    surface: canvas
+```tsx
+<PanelPage
+  title="Containers"
+  layers={{ default: "services", options: [
+    { value: "services", label: "Services", icon: "domain", count: counts.services },
+    { value: "jobs", label: "Jobs", icon: "action", count: counts.jobs },
+  ] }}
+  filters={[{ title: "State", param: "state", rows: [
+    { key: "running", label: "Running", colour: "green" },
+    { key: "stopped", label: "Stopped", colour: "grey" },
+  ] }]}
+  bar={[{ kind: "choice", param: "view", default: "graph", options: [
+    { value: "graph", title: "Graph", icon: "cards" },
+    { value: "table", title: "Table", icon: "table" },
+  ] }]}
+>
+  <MaxitorCanvas bounds={scene.bounds}>{nodes}</MaxitorCanvas>
+</PanelPage>
 ```
 
 The rules of controls:
 
-- **Each control is an address parameter.** The pill is `?mode=jobs`, the view `?view=table`, a filter `?state=running,stopped` (the options switched on are listed; no parameter — everything is on). So Back, a link and a room work for controls by themselves (7.5, section 8), and a parameter in `room.shared` switches for every participant at once. The default value (`default`) is not written into the address.
-- **A page does not draw controls.** It reads their parameters from its address like any others and builds its view by them; on a change of a control it gets `panel.location`.
-- **Options are in the YAML or come from data.** Fixed ones as an `options` list; data-dependent ones by a reading action `source` with the same contract as the tree's lists (7.4), at the panel's moment: each entry's `key` is the option's value, its `title` the label, an optional `colour` a name of the palette. The pill's numbers come from the action `counts`, which answers `{"counts": {"<option>": <number>}}` for the page's scope and parameters.
-- **The set of controls is closed.** A plugin does not move a control, does not recolour it, does not put up a second pill and does not invent a new kind. A control many need is added to the core — and appears for everyone at once; one a single screen needs is the page's content, not a control.
-- **Colours come from the core's palette** (`colour: green`), not as codes: shades, contrast and the dark theme are one for all of Maxitor.
-- **On a phone** controls fold the same way for everyone: filters into a button, the view into a menu; the core decides.
+- **Each control is an address parameter.** The layer is `?layer=jobs`, a choice `?view=table`, a filter `?state=running` (the options switched on are listed; no parameter — everything is on), the paint switch `?paint=<section>`. The default is not written. So Back, a link and following work for controls by themselves (7.5, section 8).
+- **What a server page gives is data.** Filters, layers and choices are plain values the shell turns into writes of the address; only a button, a switch and an action carry a function, and come from a client component.
+- **A value that is gone gives way.** A layer or a choice the page no longer offers falls back to its default, written once in place, so Back does not return to it.
+- **The core's names are the core's.** `at`, `mode`, `from` and every `_…` are written by the core; a page carries them as the address holds them and may not change them. The panel router refuses such a write — an error in development and in tests, a line in the console in production — and the core refuses it too, and a parameter named like one of the node's path parameters.
+- **Colours come from the palette** (`colour: green`), icons from the shell's set: a plugin's buttons look like every other plugin's.
+- **The content field is the plugin's.** On a document page the shell pads it clear of the controls; on a canvas the fitted scene stays clear of them. Inside it a plugin lays out what it likes.
 
-**Styles come from one place.** The package `@maxitor/tokens` holds colours, the palette (`grey`, `blue`, `green`, `amber`, `red`, `violet`, `teal`, `pink`), radii, shadows, blur, type sizes and spacing as CSS custom properties `--mx-*`; the core's frame and controls and the components of `@maxitor/panel`, with which a plugin draws its content (cards, tables, nodes on the canvas), draw with them. Neither the core nor a plugin writes colour or size numbers in code, and the core's check `check-tokens.mjs` holds the frame, the controls and `@maxitor/panel` to it.
+**The shell's boundary.** `maxitor-plugin-check` refuses a frontend whose page does not render `<PanelPage>`, which places an element `fixed`, or which raises a layer to the shell's (`--mx-layer-shell`, 30) or above, naming the file and the line; positioning, another component kit and the plugin's own colours inside the content field pass. `panel.ready` carries `shell` and the shell's version; a page without the shell opens under a red strip "This page has no Maxitor frame" on the local stand and in development, and is written to the console elsewhere.
 
-If a filter row must highlight something on the canvas on hover, a message `panel.control.hover` from the core to the page will be needed; it is introduced when the first plugin needs it.
+**Styles come from one place.** The package `@maxitor/tokens` holds colours, the palette (`grey`, `blue`, `green`, `amber`, `red`, `violet`, `teal`, `pink`), radii, shadows, blur, type sizes and spacing as CSS custom properties `--mx-*`; the core's frame and the shell and components of `@maxitor/panel`, with which a plugin draws its controls and its content (cards, tables, nodes on the canvas), draw with them. The core's check `check-tokens.mjs` holds the frame and `@maxitor/panel` to them.
 
 ### 7.9. History: what a page gives the time scale
 
@@ -766,7 +750,7 @@ Works on every page that keeps the rules of section 7:
 
 | Room feature | Why it works by itself |
 |---|---|
-| **controls** | mode, view and filters are address parameters (7.8); those in `room.shared` are common to all |
+| **controls** | the layer, the choices and the filters are address parameters (7.8); those in `room.shared` are common to all |
 | **who is where** | the core knows each participant's panel address; the page key is the organization, the owner and the path |
 | **the common moment** | the moment is the address parameter `at`; changing the room's moment sends `panel.location` to all |
 | **following** | the follower gets the leader's panel address; the core replaces the window's address (piling up no history entries) and sends `panel.location` or opens a new `iframe` |
@@ -992,7 +976,7 @@ class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
 
 `user.organization` is the organization of the address (`/p/notes/api/<organization>/notes`): the plugin's auth coordinator takes it from the path the gateway has already checked and puts it into the context beside the token's person, so a write and a read are bound to it alike. `item_access_decide` checks it again, and that the item is one of the organization's now, and answers `Allowed()` or `FORBIDDEN_OBJECT` (6.6): one answer for an item that does not exist and one of another organization. The role is already checked by `@check_roles`, so the step decides only about the organization and the item. The summary looks the organization's `id` up again, because the decision passes no state on. `versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
 
-**5. Tree nodes and controls.** In `navigation.yaml` — the section "Notes" in the root of the tree, under it the list node `item` whose instances come from the action `list_items`, and under every item its pages: "Notes" (`page: /items/{item_id}`) with `room: {shared: [view], surface: document}`, "Published notes" and "Draft", as in section 7.2. The notes page has controls: the view `list`/`table` and an author filter whose options come from the action `list_note_authors` (section 7.8). `maxitor plugin check` checks every `{item_id}` against the list node above it.
+**5. Tree nodes.** In `navigation.yaml` — the section "Notes" in the root of the tree, under it the list node `item` whose instances come from the action `list_items`, and under every item its pages: "Notes" (`page: /items/{item_id}`) with `room: {shared: [view], surface: document}`, "Published notes" and "Draft", as in section 7.2. The page's controls are its own (section 7.8): it reads its authors from the action `list_note_authors` and gives them to the shell, with the choice of a list or a table. `maxitor plugin check` checks every `{item_id}` against the list node above it.
 
 **History.** An item's notes are published together under a number, `v1`, `v2`, with the draft between two revisions: the simplest model of a release. A model where every record goes through a lifecycle of its own — in work, shared, published, archived — is the plugin common data environment (bystrovmaxim/gnomon#106).
 
@@ -1013,8 +997,17 @@ export default async function ItemNotesPage({ params, searchParams }) {
   if (query.author) url.searchParams.set("author", query.author);
   const notes = await fetch(url, { headers: { authorization: auth } }).then((r) => r.json());
 
+  const authors = await fetch(`${process.env.MAXITOR_PLUGIN_API}/p/notes/api/${org}/lists/list_note_authors?item_id=${item_id}`,
+    { headers: { authorization: auth } }).then((r) => r.json());
+
   return (
-    <PanelPage title="Notes">
+    <PanelPage
+      title="Notes"
+      filters={[{ title: "Author", param: "author", rows: authors.entries.map((a) => ({ key: a.key, label: a.title })) }]}
+      bar={[{ kind: "choice", param: "view", default: "cards", options: [
+        { value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" },
+      ] }]}
+    >
       <NotesView notes={notes} />
     </PanelPage>
   );
@@ -1027,8 +1020,8 @@ export default async function ItemNotesPage({ params, searchParams }) {
 import { usePanelQuery, RoomLayer, NoteCard, DataTable } from "@maxitor/panel";
 
 export function NotesView({ notes }) {
-  // the core draws the view and author controls from `controls`; the page only reads their parameters
-  const { view = "list" } = usePanelQuery();
+  // the shell writes ?view= when the choice in its bottom bar changes; the page only reads it
+  const { view = "cards" } = usePanelQuery();
   return (
     <>
       {view === "table"
@@ -1040,7 +1033,7 @@ export function NotesView({ notes }) {
 }
 ```
 
-The view switch and the author filter are the core's controls: they write `?view=` and `?author=` into the address, and the page rebuilds on `panel.location`. In a room `view` is common to everyone on this page, and participants' pointers land on notes by their anchors.
+The shell draws the author filter at the top left and the view in its bottom bar, and writes `?author=` and `?view=` into the address; the page rebuilds from it. In a room `view` is common to everyone on this page, and participants' pointers land on notes by their anchors.
 
 **7. Running it locally.**
 
@@ -1096,7 +1089,7 @@ maxitor plugin check dist/acme_maxitor_notes-1.0.0-py3-none-any.whl
 28. Access is split three ways: the role in `@check_roles`, the organization and the object in one `@access_decide`, the work in aspects.
 29. A room works on every page; pointers travel in the coordinates of the surface declared in `room.surface`; a plugin has no room connection of its own.
 30. A plugin has no canvas of its own: moving, zooming, the field and the camera come from the core's `<MaxitorCanvas>`, one for every plugin.
-31. Controls — mode, view, filters, legend — are declared by a plugin in `controls` and drawn by the core; each control is an address parameter; the set of controls is closed.
+31. A page's controls — filters, layer pills, the bottom bar's sections, its actions — are given by the page to the shell of `@maxitor/panel`, which draws them in the same places for every plugin; each is an address parameter; the core's names are refused; `maxitor-plugin-check` keeps the shell's boundary.
 32. Colours and sizes come from `@maxitor/tokens` and the core's palette; no code has numbers of its own.
 
 ## 14. What the tests check
@@ -1125,7 +1118,7 @@ Code breaks — a test catches it, each of these:
 20. a change of a `room.shared` parameter reaches every participant on the page, and of a parameter not on the list — none;
 21. the core relays a pointer from a plugin's page with the participant it assigned itself, and only to participants on the same page;
 22. a `postMessage` from another origin or of an unknown shape is dropped;
-23. a control with the parameter `at`, with a parameter taken by another control or by the path, with a `default` that is not an option, or with a field of position or a colour code fails the tree build;
+23. a write of the panel router that changes `at`, `mode`, `from` or a `_…` name is refused, and so is a page that steps out of the shell (`maxitor-plugin-check`);
 24. a change of a control writes its parameter into the address and one history entry, and the default value does not get into the address;
 25. a gesture on the canvas of two different plugins moves and zooms them alike: the handler is one;
 26. a plugin whose `navigation` format is not in the core's `reads`, or whose `requires.maxitor` does not include the core's version, is not installed, and the refusal names both versions;

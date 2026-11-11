@@ -3009,23 +3009,11 @@
       "type": "domain"
     },
     {
-      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:controls",
-      "is_dag": false,
-      "properties": {
-        "field_name": "controls",
-        "ordinal": 11
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:controls",
-      "type": "entity_field"
-    },
-    {
       "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:created_at",
       "is_dag": false,
       "properties": {
         "field_name": "created_at",
-        "ordinal": 13
+        "ordinal": 12
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
@@ -3157,7 +3145,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "room",
-        "ordinal": 12
+        "ordinal": 11
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
@@ -3181,7 +3169,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "updated_at",
-        "ordinal": 14
+        "ordinal": 13
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
@@ -6939,17 +6927,6 @@
         "entity_kind_label": "Core"
       },
       "type": "Entity"
-    },
-    {
-      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:controls",
-      "label": "controls",
-      "properties": {
-        "description": "The page's controls as the file writes them, as JSON",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
     },
     {
       "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:created_at",

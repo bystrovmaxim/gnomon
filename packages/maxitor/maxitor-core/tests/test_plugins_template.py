@@ -31,4 +31,4 @@ def test_the_templates_version_is_named_after_its_passport() -> None:
     passport = yaml.safe_load((TEMPLATE / "maxitor-plugin.yaml").read_text(encoding="utf-8"))
     assert passport["passport"] == 2 and "migrate" not in passport["backend"]
     schema = schema_name_of(passport["name"], passport["version"])
-    assert (schema, f"plg_{schema}") == ("notes_0_8_0", "plg_notes_0_8_0")
+    assert (schema, f"plg_{schema}") == ("notes_0_9_1", "plg_notes_0_9_1")

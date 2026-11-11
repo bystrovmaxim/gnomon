@@ -79,6 +79,19 @@
   --mx-top-row: 44px;
   --mx-tree-width: 255px;
   --mx-filter-width: 148px;
+  --mx-filter-pad: 10px;
+  --mx-badge: 20px;
+  --mx-text-badge: 8px;
+  --mx-bar-button: 30px;
+  --mx-bar-hairline: 22px;
+  --mx-empty-width: 520px;
+  --mx-card-min: 230px;
+  --mx-empty-pad-y: 34px;
+  --mx-empty-pad-x: 20px;
+  --mx-dashed-width: 1.5px;
+  /* The shell's layer over a page's own content: a plugin's page stays below it (spec 078, FR-019). */
+  --mx-layer-shell: 30;
+  --mx-layer-shell-pop: 35;
   --mx-dot-step: 18px;
   --mx-dot-size: 1px;
   --mx-icon-lg: 20px;

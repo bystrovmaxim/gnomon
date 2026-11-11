@@ -3,8 +3,9 @@
 // against the local stand (./scripts/core-stand.sh up): signing up with the code from the outbox, the consent step,
 // registering an organization, Settings → Plugins — the marketplace, the search, installing the plugin template and
 // seeing its nodes in the tree, its items added, renamed and listed through the gateway (specs/076-template-own-items
-// /quickstart.md), its notes page in the right panel with the controls the core draws, Back and Forward, the panel's
-// test page with the protocol, the canvas and every control (specs/077-core-frame/quickstart.md), a second
+// /quickstart.md), its notes page in the right panel with its controls in the shell of @maxitor/panel, Back and Forward,
+// the panel's test page with the protocol, the canvas, the test drawing in the shell, a page without the shell and the
+// tree's head (specs/077-core-frame/quickstart.md, specs/078-page-shell/quickstart.md), a second
 // organization on the deployed version, disabling and enabling, a private plugin's dialog — signing out and in, a
 // wrong password, resetting the password, someone else's organization, an organization's address without a session,
 // and the same pages and the frame on a phone.
@@ -224,7 +225,7 @@ await scenario("the template's items are added, renamed and listed through the g
   ITEM = itemId;
 });
 
-await scenario("the notes page opens in the right panel from the tree, with the core's controls, Back and Forward", async () => {
+await scenario("the notes page opens in the right panel from the tree, with its controls in the shell, Back and Forward", async () => {
   // The runner may still be starting the frontend's container just after the backend answered.
   for (let i = 0; i < 300; i += 1) {
     const answer = await page.request.get(`${BASE}/p/notes/${CODE}`, { headers: { "Sec-Fetch-Dest": "iframe" } });
@@ -241,12 +242,20 @@ await scenario("the notes page opens in the right panel from the tree, with the 
   const frame = page.frameLocator("iframe.mx-panel-frame");
   expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Payments › Notes", "the path does not name the item");
   await frame.locator(".mx-card", { hasText: "Retry three times" }).waitFor();
-  await page.getByRole("radio", { name: "Table" }).first().click();
+  // The core draws nothing over the panel: the filters and the view are the page's, in its shell.
+  expect((await page.locator(".mx-pill, .mx-filters, .mx-views, .mx-legend, .mx-bar").count()) === 0, "the core draws controls over the panel");
+  await frame.locator(".mx-filters .mx-filter-row").first().waitFor();
+  // The filters are the mockup's 148 px and stand clear of the page's content.
+  const filters = await frame.locator(".mx-filters").boundingBox();
+  const card = await frame.locator(".mx-card").first().boundingBox();
+  expect(Math.round(filters.width) === 148, `the filters are ${filters.width} px wide, not 148`);
+  expect(card.x >= filters.x + filters.width + 8, `the notes touch the filters: ${card.x} against ${filters.x + filters.width}`);
+  await frame.getByRole("radio", { name: "Table" }).click();
   await page.waitForURL(/view=table/);
   await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
-  await page.locator(".mx-filter-row").first().click();
+  await frame.locator(".mx-filter-row").first().click();
   await page.waitForURL(/author=/);
-  await frame.locator(".mx-empty").waitFor();
+  await frame.locator(".mx-empty-state", { hasText: "No notes yet" }).waitFor();
   await page.goBack();
   await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
   await page.goBack();
@@ -272,7 +281,7 @@ await scenario("an address with no moment or a moment to come says so and offers
   await page.waitForURL((url) => url.search === "?view=table");
 });
 
-await scenario("the panel's test page: the protocol, the controls in their places, the canvas", async () => {
+await scenario("the panel's test page: the protocol, a change of the core's names refused, the canvas's zoom in the shell", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/panel-test`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
   const frame = page.frameLocator("iframe.mx-panel-frame");
@@ -285,27 +294,69 @@ await scenario("the panel's test page: the protocol, the controls in their place
   await frame.getByRole("button", { name: "Open a stranger's page" }).click();
   await page.waitForTimeout(500);
   expect(page.url().includes("/core/panel-test"), "a stranger's page was opened");
-  const panel = await page.locator(".mx-panel").boundingBox();
-  const place = async (selector) => page.locator(selector).boundingBox();
-  const pill = await place(".mx-pill");
-  expect(Math.abs(pill.x + pill.width / 2 - (panel.x + panel.width / 2)) < 2, "the mode pill is not at the top centre");
-  expect((await place(".mx-views")).x > panel.x + panel.width / 2, "the view switch is not on the right");
-  expect((await place(".mx-legend")).y > panel.y + panel.height / 2, "the legend is not at the bottom");
-  await page.locator(".mx-filter-row", { hasText: "Beta" }).click();
-  await page.waitForURL(/kind=a%2Cc/);
-  await page.locator(".mx-filter-row", { hasText: "Beta" }).click();
-  await page.waitForURL((url) => !url.search.includes("kind="));
+  await frame.getByTestId("write-mode").click();
+  await frame.getByTestId("refusal").filter({ hasText: '"mode"' }).waitFor();
+  expect(!page.url().includes("mode="), "the page changed the core's mode");
   await page.goto(`${BASE}/w/${CODE}/core/panel-test/canvas`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
-  const canvas = page.frameLocator("iframe.mx-panel-frame").locator(".mx-canvas");
+  const shell = page.frameLocator("iframe.mx-panel-frame");
+  const canvas = shell.locator(".mx-canvas");
   const zoom = async () => Number(await canvas.getAttribute("data-zoom"));
   const fitted = await zoom();
-  await canvas.getByRole("button", { name: "Zoom in" }).click();
+  await shell.getByRole("button", { name: "Zoom in" }).click();
   expect((await zoom()) > fitted, "zoom in does not zoom");
-  for (let i = 0; i < 20; i += 1) await canvas.getByRole("button", { name: "Zoom in" }).click();
+  for (let i = 0; i < 20; i += 1) await shell.getByRole("button", { name: "Zoom in" }).click();
   expect((await zoom()) === 4, `the zoom passes its limit: ${await zoom()}`);
-  await canvas.getByRole("button", { name: "Fit" }).click();
+  await shell.getByRole("button", { name: "Fit" }).click();
   expect((await zoom()) === fitted, "fit does not show the scene again");
+});
+
+await scenario("the test drawing: layers with counts, filters, the bottom bar and the actions in their places", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/drawing`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  const panel = await page.locator(".mx-panel").boundingBox();
+  const place = async (selector) => frame.locator(selector).boundingBox();
+  await frame.locator(".mx-pill").waitFor();
+  const pill = await place(".mx-pill");
+  expect(Math.abs(pill.x + pill.width / 2 - (panel.x + panel.width / 2)) < 2, "the layer pills are not at the top centre");
+  const filters = await place(".mx-filters");
+  expect(filters.x < panel.x + panel.width / 4 && filters.y < panel.y + panel.height / 4, "the filters are not at the top left");
+  const bar = await place(".mx-bar");
+  expect(bar.x < panel.x + panel.width / 4 && bar.y > panel.y + panel.height / 2, "the bottom bar is not at the bottom left");
+  const actions = await place(".mx-actions");
+  expect(actions.x > panel.x + panel.width / 2 && actions.y < panel.y + panel.height / 4, "the actions are not at the top right");
+  const labels = await frame.locator(".mx-bar").getByRole("button").evaluateAll((all) => all.map((b) => b.getAttribute("aria-label")));
+  expect(labels[0] === "Zoom in" && labels.includes("Close every port"), `the zoom does not come first: ${labels}`);
+  expect((await frame.getByRole("radio", { name: "Domains" }).innerText()).includes("2"), "the layer has no count");
+  await frame.getByRole("radio", { name: "Events" }).click();
+  await page.waitForURL(/layer=events/);
+  await frame.getByRole("radio", { name: "Top to bottom" }).click();
+  await page.waitForURL(/layout=tb/);
+  expect((await frame.locator(".mx-filter-title", { hasText: "Changes" }).count()) === 0, "a comparison's section shows at now");
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/drawing?mode=diff&from=2026-11-01T00:00:00Z`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  await frame.locator(".mx-filter-title", { hasText: "Changes" }).waitFor();
+  expect((await frame.locator(".mx-actions").count()) === 0, "the actions show in a comparison");
+});
+
+await scenario("a page without the shell is marked by a red strip on the stand", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/unframed`);
+  await page.locator(".mx-unframed", { hasText: "This page has no Maxitor frame" }).waitFor();
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/drawing`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  expect((await page.locator(".mx-unframed").count()) === 0, "a page in the shell is marked");
+});
+
+await scenario("the tree's head: collapse folds the tree, up opens the nearest page above", async () => {
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}?view=table`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  await page.getByRole("button", { name: "Collapse sidebar" }).click();
+  expect((await page.locator(".mx-body > .mx-tree.collapsed .mx-node").count()) === 0, "the collapsed tree still shows its nodes");
+  await page.getByRole("button", { name: "Expand sidebar" }).click();
+  await page.locator(".mx-body > .mx-tree .mx-node").first().waitFor();
+  await page.getByRole("link", { name: "Up" }).click();
+  await page.waitForURL((url) => url.pathname === `/w/${CODE}/notes` && url.search === "");
 });
 
 await scenario("a second organization installs the deployed version without building it", async () => {
@@ -444,17 +495,24 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   await phone.close();
 });
 
-await scenario("on a phone the panel's controls fold: filters into a button, the view into a menu", async () => {
+await scenario("on a phone the shell folds: the filters into a button, the pills to icons, the actions to the bottom", async () => {
   const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
   await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
   await phone.addCookies(await context.cookies());
   const p = await phone.newPage();
   await p.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
-  await p.locator(".mx-filters-button").waitFor();
-  expect(!(await p.locator(".mx-filters-body").isVisible()), "the filters are not folded");
-  await p.locator("select.mx-views-narrow").selectOption("table");
+  await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  const frame = p.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".mx-filters-button").waitFor();
+  expect(!(await frame.locator(".mx-filters-body").isVisible()), "the filters are not folded");
+  await frame.getByRole("radio", { name: "Table" }).click();
   await p.waitForURL(/view=table/);
   expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the frame is wider than the phone");
+  await p.goto(`${BASE}/w/${CODE}/core/panel-test/drawing`);
+  await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  expect(!(await frame.locator(".mx-pill-label").first().isVisible()), "the pills keep their labels on a phone");
+  const actions = await frame.locator(".mx-actions").boundingBox();
+  expect(actions.y > 812 / 2, "the actions are not at the bottom on a phone");
   await phone.close();
 });
 

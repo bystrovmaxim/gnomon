@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 
 import { coreMessage, trusted, type PageMessage, type Query } from "./protocol";
+import { SHELL_VERSION } from "./version";
 
 type Panel = {
   /** The page's path inside its owner, without the organization: "/items/4f1c". */
@@ -17,6 +18,8 @@ type Panel = {
   /** Replace the frame's own address with a page path and its parameters; never a history entry. */
   show: (path: string, query: Query, at: string | null) => void;
   onWatermark: (listener: (at: string) => void) => () => void;
+  /** Called by the shell while it renders: the page is drawn in the shell (spec 078, FR-020). */
+  markShell: () => void;
 };
 
 const PanelContext = createContext<Panel | null>(null);
@@ -50,6 +53,10 @@ export function PanelProvider({
   const pathname = usePathname();
   const params = useSearchParams();
   const listeners = useRef(new Set<(at: string) => void>());
+  const shelled = useRef(false);
+  const markShell = useCallback(() => {
+    shelled.current = true;
+  }, []);
 
   const segments = pathname.split("/").filter(Boolean);
   const prefix = `/${segments.slice(0, prefixSegments).join("/")}`;
@@ -82,7 +89,8 @@ export function PanelProvider({
       else listeners.current.forEach((listener) => listener(message.at));
     };
     window.addEventListener("message", receive);
-    send({ type: "panel.ready", build, surface });
+    // The children's effects ran first: a page drawn in the shell has marked it by now.
+    send({ type: "panel.ready", build, surface, shell: shelled.current, shellVersion: shelled.current ? SHELL_VERSION : "" });
     return () => window.removeEventListener("message", receive);
   }, [build, send, show, surface]);
 
@@ -93,6 +101,6 @@ export function PanelProvider({
     };
   }, []);
 
-  const value = useMemo(() => ({ path, query, at, send, show, onWatermark }), [path, query, at, send, show, onWatermark]);
+  const value = useMemo(() => ({ path, query, at, send, show, onWatermark, markShell }), [path, query, at, send, show, onWatermark, markShell]);
   return <PanelContext.Provider value={value}>{children}</PanelContext.Provider>;
 }

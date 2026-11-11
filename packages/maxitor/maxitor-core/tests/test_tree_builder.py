@@ -23,7 +23,7 @@ from maxitor.core.plugins.tree_builder import (
 
 TEMPLATE = Path(__file__).resolve().parents[3] / "maxitor-plugin-template" / "src" / "maxitor_notes"
 NAVIGATION: dict[str, Any] = yaml.safe_load((TEMPLATE / "navigation.yaml").read_text(encoding="utf-8"))
-ACTIONS = {"list_items", "list_note_authors", "list_item_notes", "list_note_history", "note_milestone_card"}
+ACTIONS = {"list_items", "list_item_notes", "list_note_history", "note_milestone_card"}
 
 
 def _tree(*plugins: PluginFile) -> list[Any]:
@@ -46,7 +46,6 @@ def test_the_core_and_the_template_make_one_tree() -> None:
     assert tree["notes:notes"].parent == "root"
     assert (tree["notes:item"].each_source, tree["notes:item"].each_key) == ("list_items", "item_id")
     assert tree["notes:item-notes"].scope == ("item_id",)
-    assert tree["notes:item-notes"].controls is not None and "views" in tree["notes:item-notes"].controls
 
 
 def test_a_member_sees_the_template_and_an_administrator_settings_too() -> None:
@@ -59,7 +58,7 @@ def test_a_member_sees_the_template_and_an_administrator_settings_too() -> None:
 
 def test_a_parent_with_no_visible_child_and_no_page_is_hidden() -> None:
     navigation = {
-        "navigation": 1,
+        "navigation": 2,
         "nodes": [
             {
                 "id": "group",
@@ -112,34 +111,14 @@ def _item_notes(navigation: dict[str, Any]) -> dict[str, Any]:
             ACTIONS,
             "already defines",
         ),
-        # A control on a reserved parameter.
-        (_with(lambda n: _item_notes(n)["controls"]["views"].update(param="at")), ACTIONS, "does not match"),
-        # A control on a parameter of the path.
-        (
-            _with(lambda n: _item_notes(n)["controls"]["views"].update(param="item_id")),
-            ACTIONS,
-            "parameter of its path",
-        ),
-        # Two controls on one parameter.
-        (_with(lambda n: _item_notes(n)["controls"]["filters"][0].update(param="view")), ACTIONS, "two controls"),
-        # A default outside the options.
-        (
-            _with(lambda n: _item_notes(n)["controls"]["views"].update(default="grid")),
-            ACTIONS,
-            "is not one of its options",
-        ),
-        # A filter with both options and a source.
-        (
-            _with(lambda n: _item_notes(n)["controls"]["filters"][0].update(options=[{"value": "a", "label": "A"}])),
-            ACTIONS,
-            "is not valid under any",
-        ),
-        # A filter with neither.
-        (_with(lambda n: _item_notes(n)["controls"]["filters"][0].pop("source")), ACTIONS, "is not valid under any"),
+        # Navigation format 1, which declared controls.
+        (_with(lambda n: n.update(navigation=1)), ACTIONS, "navigation format 1 is not read; write format 2, without controls"),
+        # A node that declares controls: format 2 has none.
+        (_with(lambda n: _item_notes(n).update(controls={"views": {}})), ACTIONS, "not allowed"),
+        # A room shared on a parameter of the core.
+        (_with(lambda n: _item_notes(n)["room"].update(shared=["mode"])), ACTIONS, "does not match"),
         # A list whose source is no action of the plugin.
         (NAVIGATION, ACTIONS - {"list_items"}, "is no action of the plugin"),
-        # A filter whose source is no action of the plugin.
-        (NAVIGATION, ACTIONS - {"list_note_authors"}, "is no action of the plugin"),
         # Attached to a node the core does not have.
         (_with(lambda n: n["nodes"][0].update(attach="core:item")), ACTIONS, "which the core does not have"),
     ],
@@ -150,7 +129,7 @@ def test_each_fault_of_one_file_is_refused(navigation: dict[str, Any], actions: 
 
 def _reviews(attach: str) -> dict[str, Any]:
     return {
-        "navigation": 1,
+        "navigation": 2,
         "nodes": [{"id": "reviews", "attach": attach, "title": "Reviews", "page": "/items/{item_id}/reviews"}],
     }
 

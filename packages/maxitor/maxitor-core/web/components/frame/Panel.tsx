@@ -6,7 +6,6 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
-import { Controls } from "@/components/frame/Controls";
 import { PageFrame } from "@/components/frame/PageFrame";
 import { windowAddress, type PanelAddress } from "@/lib/address";
 import type { TreeNode } from "@/lib/tree";
@@ -116,9 +115,9 @@ export function Panel({
         base={`/p/${encodeURIComponent(owner)}/${encodeURIComponent(code)}`}
         title={opened.node.title || opened.node.name}
         canOpen={(other) => allowed.has(other)}
+        pathNames={Object.keys(opened.scope)}
         onTitle={onTitle}
       />
-      {opened.node.controls ? <Controls code={code} owner={owner} controls={opened.node.controls} address={address} scope={opened.scope} /> : null}
     </main>
   );
 }
