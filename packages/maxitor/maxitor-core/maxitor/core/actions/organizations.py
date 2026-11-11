@@ -254,6 +254,9 @@ class OpenedResult(BaseResult):
     user: OrganizationUserSchema = Field(description="The account's user in it")
     tree: list[TreeNodeSchema] = Field(default_factory=list, description="The nodes of its tree the user may see")
     owners: list[str] = Field(default_factory=list, description="Its enabled plugins in dependency order")
+    dependencies: dict[str, list[str]] = Field(
+        default_factory=dict, description="Each enabled plugin's direct dependencies: the plugins a page of it may open"
+    )
 
 
 @meta(description="Open an organization the account has an active user in", domain=OrganizationDomain)
@@ -297,7 +300,7 @@ class OpenOrganizationAction(BaseAction[OpenParams, OpenedResult]):
         if found is None:
             raise AccessDenied(FORBIDDEN_OBJECT)
         store = cast(PluginsStorage, connections[PLUGINS_CONNECTION_KEY])
-        nodes, owners = await organization_tree(store, found["id"])
+        nodes, files = await organization_tree(store, found["id"])
         roles = frozenset({"member", "administrator"} if found["is_admin"] else {"member"})
         return OpenedResult(
             code=found["code"],
@@ -318,7 +321,8 @@ class OpenOrganizationAction(BaseAction[OpenParams, OpenedResult]):
                 )
                 for node in visible(nodes, roles)
             ],
-            owners=owners,
+            owners=[file.owner for file in files],
+            dependencies={file.owner: sorted(file.dependencies) for file in files},
         )
 
 

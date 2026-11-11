@@ -5,7 +5,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import "./frame.css";
 import { Panel } from "@/components/frame/Panel";
@@ -20,6 +20,7 @@ export function Frame({
   current,
   nodes,
   owners,
+  dependencies,
   children,
 }: {
   account: Me;
@@ -27,6 +28,8 @@ export function Frame({
   nodes: TreeNode[];
   /** The organization's enabled plugins in dependency order. */
   owners: string[];
+  /** Each enabled plugin's direct dependencies. */
+  dependencies: Record<string, string[]>;
   /** The core's own page for the address, drawn in the panel; nothing for a plugin's page. */
   children: ReactNode;
 }) {
@@ -39,6 +42,8 @@ export function Frame({
 
   const address = useMemo(() => readAddress(pathname, search), [pathname, search]);
   const opened = useMemo(() => (address?.owner ? nodeOf(nodes, address.owner, address.path) : null), [address, nodes]);
+  // A page's title belongs to the page it came from.
+  useEffect(() => setTitle(null), [opened?.node.name]);
 
   // The path in the top row: the titles of the nodes on the way, an instance's from the page when it sends one.
   const path = useMemo(() => {
@@ -61,7 +66,7 @@ export function Frame({
       <TopRow account={account} current={current} path={path} methods={methods} switchTo={switchTo} onMenu={() => setDrawer(true)} />
       <div className="mx-body">
         <aside className="mx-tree">{tree}</aside>
-        <Panel code={current.code} address={address} opened={opened} owners={owners} onTitle={setTitle}>
+        <Panel code={current.code} address={address} opened={opened} dependencies={dependencies} onTitle={setTitle}>
           {children}
         </Panel>
         {drawer ? (

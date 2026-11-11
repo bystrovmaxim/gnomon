@@ -9,7 +9,7 @@ import { Icon } from "@/components/marks";
 import { core, me } from "@/lib/core";
 import type { TreeNode } from "@/lib/tree";
 
-type Opened = { code: string; name: string; user: { name: string; is_admin: boolean }; tree: TreeNode[]; owners: string[] };
+type Opened = { code: string; name: string; user: { name: string; is_admin: boolean }; tree: TreeNode[]; owners: string[]; dependencies: Record<string, string[]> };
 
 export default async function OrganizationLayout({ children, params }: { children: ReactNode; params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -33,7 +33,7 @@ export default async function OrganizationLayout({ children, params }: { childre
   }
   const org = answer.data;
   return (
-    <Frame account={account} current={{ code: org.code, name: org.name }} nodes={org.tree} owners={org.owners}>
+    <Frame account={account} current={{ code: org.code, name: org.name }} nodes={org.tree} owners={org.owners} dependencies={org.dependencies}>
       {children}
     </Frame>
   );

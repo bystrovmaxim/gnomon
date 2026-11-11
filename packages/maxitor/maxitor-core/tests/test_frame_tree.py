@@ -123,7 +123,9 @@ def test_a_dependency_gives_its_node_and_its_scope(world: World) -> None:
         world.plugins.set_state(_org_id(world), passport_id, "enabled")
     tree = _tree(world)
     assert tree["reviews:reviews"]["parent"] == "notes:item" and tree["reviews:reviews"]["scope"] == ["item_id"]
-    assert world.client.get(f"/api/v1/organizations/{CODE}").json()["owners"] == ["notes", "reviews"]
+    opened = world.client.get(f"/api/v1/organizations/{CODE}").json()
+    assert opened["owners"] == ["notes", "reviews"]
+    assert opened["dependencies"] == {"notes": [], "reviews": ["notes"]}
 
 
 def test_enabling_a_plugin_whose_nodes_would_not_hold_is_refused(world: World) -> None:

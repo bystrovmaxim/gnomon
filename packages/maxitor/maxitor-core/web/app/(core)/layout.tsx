@@ -4,7 +4,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "@maxitor/tokens/tokens.css";
-import "./globals.css";
+import "../globals.css";
 import { CookieBanner } from "@/components/CookieBanner";
 
 export const metadata: Metadata = { title: "Maxitor", description: "Maxitor — sign in and work in your organizations" };

@@ -9,6 +9,8 @@
 //
 // A request to a plugin loses the core's cookies and any Authorization it came with; the plugin gets the token
 // the core issued for it. Whether it may pass and with which roles is decided by the core's action, never here.
+// A plugin's page lives only inside the right panel (spec 077, R12): opened as a document of its own it is sent to
+// its panel address /w/<organization>/<name>/..., and no other site may frame it.
 import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIE = "__Host-maxitor_session";
@@ -53,9 +55,17 @@ async function askExchange(request: NextRequest, token: string, plugin: string, 
   });
 }
 
+/** Only the site itself may lay a plugin's page in a frame. */
+const FRAME_ANCESTORS = "frame-ancestors 'self'";
+
 async function gateway(request: NextRequest, match: RegExpExecArray): Promise<NextResponse> {
-  const [, plugin, api, organization] = match;
+  const [whole, plugin, api, organization] = match;
   const kind = api ? "backend" : "frontend";
+  if (kind === "frontend" && request.headers.get("sec-fetch-dest") === "document") {
+    const rest = request.nextUrl.pathname.slice(whole.replace(/\/$/, "").length);
+    const panel = new URL(`/w/${organization}/${plugin}${rest}${request.nextUrl.search}`, siteOrigin(request));
+    return NextResponse.redirect(panel, 303);
+  }
   const session = request.cookies.get(SESSION_COOKIE)?.value;
   const bearer = /^Bearer (.+)$/.exec(request.headers.get("authorization") ?? "")?.[1];
   let answer: Response;
@@ -85,7 +95,9 @@ async function gateway(request: NextRequest, match: RegExpExecArray): Promise<Ne
   headers.delete("authorization");
   if (pass.token) headers.set("authorization", `Bearer ${pass.token}`);
   const target = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, pass.address);
-  return NextResponse.rewrite(target, { request: { headers } });
+  const response = NextResponse.rewrite(target, { request: { headers } });
+  response.headers.set("content-security-policy", FRAME_ANCESTORS);
+  return response;
 }
 
 function expiresAt(token: string): number {

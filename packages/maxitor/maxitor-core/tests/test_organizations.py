@@ -60,7 +60,7 @@ def test_register_creates_the_organization_and_its_administrator(world: World) -
     assert me["organizations"] == [{"code": "severny-veter", "name": "Severny Veter", "is_admin": True}]
     opened = world.client.get("/api/v1/organizations/severny-veter").json()
     assert {k: v for k, v in opened.items() if k != "tree"} == {
-        "code": "severny-veter", "name": "Severny Veter", "user": {"name": "Anna", "is_admin": True}, "owners": []
+        "code": "severny-veter", "name": "Severny Veter", "user": {"name": "Anna", "is_admin": True}, "owners": [], "dependencies": {}
     }
     assert [node["name"] for node in opened["tree"]] == ["core:settings", "core:settings.plugins"]
     assert len(world.storage.versions["organization_versions"]) == len(world.storage.versions["user_versions"]) == 1

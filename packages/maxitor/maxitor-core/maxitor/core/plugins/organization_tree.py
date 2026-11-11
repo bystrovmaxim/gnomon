@@ -51,9 +51,10 @@ def dependency_order(plugins: Sequence[Mapping[str, Any]], needs: Mapping[str, s
 
 async def organization_tree(
     store: PluginsStorage, organization_id: str, adding: Mapping[str, Any] | None = None
-) -> tuple[list[Node], list[str]]:
+) -> tuple[list[Node], list[PluginFile]]:
     """
-    The organization's tree and its plugins' names in dependency order; raise ``TreeRefusedError``.
+    The organization's tree and its plugins in dependency order, each with its direct dependencies; raise
+    ``TreeRefusedError``.
 
     ``adding`` is a plugin about to be installed or enabled (``passport_id``, ``name``, ``version_id``): the tree is
     built with it, so a plugin that would break the tree is refused before anyone sees it.
@@ -81,4 +82,4 @@ async def organization_tree(
         )
         for p in ordered
     ]
-    return build_tree(list(core_nodes()), files), [str(p["name"]) for p in ordered]
+    return build_tree(list(core_nodes()), files), files

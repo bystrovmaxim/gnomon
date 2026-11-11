@@ -43,12 +43,6 @@ export function windowAddress(code: string, owner: string, path: string, query: 
   return `/w/${encodeURIComponent(code)}/${encodeURIComponent(owner)}${inner}${queryString(query, at)}`;
 }
 
-/** The address of a plugin's page inside the right panel's frame: /p/<name>/<organization>/<path>. */
-export function frameAddress(owner: string, code: string, path: string, query: Record<string, string>, at: string | null): string {
-  const inner = path === "/" ? "" : path;
-  return `/p/${encodeURIComponent(owner)}/${encodeURIComponent(code)}${inner}${queryString(query, at)}`;
-}
-
 /** Put the scope's values into a page template: /items/{item_id} → /items/4f1c; each value is one path segment. */
 export function fillPage(template: string, scope: Record<string, string>): string | null {
   let missing = false;

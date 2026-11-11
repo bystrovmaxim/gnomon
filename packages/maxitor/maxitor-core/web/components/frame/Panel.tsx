@@ -6,8 +6,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { PageFrame } from "@/components/frame/PageFrame";
 import type { PanelAddress } from "@/lib/address";
-import { frameAddress } from "@/lib/address";
 import type { TreeNode } from "@/lib/tree";
 
 /** "No such page": an address of a node that is not in the person's tree. */
@@ -27,12 +27,15 @@ export function Panel({
   code,
   address,
   opened,
+  dependencies,
+  onTitle,
   children,
 }: {
   code: string;
   address: PanelAddress | null;
   opened: { node: TreeNode; scope: Record<string, string> } | null;
-  owners: string[];
+  /** Each enabled plugin's direct dependencies: the owners a page of it may open. */
+  dependencies: Record<string, string[]>;
   onTitle: (title: string | null) => void;
   children: ReactNode;
 }) {
@@ -52,9 +55,20 @@ export function Panel({
       </main>
     );
   }
+  const allowed = new Set(["core", ...(dependencies[owner] ?? [])]);
   return (
     <main className="mx-panel">
-      <iframe className="mx-panel-frame" title={opened.node.title || opened.node.name} src={frameAddress(owner, code, address.path, address.query, address.at)} />
+      {/* Another owner is another frame: the key gives it a new frame and a new address. */}
+      <PageFrame
+        key={owner}
+        code={code}
+        address={address}
+        owner={owner}
+        base={`/p/${encodeURIComponent(owner)}/${encodeURIComponent(code)}`}
+        title={opened.node.title || opened.node.name}
+        canOpen={(other) => allowed.has(other)}
+        onTitle={onTitle}
+      />
     </main>
   );
 }
