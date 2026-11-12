@@ -33,18 +33,18 @@ Phases follow the issue's five; one phase is one commit. `[P]` — may run in pa
 
 ## Phase 4 — The author, the stand, the template, CI (US4, US5)
 
-- [ ] T019 `maxitor-web/maxitor/web/launch.py`, `maxitor-web/maxitor/web/plugin_build.py`: `maxitor plugin build <path> --core <version>` per `contracts/build-step.md`.
-- [ ] T020 Template: `maxitor-plugin.yaml` passport 3, `frontend.source: maxitor_notes/web`; `pyproject.toml` packs `web/` sources without `node_modules`, `.next` and `_web`; its version raised.
-- [ ] T021 `scripts/core-stand.sh`: no `npm run build` of the template; the stand installs its wheel and the installer builds it; the production build answers behind the gateway.
-- [ ] T022 `.github/workflows/ci.yml`: the npm list up to date; the template built by the step at the checkout's core and at the newest `maxitor-v4.4.*` tag; the template's browser check against each release of `@maxitor/panel` from its changelog.
-- [ ] T023 The walk of 1.6 on the local stand in the browser — the template from its wheel, the core's library whatever its `package.json` names, a failing plugin refused by name, an upgrade moving and an upgrade held — its result recorded for the pull request.
+- [x] T019 `maxitor-web/maxitor/web/launch.py`, `maxitor-web/maxitor/web/plugin_build.py`: `maxitor plugin build <path> --core <version>` per `contracts/build-step.md`.
+- [x] T020 Template: `maxitor-plugin.yaml` passport 3, `frontend.source: maxitor_notes/web`; `pyproject.toml` packs `web/` sources without `node_modules`, `.next` and `_web`; its version raised.
+- [x] T021 `scripts/core-stand.sh`: no `npm run build` of the template; the stand installs its wheel and the installer builds it; the production build answers behind the gateway.
+- [x] T022 `.github/workflows/ci.yml`: the npm list up to date; the template built by the step at the checkout's core and at the newest `maxitor-v4.4.*` tag; the template's browser check against each release of `@maxitor/panel` from its changelog.
+- [x] T023 The walk of 1.6 on the local stand in the browser — the template from its wheel, the core's library whatever its `package.json` names, a failing plugin refused by name, an upgrade moving and an upgrade held — its result recorded for the pull request.
 
 ## Phase 5 — Documentation, changelog, versions (US6)
 
-- [ ] T024 `docs/plugins/concept.md`: delivery, building, passport 3, the library's versions; the tutorial's chapters 1 and 2 where they speak of the frontend and chapter 13 with this step's tests, their rows in the index naming #110.
-- [ ] T025 READMEs of the installer, the runner, the template and `maxitor-plugin-sdk`; the core's README (passport 3, `maxitor plugin build`).
-- [ ] T026 Graph files rebuilt (`graph-builder write`); versions raised (maxitor, the core, the installer, the runner, the SDK, the template); changelogs of every changed package and the repository's.
-- [ ] T027 The closing check run to zero (`scripts/check_run.py`).
+- [x] T024 `docs/plugins/concept.md`: delivery, building, passport 3, the library's versions; the tutorial's chapters 1 and 2 where they speak of the frontend and chapter 13 with this step's tests, their rows in the index naming #110.
+- [x] T025 READMEs of the installer, the runner, the template and `maxitor-plugin-sdk`; the core's README (passport 3, `maxitor plugin build`).
+- [x] T026 Graph files rebuilt (`graph-builder write`); versions raised (maxitor, the core, the installer, the runner, the SDK, the template); changelogs of every changed package and the repository's.
+- [x] T027 The closing check run to zero (`scripts/check_run.py`).
 
 ## Dependencies
 

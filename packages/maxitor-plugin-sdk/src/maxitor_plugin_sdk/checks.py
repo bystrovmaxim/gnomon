@@ -291,22 +291,29 @@ def _read(path: Path, schema: str, problems: list[str]) -> dict[str, Any] | None
     except yaml.YAMLError as unreadable:
         problems.append(f"{name}: not YAML ({unreadable.__class__.__name__})")
         return None
-    if schema == "navigation-2" and isinstance(document, dict) and document.get("navigation") == 1:
-        problems.append(f"{name}: {NAVIGATION_FORMAT_1}")
+    refusal = _format_refusal(schema, document)
+    if refusal:
+        problems.append(f"{name}: {refusal}")
         return None
-    if schema == "plugin-passport-3" and isinstance(document, dict):
-        if document.get("passport") == 2:
-            problems.append(f"{name}: {PASSPORT_FORMAT_2}")
-            return None
-        if isinstance(document.get("frontend"), dict) and "build" in document["frontend"]:
-            problems.append(f"{name}: {FRONTEND_BUILD}")
-            return None
     validator = Draft202012Validator(json.loads((SCHEMAS / f"{schema}.schema.json").read_text(encoding="utf-8")))
     errors = sorted(validator.iter_errors(document), key=lambda error: list(error.absolute_path))
     for error in errors:
         where = "/".join(str(part) for part in error.absolute_path) or "(top)"
         problems.append(f"{name}: {where}: {error.message}")
     return None if errors or not isinstance(document, dict) else document
+
+
+def _format_refusal(schema: str, document: object) -> str | None:
+    """A file of a format no longer read, refused by name before its schema is applied; ``None`` otherwise."""
+    if not isinstance(document, dict):
+        return None
+    if schema == "navigation-2" and document.get("navigation") == 1:
+        return NAVIGATION_FORMAT_1
+    if schema == "plugin-passport-3" and document.get("passport") == 2:
+        return PASSPORT_FORMAT_2
+    if schema == "plugin-passport-3" and isinstance(document.get("frontend"), dict) and "build" in document["frontend"]:
+        return FRONTEND_BUILD
+    return None
 
 
 def _source_problems(root: Path) -> list[str]:

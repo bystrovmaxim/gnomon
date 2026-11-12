@@ -128,10 +128,7 @@ class DeployAndInstallAction(BaseAction[DeployParams, DeployResult]):
             if not await store.try_claim(f"install:{params.row_id}"):
                 return "busy"
             await store.version_lock(version["id"])
-            core = core_version()
-            problem = frontend_problem(await store.build(version["id"], core), core)
-            if problem:
-                raise FrontendNotBuiltError(problem)
+            await _require_frontend(store, version["id"])
             current = await store.version(version["id"])
             built = current is not None and current["schema_name"] is None
             if built:
@@ -232,6 +229,14 @@ class DeployAndInstallAction(BaseAction[DeployParams, DeployResult]):
             )
 
         await store.in_transaction(work)
+
+
+async def _require_frontend(store: DeployStorage, version_id: str) -> None:
+    """Raise ``FrontendNotBuiltError`` unless the version's frontend is built for the running core version."""
+    core = core_version()
+    problem = frontend_problem(await store.build(version_id, core), core)
+    if problem:
+        raise FrontendNotBuiltError(problem)
 
 
 def _reason(error: Exception) -> str:

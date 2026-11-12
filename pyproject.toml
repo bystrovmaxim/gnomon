@@ -81,7 +81,8 @@ disable_error_code = ["valid-type"]
 [tool.pylint.master]
 load-plugins = ["pylint.extensions.docparams"]
 jobs = 0
-ignore-paths = ['.*/tests/.*', '.*/node_modules/.*', '^external/.*']
+# hatch_build.py runs inside hatchling's own build environment, not this project's.
+ignore-paths = ['.*/tests/.*', '.*/node_modules/.*', '^external/.*', '.*/hatch_build[.]py$']
 
 [tool.pylint."messages control"]
 disable = [

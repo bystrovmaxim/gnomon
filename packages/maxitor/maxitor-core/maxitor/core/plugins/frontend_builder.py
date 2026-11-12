@@ -236,4 +236,3 @@ def _open_to_nobody(folder: Path) -> None:
     os.chmod(folder, 0o777)
     for path in folder.rglob("*"):
         os.chmod(path, 0o777 if path.is_dir() else 0o666)
-
