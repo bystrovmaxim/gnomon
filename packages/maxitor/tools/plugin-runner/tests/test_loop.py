@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import pytest
 from maxitor.core.plugins.actions.run_version_action import RunVersionAction, RunVersionResult
 from maxitor.core.plugins.actions.stop_version_action import StopVersionAction, StopVersionResult
 from maxitor.core.plugins.actions.take_up_running_action import RunnableSchema, TakeUpRunningAction, TakeUpRunningResult
@@ -39,7 +40,12 @@ class Machine:
         return StopVersionResult(stopped=True)
 
 
-async def test_a_round_runs_each_wanted_version_and_stops_the_rest(tmp_path: Path) -> None:
+async def test_a_round_runs_each_wanted_version_and_stops_the_rest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Docker answers that nothing runs: the host's own plugin containers, a stand's for one, are none of this test's.
+    async def docker(*args: str) -> tuple[int, str]:
+        return 0, ""
+
+    monkeypatch.setattr("maxitor.core.plugins.plugin_processes.docker", docker)
     machine = Machine()
     processes = PluginProcessesController(
         PluginRuntimeStorage(tmp_path, "postgresql://u@db/maxitor"), WheelStorage(tmp_path),
