@@ -4010,7 +4010,7 @@ const I = {
 
 const KIND_COL = { add: "#16a34a", edit: "#d97706", delete: "#dc2626" };
 const KIND_NAME = { add: "added", edit: "changed", delete: "deleted" };
-const cmp = () => S.mode !== "one" && S.page !== "draft";
+const cmp = () => S.mode !== "one" && !!S.from;
 const isPast = () => S.at !== null && S.at < WM();
 const isFuture = () => S.at !== null && S.at > WM();
 function revAfter(v) { return revisions().find(x => x.n === v.n + 1) || null; }
@@ -4039,15 +4039,16 @@ function ago(t) {
   const d = Math.round(h / 24); return d === 1 ? "yesterday" : `${d} days ago`;
 }
 function labOf(m, short) {
+  if (S.page === "draft") return m ? fmt(m) : "Now";
   if (true) { const v = revInForce(m || WM()); return (m ? "" : "Now · ") + (v ? `v${v.n}` : "nothing"); }
   return m ? (short ? (S.phone && cmp() ? dayOf(m) : fmt(m)) : fmtY(m)) : "Now";
 }
 function labFull(m) {
+  if (S.page === "draft") return m ? fmtY(m) : "now";
   if (true) { const v = revInForce(m || WM()); return v ? `v${v.n} · ${v.title}` : "nothing published"; }
   return m ? fmtY(m) : "now";
 }
 function setMode(m) {
-  if (S.page === "draft" && m !== "one") return;
   if (m === "one") return go({ mode: "one", from: null, stepIdx: null, stepper: false, edit: null, conflict: null });
   let from = S.from;
   if (!from) {
@@ -4065,7 +4066,7 @@ function step(d) {
 function pill() {
   let label;
   if (cmp()) {
-    const c = count(changes(setOf(S.from), setOf(S.at)));
+    const c = S.page === "draft" ? rowsNow().reduce((m, r) => (m[r.k]++, m), { a: 0, c: 0, r: 0 }) : count(changes(setOf(S.from), setOf(S.at)));
     label = `<span class="ab">A</span><b>${esc(labOf(S.from, true))}</b>→<span class="ab">B</span><b>${esc(labOf(S.at, true))}</b>${S.phone ? "" : `<span class="md">· ${S.mode === "split" ? "side by side" : "diff"}</span>`}
       <span class="cnts"><span style="color:#16a34a">+${c.a}</span><span style="color:#dc2626">−${c.r}</span><span style="color:#d97706">~${c.c}</span></span>`;
   } else {
@@ -4103,10 +4104,10 @@ function cmpRows() {
 }
 function modeSwitch() {
   const b = (m, ic, lb, ph) => {
-    const off = S.page === "draft" && m !== "one";
+    const off = false;
     return `<button class="${S.mode === m || (off && false) ? "on" : ""}" ${off ? 'style="opacity:.4;cursor:not-allowed" title="The draft is itself a comparison"' : ""} onclick="setMode('${m}')">${ic}<span class="dt-lab">${lb}</span><span class="ph-lab">${ph}</span></button>`;
   };
-  const mode = S.page === "draft" ? "one" : S.mode;
+  const mode = S.mode;
   return `<div class="modes" role="radiogroup">${b("one", I.one, "One", "One").replace(mode === "one" && S.mode !== "one" ? 'class=""' : "@@", 'class="on"')}${b("diff", I.diff, "Diff", "Diff")}${b("split", I.split, "Side by side", "A / B")}</div>`;
 }
 function card() {
@@ -4555,7 +4556,7 @@ const CD = () => DEV ? DEV.cd : document;
 
 /* ======================= the draft: mine alone ======================= */
 function draftAt(t) {
-  if (!S.at) return S.draft;
+  if (t >= nowT()) return S.draft;
   if (t >= REV[5].t) return DRAFT0.filter(d => d.t <= t);
   if (t >= PAST_DRAFT[0].t) return PAST_DRAFT;
   return [];
@@ -4652,13 +4653,17 @@ const barHtml = () => `<div class="mx-bar" role="toolbar" aria-label="View contr
    with the published notes already); on Published, the comparison of A and B. */
 const draftOrder = list => [...list].sort((a, b) => a.t < b.t ? 1 : -1);
 function rowsNow() {
-  if (S.page === "draft") return draftOrder(draftAt(moment()).filter(d => !hid(S.hideK, d.k))).map(d => ({ id: d.id, k: d.k, a: baseNote(d), b: d.k === "r" ? null : { body: d.body, writer: writerOf(d) } }));
-  return cmp() ? cmpRows() : [];
+  if (!cmp()) return [];
+  if (S.page !== "draft") return cmpRows();
+  /* Draft compared: what Anna's draft gained, changed or gave up between A and B. */
+  const A = new Map(draftAt(S.from).map(d => [d.id, d])), B = draftAt(S.at || nowT());
+  return draftOrder(B.filter(d => { const a = A.get(d.id); return (!a || a.body !== d.body || a.k !== d.k) && !hid(S.hideK, d.k); }))
+    .map(d => ({ id: d.id, k: d.k, a: baseNote(d), b: d.k === "r" ? null : { body: d.body, writer: writerOf(d) } }));
 }
 /* One row in the panel's top right corner: the core's change stepper first, then the page's actions. Both stand at
    once whenever both are there — on Draft at now always — and the row never lets one cover the other. */
 function actionsHtml() {
-  const stepper = (S.page === "draft" && draftAt(moment()).length) || cmp() ? changeStepper(rowsNow()) : "";
+  const stepper = cmp() ? changeStepper(rowsNow()) : "";
   const own = S.page === "draft" && !S.at;
   if (!stepper && !own) return "";
   return `<div class="mx-actions" data-shell="actions">${stepper}${own ? `<button type="button" class="mx-action" onclick="top.go({dlg:{kind:'new'},focus:true})">${ICON.plus}New note</button><button type="button" class="mx-action" ${S.draft.length ? `onclick="top.go({dlg:{kind:'publish'}})"` : 'disabled title="Nothing to publish: the draft is empty"'}>Publish</button>` : ""}</div>`;
@@ -4680,7 +4685,7 @@ function draftCard(d, ro) {
   return `<article class="mx-card nt-card k-${d.k}${th ? " meets" : ""}${chosen ? " fresh" : ""}" data-note="${d.id}"><div class="mx-card-head"><b>${esc(PEOPLE[w].name)}</b><span>${when(d.t)}</span>${tools}</div>${kindSpan(d.k)}${body}${foot}${meet}</article>`;
 }
 function draftScene() {
-  const ro = !!S.at, all = draftAt(moment()), list = all.filter(d => !hid(S.hideK, d.k)), v = revInForce(moment());
+  const ro = !!S.at, all = draftAt(S.at || nowT()), list = all.filter(d => !hid(S.hideK, d.k)), v = revInForce(moment());
   const base = all.length ? all[0].base : v.n;
   let h = `<div class="mx-card nt-revision"><div class="nt-head"><span class="nt-ref dr">Draft</span><b>${ro ? `Your draft at ${esc(when(S.at))}` : "Your draft"}</b><span>seen by you alone · made over v${base} · published whole, as one revision${ro ? " · read only" : ""}</span>${counts(all)}</div></div>`;
   const cf = ro ? [] : conflicts();
@@ -4851,9 +4856,6 @@ const SCREENS = [
     ["1.6", "Giving up a change", { dlg: { kind: "revert", id: "p2" } }],
     ["1.7", "Someone published over my base", { race: true }],
     ["1.8", "An empty draft", { draft: [] }],
-    ["1.10", "The full set: the core's stepper and the plugin's actions at once", { race: true }],
-    ["1.11", "Stepping through my changes before publishing", { race: true, stepIdx: 1 }],
-    ["1.12", "The stepper's list beside the actions", { race: true, stepper: true }],
   ]],
   ["Published — everyone's notes", [
     ["2.1", "Everyone's published notes, v6", { page: "published" }],
@@ -4878,6 +4880,10 @@ const SCREENS = [
     ["4.6", "The stepper's list of changes", { page: "published", race: true, mode: "diff", from: "2026-11-10T09:40", stepper: true }],
     ["4.7", "A change chosen in the stepper", { page: "published", race: true, mode: "diff", from: "2026-11-10T09:40", stepIdx: 1 }],
     ["4.8", "Side by side", { page: "published", race: true, mode: "split", from: "2026-11-10T09:40" }],
+    ["4.9", "Draft: the range 10:20 → now chosen on the scale", { mode: "diff", from: "2026-11-10T10:20", picker: true }],
+    ["4.10", "Draft compared: the core's stepper beside the page's actions", { mode: "diff", from: "2026-11-10T10:20" }],
+    ["4.11", "A change of the range chosen in the stepper", { mode: "diff", from: "2026-11-10T10:20", stepIdx: 1 }],
+    ["4.12", "The stepper's list beside the actions", { mode: "diff", from: "2026-11-10T10:20", stepper: true }],
   ]],
   ["Phone", [
     ["5.1", "My draft on a phone", { phone: true }],
@@ -4889,9 +4895,10 @@ const SCREENS = [
   ]],
 ];
 const NOTES = {
-  "1.10": ["The full set in the top right corner", ["The core's change stepper ‹ 5 changes › and the plugin's actions New note and Publish stand in one row of the panel's top right corner, the core's first. The shell lays the row out, so neither ever covers the other, whatever the page gives.", "On Draft the stepper is always there at now: the draft is a comparison with the published notes, and ‹ › walk Anna through her own changes before she publishes them.", "The core's version controls ‹ Now › stay in the core's top row: another document, another place.", "This changes the shell's rule: a page's actions show whenever the moment is now, in a comparison too (<code>actionsShown</code> looks at <code>at</code> alone); in the past only the stepper is left."]],
-  "1.11": ["A change chosen", ["‹ › or the list choose a change: the canvas brings its card into view and rings it, the actions stay where they are."]],
-  "1.12": ["The list beside the actions", ["The stepper's list opens downwards under the row and covers nothing of it."]],
+  "4.9": ["The range chosen", ["On Draft's scale Anna switches to Diff and chooses A at today 10:20; B stays now. Only from here on the core has changes to show."]],
+  "4.10": ["The full set in the top right corner", ["Draft compared on the core's scale from A, today 10:20, to B, now. The core's change stepper holds only the changes of that range — the three changes Anna made to her draft after 10:20 — and it stands only because a range is chosen: without one there is no stepper.", "B is now, so the page's actions New note and Publish stay: the shell shows them whenever the moment is now (<code>actionsShown</code> by <code>at</code> alone). Stepper and actions stand in one row of the panel's top right corner, the core's first, laid out by the shell, so neither covers the other.", "The core's pill ‹ A → B › stays in the core's top row."]],
+  "4.11": ["A change chosen", ["‹ › or the list choose a change of the range: its card is brought into view and ringed; the actions stay where they are."]],
+  "4.12": ["The list beside the actions", ["The stepper's list opens downwards under the row and covers nothing of it."]],
   "1.1": ["My draft", ["Every element here is production: the core's top row and tree, @maxitor/panel's filters, bottom bar, actions, cards and dialogs, with their CSS taken from the stand as it is. New are only the draft's parts, written with Maxitor's tokens in the template's notes.css.", "<b>Draft</b> is the page of the person who reads it: Anna sees only her own changes, nobody else sees them, and nothing here reaches Published before she publishes.", "A card says its state as the template's revision page does — <b>new</b>, <b>changed</b>, <b>deleted</b> — and whose note it is. A changed note shows the published text struck through above the new one; a deleted note is struck through.", "Each change remembers the published version it was made over (<b>made over v6</b>): publishing compares against it.", "The page's actions are <b>New note</b> and <b>Publish</b>. A card has Edit (new and changed) and Revert. The filter is the change's <b>State</b>."]],
   "1.2": ["The State filter", ["A click on a row hides or shows that state. Here New and Changed are off; only the deletion is left."]],
   "1.3": ["A row with nothing behind it fades", ["The new note was reverted, so no change of the draft is new any more: the row <b>New</b> fades, as @maxitor/panel fades a row whose value is absent from the data (<code>absent</code>), and comes back when a new note is written."]],
