@@ -24,7 +24,6 @@ from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 #: The folder of a plugin's package holding its history actions, one per file: ``history/<name>_action.py``.
 HISTORY_FOLDER = "history"

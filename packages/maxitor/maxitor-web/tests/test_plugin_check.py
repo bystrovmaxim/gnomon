@@ -46,7 +46,7 @@ def test_a_core_outside_the_range_is_refused(plugin: Path) -> None:
 
 
 def test_a_format_the_core_does_not_read_is_refused(plugin: Path) -> None:
-    edit(plugin, "navigation.yaml", "navigation", 3)
+    edit(plugin, "navigation.yaml", "navigation", 4)
     problems = check(plugin, "4.7.0")
     assert any(p.startswith("navigation.yaml: navigation:") for p in problems)
 

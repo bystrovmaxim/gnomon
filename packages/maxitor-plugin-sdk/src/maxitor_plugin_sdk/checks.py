@@ -313,17 +313,28 @@ def _format_refusal(schema: str, document: object) -> str | None:
     """A file of a format no longer read, refused by name before its schema is applied; ``None`` otherwise."""
     if not isinstance(document, dict):
         return None
-    if schema == "navigation-3" and document.get("navigation") == 1:
-        return NAVIGATION_FORMAT_1
-    if schema == "navigation-3" and document.get("navigation") == 2:
-        return NAVIGATION_FORMAT_2
     if schema == "navigation-3":
-        return retired_node(document)
-    if schema == "plugin-passport-3" and document.get("passport") == 2:
-        return PASSPORT_FORMAT_2
-    if schema == "plugin-passport-3" and isinstance(document.get("frontend"), dict) and "build" in document["frontend"]:
-        return FRONTEND_BUILD
+        return _navigation_refusal(document)
+    if schema == "plugin-passport-3":
+        return _passport_refusal(document)
     return None
+
+
+def _navigation_refusal(document: Mapping[str, Any]) -> str | None:
+    """Navigation of format 1 or 2, or a node still declaring what its page gives."""
+    if document.get("navigation") == 1:
+        return NAVIGATION_FORMAT_1
+    if document.get("navigation") == 2:
+        return NAVIGATION_FORMAT_2
+    return retired_node(document)
+
+
+def _passport_refusal(document: Mapping[str, Any]) -> str | None:
+    """A passport of format 2, or one naming a built site in frontend.build."""
+    if document.get("passport") == 2:
+        return PASSPORT_FORMAT_2
+    frontend = document.get("frontend")
+    return FRONTEND_BUILD if isinstance(frontend, Mapping) and "build" in frontend else None
 
 
 def _source_problems(root: Path) -> list[str]:
