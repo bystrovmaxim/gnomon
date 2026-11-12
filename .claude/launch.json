@@ -183,6 +183,21 @@
       ],
       "port": 8890,
       "autoPort": false
+    },
+    {
+      "name": "mockup-13",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8813",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/Users/bystrovmaxim/PythonDev/gnomon/.claude/worktrees/issue-13-sign-in-and-invitation/specs/072-maxitor-core/mockup"
+      ],
+      "port": 8813,
+      "autoPort": false
     }
   ]
 }
