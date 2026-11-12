@@ -99,7 +99,11 @@ export function Frame({
   // node that was only passed through by expanding. The organization stands at the head of the row as its own crumb.
   const path = useMemo(() => {
     const steps: { title: string; level: number | null }[] = levels.map((level, index) => ({ title: level.title, level: index }));
-    if (opened) steps.push({ title: title || levelTitle(opened.node, opened.scope, titles), level: null });
+    // The page of the node at the head of the panel is that node's crumb already: it is not named twice.
+    const head = levels.length ? levels[levels.length - 1] : null;
+    if (opened && opened.node.name !== head?.node.name) {
+      steps.push({ title: title || levelTitle(opened.node, opened.scope, titles), level: null });
+    }
     return steps;
   }, [levels, opened, title, titles]);
 

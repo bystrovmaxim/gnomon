@@ -5,7 +5,9 @@
 // seeing its nodes in the tree, its items added, renamed and listed through the gateway (specs/076-template-own-items
 // /quickstart.md), its notes page in the right panel with its controls in the shell of @maxitor/panel, Back and Forward,
 // the panel's test page with the protocol, the canvas, the test drawing in the shell, a page without the shell and the
-// tree's head (specs/077-core-frame/quickstart.md, specs/078-page-shell/quickstart.md), a second
+// tree's head — the arrow as Back (spec 085) — and a node that is entered with its head, its crumbs and a reload
+// inside it (specs/077-core-frame/quickstart.md, specs/078-page-shell/quickstart.md, specs/085-entered-tree-node
+// /spec.md), a second
 // organization on the deployed version, disabling and enabling, a private plugin's dialog — signing out and in, a
 // wrong password, resetting the password, someone else's organization, an organization's address without a session,
 // and the same pages and the frame on a phone.
@@ -169,10 +171,13 @@ async function waitForState(title, state) {
   throw new Error(`${title} never became ${state}`);
 }
 
-await scenario("Settings at the foot of the tree leads to Plugins; the marketplace offers the template", async () => {
+await scenario("Settings at the foot of the tree is entered and holds Plugins; the marketplace offers the template", async () => {
   await page.goto(`${BASE}/w/${CODE}`);
   await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).click();
-  await page.locator(".mx-tree-foot .mx-node", { hasText: "Plugins" }).click();
+  // Settings is entered (spec 085): the panel holds its children only, and Settings stands at its head.
+  await page.locator(".mx-level-head", { hasText: "Settings" }).waitFor();
+  expect((await page.locator(".mx-tree-scroll .mx-node").count()) === 1, "the level of Settings holds more than Plugins");
+  await page.locator(".mx-tree-scroll .mx-node", { hasText: "Plugins" }).click();
   await page.waitForURL(`**/w/${CODE}/core/settings/plugins`);
   expect((await page.locator(".mx-path").innerText()).includes("Settings"), "the top row's path does not say Settings");
   await page.getByRole("tab", { name: /Marketplace/ }).click();
@@ -242,7 +247,8 @@ await scenario("the notes page opens in the right panel from the tree, with its 
   await page.waitForURL(`**/w/${CODE}/notes/items/${ITEM}`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   const frame = page.frameLocator("iframe.mx-panel-frame");
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Payments › Notes", "the path does not name the item");
+  // The crumbs name the entered levels and the open page only: the item was passed by expanding (spec 085).
+  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Notes", "the crumbs name a node passed by expanding");
   await frame.locator(".mx-card", { hasText: "Retry three times" }).waitFor();
   // The core draws nothing over the panel: the filters and the view are the page's, in its shell.
   expect((await page.locator(".mx-pill, .mx-filters, .mx-views, .mx-legend, .mx-bar").count()) === 0, "the core draws controls over the panel");
@@ -432,15 +438,51 @@ await scenario("a page without the shell is marked by a red strip on the stand",
   expect((await page.locator(".mx-unframed").count()) === 0, "a page in the shell is marked");
 });
 
-await scenario("the tree's head: collapse folds the tree, up opens the nearest page above", async () => {
+await scenario("a node that is entered holds its children only; its head, its crumbs and a reload inside it", async () => {
+  await page.goto(`${BASE}/w/${CODE}`);
+  expect((await page.locator(".mx-node", { hasText: "Notes" }).first().locator(".mx-node-enter").count()) === 1, "Notes carries no mark of an entered node");
+  expect((await page.locator(".mx-node", { hasText: "Payments" }).count()) === 0, "an entered node shows its children before the click");
+  await page.locator(".mx-node", { hasText: "Notes" }).first().click();
+  await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
+  await page.locator(".mx-node", { hasText: "Payments" }).waitFor();
+  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes", "the crumbs do not name the entered level");
+  // An item expands where it stands, inside the level; Back returns to the root and opens nothing.
+  await page.locator(".mx-node", { hasText: "Payments" }).click();
+  await page.locator(`a.mx-node[href$="/items/${ITEM}"]`).waitFor();
+  const address = page.url();
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.locator(".mx-level-head").waitFor({ state: "detached" });
+  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).waitFor();
+  expect(page.url() === address, "Back changed the address");
+  // What was expanded in the level lives in the page's memory: entering Notes again finds the item still expanded.
+  await page.locator(".mx-node", { hasText: "Notes" }).first().click();
+  await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
+  await page.locator(`a.mx-node[href$="/items/${ITEM}"]`).waitFor();
+  // A reload on a page inside Notes enters Notes again from the address, and the page's own line is expanded.
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
+  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Notes", "the crumbs do not name the entered level and the page");
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.locator(".mx-level-head").waitFor({ state: "detached" });
+  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).waitFor();
+  expect(page.url().includes(`/notes/items/${ITEM}`), "Back changed the address");
+});
+
+await scenario("the tree's head: collapse folds the tree, the arrow is Back and steps out of the entered level", async () => {
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}?view=table`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   await page.getByRole("button", { name: "Collapse sidebar" }).click();
   expect((await page.locator(".mx-body > .mx-tree.collapsed .mx-node").count()) === 0, "the collapsed tree still shows its nodes");
   await page.getByRole("button", { name: "Expand sidebar" }).click();
   await page.locator(".mx-body > .mx-tree .mx-node").first().waitFor();
-  await page.getByRole("link", { name: "Up" }).click();
-  await page.waitForURL((url) => url.pathname === `/w/${CODE}/notes` && url.search === "");
+  // Back returns to the level before the last entering and opens nothing: the address and the panel's page stay.
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.locator(".mx-level-head").waitFor({ state: "detached" });
+  expect((await page.locator(".mx-node", { hasText: "Notes" }).count()) === 1, "the root of the tree is not back");
+  expect((await page.locator("iframe.mx-panel-frame:not(.waiting)").count()) === 1, "Back closed the page");
+  expect(page.url().includes(`/notes/items/${ITEM}`), "Back changed the address");
+  // At the root the arrow is off.
+  expect((await page.locator(".mx-tree-head .mx-tree-button.off[aria-label='Back']").count()) === 1, "Back is on at the root");
 });
 
 await scenario("a second organization installs the deployed version without building it", async () => {
@@ -575,6 +617,8 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   expect(sheet && Math.round(sheet.y + sheet.height) >= 811 && sheet.width >= 370, "the dialog is not a sheet from the bottom");
   await p.getByRole("button", { name: "Cancel" }).click();
   await p.getByRole("button", { name: "The organization's tree" }).click();
+  await p.locator(".mx-tree.drawer .mx-node", { hasText: "Settings" }).click();
+  await p.locator(".mx-tree.drawer .mx-level-head", { hasText: "Settings" }).waitFor();
   await p.locator(".mx-tree.drawer .mx-node", { hasText: "Plugins" }).waitFor();
   await phone.close();
 });
