@@ -14,7 +14,7 @@ import { compareNotes } from "../../../notes/compare";
 import { PUBLISHED_HISTORY } from "../../../notes/history";
 import { marksInDraft, STATE_LABEL, type Change } from "../../../notes/draft";
 import { DraftIcon } from "../../../notes/marking";
-import { CARD_GAP, cardsBounds, refusalText } from "../../../notes/notes";
+import { CARD_GAP, cardsBounds, refusalText, when } from "../../../notes/notes";
 import { useFresh } from "../../../notes/parts";
 import { HEAD, RevisionCard, type PublishedNote, type Revision } from "../../../notes/revision";
 import { initials, paletteOf } from "../people";
@@ -185,7 +185,7 @@ export function PublishedView({
                   <article key={note.id} className="mx-card nt-card" data-room-anchor={`note:${note.id}`} data-change={statusOf(note)}>
                     <div className="mx-card-head">
                       <b>{note.writer_name}</b>
-                      <span>{note.changed_by && note.changed_by !== note.writer_name ? `changed by ${note.changed_by}` : ""}</span>
+                      <span>{when(note.updated_at)}</span>
                       {now ? (
                         <span className="nt-tools">
                           <button type="button" title="Change it in my draft" onClick={() => edit(note)}>Edit</button>
@@ -195,6 +195,7 @@ export function PublishedView({
                       ) : null}
                     </div>
                     <div className="nt-body">{note.body}</div>
+                    <div className="nt-foot">Last change by {note.changed_by || note.writer_name}</div>
                     {mark ? (
                       <button type="button" className={`nt-mark ${mark}`} onClick={openDraft}>
                         <DraftIcon />
