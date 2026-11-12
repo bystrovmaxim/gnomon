@@ -17,6 +17,7 @@ import { Filters } from "./shell/Filters";
 import { Layers } from "./shell/Layers";
 import { ShellContext, type Reserve, type Shell, type Zoom } from "./shell/ShellContext";
 import type { BarSection, FilterSection, Layers as LayersInput, PageAction } from "./shell/types";
+import type { PageHistory } from "./protocol";
 import "./shell/shell.css";
 
 /** The edge an element takes from the panel's side, or 0 when it is not drawn. */
@@ -34,6 +35,7 @@ export function PanelPage({
   layers,
   bar = [],
   actions = [],
+  history,
   children,
 }: {
   title: string;
@@ -41,12 +43,19 @@ export function PanelPage({
   layers?: LayersInput;
   bar?: BarSection[];
   actions?: PageAction[];
+  /** How the page answers the core's time scale; without it the page is offered one moment only (spec 082). */
+  history?: PageHistory;
   children: ReactNode;
 }) {
   const { send, markShell } = usePanel();
   // The provider sends panel.ready after its children mounted: it says then that this page renders the shell.
   markShell();
   useEffect(() => send({ type: "panel.title", text: title }), [send, title]);
+  // The page gives its history when it opens and whenever it gives a new one; the core keeps only the last.
+  const historyKey = JSON.stringify(history ?? null);
+  useEffect(() => {
+    if (history) send({ type: "panel.history", history });
+  }, [historyKey, send]);
 
   const query = usePanelQuery();
   const { at, ...own } = query;

@@ -29,6 +29,6 @@ def test_the_action_answers_the_package_version_to_anyone() -> None:
         "passport": 1,
         "id": "maxitor",
         "version": version("maxitor"),
-        "reads": {"plugin-passport": [3], "plugin-schema": [1], "navigation": [2], "foreign-keys": [1]},
+        "reads": {"plugin-passport": [3], "plugin-schema": [1], "navigation": [3], "foreign-keys": [1]},
         "sdk": 1,
     }

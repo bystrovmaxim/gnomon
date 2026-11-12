@@ -117,6 +117,8 @@ function TestDrawing() {
         { kind: "button", items: [{ title: "Close every port", icon: "close-ports", onClick: () => setClosed((n) => n + 1) }] },
       ]}
       actions={[{ title: "New note", icon: "plus", onClick: () => setClosed((n) => n + 1) }]}
+      // Its history, as a plugin's page gives it: one name the core does not know and one comparison wider than allowed.
+      history={{ milestones: "list_test_history", card: "no_such_card", compare: ["diff", "side_by_side"] }}
     >
       <MaxitorCanvas bounds={{ x: 0, y: 0, width: 840, height: 480 }} label="Test drawing">
         {shown.map((node) => (

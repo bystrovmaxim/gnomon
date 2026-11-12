@@ -377,7 +377,7 @@ def probe_wheel(uvicorn_required: bool = True) -> bytes:
         archive.writestr("probe_plugin/__init__.py", "")
         archive.writestr("probe_plugin/app.py", APP)
         archive.writestr("probe_plugin/maxitor-plugin.yaml", PASSPORT)
-        archive.writestr("probe_plugin/navigation.yaml", "navigation: 2\nnodes: []\n")
+        archive.writestr("probe_plugin/navigation.yaml", "navigation: 3\nnodes: []\n")
         archive.writestr("probe_plugin-0.1.0.dist-info/METADATA", metadata)
         archive.writestr("probe_plugin-0.1.0.dist-info/WHEEL", "Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n")
         archive.writestr("probe_plugin-0.1.0.dist-info/RECORD", "")

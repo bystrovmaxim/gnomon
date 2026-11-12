@@ -1,5 +1,9 @@
 # Changelog — maxitor-plugin-sdk
 
+## 1.7.0 — 2026-11-12
+
+Navigation format 3: `navigation-3.schema.json` is format 2 without `room` and `history` — the tree only. `checks` refuses format 2 with `NAVIGATION_FORMAT_2` and a node declaring `history`, `room` or `controls` with `retired_node`, naming the node; the page gives its history in its code, so the check of a page's history in `navigation.yaml` is gone. ([#116](https://github.com/bystrovmaxim/gnomon/issues/116))
+
 ## 1.6.0 — 2026-11-12
 
 Passport format 3: `plugin-passport-3.schema.json` is format 2 with `frontend.source` — the folder of the frontend's sources the core builds — in place of `frontend.build`. `checks` refuses format 2 with `PASSPORT_FORMAT_2` and `frontend.build` with `FRONTEND_BUILD`, and a plugin's `web/` without `package.json` or `package-lock.json`. ([#110](https://github.com/bystrovmaxim/gnomon/issues/110))

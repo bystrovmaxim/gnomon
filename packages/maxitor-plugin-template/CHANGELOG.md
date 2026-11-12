@@ -5,6 +5,12 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] — 2026-11-12
+
+### Changed
+
+- **Its pages give their history in their code.** The notes page gives its reading action, milestones and card, the published notes their milestones and card, the draft no comparison; `navigation.yaml` is format 3, the tree only, with no room. It requires Maxitor `>=4.7,<5`. Its pages 0.5.0. ([#116](https://github.com/bystrovmaxim/gnomon/issues/116))
+
 ## [0.10.0] — 2026-11-12
 
 ### Changed

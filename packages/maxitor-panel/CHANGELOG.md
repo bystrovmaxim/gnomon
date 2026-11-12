@@ -1,5 +1,9 @@
 # Changelog of @maxitor/panel
 
+## 0.5.0
+
+`PanelPage` takes `history` — `read`, `bars`, `milestones`, `card`, `compare`, `legend` — and sends it as `panel.history`; `checkHistory` is the core's check of its names against a version's actions and comparisons, `NO_HISTORY` what a page without one is offered. `panel.ready` and `PanelDocument` carry no `surface`: every page lies on the canvas. ([#116](https://github.com/bystrovmaxim/gnomon/issues/116))
+
 ## 0.4.0
 
 A list lies whole on the canvas: `DataTable` is a card at its full length, moved and zoomed by the camera, with no scroll of its own and no pages; only the rows in view are drawn, the canvas knows every row's place by its anchor, and the head — the list's name, how many rows pass of how many, the column names — sticks to the top of the view. A column has a kind of cell: text, mono, number, date, person, status. The filters come in three kinds: a choice (more than eight values get a search, the first eight and "N more"), a text, and a range of numbers or dates written `from..to`; on a phone they are one button opening a sheet from below. `openDateRangePicker` and `openDatePicker` are the date pickers a page calls like functions: ready stretches, fields that take typing, dates that move with today, two months and wheels, Cancel and Apply; sheets from below on a phone. `usePanelHidden` tells the core what the filters hide (`panel.hidden`). The canvas fits its scene once it has a size, and on a phone keeps it clear of the Filters button at the top. ([#115](https://github.com/bystrovmaxim/gnomon/issues/115))

@@ -5,5 +5,5 @@ import { PanelDocument } from "@maxitor/panel";
 import type { ReactNode } from "react";
 
 export default function PanelLayout({ children }: { children: ReactNode }) {
-  return <PanelDocument build="core" surface="canvas" prefixSegments={2}>{children}</PanelDocument>;
+  return <PanelDocument build="core" prefixSegments={2}>{children}</PanelDocument>;
 }

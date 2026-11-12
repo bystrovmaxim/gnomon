@@ -25,7 +25,7 @@ import yaml
 from jsonschema import Draft202012Validator
 
 from maxitor_plugin_sdk.frontend import frontend_problems
-from maxitor_plugin_sdk.history import HISTORY_FOLDER, history_problems
+from maxitor_plugin_sdk.history import HISTORY_FOLDER
 from maxitor_plugin_sdk.plugin_schema import PluginSchemaError, read_plugin_schema
 from maxitor_plugin_sdk.roles import NODE_ROLES
 
@@ -35,7 +35,11 @@ PASSPORT_FILE = "maxitor-plugin.yaml"
 MAX_YAML_BYTES = 64 * 1024
 PLACEHOLDER = re.compile(r"\{([a-z][a-z0-9_]*)\}")
 # Navigation format 1 declared a page's controls; format 2 leaves them to the page (spec 078, FR-016).
-NAVIGATION_FORMAT_1 = "navigation format 1 is not read; write format 2, without controls"
+NAVIGATION_FORMAT_1 = "navigation format 1 is not read; write format 3, without controls, history or room"
+# Navigation format 2 carried a page's history and a room's shared parameters; format 3 is the tree only (spec 082).
+NAVIGATION_FORMAT_2 = "navigation format 2 is not read; write format 3: the page gives its history and controls, and a room shares nothing"
+#: What a node of format 3 may no longer declare: the page gives it, or nothing does.
+RETIRED_KEYS = ("controls", "history", "room")
 # Passport format 2 carried a built site; format 3 carries the frontend's sources, and the core builds them (spec 080).
 PASSPORT_FORMAT_2 = "passport format 2 is not read; write format 3, the frontend as sources (frontend.source)"
 FRONTEND_BUILD = "frontend.build is not a field of format 3; name the frontend's sources in frontend.source"
@@ -68,11 +72,10 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     problems.extend(_source_problems(root))
     problems.extend(frontend_problems(root))
     problems.extend(passport_role_problems(passport))
-    navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-2", problems)
+    navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-3", problems)
     if navigation is not None:
         problems.extend(navigation_problems(navigation))
         problems.extend(source_problems(navigation, action_names(package)))
-        problems.extend(_history_problems(package, passport, navigation))
     schema_file = passport.get("database", {}).get("schema")
     if schema_file is not None:
         problems.extend(_schema_problems(package.parent / schema_file))
@@ -84,14 +87,17 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     return {**passport, "formats": _formats(passport, navigation, keys_file, schema_file)}, problems
 
 
-def _history_problems(package: Path, passport: Mapping[str, Any], navigation: Mapping[str, Any]) -> list[str]:
-    """Each page's history against the passport's comparisons and the plugin's folder ``history/``."""
-    actions = {path.name.removesuffix("_action.py") for path in (package / HISTORY_FOLDER).glob("*_action.py")}
-    problems: list[str] = []
-    for node, _scope in _walk(navigation["nodes"]):
-        if "history" in node:
-            problems.extend(history_problems(passport.get("history"), node["id"], node["history"], actions))
-    return problems
+def retired_node(navigation: Mapping[str, Any]) -> str | None:
+    """
+    Why a file of format 3 is refused for a node that still declares what a page gives — its history, its controls —
+    or what a room no longer shares; the node is named. ``None`` when no node does.
+    """
+    nodes = navigation.get("nodes")
+    for node, _scope in _walk(nodes if isinstance(nodes, list) else []):
+        for key in RETIRED_KEYS:
+            if isinstance(node, Mapping) and key in node:
+                return f"{node.get('id')!r} declares {key}; the page gives its history and controls, and a room shares nothing"
+    return None
 
 
 def _schema_problems(path: Path) -> list[str]:
@@ -307,8 +313,12 @@ def _format_refusal(schema: str, document: object) -> str | None:
     """A file of a format no longer read, refused by name before its schema is applied; ``None`` otherwise."""
     if not isinstance(document, dict):
         return None
-    if schema == "navigation-2" and document.get("navigation") == 1:
+    if schema == "navigation-3" and document.get("navigation") == 1:
         return NAVIGATION_FORMAT_1
+    if schema == "navigation-3" and document.get("navigation") == 2:
+        return NAVIGATION_FORMAT_2
+    if schema == "navigation-3":
+        return retired_node(document)
     if schema == "plugin-passport-3" and document.get("passport") == 2:
         return PASSPORT_FORMAT_2
     if schema == "plugin-passport-3" and isinstance(document.get("frontend"), dict) and "build" in document["frontend"]:

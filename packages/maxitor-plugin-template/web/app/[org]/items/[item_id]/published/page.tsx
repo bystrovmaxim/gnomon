@@ -4,7 +4,7 @@ import { Card, PanelPage } from "@maxitor/panel";
 
 export default function PublishedNotesPage() {
   return (
-    <PanelPage title="Published notes">
+    <PanelPage history={{ milestones: "list_note_history", card: "note_milestone_card" }} title="Published notes">
       <Card>The notes of the item's last published revision, with its number, title and comment, will be here.</Card>
     </PanelPage>
   );

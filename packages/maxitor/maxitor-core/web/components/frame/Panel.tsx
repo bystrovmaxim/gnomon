@@ -6,6 +6,8 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 
+import type { HistoryAllowed } from "@maxitor/panel/protocol";
+
 import { PageFrame } from "@/components/frame/PageFrame";
 import { windowAddress, type PanelAddress } from "@/lib/address";
 import type { TreeNode } from "@/lib/tree";
@@ -68,6 +70,7 @@ export function Panel({
   address,
   opened,
   dependencies,
+  histories,
   onTitle,
   children,
 }: {
@@ -76,6 +79,8 @@ export function Panel({
   opened: { node: TreeNode; scope: Record<string, string> } | null;
   /** Each enabled plugin's direct dependencies: the owners a page of it may open. */
   dependencies: Record<string, string[]>;
+  /** Each enabled plugin's history actions and comparisons. */
+  histories: Record<string, HistoryAllowed>;
   onTitle: (title: string | null) => void;
   children: ReactNode;
 }) {
@@ -116,6 +121,7 @@ export function Panel({
         title={opened.node.title || opened.node.name}
         canOpen={(other) => allowed.has(other)}
         pathNames={Object.keys(opened.scope)}
+        historyAllowed={histories[owner] ?? { actions: [], compare: [] }}
         onTitle={onTitle}
       />
     </main>

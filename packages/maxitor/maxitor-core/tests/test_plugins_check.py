@@ -85,8 +85,11 @@ def test_a_list_reads_an_action_the_wheel_carries() -> None:
         ({"maxitor_notes/schema.yaml": None}, "schema"),
         ({"maxitor_notes/foreign-keys.yaml": KEYS.replace("schema: core, table: user", "schema: tags, table: tag")}, "foreign_keys"),
         ({"maxitor_notes/navigation.yaml": None}, "navigation"),
-        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 2", "navigation: 7")}, "navigation"),
-        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 2", "navigation: 1")}, "navigation"),
+        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 3", "navigation: 7")}, "navigation"),
+        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 3", "navigation: 1")}, "navigation"),
+        # Navigation format 2 carried a page's history and a room's shared parameters.
+        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 3", "navigation: 2")}, "navigation"),
+        ({"maxitor_notes/navigation.yaml": NAVIGATION + "    history: {read: list_items}\n"}, "navigation"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace('">=4.0,<5"', '">=5.0,<6"')}, "core_range"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT + "roles:\n  - name: reader\n    description: Reads.\n"}, "passport"),
         ({"maxitor_notes/navigation.yaml": NAVIGATION + "    roles: [reader]\n"}, "navigation"),
@@ -252,7 +255,7 @@ class World:
 
 
 async def test_a_good_version_becomes_active_under_its_passports_identity(tmp_path: Path) -> None:
-    world = World(tmp_path)
+    world = World(tmp_path, data=wheel({"maxitor_notes/history/list_note_history_action.py": "", "maxitor_notes/actions/list_items_action.py": ""}))
     assert await world.run() == "active"
     plugin = world.updates("plugin")
     assert plugin[0][0].startswith("UPDATE plugin SET passport_id = $1, name = $2, title = $3, description = $4")
@@ -260,7 +263,9 @@ async def test_a_good_version_becomes_active_under_its_passports_identity(tmp_pa
     nodes = [p for q, p in world.connection.statements if q.startswith("INSERT INTO plugin_node (")]
     assert [(p[2], p[6]) for p in nodes] == [("notes:tags", "Tags"), ("notes:notes", "All notes")]
     version = world.updates("plugin_version")[-1]
-    assert "state = $4" in version[0] and version[1][:4] == (PLACEHOLDER, "0.4.0", ">=4.0,<5", "active")
+    assert "state = $6" in version[0] and version[1][:3] == (PLACEHOLDER, "0.4.0", ">=4.0,<5") and version[1][5] == "active"
+    # What a page's history is checked against: the wheel's actions and the passport's comparisons.
+    assert "history_actions = $4" in version[0] and version[1][3] == ["list_items", "list_note_history"] and version[1][4] == []
 
 
 async def test_a_wheel_not_in_the_store_is_downloaded_and_kept(tmp_path: Path) -> None:

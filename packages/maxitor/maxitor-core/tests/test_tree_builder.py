@@ -58,7 +58,7 @@ def test_a_member_sees_the_template_and_an_administrator_settings_too() -> None:
 
 def test_a_parent_with_no_visible_child_and_no_page_is_hidden() -> None:
     navigation = {
-        "navigation": 2,
+        "navigation": 3,
         "nodes": [
             {
                 "id": "group",
@@ -112,11 +112,13 @@ def _item_notes(navigation: dict[str, Any]) -> dict[str, Any]:
             "already defines",
         ),
         # Navigation format 1, which declared controls.
-        (_with(lambda n: n.update(navigation=1)), ACTIONS, "navigation format 1 is not read; write format 2, without controls"),
-        # A node that declares controls: format 2 has none.
-        (_with(lambda n: _item_notes(n).update(controls={"views": {}})), ACTIONS, "not allowed"),
-        # A room shared on a parameter of the core.
-        (_with(lambda n: _item_notes(n)["room"].update(shared=["mode"])), ACTIONS, "does not match"),
+        (_with(lambda n: n.update(navigation=1)), ACTIONS, "navigation format 1 is not read; write format 3"),
+        # Navigation format 2, which carried a page's history and a room's shared parameters.
+        (_with(lambda n: n.update(navigation=2)), ACTIONS, "navigation format 2 is not read; write format 3"),
+        # A node that declares what its page gives or a room it no longer has, named.
+        (_with(lambda n: _item_notes(n).update(controls={"views": {}})), ACTIONS, "'item-notes' declares controls"),
+        (_with(lambda n: _item_notes(n).update(history={"read": "list_item_notes"})), ACTIONS, "'item-notes' declares history"),
+        (_with(lambda n: _item_notes(n).update(room={"shared": ["view"]})), ACTIONS, "'item-notes' declares room"),
         # A list whose source is no action of the plugin.
         (NAVIGATION, ACTIONS - {"list_items"}, "is no action of the plugin"),
         # Attached to a node the core does not have.
@@ -129,7 +131,7 @@ def test_each_fault_of_one_file_is_refused(navigation: dict[str, Any], actions: 
 
 def _reviews(attach: str) -> dict[str, Any]:
     return {
-        "navigation": 2,
+        "navigation": 3,
         "nodes": [{"id": "reviews", "attach": attach, "title": "Reviews", "page": "/items/{item_id}/reviews"}],
     }
 

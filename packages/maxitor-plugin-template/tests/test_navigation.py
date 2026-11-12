@@ -78,10 +78,10 @@ def test_a_list_key_defined_twice_in_one_scope_is_refused(plugin, edit) -> None:
     assert "navigation: 'again' defines 'author_id', which a list node above it already defines" in check_plugin(plugin)
 
 
-@pytest.mark.parametrize("name", ["at", "_view", "View"])
-def test_a_shared_room_parameter_reserved_by_maxitor_is_refused(plugin, edit, name) -> None:
-    edit("navigation.yaml", lambda doc: _node(doc, "item-notes")["room"].update(shared=[name]))
-    assert any("room/shared/0" in problem for problem in check_plugin(plugin))
+@pytest.mark.parametrize("key", ["history", "room"])
+def test_a_page_node_declaring_history_or_a_room_is_refused_by_name(plugin, edit, key) -> None:
+    edit("navigation.yaml", lambda doc: _node(doc, "item-notes").update({key: {}}))
+    assert any(f"'item-notes' declares {key}" in problem for problem in check_plugin(plugin))
 
 
 @pytest.mark.parametrize("page", ["items/{item_id}", "/items/../admin", "/items/{Item}", "/items?view=table"])

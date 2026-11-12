@@ -233,7 +233,7 @@ class PluginsStorage(CoreStorage):
             return []
         rows = await self._fetch(
             "SELECT plugin_version_id::text AS version_id, full_name, parent, position, node_order, title, icon, page,"
-            " each_source, each_key, roles, room::text AS room FROM plugin_node"
+            " each_source, each_key, roles FROM plugin_node"
             " WHERE plugin_version_id = ANY($1::text[]::uuid[]) ORDER BY plugin_version_id, position",
             (version_ids,),
         )
@@ -268,6 +268,20 @@ class PluginsStorage(CoreStorage):
             (organization_id,),
         )
         return [dict(row) for row in rows]
+
+    async def plugin_histories(self, organization_id: str) -> dict[str, dict[str, list[str]]]:
+        """Each enabled plugin's history actions and comparisons, by its name: what its pages' histories are checked against."""
+        rows = await self._fetch(
+            "SELECT p.name, v.history_actions, v.history_compare"
+            " FROM organization_plugin op JOIN plugin p ON p.id = op.plugin_id"
+            " JOIN plugin_version v ON v.id = op.plugin_version_id"
+            " WHERE op.organization_id = $1::text::uuid AND op.state = 'enabled'",
+            (organization_id,),
+        )
+        return {
+            str(row["name"]): {"actions": list(row["history_actions"] or []), "compare": list(row["history_compare"] or [])}
+            for row in rows
+        }
 
     # ── the marketplace's rows ────────────────────────────────────────────────
 

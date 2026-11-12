@@ -158,16 +158,13 @@ async def test_the_history_actions_are_refused_outside_the_organization() -> Non
             await _run(action, params, organization="globex")
 
 
-def test_the_pages_declare_their_history_and_the_passport_its_comparisons() -> None:
+def test_the_pages_give_their_history_and_the_passport_its_comparisons() -> None:
     passport = yaml.safe_load((PACKAGE / "maxitor-plugin.yaml").read_text())
-    def every(found):
-        for node in found:
-            yield node
-            yield from every(node.get("children", []))
-
-    nodes = {node["id"]: node for node in every(yaml.safe_load((PACKAGE / "navigation.yaml").read_text())["nodes"])}
+    web = PACKAGE.parents[1] / "web" / "app" / "[org]" / "items" / "[item_id]"
     assert passport["history"] == {"compare": ["diff", "side_by_side"]}
-    assert nodes["item-notes"]["history"] == {"read": "list_item_notes", "milestones": "list_note_history", "card": "note_milestone_card"}
-    assert nodes["item-published"]["history"] == {"milestones": "list_note_history", "card": "note_milestone_card"}
-    assert nodes["item-draft"]["history"] == {"compare": []}
+    assert 'history={{ read: "list_item_notes", milestones: "list_note_history", card: "note_milestone_card" }}' in (web / "page.tsx").read_text()
+    assert 'history={{ milestones: "list_note_history", card: "note_milestone_card" }}' in (web / "published" / "page.tsx").read_text()
+    assert "history={{ compare: [] }}" in (web / "draft" / "page.tsx").read_text()
+    assert "history" not in (PACKAGE / "navigation.yaml").read_text().replace("# The page's controls and its history", "")
     assert {path.name for path in (PACKAGE / "history").glob("*_action.py")} == {"list_note_history_action.py", "note_milestone_card_action.py"}
+
