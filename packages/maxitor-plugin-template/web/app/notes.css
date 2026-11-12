@@ -1,0 +1,35 @@
+/* web/app/notes.css — the template's own look inside the content field, drawn with Maxitor's tokens: the cards' grid
+   on the canvas, a card's tools, its editing and its words, a dialog's fields. Nothing is placed fixed and no layer
+   reaches the shell's: dialogs are the shell's own. */
+.nt-grid { position: absolute; left: 0; top: 0; grid-template-columns: repeat(3, 280px); gap: 16px; }
+.nt-card { min-height: 120px; display: flex; flex-direction: column; gap: var(--mx-space-3); }
+.nt-card.fresh { box-shadow: 0 0 0 var(--mx-ring) var(--mx-palette-blue), var(--mx-shadow-float); }
+.nt-new { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); color: var(--mx-palette-blue); }
+.nt-tools { margin-left: auto; display: inline-flex; gap: var(--mx-space-2); }
+.nt-tools button, .nt-row button, .nt-ask button { border: 0; background: transparent; color: var(--mx-muted); font: inherit; font-size: var(--mx-text-sm); cursor: pointer; border-radius: var(--mx-radius-sm); padding: var(--mx-space-1) var(--mx-space-3); }
+.nt-tools button:hover, .nt-row button:hover, .nt-ask button:hover { background: var(--mx-hover); color: var(--mx-ink); }
+.nt-more { display: none; }
+.nt-body { white-space: pre-wrap; }
+.nt-edit, .mx-dialog textarea { display: flex; flex-direction: column; gap: var(--mx-space-3); }
+.nt-edit textarea, .mx-dialog textarea, .mx-dialog input { width: 100%; box-sizing: border-box; font: inherit; font-size: var(--mx-text-md); color: var(--mx-ink); border: var(--mx-line-width) solid var(--mx-line-3); border-radius: var(--mx-radius-md); padding: var(--mx-space-4) var(--mx-space-5); resize: vertical; }
+.mx-dialog label { display: flex; flex-direction: column; gap: var(--mx-space-2); font-size: var(--mx-text-sm); color: var(--mx-muted); }
+.nt-row { display: flex; justify-content: flex-end; gap: var(--mx-space-3); }
+.nt-row .nt-primary { background: var(--mx-ink); color: var(--mx-on-ink); padding: var(--mx-space-3) var(--mx-space-5); }
+.nt-row .nt-primary:hover { background: var(--mx-ink-2); color: var(--mx-on-ink); }
+.nt-row button:disabled { opacity: 0.4; cursor: default; }
+.nt-ask { display: flex; align-items: center; gap: var(--mx-space-3); flex-wrap: wrap; font-size: var(--mx-text-sm); color: var(--mx-ink-3); }
+.nt-danger { color: var(--mx-bad) !important; }
+.nt-said { font-size: var(--mx-text-sm); color: var(--mx-warn); line-height: 1.45; }
+.nt-sheet-button { border: 0; background: var(--mx-hover); border-radius: var(--mx-radius-md); padding: var(--mx-space-5); font: inherit; font-size: var(--mx-text-md); text-align: left; cursor: pointer; }
+.nt-revision { position: absolute; left: 0; top: 0; width: 872px; box-sizing: border-box; }
+.nt-revision b { font-size: var(--mx-text-lg); color: var(--mx-ink); }
+.nt-below { position: absolute; left: 0; }
+.nt-kind { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); }
+.nt-kind.added { color: var(--mx-ok); }
+.nt-kind.changed { color: var(--mx-warn); }
+.nt-kind.removed { color: var(--mx-bad); }
+.nt-before { color: var(--mx-muted); text-decoration: line-through; white-space: pre-wrap; }
+@media (max-width: 520px) {
+  .nt-tools button:not(.nt-more) { display: none; }
+  .nt-more { display: inline-flex; }
+}

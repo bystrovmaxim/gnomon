@@ -1,12 +1,15 @@
-// web/app/[org]/items/[item_id]/draft/page.tsx — the draft of an item, opened at /w/<org>/notes/items/<item_id>/draft.
-// What changed since the last revision, and publishing it, come with the template's pages (#102).
-import { Card, PanelPage } from "@maxitor/panel";
+// web/app/[org]/items/[item_id]/draft/page.tsx — the draft of an item, opened at /w/<org>/notes/items/<item_id>/draft:
+// what was added, changed or removed since the last revision, and publishing it.
+import { momentFrom } from "@maxitor/panel";
 
-export default function DraftPage() {
-  return (
-    // The draft is a comparison already: it offers one moment only.
-    <PanelPage title="Draft" history={{ compare: [] }}>
-      <Card>What was added, changed or removed since the last revision, with who and when, will be here.</Card>
-    </PanelPage>
-  );
+import { read } from "../../../notes/server";
+import { DraftView } from "./DraftView";
+import type { Change, Revision } from "../../../notes/revision";
+
+type Props = { params: Promise<{ org: string; item_id: string }>; searchParams: Promise<Record<string, string | undefined>> };
+
+export default async function DraftPage({ params, searchParams }: Props) {
+  const { org, item_id } = await params;
+  const found = await read<{ revision: Revision | null; changes: Change[] }>(org, `/items/${encodeURIComponent(item_id)}/draft`, { at: momentFrom(await searchParams) ?? undefined });
+  return <DraftView org={org} itemId={item_id} revision={found?.revision ?? null} changes={found?.changes ?? []} />;
 }

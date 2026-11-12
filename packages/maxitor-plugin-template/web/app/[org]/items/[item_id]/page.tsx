@@ -3,7 +3,7 @@
 // Its controls are its own: it gives the shell of @maxitor/panel the authors and the choice of a list or a table, and
 // the shell draws them in the same places as every page of Maxitor and writes them into the address.
 import { headers } from "next/headers";
-import { PanelPage, momentFrom, type BarSection, type FilterSection } from "@maxitor/panel";
+import { momentFrom, type BarSection, type FilterSection } from "@maxitor/panel";
 import { initials, paletteOf } from "./people";
 import { NotesView, type Note } from "./NotesView";
 
@@ -46,16 +46,6 @@ export default async function ItemNotesPage({ params, searchParams }: Props) {
   const all: Note[] = response.ok ? (await response.json()).notes : [];
   const notes = writers ? all.filter((note) => writers.includes(note.writer_id)) : all;
 
-  return (
-    <PanelPage
-      title="Notes"
-      filters={filters}
-      bar={bar}
-      // How the page answers the core's time scale: its reading action counts the bars over a stretch; the milestones and
-      // a milestone's card are actions of the folder history/. The comparisons are the passport's.
-      history={{ read: "list_item_notes", milestones: "list_note_history", card: "note_milestone_card" }}
-    >
-      <NotesView notes={notes} />
-    </PanelPage>
-  );
+  // The page's shell, its canvas, its writing and its reading again when "now" moved are drawn by NotesView.
+  return <NotesView org={org} itemId={item_id} notes={notes} filters={filters} bar={bar} />;
 }

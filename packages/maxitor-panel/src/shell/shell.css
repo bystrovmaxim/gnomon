@@ -83,7 +83,8 @@ button.mx-filter-row.field { cursor: pointer; }
   .mx-bar.folds > .mx-bar-more { display: inline-flex; }
   .mx-bar button { width: var(--mx-tree-row-phone); height: var(--mx-tree-row-phone); }
   .mx-empty-state { margin: var(--mx-space-5); }
-  .mx-actions { top: auto; bottom: var(--mx-space-5); }
+  /* above the bottom bar, which takes the whole bottom row of a phone */
+  .mx-actions { top: auto; bottom: calc(var(--mx-space-5) + var(--mx-tree-row-phone) + var(--mx-space-3)); }
   .mx-shell-content.document.with-filters { padding-left: var(--mx-space-5); }
 }
 

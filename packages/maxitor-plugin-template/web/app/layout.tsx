@@ -4,6 +4,8 @@
 import type { ReactNode } from "react";
 import { PanelDocument } from "@maxitor/panel";
 
+import "./notes.css";
+
 import { version } from "../package.json";
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -47,7 +47,8 @@ export function useCanvasOrNull(): CanvasApi | null {
 export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: Bounds; children: ReactNode; label?: string }) {
   const field = useRef<HTMLDivElement>(null);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 1 });
-  const fitted = useRef(false);
+  /** The person moved or zoomed the camera: the scene is no longer fitted by itself. */
+  const touched = useRef(false);
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<{ camera: Camera; from: Point[] } | null>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
@@ -80,16 +81,18 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
     [bounds, shell, size],
   );
 
-  // The scene opens fitted, once; later the person's camera is theirs. The shell draws its bottom bar only once the
-  // canvas gave it the zoom, so the first fit waits a frame and keeps the scene clear of the bar, as Fit later does.
+  // The scene stays fitted while the field or the scene changes — a panel still hidden, then shown; a phone turned; a
+  // note added — until the person moves the camera: from then on the camera is theirs. The shell draws its bottom bar
+  // only once the canvas gave it the zoom, so a fit waits for the commit and keeps the scene clear of the bar.
   const latestFit = useRef(fitTo);
   latestFit.current = fitTo;
-  // A panel still hidden has no size yet: the first fit waits until the field has one.
   useEffect(() => {
-    if (fitted.current || !viewport.width || !viewport.height) return;
-    fitted.current = true;
+    if (touched.current || !viewport.width || !viewport.height) return;
     // After this commit, once the shell has drawn its controls; a timer runs in a panel still hidden, a frame does not.
-    window.setTimeout(() => latestFit.current(), 0);
+    const timer = window.setTimeout(() => {
+      if (!touched.current) latestFit.current();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [fitTo, viewport.width, viewport.height]);
 
   // The wheel is listened to directly: React's listener is passive and could not keep the page from scrolling.
@@ -98,6 +101,7 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
     if (!element) return;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
+      touched.current = true;
       const { left, top, height } = size();
       setCamera((was) => wheel(was, event, { x: event.clientX - left, y: event.clientY - top }, height));
     };
@@ -149,8 +153,14 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
   useEffect(() => {
     shell?.setZoom({
       zoom: camera.zoom,
-      zoomIn: () => setCamera((was) => zoomAround(was, middle(), ZOOM_STEP)),
-      zoomOut: () => setCamera((was) => zoomAround(was, middle(), 1 / ZOOM_STEP)),
+      zoomIn: () => {
+        touched.current = true;
+        setCamera((was) => zoomAround(was, middle(), ZOOM_STEP));
+      },
+      zoomOut: () => {
+        touched.current = true;
+        setCamera((was) => zoomAround(was, middle(), 1 / ZOOM_STEP));
+      },
       fit: () => fitTo(),
     });
   }, [camera.zoom, fitTo, middle, shell]);
@@ -174,11 +184,13 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
           const next = key(camera, event.key, middle(), bounds, width, height);
           if (next) {
             event.preventDefault();
+            touched.current = true;
             setCamera(next);
           }
         }}
         onPointerDown={(event) => {
           if ((event.target as HTMLElement).closest("button, a, input, textarea, select")) return;
+          touched.current = true;
           field.current?.setPointerCapture(event.pointerId);
           pointers.current.set(event.pointerId, local(event));
           begin();
