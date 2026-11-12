@@ -24,5 +24,5 @@ export const PUBLISHED_HISTORY: PageHistory = {
   actions: [{ on: "milestone", kinds: ["published", "rollback"], title: "Roll back to {ref}", action: "rollback_publication", ask: true }],
 };
 
-/** Draft on the scale: the same publications, and Diff alone — the draft is a comparison with Published already. */
-export const DRAFT_HISTORY: PageHistory = { read: "list_note_draft", milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS, compare: ["diff"] };
+/** Draft on the scale: the bars of the person's own changes, the same publications, and both comparisons of the passport. */
+export const DRAFT_HISTORY: PageHistory = { read: "list_note_draft", milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS };

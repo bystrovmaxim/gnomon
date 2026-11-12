@@ -66,5 +66,5 @@ The card's switch of small points stands only with `small`.
 | Page | read / bars | kinds | small | flag | compare | actions |
 |---|---|---|---|---|---|---|
 | Notes · Published | `list_published_notes` | published, rollback | — | — | diff, side_by_side | Roll back on a milestone |
-| Notes · Draft | `list_note_draft` | published, rollback | — | — | diff | — |
+| Notes · Draft | `list_note_draft` | published, rollback | — | — | diff, side_by_side | — |
 | The test page, graph fixture | — | direct, merged, review_required, approved, changes_requested, live | yes | yes | diff, side_by_side | — |

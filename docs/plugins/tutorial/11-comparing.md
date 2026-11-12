@@ -10,7 +10,7 @@ history:
   compare: [diff, side_by_side]
 ```
 
-Draft gives `compare: ["diff"]`: a draft is a comparison with Published already.
+Neither page narrows the list: Draft too offers Diff and Side by side — its two panels show the person's draft at A and at B.
 
 ## The page draws one canvas from its context
 

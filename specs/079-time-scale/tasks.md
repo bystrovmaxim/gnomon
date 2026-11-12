@@ -118,7 +118,7 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 ## Phase 9: Comparing on the template's pages (issue 1.5, US7)
 
-- [x] T049 [US7] Passport `TPL/src/maxitor_notes/maxitor-plugin.yaml` keeps `compare: [diff, side_by_side]`; Draft's history gives `compare: ["diff"]`
+- [x] T049 [US7] Passport `TPL/src/maxitor_notes/maxitor-plugin.yaml` keeps `compare: [diff, side_by_side]`; Draft's history narrows nothing: Diff and Side by side
 - [x] T050 [US7] Both pages draw from `at`, `against`, `side`: Diff and the two sides with `data-change` on each note, `data-room-anchor = note:<id>`
 - [x] T051 [US7] A note's differences for `DiffCard` (its `body` before and after) and `ChangeStepper` grouped by the item; `panel.counts`
 - [x] T052 [P] [US7] Tests: `TPL/web/tests/notes.test.ts` (one test per row of the context table)

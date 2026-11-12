@@ -3,7 +3,7 @@
 // change that meets someone else's publication is marked and resolved in the publishing dialog.
 "use client";
 
-import { ChangeStepper, countsOf, Dialog, DiffCard, MaxitorCanvas, PanelPage, useCounts, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
+import { ChangeStepper, countsOf, Dialog, DiffCard, MaxitorCanvas, PanelPage, useCounts, useMoment, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -79,15 +79,17 @@ export function DraftView({
   const query = usePanelQuery();
   const { at, paint } = query;
   const now = !at && other === null;
-  // Diff: what happened to each change of the draft between A and B — B's draft against A's —, stepped with its card.
+  // A comparison: what happened to each change of the draft between A and B, stepped with its card — in Diff B's draft
+  // against A's, in Side by side each panel its own moment's draft against the other's.
+  const { side } = useMoment();
   const asNote = (change: Change) => ({ id: change.note_id, writer_name: change.writer_name, body: `${change.state}|${change.body}` });
-  const compared = compareNotes(changes.map(asNote), other ? other.map(asNote) : null, null);
+  const compared = compareNotes(changes.map(asNote), other ? other.map(asNote) : null, side);
   const [position, setPosition] = useState<number | null>(null);
   useEffect(() => setPosition(null), [at, other === null]);
   const step = position === null ? null : compared.steps[position] ?? null;
   const stepChange = step ? changes.find((change) => `note:${change.note_id}` === step.key) ?? other?.find((change) => `note:${change.note_id}` === step.key) ?? null : null;
   const wasChange = stepChange ? other?.find((change) => change.note_id === stepChange.note_id) ?? null : null;
-  useCounts(other !== null ? countsOf(compared.steps) : null);
+  useCounts(other !== null && side !== "a" ? countsOf(compared.steps) : null);
   const stateParam = typeof query.state === "string" ? query.state : undefined;
   const editId = typeof query.edit === "string" ? query.edit : null;
   const router = useRouter();
