@@ -36,6 +36,14 @@ test("the arrows step to the previous and the next change, and past the last one
   assert.equal(stepMoment(changes, null, WATERMARK, 1), undefined);
 });
 
+test("from now the first step back stands on the newest change, even one made at the watermark itself", () => {
+  const changes = ["2026-11-12T12:00:27.000000Z", "2026-11-12T12:00:30.123456Z"];
+  assert.equal(stepMoment(changes, null, WATERMARK, -1), "2026-11-12T12:00:30.123456Z");
+  assert.equal(stepMoment(changes, "2026-11-12T12:00:30.123456Z", WATERMARK, -1), "2026-11-12T12:00:27.000000Z");
+  assert.equal(stepMoment(changes, "2026-11-12T12:00:30.123456Z", WATERMARK, 1), null);
+  assert.deepEqual(canStep(changes, null, WATERMARK), { older: true, newer: false });
+});
+
 test("a page without changes has no older step; the newer arrow leads back to now from the past", () => {
   assert.deepEqual(canStep([], null, WATERMARK), { older: false, newer: false });
   assert.deepEqual(canStep([], "2026-11-01T00:00:00.000000Z", WATERMARK), { older: false, newer: true });

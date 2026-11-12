@@ -238,7 +238,7 @@ On a phone the card is a sheet, Side by side shows one panel at a time switched 
 - **FR-002**: The moment MUST be one for the whole screen — the tree, the panel and everyone following —, written to the address as `at`, sent to the page as `panel.location`, kept as chosen — to the minute, or to the second while the scale is zoomed below a minute —, never moved to the start of a publication.
 - **FR-003**: "Now" MUST be a green dashed line with nothing written on it, following the watermark and sending `panel.watermark`; what lies right of it MUST be hatched and MUST NOT be chosen; an `at` later than the watermark MUST be refused, the page saying so and leading to now.
 - **FR-004**: Continuous history and publications MUST be read the same way: reading at a moment gives the state then; between two publications the answer does not change.
-- **FR-005**: The pill's arrows and Shift + ← → MUST step to the previous or the next change of the page, through its milestones when it has only milestones; Shift + ↑ ↓ MUST step a comparison's changes; neither while one types nor on a handle of the scale; the keys MUST work whether the focus is in the core's frame or in the page, passed through the panel protocol.
+- **FR-005**: The pill's arrows and Shift + ← → MUST step to the previous or the next change of the page, through its milestones when it has only milestones; from now the first step back MUST stand on the newest change, even one made at the watermark itself; Shift + ↑ ↓ MUST step a comparison's changes; neither while one types nor on a handle of the scale; the keys MUST work whether the focus is in the core's frame or in the page, passed through the panel protocol.
 
 #### The page's setup and the legend
 

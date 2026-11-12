@@ -49,13 +49,14 @@ export function chosenMoment(time: number, watermark: string, unit: number = MIN
 /**
  * One step of the pill's arrows (FR-005): the previous or the next change of the page from the moment shown. `changes`
  * are the moments of the page's changes — its bars' changes, or its milestones when it has only milestones —, in any
- * order. A step past the last change before now is now; null when there is no step that way.
+ * order. From now the first step back is the newest change, even one made at the watermark itself, so every change
+ * can be stood on; a step past the last change before now is now; null when there is no step that way.
  */
 export function stepMoment(changes: readonly string[], at: string | null, watermark: string, delta: -1 | 1): string | null | undefined {
   const shown = padded(at ?? watermark);
   const sorted = [...new Set(changes.map(padded))].filter((moment) => moment <= padded(watermark)).sort();
   if (delta < 0) {
-    const earlier = sorted.filter((moment) => moment < shown);
+    const earlier = sorted.filter((moment) => (at === null ? moment <= shown : moment < shown));
     return earlier.length ? earlier[earlier.length - 1] : undefined;
   }
   if (at === null) return undefined;
