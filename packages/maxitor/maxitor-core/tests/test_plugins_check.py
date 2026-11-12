@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
+from importlib.metadata import version as package_version
 from pathlib import Path
 from typing import Any
 
@@ -69,7 +70,15 @@ def test_a_list_reads_an_action_the_wheel_carries() -> None:
 @pytest.mark.parametrize(
     ("files", "reason"),
     [
-        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("passport: 2", "passport: 1")}, "passport"),
+        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("passport: 3", "passport: 1")}, "passport"),
+        # Format 2 named a built site; the core builds the frontend from its sources.
+        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("passport: 3", "passport: 2")}, "passport"),
+        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("source: maxitor_notes/web", "build: maxitor_notes/_web")}, "passport"),
+        ({"maxitor_notes/web/package-lock.json": None}, "frontend"),
+        ({"maxitor_notes/web/package.json": None}, "frontend"),
+        ({"maxitor_notes/web/node_modules/next/package.json": "{}"}, "frontend"),
+        ({"maxitor_notes/web/.next/BUILD_ID": "x"}, "frontend"),
+        ({"maxitor_notes/web/server.js": "x"}, "frontend"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("name: notes", "name: Notes!")}, "passport"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("version: 0.4.0", "version: 0.4.1")}, "passport"),
         ({"maxitor_notes/schema.yaml": SCHEMA.replace("type: text", "type: varchar")}, "schema"),
@@ -310,3 +319,17 @@ async def test_the_hold_is_let_go_whatever_the_verdict(tmp_path: Path) -> None:
         assert queries[0] == "SELECT pg_try_advisory_lock(hashtext($1))"
         assert queries[-1] == "SELECT pg_advisory_unlock(hashtext($1))"
         assert world.connection.statements[0][1] == world.connection.statements[-1][1] == (f"check:{VERSION}",)
+
+
+def test_a_passport_of_format_2_is_refused_by_name() -> None:
+    with pytest.raises(VersionRejectedError) as refused:
+        inspect(read_wheel(wheel({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("passport: 3", "passport: 2")})))
+    assert refused.value.detail == (
+        f"the passport is format 2; the core {package_version('maxitor')} reads format 3 — the frontend ships as sources (frontend.source)"
+    )
+
+
+def test_sources_without_their_lock_are_refused_by_name() -> None:
+    with pytest.raises(VersionRejectedError) as refused:
+        inspect(read_wheel(wheel({"maxitor_notes/web/package-lock.json": None})))
+    assert refused.value.detail == "frontend.source holds no package-lock.json; the core builds the frontend strictly by its lock file"

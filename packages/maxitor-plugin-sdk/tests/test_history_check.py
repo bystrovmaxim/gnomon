@@ -6,9 +6,9 @@ import yaml
 from maxitor_plugin_sdk.checks import check_plugin
 
 PASSPORT = {
-    "passport": 2, "id": "io.example.notes", "name": "notes", "title": "Notes", "description": "Notes.", "version": "1.0.0",
+    "passport": 3, "id": "io.example.notes", "name": "notes", "title": "Notes", "description": "Notes.", "version": "1.0.0",
     "requires": {"maxitor": ">=4.0,<5"}, "backend": {"app": "notes.app:create_app"},
-    "frontend": {"build": "notes/_web", "navigation": "notes/navigation.yaml"},
+    "frontend": {"source": "notes/web", "navigation": "notes/navigation.yaml"},
 }
 
 

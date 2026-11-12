@@ -12,7 +12,7 @@ import io
 import zipfile
 from dataclasses import dataclass, field
 from email.parser import HeaderParser
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import yaml
@@ -44,6 +44,8 @@ class WheelContents:
     files: dict[str, str] = field(default_factory=dict)
     #: The actions the plugin's package holds, one per file actions/<name>_action.py or history/<name>_action.py.
     actions: frozenset[str] = frozenset()
+    #: The files of the frontend's sources, by their path inside the folder ``frontend.source`` names.
+    sources: frozenset[str] = frozenset()
 
     def file(self, path: str | None) -> str | None:
         """The text of ``path`` inside the wheel, as the passport names it; ``None`` when absent."""
@@ -110,8 +112,22 @@ def read_wheel(data: bytes, max_expanded: int = MAX_EXPANDED_BYTES) -> WheelCont
             raise WheelRefusedError("passport", "the passport is not a mapping")
         files = {path: _text(archive, path) for path in _named_files(passport) if path in names}
         return WheelContents(
-            str(headers["Name"] or ""), str(headers["Version"] or ""), passport, files, _actions(names, passports[0])
+            str(headers["Name"] or ""),
+            str(headers["Version"] or ""),
+            passport,
+            files,
+            _actions(names, passports[0]),
+            _sources(names, passport),
         )
+
+
+def _sources(names: set[str], passport: dict[str, Any]) -> frozenset[str]:
+    """The files under the folder the passport's ``frontend.source`` names, by their path inside it."""
+    source = (passport.get("frontend") or {}).get("source")
+    if not isinstance(source, str) or not _safe(source):
+        return frozenset()
+    prefix = source.rstrip("/") + "/"
+    return frozenset(name[len(prefix) :] for name in names if name.startswith(prefix) and not name.endswith("/"))
 
 
 def _actions(names: set[str], passport_path: str) -> frozenset[str]:
@@ -123,3 +139,16 @@ def _actions(names: set[str], passport_path: str) -> frozenset[str]:
         if len(parts) == 3 and parts[0] == package and parts[1] in ("actions", "history") and parts[2].endswith("_action.py"):
             found.add(parts[2].removesuffix("_action.py"))
     return frozenset(found)
+
+
+def extract_sources(data: bytes, source: str, target: Path) -> None:
+    """Write the files of the wheel's folder ``source`` into ``target``, each path checked to stay inside it."""
+    if not _safe(source):
+        raise WheelRefusedError("passport", f"frontend.source {source} leaves the wheel")
+    prefix = source.rstrip("/") + "/"
+    with _open(data) as archive:
+        for name in archive.namelist():
+            if name.startswith(prefix) and not name.endswith("/") and _safe(name):
+                path = target / name[len(prefix) :]
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(archive.read(name))
