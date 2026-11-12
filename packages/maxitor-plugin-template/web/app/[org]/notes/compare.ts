@@ -20,9 +20,15 @@ export function snippet(body: string, length = 60): string {
 /**
  * The notes shown at this page's moment compared with the other moment: Diff (`side` null) is B against A and draws
  * what B lost as removed ghosts; Side by side's A marks what B does not have as removed, B what A did not have as
- * added. Without the other moment nothing is compared.
+ * added. Without the other moment nothing is compared. `arrival` says what a note the other moment lacks stands for —
+ * a draft's change is what its own state says: new, changed or deleted.
  */
-export function compareNotes<Note extends ComparedNote>(shown: readonly Note[], other: readonly Note[] | null, side: "a" | "b" | null): {
+export function compareNotes<Note extends ComparedNote>(
+  shown: readonly Note[],
+  other: readonly Note[] | null,
+  side: "a" | "b" | null,
+  arrival?: (note: Note) => NoteStep["status"],
+): {
   status: Map<string, NoteChange>;
   ghosts: Note[];
   steps: NoteStep[];
@@ -32,7 +38,8 @@ export function compareNotes<Note extends ComparedNote>(shown: readonly Note[], 
   const before = new Map(other.map((note) => [note.id, note]));
   for (const note of shown) {
     const was = before.get(note.id);
-    status.set(note.id, !was ? (side === "a" ? "removed" : "added") : was.body !== note.body ? "changed" : "unchanged");
+    // A note the other moment lacks is added — removed on A's side —, unless the page says what its arrival is.
+    status.set(note.id, !was ? (arrival?.(note) ?? (side === "a" ? "removed" : "added")) : was.body !== note.body ? "changed" : "unchanged");
   }
   const ghosts = side === null ? other.filter((note) => !status.has(note.id)) : [];
   for (const note of ghosts) status.set(note.id, "removed");

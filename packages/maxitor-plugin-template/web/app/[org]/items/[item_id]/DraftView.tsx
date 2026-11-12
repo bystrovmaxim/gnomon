@@ -83,7 +83,10 @@ export function DraftView({
   // against A's, in Side by side each panel its own moment's draft against the other's.
   const { side } = useMoment();
   const asNote = (change: Change) => ({ id: change.note_id, writer_name: change.writer_name, body: `${change.state}|${change.body}` });
-  const compared = compareNotes(changes.map(asNote), other ? other.map(asNote) : null, side);
+  // A change the other moment's draft lacks wears its own state, so its halo says what its card says.
+  const stateOf = new Map([...changes, ...(other ?? [])].map((change) => [change.note_id, change.state]));
+  const arrival = (note: { id: string }) => ({ new: "added", changed: "changed", deleted: "removed" } as const)[stateOf.get(note.id) ?? "new"];
+  const compared = compareNotes(changes.map(asNote), other ? other.map(asNote) : null, side, arrival);
   const [position, setPosition] = useState<number | null>(null);
   useEffect(() => setPosition(null), [at, other === null]);
   const step = position === null ? null : compared.steps[position] ?? null;

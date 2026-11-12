@@ -25,3 +25,12 @@ test("one moment compares nothing; a long note is named by its first words", () 
   assert.equal(compareNotes(b, null, null).status.size, 0);
   assert.equal(snippet("a ".repeat(50), 10), "a a a a a…");
 });
+
+test("a draft's change the other moment lacks wears its own state: a changed note is changed, a deletion removed", () => {
+  const states: Record<string, "added" | "changed" | "removed"> = { c1: "changed", c2: "removed", c3: "added" };
+  const arrival = (note: { id: string }) => states[note.id];
+  const draftB = [note("c1", "changed|Retry six"), note("c2", "deleted|Tokens"), note("c3", "new|Payouts")];
+  const { status, steps } = compareNotes(draftB, [], null, arrival);
+  assert.deepEqual([...status], [["c1", "changed"], ["c2", "removed"], ["c3", "added"]]);
+  assert.deepEqual(steps.map((step) => step.status).sort(), ["added", "changed", "removed"]);
+});
