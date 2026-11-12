@@ -21,4 +21,4 @@ When anyone in the organization writes, "now" moves, and Maxitor tells the open 
 
 ## Check it
 
-Open an item's Notes, then write a note on the same item from another tab or through the API: within seconds it appears in the first tab without a reload, marked New.
+Open an item's Draft and, in another tab of the same person, write a note on the same item: within seconds it appears in the first tab without a reload. Then open Published notes in a second person's browser: nothing of the draft shows there until it is published, and a publication made in the meantime reaches the open pages at now and marks the changes it meets in the draft.

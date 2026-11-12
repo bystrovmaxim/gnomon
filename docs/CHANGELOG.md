@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-11-12] — A draft of my own over everyone's published notes
+
+An item of the plugin template now has two pages where it had three. **Draft** is the person who reads it: their own changes over the notes everyone has published — a note they added, one they changed, one they deleted — each saying its state and the revision it was made over, the changed words struck red and green inside the one text, a State filter in the shell and a revert for every change. **Published notes** is everyone's: the revision in force with its number, title, comment and release, read only, the Authors filter above it, and the marks of what waits in the person's own draft.
+
+A write no longer changes what everyone reads. It waits in the writer's draft until they publish it, whole, as the next revision: the publication compares every change's base with the note as published now, and a change that meets someone else's publication is a conflict shown with both sides and a choice — overwrite with theirs, or give up — before anything is published. A note someone deleted is restored with the person's text; one the person deleted while someone changed it is deleted with the change. The template keeps the draft as a versioned table, so Draft and Published both read at any moment, and the item's Notes page is gone.
+
+The tutorial's page chapter, its chapter on now and the past and its chapter on tests speak of the two pages and the draft, the plugin concept of the model, and the template's README of its files; the template is 0.13.0 with its pages 0.7.0, and Maxitor 4.9.0 with the core's application 1.8.0 for the browser check that walks it. ([#121](https://github.com/bystrovmaxim/gnomon/issues/121))
+
 ## [2026-11-12] — The page shell looks like the mockup
 
 The shell every plugin's page lies in now looks the way the mockup and maxitor-web draw it. The filters are 148 px and stand clear of the page: each section opens with an arrow, and a person is a disk of a palette colour with their initials. The bottom bar is flat, with zoom in, zoom out, fit and the percentage before the page's own buttons. A page with nothing to show says so in a dashed card in the middle instead of bare text, and the template's notes show as cards in a grid by default, or as a table. The browser check now measures the filters' width and their distance from the page.

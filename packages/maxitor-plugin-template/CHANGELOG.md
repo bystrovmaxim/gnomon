@@ -5,6 +5,12 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] — 2026-11-12
+
+### Added
+
+- **A draft of my own over everyone's published notes.** An item now has two pages: Draft, one person's own changes over the published notes, and Published notes, everyone's notes of the revision in force, read only. A write, an edit and a deletion no longer touch the published notes: they wait in the person's draft, one `note_change` row per (person, note) with its state — new, changed or deleted — and the published version it was made over, so nobody sees another's draft and the past of a draft reads at any moment. A changed note marks the words that went and the words that came inside its one text; the State filter chooses which states stand and fades a state with nothing behind it; every change is given up by a revert. Publishing takes the whole draft as one revision with a title, a comment and an optional release, finds its conflicts by value — the published note no longer reads as the change's base or is deleted — and asks for each to overwrite or give up; a note someone deleted is restored with the person's text, and a change whose text is already published leaves the draft. Published notes marks each note waiting in the draft and opens its editor; the Notes page is gone. `web/tests/draft.test.ts` holds the pages' rules, the template's tests the storage's. Its pages 0.7.0. ([#121](https://github.com/bystrovmaxim/gnomon/issues/121))
+
 ## [0.12.0] — 2026-11-12
 
 ### Added

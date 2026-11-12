@@ -38,9 +38,9 @@ Phases follow the issue's five; one phase is one commit. `[P]` — may run in pa
 
 ## Phase 5 — Documentation, changelog, versions (US7)
 
-- [ ] T020 The tutorial's chapters 8, 9 and 13 and the index's rows; the plugin concept where the pages and the revisions change; the template's README.
-- [ ] T021 Versions raised: the template and its pages; graph files rebuilt; changelogs of every changed level.
-- [ ] T022 The closing check run to zero (`scripts/check_run.py`).
+- [x] T020 The tutorial's chapters 8, 9 and 13 and the index's rows; the plugin concept where the pages and the revisions change; the template's README.
+- [x] T021 Versions raised: the template and its pages; graph files rebuilt; changelogs of every changed level.
+- [ ] T022 The closing check run to zero (`scripts/check_run.py`): every step passes but the one that builds a Docker image, which this environment's Docker cannot do (it hangs fetching `node:22-slim` and cannot write `~/.docker`); the template's frontend build and the two-person walk wait on that.
 
 ## Dependencies
 

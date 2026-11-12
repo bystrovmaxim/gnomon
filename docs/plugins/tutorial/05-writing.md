@@ -8,47 +8,42 @@ A changing action makes one change in one transaction: the organization's lock a
 
 <!-- quote: packages/maxitor-plugin-template/src/maxitor_notes/storage/notes_storage.py -->
 ```python
-    async def add_note(self, organization_id: str, item_id: str, writer_id: str, body: str, operation: str) -> str:
-        """Write a new note and its first version in one transaction; return the change time."""
+    async def add_note_change(self, organization_id: str, item_id: str, person_id: str, body: str, operation: str) -> str:
+        """Write a new note into the person's draft and its first version in one transaction; return the change time."""
         await self.begin()
         try:
-            changed_at = await self._fetchval(change_time_sql(VERSION_TABLES), (organization_id,))
-            note_id = str(uuid4())
+            changed_at, now = await self._change_time_now(organization_id)
+            change_id, note_id = str(uuid4()), str(uuid4())
             await self._execute(
-                "INSERT INTO note (id, organization_id, item_id, writer_id, body, created_at, updated_at)"
-                " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4::text::uuid, $5, $6, $6)",
-                (note_id, organization_id, item_id, writer_id, body, changed_at),
+                "INSERT INTO note_change (id, organization_id, item_id, person_id, note_id, writer_id, state, body,"
+                " base_body, base_revision, created_at, updated_at)"
+                " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4::text::uuid, $5::text::uuid,"
+                " $4::text::uuid, 'new', $6, NULL, NULL, $7, $7)",
+                (change_id, organization_id, item_id, person_id, note_id, body, changed_at),
             )
-            await self._execute(
-                "INSERT INTO note_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
-                " item_id, writer_id, body, created_at, updated_at)"
-                " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, writer_id, body, created_at, updated_at"
-                " FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
-                (organization_id, note_id, changed_at, writer_id, operation),
-            )
-            moment = await self._fetchval(f"SELECT {moment_text('$1::timestamptz')}", (changed_at,))
+            await self._open_change_version(organization_id, person_id, note_id, changed_at, person_id, operation)
             await self.commit()
         except BaseException:
             await self.rollback()
             raise
-        return str(moment)
+        return now
 ```
 
 The action passes the writer from the token, never from the request, and the organization of the address:
 
 <!-- quote: packages/maxitor-plugin-template/src/maxitor_notes/actions/add_note_action.py -->
 ```python
-    @summary_aspect("Write the note and its version, and return the change time")
+    @summary_aspect("Write the change and its version, and return the change time")
     @context_requires(Ctx.User.user_id, "user.organization")
     async def write_summary(self, params: AddNoteParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView) -> AddNoteResult:
         """The organization's id again, then one transaction: the organization's lock, the time, the row, its version."""
         _ = (state, box)
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
         organization_id = await member_organization_id(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
-        changed_at = await storage.add_note(
+        changed_at = await storage.add_note_change(
             organization_id=organization_id,
             item_id=params.item_id,
-            writer_id=str(ctx.get(Ctx.User.user_id)),
+            person_id=str(ctx.get(Ctx.User.user_id)),
             body=params.body,
             operation=type(self).__name__,
         )
@@ -57,7 +52,7 @@ The action passes the writer from the token, never from the request, and the org
 
 ## Editing without losing someone else's change
 
-An edit and a deletion send back `base_moment` — the moment the person saw. If the note changed after it, nothing is written and the answer names who changed it and when (`changed_since`); a note deleted meanwhile is refused as `deleted`.
+An edit and a deletion write the person's own draft, never the published notes: `edit_note` and `delete_note` take the published text the person saw as `base_body` and the revision in force as `base_revision`, and keep them with the change. Whether that base still holds is decided when the draft is published, not when it is written: a change over a note that is unchanged goes in as it is, one that meets someone else's publication is a conflict the person overwrites or gives up there. A change that leaves the note as published leaves the draft.
 
 ## Check it
 
