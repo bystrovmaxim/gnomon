@@ -13,8 +13,13 @@ import { Panel } from "@/components/frame/Panel";
 import { TopRow } from "@/components/frame/TopRow";
 import { Tree, type Level } from "@/components/frame/Tree";
 import { TreeHead } from "@/components/frame/TreeHead";
-import { readAddress, windowAddress } from "@/lib/address";
-import type { HistoryAllowed } from "@maxitor/panel/protocol";
+import { ScaleContext, useWatermark, type ScaleBridge } from "@/components/scale/bridge";
+import { Scale } from "@/components/scale/Scale";
+import type { Mode } from "@/components/scale/ScaleCard";
+import { queryString, readAddress, windowAddress } from "@/lib/address";
+import { canStep, stepMoment } from "@/lib/moment";
+import { stepOfKey } from "@maxitor/panel/keys";
+import type { HistoryAllowed, PageHistory, StepKeyName } from "@maxitor/panel/protocol";
 
 import type { Me } from "@/lib/core";
 import { crumbsOf, levelAbove } from "@/lib/levels";
@@ -47,7 +52,7 @@ export function Frame({
   const [drawer, setDrawer] = useState(false);
   // Collapsed lives only in this visit: a new visit opens the tree expanded.
   const [collapsed, setCollapsed] = useState(false);
-  const [, setTitle] = useState<string | null>(null);
+  const [title, setTitle] = useState<string | null>(null);
   const [titles, setTitles] = useState<Record<string, string>>({});
   const keepTitles = useCallback((found: Record<string, string>) => setTitles((was) => ({ ...was, ...found })), []);
   // The levels of the left panel, the root first and the deepest last (spec 085). Back pops one, a crumb pops to its
@@ -141,6 +146,66 @@ export function Frame({
   // Another organization opens the same page, or its root when the page is not there: the tree decides there.
   const switchTo = (code: string) => (address?.owner ? windowAddress(code, address.owner, address.path, address.query, address.at) : `/w/${code}`);
 
+  // The moment of the whole screen (spec 079, FR-002): the address's `at`, "now" the organization's watermark. A choice
+  // on the scale is one history entry of the window's address; the open page is told by panel.location.
+  const watermark = useWatermark(current.code);
+  const [history, setHistory] = useState<PageHistory | null>(null);
+  const at = address?.at ?? null;
+  // The moments of the page's changes the arrows step through; the page's bars and milestones give them (spec 079, FR-005).
+  const changes = useMemo<string[]>(() => [], []);
+  const choose = useCallback(
+    (moment: string | null) => {
+      if (address?.owner) router.push(windowAddress(current.code, address.owner, address.path, address.query, moment), { scroll: false });
+      else router.push(`${home}${queryString(address?.query ?? {}, moment)}`, { scroll: false });
+    },
+    [address, current.code, home, router],
+  );
+  const step = useCallback(
+    (delta: -1 | 1) => {
+      if (!watermark) return;
+      const next = stepMoment(changes, at, watermark, delta);
+      if (next !== undefined) choose(next);
+    },
+    [at, changes, choose, watermark],
+  );
+  // Shift + ← → step the moment with the focus in the frame; pressed in the page, they come by panel.keys.
+  useEffect(() => {
+    const press = (event: KeyboardEvent) => {
+      const delta = stepOfKey(event);
+      if (delta === null) return;
+      event.preventDefault();
+      step(delta);
+    };
+    window.addEventListener("keydown", press);
+    return () => window.removeEventListener("keydown", press);
+  }, [step]);
+  const bridge = useMemo<ScaleBridge>(
+    () => ({
+      watermark,
+      giveHistory: setHistory,
+      pressed: (key: StepKeyName) => {
+        if (key === "ArrowLeft") step(-1);
+        else if (key === "ArrowRight") step(1);
+      },
+    }),
+    [step, watermark],
+  );
+  const offered = (history?.compare ?? []) as Mode[];
+  const scaleTitle = title || opened?.node.title || opened?.node.name || current.name;
+  const moment = (
+    <Scale
+      at={at}
+      watermark={watermark}
+      title={scaleTitle}
+      subtitle={watermark ? "Read the page at any moment up to now" : "Reading now…"}
+      first={changes[0] ?? null}
+      offered={offered}
+      canStep={watermark ? canStep(changes, at, watermark) : { older: false, newer: at !== null }}
+      onStep={step}
+      onChoose={choose}
+    />
+  );
+
   const level = levels.length ? levels[levels.length - 1] : null;
   const tree = (
     <Tree
@@ -157,8 +222,9 @@ export function Frame({
   );
 
   return (
+    <ScaleContext.Provider value={bridge}>
     <div className="mx-frame">
-      <TopRow account={account} current={current} path={path} onCrumb={stepTo} methods={methods} switchTo={switchTo} onMenu={() => setDrawer(true)} />
+      <TopRow account={account} current={current} path={path} onCrumb={stepTo} methods={methods} switchTo={switchTo} onMenu={() => setDrawer(true)} moment={moment} />
       <div className="mx-body">
         <aside className={`mx-tree${collapsed ? " collapsed" : ""}`}>
           <TreeHead collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onBack={back} />
@@ -178,6 +244,7 @@ export function Frame({
         ) : null}
       </div>
     </div>
+    </ScaleContext.Provider>
   );
 }
 

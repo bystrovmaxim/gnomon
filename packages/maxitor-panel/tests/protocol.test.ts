@@ -48,3 +48,9 @@ test("a page's ready says whether it renders the shell; a page built before the 
     type: "panel.ready", build: "1", shell: false, shellVersion: "",
   });
 });
+
+test("Shift and an arrow pressed in the page pass as panel.keys; another key does not", () => {
+  for (const key of ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]) assert.deepEqual(pageMessage({ type: "panel.keys", key }), { type: "panel.keys", key });
+  assert.equal(pageMessage({ type: "panel.keys", key: "Enter" }), null);
+  assert.equal(pageMessage({ type: "panel.keys" }), null);
+});

@@ -14,14 +14,14 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 **Independent test**: open Draft, Published and the test page on the stand; compare with the graph viewer and `archive/makets/085-entered-tree-node`; enter Notes, open Published, press Back.
 
-- [ ] T001 [P] [US5] Set `--mx-canvas: #f4f5f7`, `--mx-dot: rgba(160, 168, 180, 0.42)`, `--mx-dot-step: 20px` in `TOKENS/tokens.css` and give `.mx-canvas` `background-color: var(--mx-canvas)` in `PANEL/src/canvas/canvas.css`
-- [ ] T002 [P] [US5] Write `PANEL/src/compare/marks.css`: `[data-change="added|changed|removed"]` frame colours `#16a34a`, `#d97706`, `#dc2626` and the halo `box-shadow: 0 0 44px 34px` of the colour at 0.16; `[data-paint="changes"] [data-change="unchanged"] { opacity: .32 }`; export it from `PANEL/src/index.ts` with `panel.css`
-- [ ] T003 [P] [US5] Replace the hand-drawn `Icon` set in `CORE/components/marks.tsx` with the SVG paths of `GV/components/navigation/LeftSidebar/SidebarToggleIcon.tsx` and of Material's `ChevronRight`, `ExpandMore`, `ChevronLeft` and outlined node icons (`DescriptionOutlined`, `FolderOutlined`, `SettingsOutlined`), 16 px, opacity 0.88; name the sources in the file's head
-- [ ] T004 [P] [US5] In `PANEL/src/shell/shell.css`, fade only the label of `.mx-filter-row.absent` to 0.4, keep the disk; `.mx-filter-row.off` fades whole to 0.42; draw disks with `statusDiskUri` of `GV/lib/erdFilterPresence.ts` ported to `PANEL/src/shell/disks.ts` (20 px, 1 px ring `rgba(0,0,0,.12)`)
-- [ ] T005 [P] [US5] Fill `.mx-avatar` in `CORE/components/frame/frame.css` and `TopRow.tsx` with the person's colour (`paletteOf(account.id)` of `@maxitor/tokens`) and white initials
-- [ ] T006 [US5] In `CORE/components/frame/TreeHead.tsx` and `frame.css`: the head's buttons on the level's left edge (head padding so the icon's left equals `.mx-level-icon`'s); Back not rendered at the root (no `off` span); collapsed, only the expand button
-- [ ] T007 [US5] In `CORE/components/frame/Frame.tsx`: crumbs = the organization then the entered levels only (no page title), each after `›`; Back pops the deepest level and pushes the address of that level's page — the entered node's page, else `/w/<code>`
-- [ ] T008 [P] [US5] Tests: `CORE/tests/levels.test.ts` (crumbs without the page, Back's address at a level and at the root), `PANEL/tests/marks.test.ts` (the marks' CSS holds the values of T002), `PANEL/tests/filters.test.ts` (an absent row keeps its disk)
+- [x] T001 [P] [US5] Set `--mx-canvas: #f4f5f7`, `--mx-dot: rgba(160, 168, 180, 0.42)`, `--mx-dot-step: 20px` in `TOKENS/tokens.css` and give `.mx-canvas` `background-color: var(--mx-canvas)` in `PANEL/src/canvas/canvas.css`
+- [x] T002 [P] [US5] Write `PANEL/src/compare/marks.css`: `[data-change="added|changed|removed"]` frame colours `#16a34a`, `#d97706`, `#dc2626` and the halo `box-shadow: 0 0 44px 34px` of the colour at 0.16; `[data-paint="changes"] [data-change="unchanged"] { opacity: .32 }`; export it from `PANEL/src/index.ts` with `panel.css`
+- [x] T003 [P] [US5] Replace the hand-drawn `Icon` set in `CORE/components/marks.tsx` with the SVG paths of `GV/components/navigation/LeftSidebar/SidebarToggleIcon.tsx` and of Material's `ChevronRight`, `ExpandMore`, `ChevronLeft` and outlined node icons (`DescriptionOutlined`, `FolderOutlined`, `SettingsOutlined`), 16 px, opacity 0.88; name the sources in the file's head
+- [x] T004 [P] [US5] In `PANEL/src/shell/shell.css`, fade only the label of `.mx-filter-row.absent` to 0.4, keep the disk; `.mx-filter-row.off` fades whole to 0.42; draw disks with `statusDiskUri` of `GV/lib/erdFilterPresence.ts` ported to `PANEL/src/shell/disks.ts` (20 px, 1 px ring `rgba(0,0,0,.12)`)
+- [x] T005 [P] [US5] Fill `.mx-avatar` in `CORE/components/frame/frame.css` and `TopRow.tsx` with the person's colour (`paletteOf(account.id)` of `@maxitor/tokens`) and white initials
+- [x] T006 [US5] In `CORE/components/frame/TreeHead.tsx` and `frame.css`: the head's buttons on the level's left edge (head padding so the icon's left equals `.mx-level-icon`'s); Back not rendered at the root (no `off` span); collapsed, only the expand button
+- [x] T007 [US5] In `CORE/components/frame/Frame.tsx`: crumbs = the organization then the entered levels only (no page title), each after `›`; Back pops the deepest level and pushes the address of that level's page — the entered node's page, else `/w/<code>`
+- [x] T008 [P] [US5] Tests: `CORE/tests/levels.test.ts` (crumbs without the page, Back's address at a level and at the root), `PANEL/tests/marks.test.ts` (the marks' CSS holds the values of T002), `PANEL/tests/filters.test.ts` (an absent row keeps its disk)
 
 **Checkpoint**: phase 1 tests green; commit "feat(core): the frame and the canvas as the graph viewer draws them (#98, phase 1)".
 
@@ -31,12 +31,12 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 **Independent test**: on the stand, with no publication open Published; publish; filter by Written and Last change; compare with `archive/makets/084-notes-draft-published`.
 
-- [ ] T009 [P] [US6] `TPL/web/app/[org]/notes/revision.tsx`: `RevisionCard` as the mockup's head — chip `vN`, bold title, one line `<person> published it <when> · release <name> · <n> notes by <m> authors · read only`, and `Your draft: N` (prop `waiting`, `onOpenDraft`) at its end; the empty card says nothing is published yet and holds the same button
-- [ ] T010 [US6] `TPL/web/app/[org]/items/[item_id]/published/PublishedView.tsx`: drop the loose `.nt-waiting` button and the `VIEWS` bar; the empty state "the Authors filter hides every published note" only when a publication exists and the filter hides all; filters Authors, Written (`written`), Last change (`changed`) as ranges of the shell; table columns Written and Last change
-- [ ] T011 [US6] `TPL/web/app/[org]/items/[item_id]/DraftView.tsx`: after a successful publication close the dialog and `panelRouter.push({ path: \`${panelPath}/published\`, query: {} })`; bottom bar zoom only
-- [ ] T012 [P] [US6] `SDK/src/maxitor_plugin_sdk/date_bounds.py`: `parse(value, today) -> (date | None, date | None)` for `YYYY-MM-DD..YYYY-MM-DD`, `now-30d..now`, `now/M`, `now-1y/y`, open bounds; the same table of cases as `PANEL/src/pickers/dates.ts`
-- [ ] T013 [US6] `TPL/src/maxitor_notes/actions/list_published_notes_action.py` and `storage/notes_storage.py`: params `written` and `changed` (optional, max 64), filtering by the note's `created` and `updated` through `date_bounds`
-- [ ] T014 [P] [US6] Tests: `SDK/tests/test_date_bounds.py`, `TPL/tests/test_notes_actions.py` (filters), `TPL/web/tests/notes.test.ts` (head line, empty card, no loose button)
+- [x] T009 [P] [US6] `TPL/web/app/[org]/notes/revision.tsx`: `RevisionCard` as the mockup's head — chip `vN`, bold title, one line `<person> published it <when> · release <name> · <n> notes by <m> authors · read only`, and `Your draft: N` (prop `waiting`, `onOpenDraft`) at its end; the empty card says nothing is published yet and holds the same button
+- [x] T010 [US6] `TPL/web/app/[org]/items/[item_id]/published/PublishedView.tsx`: drop the loose `.nt-waiting` button and the `VIEWS` bar; the empty state "the Authors filter hides every published note" only when a publication exists and the filter hides all; filters Authors, Written (`written`), Last change (`changed`) as ranges of the shell; table columns Written and Last change
+- [x] T011 [US6] `TPL/web/app/[org]/items/[item_id]/DraftView.tsx`: after a successful publication close the dialog and `panelRouter.push({ path: \`${panelPath}/published\`, query: {} })`; bottom bar zoom only
+- [x] T012 [P] [US6] `SDK/src/maxitor_plugin_sdk/date_bounds.py`: `parse(value, today) -> (date | None, date | None)` for `YYYY-MM-DD..YYYY-MM-DD`, `now-30d..now`, `now/M`, `now-1y/y`, open bounds; the same table of cases as `PANEL/src/pickers/dates.ts`
+- [x] T013 [US6] `TPL/src/maxitor_notes/actions/list_published_notes_action.py` and `storage/notes_storage.py`: params `written` and `changed` (optional, max 64), filtering by the note's `created` and `updated` through `date_bounds`
+- [x] T014 [P] [US6] Tests: `SDK/tests/test_date_bounds.py`, `TPL/tests/test_notes_actions.py` (filters), `TPL/web/tests/notes.test.ts` (head line, empty card, no loose button)
 
 **Checkpoint**: phase 2 tests green; graph files rebuilt; commit.
 
@@ -46,12 +46,12 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 **Independent test**: open the pill on the test page; choose a moment; reload; step ‹ ›; an `at` past the watermark refused.
 
-- [ ] T015 [P] [US1] Port `GV/components/history/VersionButton/VersionButton.tsx` to `CORE/components/scale/Pill.tsx` + `scale.css` (arrows, moment label, live dot, counts slot), keeping sizes and colours
-- [ ] T016 [P] [US1] Port the card frame of `GV/components/history/VersionPicker/VersionPicker.tsx` to `CORE/components/scale/ScaleCard.tsx` (head: title, subtitle, switch of small points slot, "i", modes; hangs 11 px under the pill, right edges aligned; a sheet on a phone)
-- [ ] T017 [P] [US1] `CORE/components/scale/geometry.ts`: time ↔ x, presets 1 h, 1 d, 7 d, 30 d, All, bar width from a day to a minute, the watermark and the hatched future
-- [ ] T018 [US1] Wire the pill into `CORE/components/frame/TopRow.tsx` and `PageFrame.tsx`: `at` in the address, `panel.location` with `at`, `panel.watermark` on watermark moves, refusal of `at` later than the watermark with the page's message and a link to now
-- [ ] T019 [US1] Stepping: port `GV/lib/stepKeys.ts` to `CORE/components/scale/keys.ts`; the pill's arrows and Shift + ← → step changes (or milestones); `panel.keys` from the page in `PANEL/src/protocol.ts` and `PanelProvider.tsx`
-- [ ] T020 [P] [US1] Tests: `CORE/tests/geometry.test.ts`, `CORE/tests/moment.test.ts` (refusal past the watermark, kept to the minute), `PANEL/tests/protocol.test.ts` (`panel.keys`)
+- [x] T015 [P] [US1] Port `GV/components/history/VersionButton/VersionButton.tsx` to `CORE/components/scale/Pill.tsx` + `scale.css` (arrows, moment label, live dot, counts slot), keeping sizes and colours
+- [x] T016 [P] [US1] Port the card frame of `GV/components/history/VersionPicker/VersionPicker.tsx` to `CORE/components/scale/ScaleCard.tsx` (head: title, subtitle, switch of small points slot, "i", modes; hangs 11 px under the pill, right edges aligned; a sheet on a phone)
+- [x] T017 [P] [US1] `CORE/components/scale/geometry.ts`: time ↔ x, presets 1 h, 1 d, 7 d, 30 d, All, bar width from a day to a minute, the watermark and the hatched future
+- [x] T018 [US1] Wire the pill into `CORE/components/frame/TopRow.tsx` and `PageFrame.tsx`: `at` in the address, `panel.location` with `at`, `panel.watermark` on watermark moves, refusal of `at` later than the watermark with the page's message and a link to now
+- [x] T019 [US1] Stepping: port `GV/lib/stepKeys.ts` to `PANEL/src/keys.ts`, shared by the core's frame and the page; the pill's arrows and Shift + ← → step changes (or milestones); `panel.keys` from the page in `PANEL/src/protocol.ts` and `PanelProvider.tsx`
+- [x] T020 [P] [US1] Tests: `CORE/tests/geometry.test.ts`, `CORE/tests/moment.test.ts` (refusal past the watermark, kept to the minute), `PANEL/tests/protocol.test.ts` (`panel.keys`)
 
 **Checkpoint**: commit.
 

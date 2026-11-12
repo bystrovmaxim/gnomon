@@ -17,6 +17,7 @@ const REPOSITORY = resolve(WEB, "../../../..");
 /** What is checked when no path is given: everything the frame and the panel package draw. */
 const DEFAULT_PATHS = [
   join(WEB, "components/frame"),
+  join(WEB, "components/scale"),
   join(WEB, "app/(panel)"),
   join(REPOSITORY, "packages/maxitor-panel/src"),
 ];

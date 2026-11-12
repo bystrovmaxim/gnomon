@@ -141,5 +141,52 @@
   --mx-text-sign: 12px;
   /* A tree's pictogram, as the graph viewer's SidebarRowIcon dims it. */
   --mx-icon-dim: 0.88;
-}
 
+  /* The time scale (spec 079): the graph viewer's VersionButton and VersionPicker, and the mockup of spec 074. */
+  --mx-pill: rgba(15, 23, 42, 0.05);
+  --mx-pill-open: rgba(15, 23, 42, 0.1);
+  --mx-pill-ink: #334155;
+  --mx-pill-arrow: #475569;
+  --mx-pill-off: #cbd5e1;
+  --mx-pill-hairline: rgba(15, 23, 42, 0.12);
+  --mx-pill-height: 28px;
+  --mx-pill-height-phone: 34px;
+  --mx-pill-arrow-width: 26px;
+  --mx-pill-arrow-phone: 34px;
+  --mx-pill-hairline-height: 16px;
+  --mx-text-pill: 12.5px;
+  --mx-text-scale: 12px;
+  --mx-live: #16a34a;
+  --mx-live-ring: rgba(22, 163, 74, 0.15);
+  --mx-past: #2563eb;
+  --mx-now-link: #1d4ed8;
+  --mx-mark: 7px;
+  --mx-ring-wide: 3px;
+  --mx-scale-gap: 11px;
+  --mx-scale-card: 760px;
+  --mx-scale-card-radius: 10px;
+  --mx-scale-pad-top: 14px;
+  --mx-scale-pad-x: 20px;
+  --mx-scale-pad-bottom: 12px;
+  --mx-scale-edge: 10px;
+  --mx-shadow-scale: 0 12px 40px rgba(15, 23, 42, 0.16), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --mx-shadow-tip: 0 8px 30px rgba(15, 23, 42, 0.14), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --mx-shadow-handle: drop-shadow(0 1px 1.2px rgba(0, 0, 0, 0.25));
+  --mx-scale-hatch: #e2e8f0;
+  --mx-scale-axis: #cbd5e1;
+  --mx-scale-day: rgba(15, 23, 42, 0.09);
+  --mx-scale-hour: rgba(15, 23, 42, 0.04);
+  --mx-scale-range: rgba(15, 23, 42, 0.06);
+  --mx-scale-brush: rgba(37, 99, 235, 0.12);
+  --mx-scale-brush-line: #2563eb;
+  --mx-zoom-height: 22px;
+  --mx-zoom-height-phone: 30px;
+  --mx-zoom-radius: 7px;
+  --mx-zoom-inner-radius: 5px;
+  --mx-modes-height: 24px;
+  --mx-modes-height-phone: 32px;
+  --mx-text-axis: 10.5px;
+  --mx-sheet-grab: 40px;
+  --mx-sheet-grab-height: 5px;
+  --mx-sheet-height: 86%;
+}

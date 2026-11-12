@@ -20,6 +20,7 @@
 .mx-path-step:last-child { color: var(--mx-ink); font-weight: var(--mx-weight-medium); }
 .mx-path-sep { color: var(--mx-faint); flex-shrink: 0; }
 .mx-slot { display: inline-flex; align-items: center; min-width: 0; }
+.mx-slot-moment { margin-left: var(--mx-space-3); }
 .mx-avatar { width: var(--mx-control); height: var(--mx-control); border-radius: var(--mx-radius-round); background: var(--mx-faint); color: var(--mx-on-ink); display: inline-flex; align-items: center; justify-content: center; font-size: var(--mx-text-sm); font-weight: var(--mx-weight-heavy); cursor: pointer; border: 0; }
 .mx-avatar.on { box-shadow: 0 0 0 var(--mx-ring) var(--mx-surface), 0 0 0 calc(2 * var(--mx-ring)) var(--mx-ink); }
 .mx-burger { display: none; width: var(--mx-tree-slot); height: var(--mx-tree-slot); border: 0; background: none; border-radius: var(--mx-radius-sm); align-items: center; justify-content: center; cursor: pointer; }
@@ -90,6 +91,9 @@
 @media (max-width: 520px) {
   .mx-burger { display: inline-flex; }
   .mx-logo-name, .mx-path-step:not(:last-child), .mx-path-sep { display: none; }
+  /* The pill fills the row, as the mockup of spec 074 draws a phone: the organization and the crumbs give way to it. */
+  .mx-org, .mx-path { display: none; }
+  .mx-slot-moment { flex: 1; margin: 0 var(--mx-space-1); }
   .mx-body > .mx-tree { display: none; }
   .mx-tree.drawer { display: flex; position: fixed; z-index: 60; top: var(--mx-top-row); left: 0; bottom: 0; width: var(--mx-drawer-width); box-shadow: var(--mx-shadow-pop); }
   .mx-node { min-height: var(--mx-tree-row-phone); font-size: var(--mx-text-lg); }

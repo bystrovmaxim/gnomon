@@ -6,6 +6,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
 
+import { changeStepOfKey, stepOfKey, type StepKeyName } from "./keys";
 import { coreMessage, trusted, type PageMessage, type Query } from "./protocol";
 import { SHELL_VERSION } from "./version";
 
@@ -91,6 +92,17 @@ export function PanelProvider({
     send({ type: "panel.ready", build, shell: shelled.current, shellVersion: shelled.current ? SHELL_VERSION : "" });
     return () => window.removeEventListener("message", receive);
   }, [build, send, show]);
+
+  // Shift and an arrow step the scale wherever the focus is: pressed in the page, the core is told (spec 079, FR-005).
+  useEffect(() => {
+    const press = (event: KeyboardEvent) => {
+      if (stepOfKey(event) === null && changeStepOfKey(event) === null) return;
+      event.preventDefault();
+      send({ type: "panel.keys", key: event.key as StepKeyName });
+    };
+    window.addEventListener("keydown", press);
+    return () => window.removeEventListener("keydown", press);
+  }, [send]);
 
   const onWatermark = useCallback((listener: (at: string) => void) => {
     listeners.current.add(listener);

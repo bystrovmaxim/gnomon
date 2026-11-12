@@ -10,12 +10,11 @@ import { checkHistory, coreMessage, NO_HISTORY, pageMessage, trusted, type CoreM
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import { useScale } from "@/components/scale/bridge";
 import { queryString, windowAddress, type PanelAddress } from "@/lib/address";
 
 /** How long a page may take to say panel.ready before the panel says it does not answer. */
 const READY_MS = 15000;
-/** How often the frame asks whether "now" moved, for a page without a moment. */
-const WATERMARK_MS = 5000;
 
 type State = "waiting" | "ready" | "silent";
 
@@ -71,7 +70,9 @@ export function PageFrame({
   const [src] = useState(() => `${base}${address.path === "/" ? "" : address.path}${queryString(address.query, address.at)}`);
   // What the page shows now: what it asked for, or what it was last told.
   const shown = useRef(keyOf(address.path, address.query, address.at));
-  const watermark = useRef<string | null>(null);
+  const scale = useScale();
+  // The watermark the page last read at: a page at now is told when it moves past it.
+  const told = useRef<string | null>(null);
   // What the page holds but its filters leave out: a pointer at one of them is shown as hidden (spec 081, FR-013).
   const hiddenAnchors = useRef<ReadonlySet<string>>(new Set());
   const [hidden, setHidden] = useState(0);
@@ -112,7 +113,9 @@ export function PageFrame({
           else console.error(text);
         }
         setHistory(kept);
-      } else if (message.type === "panel.hidden") {
+        scale.giveHistory(kept);
+      } else if (message.type === "panel.keys") scale.pressed(message.key);
+      else if (message.type === "panel.hidden") {
         hiddenAnchors.current = new Set(message.anchors);
         setHidden(message.anchors.length);
       }
@@ -132,7 +135,11 @@ export function PageFrame({
     };
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [address.at, address.path, address.query, canOpen, code, historyAllowed, onTitle, owner, pathNames, router]);
+  }, [address.at, address.path, address.query, canOpen, code, historyAllowed, onTitle, owner, pathNames, router, scale]);
+
+  // The page closes: its history leaves the scale with it.
+  const { giveHistory } = scale;
+  useEffect(() => () => giveHistory(null), [giveHistory]);
 
   // A page that never says it is ready is shown as not answering.
   useEffect(() => {
@@ -141,28 +148,13 @@ export function PageFrame({
     return () => window.clearTimeout(timer);
   }, [state, attempt]);
 
-  // "Now" moved: a page without a moment reads its data again.
+  // "Now" moved: a page without a moment reads its data again; a page in the past is not told.
+  const { watermark } = scale;
   useEffect(() => {
-    if (state !== "ready" || address.at) return;
-    let stopped = false;
-    const ask = async () => {
-      try {
-        const answer = await fetch(`/api/v1/organizations/${encodeURIComponent(code)}/watermark`, { cache: "no-store" });
-        if (!answer.ok || stopped) return;
-        const { at } = (await answer.json()) as { at: string | null };
-        if (at && watermark.current !== null && at !== watermark.current) tell({ type: "panel.watermark", at });
-        watermark.current = at ?? watermark.current ?? "";
-      } catch {
-        // The next question asks again.
-      }
-    };
-    void ask();
-    const timer = window.setInterval(ask, WATERMARK_MS);
-    return () => {
-      stopped = true;
-      window.clearInterval(timer);
-    };
-  }, [address.at, code, state, tell]);
+    if (state !== "ready" || address.at || !watermark) return;
+    if (told.current !== null && watermark !== told.current) tell({ type: "panel.watermark", at: watermark });
+    told.current = watermark;
+  }, [address.at, state, tell, watermark]);
 
   return (
     <>

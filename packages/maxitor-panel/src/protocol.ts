@@ -4,6 +4,10 @@
 
 export type Query = Record<string, string>;
 
+/** The arrows a page passes to the core with panel.keys, Shift held. */
+export const STEP_KEYS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"] as const;
+export type StepKeyName = (typeof STEP_KEYS)[number];
+
 /** From the page to the core. */
 export type PageMessage =
   /** `shell`: the page renders the shell of @maxitor/panel, `shellVersion` its version (spec 078, FR-020). */
@@ -14,7 +18,9 @@ export type PageMessage =
   | { type: "panel.title"; text: string }
   | { type: "panel.open"; owner: string; path: string; query: Query }
   /** The anchors of what the page holds but its filters leave out now (spec 081, FR-013). */
-  | { type: "panel.hidden"; anchors: string[] };
+  | { type: "panel.hidden"; anchors: string[] }
+  /** Shift and an arrow pressed in the page: the core steps the moment (← →) or a comparison's changes (↑ ↓) (spec 079, FR-005). */
+  | { type: "panel.keys"; key: StepKeyName };
 
 /** From the core to the page. */
 export type CoreMessage =
@@ -51,6 +57,8 @@ export function pageMessage(data: unknown): PageMessage | null {
       return text(m.owner) && path(m.path) && query(m.query) ? { type: m.type, owner: m.owner, path: m.path, query: m.query } : null;
     case "panel.hidden":
       return anchors(m.anchors) ? { type: m.type, anchors: m.anchors } : null;
+    case "panel.keys":
+      return (STEP_KEYS as readonly unknown[]).includes(m.key) ? { type: m.type, key: m.key as StepKeyName } : null;
     default:
       return null;
   }
