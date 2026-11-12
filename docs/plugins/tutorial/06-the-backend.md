@@ -51,4 +51,4 @@ A missing role is answered 403; another organization's object 404, as if it did 
 
 ## Check it
 
-On the local stand, signed in as a member: the reading of chapter 4 answers `200`. Signed out: `401`. With another organization's code: `404`. Maxitor's runner keeps the backend running in its container: `docker kill maxitor-notes_0_11_0-backend`, and within a round it answers again.
+On the local stand, signed in as a member: the reading of chapter 4 answers `200`. Signed out: `401`. With another organization's code: `404`. Maxitor's runner keeps the backend running in its container: `docker kill maxitor-notes_0_12_0-backend`, and within a round it answers again.

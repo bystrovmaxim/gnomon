@@ -30,7 +30,7 @@ Maxitor installs this plugin: an organization's administrator finds it in Settin
 | `src/maxitor_notes/events.py` | The typed events the actions write: an item added, an item renamed. |
 | `src/maxitor_notes/notes_refusal_error.py` | The refusals and their HTTP answers: a moment not come, a note or an item changed since, a note deleted, a title taken, nothing to publish. |
 | `graph.json` | The plugin's graph, built by `graph-builder write` from its code. |
-| `web/` | The frontend: a Next.js application under `/p/notes` whose pages keep every view setting in their address. The wheel carries it as `maxitor_notes/web`, sources only: `package.json`, `package-lock.json` and the pages, without `node_modules` and `.next`. |
+| `web/` | The frontend: a Next.js application under `/p/notes` whose pages keep every view setting in their address and lie on the canvas — an item's notes as cards or a table, written in a dialog, edited in their card through conflicts, deleted after one question and read again when "now" moved; Published notes with its revision; Draft with publishing. `web/app/[org]/notes/` holds what the pages share, `web/tests/` the rules they decide without a browser. The wheel carries it as `maxitor_notes/web`, sources only: `package.json`, `package-lock.json` and the pages, without `node_modules` and `.next`. |
 
 ## Building a release
 

@@ -1000,7 +1000,7 @@ class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
 ```tsx
 // web/app/[org]/items/[item_id]/page.tsx — a server component
 import { headers } from "next/headers";
-import { PanelPage, momentFrom } from "@maxitor/panel";
+import { momentFrom } from "@maxitor/panel";
 import { NotesView } from "./NotesView";
 
 export default async function ItemNotesPage({ params, searchParams }) {
@@ -1015,40 +1015,34 @@ export default async function ItemNotesPage({ params, searchParams }) {
   const authors = await fetch(`${process.env.MAXITOR_PLUGIN_API}/p/notes/api/${org}/lists/list_note_authors?item_id=${item_id}`,
     { headers: { authorization: auth } }).then((r) => r.json());
 
+  const filters = [{ title: "Authors", param: "author", rows: authors.entries.map((a) => ({ key: a.key, label: a.title })) }];
+  const bar = [{ kind: "choice", param: "view", default: "cards", options: [
+    { value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" },
+  ] }];
+  return <NotesView org={org} itemId={item_id} notes={notes} filters={filters} bar={bar} />;
+}
+```
+
+```tsx
+// web/app/[org]/items/[item_id]/NotesView.tsx — a client component: the shell, the canvas, writing and now
+"use client";
+import { DataTable, Dialog, MaxitorCanvas, PanelPage, usePanelQuery } from "@maxitor/panel";
+
+export function NotesView({ org, itemId, notes, filters, bar }) {
+  const { view = "cards", at } = usePanelQuery();          // the shell writes ?view=; the page only reads it
+  const fresh = useFresh(notes.map((n) => n.id), !at);     // panel.watermark: read again, mark a colleague's note new
   return (
-    <PanelPage
-      title="Notes"
-      filters={[{ title: "Author", param: "author", rows: authors.entries.map((a) => ({ key: a.key, label: a.title })) }]}
-      bar={[{ kind: "choice", param: "view", default: "cards", options: [
-        { value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" },
-      ] }]}
-    >
-      <NotesView notes={notes} />
+    <PanelPage title="Notes" filters={filters} bar={bar} actions={[{ title: "New note", icon: "plus", onClick: openDialog }]}>
+      {view === "table"
+        ? <DataTable name="Notes" rows={notes} anchor={(n) => `note:${n.id}`} columns={columns} />   // whole on the canvas
+        : <MaxitorCanvas bounds={grid}>{notes.map((n) => <NoteCard key={n.id} note={n} fresh={fresh.has(n.id)} />)}</MaxitorCanvas>}
+      {writing ? <Dialog title="New note">…</Dialog> : null}
     </PanelPage>
   );
 }
 ```
 
-```tsx
-// web/app/[org]/items/[item_id]/NotesView.tsx — a client component
-"use client";
-import { usePanelQuery, RoomLayer, NoteCard, DataTable } from "@maxitor/panel";
-
-export function NotesView({ notes }) {
-  // the shell writes ?view= when the choice in its bottom bar changes; the page only reads it
-  const { view = "cards" } = usePanelQuery();
-  return (
-    <>
-      {view === "table"
-        ? <DataTable rows={notes} columns={["writer_name", "body"]} anchor={(n) => `note:${n.id}`} />
-        : notes.map((n) => <NoteCard key={n.id} data-room-anchor={`note:${n.id}`} note={n} />)}
-      <RoomLayer />
-    </>
-  );
-}
-```
-
-The shell draws the author filter at the top left and the view in its bottom bar, and writes `?author=` and `?view=` into the address; the page rebuilds from it. In a room `view` is common to everyone on this page, and participants' pointers land on notes by their anchors.
+The shell draws the author filter at the top left and the view in its bottom bar, and writes `?author=` and `?view=` into the address; the page rebuilds from it. Every note lies on the canvas with its anchor `note:<id>`, so a pointer lands on it on every screen. "New note" opens the shell's `Dialog` — a sheet on a phone — and a card edits its note in place: a `changed_since` or `deleted` refusal is said in the card, the person's text kept. Published notes shows the revision in force; Draft the changes since it and publishing.
 
 **7. Running it locally.**
 

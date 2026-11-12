@@ -1,5 +1,9 @@
 # Changelog of @maxitor/panel
 
+## 0.6.0
+
+`Dialog` is a page's dialog over the canvas, a sheet from below on a phone: a page places nothing fixed of its own, so writing and asking happen in the shell's dialog. ([#102](https://github.com/bystrovmaxim/gnomon/issues/102))
+
 ## 0.5.0
 
 `PanelPage` takes `history` — `read`, `bars`, `milestones`, `card`, `compare`, `legend` — and sends it as `panel.history`; `checkHistory` is the core's check of its names against a version's actions and comparisons, `NO_HISTORY` what a page without one is offered. `panel.ready` and `PanelDocument` carry no `surface`: every page lies on the canvas. ([#116](https://github.com/bystrovmaxim/gnomon/issues/116))
