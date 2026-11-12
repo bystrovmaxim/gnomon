@@ -55,7 +55,8 @@ export function Notes() {
 | `EmptyState {title}` | what a page shows when it has nothing to show: a dashed card with a title and a line, never bare text |
 | `useMoment()` | the page's context: `at`, `against`, `side`, `milestone`; a page draws one canvas from it, never knowing how many panels there are |
 | `useCounts(counts)`, `useChangeStep(listener)`, `useBackToNow()` | the comparison's counts for the pill (`panel.counts`), Shift + ↑ ↓ as `panel.step`, and now asked for (`panel.now`) |
-| `ChangeStepper {entries, position, onGo}`, `DiffCard {target, at, onClose}`, `StatusIcon {status}`, `VersionsBetween {items}` | what a page compares with, ported from the graph viewer: the stepper with its list grouped, the card of one change, the disk of a change, what lies between A and B |
+| `PersonDisk {name, colour}` | a person: a disk of their palette colour with their initials, as a table's person cell and an Authors filter draw them |
+| `ChangeStepper {entries, position, onGo}`, `DiffCard {target, at, beside, onClose}`, `StatusIcon {status}`, `VersionsBetween {items}` | what a page compares with, ported from the graph viewer: the stepper with its list grouped, the card of one change — standing beside the element `beside` names, as the graph viewer's does —, the disk of a change, what lies between A and B |
 | `data-change`, `data-paint`, `data-room-anchor` | a comparison's halo under an element that changed and the fading of the rest while the changes paint; an element's anchor, which the canvas reports under the pointer and lights or brings into view when the core asks |
 | `pageMessage`, `coreMessage`, `trusted` | the protocol's shape checks, for whoever speaks it by hand |
 

@@ -10,7 +10,8 @@ A plugin says the cores it runs with in `requires.maxitor` of its passport and i
 | A card of blocks | Maxitor 4.11.0, `maxitor-plugin-sdk` 1.9.0 | the card action answers `{ blocks }` |
 | Diff and Side by side, the page's context | Maxitor 4.11.0, `@maxitor/panel` 0.7.0 (`useMoment`) | `history.compare` in the passport |
 | The halo and the fading | `@maxitor/panel` 0.7.0 (`marks.css`) | `data-change` on each element |
-| `ChangeStepper`, `DiffCard`, `StatusIcon`, `VersionsBetween`, `useCounts` | `@maxitor/panel` 0.7.0 | the page draws them in a comparison |
+| `ChangeStepper`, `DiffCard`, `StatusIcon`, `VersionsBetween`, `useCounts` | `@maxitor/panel` 0.7.0 | the page draws them in a comparison; `DiffCard`'s `beside` names the element it stands by |
+| `PersonDisk` | `@maxitor/panel` 0.7.0 | a person on a card, as a table and a filter draw them |
 | Track through anchors | Maxitor 4.11.0, `@maxitor/panel` 0.7.0 | `data-room-anchor` on what the page draws |
 | An action on a milestone, `useBackToNow` | Maxitor 4.11.0, `@maxitor/panel` 0.7.0 | `actions` in the history and `onMilestoneAction` |
 

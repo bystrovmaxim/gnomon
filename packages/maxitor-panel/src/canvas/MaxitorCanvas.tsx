@@ -1,6 +1,6 @@
 // @maxitor/panel — one canvas for every plugin (the plugin concept, 7.7): moving and zooming by drag, the wheel, a
-// two-finger swipe, a pinch, Ctrl/⌘ with the wheel and keys, within limits; fit; the field of dots moving with the
-// picture; the camera. Its zoom stands first in the shell's bottom bar (spec 078, FR-006), and a fit keeps the scene
+// two-finger swipe, a pinch, Ctrl/⌘ with the wheel and keys, within limits; fit; the field of dots standing still
+// under the picture, as the ERD's; the camera. Its zoom stands first in the shell's bottom bar (spec 078, FR-006), and a fit keeps the scene
 // clear of the shell's controls. A page puts only its content in canvas coordinates; it cannot change the
 // gestures. The viewport is never written into the address: everyone has their own screen.
 "use client";
@@ -205,10 +205,6 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
         aria-label={label}
         tabIndex={0}
         data-zoom={camera.zoom.toFixed(3)}
-        style={{
-          backgroundPosition: `${camera.x}px ${camera.y}px`,
-          backgroundSize: `calc(var(--mx-dot-step) * ${camera.zoom}) calc(var(--mx-dot-step) * ${camera.zoom})`,
-        }}
         onKeyDown={(event) => {
           const { width, height } = size();
           const next = key(camera, event.key, middle(), bounds, width, height);

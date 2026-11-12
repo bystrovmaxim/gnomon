@@ -5,12 +5,12 @@
 // Outside a canvas the list lays one of its own.
 "use client";
 
-import { PALETTE, paletteColour, type PaletteColour } from "@maxitor/tokens";
 import { useEffect, useMemo, type ReactNode } from "react";
 
 import { MaxitorCanvas, useCanvasOrNull } from "../canvas/MaxitorCanvas";
 import { dayLabel } from "../pickers/dates";
-import { headOffset, initials, LIST_HEAD, LIST_ROW, LIST_WIDTH, listHeight, rowBounds, rowsInView, viewOf } from "./list";
+import { PersonDisk, personColour } from "./PersonDisk";
+import { headOffset, LIST_HEAD, LIST_ROW, LIST_WIDTH, listHeight, rowBounds, rowsInView, viewOf } from "./list";
 
 /** How a cell is drawn: plain text, monospace, a number, a date, a person with a disk, a status with a dot. */
 export type CellKind = "text" | "mono" | "number" | "date" | "person" | "status";
@@ -25,17 +25,13 @@ export type Column<Row> = {
   width?: number;
 };
 
-function colourOf(name: string | undefined): string {
-  return paletteColour((PALETTE as readonly string[]).includes(name ?? "") ? (name as PaletteColour) : "grey");
-}
-
 function Cell<Row>({ column, row }: { column: Column<Row>; row: Row }) {
   const value = column.value(row);
   const kind = column.kind ?? "text";
   if (kind === "person" && typeof value === "string") {
     return (
       <span className="mx-list-person">
-        <span className="mx-disk" style={{ background: colourOf(column.colour?.(row)) }}>{initials(value)}</span>
+        <PersonDisk name={value} colour={column.colour?.(row)} />
         <span>{value}</span>
       </span>
     );
@@ -43,7 +39,7 @@ function Cell<Row>({ column, row }: { column: Column<Row>; row: Row }) {
   if (kind === "status") {
     return (
       <span className="mx-list-status">
-        <span className="mx-list-dot" style={{ background: colourOf(column.colour?.(row)) }} />
+        <span className="mx-list-dot" style={{ background: personColour(column.colour?.(row)) }} />
         {value}
       </span>
     );

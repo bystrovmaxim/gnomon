@@ -11,6 +11,7 @@ export type { Bounds, Camera, Insets, Point } from "./canvas/camera";
 export { Card } from "./content/Card";
 export { Dialog } from "./content/Dialog";
 export { EmptyState } from "./content/EmptyState";
+export { PersonDisk, personColour } from "./content/PersonDisk";
 export { DataTable, type CellKind, type Column } from "./content/DataTable";
 export { LIST_HEAD, LIST_ROW, LIST_WIDTH, listHeight } from "./content/list";
 export { openDatePicker, openDateRangePicker, type Anchor, type DatePickerOptions, type RangePickerOptions } from "./pickers/DatePickers";

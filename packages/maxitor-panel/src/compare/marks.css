@@ -10,6 +10,8 @@
   box-shadow: 0 0 var(--mx-halo-blur) var(--mx-halo-spread) color-mix(in srgb, var(--mx-change) var(--mx-halo-strength), transparent);
 }
 [data-paint="changes"] [data-change="unchanged"] { opacity: var(--mx-faded); }
+/* As on the ERD, a faded element under the pointer, or lit from the other panel, is drawn whole again. */
+[data-paint="changes"] [data-change="unchanged"]:hover, [data-paint="changes"] [data-change="unchanged"][data-marked] { opacity: 1; }
 
 /* The element another panel points at or chose (spec 079, FR-021), as the mockup of spec 079 lights it: a blue glow
    round a card, a tint and an inner line on a row. */

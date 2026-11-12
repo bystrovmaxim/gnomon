@@ -669,7 +669,7 @@ The core's canvas gives everything that belongs to the canvas itself:
 
 - **moving and zooming** — dragging, the wheel, pinching, keys, zoom limits, inertia; a plugin writes no gestures of its own and cannot change them;
 - **fit** and the zoom, which stands first in the shell's bottom bar (7.8); the keys `+` and `-` zoom, `0` fits, the arrows move; the zoom stays between 10% and 400%;
-- **the field of dots**, moving with the canvas;
+- **the field of dots**, standing still as the ERD's while the picture moves over it;
 - **the camera**: converting screen coordinates into canvas coordinates and back;
 - **the room**: others' pointers, clicks, selections and the viewport for a follower (section 8) — with no code in the plugin.
 

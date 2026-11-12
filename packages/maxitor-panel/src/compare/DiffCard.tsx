@@ -1,12 +1,14 @@
 // @maxitor/panel — the card of one change (spec 079, FR-025), ported from the graph viewer's DiffCard: the element's
 // title and its StatusIcon; "Added in B" or "Removed in B" for a whole element; for a changed one every property that
 // differs, its path, the value before struck and the one after; parts changed inside it below, by group. Values are
-// text, never markup. A click outside or Escape closes it; a click on the stepper moves it on.
+// text, never markup. Given an anchor it stands beside that element as the graph viewer's does, following it while the
+// camera brings it into view. A click outside or Escape closes it; a click on the stepper moves it on.
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { CHANGE_SIGN, type Change } from "./changes";
+import { besideBox } from "./place";
 import { StatusIcon } from "./StatusIcon";
 
 /** One property that changed: its path and its value before and after. */
@@ -47,8 +49,42 @@ function grouped(parts: readonly ChangedPart[]): [string, ChangedPart[]][] {
   return [...groups];
 }
 
-export function DiffCard({ target, newer = "B", at, onClose }: { target: DiffTarget; newer?: string; at: { x: number; y: number }; onClose: () => void }) {
+export function DiffCard({
+  target,
+  newer = "B",
+  at,
+  beside,
+  onClose,
+}: {
+  target: DiffTarget;
+  newer?: string;
+  /** Where the card stands in the panel's pixels, until it finds the element of `beside` and whenever it is out of sight. */
+  at: { x: number; y: number };
+  /** The anchor of the element the card describes, as `data-room-anchor` names it: the card stands beside it. */
+  beside?: string;
+  onClose: () => void;
+}) {
   const card = useRef<HTMLDivElement>(null);
+  const [place, setPlace] = useState(at);
+  // Beside its element, read every frame while the card is open, since the camera may still be gliding to it.
+  useEffect(() => {
+    if (!beside) {
+      setPlace(at);
+      return;
+    }
+    let frame = 0;
+    const follow = () => {
+      const element = document.querySelector(`[data-room-anchor="${CSS.escape(beside)}"]`);
+      const own = card.current;
+      const panel = own?.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+      const box = element?.getBoundingClientRect();
+      const next = own && box && box.right > panel.left && box.left < panel.right ? besideBox(panel, box, own.offsetWidth, own.offsetHeight) : at;
+      setPlace((was) => (Math.abs(was.x - next.x) < 0.5 && Math.abs(was.y - next.y) < 0.5 ? was : next));
+      frame = requestAnimationFrame(follow);
+    };
+    follow();
+    return () => cancelAnimationFrame(frame);
+  }, [beside, at.x, at.y]);
   useEffect(() => {
     const key = (event: KeyboardEvent) => event.key === "Escape" && onClose();
     const press = (event: PointerEvent) => {
@@ -67,7 +103,7 @@ export function DiffCard({ target, newer = "B", at, onClose }: { target: DiffTar
   const parts = grouped(target.parts ?? []);
   const inside = parts.length > 0;
   return (
-    <div ref={card} className="mx-diff-card" role="dialog" aria-label={`What changed in ${target.title}`} style={{ left: at.x, top: at.y }}>
+    <div ref={card} className="mx-diff-card" role="dialog" aria-label={`What changed in ${target.title}`} style={{ left: place.x, top: place.y }}>
       <div className="mx-diff-head">
         <span>{target.title}</span>
         <StatusIcon status={target.status} />

@@ -1,6 +1,6 @@
-/* @maxitor/panel — the canvas: the graph viewer's surface and field of dots (ErdGraphvizCanvas), which move and scale with
-   the picture; its zoom is in the shell's bar. */
-.mx-canvas { position: fixed; inset: 0; overflow: hidden; touch-action: none; cursor: grab; outline: none; background-color: var(--mx-canvas); background-image: radial-gradient(var(--mx-dot) var(--mx-dot-size), transparent var(--mx-dot-size)); }
+/* @maxitor/panel — the canvas: the graph viewer's surface and field of dots (ErdGraphvizCanvas), which stand still while
+   the picture moves and zooms over them; its zoom is in the shell's bar. */
+.mx-canvas { position: fixed; inset: 0; overflow: hidden; touch-action: none; cursor: grab; outline: none; background-color: var(--mx-canvas); background-image: radial-gradient(var(--mx-dot) var(--mx-dot-size), transparent var(--mx-dot-size)); background-size: var(--mx-dot-step) var(--mx-dot-step); }
 .mx-canvas:active { cursor: grabbing; }
 .mx-canvas:focus-visible { box-shadow: inset 0 0 0 var(--mx-ring) var(--mx-line-3); }
 .mx-canvas-scene { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
