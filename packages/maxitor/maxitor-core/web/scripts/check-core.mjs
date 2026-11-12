@@ -252,19 +252,19 @@ await scenario("the notes page opens in the right panel from the tree, with its 
   expect(card.x >= filters.x + filters.width + 8, `the notes touch the filters: ${card.x} against ${filters.x + filters.width}`);
   await frame.getByRole("radio", { name: "Table" }).click();
   await page.waitForURL(/view=table/);
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await frame.locator(".mx-filter-row").first().click();
   await page.waitForURL(/author=/);
   await frame.locator(".mx-empty-state", { hasText: "No notes yet" }).waitFor();
   await page.goBack();
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await page.goBack();
   await frame.locator(".mx-card", { hasText: "Retry three times" }).waitFor();
   await page.goForward();
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await page.reload();
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
-  await page.frameLocator("iframe.mx-panel-frame").locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await page.frameLocator("iframe.mx-panel-frame").locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
 });
 
 await scenario("a plugin's page opened by itself goes to its panel address", async () => {
