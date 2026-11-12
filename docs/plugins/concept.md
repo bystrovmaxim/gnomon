@@ -555,7 +555,7 @@ Disabling and removing only take nodes away, and an enabled plugin that needs an
 
 The builder refuses when:
 
-1. a file is navigation format 1 or 2 ("navigation format 2 is not read; write format 4: the page gives its history and controls, and a room shares nothing"), a node with children says no `opens` or a node without children says it (named: "'item' has children and no opens; write opens: expand or enter"), a node declares `history`, `room` or `controls` (named: "'item-notes' declares history; …"), or the file fails the JSON schema (`navigation-4.schema.json`): an unknown field, a wrong `id`, an unknown icon, an `opens` that is neither `expand` nor `enter`;
+1. a file is navigation format 1 or 2 ("navigation format 2 is not read; write format 4: the page gives its history and controls, and a room shares nothing"), a node with children says no `opens` or a node without children says it (named: "'item' has children and no opens; write opens: expand or enter"), a node declares `history`, `room` or `controls` (named: "'item-draft' declares history; …"), or the file fails the JSON schema (`navigation-4.schema.json`): an unknown field, a wrong `id`, an unknown icon, an `opens` that is neither `expand` nor `enter`;
 2. `attach` points at a node that does not exist, or at a plugin that is not a direct dependency;
 3. an `id` repeats within one owner;
 4. a `{name}` in `page` or in a list's parameters is not defined in the scope at the node's place;
