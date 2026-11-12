@@ -35,9 +35,13 @@ PASSPORT_FILE = "maxitor-plugin.yaml"
 MAX_YAML_BYTES = 64 * 1024
 PLACEHOLDER = re.compile(r"\{([a-z][a-z0-9_]*)\}")
 # Navigation format 1 declared a page's controls; format 2 leaves them to the page (spec 078, FR-016).
-NAVIGATION_FORMAT_1 = "navigation format 1 is not read; write format 3, without controls, history or room"
+NAVIGATION_FORMAT_1 = "navigation format 1 is not read; write format 4, without controls, history or room"
 # Navigation format 2 carried a page's history and a room's shared parameters; format 3 is the tree only (spec 082).
-NAVIGATION_FORMAT_2 = "navigation format 2 is not read; write format 3: the page gives its history and controls, and a room shares nothing"
+NAVIGATION_FORMAT_2 = "navigation format 2 is not read; write format 4: the page gives its history and controls, and a room shares nothing"
+# Format 4 gives a node the way it opens (spec 085); a format this code does not know is refused by name.
+NAVIGATION_FORMAT_UNKNOWN = "navigation format {version} is not read; write format 4, the tree with the way each node opens"
+#: The navigation formats the core reads: format 3's nodes all expand, format 4's say how they open.
+NAVIGATION_FORMATS = (3, 4)
 #: What a node of format 3 may no longer declare: the page gives it, or nothing does.
 RETIRED_KEYS = ("controls", "history", "room")
 # Passport format 2 carried a built site; format 3 carries the frontend's sources, and the core builds them (spec 080).
@@ -72,7 +76,7 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     problems.extend(_source_problems(root))
     problems.extend(frontend_problems(root))
     problems.extend(passport_role_problems(passport))
-    navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-3", problems)
+    navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation", problems)
     if navigation is not None:
         problems.extend(navigation_problems(navigation))
         problems.extend(source_problems(navigation, action_names(package)))
@@ -89,8 +93,8 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
 
 def retired_node(navigation: Mapping[str, Any]) -> str | None:
     """
-    Why a file of format 3 is refused for a node that still declares what a page gives — its history, its controls —
-    or what a room no longer shares; the node is named. ``None`` when no node does.
+    Why a file of format 3 or 4 is refused for a node that still declares what a page gives — its history, its
+    controls — or what a room no longer shares; the node is named. ``None`` when no node does.
     """
     nodes = navigation.get("nodes")
     for node, _scope in _walk(nodes if isinstance(nodes, list) else []):
@@ -179,12 +183,35 @@ def node_role_problems(navigation: Mapping[str, Any]) -> list[str]:
     ]
 
 
+def opens_problems(navigation: Mapping[str, Any]) -> list[str]:
+    """
+    Every node of format 4 says how it opens, and only a node with children does: ``opens`` has no default, and a
+    node without children has nothing to open. Each refusal names the node.
+    """
+    # Format 3 has no field to say it: every node of it expands, so nothing of it is asked (spec 085).
+    if navigation.get("navigation") != 4:
+        return []
+    problems: list[str] = []
+    for node, _scope in _walk(navigation["nodes"]):
+        children = node.get("children") or []
+        if children and "opens" not in node:
+            problems.append(
+                f"navigation: {node['id']!r} has children and no opens; write opens: expand or enter"
+            )
+        if not children and "opens" in node:
+            problems.append(
+                f"navigation: {node['id']!r} has no children and says opens; write it only on a node with children"
+            )
+    return problems
+
+
 def navigation_problems(navigation: Mapping[str, Any]) -> list[str]:
     """Rules of ``navigation.yaml`` across nodes, which a schema cannot express."""
     problems: list[str] = []
     seen_ids: set[str] = set()
     seen_pages: dict[str, str] = {}
     problems.extend(node_role_problems(navigation))
+    problems.extend(opens_problems(navigation))
     for node, scope in _walk(navigation["nodes"]):
         node_id = node["id"]
         if node_id in seen_ids:
@@ -301,6 +328,12 @@ def _read(path: Path, schema: str, problems: list[str]) -> dict[str, Any] | None
     if refusal:
         problems.append(f"{name}: {refusal}")
         return None
+    if schema == "navigation":
+        chosen = _navigation_schema(document)
+        if chosen is None:
+            problems.append(f"{name}: {NAVIGATION_FORMAT_UNKNOWN.format(version=_document_format(document))}")
+            return None
+        schema = chosen
     validator = Draft202012Validator(json.loads((SCHEMAS / f"{schema}.schema.json").read_text(encoding="utf-8")))
     errors = sorted(validator.iter_errors(document), key=lambda error: list(error.absolute_path))
     for error in errors:
@@ -309,11 +342,22 @@ def _read(path: Path, schema: str, problems: list[str]) -> dict[str, Any] | None
     return None if errors or not isinstance(document, dict) else document
 
 
+def _navigation_schema(document: object) -> str | None:
+    """The schema of the navigation format the document names, 3 or 4; ``None`` for a format not read."""
+    version = document.get("navigation") if isinstance(document, Mapping) else None
+    return f"navigation-{version}" if version in NAVIGATION_FORMATS else None
+
+
+def _document_format(document: Mapping[str, Any]) -> object:
+    """The format a file names, for a refusal that has to say it: ``navigation`` or ``passport``."""
+    return document.get("navigation", document.get("passport"))
+
+
 def _format_refusal(schema: str, document: object) -> str | None:
     """A file of a format no longer read, refused by name before its schema is applied; ``None`` otherwise."""
     if not isinstance(document, dict):
         return None
-    if schema == "navigation-3":
+    if schema == "navigation" or schema.startswith("navigation-"):
         return _navigation_refusal(document)
     if schema == "plugin-passport-3":
         return _passport_refusal(document)

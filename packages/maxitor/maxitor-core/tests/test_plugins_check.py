@@ -262,6 +262,8 @@ async def test_a_good_version_becomes_active_under_its_passports_identity(tmp_pa
     assert plugin[0][1][:2] == ("run.aoa.maxitor.notes", "notes")
     nodes = [p for q, p in world.connection.statements if q.startswith("INSERT INTO plugin_node (")]
     assert [(p[2], p[6]) for p in nodes] == [("notes:tags", "Tags"), ("notes:notes", "All notes")]
+    # Format 3 says nothing of how a node opens, so every node of it is stored as expanding (spec 085).
+    assert [p[12] for p in nodes] == ["expand", "expand"]
     version = world.updates("plugin_version")[-1]
     assert "state = $6" in version[0] and version[1][:3] == (PLACEHOLDER, "0.4.0", ">=4.0,<5") and version[1][5] == "active"
     # What a page's history is checked against: the wheel's actions and the passport's comparisons.

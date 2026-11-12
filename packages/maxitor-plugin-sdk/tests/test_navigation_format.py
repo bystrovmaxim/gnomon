@@ -1,6 +1,7 @@
 """
-Navigation format 3 (spec 082, FR-006, FR-007): the tree only. Formats 1 and 2 are refused by name, and a node that
-declares what its page gives — its history, its controls — or a room is refused naming the node.
+Navigation format 4 (spec 085, FR-015 – FR-017): the tree, and how each node opens. Formats 1 and 2 are refused by
+name; a node with children and no `opens`, and a node without children that says it, are refused naming the node;
+so is a node that declares what its page gives — its history, its controls — or a room.
 """
 
 from __future__ import annotations
@@ -33,23 +34,25 @@ def _item_notes(document: dict) -> dict:
     return document["nodes"][0]["children"][0]["children"][0]
 
 
-def test_the_template_is_format_3_and_passes() -> None:
-    validator = Draft202012Validator(json.loads((SCHEMAS / "navigation-3.schema.json").read_text(encoding="utf-8")))
-    assert _template()["navigation"] == 3
+def test_the_template_is_format_4_and_passes() -> None:
+    validator = Draft202012Validator(json.loads((SCHEMAS / "navigation-4.schema.json").read_text(encoding="utf-8")))
+    assert _template()["navigation"] == 4
     assert list(validator.iter_errors(_template())) == []
+    assert _template()["nodes"][0]["opens"] == "enter"
+    assert _template()["nodes"][0]["children"][0]["opens"] == "expand"
 
 
-@pytest.mark.parametrize(("format_", "refusal"), [(1, NAVIGATION_FORMAT_1), (2, NAVIGATION_FORMAT_2)])
-def test_older_formats_are_refused_by_name(tmp_path: Path, format_: int, refusal: str) -> None:
+def test_a_node_with_children_and_no_opens_is_refused_naming_it(tmp_path: Path) -> None:
     document = _template()
-    document["navigation"] = format_
-    assert check_plugin(_copy(tmp_path, document)) == [f"navigation.yaml: {refusal}"]
-
-
-@pytest.mark.parametrize(("key", "value"), [("history", {"read": "list_item_notes"}), ("room", {"shared": ["view"]}), ("controls", {"views": {}})])
-def test_a_node_that_declares_what_its_page_gives_is_refused_naming_it(tmp_path: Path, key: str, value: dict) -> None:
-    document = _template()
-    _item_notes(document)[key] = value
+    del document["nodes"][0]["children"][0]["opens"]
     assert check_plugin(_copy(tmp_path, document)) == [
-        f"navigation.yaml: 'item-notes' declares {key}; the page gives its history and controls, and a room shares nothing"
+        "navigation: 'item' has children and no opens; write opens: expand or enter"
+    ]
+
+
+def test_a_node_without_children_that_says_opens_is_refused_naming_it(tmp_path: Path) -> None:
+    document = _template()
+    _item_notes(document)["opens"] = "expand"
+    assert check_plugin(_copy(tmp_path, document)) == [
+        "navigation: 'item-notes' has no children and says opens; write it only on a node with children"
     ]

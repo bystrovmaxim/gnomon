@@ -1,7 +1,7 @@
 # navigation.yaml — the core's nodes in Maxitor's left tree (the plugin concept, 7.1).
 # Every node with an id is an attachment node: a plugin may stand under it. Their full names (core:settings,
 # core:settings.plugins) are the core's contract with plugins: renaming or removing one is a major version of the core.
-navigation: 3
+navigation: 4
 nodes:
   # The organization's settings, at the foot of the tree, for its administrators.
   - id: settings
@@ -10,6 +10,8 @@ nodes:
     icon: settings
     order: 10000
     roles: [administrator]
+    # The organization's settings are entered: the panel holds its children only, Settings at its head (spec 085).
+    opens: enter
     children:
       - id: settings.plugins
         title: Plugins

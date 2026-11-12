@@ -48,6 +48,40 @@ def test_the_core_and_the_template_make_one_tree() -> None:
     assert tree["notes:item-notes"].scope == ("item_id",)
 
 
+def test_a_node_carries_the_way_it_opens() -> None:
+    """Spec 085: the way a node opens arrives with the node, from the file to the tree the frame draws."""
+    tree = {node.full_name: node for node in _tree(_notes())}
+    assert tree["core:settings"].opens == "enter"
+    assert tree["notes:notes"].opens == "enter"
+    assert tree["notes:item"].opens == "expand"
+    assert tree["notes:item-notes"].opens == "expand"
+
+
+def test_format_3_is_read_as_it_is_and_every_node_of_it_expands() -> None:
+    navigation = {
+        "navigation": 3,
+        "nodes": [{"id": "notes", "attach": "root", "title": "Notes", "children": [{"id": "inside", "title": "Inside"}]}],
+    }
+    assert [(node.full_name, node.opens) for node in check_version("notes", navigation, set())] == [
+        ("notes:notes", "expand"),
+        ("notes:inside", "expand"),
+    ]
+
+
+def test_a_format_4_node_with_children_must_say_how_it_opens() -> None:
+    navigation = copy.deepcopy(NAVIGATION)
+    del navigation["nodes"][0]["children"][0]["opens"]
+    assert "'item' has children and no opens" in _refused(lambda: check_version("notes", navigation, ACTIONS))
+
+
+def test_a_format_4_leaf_must_not_say_how_it_opens() -> None:
+    navigation = copy.deepcopy(NAVIGATION)
+    navigation["nodes"][0]["children"][0]["children"][0]["opens"] = "expand"
+    assert "'item-notes' has no children and says opens" in _refused(
+        lambda: check_version("notes", navigation, ACTIONS)
+    )
+
+
 def test_a_member_sees_the_template_and_an_administrator_settings_too() -> None:
     tree = _tree(_notes())
     member = {node.full_name for node in visible(tree, frozenset({"member"}))}
@@ -112,9 +146,9 @@ def _item_notes(navigation: dict[str, Any]) -> dict[str, Any]:
             "already defines",
         ),
         # Navigation format 1, which declared controls.
-        (_with(lambda n: n.update(navigation=1)), ACTIONS, "navigation format 1 is not read; write format 3"),
+        (_with(lambda n: n.update(navigation=1)), ACTIONS, "navigation format 1 is not read; write format 4"),
         # Navigation format 2, which carried a page's history and a room's shared parameters.
-        (_with(lambda n: n.update(navigation=2)), ACTIONS, "navigation format 2 is not read; write format 3"),
+        (_with(lambda n: n.update(navigation=2)), ACTIONS, "navigation format 2 is not read; write format 4"),
         # A node that declares what its page gives or a room it no longer has, named.
         (_with(lambda n: _item_notes(n).update(controls={"views": {}})), ACTIONS, "'item-notes' declares controls"),
         (_with(lambda n: _item_notes(n).update(history={"read": "list_item_notes"})), ACTIONS, "'item-notes' declares history"),
