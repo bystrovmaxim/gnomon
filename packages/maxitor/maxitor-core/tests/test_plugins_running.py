@@ -3,8 +3,8 @@
 Running plugins: the runner's storage names no schema and binds every condition; RunVersionAction starts what is
 missing, leaves what runs, notices what exited and waits its pause; StopVersionAction forgets a version; the gateway's
 pass lets through only an active member to a plugin enabled there, with the core's roles, and says when it does not
-run; the controller really starts a test wheel's backend and frontend on 127.0.0.1 with nothing of the core's
-settings in their environment.
+run; the frontend runs only from the installer's build for this core version; the controller really starts a test
+wheel's backend and a frontend image on 127.0.0.1 with nothing of the core's settings in their environment.
 """
 
 from __future__ import annotations
@@ -22,6 +22,7 @@ import pytest
 from maxitor.core.plugins.actions.run_version_action import RunVersionAction, RunVersionParams, pause_after
 from maxitor.core.plugins.actions.stop_version_action import StopVersionAction, StopVersionParams
 from maxitor.core.plugins.actions.take_up_running_action import TakeUpRunningAction, TakeUpRunningParams
+from maxitor.core.plugins.frontend_builder import core_version
 from maxitor.core.plugins.plugin_processes import (
     RUNNER_LABEL,
     EnvironmentInstallError,
@@ -30,7 +31,6 @@ from maxitor.core.plugins.plugin_processes import (
     PluginProcessesController,
     Started,
     build_failure,
-    frontend_files,
     moved_dsn,
     wheel_file_name,
 )
@@ -102,24 +102,24 @@ async def test_a_runner_sees_and_removes_only_its_own_containers(monkeypatch: py
 class PretendController(PluginProcessesController):
     """A controller that starts nothing: it answers from what the test sets."""
 
-    def __init__(self, *, frontend: bool = False, broken: bool = False, refuse: bool = False) -> None:
+    def __init__(self, *, broken: bool = False, refuse: bool = False) -> None:
         super().__init__(
             PluginRuntimeStorage(Path("/nowhere"), "postgresql://u@db/maxitor"),
             WheelStorage(Path("/nowhere")),
             gateway_url="http://host.docker.internal:3000",
         )
-        self.frontend, self.broken, self.refuse = frontend, broken, refuse
+        self.broken, self.refuse = broken, refuse
         self.codes: dict[tuple[str, str], int | None] = {}
         self.starts: list[tuple[str, str]] = []
         self.port = 40000
 
-    def plan(self, sha256: str) -> Plan:
-        return Plan("maxitor_notes.app:create_app", "maxitor_notes/_web" if self.frontend else None)
+    def plan(self, sha256: str, frontend_image: str | None) -> Plan:
+        return Plan("maxitor_notes.app:create_app", frontend_image)
 
     async def ensure_images(self, schema: str, sha256: str, plan: Plan) -> Images:
         if self.broken:
             raise EnvironmentInstallError("pip: No matching distribution found for aoa-action-machine")
-        return Images(f"maxitor-plugin/{schema}-backend:aaaa", f"maxitor-plugin/{schema}-frontend:aaaa" if plan.frontend_build else None)
+        return Images(f"maxitor-plugin/{schema}-backend:aaaa", plan.frontend_image)
 
     async def start(self, version_id: str, kind: str, schema: str, image: str) -> Started:
         if self.refuse:
@@ -168,10 +168,28 @@ async def test_a_version_gets_its_backend_started_and_recorded() -> None:
     assert row["address"] == "http://127.0.0.1:40001" and row["failures"] == 0 and row["next_start_at"] is None
 
 
-async def test_the_frontend_starts_after_the_backend_from_its_own_image() -> None:
-    storage, processes = store(), PretendController(frontend=True)
+def built(core: str, state: str = "built") -> dict[str, Any]:
+    """The installer's build of the version's frontend for ``core``."""
+    image = f"maxitor-plugin/notes_1_0_0-frontend:aaaaaaaaaaaa-{core}" if state == "built" else None
+    return {
+        "id": "b1", "version_id": "v1", "core_version": core, "state": state, "image": image,
+        "error": None if state == "built" else "Type error: x", "started_at": datetime.now(UTC), "finished_at": None,
+    }
+
+
+async def test_the_frontend_starts_after_the_backend_from_the_installers_build() -> None:
+    storage, processes = store(), PretendController()
+    await storage.put_build(built(core_version()))
     assert (await run(storage, processes, RunVersionAction(), VERSION)).running == ["backend", "frontend"]
-    assert processes.starts[1] == ("frontend", "maxitor-plugin/notes_1_0_0-frontend:aaaa")
+    assert processes.starts[1] == ("frontend", f"maxitor-plugin/notes_1_0_0-frontend:aaaaaaaaaaaa-{core_version()}")
+
+
+async def test_no_frontend_runs_without_a_build_for_this_core_version() -> None:
+    storage, processes = store(), PretendController()
+    await storage.put_build(built("0.0.1"))
+    assert (await run(storage, processes, RunVersionAction(), VERSION)).running == ["backend"]
+    await storage.put_build(built(core_version(), state="failed"))
+    assert (await run(storage, processes, RunVersionAction(), VERSION)).running == ["backend"]
 
 
 async def test_a_running_process_is_left_alone() -> None:
@@ -315,7 +333,7 @@ SERVER = """
 const http = require("http");
 http.createServer((req, res) => res.end("frontend " + process.env.MAXITOR_PLUGIN_API)).listen(Number(process.env.PORT), process.env.HOSTNAME);
 """
-PASSPORT = """passport: 2
+PASSPORT = """passport: 3
 id: io.x.probe
 name: probe
 title: Probe
@@ -327,7 +345,7 @@ requires:
 backend:
   app: probe_plugin.app:create_app
 frontend:
-  build: probe_plugin/_web
+  source: probe_plugin/web
   navigation: probe_plugin/navigation.yaml
 """
 
@@ -340,16 +358,14 @@ def probe_wheel(uvicorn_required: bool = True) -> bytes:
         archive.writestr("probe_plugin/app.py", APP)
         archive.writestr("probe_plugin/maxitor-plugin.yaml", PASSPORT)
         archive.writestr("probe_plugin/navigation.yaml", "navigation: 2\nnodes: []\n")
-        archive.writestr("probe_plugin/_web/server.js", SERVER)
         archive.writestr("probe_plugin-0.1.0.dist-info/METADATA", metadata)
         archive.writestr("probe_plugin-0.1.0.dist-info/WHEEL", "Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n")
         archive.writestr("probe_plugin-0.1.0.dist-info/RECORD", "")
     return buffer.getvalue()
 
 
-def test_a_wheel_is_named_by_its_own_tag_and_gives_its_pages() -> None:
+def test_a_wheel_is_named_by_its_own_tag() -> None:
     assert wheel_file_name(probe_wheel()) == "probe_plugin-0.1.0-py3-none-any.whl"
-    assert set(frontend_files(probe_wheel(), "probe_plugin/_web")) == {"server.js"}
 
 
 def test_the_containers_reach_the_database_under_their_own_address() -> None:
@@ -414,9 +430,18 @@ async def test_the_controller_runs_a_wheels_backend_and_frontend_in_unprivileged
     processes = PluginProcessesController(
         runtime, wheels, gateway_url="http://host.docker.internal:3000", db_address="maxitor-db:5432", runner="tests"
     )
-    plan = processes.plan(sha256)
+    # The installer's build stands in: an image of the frontend's server, built here.
+    context = tmp_path / "frontend"
+    context.mkdir()
+    (context / "server.js").write_text(SERVER, encoding="utf-8")
+    (context / "Dockerfile").write_text(
+        'FROM node:22-slim\nCOPY server.js /app/server.js\nENV HOSTNAME=0.0.0.0 PORT=3000\nCMD ["node", "/app/server.js"]\n', encoding="utf-8"
+    )
+    frontend_image = "maxitor-plugin/probe_0_1_0-frontend:tests"
+    await processes._build(frontend_image, context)
+    plan = processes.plan(sha256, frontend_image)
     images = await processes.ensure_images("probe_0_1_0", sha256, plan)
-    assert images.frontend is not None
+    assert images.frontend == frontend_image
     try:
         backend = await processes.start("v-probe", "backend", "probe_0_1_0", images.backend)
         frontend = await processes.start("v-probe", "frontend", "probe_0_1_0", images.frontend)

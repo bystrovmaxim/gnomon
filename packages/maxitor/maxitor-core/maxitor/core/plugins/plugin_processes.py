@@ -6,7 +6,7 @@ PluginProcessesController — a deployed version's images and its containers on 
 
     <runtime>/<schema>/plugin.env         the version's database address and service key (written by the installer)
     image  maxitor-plugin/<schema>-backend:<sha>    python:<x.y>-slim, the wheel and its requirements installed
-    image  maxitor-plugin/<schema>-frontend:<sha>   node:22-slim, the wheel's built pages   (when it carries them)
+    image  maxitor-plugin/<schema>-frontend:<sha12>-<core version>   the installer's build of the frontend
     network maxitor-<schema>                         the version's own; the database joins it when it is a container
     container maxitor-<schema>-<kind>   user 65534, no capabilities, no new privileges, read-only, its limits,
                                         its port published on 127.0.0.1 of the host only
@@ -60,12 +60,6 @@ RUN pip install --no-cache-dir --disable-pip-version-check --find-links /wheels 
 USER {user}
 CMD ["python", "-m", "uvicorn", "{app}", "--factory", "--host", "0.0.0.0", "--port", "{port}"]
 """
-FRONTEND_DOCKERFILE = """FROM node:22-slim
-COPY web/ /app/
-USER {user}
-ENV HOSTNAME=0.0.0.0 PORT={port}
-CMD ["node", "/app/server.js"]
-"""
 
 
 #: A line a build step printed, with its step number and time: ``#5 0.825 ERROR: No matching distribution …``.
@@ -92,15 +86,15 @@ class Started:
 
 @dataclass(frozen=True)
 class Plan:
-    """How one version runs: the backend's factory and, when the wheel carries one, the frontend's build."""
+    """How one version runs: the backend's factory from the wheel, and the frontend's image the installer built."""
 
     backend_app: str
-    frontend_build: str | None
+    frontend_image: str | None
 
 
 @dataclass(frozen=True)
 class Images:
-    """The version's images: the backend's always, the frontend's when the wheel carries its build."""
+    """The version's images: the backend's always, the frontend's once the installer built it."""
 
     backend: str
     frontend: str | None
@@ -124,17 +118,6 @@ def wheel_file_name(data: bytes) -> str:
     tags = [line.split(":", 1)[1].strip() for line in lines if line.startswith("Tag:")]
     stem = info.split("/", 1)[0].removesuffix(".dist-info")
     return f"{stem}-{tags[0] if tags else 'py3-none-any'}.whl"
-
-
-def frontend_files(data: bytes, build: str) -> dict[str, bytes]:
-    """The files of the wheel under the frontend's build folder, by their path inside it."""
-    prefix = build.rstrip("/") + "/"
-    with zipfile.ZipFile(io.BytesIO(data)) as archive:
-        return {
-            name[len(prefix) :]: archive.read(name)
-            for name in archive.namelist()
-            if name.startswith(prefix) and not name.endswith("/") and ".." not in name.split("/")
-        }
 
 
 def moved_dsn(dsn: str, address: str | None) -> str:
@@ -183,7 +166,8 @@ class PluginProcessesController(BaseController):
     """
     AI-CORE-BEGIN
     ROLE: Every Docker step of running a plugin version.
-    CONTRACT: ``plan`` reads how a version runs from its wheel; ``ensure_images`` builds its images once; ``start``
+    CONTRACT: ``plan`` reads how a version runs from its wheel and its frontend's build; ``ensure_images`` builds the
+        backend's image once and takes the frontend's when it is on the host; ``start``
         runs one container and answers its name and address once it answers HTTP, or raises; ``exit_code`` tells
         whether a container runs; ``stop`` removes a version's containers; ``stop_all`` every plugin container of
         this runner.
@@ -230,22 +214,19 @@ class PluginProcessesController(BaseController):
 
     # ── what a version needs ──────────────────────────────────────────────────
 
-    def plan(self, sha256: str) -> Plan:
-        """The backend's factory and, when the wheel carries its ``server.js``, the frontend's build path."""
-        data = self._wheel(sha256)
-        passport: dict[str, Any] = read_wheel(data).passport
-        build = (passport.get("frontend") or {}).get("build")
-        carries = isinstance(build, str) and "server.js" in frontend_files(data, build)
-        return Plan(str((passport.get("backend") or {})["app"]), str(build) if carries else None)
+    def plan(self, sha256: str, frontend_image: str | None) -> Plan:
+        """The backend's factory from the wheel's passport, and the frontend's image of the installer's build."""
+        passport: dict[str, Any] = read_wheel(self._wheel(sha256)).passport
+        return Plan(str((passport.get("backend") or {})["app"]), frontend_image)
 
     async def ensure_images(self, schema: str, sha256: str, plan: Plan) -> Images:
-        """The version's images, built the first time; raise ``EnvironmentInstallError``."""
+        """The backend's image, built the first time, and the frontend's when the host has it; raise ``EnvironmentInstallError``."""
         backend = f"maxitor-plugin/{schema}-backend:{sha256[:12]}"
-        frontend = f"maxitor-plugin/{schema}-frontend:{sha256[:12]}" if plan.frontend_build else None
         if not await self._has_image(backend):
             await self._build(backend, self._backend_context(schema, sha256, plan))
-        if frontend is not None and plan.frontend_build is not None and not await self._has_image(frontend):
-            await self._build(frontend, self._frontend_context(schema, sha256, plan.frontend_build))
+        frontend = plan.frontend_image
+        if frontend is not None and not await self._has_image(frontend):
+            raise EnvironmentInstallError(f"the frontend's image {frontend} is not on this host; the installer builds it")
         return Images(backend, frontend)
 
     # ── containers ────────────────────────────────────────────────────────────
@@ -355,17 +336,6 @@ class PluginProcessesController(BaseController):
             app=plan.backend_app,
             port=INNER_PORTS["backend"],
         )
-        (context / "Dockerfile").write_text(dockerfile, encoding="utf-8")
-        return context
-
-    def _frontend_context(self, schema: str, sha256: str, build: str) -> Path:
-        context = self._home(schema) / "image-frontend"
-        shutil.rmtree(context, ignore_errors=True)
-        for path, content in frontend_files(self._wheel(sha256), build).items():
-            target = context / "web" / path
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(content)
-        dockerfile = FRONTEND_DOCKERFILE.format(user=UNPRIVILEGED, port=INNER_PORTS["frontend"])
         (context / "Dockerfile").write_text(dockerfile, encoding="utf-8")
         return context
 

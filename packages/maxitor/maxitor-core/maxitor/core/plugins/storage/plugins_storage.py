@@ -22,6 +22,7 @@ from typing import Any, ClassVar
 
 from maxitor.core.plugins.entities import (
     OrganizationPluginCoreEntity,
+    PluginBuildCoreEntity,
     PluginCoreEntity,
     PluginDependencyCoreEntity,
     PluginNodeCoreEntity,
@@ -85,6 +86,7 @@ def like_pattern(query: str) -> str:
     PluginNodeCoreEntity,
     OrganizationPluginCoreEntity,
     PluginProcessCoreEntity,
+    PluginBuildCoreEntity,
 )
 class PluginsStorage(CoreStorage):
     """
@@ -93,7 +95,7 @@ class PluginsStorage(CoreStorage):
     CONTRACT: ``plugin_lock`` and ``organization_lock`` take the lock and answer the change time; the core's
         ``insert`` and ``update`` write a row with its version; the readers answer what one page or one step needs.
     INVARIANTS: Names no schema in SQL; every reading of organization_plugin names its organization; a private plugin
-        is read only for its owner; plugin_process is mechanics of work, written without versions by the runner only.
+        is read only for its owner; plugin_process is mechanics of work, written without versions by the runner only; so is plugin_build, by the installer.
     AI-CORE-END
     """
 
@@ -318,14 +320,14 @@ class PluginsStorage(CoreStorage):
         )
         return [row["id"] for row in rows]
 
-    async def pending_installs(self) -> list[tuple[str, str]]:
-        """The installs waiting for the installer, oldest first: (organization id, row id)."""
+    async def pending_installs(self) -> list[tuple[str, str, str]]:
+        """The installs waiting for the installer, oldest first: (organization id, row id, version id)."""
         rows = await self._fetch(
-            "SELECT organization_id::text AS organization_id, id::text AS id FROM organization_plugin"
-            " WHERE state = 'installing' ORDER BY created_at",
+            "SELECT organization_id::text AS organization_id, id::text AS id, plugin_version_id::text AS version_id"
+            " FROM organization_plugin WHERE state = 'installing' ORDER BY created_at",
             (),
         )
-        return [(row["organization_id"], row["id"]) for row in rows]
+        return [(row["organization_id"], row["id"], row["version_id"]) for row in rows]
 
     # ── the runner ────────────────────────────────────────────────────────────
 
@@ -377,6 +379,36 @@ class PluginsStorage(CoreStorage):
             await self._execute("DELETE FROM plugin_process", ())
         else:
             await self._execute("DELETE FROM plugin_process WHERE plugin_version_id = $1::text::uuid", (version_id,))
+
+    # ── builds ────────────────────────────────────────────────────────────────
+
+    async def build(self, version_id: str, core_version: str) -> dict[str, Any] | None:
+        """The build of a version's frontend for a core version, or ``None`` when it was never started."""
+        row = await self._fetchrow(
+            "SELECT id::text AS id, plugin_version_id::text AS version_id, core_version, state, image, error, started_at,"
+            " finished_at FROM plugin_build WHERE plugin_version_id = $1::text::uuid AND core_version = $2",
+            (version_id, core_version),
+        )
+        return None if row is None else dict(row)
+
+    async def put_build(self, row: Mapping[str, Any]) -> None:
+        """Write a build: started, built with its image, or failed with its error."""
+        await self._execute(
+            "INSERT INTO plugin_build (id, plugin_version_id, core_version, state, image, error, started_at, finished_at)"
+            " VALUES ($1::text::uuid, $2::text::uuid, $3, $4, $5, $6, $7, $8)"
+            " ON CONFLICT (plugin_version_id, core_version) DO UPDATE SET state = EXCLUDED.state, image = EXCLUDED.image,"
+            " error = EXCLUDED.error, started_at = EXCLUDED.started_at, finished_at = EXCLUDED.finished_at",
+            (
+                row["id"],
+                row["version_id"],
+                row["core_version"],
+                row["state"],
+                row["image"],
+                row["error"],
+                row["started_at"],
+                row["finished_at"],
+            ),
+        )
 
     # ── the gateway ───────────────────────────────────────────────────────────
 

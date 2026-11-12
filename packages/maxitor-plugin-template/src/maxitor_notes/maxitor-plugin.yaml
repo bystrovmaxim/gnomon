@@ -1,6 +1,6 @@
 # maxitor-plugin.yaml — the passport of the plugin: who it is and what it needs.
 # Maxitor's installer reads it from the wheel before installing anything.
-passport: 2
+passport: 3
 
 # The global identifier: reverse domain notation, never changes.
 id: io.github.bystrovmaxim.notes
@@ -43,7 +43,9 @@ backend:
   app: maxitor_notes.app:create_app
 
 frontend:
-  build: maxitor_notes/_web
+  # The frontend's sources in the wheel: package.json, package-lock.json and the pages. Maxitor builds them with its
+  # own @maxitor/panel; the wheel carries no built site.
+  source: maxitor_notes/web
   navigation: maxitor_notes/navigation.yaml
 
 # The plugin carries no SQL and no migrations: it declares its tables, and Maxitor builds them.

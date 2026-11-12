@@ -36,6 +36,13 @@ MAX_YAML_BYTES = 64 * 1024
 PLACEHOLDER = re.compile(r"\{([a-z][a-z0-9_]*)\}")
 # Navigation format 1 declared a page's controls; format 2 leaves them to the page (spec 078, FR-016).
 NAVIGATION_FORMAT_1 = "navigation format 1 is not read; write format 2, without controls"
+# Passport format 2 carried a built site; format 3 carries the frontend's sources, and the core builds them (spec 080).
+PASSPORT_FORMAT_2 = "passport format 2 is not read; write format 3, the frontend as sources (frontend.source)"
+FRONTEND_BUILD = "frontend.build is not a field of format 3; name the frontend's sources in frontend.source"
+#: Where a plugin's frontend lives in its own folder; the wheel carries it where the passport's frontend.source says.
+WEB_FOLDER = "web"
+#: The files a frontend's sources must hold for the core to build them strictly by the lock.
+FRONTEND_FILES = ("package.json", "package-lock.json")
 
 
 def check_plugin(root: Path) -> list[str]:
@@ -54,10 +61,11 @@ def read_plugin(root: Path) -> tuple[dict[str, Any] | None, list[str]]:
     package = _package_folder(root, problems)
     if package is None:
         return None, problems
-    passport = _read(package / PASSPORT_FILE, "plugin-passport-2", problems)
+    passport = _read(package / PASSPORT_FILE, "plugin-passport-3", problems)
     if passport is None:
         return None, problems
     _check_version(root, passport, problems)
+    problems.extend(_source_problems(root))
     problems.extend(frontend_problems(root))
     problems.extend(passport_role_problems(passport))
     navigation = _read(package.parent / passport["frontend"]["navigation"], "navigation-2", problems)
@@ -286,12 +294,31 @@ def _read(path: Path, schema: str, problems: list[str]) -> dict[str, Any] | None
     if schema == "navigation-2" and isinstance(document, dict) and document.get("navigation") == 1:
         problems.append(f"{name}: {NAVIGATION_FORMAT_1}")
         return None
+    if schema == "plugin-passport-3" and isinstance(document, dict):
+        if document.get("passport") == 2:
+            problems.append(f"{name}: {PASSPORT_FORMAT_2}")
+            return None
+        if isinstance(document.get("frontend"), dict) and "build" in document["frontend"]:
+            problems.append(f"{name}: {FRONTEND_BUILD}")
+            return None
     validator = Draft202012Validator(json.loads((SCHEMAS / f"{schema}.schema.json").read_text(encoding="utf-8")))
     errors = sorted(validator.iter_errors(document), key=lambda error: list(error.absolute_path))
     for error in errors:
         where = "/".join(str(part) for part in error.absolute_path) or "(top)"
         problems.append(f"{name}: {where}: {error.message}")
     return None if errors or not isinstance(document, dict) else document
+
+
+def _source_problems(root: Path) -> list[str]:
+    """The frontend's sources the core builds: its folder ``web/`` with the package and the lock it is built by."""
+    web = root / WEB_FOLDER
+    if not web.is_dir():
+        return []
+    return [
+        f"{WEB_FOLDER}/{name}: missing; the core builds the frontend strictly by it"
+        for name in FRONTEND_FILES
+        if not (web / name).is_file()
+    ]
 
 
 def _check_version(root: Path, passport: Mapping[str, Any], problems: list[str]) -> None:

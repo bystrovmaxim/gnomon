@@ -14,19 +14,19 @@ Phases follow the issue's five; one phase is one commit. `[P]` — may run in pa
 
 ## Phase 2 — Passport format 3; the installer builds before it deploys; the runner runs the build (US1, US2)
 
-- [ ] T001 [P] `packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/plugin-passport-3.schema.json`: format 2 with `frontend.source` in place of `frontend.build`; remove `plugin-passport-2.schema.json` and format 2 from the SDK's reading (`checks.py`, `compat.py`); `maxitor-plugin-check` refuses format 2 and `frontend.build` by name, and a `frontend.source` folder without `package.json` and `package-lock.json` or holding `node_modules`, `.next` or a built site.
-- [ ] T007 `entities.py`, `ddl.py`, a migration in `maxitor/core/migrations/`: `plugins.plugin_build` and `plugins.frontend_generation` with their `*_versions`, descriptions, service time fields (data-model.md).
-- [ ] T008 `storage/build_storage.py`: read and write builds and the generation; the latest build of a version for a core version.
-- [ ] T009 `events.py`: `FrontendBuiltEvent`, `FrontendBuildFailedEvent` (critical), `FrontendGenerationMovedEvent`, `BuilderImageBuiltEvent`.
-- [ ] T010 `actions/build_frontend_action.py`: build one version for the running core version — `building`, then `built` with the image or `failed` with the error; no lock held while building.
-- [ ] T011 `actions/deploy_and_install_action.py`, `actions/check_version_action.py`, `wheel.py`, `maxitor-core.yaml`: passport 3; deploy only a version with a `built` build for the running core version; a `failed` build fails the install with its reason, shown in Settings → Plugins.
-- [ ] T012 `tools/plugin-installer/.../loop.py`: each round builds every version waiting to deploy that has no build for the running core version, before deploying it.
-- [ ] T013 `plugin_processes.py`: the frontend image is the serving build's (`plugin_build` of the serving core version); no site read from the wheel; `FRONTEND_DOCKERFILE` and `frontend_files` removed.
-- [ ] T014 Tests: `packages/maxitor-plugin-sdk/tests/test_passport_3.py` (format 3 read, format 2 and `frontend.build` refused, sources checked); the build action's states; a version without a build is not deployed; a failed build refuses the install by name; the runner's plan takes the build's image.
+- [x] T001 [P] `packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/plugin-passport-3.schema.json`: format 2 with `frontend.source` in place of `frontend.build`; remove `plugin-passport-2.schema.json` and format 2 from the SDK's reading (`checks.py`, `compat.py`); `maxitor-plugin-check` refuses format 2 and `frontend.build` by name, and a `frontend.source` folder without `package.json` and `package-lock.json` or holding `node_modules`, `.next` or a built site.
+- [x] T007 `entities.py`, `migrations/plugins/0005_plugin_build.sql`: `plugins.plugin_build`, mechanics of work without versions like `plugin_process`, every column described (data-model.md).
+- [x] T008 `storage/plugins_storage.py`: `build` and `put_build` — the build of a version for a core version, read by the installer and the runner.
+- [x] T009 `events.py`, `plugins_domain.py`: `FrontendBuiltEvent`, `FrontendBuildFailedEvent` (critical), `BuilderImageBuiltEvent`.
+- [x] T010 `actions/build_frontend_action.py`: build one version for the running core version — `building`, then `built` with the image or `failed` with the error; no lock held while building.
+- [x] T011 `actions/deploy_and_install_action.py`, `actions/check_version_action.py`, `wheel.py`, `maxitor-core.yaml`: passport 3; deploy only a version with a `built` build for the running core version; a `failed` build fails the install with its reason, shown in Settings → Plugins.
+- [x] T012 `tools/plugin-installer/.../loop.py`: each round builds every version waiting to deploy that has no build for the running core version, before deploying it.
+- [x] T013 `plugin_processes.py`: the frontend image is the serving build's (`plugin_build` of the serving core version); no site read from the wheel; `FRONTEND_DOCKERFILE` and `frontend_files` removed.
+- [x] T014 Tests: `packages/maxitor-plugin-sdk/tests/test_passport_3.py` (format 3 read, format 2 and `frontend.build` refused, sources checked); the build action's states; a version without a build is not deployed; a failed build refuses the install by name; the runner's plan takes the build's image.
 
 ## Phase 3 — Upgrading the core (US3)
 
-- [ ] T015 `actions/move_frontend_generation_action.py`: on a core version differing from the serving one, set the target; when every enabled version has a `built` build for it, move the serving version in one transaction and emit `FrontendGenerationMovedEvent`; a failed build holds the move and emits `FrontendBuildFailedEvent`; a disabled version is no longer waited for.
+- [ ] T015 `migrations/plugins/0006_frontend_generation.sql`, `entities.py`, `events.py` (`FrontendGenerationMovedEvent`), `actions/move_frontend_generation_action.py`: on a core version differing from the serving one, set the target; when every enabled version has a `built` build for it, move the serving version in one transaction and emit `FrontendGenerationMovedEvent`; a failed build holds the move and emits `FrontendBuildFailedEvent`; a disabled version is no longer waited for.
 - [ ] T016 `tools/plugin-installer/.../loop.py`: the upgrade round in the background, after the deploy round, one build at a time.
 - [ ] T017 `tools/plugin-runner/.../loop.py`: when the serving core version changes, restart each version's frontend container on its new image.
 - [ ] T018 Tests: no move while one build is missing or failed; the move switches all at once; a disabled plugin stops holding the move; the runner restarts on a move.

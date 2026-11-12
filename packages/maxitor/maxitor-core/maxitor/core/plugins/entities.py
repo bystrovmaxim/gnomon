@@ -307,6 +307,31 @@ class PluginProcessCoreEntity(BaseCoreEntity):
     updated_at: datetime = Field(description="When the row last changed")
 
 
+@entity(description="One build of a plugin version's frontend for one core version, kept by the installer", domain=PluginsDomain)
+class PluginBuildCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: Which image runs a version's frontend under a core version, or why there is none.
+    CONTRACT: Written only by the installer; one row per version and core version; a built row names its image, a
+        failed one its error.
+    INVARIANTS: Mechanics of work: kept without versions; a retry moves a failed row back to building.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Build id")
+    core_version: str = Field(description="The core version whose builder image and @maxitor packages made it")
+    state: str = Field(description="building, built or failed")
+    image: str | None = Field(default=None, description="The frontend's image once built; empty otherwise")
+    error: str | None = Field(default=None, description="The first error of the step that failed; empty unless failed")
+    started_at: datetime = Field(description="When the build started")
+    finished_at: datetime | None = Field(default=None, description="When the build ended; empty while it runs")
+
+    plugin_version: Annotated[
+        AssociationOne[PluginVersionCoreEntity],
+        NoInverse(),
+    ] = Field(description="The plugin version whose frontend was built")
+
+
 # Relations name classes declared later in the module; resolve them now.
 PluginCoreEntity.model_rebuild()
 PluginVersionCoreEntity.model_rebuild()

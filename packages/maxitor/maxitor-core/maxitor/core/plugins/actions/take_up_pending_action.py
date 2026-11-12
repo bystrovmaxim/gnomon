@@ -40,6 +40,7 @@ class PendingInstallSchema(BaseSchema):
 
     organization_id: str = Field(description="The organization")
     row_id: str = Field(description="The organization's plugin row")
+    version_id: str = Field(description="The version the row installs")
 
 
 class TakeUpResult(BaseResult):
@@ -82,7 +83,7 @@ class TakeUpPendingAction(BaseAction[TakeUpParams, TakeUpResult]):
                     "Version {%var.row_id} taken up after a stop",
                     RowTakenUpEvent(kind="version", row_id=version_id),
                 )
-            for _organization_id, row_id in installs:
+            for _organization_id, row_id, _version_id in installs:
                 await box.info(
                     Channel.business,
                     "Install {%var.row_id} taken up after a stop",
@@ -90,5 +91,5 @@ class TakeUpPendingAction(BaseAction[TakeUpParams, TakeUpResult]):
                 )
         return TakeUpResult(
             versions=versions,
-            installs=[PendingInstallSchema(organization_id=org, row_id=row) for org, row in installs],
+            installs=[PendingInstallSchema(organization_id=org, row_id=row, version_id=version) for org, row, version in installs],
         )

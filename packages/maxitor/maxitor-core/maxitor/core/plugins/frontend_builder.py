@@ -110,7 +110,8 @@ class FrontendBuilderController(BaseController):
     def __init__(
         self, work: Path, *, version: str | None = None, memory: str = "2g", cpus: str = "2", library: Path | None = None
     ) -> None:
-        self._work = work
+        # Docker mounts the build folders by absolute path.
+        self._work = work.resolve()
         self._version = version or core_version()
         self._memory = memory
         self._cpus = cpus
@@ -128,6 +129,11 @@ class FrontendBuilderController(BaseController):
     def version(self) -> str:
         """The core version the builds are made for."""
         return self._version
+
+    @property
+    def work(self) -> Path:
+        """The folder the builds work in, one subfolder per version's schema."""
+        return self._work
 
     @property
     def builder_image(self) -> str:

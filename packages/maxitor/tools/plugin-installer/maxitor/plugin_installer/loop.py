@@ -5,7 +5,7 @@ The installer's loop: on start and then every period, take up the queue and fini
 ::
 
     TakeUpPendingAction ──► for each version: CheckVersionAction
-                        └─► for each install: DeployAndInstallAction
+                        └─► for each install: BuildFrontendAction, then DeployAndInstallAction
     the database refuses the connection ──► ReportConnectionRefusedAction, and the next round tries again
 
 Every step is an action of the domain plugins run by the machine with the installer's own context; there is no
@@ -18,6 +18,7 @@ import asyncio
 from collections.abc import Mapping
 from typing import Any
 
+from maxitor.core.plugins.actions.build_frontend_action import BuildFrontendAction, BuildParams
 from maxitor.core.plugins.actions.check_version_action import CheckParams, CheckVersionAction
 from maxitor.core.plugins.actions.deploy_and_install_action import DeployAndInstallAction, DeployParams
 from maxitor.core.plugins.actions.report_connection_refused_action import RefusedParams, ReportConnectionRefusedAction
@@ -51,6 +52,8 @@ async def one_round(machine: ActionProductMachine, connections: Mapping[str, Any
     for version_id in queue.versions:
         await run_action(machine, connections, CheckVersionAction(), CheckParams(version_id=version_id))
     for install in queue.installs:
+        # The frontend first and with no lock held: the deployment takes a version only once it is built.
+        await run_action(machine, connections, BuildFrontendAction(), BuildParams(version_id=install.version_id))
         await run_action(
             machine,
             connections,

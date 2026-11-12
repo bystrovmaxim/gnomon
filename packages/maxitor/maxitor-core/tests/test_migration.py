@@ -137,13 +137,14 @@ async def test_the_migrator_runs_platform_then_organization_under_their_schemas(
         "plugins/0002_plugin_processes.sql",
         "plugins/0003_plugin_nodes.sql",
         "plugins/0004_plugin_node_no_controls.sql",
+        "plugins/0005_plugin_build.sql",
     ]
     paths = [q for q in connection.queries() if q.startswith("SET LOCAL search_path")]
     assert paths[0] == 'SET LOCAL search_path TO "platform", "extensions"'
     assert paths[1] == 'SET LOCAL search_path TO "platform", "extensions"'
     assert paths[2] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
     assert paths[3] == paths[4] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
-    assert paths[5] == paths[6] == paths[7] == paths[8] == 'SET LOCAL search_path TO "plugins", "organization", "platform", "extensions"'
+    assert paths[5] == paths[6] == paths[7] == paths[8] == paths[9] == 'SET LOCAL search_path TO "plugins", "organization", "platform", "extensions"'
     recorded = [params for query, params in connection.statements if query.startswith("INSERT INTO migration")]
     assert [name for name, _digest in recorded] == ran
 

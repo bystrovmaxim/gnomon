@@ -4,7 +4,7 @@ Spec: [spec.md](spec.md) · Research: [research.md](research.md).
 
 ## Tables of the schema `plugins`
 
-Both follow the schema's rules: a description on every table and column, the service time fields, a `*_versions` table keeping their history (constitution, "Technology frame and schema rules").
+Both follow the schema's rules: a description on every table and column. Like `plugin_process`, they are mechanics of work, kept by the installer without versions: a build's history is its events (`FrontendBuiltEvent`, `FrontendBuildFailedEvent`), the move's is `FrontendGenerationMovedEvent`.
 
 ### `plugins.plugin_build` — one frontend build of one plugin version for one core version
 
@@ -16,9 +16,10 @@ Both follow the schema's rules: a description on every table and column, the ser
 | `state` | text | `building`, `built`, `failed` |
 | `image` | text, null | The frontend image when built: `maxitor-plugin/<schema>-frontend:<sha12>-<core version>` |
 | `error` | text, null | When failed: the first error of the failing step, as the message shows it |
-| `started_at`, `finished_at` | timestamptz | When the build started and ended |
+| `started_at`, `finished_at` | timestamptz | When the build started and ended; `finished_at` null while it runs |
 
 - Unique: (`version_id`, `core_version`) — one build per version and core version; a retry replaces a `failed` row's state.
+- An image exactly when `built`, an error exactly when `failed`.
 - States: `building` → `built` | `failed`; `failed` → `building` on a retry (a redeployment of the plugin, or the next upgrade round).
 
 ### `plugins.frontend_generation` — the core version whose builds the site serves

@@ -1,7 +1,7 @@
 # packages/maxitor/maxitor-core/tests/plugin_runtime_fakes.py
 """
-The runner's and the gateway's readings of the schema plugins in memory, for tests: the processes, the pass, the
-exchange and the service token, over the same lists as MemoryPluginsStorage.
+The runner's and the gateway's readings of the schema plugins in memory, for tests: the processes, the builds, the
+pass, the exchange and the service token, over the same lists as MemoryPluginsStorage.
 """
 
 from __future__ import annotations
@@ -44,6 +44,15 @@ class MemoryRuntimeReadings:
     async def forget_processes(self, version_id: str | None = None) -> None:
         rows = self.tables["plugin_process"]
         rows[:] = [r for r in rows if version_id is not None and r["version_id"] != version_id]
+
+    async def build(self, version_id: str, core_version: str) -> dict[str, Any] | None:
+        rows = self.tables.setdefault("plugin_build", [])
+        return next((dict(r) for r in rows if (r["version_id"], r["core_version"]) == (version_id, core_version)), None)
+
+    async def put_build(self, row: Any) -> None:
+        rows = self.tables.setdefault("plugin_build", [])
+        rows[:] = [r for r in rows if (r["version_id"], r["core_version"]) != (row["version_id"], row["core_version"])]
+        rows.append(dict(row))
 
     async def pass_target(self, code: str, account_id: str, name: str, kind: str) -> dict[str, Any] | None:
         organization = await self.core.organization_for(code, account_id)

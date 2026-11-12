@@ -3,7 +3,8 @@
 Deploying a version: one transaction that builds the user, the schema, the tables and the rights and enables the
 plugin; the plain password reaches no statement, only the version's environment file; a failure at any step leaves
 nothing and records the reason; a version already deployed is not built again; a row another installer holds is
-left alone.
+left alone; a version whose frontend has no built build for the running core version is not deployed, and the
+install fails with the build's error.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from typing import Any
 
 import pytest
 from maxitor.core.plugins.actions.deploy_and_install_action import DeployAndInstallAction, DeployParams
+from maxitor.core.plugins.frontend_builder import core_version
 from maxitor.core.plugins.installer_role import InstallerRole
 from maxitor.core.plugins.storage.deploy_storage import DEPLOY_CONNECTION_KEY, DeployStorage
 from maxitor.core.plugins.storage.plugin_runtime_storage import RUNTIME_CONNECTION_KEY, PluginRuntimeStorage
@@ -35,7 +37,7 @@ ROW = "6f1d6b70-2a0b-4b61-9a3e-0a6e9a0f7c22"
 VERSION = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d"
 INSTALLER = Context(user=UserInfo(user_id="plugin-installer", roles=(InstallerRole,)))
 
-PASSPORT = """passport: 2
+PASSPORT = """passport: 3
 id: run.aoa.maxitor.notes
 name: notes
 title: Notes
@@ -44,6 +46,7 @@ database:
   schema: maxitor_notes/schema.yaml
   foreign_keys: maxitor_notes/foreign-keys.yaml
 frontend:
+  source: maxitor_notes/web
   navigation: maxitor_notes/navigation.yaml
 """
 SCHEMA = """schema: 1
@@ -107,11 +110,26 @@ class Pool:
 class World:
     """The installer's connections over a recording database, a wheel store and a runtime directory."""
 
-    def __init__(self, tmp: Path, *, deployed: str | None = None, claimed: bool = True, fail_on: str | None = None) -> None:
+    def __init__(
+        self,
+        tmp: Path,
+        *,
+        deployed: str | None = None,
+        claimed: bool = True,
+        fail_on: str | None = None,
+        build: dict[str, Any] | str | None = "built",
+    ) -> None:
         self.store = WheelStorage(tmp / "wheels")
         self.sha = self.store.put(wheel())
         self.runtime = PluginRuntimeStorage(tmp / "runtime", "postgresql://maxitor_installer:secret@db.local:5432/maxitor")
         self.deployed, self.claimed = deployed, claimed
+        # The installer's build of the version's frontend for the running core version: built unless a test says.
+        self.build = (
+            {"id": "b1", "version_id": VERSION, "core_version": core_version(), "state": "built",
+             "image": "maxitor-plugin/notes_0_4_0-frontend:aaaaaaaaaaaa", "error": None, "started_at": MOMENT, "finished_at": MOMENT}
+            if build == "built"
+            else build
+        )
         self.connection = FailingConnection(self.answer, fail_on)
 
     def answer(self, query: str, params: tuple[Any, ...]) -> Any:
@@ -127,6 +145,8 @@ class World:
                     "sha256": self.sha, "state": "active", "reason": None, "core_range": ">=4,<5",
                     "schema_name": self.deployed, "database_user": None, "passport_id": "run.aoa.maxitor.notes",
                     "name": "notes", "title": "Notes", "owner_organization_id": None}
+        if "FROM plugin_build" in query:
+            return self.build
         if query.startswith("SELECT * FROM"):
             return {"id": VERSION, "organization_id": ORG, "state": "enabled", "updated_at": MOMENT}
         return None
@@ -216,3 +236,23 @@ async def test_a_key_to_a_dependency_is_refused_before_any_sql(tmp_path: Path) -
     world.sha = world.store.put(wheel({"maxitor_notes/foreign-keys.yaml": KEYS.replace("schema: core, table: user", "schema: tags, table: tag")}))
     assert await world.run() == "failed"
     assert not any(s.startswith(("CREATE ROLE", "CREATE SCHEMA")) for s in world.queries())
+
+
+@pytest.mark.parametrize(
+    ("build", "reason"),
+    [
+        (None, "the frontend is not built for the core {core}"),
+        ({"state": "building", "error": None}, "the frontend is not built for the core {core}"),
+        ({"state": "failed", "error": "./app/page.tsx:3:7 Type error: Cannot find name 'x'."},
+         "the frontend could not be built for the core {core}: ./app/page.tsx:3:7 Type error: Cannot find name 'x'."),
+    ],
+)
+async def test_a_version_without_a_built_frontend_is_not_deployed_and_the_install_says_why(
+    tmp_path: Path, build: dict[str, Any] | None, reason: str
+) -> None:
+    world = World(tmp_path, build=None if build is None else {"id": "b1", "version_id": VERSION, "core_version": core_version(), **build})
+    assert await world.run() == "failed"
+    assert not any(s.startswith(("CREATE ROLE", "CREATE SCHEMA", "UPDATE plugin_version")) for s in world.queries())
+    failed = [p for s, p in world.connection.statements if s.startswith("UPDATE organization_plugin SET state = $1")]
+    assert failed[-1][:2] == ("failed", reason.format(core=core_version()))
+    assert not world.env().exists()

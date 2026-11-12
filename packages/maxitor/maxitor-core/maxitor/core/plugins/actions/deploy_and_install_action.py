@@ -4,8 +4,11 @@ DeployAndInstallAction — the installer finishes one install: deploys its versi
 
 ::
 
-    installing ──▶ (version not deployed? build it) ──▶ enabled
+    installing ──▶ (frontend built for this core? version not deployed? build it) ──▶ enabled
          └──────▶ any failure: nothing built, nothing of the organization changed ──▶ failed (with the reason)
+
+The frontend is built before, by BuildFrontendAction, outside any lock; a version whose frontend has no built build
+for the running core version is not deployed, and the install fails with the build's error.
 
 Deploying and enabling are one transaction under the row's claim, the version's lock and the organization's lock;
 the version's environment file is written inside it and removed if it rolls back.
@@ -15,7 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 from maxitor.core.plugins.core_keys import CoreKeysError, core_keys
 from maxitor.core.plugins.events import (
@@ -24,6 +27,7 @@ from maxitor.core.plugins.events import (
     PluginInstalledEvent,
     VersionDeployedEvent,
 )
+from maxitor.core.plugins.frontend_builder import core_version
 from maxitor.core.plugins.installer_role import InstallerRole
 from maxitor.core.plugins.plugins_domain import PluginsDomain
 from maxitor.core.plugins.scram import scram_verifier
@@ -47,6 +51,19 @@ from aoa.action_machine.runtime.tools_box import ToolsBox
 
 #: What may go wrong while a version is read or built; anything else is a fault of the installer itself.
 DEPLOY_FAILURES = (HandleError, WheelRefusedError, PluginSchemaError, CoreKeysError, ValueError, OSError)
+
+
+class FrontendNotBuiltError(ValueError):
+    """The version's frontend has no built build for the running core version; the message says why."""
+
+
+def frontend_problem(build: dict[str, Any] | None, core: str) -> str | None:
+    """Why a version cannot be deployed for want of its frontend's build, or ``None`` when it is built."""
+    if build is None or build["state"] == "building":
+        return f"the frontend is not built for the core {core}"
+    if build["state"] == "failed":
+        return f"the frontend could not be built for the core {core}: {build['error']}"
+    return None
 
 
 class DeployParams(BaseParams):
@@ -111,6 +128,10 @@ class DeployAndInstallAction(BaseAction[DeployParams, DeployResult]):
             if not await store.try_claim(f"install:{params.row_id}"):
                 return "busy"
             await store.version_lock(version["id"])
+            core = core_version()
+            problem = frontend_problem(await store.build(version["id"], core), core)
+            if problem:
+                raise FrontendNotBuiltError(problem)
             current = await store.version(version["id"])
             built = current is not None and current["schema_name"] is None
             if built:
@@ -215,5 +236,7 @@ class DeployAndInstallAction(BaseAction[DeployParams, DeployResult]):
 
 def _reason(error: Exception) -> str:
     """What failed, in a line a page can show; the database's own words when it was the database."""
+    if isinstance(error, FrontendNotBuiltError):
+        return str(error)[:500]
     cause = error.__cause__ if isinstance(error, HandleError) and error.__cause__ is not None else error
     return f"{type(cause).__name__}: {cause}"[:500]
