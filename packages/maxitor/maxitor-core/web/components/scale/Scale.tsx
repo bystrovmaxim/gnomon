@@ -279,6 +279,12 @@ export function Scale({
     if (a > b) [a, b] = [b, a];
     onRange({ from: momentOf(Math.min(a, now), unit), at: chosenMoment(b, watermark, unit) });
   };
+  // A and B dragged together: the stretch between them moves whole, B never past now.
+  const shift = (a: number, b: number) => {
+    if (!watermark || now === null) return;
+    const unit = unitOf(step);
+    onRange({ from: momentOf(a, unit), at: chosenMoment(b, watermark, unit) });
+  };
   const pick = (milestone: Milestone, handle: Handle) => {
     if (milestone.opens || milestone.link || !comparing || handle === "one") return onMilestone(milestone);
     const time = msOf(milestone.at);
@@ -423,6 +429,7 @@ export function Scale({
                 cardOf={cardOf}
                 onView={changeView}
                 onChoose={choose}
+                onRange={shift}
                 onMilestone={pick}
               />
             ) : (

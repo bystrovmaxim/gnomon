@@ -3,8 +3,9 @@
 // bottom: the milestones' lane — each point where it happened, from its kind —, the bars of the page's changes —
 // added green, changed amber, removed red —, the time axis with its dates, and the moment's chip. "Now" is a green
 // dashed line with nothing written on it; the future right of it is hatched. A click chooses a moment — on a point,
-// that milestone —, a drag of the handle moves it; dragging across a stretch zooms into it, the wheel zooms round the
-// pointer, Shift-wheel or a sideways swipe moves; on a phone a drag moves and two fingers pinch.
+// that milestone —, a drag of the handle moves it, a drag between A and B moves them both; dragging across a stretch
+// zooms into it, the wheel zooms round the pointer, Shift-wheel or a sideways swipe moves; on a phone a drag moves and
+// two fingers pinch.
 "use client";
 
 import type { Bar, CardBlock, Milestone } from "@maxitor/panel/history";
@@ -30,6 +31,8 @@ const NEAR_POINT = 8;
 const CLICK = 6;
 /** The time "now" is said for: within a second of the watermark. */
 const NOW_SLACK = 1000;
+/** A's knob stands this far under the top edge, so a short stem parts it from its chip above. */
+const A_KNOB = 10;
 
 /** A handle of the scale: the one moment, or A and B of a comparison. */
 export type Handle = "one" | "a" | "b";
@@ -37,6 +40,7 @@ export type Handle = "one" | "a" | "b";
 type Drag =
   | { kind: "handle"; handle: Handle; time: number }
   | { kind: "brush"; x0: number; x1: number }
+  | { kind: "range"; x0: number; a: number; b: number; shift: number; moved: boolean }
   | { kind: "pan"; x0: number; view: View; moved: boolean }
   | { kind: "pinch"; distance: number; view: View; centre: number };
 
@@ -55,6 +59,7 @@ export function Track({
   cardOf,
   onView,
   onChoose,
+  onRange,
   onMilestone,
 }: {
   view: View;
@@ -80,6 +85,8 @@ export function Track({
   onView: (view: View, glide: boolean) => void;
   /** A handle was moved to this time — the one moment, or A or B —; the card decides whether it is now. */
   onChoose: (time: number, handle: Handle) => void;
+  /** A and B were dragged together, the stretch between them kept: their new times. */
+  onRange: (a: number, b: number) => void;
   /** A milestone was chosen; in a comparison, for the handle nearer to it. */
   onMilestone: (milestone: Milestone, handle: Handle) => void;
 }) {
@@ -134,18 +141,19 @@ export function Track({
   // The handles where they stand, the one being dragged where the pointer is.
   const times: Partial<Record<Handle, number>> = against === null ? { one: shown } : { a: against, b: shown };
   if (drag?.kind === "handle") times[drag.handle] = drag.time;
-  const nearHandle = (x: number): Handle | null => {
-    let best: Handle | null = null;
-    let distance = NEAR;
-    for (const [handle, time] of Object.entries(times) as [Handle, number][]) {
-      const d = Math.abs(X(time) - x);
-      if (d < distance) {
-        distance = d;
-        best = handle;
-      }
-    }
-    return best;
+  if (drag?.kind === "range") {
+    times.a = drag.a + drag.shift;
+    times.b = drag.b + drag.shift;
+  }
+  // A's knob stands near the top edge and B's on the axis, so when the two meet the upper half grabs A and the lower B.
+  const nearHandle = (x: number, y: number): Handle | null => {
+    const near = (Object.entries(times) as [Handle, number][]).filter(([, time]) => Math.abs(X(time) - x) < NEAR);
+    if (near.length === 2) return y < (TOP + base) / 2 ? "a" : "b";
+    if (near.length === 0) return null;
+    return near.reduce((best, next) => (Math.abs(X(next[1]) - x) < Math.abs(X(best[1]) - x) ? next : best))[0];
   };
+  /** Whether an x lies between A and B, where a drag moves them both. */
+  const inRange = (x: number): boolean => against !== null && x > Math.min(X(against), X(shown)) && x < Math.max(X(against), X(shown));
   /** The handle a click at a time moves: the one moment, or the nearer of A and B. */
   const nearer = (time: number): Handle => (against === null ? "one" : Math.abs(time - against) < Math.abs(time - shown) ? "a" : "b");
 
@@ -158,8 +166,9 @@ export function Track({
       setDrag({ kind: "pinch", distance: Math.max(1, Math.abs(a - b)), view, centre: T((a + b) / 2) });
       return;
     }
-    const grabbed = nearHandle(x);
+    const grabbed = nearHandle(x, localY(event.currentTarget, event.clientY));
     if (grabbed) setDrag({ kind: "handle", handle: grabbed, time: T(x) });
+    else if (!phone && against !== null && inRange(x)) setDrag({ kind: "range", x0: x, a: Math.min(against, shown), b: Math.max(against, shown), shift: 0, moved: false });
     else if (phone) setDrag({ kind: "pan", x0: x, view, moved: false });
     else setDrag({ kind: "brush", x0: x, x1: x });
   };
@@ -176,7 +185,10 @@ export function Track({
       onView(zoomView(drag.view, drag.centre, drag.distance / Math.max(1, Math.abs(a - b)), domain), false);
     } else if (drag.kind === "handle") setDrag({ ...drag, time: Math.min(Math.max(T(x), domain.from), now) });
     else if (drag.kind === "brush") setDrag({ ...drag, x1: x });
-    else {
+    else if (drag.kind === "range") {
+      const shift = Math.min(Math.max(T(x) - T(drag.x0), domain.from - drag.a), now - drag.b);
+      setDrag({ ...drag, shift, moved: drag.moved || Math.abs(x - drag.x0) > CLICK });
+    } else {
       const dx = x - drag.x0;
       const moved = drag.moved || Math.abs(dx) > 3;
       if (moved) onView(moveView(drag.view, (-dx / width) * (drag.view.to - drag.view.from), domain), false);
@@ -190,6 +202,7 @@ export function Track({
     if (!was || was.kind === "pinch") return;
     const x = localX(event.currentTarget, event.clientX);
     if (was.kind === "handle") return onChoose(was.time, was.handle);
+    if (was.kind === "range" && was.moved) return onRange(was.a + was.shift, was.b + was.shift);
     if (was.kind === "brush" && Math.abs(was.x1 - was.x0) > CLICK) return onView({ from: T(Math.min(was.x0, was.x1)), to: T(Math.max(was.x0, was.x1)) }, true);
     if (was.kind === "pan" && was.moved) return;
     const y = localY(event.currentTarget, event.clientY);
@@ -217,7 +230,7 @@ export function Track({
   return (
     <div
       ref={box}
-      className={`mx-track${drag && drag.kind !== "brush" ? " grabbing" : ""}`}
+      className={`mx-track${drag && drag.kind !== "brush" && !(drag.kind === "range" && !drag.moved) ? " grabbing" : ""}${!drag && hover && !phone && inRange(hover.x) && nearHandle(hover.x, hover.y) === null ? " over-range" : ""}`}
       style={{ height }}
       onPointerDown={down}
       onPointerMove={move}
@@ -318,9 +331,9 @@ export function Track({
         })}
         {nowX >= 0 && nowX <= width ? <line x1={nowX} y1={TOP} x2={nowX} y2={base} className="mx-track-now" /> : null}
         {hover && !drag && !inLane ? <line x1={hover.x} y1={TOP} x2={hover.x} y2={base} className="mx-track-hover" /> : null}
-        {times.one !== undefined ? <HandleMark x={X(times.one)} width={width} top={TOP} base={base} chipY={base + DATES + CHIP - 13} text={label(times.one)} hollow={false} shadow={`${hatch}-shadow`} /> : null}
-        {times.a !== undefined ? <HandleMark x={X(times.a)} width={width} top={TOP} base={base} chipY={TOP - 11} text={`A ${label(times.a)}`} hollow shadow={`${hatch}-shadow`} /> : null}
-        {times.b !== undefined ? <HandleMark x={X(times.b)} width={width} top={TOP} base={base} chipY={base + DATES + CHIP - 13} text={`B ${label(times.b)}`} hollow={false} shadow={`${hatch}-shadow`} /> : null}
+        {times.one !== undefined ? <HandleMark x={X(times.one)} width={width} top={TOP} base={base} knobY={base} chipY={base + DATES + CHIP - 13} text={label(times.one)} hollow={false} shadow={`${hatch}-shadow`} /> : null}
+        {times.a !== undefined ? <HandleMark x={X(times.a)} width={width} top={TOP} base={base} knobY={TOP + A_KNOB} chipY={TOP - 11} text={`A ${label(times.a)}`} hollow shadow={`${hatch}-shadow`} /> : null}
+        {times.b !== undefined ? <HandleMark x={X(times.b)} width={width} top={TOP} base={base} knobY={base} chipY={base + DATES + CHIP - 13} text={`B ${label(times.b)}`} hollow={false} shadow={`${hatch}-shadow`} /> : null}
         {brush ? <rect x={brush.from} y={TOP} width={brush.to - brush.from} height={base - TOP} className="mx-track-brush" /> : null}
       </svg>
       {hoveredPoint ? (
@@ -404,9 +417,9 @@ function barAt(bars: Bar[], time: number, step: number): Bar | null {
   return null;
 }
 
-/** A moment's handle: a line through the body, a knob on the axis and a dark chip under the dates — A's hollow, its chip
-    above —; a chip at the edge, pointing out, when the moment is outside the stretch in view. */
-function HandleMark({ x, width, top, base, chipY, text, hollow, shadow }: { x: number; width: number; top: number; base: number; chipY: number; text: string; hollow: boolean; shadow: string }) {
+/** A moment's handle: a line through the body, a knob and a dark chip under the dates — A's hollow, its knob near the top
+    edge and its chip above —; a chip at the edge, pointing out, when the moment is outside the stretch in view. */
+function HandleMark({ x, width, top, base, knobY, chipY, text, hollow, shadow }: { x: number; width: number; top: number; base: number; knobY: number; chipY: number; text: string; hollow: boolean; shadow: string }) {
   const out = x < 0 || x > width;
   const shown = out ? `${x < 0 ? "‹ " : ""}${text}${x > width ? " ›" : ""}` : text;
   const chipWidth = shown.length * 6.1 + 16;
@@ -416,7 +429,7 @@ function HandleMark({ x, width, top, base, chipY, text, hollow, shadow }: { x: n
       {out ? null : (
         <>
           <line x1={x} y1={top} x2={x} y2={base} className="mx-track-handle" />
-          <circle cx={x} cy={base} r={5.5} className={`mx-track-knob${hollow ? " hollow" : ""}`} filter={`url(#${shadow})`} />
+          <circle cx={x} cy={knobY} r={5.5} className={`mx-track-knob${hollow ? " hollow" : ""}`} filter={`url(#${shadow})`} />
         </>
       )}
       <rect x={cx - chipWidth / 2} y={chipY - 9} width={chipWidth} height={18} rx={9} className={`mx-track-chip${hollow ? " hollow" : ""}`} />

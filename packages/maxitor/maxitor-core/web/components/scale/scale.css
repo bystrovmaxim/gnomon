@@ -59,6 +59,7 @@
 
 /* the scale */
 .mx-track { position: relative; cursor: crosshair; touch-action: none; user-select: none; }
+.mx-track.over-range { cursor: grab; }
 .mx-track.grabbing { cursor: grabbing; }
 .mx-track-svg { display: block; overflow: hidden; }
 .mx-track-hatch { stroke: var(--mx-scale-hatch); stroke-width: 2.5; }
