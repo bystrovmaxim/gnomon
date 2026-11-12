@@ -3009,7 +3009,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "created_at",
-        "ordinal": 12
+        "ordinal": 11
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
@@ -3137,18 +3137,6 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:room",
-      "is_dag": false,
-      "properties": {
-        "field_name": "room",
-        "ordinal": 11
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
-      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:room",
-      "type": "entity_field"
-    },
-    {
       "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:title",
       "is_dag": false,
       "properties": {
@@ -3165,7 +3153,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "updated_at",
-        "ordinal": 13
+        "ordinal": 12
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
@@ -3467,7 +3455,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "checked_at",
-        "ordinal": 10
+        "ordinal": 12
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3491,7 +3479,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "created_at",
-        "ordinal": 12
+        "ordinal": 14
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3503,7 +3491,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "database_user",
-        "ordinal": 8
+        "ordinal": 10
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3515,11 +3503,35 @@
       "is_dag": false,
       "properties": {
         "field_name": "deployed_at",
-        "ordinal": 9
+        "ordinal": 11
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
       "target_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity:deployed_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginVersionCoreEntity:history_actions",
+      "is_dag": false,
+      "properties": {
+        "field_name": "history_actions",
+        "ordinal": 5
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity:history_actions",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity|entity_field|maxitor.core.plugins.entities.PluginVersionCoreEntity:history_compare",
+      "is_dag": false,
+      "properties": {
+        "field_name": "history_compare",
+        "ordinal": 6
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity:history_compare",
       "type": "entity_field"
     },
     {
@@ -3551,7 +3563,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "reason",
-        "ordinal": 6
+        "ordinal": 8
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3563,7 +3575,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "schema_name",
-        "ordinal": 7
+        "ordinal": 9
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3575,7 +3587,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "service_key_hash",
-        "ordinal": 11
+        "ordinal": 13
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3599,7 +3611,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "state",
-        "ordinal": 5
+        "ordinal": 7
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -3611,7 +3623,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "updated_at",
-        "ordinal": 13
+        "ordinal": 15
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginVersionCoreEntity",
@@ -7295,17 +7307,6 @@
       "type": "EntityField"
     },
     {
-      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:room",
-      "label": "room",
-      "properties": {
-        "description": "The page's behaviour with other people as the file writes it, as JSON",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
       "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:title",
       "label": "title",
       "properties": {
@@ -7486,6 +7487,28 @@
         "description": "When it was deployed; empty before",
         "field_annotation": "Union[datetime, NoneType]",
         "field_type": "datetime | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity:history_actions",
+      "label": "history_actions",
+      "properties": {
+        "description": "The names of the actions its wheel holds: what a page's history may name; empty until checked",
+        "field_annotation": "Union[list[str], NoneType]",
+        "field_type": "str[] | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginVersionCoreEntity:history_compare",
+      "label": "history_compare",
+      "properties": {
+        "description": "The comparisons its passport's history offers, which a page narrows; empty until checked",
+        "field_annotation": "Union[list[str], NoneType]",
+        "field_type": "str[] | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
