@@ -93,19 +93,31 @@ export function Frame({
   );
 
   const back = levels.length ? () => setLevels((was) => was.slice(0, -1)) : null;
-  const stepTo = useCallback((index: number) => setLevels((was) => was.slice(0, index + 1)), []);
 
-  // The crumbs of the top row (spec 085, FR-011): the entered levels, the deepest last, then the open page — never a
-  // node that was only passed through by expanding. The organization stands at the head of the row as its own crumb.
+  // The entered levels on the line of the open page, the deepest last: what the crumbs name. They follow the page,
+  // not where the panel stands, so entering Settings while a note's page is open never names Settings over it.
+  const pageLevels = useMemo<Level[]>(
+    () => (opened ? enteredLine(nodes, opened.node).map((node) => ({ node, scope: opened.scope, title: levelTitle(node, opened.scope, titles) })) : []),
+    [nodes, opened, titles],
+  );
+  // A crumb steps the panel out to its level of the page's line; with no page open the crumbs are the panel's levels.
+  const stepTo = useCallback(
+    (index: number) => setLevels((was) => (opened ? pageLevels : was).slice(0, index + 1)),
+    [opened, pageLevels],
+  );
+
+  // The crumbs of the top row (spec 085, FR-011): the entered levels above the open page, the deepest last, then the
+  // page — never a node that was only passed through by expanding. The organization stands at the head of the row.
   const path = useMemo(() => {
-    const steps: { title: string; level: number | null }[] = levels.map((level, index) => ({ title: level.title, level: index }));
-    // The page of the node at the head of the panel is that node's crumb already: it is not named twice.
-    const head = levels.length ? levels[levels.length - 1] : null;
+    const line = opened ? pageLevels : levels;
+    const steps: { title: string; level: number | null }[] = line.map((level, index) => ({ title: level.title, level: index }));
+    // The page of the node at the head of the line is that node's crumb already: it is not named twice.
+    const head = line.length ? line[line.length - 1] : null;
     if (opened && opened.node.name !== head?.node.name) {
       steps.push({ title: title || levelTitle(opened.node, opened.scope, titles), level: null });
     }
     return steps;
-  }, [levels, opened, title, titles]);
+  }, [levels, opened, pageLevels, title, titles]);
 
   // Another organization opens the same page, or its root when the page is not there: the tree decides there.
   const switchTo = (code: string) => (address?.owner ? windowAddress(code, address.owner, address.path, address.query, address.at) : `/w/${code}`);

@@ -488,6 +488,10 @@ await scenario("a node that is entered holds its children only; its head, its cr
   await page.locator(".mx-level-head").waitFor({ state: "detached" });
   await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).waitFor();
   expect(page.url().includes(`/notes/items/${ITEM}`), "Back changed the address");
+  // Entering Settings with a note's page open keeps the crumbs on the page's own line: Settings is not over it.
+  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).click();
+  await page.locator(".mx-level-head", { hasText: "Settings" }).waitFor();
+  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Draft", "the crumbs name Settings over a page of Notes");
 });
 
 await scenario("the tree's head: collapse folds the tree, the arrow is Back and steps out of the entered level", async () => {

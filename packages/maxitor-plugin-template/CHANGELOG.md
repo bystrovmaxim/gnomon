@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **Its section is entered.** `navigation.yaml` is navigation format 4: Notes says `opens: enter`, so the left panel holds the items only with Notes at its head, and an item says `opens: expand`, so its two pages appear under it inside that level. The plugin needs Maxitor 4.10, the first core that reads format 4. ([#122](https://github.com/bystrovmaxim/gnomon/issues/122))
+- **Draft before the first publication.** Its head says nothing is published yet instead of naming a revision that does not exist. ([#122](https://github.com/bystrovmaxim/gnomon/issues/122))
 
 ## [0.13.0] — 2026-11-12
 
