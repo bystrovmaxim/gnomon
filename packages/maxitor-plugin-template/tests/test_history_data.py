@@ -172,7 +172,8 @@ def test_the_pages_give_their_history_and_the_passport_its_comparisons() -> None
     history = (PACKAGE.parents[1] / "web" / "app" / "[org]" / "notes" / "history.ts").read_text()
     assert 'milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS' in history
     assert "published:" in history and "rollback:" in history and "small:" not in history and "flag:" not in history
-    assert "history={{ compare: [] }}" in (web / "DraftView.tsx").read_text()
+    assert "history={DRAFT_HISTORY}" in (web / "DraftView.tsx").read_text()
+    assert 'kinds: NOTE_KINDS, compare: ["diff"]' in (PACKAGE.parents[1] / "web" / "app" / "[org]" / "notes" / "history.ts").read_text()
     assert "history" not in (PACKAGE / "navigation.yaml").read_text().replace("# The page's controls and its history", "")
     assert {path.name for path in (PACKAGE / "history").glob("*_action.py")} == {"list_note_history_action.py", "note_milestone_card_action.py"}
 

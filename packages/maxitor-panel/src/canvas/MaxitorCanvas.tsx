@@ -28,6 +28,8 @@ type CanvasApi = {
   fit: (bounds?: Bounds) => void;
   /** Bring a canvas point to the middle. */
   show: (point: Point) => void;
+  /** Bring an anchor into the middle, keeping the zoom, with the glide of 450 ms; false when the canvas does not hold it. */
+  bring: (anchor: string) => boolean;
   toCanvas: (screen: Point) => Point;
   toScreen: (point: Point) => Point;
 };
@@ -142,9 +144,11 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
       },
       toCanvas: (screen) => toCanvas(camera, screen),
       toScreen: (point) => toScreen(camera, point),
+      bring: (anchor) => bringRef.current(anchor),
     }),
     [camera, fitTo, size, viewport],
   );
+  const bringRef = useRef<(anchor: string) => boolean>(() => false);
 
   // A glide of the camera to a target, 450 ms eased, as the graph viewer brings an element into view.
   const glideFrame = useRef(0);
@@ -167,6 +171,7 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
 
   const panel = usePanelOrNull();
   const pointer = useAnchors({ field, panel, api, size, glideTo, touch: () => void (touched.current = true) });
+  bringRef.current = pointer.bring;
   const pressedAt = useRef<Point | null>(null);
 
   const middle = useCallback(() => {

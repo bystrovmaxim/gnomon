@@ -117,5 +117,19 @@ export function useAnchors({
   });
 
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
-  return { over, chose };
+
+  // The page's own step: bring an anchor it holds to the middle and light it.
+  const bring = useCallback(
+    (anchor: string) => {
+      const bounds = where(anchor);
+      if (!bounds) return false;
+      const { width, height } = size();
+      touch();
+      glideTo(centreOn(latest.current.camera, { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }, width, height));
+      setMarked(anchor);
+      return true;
+    },
+    [glideTo, size, touch, where],
+  );
+  return { over, chose, bring };
 }

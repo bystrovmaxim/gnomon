@@ -12,10 +12,14 @@ type Props = { params: Promise<{ org: string; item_id: string }>; searchParams: 
 
 export default async function DraftPage({ params, searchParams }: Props) {
   const { org, item_id } = await params;
-  const at = momentFrom(await searchParams) ?? undefined;
-  const [draft, published] = await Promise.all([
+  const query = await searchParams;
+  const at = momentFrom(query) ?? undefined;
+  // In Diff the core gives the other moment as _against: the draft then is read too (spec 079, FR-019).
+  const against = query._against;
+  const [draft, published, other] = await Promise.all([
     read<{ revision: Revision | null; changes: Change[] }>(org, `/items/${encodeURIComponent(item_id)}/draft`, { at }),
     read<{ revision: Revision | null; notes: PublishedNote[] }>(org, `/items/${encodeURIComponent(item_id)}/published`, { at }),
+    against ? read<{ revision: Revision | null; changes: Change[] }>(org, `/items/${encodeURIComponent(item_id)}/draft`, { at: against }) : null,
   ]);
   return (
     <DraftView
@@ -25,6 +29,7 @@ export default async function DraftPage({ params, searchParams }: Props) {
       changes={draft?.changes ?? []}
       published={published?.notes ?? []}
       publishedRevision={published?.revision ?? null}
+      other={against ? (other?.changes ?? []) : null}
     />
   );
 }

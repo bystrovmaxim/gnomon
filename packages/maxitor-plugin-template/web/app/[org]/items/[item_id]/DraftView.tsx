@@ -3,11 +3,13 @@
 // change that meets someone else's publication is marked and resolved in the publishing dialog.
 "use client";
 
-import { Dialog, MaxitorCanvas, PanelPage, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
+import { ChangeStepper, countsOf, Dialog, DiffCard, MaxitorCanvas, PanelPage, useCounts, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { call } from "../../notes/api";
+import { compareNotes } from "../../notes/compare";
+import { DRAFT_HISTORY } from "../../notes/history";
 import {
   baseLine,
   choiceLabel,
@@ -63,6 +65,7 @@ export function DraftView({
   changes,
   published,
   publishedRevision,
+  other,
 }: {
   org: string;
   itemId: string;
@@ -70,10 +73,21 @@ export function DraftView({
   changes: Change[];
   published: PublishedNote[];
   publishedRevision: Revision | null;
+  /** In Diff, the draft at the other moment; null at one moment. */
+  other: Change[] | null;
 }) {
   const query = usePanelQuery();
-  const { at } = query;
-  const now = !at;
+  const { at, paint } = query;
+  const now = !at && other === null;
+  // Diff: what happened to each change of the draft between A and B — B's draft against A's —, stepped with its card.
+  const asNote = (change: Change) => ({ id: change.note_id, writer_name: change.writer_name, body: `${change.state}|${change.body}` });
+  const compared = compareNotes(changes.map(asNote), other ? other.map(asNote) : null, null);
+  const [position, setPosition] = useState<number | null>(null);
+  useEffect(() => setPosition(null), [at, other === null]);
+  const step = position === null ? null : compared.steps[position] ?? null;
+  const stepChange = step ? changes.find((change) => `note:${change.note_id}` === step.key) ?? other?.find((change) => `note:${change.note_id}` === step.key) ?? null : null;
+  const wasChange = stepChange ? other?.find((change) => change.note_id === stepChange.note_id) ?? null : null;
+  useCounts(other !== null ? countsOf(compared.steps) : null);
   const stateParam = typeof query.state === "string" ? query.state : undefined;
   const editId = typeof query.edit === "string" ? query.edit : null;
   const router = useRouter();
@@ -206,14 +220,26 @@ export function DraftView({
   return (
     <PanelPage
       title="Draft"
-      // The draft is a comparison already: it offers one moment only.
-      history={{ compare: [] }}
+      history={DRAFT_HISTORY}
+      stepper={other !== null ? <ChangeStepper entries={compared.steps} position={position} onGo={setPosition} /> : undefined}
       filters={[{ title: "State", param: "state", rows: stateRows(changes) }]}
       actions={[
         { title: "New note", icon: "plus", onClick: () => { setWriting(true); setSaid(""); } },
         { title: "Publish", onClick: () => openPublishing() },
       ]}
     >
+      {stepChange && step ? (
+        <DiffCard
+          target={{
+            title: stepChange.writer_name,
+            status: step.status,
+            differences: step.status === "changed" ? [{ path: ["text"], change: "changed", before: wasChange?.body, after: stepChange.body }] : undefined,
+            note: step.status !== "changed" ? stepChange.body : undefined,
+          }}
+          at={{ x: 16, y: 56 }}
+          onClose={() => setPosition(null)}
+        />
+      ) : null}
       <MaxitorCanvas bounds={bounds} label="Draft">
         <DraftHead revision={revision} changes={changes} />
         {race ? (
@@ -227,7 +253,7 @@ export function DraftView({
             </span>
           </div>
         ) : null}
-        <div className="mx-cards nt-grid" style={{ top: gridTop, width: below.width }}>
+        <div className="mx-cards nt-grid" style={{ top: gridTop, width: below.width }} data-paint={other !== null && (paint ?? "change") === "change" ? "changes" : undefined}>
           {visible.length === 0 && !editingShown ? (
             <div className="mx-empty-state" style={{ margin: 0, maxWidth: "none" }}>
               <b>{changes.length ? "Nothing to show" : "Your draft is empty"}</b>
@@ -241,6 +267,7 @@ export function DraftView({
                 key={`${change.note_id}:${change.changed_at}`}
                 className={`mx-card nt-card nt-state-${change.state}${change.conflict ? " meets" : ""}`}
                 data-room-anchor={`note:${change.note_id}`}
+                data-change={compared.status.get(change.note_id)}
               >
                 <div className="mx-card-head">
                   <b>{change.writer_name}</b>

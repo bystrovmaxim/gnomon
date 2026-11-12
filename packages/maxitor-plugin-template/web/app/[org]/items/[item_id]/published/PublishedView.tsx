@@ -1,13 +1,16 @@
 // web/app/[org]/items/[item_id]/published/PublishedView.tsx — Published on the canvas: everyone's notes of the
 // revision in force, read only, with the Authors filter; Edit and Delete act in the person's own draft, and a note
-// waiting there is marked. In the past the page is read only and has no tools.
+// waiting there is marked. In the past the page is read only and has no tools. In a comparison (spec 079, 1.5) each
+// note wears what happened to it between A and B — its halo, the rest faded while the changes paint —, the filter adds
+// Changes, the stepper walks the changes with each one's card, and the counts go to the pill.
 "use client";
 
-import { DataTable, Dialog, MaxitorCanvas, PanelPage, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
+import { ChangeStepper, countsOf, DataTable, Dialog, DiffCard, MaxitorCanvas, PanelPage, useCanvas, useCounts, useMoment, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { call } from "../../../notes/api";
+import { compareNotes } from "../../../notes/compare";
 import { PUBLISHED_HISTORY } from "../../../notes/history";
 import { marksInDraft, STATE_LABEL, type Change } from "../../../notes/draft";
 import { DraftIcon } from "../../../notes/marking";
@@ -27,16 +30,20 @@ export function PublishedView({
   revision,
   notes,
   changes,
+  other,
 }: {
   org: string;
   itemId: string;
   revision: Revision | null;
   notes: PublishedNote[];
   changes: Change[];
+  /** The notes at the other moment of a comparison; null at one moment. */
+  other: PublishedNote[] | null;
 }) {
   const query = usePanelQuery();
-  const { view = "cards", at, author } = query;
-  const now = !at;
+  const { view = "cards", at, author, change, paint } = query;
+  const { side } = useMoment();
+  const now = !at && other === null;
   const router = useRouter();
   const panelRouter = usePanelRouter();
   const path = usePanelPath();
@@ -49,7 +56,19 @@ export function PublishedView({
   const marks = marksInDraft(changes);
   const authors = [...new Map(notes.map((note) => [note.writer_id, note.writer_name])).entries()];
   const chosen = author ? new Set(author.split(",").filter(Boolean)) : null;
-  const shown = chosen ? notes.filter((note) => chosen.has(note.writer_id)) : notes;
+  // A comparison: what happened to each note, the notes B lost drawn as ghosts in Diff, and the steps through them.
+  const compared = compareNotes(notes, other, side);
+  const changesChosen = change ? new Set(change.split(",").filter(Boolean)) : null;
+  const all = [...notes, ...compared.ghosts];
+  const shown = all.filter((note) => (!chosen || chosen.has(note.writer_id)) && (!changesChosen || changesChosen.has(compared.status.get(note.id) ?? "")));
+  const statusOf = (note: PublishedNote) => compared.status.get(note.id);
+  const paintChanges = other !== null && (paint ?? "change") === "change";
+  const [position, setPosition] = useState<number | null>(null);
+  useEffect(() => setPosition(null), [at, other === null]);
+  const step = position === null ? null : compared.steps[position] ?? null;
+  const stepNote = step ? all.find((note) => `note:${note.id}` === step.key) ?? null : null;
+  const wasBody = stepNote ? other?.find((note) => note.id === stepNote.id)?.body : undefined;
+  useCounts(other !== null && side !== "a" ? countsOf(compared.steps) : null);
   const below = cardsBounds(Math.max(shown.length, 1));
   const bounds = { x: 0, y: 0, width: below.width, height: HEAD + CARD_GAP + below.height };
 
@@ -68,14 +87,44 @@ export function PublishedView({
     <PanelPage
       title="Published"
       history={PUBLISHED_HISTORY}
+      stepper={other !== null ? <ChangeStepper entries={compared.steps} position={position} onGo={setPosition} /> : undefined}
       filters={[
-        ...(authors.length ? [{ title: "Authors", param: "author", rows: authors.map(([key, name]) => ({ key, label: name, mark: initials(name), colour: paletteOf(key) })) }] : []),
+        // A comparison's changes come first and paint by default; the halo marks a note, the rest fades.
+        ...(other !== null
+          ? [
+              {
+                title: "Changes",
+                param: "change",
+                paints: true,
+                rows: (["added", "changed", "removed", "unchanged"] as const).map((key) => ({
+                  key,
+                  label: key[0].toUpperCase() + key.slice(1),
+                  colour: ({ added: "green", changed: "amber", removed: "red", unchanged: "grey" } as const)[key],
+                  absent: ![...compared.status.values()].includes(key),
+                })),
+              },
+            ]
+          : []),
+        ...(authors.length ? [{ title: "Authors", param: "author", paints: other !== null, rows: authors.map(([key, name]) => ({ key, label: name, mark: initials(name), colour: paletteOf(key) })) }] : []),
         // Two ranges of dates, named by the table's columns: when a note was first written and when it last changed.
         { kind: "range", title: "Written", param: "written", unit: "date", presets: SINCE_FIRST(revision) },
         { kind: "range", title: "Last change", param: "changed", unit: "date", presets: SINCE_FIRST(revision) },
       ]}
     >
+      {stepNote && step ? (
+        <DiffCard
+          target={{
+            title: stepNote.writer_name,
+            status: step.status,
+            differences: step.status === "changed" ? [{ path: ["text"], change: "changed", before: wasBody, after: stepNote.body }] : undefined,
+            note: step.status !== "changed" ? stepNote.body : undefined,
+          }}
+          at={{ x: 16, y: 56 }}
+          onClose={() => setPosition(null)}
+        />
+      ) : null}
       <MaxitorCanvas bounds={bounds} label="Published">
+        <Bring anchor={step?.key ?? null} />
         <RevisionCard revision={revision} notes={notes} waiting={changes.length} onOpenDraft={openDraft} empty="Nothing is published yet: publish the draft to make the first revision." />
         {said ? <div className="nt-said nt-over" style={{ top: HEAD - 58 }}>{said}</div> : null}
         {view === "table" ? (
@@ -85,6 +134,7 @@ export function PublishedView({
             rows={shown}
             rowKey={(note) => note.id}
             anchor={(note) => `note:${note.id}`}
+            change={statusOf}
             columns={[
               { title: "Writer", kind: "person", value: (note) => note.writer_name, colour: (note) => paletteOf(note.writer_id), width: 1 },
               { title: "Note", value: (note) => note.body, width: 3 },
@@ -93,7 +143,7 @@ export function PublishedView({
             ]}
           />
         ) : (
-          <div className="mx-cards nt-grid" style={{ top: HEAD + CARD_GAP, width: below.width }}>
+          <div className="mx-cards nt-grid" style={{ top: HEAD + CARD_GAP, width: below.width }} data-paint={paintChanges ? "changes" : undefined}>
             {revision && shown.length === 0 ? (
               <div className="mx-empty-state" style={{ margin: 0, maxWidth: "none" }}>
                 <b>Nothing to show</b>The filters hide every published note.
@@ -102,7 +152,7 @@ export function PublishedView({
               shown.map((note) => {
                 const mark = marks.get(note.id);
                 return (
-                  <article key={note.id} className="mx-card nt-card" data-room-anchor={`note:${note.id}`}>
+                  <article key={note.id} className="mx-card nt-card" data-room-anchor={`note:${note.id}`} data-change={statusOf(note)}>
                     <div className="mx-card-head">
                       <b>{note.writer_name}</b>
                       <span>{note.changed_by && note.changed_by !== note.writer_name ? `changed by ${note.changed_by}` : ""}</span>
@@ -136,4 +186,16 @@ export function PublishedView({
       ) : null}
     </PanelPage>
   );
+}
+
+/** The stepper's step brought into the middle of the canvas, keeping the zoom. */
+function Bring({ anchor }: { anchor: string | null }) {
+  // Only a new step moves the camera: the canvas changes with every move, so it is read, not watched.
+  const api = useCanvas();
+  const canvas = useRef(api);
+  canvas.current = api;
+  useEffect(() => {
+    if (anchor) canvas.current.bring(anchor);
+  }, [anchor]);
+  return null;
 }

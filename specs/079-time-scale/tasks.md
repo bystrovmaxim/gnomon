@@ -110,18 +110,18 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 ## Phase 8: The past on the template's pages (issue 1.5, US7)
 
-- [ ] T046 [US7] `TPL/web/app/[org]/items/[item_id]/published/PublishedView.tsx` and `DraftView.tsx`: read at `at` from `useMoment()`; no writing, editing, deleting in the past or in a comparison; a moment past the watermark leads to now
-- [ ] T047 [US7] Comparison mode on both pages: the filter adds Changes, paint by change default, `data-paint`, the camera kept between moments
-- [ ] T048 [P] [US7] Tests: `TPL/web/tests/notes.test.ts` (read-only past)
+- [x] T046 [US7] `TPL/web/app/[org]/items/[item_id]/published/PublishedView.tsx` and `DraftView.tsx`: read at `at` from `useMoment()`; no writing, editing, deleting in the past or in a comparison; a moment past the watermark leads to now
+- [x] T047 [US7] Comparison mode on both pages: the filter adds Changes, paint by change default, `data-paint`, the camera kept between moments
+- [x] T048 [P] [US7] Tests: `TPL/web/tests/notes.test.ts` (read-only past)
 
 **Checkpoint**: commit.
 
 ## Phase 9: Comparing on the template's pages (issue 1.5, US7)
 
-- [ ] T049 [US7] Passport `TPL/src/maxitor_notes/maxitor-plugin.yaml` keeps `compare: [diff, side_by_side]`; Draft's history gives `compare: ["diff"]`
-- [ ] T050 [US7] Both pages draw from `at`, `against`, `side`: Diff and the two sides with `data-change` on each note, `data-room-anchor = note:<id>`
-- [ ] T051 [US7] A note's differences for `DiffCard` (its `body` before and after) and `ChangeStepper` grouped by the item; `panel.counts`
-- [ ] T052 [P] [US7] Tests: `TPL/web/tests/notes.test.ts` (one test per row of the context table)
+- [x] T049 [US7] Passport `TPL/src/maxitor_notes/maxitor-plugin.yaml` keeps `compare: [diff, side_by_side]`; Draft's history gives `compare: ["diff"]`
+- [x] T050 [US7] Both pages draw from `at`, `against`, `side`: Diff and the two sides with `data-change` on each note, `data-room-anchor = note:<id>`
+- [x] T051 [US7] A note's differences for `DiffCard` (its `body` before and after) and `ChangeStepper` grouped by the item; `panel.counts`
+- [x] T052 [P] [US7] Tests: `TPL/web/tests/notes.test.ts` (one test per row of the context table)
 
 **Checkpoint**: commit.
 

@@ -59,6 +59,7 @@ function Card<Row>({
   columns,
   rowKey,
   anchor,
+  change,
   at,
   empty,
 }: {
@@ -68,6 +69,7 @@ function Card<Row>({
   columns: Column<Row>[];
   rowKey: (row: Row) => string;
   anchor?: (row: Row) => string;
+  change?: (row: Row) => string | undefined;
   at: { x: number; y: number };
   empty: string;
 }) {
@@ -112,6 +114,7 @@ function Card<Row>({
             key={rowKey(row)}
             className="mx-list-row"
             data-room-anchor={anchor?.(row)}
+            data-change={change?.(row)}
             style={{ top: LIST_HEAD + (start + offset) * LIST_ROW, height: LIST_ROW, gridTemplateColumns: template }}
           >
             {columns.map((column) => (
@@ -135,6 +138,7 @@ export function DataTable<Row>({
   columns,
   rowKey,
   anchor,
+  change,
   name = "Rows",
   total,
   at = { x: 0, y: 0 },
@@ -145,13 +149,15 @@ export function DataTable<Row>({
   rowKey: (row: Row) => string;
   /** A row's anchor on every screen: what another person's pointer lands on (#76). */
   anchor?: (row: Row) => string;
+  /** In a comparison, what happened to a row between A and B: its halo, and its fading while the changes paint. */
+  change?: (row: Row) => "added" | "changed" | "removed" | "unchanged" | undefined;
   name?: string;
   total?: number;
   at?: { x: number; y: number };
   empty?: string;
 }) {
   const canvas = useCanvasOrNull();
-  const card = <Card name={name} rows={rows} total={total ?? rows.length} columns={columns} rowKey={rowKey} anchor={anchor} at={at} empty={empty} />;
+  const card = <Card name={name} rows={rows} total={total ?? rows.length} columns={columns} rowKey={rowKey} anchor={anchor} change={change} at={at} empty={empty} />;
   if (canvas) return card;
   // Alone on a page: the list lays its own canvas, opened on its head and first rows.
   const shown = { x: at.x, y: at.y, width: LIST_WIDTH, height: Math.min(listHeight(rows.length), LIST_HEAD + 16 * LIST_ROW) };

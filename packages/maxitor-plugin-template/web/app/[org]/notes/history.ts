@@ -16,3 +16,6 @@ export const NOTE_KINDS: Record<string, Kind> = {
 
 /** Published on the scale: its publications as points, each with its card. */
 export const PUBLISHED_HISTORY: PageHistory = { milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS };
+
+/** Draft on the scale: the same publications, and Diff alone — the draft is a comparison with Published already. */
+export const DRAFT_HISTORY: PageHistory = { milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS, compare: ["diff"] };
