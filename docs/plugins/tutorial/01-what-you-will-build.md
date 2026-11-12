@@ -30,7 +30,7 @@ Create an account, register an organization, install Notes in Settings → Plugi
 That answer came from the template's backend in its own container, through the gateway, with your sign-in. The installer's log shows the frontend's build before the deployment:
 
 ```text
-The frontend of io.github.bystrovmaxim.notes 0.10.0 built for the core 4.5.0 as maxitor-plugin/notes_0_10_0-frontend:<sha12>-4.5.0
+The frontend of io.github.bystrovmaxim.notes 0.11.0 built for the core 4.7.0 as maxitor-plugin/notes_0_11_0-frontend:<sha12>-4.7.0
 ```
 
 The next chapters build exactly that.

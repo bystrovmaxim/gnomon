@@ -36,7 +36,7 @@ def test_a_page_that_places_an_element_fixed_is_refused(plugin) -> None:
 8. **Its frontend builds the way Maxitor builds it.** `maxitor plugin build` runs the installer's own step: the core's `@maxitor/panel` in place of the plugin's, only packages on the core's npm list, no network while the plugin's code runs. The plugin's CI runs it with the core at the lower and at the upper bound of `requires.maxitor`; the template's CI does both — the check run with the checkout's core, the job `template-lower-bound` with the newest release of the lowest minor the range allows:
 
 ```bash
-uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.5.0
+uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.7.0
 ```
 
 9. **Its filters read the address the way the shell writes it.** A range of dates is `from..to` with bounds that may move with today; a test of the page's filtering reads `?written=now-30d..now` on a fixed day and expects exactly the notes of those 30 days, and a note with no date only while both ends are open — `inRange` of `@maxitor/panel` gives the same answer the core's test list relies on:
@@ -45,6 +45,8 @@ uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core
 import { inRange, readRange } from "@maxitor/panel";
 assert.equal(inRange("2026-09-01", readRange("now-90d..now"), "2026-11-10"), true);
 ```
+
+10. **Its pages give their history, and its tree holds nothing else.** `test_history_data.py` reads the history each page gives in its code and the passport's comparisons; `test_navigation.py` adds `history` or `room` to a page's node and sees it refused by name.
 
 ## Run them
 
