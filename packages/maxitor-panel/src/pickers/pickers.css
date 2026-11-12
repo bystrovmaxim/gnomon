@@ -1,0 +1,73 @@
+/* @maxitor/panel — the date pickers (spec 081): Apple's layout in Maxitor's colours, type and sizes, as the mockup of
+   spec 079 draws them; a sheet from below on a phone. Drawn with @maxitor/tokens only. */
+.mx-cal { position: fixed; z-index: var(--mx-layer-shell-pop); display: flex; background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-lg); box-shadow: var(--mx-shadow-pop); font-family: var(--mx-font); font-size: var(--mx-text-sm); color: var(--mx-ink); overflow: hidden; }
+.mx-cal button, .mx-cal input { font: inherit; color: inherit; }
+.mx-cal-presets { width: var(--mx-cal-presets); flex-shrink: 0; background: var(--mx-cal-side); border-right: var(--mx-line-width) solid var(--mx-line-2); padding: var(--mx-space-5) var(--mx-space-3); display: flex; flex-direction: column; gap: var(--mx-space-1); }
+.mx-cal-presets button { text-align: left; border: 0; background: transparent; border-radius: var(--mx-radius-sm); height: var(--mx-control); padding: 0 var(--mx-space-4); color: var(--mx-ink-3); cursor: pointer; white-space: nowrap; }
+.mx-cal-presets button:hover { background: var(--mx-hover); }
+.mx-cal-presets button.on { background: var(--mx-cal-accent); color: var(--mx-on-ink); }
+.mx-cal-presets-line { height: var(--mx-line-width); background: var(--mx-line-2); margin: var(--mx-space-3) var(--mx-space-4); flex-shrink: 0; }
+.mx-cal-main { width: var(--mx-cal-main); padding: var(--mx-space-5) var(--mx-space-5) 0; display: flex; flex-direction: column; gap: var(--mx-space-5); }
+.mx-cal.single .mx-cal-main { width: var(--mx-cal-main-one); }
+.mx-cal-fields { display: flex; align-items: flex-start; gap: var(--mx-space-4); }
+.mx-cal-arrow { padding-top: var(--mx-space-7); color: var(--mx-faint); }
+.mx-cal-field { flex: 1; min-width: 0; }
+.mx-cal-field label { display: block; font-size: var(--mx-text-xs); color: var(--mx-muted); margin: 0 0 var(--mx-space-1) var(--mx-space-1); }
+.mx-cal-field-box { display: flex; align-items: center; height: var(--mx-cal-field); border: var(--mx-line-width) solid var(--mx-line-3); border-radius: var(--mx-radius-md); background: var(--mx-surface); padding: 0 var(--mx-space-2) 0 var(--mx-space-5); }
+.mx-cal-field.on .mx-cal-field-box { border-color: var(--mx-ink); box-shadow: 0 0 0 var(--mx-ring) var(--mx-selected); }
+.mx-cal-field-box input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); font-variant-numeric: tabular-nums; }
+.mx-cal-field-box input::placeholder { font-weight: normal; color: var(--mx-faint); }
+.mx-cal-field-box button { width: var(--mx-control-sm); height: var(--mx-control-sm); border: 0; border-radius: var(--mx-radius-sm); background: transparent; color: var(--mx-faint); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.mx-cal-field-box button:hover:not(:disabled) { background: var(--mx-hover); color: var(--mx-ink-3); }
+.mx-cal-field-box button.on { color: var(--mx-cal-link); }
+.mx-cal-field-box button:disabled { opacity: 0.35; cursor: default; }
+.mx-cal-field i { display: block; font-style: normal; font-size: var(--mx-text-xs); color: var(--mx-cal-link); margin: var(--mx-space-1) 0 0 var(--mx-space-1); min-height: var(--mx-text-md); }
+.mx-cal-months { display: grid; grid-template-columns: 1fr 1fr; gap: var(--mx-space-7); }
+.mx-cal-months.one { display: block; }
+.mx-cal-head { display: flex; align-items: center; height: var(--mx-control); margin-bottom: var(--mx-space-1); }
+.mx-cal-title { display: inline-flex; align-items: center; gap: var(--mx-space-3); border: 0; background: transparent; border-radius: var(--mx-radius-sm); padding: 0 var(--mx-space-2); height: var(--mx-control-sm); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); cursor: pointer; }
+.mx-cal-title:hover { background: var(--mx-hover); }
+.mx-cal-chevron { display: inline-flex; color: var(--mx-muted); transition: transform 200ms ease; }
+.mx-cal-title.open .mx-cal-chevron { transform: rotate(90deg); color: var(--mx-ink); }
+.mx-cal-nav { margin-left: auto; display: inline-flex; gap: var(--mx-space-1); }
+.mx-cal-nav button { width: var(--mx-control-sm); height: var(--mx-control-sm); border: 0; border-radius: var(--mx-radius-sm); background: transparent; color: var(--mx-ink-3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.mx-cal-nav button:hover:not(:disabled) { background: var(--mx-hover); }
+.mx-cal-nav button:disabled { color: var(--mx-cal-off); cursor: default; }
+.mx-cal-weekdays, .mx-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.mx-cal-weekdays span { text-align: center; font-size: var(--mx-text-tiny); color: var(--mx-faint); padding: var(--mx-space-1) 0; }
+.mx-cal-day { position: relative; height: var(--mx-cal-cell); border: 0; padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.mx-cal-day span { width: var(--mx-cal-day); height: var(--mx-cal-day); border-radius: var(--mx-radius-round); display: inline-flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; position: relative; z-index: 1; }
+.mx-cal-day.empty { cursor: default; }
+.mx-cal-day.inside { background: var(--mx-band); }
+.mx-cal-day.starts { background: linear-gradient(90deg, transparent 50%, var(--mx-band) 50%); }
+.mx-cal-day.ends { background: linear-gradient(90deg, var(--mx-band) 50%, transparent 50%); }
+.mx-cal-day.hover:not(.chosen) span { background: var(--mx-selected); }
+.mx-cal-day.today span { font-weight: var(--mx-weight-heavy); text-decoration: underline; text-underline-offset: var(--mx-space-1); }
+.mx-cal-day.chosen span { background: var(--mx-cal-accent); color: var(--mx-on-ink); font-weight: var(--mx-weight-bold); }
+.mx-cal-day.disabled { cursor: default; }
+.mx-cal-day.disabled span { color: var(--mx-cal-off); }
+.mx-cal-wheels { position: relative; display: flex; justify-content: center; height: var(--mx-cal-wheels); margin-top: var(--mx-space-4); }
+.mx-cal-band { position: absolute; left: 0; right: 0; top: var(--mx-cal-wheel-pad); height: var(--mx-cal-wheel-row); border-radius: var(--mx-radius-md); background: var(--mx-hover); pointer-events: none; }
+.mx-cal-wheel { position: relative; height: var(--mx-cal-wheels); overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; -webkit-mask-image: linear-gradient(transparent, black 30%, black 70%, transparent); mask-image: linear-gradient(transparent, black 30%, black 70%, transparent); }
+.mx-cal-wheel::-webkit-scrollbar { display: none; }
+.mx-cal-wheel.months { width: 60%; text-align: right; padding-right: var(--mx-space-6); }
+.mx-cal-wheel.years { width: 40%; text-align: left; padding-left: var(--mx-space-6); }
+.mx-cal-wheel-pad { height: var(--mx-cal-wheel-pad); }
+.mx-cal-wheel-item { height: var(--mx-cal-wheel-row); line-height: var(--mx-cal-wheel-row); scroll-snap-align: center; font-size: var(--mx-text-md); color: var(--mx-muted); cursor: pointer; font-variant-numeric: tabular-nums; }
+.mx-cal-wheel-item.on { color: var(--mx-ink); font-weight: var(--mx-weight-bold); }
+.mx-cal-wheel-item.off { color: var(--mx-cal-off); }
+.mx-cal-foot { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: var(--mx-space-3); margin: auto calc(var(--mx-space-5) * -1) 0; padding: var(--mx-space-5); border-top: var(--mx-line-width) solid var(--mx-line-2); }
+.mx-cal-summary { justify-self: start; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--mx-muted); font-variant-numeric: tabular-nums; }
+.mx-cal-foot button { justify-self: end; height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-md); background: transparent; color: var(--mx-cal-accent); cursor: pointer; }
+.mx-cal-foot button:hover { background: var(--mx-hover); }
+.mx-cal-foot button.apply { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-cal-scrim { position: fixed; inset: 0; z-index: var(--mx-layer-shell-pop); background: var(--mx-scrim); }
+
+/* a phone: a sheet from below, the ready stretches as a row of chips, one month */
+.mx-cal.sheet { left: 0; right: 0; bottom: 0; top: auto; max-height: 94%; overflow-y: auto; flex-direction: column; border: 0; border-radius: var(--mx-sheet-radius) var(--mx-sheet-radius) 0 0; }
+.mx-cal.sheet .mx-cal-presets { width: auto; flex-direction: row; overflow-x: auto; gap: var(--mx-space-3); padding: var(--mx-space-5); border-right: 0; border-bottom: var(--mx-line-width) solid var(--mx-line-2); background: var(--mx-surface); scrollbar-width: none; }
+.mx-cal.sheet .mx-cal-presets button { flex-shrink: 0; height: var(--mx-bar-button); padding: 0 var(--mx-space-5); border: var(--mx-line-width) solid var(--mx-line-3); border-radius: var(--mx-radius-round); }
+.mx-cal.sheet .mx-cal-presets-line { width: var(--mx-line-width); height: var(--mx-control-sm); margin: var(--mx-space-2) var(--mx-space-1); }
+.mx-cal.sheet .mx-cal-main, .mx-cal.sheet.single .mx-cal-main { width: auto; min-width: 0; }
+.mx-cal.sheet .mx-cal-months { grid-template-columns: 1fr; }
+.mx-cal.sheet .mx-cal-day { height: var(--mx-cal-cell-phone); }

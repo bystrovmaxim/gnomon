@@ -3,7 +3,7 @@
 The installer's process: its connections, built once from its settings, and its loop.
 
 Every connection is declared here in place: the installer's storage per call from one pool as maxitor_installer,
-the wheel store and the environment files over their directories.
+the wheel store and the environment files over their directories, the frontends' builds over Docker.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from maxitor.core.plugins.actions.add_marketplace_version_action import AddMarketplaceVersionAction, AddVersionParams
+from maxitor.core.plugins.frontend_builder import BUILDER_CONNECTION_KEY, FrontendBuilderController
 from maxitor.core.plugins.gateways.wheel_source_gateway import WHEEL_SOURCE_CONNECTION_KEY, WheelSourceGateway
 from maxitor.core.plugins.storage.deploy_storage import DEPLOY_CONNECTION_KEY, DeployStorage
 from maxitor.core.plugins.storage.plugin_runtime_storage import RUNTIME_CONNECTION_KEY, PluginRuntimeStorage
@@ -38,6 +39,7 @@ def connections_of(settings: InstallerSettings, pool: PostgresPool) -> dict[str,
         WHEELS_CONNECTION_KEY: WheelStorage(settings.wheel_store, settings.wheel_max_bytes),
         RUNTIME_CONNECTION_KEY: PluginRuntimeStorage(settings.runtime, settings.dsn),
         WHEEL_SOURCE_CONNECTION_KEY: WheelSourceGateway(settings.wheel_max_bytes, settings.wheel_timeout_seconds),
+        BUILDER_CONNECTION_KEY: FrontendBuilderController(settings.builds),
     }
 
 

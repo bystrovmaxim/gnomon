@@ -11,8 +11,17 @@ import "./canvas.css";
 import { useShell } from "../shell/ShellContext";
 import { centreOn, fitInside, key, pinch, toCanvas, toScreen, wheel, zoomAround, ZOOM_STEP, type Bounds, type Camera, type Point } from "./camera";
 
+/** Finds where an anchor lies on the canvas, or null when it is not one of its own. */
+export type Locator = (anchor: string) => Bounds | null;
+
 type CanvasApi = {
   camera: Camera;
+  /** The canvas's size on the screen, in screen pixels. */
+  viewport: { width: number; height: number };
+  /** Let the content say where its anchors lie, every one of them, drawn or not (spec 081, FR-002); answers a remover. */
+  register: (locator: Locator) => () => void;
+  /** Where an anchor lies on the canvas, or null when no content knows it. */
+  locate: (anchor: string) => Bounds | null;
   /** Show ``bounds`` whole, or the whole scene. */
   fit: (bounds?: Bounds) => void;
   /** Bring a canvas point to the middle. */
@@ -30,12 +39,29 @@ export function useCanvas(): CanvasApi {
   return canvas;
 }
 
+/** The canvas around, or null when the content is not laid on one. */
+export function useCanvasOrNull(): CanvasApi | null {
+  return useContext(CanvasContext);
+}
+
 export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: Bounds; children: ReactNode; label?: string }) {
   const field = useRef<HTMLDivElement>(null);
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 1 });
   const fitted = useRef(false);
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<{ camera: Camera; from: Point[] } | null>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const locators = useRef(new Set<Locator>());
+
+  useEffect(() => {
+    const element = field.current;
+    if (!element) return;
+    const measure = () => setViewport({ width: element.clientWidth, height: element.clientHeight });
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   const size = useCallback(() => {
     const box = field.current?.getBoundingClientRect();
@@ -58,11 +84,13 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
   // canvas gave it the zoom, so the first fit waits a frame and keeps the scene clear of the bar, as Fit later does.
   const latestFit = useRef(fitTo);
   latestFit.current = fitTo;
+  // A panel still hidden has no size yet: the first fit waits until the field has one.
   useEffect(() => {
-    if (fitted.current || !size().width) return;
+    if (fitted.current || !viewport.width || !viewport.height) return;
     fitted.current = true;
-    requestAnimationFrame(() => latestFit.current());
-  }, [fitTo, size]);
+    // After this commit, once the shell has drawn its controls; a timer runs in a panel still hidden, a frame does not.
+    window.setTimeout(() => latestFit.current(), 0);
+  }, [fitTo, viewport.width, viewport.height]);
 
   // The wheel is listened to directly: React's listener is passive and could not keep the page from scrolling.
   useEffect(() => {
@@ -89,6 +117,18 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
   const api = useMemo<CanvasApi>(
     () => ({
       camera,
+      viewport,
+      register: (locator) => {
+        locators.current.add(locator);
+        return () => locators.current.delete(locator);
+      },
+      locate: (anchor) => {
+        for (const locator of locators.current) {
+          const found = locator(anchor);
+          if (found) return found;
+        }
+        return null;
+      },
       fit: fitTo,
       show: (point) => {
         const { width, height } = size();
@@ -97,7 +137,7 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
       toCanvas: (screen) => toCanvas(camera, screen),
       toScreen: (point) => toScreen(camera, point),
     }),
-    [camera, fitTo, size],
+    [camera, fitTo, size, viewport],
   );
 
   const middle = useCallback(() => {

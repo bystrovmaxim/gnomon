@@ -33,6 +33,19 @@ def test_a_page_that_places_an_element_fixed_is_refused(plugin) -> None:
     assert any("an element placed fixed lies over Maxitor's frame" in problem for problem in check_plugin(plugin))
 ```
 
+8. **Its frontend builds the way Maxitor builds it.** `maxitor plugin build` runs the installer's own step: the core's `@maxitor/panel` in place of the plugin's, only packages on the core's npm list, no network while the plugin's code runs. The plugin's CI runs it with the core at the lower and at the upper bound of `requires.maxitor`; the template's CI does both — the check run with the checkout's core, the job `template-lower-bound` with the newest release of the lowest minor the range allows:
+
+```bash
+uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.5.0
+```
+
+9. **Its filters read the address the way the shell writes it.** A range of dates is `from..to` with bounds that may move with today; a test of the page's filtering reads `?written=now-30d..now` on a fixed day and expects exactly the notes of those 30 days, and a note with no date only while both ends are open — `inRange` of `@maxitor/panel` gives the same answer the core's test list relies on:
+
+```ts
+import { inRange, readRange } from "@maxitor/panel";
+assert.equal(inRange("2026-09-01", readRange("now-90d..now"), "2026-11-10"), true);
+```
+
 ## Run them
 
 ```bash

@@ -1,5 +1,9 @@
 # Changelog of @maxitor/tokens
 
+## 0.4.0
+
+The date pickers' colours and sizes — the band between two days, the side of ready stretches, a day's cell, a field, the wheels, a sheet's corners and its scrim — and `--mx-mono` for a monospace cell. ([#115](https://github.com/bystrovmaxim/gnomon/issues/115))
+
 ## 0.3.0
 
 The sizes of the shell after the mockup: the filters' padding, a person's disk and its letters, the bottom bar's buttons and hairline, the empty state's card, a card's least width in a grid.

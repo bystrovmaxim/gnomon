@@ -69,6 +69,9 @@ export function PageFrame({
   // What the page shows now: what it asked for, or what it was last told.
   const shown = useRef(keyOf(address.path, address.query, address.at));
   const watermark = useRef<string | null>(null);
+  // What the page holds but its filters leave out: a pointer at one of them is shown as hidden (spec 081, FR-013).
+  const hiddenAnchors = useRef<ReadonlySet<string>>(new Set());
+  const [hidden, setHidden] = useState(0);
 
   const tell = useCallback((message: CoreMessage) => {
     frame.current?.contentWindow?.postMessage(message, window.location.origin);
@@ -94,6 +97,10 @@ export function PageFrame({
         if (!message.shell) console.warn(`Maxitor: the page ${address.path} of ${owner} has no Maxitor frame: it does not render the shell of @maxitor/panel`);
       }
       else if (message.type === "panel.title") onTitle(message.text);
+      else if (message.type === "panel.hidden") {
+        hiddenAnchors.current = new Set(message.anchors);
+        setHidden(message.anchors.length);
+      }
       else if (message.type === "panel.navigate") {
         const refused = refusedNames(message.query, address.query, pathNames);
         if (refused.length) {
@@ -150,6 +157,7 @@ export function PageFrame({
         className={`mx-panel-frame${state === "ready" ? "" : " waiting"}`}
         title={title}
         src={src}
+        data-hidden={hidden}
       />
       {unframed && MARK_UNFRAMED ? (
         <div className="mx-unframed" role="alert">This page has no Maxitor frame</div>

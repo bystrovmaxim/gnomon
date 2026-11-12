@@ -20,7 +20,7 @@
 .mx-count:empty { display: none; }
 
 /* the filters: top left, as maxitor-web's ErdFilterPanel and the mockup of spec 074 draw them */
-.mx-filters { box-sizing: border-box; top: var(--mx-space-5); left: var(--mx-space-5); width: var(--mx-filter-width); max-height: calc(100% - var(--mx-control) * 3); overflow-y: auto; background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-xs); box-shadow: var(--mx-shadow-float); padding: var(--mx-space-2) var(--mx-filter-pad); }
+.mx-filters { box-sizing: border-box; top: var(--mx-space-5); left: var(--mx-space-5); width: var(--mx-filter-width); max-height: calc(100% - var(--mx-control) * 3); overflow-y: auto; overscroll-behavior: contain; background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-xs); box-shadow: var(--mx-shadow-float); padding: var(--mx-space-2) var(--mx-filter-pad); }
 .mx-filters-button { display: none; }
 .mx-filter-title { display: flex; align-items: center; gap: var(--mx-space-2); width: 100%; text-align: left; border: 0; background: none; padding: var(--mx-space-3) 0; font-size: var(--mx-text-tiny); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); color: var(--mx-muted); cursor: pointer; }
 .mx-filter-title .mx-icon { transition: transform 120ms ease; }
@@ -31,6 +31,20 @@
 .mx-filter-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-filter-note { font-size: var(--mx-text-sm); color: var(--mx-faint); padding-bottom: var(--mx-space-4); }
 .mx-disk { box-sizing: border-box; width: var(--mx-badge); height: var(--mx-badge); border-radius: var(--mx-radius-round); flex-shrink: 0; border: var(--mx-line-width) solid var(--mx-line); display: inline-flex; align-items: center; justify-content: center; color: var(--mx-on-ink); font-size: var(--mx-text-badge); font-weight: var(--mx-weight-heavy); }
+.mx-filter-row.field { cursor: text; }
+button.mx-filter-row.field { cursor: pointer; }
+.mx-disk.mark { background: var(--mx-surface); color: var(--mx-muted); }
+.mx-filter-row.field.on .mx-disk.mark, .mx-filter-row.field.open .mx-disk.mark { color: var(--mx-ink); border-color: var(--mx-muted); }
+.mx-filter-input { flex: 1; min-width: 0; height: var(--mx-badge); border: 0; border-bottom: var(--mx-line-width) solid transparent; padding: 0; font: inherit; font-size: var(--mx-text-sm); color: var(--mx-ink); background: transparent; outline: none; }
+.mx-filter-input::placeholder { color: var(--mx-faint); }
+.mx-filter-input:focus { border-bottom-color: var(--mx-faint); }
+.mx-filter-input.number { text-align: right; font-variant-numeric: tabular-nums; }
+.mx-filter-pre { color: var(--mx-muted); }
+.mx-filter-how { display: block; font-size: var(--mx-text-tiny); color: var(--mx-cal-link); overflow: hidden; text-overflow: ellipsis; }
+.mx-filter-clear { flex-shrink: 0; width: var(--mx-icon); height: var(--mx-icon); border-radius: var(--mx-radius-sm); color: var(--mx-muted); display: inline-flex; align-items: center; justify-content: center; font-size: var(--mx-text-md); line-height: 1; }
+.mx-filter-clear:hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-filter-more { align-self: flex-start; border: 0; background: none; padding: 0 0 0 calc(var(--mx-badge) + var(--mx-space-4)); font-size: var(--mx-text-sm); color: var(--mx-cal-link); cursor: pointer; }
+.mx-filters-sheet-head, .mx-filters-scrim { display: none; }
 .mx-paint { display: flex; justify-content: center; gap: var(--mx-space-3); padding: var(--mx-space-3) 0; border-top: var(--mx-line-width) solid var(--mx-line-2); margin: 0 calc(var(--mx-filter-pad) * -1); }
 .mx-paint button { width: var(--mx-icon-sm); height: var(--mx-icon-sm); border-radius: var(--mx-radius-round); border: var(--mx-line-width) solid var(--mx-line-3); background: var(--mx-surface); padding: 0; cursor: pointer; }
 .mx-paint button.on { background: var(--mx-ink); border-color: var(--mx-ink); }
@@ -58,7 +72,13 @@
   .mx-filters:not(.folded) .mx-filters-body { box-sizing: border-box; }
   .mx-filters-button { display: inline-flex; align-items: center; gap: var(--mx-space-3); height: var(--mx-control); padding: 0 var(--mx-space-5); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); background: var(--mx-surface); font-size: var(--mx-text-md); cursor: pointer; }
   .mx-filters.folded .mx-filters-body { display: none; }
-  .mx-filters:not(.folded) .mx-filters-body { margin-top: var(--mx-space-3); width: var(--mx-filter-width); background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-xs); box-shadow: var(--mx-shadow-pop); padding: var(--mx-space-2) var(--mx-filter-pad); }
+  /* open on a phone: the same sections in a sheet from below, Done closing it */
+  .mx-filters:not(.folded) .mx-filters-body { position: fixed; left: 0; right: 0; bottom: 0; max-height: 80%; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; background: var(--mx-surface); border-radius: var(--mx-sheet-radius) var(--mx-sheet-radius) 0 0; box-shadow: var(--mx-shadow-pop); padding: 0 var(--mx-space-6) var(--mx-space-7); z-index: var(--mx-layer-shell-pop); }
+  .mx-filters:not(.folded) .mx-filters-sheet-head { display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; padding: var(--mx-space-5) 0 var(--mx-space-3); background: var(--mx-surface); font-size: var(--mx-text-lg); }
+  .mx-filters-sheet-head button { border: 0; background: var(--mx-ink); color: var(--mx-on-ink); border-radius: var(--mx-radius-md); height: var(--mx-bar-button); padding: 0 var(--mx-space-6); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); cursor: pointer; }
+  .mx-filters:not(.folded) { z-index: var(--mx-layer-shell-pop); }
+  .mx-filters-scrim { display: block; position: fixed; inset: 0; background: var(--mx-scrim); }
+  .mx-filters:not(.folded) .mx-filter-row, .mx-filters:not(.folded) .mx-filter-input { font-size: var(--mx-text-md); }
   .mx-bar.folds > .mx-bar-sections { display: none; }
   .mx-bar.folds > .mx-bar-more { display: inline-flex; }
   .mx-bar button { width: var(--mx-tree-row-phone); height: var(--mx-tree-row-phone); }

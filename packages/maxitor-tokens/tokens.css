@@ -51,6 +51,7 @@
 
   /* Type. */
   --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --mx-text-xs: 10.5px;
   --mx-text-sm: 11.5px;
   --mx-text-md: 13px;
@@ -104,4 +105,23 @@
   --mx-drawer-width: 296px;
   --mx-text-huge: 56px;
   --mx-phone: 520px;
+
+  /* The date pickers (spec 081): Apple's layout in Maxitor's colours, as the mockup of spec 079 draws them. */
+  --mx-band: #eef2f7;
+  --mx-cal-side: #f8fafc;
+  --mx-cal-accent: #475569;
+  --mx-cal-link: #2563eb;
+  --mx-cal-off: #d6dde6;
+  --mx-scrim: rgba(15, 23, 42, 0.32);
+  --mx-cal-presets: 150px;
+  --mx-cal-main: 470px;
+  --mx-cal-main-one: 270px;
+  --mx-cal-cell: 30px;
+  --mx-cal-cell-phone: 40px;
+  --mx-cal-day: 28px;
+  --mx-cal-field: 32px;
+  --mx-cal-wheels: 196px;
+  --mx-cal-wheel-row: 28px;
+  --mx-cal-wheel-pad: 84px;
+  --mx-sheet-radius: 16px;
 }

@@ -4,12 +4,16 @@
 from __future__ import annotations
 
 from maxitor.core.plugins.events import (
+    BuilderImageBuiltEvent,
     DeployFailedEvent,
     DeploySkippedEvent,
     DisableRefusedEvent,
     DownloadTimedOutEvent,
     EnvironmentFailedEvent,
     FailedInstallDroppedEvent,
+    FrontendBuildFailedEvent,
+    FrontendBuiltEvent,
+    FrontendGenerationMovedEvent,
     InstallerConnectionRefusedEvent,
     InstallerStartedEvent,
     InstallRefusedEvent,
@@ -61,4 +65,8 @@ class PluginsDomain(BaseDomain):
         ProcessStoppedEvent,
         ProcessExitedEvent,
         EnvironmentFailedEvent,
+        BuilderImageBuiltEvent,
+        FrontendBuiltEvent,
+        FrontendBuildFailedEvent,
+        FrontendGenerationMovedEvent,
     )

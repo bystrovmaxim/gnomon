@@ -95,6 +95,24 @@ def _validator(name: str) -> Draft202012Validator:
     return Draft202012Validator(json.loads((SCHEMAS / f"{name}.schema.json").read_text(encoding="utf-8")))
 
 
+#: What the frontend's sources must hold: the core builds them strictly by the lock file.
+SOURCE_FILES = ("package.json", "package-lock.json")
+#: What they must not hold: installed packages and a built site, which the core makes itself.
+NOT_SOURCES = ("node_modules", ".next", "_web")
+
+
+def _source_problem(sources: frozenset[str]) -> str | None:
+    """Why the wheel's frontend sources cannot be built, or ``None``."""
+    for name in SOURCE_FILES:
+        if name not in sources:
+            return f"frontend.source holds no {name}; the core builds the frontend strictly by its lock file"
+    for path in sorted(sources):
+        top = path.split("/", 1)[0]
+        if top in NOT_SOURCES or path == "server.js":
+            return f"frontend.source holds {top}; the wheel carries the sources only, the core builds the site"
+    return None
+
+
 def _nodes(contents: WheelContents) -> list[Node]:
     """Every node of the version's navigation, when the rules one file shows hold; raise ``VersionRejectedError``."""
     text = contents.file((contents.passport.get("frontend") or {}).get("navigation"))
@@ -111,9 +129,16 @@ def inspect(contents: WheelContents) -> tuple[dict[str, Any], list[Node]]:
     passport = contents.passport
     if passport.get("passport") == 1:
         raise VersionRejectedError("passport", "passport 1 carries migrations; Maxitor builds tables from schema.yaml since passport 2")
-    problems = [e.message for e in _validator("plugin-passport-2").iter_errors(passport)]
+    if passport.get("passport") == 2:
+        raise VersionRejectedError(
+            "passport", f"the passport is format 2; the core {package_version('maxitor')} reads format 3 — the frontend ships as sources (frontend.source)"
+        )
+    problems = [e.message for e in _validator("plugin-passport-3").iter_errors(passport)]
     if problems:
         raise VersionRejectedError("passport", problems[0])
+    source_problem = _source_problem(contents.sources)
+    if source_problem:
+        raise VersionRejectedError("frontend", source_problem)
     roles = passport_role_problems(passport)
     if roles:
         raise VersionRejectedError("passport", roles[0])

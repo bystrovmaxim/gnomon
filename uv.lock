@@ -1328,7 +1328,7 @@ wheels = [
 
 [[package]]
 name = "maxitor"
-version = "4.4.2"
+version = "4.6.0"
 source = { editable = "packages/maxitor" }
 dependencies = [
     { name = "jsonschema" },
@@ -1394,6 +1394,7 @@ plugin-runner = [
     { name = "uvicorn" },
 ]
 plugins = [
+    { name = "aoa-action-machine" },
     { name = "maxitor-plugin-sdk" },
     { name = "pyyaml" },
 ]
@@ -1421,6 +1422,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aoa-action-machine", marker = "extra == 'plugins'", editable = "external/aoa/packages/aoa-action-machine" },
     { name = "aoa-action-machine", marker = "extra == 'repo-graph-port'", editable = "external/aoa/packages/aoa-action-machine" },
     { name = "aoa-action-machine", marker = "extra == 'web'", editable = "external/aoa/packages/aoa-action-machine" },
     { name = "aoa-action-machine", extras = ["postgres", "jwt"], marker = "extra == 'core'", editable = "external/aoa/packages/aoa-action-machine" },
@@ -1466,7 +1468,7 @@ dev = [
 
 [[package]]
 name = "maxitor-plugin-sdk"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/maxitor-plugin-sdk" }
 dependencies = [
     { name = "aoa-action-machine" },
@@ -1485,7 +1487,7 @@ requires-dist = [
 
 [[package]]
 name = "maxitor-plugin-template"
-version = "0.9.1"
+version = "0.10.0"
 source = { editable = "packages/maxitor-plugin-template" }
 dependencies = [
     { name = "aoa-action-machine", extra = ["jwt", "postgres"] },
