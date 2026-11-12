@@ -139,7 +139,7 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 ## Phase 11: The closing check run, documentation, changelog, versions
 
-- [ ] T060 Closing check run `scripts/check_run.py` to zero
+- [x] T060 Closing check run `scripts/check_run.py` to zero
 - [x] T061 [P] Docs: `packages/maxitor/README.md` scale section and a how-to; `docs/plugins/history.md`, `docs/plugins/compatibility.md`; `docs/plugins/concept.md` reserves `mode` and `from`
 - [x] T062 [P] Tutorial: `docs/plugins/tutorial/10-history-on-the-scale.md`, `11-comparing.md`, `index.md` naming #98, `09-now-and-the-past.md` next link, `13-tests.md` grown
 - [x] T063 Versions: `version.toml` and package versions of the core, `@maxitor/panel`, `@maxitor/tokens`, the SDK, the template (passport `version`, `requires.maxitor`)
