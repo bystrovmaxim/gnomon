@@ -112,15 +112,16 @@ export function Scale({
   useEffect(() => setHideSmall(window.localStorage.getItem(SMALL_KEY) === "1"), []);
 
   // The milestones of the whole history, read again when "now" moves; and where the history starts. What was read is
-  // kept while the same page reads them again — a new moment, a filter —, so the history does not shrink meanwhile and
-  // take the stretch in view with it; another page starts empty.
+  // kept while the same source reads them again — the page gave its setup anew, "now" moved —, so the history does not
+  // shrink meanwhile and take the stretch in view with it; another source, another page's, starts empty. The source
+  // decides, not the address: a page may give its history before the core's address names it.
   const [milestones, setMilestones] = useState<Milestone[] | null>(null);
   const [firstBar, setFirstBar] = useState<string | null>(null);
+  const milestonesOf = useRef<string | null>(null);
+  const firstBarOf = useRef<string | null>(null);
   useEffect(() => {
-    setMilestones(null);
-    setFirstBar(null);
-  }, [page]);
-  useEffect(() => {
+    if (milestonesOf.current !== (source?.key ?? null)) setMilestones(null);
+    milestonesOf.current = source?.key ?? null;
     if (!source?.milestones || !watermark) {
       setMilestones(null);
       return;
@@ -142,6 +143,8 @@ export function Scale({
     };
   }, [onMilestones, page, setup, source, watermark]);
   useEffect(() => {
+    if (firstBarOf.current !== (source?.key ?? null)) setFirstBar(null);
+    firstBarOf.current = source?.key ?? null;
     if (!source?.bars || !watermark) {
       setFirstBar(null);
       return;

@@ -278,8 +278,12 @@ await scenario("the Draft page opens in the right panel from the tree, with its 
   await frame.locator(".mx-empty-state", { hasText: "The State filter hides every change" }).waitFor();
   await page.goBack();
   await frame.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
-  // The draft is offered one moment only: no scale, no comparison.
-  expect((await page.locator(".mx-pill").count()) === 0, "the core drew a scale on the draft");
+  // The draft is on the scale as Published is (spec 079, FR-047, FR-048): its own changes and the publications, and
+  // both comparisons.
+  await page.locator(".mx-pill-main").click();
+  await page.locator(".mx-modes [role=radio]", { hasText: "Diff" }).waitFor();
+  expect((await page.locator(".mx-modes [role=radio]", { hasText: "Side by side" }).count()) === 1, "the draft offers no Side by side");
+  await page.keyboard.press("Escape");
 });
 
 await scenario("the draft is mine alone: a new note, a change and a revert, and Published does not show it until publication", async () => {
