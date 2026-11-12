@@ -171,7 +171,6 @@
   --mx-scale-edge: 10px;
   --mx-shadow-scale: 0 12px 40px rgba(15, 23, 42, 0.16), 0 1px 2px rgba(15, 23, 42, 0.06);
   --mx-shadow-tip: 0 8px 30px rgba(15, 23, 42, 0.14), 0 1px 2px rgba(15, 23, 42, 0.06);
-  --mx-shadow-handle: drop-shadow(0 1px 1.2px rgba(0, 0, 0, 0.25));
   --mx-scale-hatch: #e2e8f0;
   --mx-scale-axis: #cbd5e1;
   --mx-scale-day: rgba(15, 23, 42, 0.09);
@@ -189,4 +188,37 @@
   --mx-sheet-grab: 40px;
   --mx-sheet-grab-height: 5px;
   --mx-sheet-height: 86%;
+
+  /* The milestones' palette, as the graph viewer's track and the mockup of spec 074 draw it: a point's colour, the tint
+     of its badge and the ink of the badge's words. */
+  --mx-tone-neutral: #8c959f;
+  --mx-tone-neutral-tint: #f6f8fa;
+  --mx-tone-neutral-ink: #59636e;
+  --mx-tone-purple: #8250df;
+  --mx-tone-purple-tint: #fbefff;
+  --mx-tone-purple-ink: #8250df;
+  --mx-tone-blue: #0969da;
+  --mx-tone-blue-tint: #ddf4ff;
+  --mx-tone-blue-ink: #0969da;
+  --mx-tone-green: #1a7f37;
+  --mx-tone-green-tint: #dafbe1;
+  --mx-tone-green-ink: #1a7f37;
+  --mx-tone-amber: #9a6700;
+  --mx-tone-amber-tint: #fff8c5;
+  --mx-tone-amber-ink: #9a6700;
+  --mx-tone-red: #d1242f;
+  --mx-tone-red-tint: #ffebe9;
+  --mx-tone-red-ink: #d1242f;
+  --mx-chip-bg: #f1f5f9;
+  --mx-message-bg: #f8fafc;
+  --mx-scale-tip: 270px;
+  --mx-scale-card-tip: 320px;
+  --mx-scale-grid: rgba(15, 23, 42, 0.05);
+  --mx-badge-height: 22px;
+  --mx-badge-icon: 13px;
+  --mx-badge-outline: 1.2px;
+  --mx-message-max: 120px;
+  --mx-text-card-title: 13.5px;
+  --mx-legend-width: 640px;
+  --mx-legend-keys: 200px;
 }

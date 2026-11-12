@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { call } from "../../../notes/api";
+import { PUBLISHED_HISTORY } from "../../../notes/history";
 import { marksInDraft, STATE_LABEL, type Change } from "../../../notes/draft";
 import { DraftIcon } from "../../../notes/marking";
 import { CARD_GAP, cardsBounds, refusalText } from "../../../notes/notes";
@@ -66,7 +67,7 @@ export function PublishedView({
   return (
     <PanelPage
       title="Published"
-      history={{ milestones: "list_note_history", card: "note_milestone_card" }}
+      history={PUBLISHED_HISTORY}
       filters={[
         ...(authors.length ? [{ title: "Authors", param: "author", rows: authors.map(([key, name]) => ({ key, label: name, mark: initials(name), colour: paletteOf(key) })) }] : []),
         // Two ranges of dates, named by the table's columns: when a note was first written and when it last changed.

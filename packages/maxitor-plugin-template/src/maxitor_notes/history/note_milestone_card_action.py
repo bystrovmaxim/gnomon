@@ -1,18 +1,18 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/history/note_milestone_card_action.py
 """
-NoteMilestoneCardAction — the card of one milestone of an item's notes, as data the core's time scale draws; asked
-on hover and when the milestone is chosen. navigation.yaml names this action ``note_milestone_card``.
+NoteMilestoneCardAction — the card of one publication of an item's notes, as the blocks the core's time scale draws
+from data; asked on hover and when the milestone is chosen. Published names this action in its history.
 
 ::
 
     GET /p/notes/api/{organization}/history/note_milestone_card?item_id=…&id=v3&at=… ──► NoteMilestoneCardAction
         ├─ organization_access_decide: the person is a member of {organization}
-        └─ card_summary: the organization's id again; the milestone's card at the moment, or not found (404)
+        └─ card_summary: the organization's id again; the publication's card at the moment as blocks, or not found (404)
 """
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, cast
 
 from maxitor_plugin_sdk.moments import MOMENT_PATTERN
 from maxitor_plugin_sdk.roles import MemberRole
@@ -40,14 +40,14 @@ class NoteMilestoneCardParams(BaseParams):
     """Which item, which milestone, at which moment."""
 
     item_id: str = Field(min_length=1, max_length=64, description="The item")
-    id: str = Field(pattern=r"^(v[1-9][0-9]{0,8}|draft)$", description="v<number> for a revision, draft for the draft")
+    id: str = Field(pattern=r"^v[1-9][0-9]{0,8}$", description="v<number>")
     at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The moment the card is read at; none means now")
 
 
 class NoteMilestoneCardResult(BaseResult):
     """The milestone's card."""
 
-    card: MilestoneCardCoreEntity = Field(description="Author, what it changed, the number of notes, its comment")
+    blocks: list[dict[str, Any]] = Field(description="The card's blocks of history-2.schema.json, in their order")
 
 
 @meta(description="Answer one milestone's card of an item's notes, for the core's time scale", domain=NotesDomain)
@@ -57,7 +57,8 @@ class NoteMilestoneCardAction(BaseAction[NoteMilestoneCardParams, NoteMilestoneC
     """
     AI-CORE-BEGIN
     ROLE: Answer the core's time scale with one milestone's card.
-    CONTRACT: The shape of history-1.schema.json's card; the comment is the revision's own words.
+    CONTRACT: The blocks of history-2.schema.json's card: its badge, reference and time; its title; who published it;
+        its notes and what it changed; its release.
     INVARIANTS: The card is data; the core draws it, and no control of the plugin runs in the core's frame.
     AI-CORE-END
     """
@@ -77,4 +78,29 @@ class NoteMilestoneCardAction(BaseAction[NoteMilestoneCardParams, NoteMilestoneC
         _ = (state, box)
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
         organization_id = await member_organization_id(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
-        return NoteMilestoneCardResult(card=await storage.milestone_card(organization_id, params.item_id, params.id, params.at))
+        return NoteMilestoneCardResult(blocks=card_blocks(await storage.milestone_card(organization_id, params.item_id, params.id, params.at)))
+
+
+def card_blocks(card: MilestoneCardCoreEntity) -> list[dict[str, Any]]:
+    """A publication's card as the core draws it: a purple Published badge or a red Rolled back one, then the rest."""
+    badge = {"icon": "undo", "label": "Rolled back", "tone": "red"} if card.kind == "rollback" else {"icon": "tag", "label": "Published", "tone": "purple"}
+    blocks: list[dict[str, Any]] = [{"line": [{"badge": badge}, {"ref": card.ref}, {"ago": card.at}]}, {"title": card.title}]
+    if card.author_id and card.author_name:
+        blocks.append({"person": {"id": card.author_id, "name": card.author_name}})
+    chips: list[dict[str, Any]] = [{"chip": f"{card.notes} {'note' if card.notes == 1 else 'notes'}"}, {"text": summary_text(card.summary)}]
+    if card.release:
+        chips.append({"release": card.release})
+    blocks.append({"chips": chips})
+    return blocks
+
+
+def summary_text(summary: dict[str, int]) -> str:
+    """What a publication changed, as its card says it: "+2 notes · 1 changed · −1 note", or "no changes"."""
+    parts = []
+    if summary.get("added"):
+        parts.append(f"+{summary['added']} {'note' if summary['added'] == 1 else 'notes'}")
+    if summary.get("changed"):
+        parts.append(f"{summary['changed']} changed")
+    if summary.get("removed"):
+        parts.append(f"−{summary['removed']} {'note' if summary['removed'] == 1 else 'notes'}")
+    return " · ".join(parts) or "no changes"

@@ -2111,7 +2111,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "author_id",
-        "ordinal": 8
+        "ordinal": 6
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2123,7 +2123,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "author_name",
-        "ordinal": 9
+        "ordinal": 7
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2131,23 +2131,11 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:chips",
-      "is_dag": false,
-      "properties": {
-        "field_name": "chips",
-        "ordinal": 11
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:chips",
-      "type": "entity_field"
-    },
-    {
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:comment",
       "is_dag": false,
       "properties": {
         "field_name": "comment",
-        "ordinal": 12
+        "ordinal": 10
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2179,27 +2167,15 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:link",
+      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:notes",
       "is_dag": false,
       "properties": {
-        "field_name": "link",
-        "ordinal": 7
+        "field_name": "notes",
+        "ordinal": 9
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:link",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:minor",
-      "is_dag": false,
-      "properties": {
-        "field_name": "minor",
-        "ordinal": 5
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:minor",
+      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:notes",
       "type": "entity_field"
     },
     {
@@ -2219,7 +2195,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "release",
-        "ordinal": 6
+        "ordinal": 5
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2231,7 +2207,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "summary",
-        "ordinal": 10
+        "ordinal": 8
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2272,6 +2248,18 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:comment",
+      "is_dag": false,
+      "properties": {
+        "field_name": "comment",
+        "ordinal": 5
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
+      "target_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:comment",
+      "type": "entity_field"
+    },
+    {
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:id",
       "is_dag": false,
       "properties": {
@@ -2288,7 +2276,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "kind",
-        "ordinal": 2
+        "ordinal": 4
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
@@ -2296,35 +2284,11 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:link",
-      "is_dag": false,
-      "properties": {
-        "field_name": "link",
-        "ordinal": 7
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:link",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:minor",
-      "is_dag": false,
-      "properties": {
-        "field_name": "minor",
-        "ordinal": 5
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:minor",
-      "type": "entity_field"
-    },
-    {
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:ref",
       "is_dag": false,
       "properties": {
         "field_name": "ref",
-        "ordinal": 3
+        "ordinal": 2
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
@@ -2332,23 +2296,11 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:release",
-      "is_dag": false,
-      "properties": {
-        "field_name": "release",
-        "ordinal": 6
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:release",
-      "type": "entity_field"
-    },
-    {
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:title",
       "is_dag": false,
       "properties": {
         "field_name": "title",
-        "ordinal": 4
+        "ordinal": 3
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
@@ -3242,21 +3194,12 @@
       "type": "field"
     },
     {
-      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card|entity_schema|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card",
-      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "type": "entity_schema"
-    },
-    {
-      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult|field|maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card",
+      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult|field|maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:blocks",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
       "source_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult",
-      "target_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card",
+      "target_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:blocks",
       "type": "field"
     },
     {
@@ -5047,7 +4990,7 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:at",
       "label": "at",
       "properties": {
-        "description": "When it was published, or the watermark for the draft",
+        "description": "When it was published",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false
@@ -5058,7 +5001,7 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:author_id",
       "label": "author_id",
       "properties": {
-        "description": "Who published it; none for the draft",
+        "description": "Who published it",
         "field_annotation": "Union[str, NoneType]",
         "field_type": "str | None",
         "primary_key_hint": false
@@ -5077,21 +5020,10 @@
       "type": "EntityField"
     },
     {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:chips",
-      "label": "chips",
-      "properties": {
-        "description": "Short counts: the number of its notes",
-        "field_annotation": "list[str]",
-        "field_type": "str[]",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:comment",
       "label": "comment",
       "properties": {
-        "description": "Its own words, shown under the scale when it is chosen",
+        "description": "Its own words, shown under the scale when it is in force",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false
@@ -5102,7 +5034,7 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:id",
       "label": "id",
       "properties": {
-        "description": "v<number> for a revision, draft for the draft",
+        "description": "v<number>",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": true
@@ -5113,31 +5045,20 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:kind",
       "label": "kind",
       "properties": {
-        "description": "The look of its point",
-        "field_annotation": "Literal[revision, proposal]",
-        "field_type": "\"revision\" | \"proposal\"",
+        "description": "Its kind: a publication, or a rollback to an earlier one",
+        "field_annotation": "Literal[published, rollback]",
+        "field_type": "\"published\" | \"rollback\"",
         "primary_key_hint": false
       },
       "type": "EntityField"
     },
     {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:link",
-      "label": "link",
+      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:notes",
+      "label": "notes",
       "properties": {
-        "description": "Where choosing it leads",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:minor",
-      "label": "minor",
-      "properties": {
-        "description": "A revision that added and removed no note",
-        "field_annotation": "bool",
-        "field_type": "bool",
+        "description": "How many notes it holds",
+        "field_annotation": "int",
+        "field_type": "int",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5190,7 +5111,7 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
       "label": "MilestoneCoreEntity",
       "properties": {
-        "description": "A published revision, or the draft, as a point of the time scale",
+        "description": "A publication of an item's notes, as a point of the time scale",
         "entity_kind": "core",
         "entity_kind_label": "Core"
       },
@@ -5200,9 +5121,20 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:at",
       "label": "at",
       "properties": {
-        "description": "When it was published, or the watermark for the draft",
+        "description": "When it was published",
         "field_annotation": "str",
         "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:comment",
+      "label": "comment",
+      "properties": {
+        "description": "Its own words, shown under the scale while it is in force",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5211,7 +5143,7 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:id",
       "label": "id",
       "properties": {
-        "description": "v<number> for a revision, draft for the draft",
+        "description": "v<number>",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": true
@@ -5222,31 +5154,9 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:kind",
       "label": "kind",
       "properties": {
-        "description": "The look of its point: a revision or the draft",
-        "field_annotation": "Literal[revision, proposal]",
-        "field_type": "\"revision\" | \"proposal\"",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:link",
-      "label": "link",
-      "properties": {
-        "description": "Where choosing it leads: the draft's page for the proposal",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:minor",
-      "label": "minor",
-      "properties": {
-        "description": "A revision that added and removed no note: a small point",
-        "field_annotation": "bool",
-        "field_type": "bool",
+        "description": "Its kind: a publication, or a rollback to an earlier one",
+        "field_annotation": "Literal[published, rollback]",
+        "field_type": "\"published\" | \"rollback\"",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5255,20 +5165,9 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:ref",
       "label": "ref",
       "properties": {
-        "description": "Its short reference",
+        "description": "Its short reference, v<number>",
         "field_annotation": "str",
         "field_type": "str",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:release",
-      "label": "release",
-      "properties": {
-        "description": "The release label it carries; a flag over its point",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5965,7 +5864,7 @@
       "id": "maxitor_notes.history.list_note_history_action.ListNoteHistoryResult:milestones",
       "label": "milestones",
       "properties": {
-        "description": "The revisions in time order, the draft last",
+        "description": "The publications in time order",
         "entity_schema": true,
         "json_schema_value": false,
         "required": true
@@ -6049,7 +5948,7 @@
       "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardParams:id",
       "label": "id",
       "properties": {
-        "description": "v<number> for a revision, draft for the draft",
+        "description": "v<number>",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -6074,11 +5973,11 @@
       "type": "Result"
     },
     {
-      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card",
-      "label": "card",
+      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:blocks",
+      "label": "blocks",
       "properties": {
-        "description": "Author, what it changed, the number of notes, its comment",
-        "entity_schema": true,
+        "description": "The card's blocks of history-2.schema.json, in their order",
+        "entity_schema": false,
         "json_schema_value": false,
         "required": true
       },

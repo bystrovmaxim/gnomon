@@ -19,7 +19,7 @@ export function TestFrame({ code }: { code: string }) {
       title="Panel test"
       canOpen={(owner) => owner === "core"}
       // The test drawing's history is checked as a plugin's is: against these actions and these comparisons.
-      historyAllowed={{ actions: ["list_test_history", "test_milestone_card"], compare: ["diff"] }}
+      historyAllowed={{ actions: ["list_test_notes", "list_test_history", "list_graph_history", "list_odd_history", "test_milestone_card"], compare: ["diff"] }}
       onTitle={() => undefined}
     />
   );

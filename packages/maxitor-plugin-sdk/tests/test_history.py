@@ -1,6 +1,11 @@
-"""The bars a page's own reading query gives: added, changed and removed, from what the versions say."""
+"""The history contract: the bars a page's own reading query gives, and the shapes of format 2."""
+
+import json
+from pathlib import Path
 
 import pytest
+from jsonschema import Draft202012Validator
+from maxitor_plugin_sdk import history
 from maxitor_plugin_sdk.history import Bar, Version, bars_of
 
 START = "2026-11-08T00:00:00.000000Z"
@@ -43,3 +48,30 @@ def test_several_changes_in_one_bar_add_up() -> None:
 def test_a_bar_lasts_at_least_a_second() -> None:
     with pytest.raises(ValueError):
         bars_of([], START, END, 0)
+
+
+def _schema(shape: str) -> Draft202012Validator:
+    schema = json.loads((Path(history.__file__).parent / "schemas" / f"history-{history.HISTORY_FORMAT}.schema.json").read_text())
+    return Draft202012Validator({"$ref": f"#/$defs/{shape}", "$defs": schema["$defs"]})
+
+
+def test_format_2_milestones_name_a_kind_of_the_page_and_carry_no_closed_list() -> None:
+    milestone = {"id": "v6", "at": "2026-11-10T11:30:00.000000Z", "ref": "v6", "title": "Back to v3", "kind": "rollback", "comment": "Back to v3."}
+    assert list(_schema("milestone").iter_errors(milestone)) == []
+    assert list(_schema("milestone").iter_errors({**milestone, "minor": True})) != []
+    assert list(_schema("milestone").iter_errors({**milestone, "kind": "Rolled Back"})) != []
+
+
+def test_a_card_is_a_list_of_blocks_of_known_shapes() -> None:
+    card = {
+        "blocks": [
+            {"line": [{"badge": {"icon": "undo", "label": "Rolled back", "tone": "red"}}, {"ref": "v6"}, {"ago": "2026-11-10T11:30:00.000000Z"}]},
+            {"title": "Back to v3"},
+            {"text": "to v3 · everything published after it stays in the history"},
+            {"person": {"id": "a1", "name": "Anna"}},
+            {"chips": [{"chip": "12 notes"}, {"text": "+2 notes · 1 changed"}]},
+        ]
+    }
+    assert list(_schema("card").iter_errors(card)) == []
+    assert list(_schema("card").iter_errors({"blocks": [{"script": "alert(1)"}]})) != []
+    assert list(_schema("card").iter_errors({"blocks": [{"line": [{"badge": {"icon": "rocket", "label": "x", "tone": "red"}}]}]})) != []

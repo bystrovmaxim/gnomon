@@ -795,9 +795,9 @@ class NotesStorage(PostgresStorage):
         return end, [Version(entity_id=row["id"], valid_from=row["valid_from"], valid_to=row["valid_to"]) for row in rows]
 
     async def milestones(self, organization_id: str, item_id: str, start: str, end: str) -> list[MilestoneCoreEntity]:
-        """The revisions published in the stretch, in order, and the draft last as a proposal when anything changed since the last one."""
+        """The publications of the stretch, in order."""
         cards = await self._cards(organization_id, item_id, end)
-        return [MilestoneCoreEntity(**card.model_dump(include=set(MilestoneCoreEntity.model_fields))) for card in cards if start < card.at or card.kind == "proposal"]
+        return [MilestoneCoreEntity(**card.model_dump(include=set(MilestoneCoreEntity.model_fields))) for card in cards if start < card.at]
 
     async def milestone_card(self, organization_id: str, item_id: str, milestone_id: str, moment: str | None) -> MilestoneCardCoreEntity:
         """The card of one milestone as it read at ``moment`` (the watermark when ``None``)."""
@@ -809,8 +809,8 @@ class NotesStorage(PostgresStorage):
 
     async def _cards(self, organization_id: str, item_id: str, end: str) -> list[MilestoneCardCoreEntity]:
         """
-        Every revision of the item published by ``end`` with what it changed against the one before, and the draft
-        at ``end`` as a proposal when it holds any change. ``end`` is cut to the watermark.
+        Every revision of the item published by ``end`` with what it changed against the one before. ``end`` is cut
+        to the watermark.
         """
         watermark = await self._watermark(organization_id)
         if watermark is None:
@@ -834,22 +834,12 @@ class NotesStorage(PostgresStorage):
             summary = _summary(before, notes)
             cards.append(
                 MilestoneCardCoreEntity(
-                    id=revision.ref, at=revision.at, kind="revision", ref=revision.ref, title=revision.title,
-                    minor=summary["added"] == 0 and summary["removed"] == 0, release=revision.release,
-                    author_id=revision.publisher_id, author_name=revision.publisher_name, summary=summary,
-                    chips=[f"{len(notes)} notes"], comment=revision.comment,
+                    id=revision.ref, at=revision.at, kind="published", ref=revision.ref, title=revision.title,
+                    release=revision.release, author_id=revision.publisher_id, author_name=revision.publisher_name,
+                    summary=summary, notes=len(notes), comment=revision.comment,
                 )
             )
             before = notes
-        now = {note.id: note.body for note in await self.notes_of_item(organization_id, item_id, end, None)}
-        draft = _summary(before, now)
-        if any(draft.values()):
-            cards.append(
-                MilestoneCardCoreEntity(
-                    id="draft", at=end, kind="proposal", ref="draft", title="Draft — waiting to be published", minor=False,
-                    link=f"/items/{item_id}/draft", summary=draft, chips=[f"{len(now)} notes"], comment="",
-                )
-            )
         return cards
 
     async def note_authors(self, organization_id: str, item_id: str, moment: str | None, limit: int, after: str | None) -> list[NoteAuthorCoreEntity]:

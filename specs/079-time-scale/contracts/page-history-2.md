@@ -26,6 +26,18 @@ A page gives its history in `PanelPage`'s `history` and the shell sends it as `p
 4. `small` and `flag` are strings of at most 160 characters.
 5. `actions[].kinds` must name declared kinds.
 
+## Where the core asks
+
+The core calls each action of the history through the gateway with the organization's token: `GET /p/<plugin>/api/<organization>/history/<action>?…`. The plugin mounts its history actions there, the reading action of a page included.
+
+| Call | Parameters |
+|---|---|
+| bars (`bars`, else `read`) | the open node's path parameters, the page's own address parameters (never `at`, `mode`, `from` or a name starting with `_`), `from_at`, `to_at`, `width` in seconds |
+| milestones | the node's path parameters, `from_at`, `to_at` — a page's filters never narrow its milestones |
+| card | the node's path parameters, `id`, and `at` when the screen is in the past |
+
+Bars are asked in chunks of 60 bars of one width aligned to the epoch; a chunk wholly at or before the watermark is kept in the page's memory, the chunk holding now is asked again. The core's own test page answers from fixtures in the page's memory.
+
 ## Milestones answered (`schemas/history-2.schema.json`)
 
 ```json

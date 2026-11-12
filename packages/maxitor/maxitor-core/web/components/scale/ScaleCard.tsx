@@ -7,7 +7,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-import { Legend, type LegendGroup } from "@/components/scale/Legend";
+import { Legend } from "@/components/scale/Legend";
+import type { LegendSection } from "@/components/scale/legendRows";
 import { PRESETS } from "@/components/scale/geometry";
 
 export type Mode = "one" | "diff" | "side_by_side";
@@ -92,7 +93,7 @@ export function ScaleCard({
   subtitle: string;
   /** The page's own tools in the head, before the "i": the switch of small points. */
   tools?: ReactNode;
-  legend: LegendGroup[];
+  legend: LegendSection[];
   mode: Mode;
   offered: readonly Mode[];
   onMode: ((mode: Mode) => void) | null;
@@ -133,7 +134,7 @@ export function ScaleCard({
           <ModeSwitch value={mode} offered={offered} onMode={onMode} />
         </div>
       </div>
-      {legendOpen ? <Legend groups={legend} comparing={mode !== "one"} /> : null}
+      {legendOpen ? <Legend sections={legend} comparing={mode !== "one"} /> : null}
       <div className="mx-card-bar">
         <span className="mx-zoom" role="group" aria-label="Zoom">
           {PRESETS.map((preset) => (

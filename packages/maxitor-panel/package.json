@@ -11,7 +11,8 @@
     "./protocol": "./src/protocol.ts",
     "./panel.css": "./src/panel.css",
     "./address": "./src/shell/address.ts",
-    "./keys": "./src/keys.ts"
+    "./keys": "./src/keys.ts",
+    "./history": "./src/history.ts"
   },
   "files": [
     "src",

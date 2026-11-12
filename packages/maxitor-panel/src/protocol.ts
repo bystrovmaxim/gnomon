@@ -83,17 +83,33 @@ export function trusted(event: MessageEvent, expected: Window | null | undefined
   return expected !== null && expected !== undefined && event.origin === window.location.origin && event.source === expected;
 }
 
-// ── a page's history (spec 082, FR-001 – FR-005): how a page answers the core's time scale, given by the page in its
-// code, never declared in navigation.yaml; the shape a message may carry, and the core's check of every name.
+// ── a page's history (spec 082, FR-001 – FR-005; spec 079, history format 2): how a page sets up the core's time
+// scale, given by the page in its code, never declared in navigation.yaml; the shape a message may carry, and the
+// core's check of every name and every promise.
 
 /** The comparisons a page may offer beside one moment. */
 export const COMPARISONS = ["diff", "side_by_side"] as const;
 export type Comparison = (typeof COMPARISONS)[number];
 
+/** The core's palette of points, the looks of a point and the lines leading to it. */
+export const TONES = ["neutral", "purple", "blue", "green", "amber", "red"] as const;
+export const LOOKS = ["filled", "hollow", "dashed"] as const;
+export const LEADS = ["solid", "dashed"] as const;
+export type Tone = (typeof TONES)[number];
+export type Look = (typeof LOOKS)[number];
+export type Lead = (typeof LEADS)[number];
+
+/** One kind of the page's points: how its point is drawn and what the legend says of it. */
+export type Kind = { tone: Tone; look: Look; lead: Lead; term: string; def: string };
+
+/** An action a page offers on a milestone of its kinds, called exactly on it: Roll back to {ref}. */
+export type MilestoneAction = { on: "milestone"; kinds: string[]; title: string; action: string; ask: boolean };
+
 /**
- * A page's history: its reading action (the bars over a stretch are counted from it), its own bars, its milestones
- * and a milestone's card — actions of the plugin — its comparisons, narrowing the passport's, and the legend's words.
- * A page that gives none is offered one moment only, with no bars and no milestones.
+ * A page's history, format 2: its reading action (the bars over a stretch are counted from it), its own bars, its
+ * milestones and a milestone's card — actions of the plugin —; its vocabulary of points, `kinds`, in the legend's
+ * order; `small` and `flag`, the sentences that promise small points and flags; its comparisons, narrowing the
+ * passport's; and the actions it offers on a milestone. A page that gives none is offered one moment only.
  */
 export type PageHistory = {
   read?: string;
@@ -101,41 +117,71 @@ export type PageHistory = {
   milestones?: string;
   card?: string;
   compare?: Comparison[];
-  legend?: Record<string, string>;
+  kinds?: Record<string, Kind>;
+  small?: string;
+  flag?: string;
+  actions?: MilestoneAction[];
 };
 
 /** What a plugin version allows: its actions' names and its passport's `history.compare`. */
 export type HistoryAllowed = { actions: readonly string[]; compare: readonly string[] };
 
 const NAME = /^[a-z][a-z0-9_]{0,62}$/;
+const KIND = /^[a-z][a-z0-9_]{0,31}$/;
 const ROLES = ["read", "bars", "milestones", "card"] as const;
+/** The most kinds a page may declare, and the longest words it may give. */
+export const MAX_KINDS = 12;
+const TERM = 40;
+const DEF = 200;
+const PROMISE = 160;
 
-/** The history, when a message carries one of a known shape; null otherwise. */
+const record = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(text);
+
+/** The history, when a message carries one of a known shape; null otherwise. Words are checked by checkHistory. */
 export function historyOf(value: unknown): PageHistory | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
-  const given = value as Record<string, unknown>;
+  if (!record(value)) return null;
   const history: PageHistory = {};
   for (const role of ROLES) {
-    const name = given[role];
+    const name = value[role];
     if (name === undefined) continue;
     if (typeof name !== "string" || !NAME.test(name)) return null;
     history[role] = name;
   }
-  if (given.compare !== undefined) {
-    if (!Array.isArray(given.compare) || !given.compare.every((each) => (COMPARISONS as readonly unknown[]).includes(each))) return null;
-    history.compare = [...new Set(given.compare as Comparison[])];
+  if (value.compare !== undefined) {
+    if (!Array.isArray(value.compare) || !value.compare.every((each) => (COMPARISONS as readonly unknown[]).includes(each))) return null;
+    history.compare = [...new Set(value.compare as Comparison[])];
   }
-  if (given.legend !== undefined) {
-    const legend = given.legend;
-    if (typeof legend !== "object" || legend === null || Array.isArray(legend) || !Object.values(legend).every((word) => typeof word === "string")) return null;
-    history.legend = Object.fromEntries(Object.entries(legend as Record<string, string>).map(([key, word]) => [key, word.slice(0, 80)]));
+  if (value.kinds !== undefined) {
+    if (!record(value.kinds)) return null;
+    const kinds: Record<string, Kind> = {};
+    for (const [key, kind] of Object.entries(value.kinds)) {
+      if (!record(kind) || !["tone", "look", "lead", "term", "def"].every((field) => text(kind[field]))) return null;
+      kinds[key] = { tone: kind.tone, look: kind.look, lead: kind.lead, term: kind.term, def: kind.def } as Kind;
+    }
+    history.kinds = kinds;
+  }
+  for (const promise of ["small", "flag"] as const) {
+    if (value[promise] === undefined) continue;
+    if (!text(value[promise])) return null;
+    history[promise] = value[promise] as string;
+  }
+  if (value.actions !== undefined) {
+    if (!Array.isArray(value.actions)) return null;
+    const actions: MilestoneAction[] = [];
+    for (const action of value.actions) {
+      if (!record(action) || !text(action.on) || !strings(action.kinds) || !text(action.title) || !text(action.action) || typeof action.ask !== "boolean") return null;
+      actions.push({ on: action.on as "milestone", kinds: action.kinds, title: action.title, action: action.action, ask: action.ask });
+    }
+    history.actions = actions;
   }
   return history;
 }
 
 /**
- * The core's check of a page's history: every action it names must be one of the version's, and its comparisons
- * must narrow the passport's. A name that does not hold is refused by name and left out; the rest is kept.
+ * The core's check of a page's history: every action it names must be one of the version's, its comparisons must
+ * narrow the passport's, its kinds must hold the core's words, its promises must be short, and an action on a
+ * milestone must name declared kinds. What does not hold is refused by name and left out; the rest is kept.
  */
 export function checkHistory(history: PageHistory, allowed: HistoryAllowed): { kept: PageHistory; refused: string[] } {
   const actions = new Set(allowed.actions);
@@ -154,6 +200,35 @@ export function checkHistory(history: PageHistory, allowed: HistoryAllowed): { k
     kept.compare = history.compare.filter((each) => allowed.compare.includes(each));
   } else {
     kept.compare = allowed.compare.filter((each): each is Comparison => (COMPARISONS as readonly string[]).includes(each));
+  }
+  if (history.kinds) {
+    const kinds: Record<string, Kind> = {};
+    for (const [key, kind] of Object.entries(history.kinds)) {
+      if (!KIND.test(key)) refused.push(`the kind ${JSON.stringify(key)} is no name of a kind`);
+      else if (Object.keys(kinds).length >= MAX_KINDS) refused.push(`the kind ${JSON.stringify(key)} is past the ${MAX_KINDS} a page may declare`);
+      else if (!(TONES as readonly string[]).includes(kind.tone)) refused.push(`the kind ${JSON.stringify(key)} has the tone ${JSON.stringify(kind.tone)}, which is not of the core's palette`);
+      else if (!(LOOKS as readonly string[]).includes(kind.look)) refused.push(`the kind ${JSON.stringify(key)} has the look ${JSON.stringify(kind.look)}, which the core does not draw`);
+      else if (!(LEADS as readonly string[]).includes(kind.lead)) refused.push(`the kind ${JSON.stringify(key)} has the lead ${JSON.stringify(kind.lead)}, which the core does not draw`);
+      else kinds[key] = { ...kind, term: kind.term.slice(0, TERM), def: kind.def.slice(0, DEF) };
+    }
+    kept.kinds = kinds;
+  }
+  for (const promise of ["small", "flag"] as const) {
+    const sentence = history[promise];
+    if (sentence !== undefined && sentence.length > PROMISE) {
+      refused.push(`${promise} is longer than ${PROMISE} characters`);
+      delete kept[promise];
+    }
+  }
+  if (history.actions) {
+    const declared = new Set(Object.keys(kept.kinds ?? {}));
+    kept.actions = history.actions.filter((each) => {
+      if (each.on !== "milestone") refused.push(`an action is offered on ${JSON.stringify(each.on)}; only on a milestone`);
+      else if (!actions.has(each.action)) refused.push(`an action names ${JSON.stringify(each.action)}, which is no action of the plugin`);
+      else if (!each.kinds.length || each.kinds.some((kind) => !declared.has(kind))) refused.push(`the action ${JSON.stringify(each.action)} names a kind the page did not declare`);
+      else return true;
+      return false;
+    });
   }
   return { kept, refused };
 }

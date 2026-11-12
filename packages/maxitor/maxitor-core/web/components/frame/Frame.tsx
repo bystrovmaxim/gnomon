@@ -14,11 +14,13 @@ import { TopRow } from "@/components/frame/TopRow";
 import { Tree, type Level } from "@/components/frame/Tree";
 import { TreeHead } from "@/components/frame/TreeHead";
 import { ScaleContext, useWatermark, type ScaleBridge } from "@/components/scale/bridge";
+import { fixtureSource } from "@/components/scale/fixtures";
 import { Scale } from "@/components/scale/Scale";
-import type { Mode } from "@/components/scale/ScaleCard";
+import { gatewaySource } from "@/components/scale/source";
 import { queryString, readAddress, windowAddress } from "@/lib/address";
 import { canStep, stepMoment } from "@/lib/moment";
 import { stepOfKey } from "@maxitor/panel/keys";
+import type { Milestone } from "@maxitor/panel/history";
 import type { HistoryAllowed, PageHistory, StepKeyName } from "@maxitor/panel/protocol";
 
 import type { Me } from "@/lib/core";
@@ -151,8 +153,8 @@ export function Frame({
   const watermark = useWatermark(current.code);
   const [history, setHistory] = useState<PageHistory | null>(null);
   const at = address?.at ?? null;
-  // The moments of the page's changes the arrows step through; the page's bars and milestones give them (spec 079, FR-005).
-  const changes = useMemo<string[]>(() => [], []);
+  // The moments of the page's changes the arrows step through: its milestones, or its bars (spec 079, FR-005).
+  const [changes, setChanges] = useState<string[]>([]);
   const choose = useCallback(
     (moment: string | null) => {
       if (address?.owner) router.push(windowAddress(current.code, address.owner, address.path, address.query, moment), { scroll: false });
@@ -190,19 +192,39 @@ export function Frame({
     }),
     [step, watermark],
   );
-  const offered = (history?.compare ?? []) as Mode[];
+  // Where the scale reads the open page's history: the plugin's history actions through the gateway, with the node's
+  // path parameters and the page's own; the core's test page from its fixtures. The page's filters are part of it.
+  // The test page's fixtures are laid back from the watermark, so they follow it; a plugin's source needs only to know
+  // that the watermark was read, so its cards and bars are kept while "now" moves.
+  const queryKey = JSON.stringify(address?.query ?? {});
+  const sourceNow = address?.owner === "core" ? watermark : watermark === null ? null : "read";
+  const source = useMemo(() => {
+    if (!history || !address?.owner || !watermark) return null;
+    if (address.owner === "core") return fixtureSource(history, watermark);
+    return gatewaySource(address.owner, current.code, history, opened?.scope ?? {}, JSON.parse(queryKey) as Record<string, string>);
+  }, [address?.owner, current.code, history, opened?.scope, queryKey, sourceNow]);
+  const milestone = useCallback(
+    (chosen: Milestone) => {
+      const opens = chosen.opens ?? chosen.link;
+      if (opens && address?.owner) router.push(windowAddress(current.code, address.owner, opens, {}, at), { scroll: false });
+      else choose(chosen.at);
+    },
+    [address?.owner, at, choose, current.code, router],
+  );
   const scaleTitle = title || opened?.node.title || opened?.node.name || current.name;
   const moment = (
     <Scale
       at={at}
       watermark={watermark}
       title={scaleTitle}
-      subtitle={watermark ? "Read the page at any moment up to now" : "Reading now…"}
-      first={changes[0] ?? null}
-      offered={offered}
+      page={address?.path ?? "/"}
+      history={history}
+      source={source}
       canStep={watermark ? canStep(changes, at, watermark) : { older: false, newer: at !== null }}
       onStep={step}
       onChoose={choose}
+      onMilestone={milestone}
+      onChanges={setChanges}
     />
   );
 

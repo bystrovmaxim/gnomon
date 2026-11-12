@@ -1,44 +1,88 @@
 // packages/maxitor/maxitor-core/web/components/scale/Legend.tsx
 // The legend behind the card's "i" (spec 079, FR-010), as the graph viewer's TrackLegend lays it out: what the scale
-// draws on the left — the page's own groups first, then the core's marks, "now" and the chosen moment —, the keys on
-// the right. A page's groups come from its setup; the core's marks and keys are always there.
+// draws on the left — the page's points, its bars, the marks it promised and the core's own —, the keys on the right.
+// Its rows come from the page's setup (legendRows.ts); this file only draws them.
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { useId } from "react";
 
-export type LegendRow = { sample: ReactNode; term: string; def: string };
-export type LegendGroup = { title: string; rows: LegendRow[] };
+import type { LegendSample, LegendSection } from "@/components/scale/legendRows";
+import { Flag, Point, SMALL_POINT, toneColour } from "@/components/scale/Point";
 
-/** A sample of the legend, 40 × 20, as the scale draws the mark. */
-export function Sample({ children }: { children: ReactNode }) {
+const PURPLE = { tone: "purple", look: "filled" } as const;
+
+function Sample({ sample }: { sample: LegendSample }) {
+  const hatch = `h${useId().replace(/:/g, "")}`;
+  let inner;
+  switch (sample.kind) {
+    case "point":
+      inner = (
+        <>
+          <path d="M6 10h28" style={{ stroke: toneColour(sample.point.tone) }} className={`mx-lane-lead${sample.point.lead === "dashed" ? " dashed" : ""}`} />
+          <Point x={20} y={10} r={4.6} kind={sample.point} />
+        </>
+      );
+      break;
+    case "bars":
+      inner = (
+        <>
+          <rect x={8} y={12} width={7} height={6} className="mx-bar-added" />
+          <rect x={17} y={6} width={7} height={12} className="mx-bar-changed" />
+          <rect x={26} y={9} width={7} height={9} className="mx-bar-removed" />
+        </>
+      );
+      break;
+    case "size":
+      inner = (
+        <>
+          <Point x={13} y={10} r={2.4} kind={sample.point ?? PURPLE} />
+          <Point x={27} y={10} r={3.4} kind={sample.point ?? PURPLE} />
+        </>
+      );
+      break;
+    case "flag":
+      inner = (
+        <>
+          <Flag x={20} y={25} r={SMALL_POINT} />
+          <Point x={20} y={14} r={2.6} kind={sample.point ?? PURPLE} />
+        </>
+      );
+      break;
+    case "three":
+      inner = (
+        <>
+          <path d="M9 10h22" style={{ stroke: toneColour((sample.point ?? PURPLE).tone) }} className="mx-lane-lead" />
+          <Point x={10} y={10} r={3} kind={sample.point ?? PURPLE} />
+          <Point x={20} y={10} r={1.9} kind={sample.point ?? PURPLE} />
+          <Point x={30} y={10} r={3} kind={sample.point ?? PURPLE} />
+        </>
+      );
+      break;
+    case "now":
+      inner = (
+        <>
+          <defs>
+            <pattern id={hatch} width={4} height={4} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1={0} y1={0} x2={0} y2={4} className="mx-legend-hatch" />
+            </pattern>
+          </defs>
+          <line x1={20} y1={2} x2={20} y2={18} className="mx-track-now" />
+          <rect x={21} y={2} width={17} height={16} fill={`url(#${hatch})`} />
+        </>
+      );
+      break;
+    default:
+      inner = (
+        <>
+          <line x1={20} y1={2} x2={20} y2={13} className="mx-track-handle" />
+          <circle cx={20} cy={13} r={3.6} className="mx-legend-knob" />
+        </>
+      );
+  }
   return (
     <svg className="mx-legend-sample" viewBox="0 0 40 20" width={40} height={20} aria-hidden>
-      {children}
+      {inner}
     </svg>
-  );
-}
-
-function NowSample() {
-  const hatch = `h${useId().replace(/:/g, "")}`;
-  return (
-    <Sample>
-      <defs>
-        <pattern id={hatch} width={4} height={4} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line x1={0} y1={0} x2={0} y2={4} className="mx-legend-hatch" />
-        </pattern>
-      </defs>
-      <line x1={20} y1={2} x2={20} y2={18} className="mx-track-now" />
-      <rect x={21} y={2} width={17} height={16} fill={`url(#${hatch})`} />
-    </Sample>
-  );
-}
-
-function MomentSample() {
-  return (
-    <Sample>
-      <line x1={20} y1={2} x2={20} y2={13} className="mx-track-handle" />
-      <circle cx={20} cy={13} r={3.6} className="mx-legend-knob" />
-    </Sample>
   );
 }
 
@@ -51,32 +95,19 @@ function Key({ keys, def }: { keys: string[]; def: string }) {
   );
 }
 
-export function Legend({ groups, comparing }: { groups: LegendGroup[]; comparing: boolean }) {
-  const marks: LegendGroup = {
-    title: "Marks",
-    rows: [
-      { sample: <NowSample />, term: "Now", def: "The green dashed line. What lies right of it is hatched: it cannot be chosen yet." },
-      {
-        sample: <MomentSample />,
-        term: "The chosen moment",
-        def: comparing
-          ? "A dark line with its chip under the axis; in a comparison A is hollow above, B dark below. Drag it, or click anywhere to move it."
-          : "A dark line with its chip under the axis. Drag it, or click anywhere to move it.",
-      },
-    ],
-  };
+export function Legend({ sections, comparing }: { sections: LegendSection[]; comparing: boolean }) {
   return (
     <div className="mx-legend" role="tooltip">
       <div>
-        {[...groups, marks].map((group) => (
-          <div className="mx-legend-group" key={group.title}>
-            <div className="mx-legend-title">{group.title}</div>
-            {group.rows.map((row) => (
-              <div className="mx-legend-row" key={row.term}>
-                {row.sample}
+        {sections.map((section) => (
+          <div className="mx-legend-group" key={section.title}>
+            <div className="mx-legend-title">{section.title}</div>
+            {section.items.map((item) => (
+              <div className="mx-legend-row" key={item.term}>
+                <Sample sample={item.sample} />
                 <div>
-                  <div className="mx-legend-term">{row.term}</div>
-                  <div className="mx-legend-def">{row.def}</div>
+                  <div className="mx-legend-term">{item.term}</div>
+                  <div className="mx-legend-def">{item.def}</div>
                 </div>
               </div>
             ))}

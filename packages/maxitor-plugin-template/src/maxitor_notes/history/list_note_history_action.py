@@ -1,13 +1,13 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/history/list_note_history_action.py
 """
-ListNoteHistoryAction — the milestones of an item's notes in a stretch: its published revisions, and the draft as a
-proposal. The core's time scale draws them as points; navigation.yaml names this action ``list_note_history``.
+ListNoteHistoryAction — the milestones of an item's notes in a stretch: its publications. The core's time scale draws
+them as points of the kinds Published declares; Published names this action in its history.
 
 ::
 
     GET /p/notes/api/{organization}/history/list_note_history?item_id=…&from_at=…&to_at=… ──► ListNoteHistoryAction
         ├─ organization_access_decide: the person is a member of {organization}
-        └─ list_summary: the organization's id again; the revisions published in the stretch, the draft last
+        └─ list_summary: the organization's id again; the publications of the stretch
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ class ListNoteHistoryParams(BaseParams):
 class ListNoteHistoryResult(BaseResult):
     """The milestones of the stretch."""
 
-    milestones: list[MilestoneCoreEntity] = Field(description="The revisions in time order, the draft last")
+    milestones: list[MilestoneCoreEntity] = Field(description="The publications in time order")
 
 
 @meta(description="List the milestones of an item's notes in a stretch, for the core's time scale", domain=NotesDomain)
@@ -57,7 +57,7 @@ class ListNoteHistoryAction(BaseAction[ListNoteHistoryParams, ListNoteHistoryRes
     """
     AI-CORE-BEGIN
     ROLE: Answer the core's time scale with the item's milestones.
-    CONTRACT: The shape of history-1.schema.json's milestones; a revision that added and removed no note is minor.
+    CONTRACT: The shape of history-2.schema.json's milestones: kind published, or rollback; one size, no flag.
     INVARIANTS: Revisions are not filtered by author: a page's author filter narrows its notes and bars, not its milestones.
     AI-CORE-END
     """

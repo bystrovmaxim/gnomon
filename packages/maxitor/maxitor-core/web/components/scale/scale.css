@@ -64,15 +64,76 @@
 .mx-track-now { stroke: var(--mx-live); stroke-width: 1.5; stroke-dasharray: 3 3; }
 .mx-track-hover { stroke: var(--mx-past); stroke-width: 1; stroke-dasharray: 2 2; }
 .mx-track-handle { stroke: var(--mx-ink); stroke-width: 1.6; }
-.mx-track-knob { fill: var(--mx-ink); stroke: var(--mx-surface); stroke-width: 2; filter: var(--mx-shadow-handle); }
+.mx-track-knob { fill: var(--mx-ink); stroke: var(--mx-surface); stroke-width: 2; }
 .mx-track-chip { fill: var(--mx-ink); }
 .mx-track-chip-text { font-size: var(--mx-text-axis); font-weight: var(--mx-weight-bold); fill: var(--mx-on-ink); }
 .mx-track-brush { fill: var(--mx-scale-brush); stroke: var(--mx-scale-brush-line); stroke-dasharray: 3 2; }
-.mx-track-tip { position: absolute; z-index: 3; width: calc(var(--mx-card-min) + 2 * var(--mx-empty-pad-x)); box-sizing: border-box; background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); box-shadow: var(--mx-shadow-tip); padding: var(--mx-space-4) var(--mx-filter-pad); font-size: var(--mx-text-scale); line-height: 1.45; color: var(--mx-ink-2); pointer-events: none; display: grid; gap: var(--mx-space-2); }
+.mx-track-tip { position: absolute; z-index: 3; width: var(--mx-scale-tip); box-sizing: border-box; background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); box-shadow: var(--mx-shadow-tip); padding: var(--mx-space-4) var(--mx-filter-pad); font-size: var(--mx-text-scale); line-height: 1.45; color: var(--mx-ink-2); pointer-events: none; display: grid; gap: var(--mx-space-2); }
 .mx-track-tip span { color: var(--mx-pill-arrow); }
+.mx-track-tip.card { width: var(--mx-scale-card-tip); padding: var(--mx-space-5) var(--mx-space-6); gap: 0; }
+.mx-track-tip-counts { display: flex; gap: var(--mx-filter-pad); font-weight: var(--mx-weight-bold); }
+.mx-track-tip span.mx-track-tip-foot { color: var(--mx-faint); font-size: var(--mx-text-sm); }
+.mx-track-grid { stroke: var(--mx-scale-grid); }
+.mx-track-count { font-size: var(--mx-text-tiny); fill: var(--mx-faint); }
+.mx-count-added { color: var(--mx-change-added); }
+.mx-count-changed { color: var(--mx-change-changed); }
+.mx-count-removed { color: var(--mx-change-removed); }
+.mx-track-tip span.mx-count-added { color: var(--mx-change-added); }
+.mx-track-tip span.mx-count-changed { color: var(--mx-change-changed); }
+.mx-track-tip span.mx-count-removed { color: var(--mx-change-removed); }
+
+/* the bars and the lane */
+.mx-bar-added { fill: var(--mx-change-added); }
+.mx-bar-changed { fill: var(--mx-change-changed); }
+.mx-bar-removed { fill: var(--mx-change-removed); }
+.mx-bar { opacity: 0.78; }
+.mx-bar-on { opacity: 1; }
+.mx-lane { stroke: var(--mx-scale-hatch); stroke-width: 2; stroke-linecap: round; }
+.mx-lane-lead { stroke-opacity: 0.35; stroke-width: 2; stroke-linecap: round; fill: none; }
+.mx-lane-lead.dashed { stroke-dasharray: 2 4; }
+.mx-point-filled { stroke: var(--mx-surface); stroke-width: 1.5; }
+.mx-point-hollow, .mx-point-dashed { fill: var(--mx-surface); stroke-width: 1.8; }
+.mx-point-dashed { stroke-dasharray: 2.2 2; }
+.mx-point-ring { fill: none; stroke: var(--mx-muted); stroke-width: 1.4; }
+.mx-point-ref { font-size: var(--mx-text-axis); font-weight: var(--mx-weight-medium); fill: var(--mx-muted); }
+.mx-point-ref.small { font-size: var(--mx-text-tiny); fill: var(--mx-faint); }
+.mx-point-ref.on { font-weight: var(--mx-weight-heavy); }
+.mx-flag-stem { stroke: var(--mx-muted); stroke-width: 1.4; fill: none; }
+.mx-flag-pennant { fill: var(--mx-muted); }
+.mx-card-small.on { color: var(--mx-tone-purple); }
+.mx-three-line { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-opacity: 0.4; }
+
+/* a milestone's card: the plugin's blocks */
+.mx-tip-line { display: flex; align-items: center; gap: var(--mx-space-4); }
+.mx-tip-badge { display: inline-flex; align-items: center; gap: var(--mx-space-2); height: var(--mx-badge-height); padding: 0 var(--mx-space-4); border-radius: var(--mx-radius-round); font-size: var(--mx-text-scale); font-weight: var(--mx-weight-medium); border: var(--mx-badge-outline) solid transparent; }
+.mx-tip-badge.outline { background: var(--mx-surface); }
+.mx-tip-badge-icon { width: var(--mx-badge-icon); height: var(--mx-badge-icon); }
+.mx-tip-ref { color: var(--mx-muted); font-size: var(--mx-text-pill); }
+.mx-track-tip span.mx-tip-ref, .mx-track-tip span.mx-tip-ago { color: var(--mx-muted); }
+.mx-tip-ago { margin-left: auto; color: var(--mx-muted); font-size: var(--mx-text-scale); }
+.mx-tip-title { font-size: var(--mx-text-card-title); font-weight: var(--mx-weight-bold); color: var(--mx-ink); margin-top: var(--mx-space-4); line-height: 1.4; }
+.mx-tip-text { font-size: var(--mx-text-sm); color: var(--mx-muted); margin-top: var(--mx-space-1); }
+.mx-tip-value { color: var(--mx-ink); }
+.mx-track-tip span.mx-tip-value { color: var(--mx-ink); }
+.mx-tip-warn { color: var(--mx-change-removed); }
+.mx-tip-person { display: flex; align-items: center; gap: var(--mx-space-3); margin-top: var(--mx-space-4); font-size: var(--mx-text-pill); color: var(--mx-pill-arrow); }
+.mx-tip-avatar { width: var(--mx-icon-lg); height: var(--mx-icon-lg); border-radius: var(--mx-radius-round); color: var(--mx-on-ink); display: inline-flex; align-items: center; justify-content: center; font-size: var(--mx-text-tiny); font-weight: var(--mx-weight-heavy); }
+.mx-track-tip span.mx-tip-avatar { color: var(--mx-on-ink); }
+.mx-tip-chips { display: flex; align-items: center; gap: var(--mx-space-4); margin-top: var(--mx-space-4); flex-wrap: wrap; }
+.mx-tip-chip { background: var(--mx-chip-bg); border-radius: var(--mx-radius-round); padding: var(--mx-space-1) var(--mx-space-4); font-size: var(--mx-text-scale); font-weight: var(--mx-weight-bold); color: var(--mx-ink-3); display: inline-flex; align-items: center; gap: var(--mx-space-2); }
+.mx-track-tip span.mx-tip-chip { color: var(--mx-ink-3); }
+.mx-tip-chip.release, .mx-track-tip span.mx-tip-chip.release { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-tip-small, .mx-track-tip span.mx-tip-small { font-size: var(--mx-text-scale); color: var(--mx-muted); }
+.mx-tip-foot { color: var(--mx-faint); margin-top: var(--mx-space-2); font-size: var(--mx-text-sm); }
+
+/* under the scale: the comment of the milestone in force */
+.mx-messages { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: var(--mx-space-6); }
+.mx-message { margin-top: var(--mx-space-4); padding-top: var(--mx-space-3); border-top: var(--mx-line-width) solid var(--mx-line-2); display: flex; flex-direction: column; }
+.mx-message b { font-size: var(--mx-text-scale); margin: var(--mx-space-1) 0 var(--mx-space-2); }
+.mx-message-body { margin: var(--mx-space-1) 0 var(--mx-space-3); padding: var(--mx-space-4) var(--mx-filter-pad); max-height: var(--mx-message-max); overflow-y: auto; white-space: pre-wrap; font-size: var(--mx-text-scale); line-height: 1.5; color: var(--mx-ink-3); background: var(--mx-message-bg); border: var(--mx-line-width) solid var(--mx-line-2); border-radius: var(--mx-radius-sm); }
 
 /* the legend behind the "i" */
-.mx-legend { position: absolute; z-index: 70; top: calc(var(--mx-scale-pad-top) + var(--mx-control) + var(--mx-space-4)); right: var(--mx-scale-pad-x); width: calc(var(--mx-scale-card) - 12 * var(--mx-filter-pad)); box-sizing: border-box; background: var(--mx-surface); color: var(--mx-ink-2); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-scale-card-radius); box-shadow: var(--mx-shadow-scale); padding: var(--mx-scale-pad-top) var(--mx-space-6) var(--mx-space-6); line-height: 1.45; display: grid; grid-template-columns: 1fr calc(20 * var(--mx-filter-pad)); gap: var(--mx-space-7); }
+.mx-legend { position: absolute; z-index: 70; top: calc(var(--mx-scale-pad-top) + var(--mx-control) + var(--mx-space-4)); right: var(--mx-scale-pad-x); width: var(--mx-legend-width); box-sizing: border-box; background: var(--mx-surface); color: var(--mx-ink-2); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-scale-card-radius); box-shadow: var(--mx-shadow-scale); padding: var(--mx-scale-pad-top) var(--mx-space-6) var(--mx-space-6); line-height: 1.45; display: grid; grid-template-columns: 1fr var(--mx-legend-keys); gap: var(--mx-space-7); }
 .mx-legend-group { display: grid; gap: var(--mx-filter-pad); align-content: start; }
 .mx-legend-group + .mx-legend-group { margin-top: var(--mx-space-6); }
 .mx-legend-title { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); letter-spacing: var(--mx-tracking-caps); text-transform: uppercase; color: var(--mx-faint); }

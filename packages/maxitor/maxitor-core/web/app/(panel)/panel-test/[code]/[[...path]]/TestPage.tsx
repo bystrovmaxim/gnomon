@@ -17,6 +17,7 @@ import {
   useWatermark,
   type FilterSection,
   type Layers,
+  type PageHistory,
 } from "@maxitor/panel";
 import { useCallback, useMemo, useState } from "react";
 
@@ -34,6 +35,7 @@ export function TestPage() {
   if (path === "/panel-test/drawing") return <TestDrawing />;
   if (path === "/panel-test/unframed") return <Unframed />;
   if (path === "/panel-test/list") return <TestList />;
+  if (path.startsWith("/panel-test/history/")) return <TestHistory fixture={path.slice("/panel-test/history/".length)} />;
 
   return (
     <PanelPage title="Panel test">
@@ -49,6 +51,11 @@ export function TestPage() {
         <button type="button" onClick={() => router.push({ path: "/panel-test/drawing", query: {} })}>Open the drawing</button>{" "}
         <button type="button" onClick={() => router.push({ path: "/panel-test/unframed", query: {} })}>Open a page without the shell</button>{" "}
         <button type="button" onClick={() => router.push({ path: "/panel-test/list", query: {} })}>Open the list</button>{" "}
+        {Object.keys(HISTORIES).map((fixture) => (
+          <span key={fixture}>
+            <button type="button" onClick={() => router.push({ path: `/panel-test/history/${fixture}`, query: {} })}>History: {fixture}</button>{" "}
+          </span>
+        ))}
         <button type="button" data-testid="write-mode" onClick={() => { try { router.push({ query: { ...params, mode: "diff" } }); } catch (refused) { setRefusal(String(refused)); } }}>Write mode</button>
       </div>
       <output data-testid="refusal">{refusal}</output>
@@ -128,6 +135,45 @@ function TestDrawing() {
         ))}
       </MaxitorCanvas>
       <output data-testid="pressed" hidden>{closed}</output>
+    </PanelPage>
+  );
+}
+
+const PUBLISHED_KINDS = {
+  published: { tone: "purple", look: "filled", lead: "solid", term: "Published", def: "The notes as they were published, in force until the next publication." },
+  rollback: { tone: "red", look: "filled", lead: "solid", term: "Rolled back", def: "A publication that brought back the notes of an earlier one; everything published between them stays in the history." },
+} as const;
+
+const GRAPH_KINDS = {
+  direct: { tone: "neutral", look: "filled", lead: "solid", term: "Direct push", def: "A change pushed straight to the branch, with no pull request." },
+  merged: { tone: "purple", look: "filled", lead: "solid", term: "Merged", def: "A merged pull request." },
+  review_required: { tone: "amber", look: "filled", lead: "dashed", term: "Review required", def: "An open pull request no reviewer has answered yet: no approval, no request for changes." },
+  approved: { tone: "green", look: "filled", lead: "dashed", term: "Approved", def: "An open pull request a reviewer approved: it can be merged." },
+  changes_requested: { tone: "red", look: "filled", lead: "dashed", term: "Changes requested", def: "An open pull request a reviewer asked to fix: it cannot be merged as it is." },
+  live: { tone: "neutral", look: "hollow", lead: "dashed", term: "Live", def: "What the service runs now — always last; one point with the newest version when their graphs are the same." },
+} as const;
+
+/** The histories of the scale's fixtures (spec 079, T028): each set up as a plugin's page sets it up. */
+const HISTORIES: Record<string, PageHistory> = {
+  bars: { read: "list_test_notes", compare: ["diff"] },
+  milestones: { milestones: "list_test_history", card: "test_milestone_card", kinds: PUBLISHED_KINDS },
+  both: { read: "list_test_notes", milestones: "list_test_history", card: "test_milestone_card", kinds: PUBLISHED_KINDS, compare: ["diff"] },
+  graph: {
+    milestones: "list_graph_history",
+    card: "test_milestone_card",
+    kinds: GRAPH_KINDS,
+    small: "A larger point changed the graph; a smaller one changed only the version.",
+    flag: "That version was released: its tag is published as a GitHub Release.",
+  },
+  undeclared: { milestones: "list_odd_history", card: "test_milestone_card", kinds: { published: PUBLISHED_KINDS.published } },
+};
+
+/** A page of the scale's fixtures: its history alone, as the time scale reads it. */
+function TestHistory({ fixture }: { fixture: string }) {
+  const history = HISTORIES[fixture];
+  return (
+    <PanelPage title={`History: ${fixture}`} history={history}>
+      <output data-testid="history-fixture">{history ? fixture : "no such fixture"}</output>
     </PanelPage>
   );
 }
