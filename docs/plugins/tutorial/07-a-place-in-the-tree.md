@@ -17,7 +17,7 @@ The template hangs a section of its own in the root of the tree. Under it is one
     order: 500
     page: /
     roles: [member]
-    # A section of its own is entered: the panel holds its items only, Notes at its head.
+    # A section of its own is entered: the panel holds its items only, Notes at its head (spec 085).
     opens: enter
     children:
       # A list node: one instance per item of the organization, read from the plugin's action list_items at the

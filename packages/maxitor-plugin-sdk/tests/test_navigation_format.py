@@ -10,10 +10,9 @@ import json
 import shutil
 from pathlib import Path
 
-import pytest
 import yaml
 from jsonschema import Draft202012Validator
-from maxitor_plugin_sdk.checks import NAVIGATION_FORMAT_1, NAVIGATION_FORMAT_2, SCHEMAS, check_plugin
+from maxitor_plugin_sdk.checks import SCHEMAS, check_plugin
 
 TEMPLATE = Path(__file__).resolve().parents[2] / "maxitor-plugin-template"
 NAVIGATION = Path("src") / "maxitor_notes" / "navigation.yaml"

@@ -168,7 +168,8 @@ export function Tree({
     const chosen = () => {
       if (entered) onEnter(node, scope, title);
       else if (hasChildren) setOpen((was) => new Set(was).add(place));
-      onChosen();
+      // A page opens and the drawer closes with it; a level entered on a phone keeps the drawer, its head and its rows.
+      if (path !== null) onChosen();
     };
     if (path !== null) {
       return (

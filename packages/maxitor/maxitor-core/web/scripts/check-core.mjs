@@ -616,10 +616,15 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   const sheet = await p.locator(".dlg.sheet").boundingBox();
   expect(sheet && Math.round(sheet.y + sheet.height) >= 811 && sheet.width >= 370, "the dialog is not a sheet from the bottom");
   await p.getByRole("button", { name: "Cancel" }).click();
+  // The address is inside Settings, so the drawer arrives at the level of Settings already: head and Plugins only.
   await p.getByRole("button", { name: "The organization's tree" }).click();
+  const drawer = async () => JSON.stringify(await p.locator(".mx-tree.drawer").innerText().catch(() => "no drawer"));
+  expect((await drawer()).includes("Plugins"), `the drawer of the address inside Settings: ${await drawer()} at ${p.url()}`);
+  // Back in the drawer steps out to the root, and Settings is a row there again — entered.
+  await p.locator(".mx-tree.drawer").getByRole("button", { name: "Back" }).click();
+  await p.locator(".mx-tree.drawer .mx-level-head").waitFor({ state: "detached" });
   await p.locator(".mx-tree.drawer .mx-node", { hasText: "Settings" }).click();
   await p.locator(".mx-tree.drawer .mx-level-head", { hasText: "Settings" }).waitFor();
-  await p.locator(".mx-tree.drawer .mx-node", { hasText: "Plugins" }).waitFor();
   await phone.close();
 });
 
