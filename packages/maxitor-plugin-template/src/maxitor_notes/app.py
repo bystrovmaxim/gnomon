@@ -31,6 +31,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from maxitor_plugin_sdk.roles import CORE_ROLES
+from pydantic import ValidationError
 
 from aoa.action_machine.auth.jwt_auth.jwt_auth_coordinator import JwtAuthCoordinator
 from aoa.action_machine.exceptions.access_denied import AccessDenied
@@ -125,6 +126,11 @@ def create_app(dsn: str | None = None, jwks_url: str | None = None) -> FastAPI:
     async def refused(_request: Request, error: NotesRefusalError) -> JSONResponse:
         """A refusal of an action becomes its status and its reason, as the core's refusals do."""
         return JSONResponse(status_code=error.status, content=error.body)
+
+    @app.exception_handler(ValidationError)
+    async def malformed(_request: Request, error: ValidationError) -> JSONResponse:
+        """A query parameter the action's params refuse — a moment not written as one — is 422, named, not a failure."""
+        return JSONResponse(status_code=422, content={"error": "invalid", "fields": sorted({str(item["loc"][0]) for item in error.errors() if item["loc"]})})
 
     @app.exception_handler(AccessDenied)
     async def denied(_request: Request, error: AccessDenied) -> JSONResponse:
