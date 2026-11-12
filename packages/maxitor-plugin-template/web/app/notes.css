@@ -4,6 +4,10 @@
    dialogs are the shell's own. */
 .nt-grid { position: absolute; left: 0; top: 0; grid-template-columns: repeat(3, 280px); gap: 16px; }
 .nt-card { min-height: 120px; display: flex; flex-direction: column; gap: var(--mx-space-3); }
+.nt-card .mx-card-head { align-items: center; }
+.nt-writer { display: flex; align-items: center; gap: var(--mx-space-3); flex: 1; min-width: 0; }
+.nt-who { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.nt-who b, .nt-who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nt-card.fresh { box-shadow: 0 0 0 var(--mx-ring) var(--mx-palette-blue), var(--mx-shadow-float); }
 .nt-card.meets { border-color: color-mix(in srgb, var(--mx-warn) 55%, transparent); }
 /* A change's state as a stripe along the card's left edge, as the accepted mockup draws it. */

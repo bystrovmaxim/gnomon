@@ -10,7 +10,7 @@ history:
   compare: [diff, side_by_side]
 ```
 
-Neither page narrows the list: Draft too offers Diff and Side by side — its two panels show the person's draft at A and at B.
+Neither page narrows the list: Draft too offers Diff and Side by side — its two panels show the person's draft at A and at B. On Draft a note the other moment lacks wears its own state through `arrival` — a changed note glows amber, not green.
 
 ## The page draws one canvas from its context
 
@@ -30,7 +30,8 @@ Published's server part reads the notes at both moments; the page compares them 
   const before = new Map(other.map((note) => [note.id, note]));
   for (const note of shown) {
     const was = before.get(note.id);
-    status.set(note.id, !was ? (side === "a" ? "removed" : "added") : was.body !== note.body ? "changed" : "unchanged");
+    // A note the other moment lacks is added — removed on A's side —, unless the page says what its arrival is.
+    status.set(note.id, !was ? (arrival?.(note) ?? (side === "a" ? "removed" : "added")) : was.body !== note.body ? "changed" : "unchanged");
   }
   const ghosts = side === null ? other.filter((note) => !status.has(note.id)) : [];
 ```

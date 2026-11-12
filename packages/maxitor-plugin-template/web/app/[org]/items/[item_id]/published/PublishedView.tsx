@@ -5,9 +5,9 @@
 // Changes, the stepper walks the changes with each one's card, and the counts go to the pill.
 "use client";
 
-import { ChangeStepper, countsOf, DataTable, Dialog, DiffCard, MaxitorCanvas, PanelPage, useBackToNow, useCanvas, useCounts, useMoment, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
+import { ChangeStepper, countsOf, DataTable, Dialog, DiffCard, MaxitorCanvas, PanelPage, useBackToNow, useCounts, useMoment, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { call } from "../../../notes/api";
 import { compareNotes } from "../../../notes/compare";
@@ -15,7 +15,7 @@ import { PUBLISHED_HISTORY } from "../../../notes/history";
 import { marksInDraft, STATE_LABEL, type Change } from "../../../notes/draft";
 import { DraftIcon } from "../../../notes/marking";
 import { CARD_GAP, cardsBounds, refusalText, when } from "../../../notes/notes";
-import { useFresh } from "../../../notes/parts";
+import { Bring, useFresh, Writer } from "../../../notes/parts";
 import { HEAD, RevisionCard, type PublishedNote, type Revision } from "../../../notes/revision";
 import { initials, paletteOf } from "../people";
 
@@ -150,6 +150,7 @@ export function PublishedView({
             note: step.status !== "changed" ? stepNote.body : undefined,
           }}
           at={{ x: 16, y: 56 }}
+          beside={step.key}
           onClose={() => setPosition(null)}
         />
       ) : null}
@@ -184,8 +185,7 @@ export function PublishedView({
                 return (
                   <article key={note.id} className="mx-card nt-card" data-room-anchor={`note:${note.id}`} data-change={statusOf(note)}>
                     <div className="mx-card-head">
-                      <b>{note.writer_name}</b>
-                      <span>{when(note.updated_at)}</span>
+                      <Writer id={note.writer_id} name={note.writer_name} time={when(note.updated_at)} />
                       {now ? (
                         <span className="nt-tools">
                           <button type="button" title="Change it in my draft" onClick={() => edit(note)}>Edit</button>
@@ -236,18 +236,6 @@ export function PublishedView({
       ) : null}
     </PanelPage>
   );
-}
-
-/** The stepper's step brought into the middle of the canvas, keeping the zoom. */
-function Bring({ anchor }: { anchor: string | null }) {
-  // Only a new step moves the camera: the canvas changes with every move, so it is read, not watched.
-  const api = useCanvas();
-  const canvas = useRef(api);
-  canvas.current = api;
-  useEffect(() => {
-    if (anchor) canvas.current.bring(anchor);
-  }, [anchor]);
-  return null;
 }
 
 /** What a rollback changes, as the dialog says it: "+2 notes · 1 changed · −1 note", or "no changes". */

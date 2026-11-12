@@ -25,7 +25,7 @@ import {
 } from "../../notes/draft";
 import { Alert, Marking, StateDisk } from "../../notes/marking";
 import { CARD_GAP, cardsBounds, refusalText, when } from "../../notes/notes";
-import { useFresh } from "../../notes/parts";
+import { Bring, useFresh, Writer } from "../../notes/parts";
 import { HEAD, type PublishedNote, type Revision } from "../../notes/revision";
 
 type Editing = { noteId: string; body: string; baseBody: string | null; baseRevision: number | null; stored: boolean };
@@ -242,10 +242,12 @@ export function DraftView({
             note: step.status !== "changed" ? stepChange.body : undefined,
           }}
           at={{ x: 16, y: 56 }}
+          beside={step.key}
           onClose={() => setPosition(null)}
         />
       ) : null}
       <MaxitorCanvas bounds={bounds} label="Draft">
+        <Bring anchor={step?.key ?? null} />
         <DraftHead revision={revision} changes={changes} />
         {race ? (
           <div className="nt-race" style={{ top: HEAD }}>
@@ -275,8 +277,7 @@ export function DraftView({
                 data-change={compared.status.get(change.note_id)}
               >
                 <div className="mx-card-head">
-                  <b>{change.writer_name}</b>
-                  <span>{when(change.changed_at)}</span>
+                  <Writer id={change.writer_id} name={change.writer_name} time={when(change.changed_at)} />
                   {now && editing?.noteId !== change.note_id ? (
                     <span className="nt-tools">
                       {change.state !== "deleted" ? (
