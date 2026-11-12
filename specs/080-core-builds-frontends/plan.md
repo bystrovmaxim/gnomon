@@ -103,8 +103,8 @@ docs/plugins/concept.md, docs/plugins/tutorial/ # delivery, building, passport 3
 
 ## Phases (as in the issue)
 
-1. The builder image and its step; the npm list and its check; passport format 3 with `frontend.source` in `maxitor-plugin-sdk`.
-2. The installer builds a version's frontend before deploying it and refuses a failed build by name; the runner runs the built frontend.
+1. The builder image and its step; the npm list and its check.
+2. Passport format 3 with `frontend.source` in `maxitor-plugin-sdk` and the core, read together with the build, since a format 3 wheel carries no site to run; the installer builds a version's frontend before deploying it and refuses a failed build by name; the runner runs the built frontend.
 3. Upgrading the core: builds per core version, the background rebuild, the move when all are built, a failed build holding the move.
 4. `maxitor plugin build --core <version>`; the stand on the production build; the template's wheel with its sources; the template's CI at both bounds and the library's releases; the walk of 1.6 on the stand.
 5. Documentation, changelog, versions.

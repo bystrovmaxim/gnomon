@@ -4,17 +4,17 @@
 
 Phases follow the issue's five; one phase is one commit. `[P]` — may run in parallel with the other `[P]` tasks of its phase.
 
-## Phase 1 — The builder image, its step, the npm list, passport format 3 (US1, US2)
+## Phase 1 — The builder image, its step, the npm list (US1, US2)
+
+- [x] T002 [P] `scripts/make_npm_list.py`: the npm list from `packages/maxitor-plugin-template/web/package-lock.json` and `packages/maxitor-panel`'s dependencies, nested ones included, sorted, `@maxitor/*` left out; writes `packages/maxitor/maxitor-core/maxitor/core/plugins/builder/npm-packages.txt` with its header; `--check` exits 1 when the file is stale.
+- [x] T003 `packages/maxitor/maxitor-core/maxitor/core/plugins/builder/`: `Dockerfile` (`node:22-slim` by digest, `TZ=UTC`, `LANG=C.UTF-8`, `NEXT_TELEMETRY_DISABLED=1`, `/maxitor/lib/`), and `packages/maxitor/hatch_build.py` copying the sources of `packages/maxitor-panel` and `packages/maxitor-tokens` into `builder/lib/` of the sdist and the wheel.
+- [x] T004 `packages/maxitor/maxitor-core/maxitor/core/plugins/frontend_build.py`: the step of `contracts/build-step.md` — the lock's checks, the `@maxitor/*` rewrite, the list and host checks, each failure an `EnvironmentInstallError` with its sentence; pure functions for the checks and the rewrite.
+- [x] T005 `packages/maxitor/maxitor-core/maxitor/core/plugins/frontend_builder.py`: `FrontendBuilderController` — builds the builder image once per core version (`BuilderImageBuiltEvent`), runs the fetch container (registry only) and the build container (`--network none`, user 65534), builds the frontend image from the output; the first error of the failing step as today's `_first_error`.
+- [x] T006 [P] Tests: `packages/maxitor/maxitor-core/tests/test_frontend_build.py` (each step's refusal by name, the rewrite, the containers' network) and `tests/scripts/test_npm_list.py` (the list is up to date). Each refusal test breaks its check and sees the test fail (adversarial).
+
+## Phase 2 — Passport format 3; the installer builds before it deploys; the runner runs the build (US1, US2)
 
 - [ ] T001 [P] `packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/plugin-passport-3.schema.json`: format 2 with `frontend.source` in place of `frontend.build`; remove `plugin-passport-2.schema.json` and format 2 from the SDK's reading (`checks.py`, `compat.py`); `maxitor-plugin-check` refuses format 2 and `frontend.build` by name, and a `frontend.source` folder without `package.json` and `package-lock.json` or holding `node_modules`, `.next` or a built site.
-- [ ] T002 [P] `scripts/make_npm_list.py`: the npm list from `packages/maxitor-plugin-template/web/package-lock.json` and `packages/maxitor-panel`'s dependencies, nested ones included, sorted, `@maxitor/*` left out; writes `packages/maxitor/maxitor-core/maxitor/core/plugins/builder/npm-packages.txt` with its header; `--check` exits 1 when the file is stale.
-- [ ] T003 `packages/maxitor/maxitor-core/maxitor/core/plugins/builder/`: `Dockerfile` (`node:22-slim` by digest, `TZ=UTC`, `LANG=C.UTF-8`, `NEXT_TELEMETRY_DISABLED=1`, `/maxitor/lib/`), and `packages/maxitor/pyproject.toml` force-including `packages/maxitor-panel` and `packages/maxitor-tokens` sources as `builder/lib/panel` and `builder/lib/tokens`.
-- [ ] T004 `packages/maxitor/maxitor-core/maxitor/core/plugins/frontend_build.py`: the step of `contracts/build-step.md` — the lock's checks, the `@maxitor/*` rewrite, the list and host checks, each failure an `EnvironmentInstallError` with its sentence; pure functions for the checks and the rewrite.
-- [ ] T005 `packages/maxitor/maxitor-core/maxitor/core/plugins/frontend_builder.py`: `FrontendBuilderController` — builds the builder image once per core version (`BuilderImageBuiltEvent`), runs the fetch container (registry only) and the build container (`--network none`, user 65534), builds the frontend image from the output; the first error of the failing step as today's `_first_error`.
-- [ ] T006 [P] Tests: `packages/maxitor-plugin-sdk/tests/test_passport_3.py` (format 3 read, format 2 and `frontend.build` refused, sources checked); `packages/maxitor/maxitor-core/tests/plugins/test_frontend_build.py` (each step's refusal by name, the rewrite, the list check) and `test_npm_list.py` (the list is up to date). Each refusal test breaks its check and sees the test fail (adversarial).
-
-## Phase 2 — The installer builds before it deploys; the runner runs the build (US1, US2)
-
 - [ ] T007 `entities.py`, `ddl.py`, a migration in `maxitor/core/migrations/`: `plugins.plugin_build` and `plugins.frontend_generation` with their `*_versions`, descriptions, service time fields (data-model.md).
 - [ ] T008 `storage/build_storage.py`: read and write builds and the generation; the latest build of a version for a core version.
 - [ ] T009 `events.py`: `FrontendBuiltEvent`, `FrontendBuildFailedEvent` (critical), `FrontendGenerationMovedEvent`, `BuilderImageBuiltEvent`.
@@ -22,7 +22,7 @@ Phases follow the issue's five; one phase is one commit. `[P]` — may run in pa
 - [ ] T011 `actions/deploy_and_install_action.py`, `actions/check_version_action.py`, `wheel.py`, `maxitor-core.yaml`: passport 3; deploy only a version with a `built` build for the running core version; a `failed` build fails the install with its reason, shown in Settings → Plugins.
 - [ ] T012 `tools/plugin-installer/.../loop.py`: each round builds every version waiting to deploy that has no build for the running core version, before deploying it.
 - [ ] T013 `plugin_processes.py`: the frontend image is the serving build's (`plugin_build` of the serving core version); no site read from the wheel; `FRONTEND_DOCKERFILE` and `frontend_files` removed.
-- [ ] T014 Tests: the build action's states; a version without a build is not deployed; a failed build refuses the install by name; the runner's plan takes the build's image.
+- [ ] T014 Tests: `packages/maxitor-plugin-sdk/tests/test_passport_3.py` (format 3 read, format 2 and `frontend.build` refused, sources checked); the build action's states; a version without a build is not deployed; a failed build refuses the install by name; the runner's plan takes the build's image.
 
 ## Phase 3 — Upgrading the core (US3)
 

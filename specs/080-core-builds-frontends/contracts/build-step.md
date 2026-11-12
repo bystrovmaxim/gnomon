@@ -12,8 +12,8 @@ The one step that turns a plugin version's frontend sources into a frontend imag
 1. **Lock present and matching**: `package-lock.json` exists and its root entry matches `package.json` — else `the lock file is missing or does not match package.json`.
 2. **Library replaced**: every `@maxitor/*` entry of `package.json` and of the lock points to `/maxitor/lib/<name>`; a name the core does not carry fails: `@maxitor/<name> is not a package of the core <version>`.
 3. **Names on the list**: every other package name in the lock is on the core's list — else `<name> is not on the core's list of npm packages`; every `resolved` URL is on `https://registry.npmjs.org/` — else `<name> is resolved from <host>, not from npm`.
-4. **Fetch**: `npm ci --ignore-scripts` in a container whose only reachable host is the npm registry, as user 65534, filling npm's cache.
-5. **Build**: in a container with no network, as user 65534: `npm ci --offline`, then `next build` with only the core's variables (`NODE_ENV=production`, `NEXT_TELEMETRY_DISABLED=1`, `TZ=UTC`, `LANG=C.UTF-8`); the output must be `standalone`.
+4. **Fetch**: `npm ci --ignore-scripts` with the registry set to npm and the plugin's `.npmrc` left behind, as user 65534, filling npm's cache: npm downloads only the lock's URLs, each checked in step 3, and no code of the plugin or of its packages runs.
+5. **Build**: in a container with no network, as user 65534: `npm ci --offline` with the development packages, then `next build` with only the core's variables (`NODE_ENV=production`, `NEXT_TELEMETRY_DISABLED=1`, `TZ=UTC`, `LANG=C.UTF-8`); the output must be `standalone`.
 6. **Image**: `.next/standalone`, `.next/static` and `public/` copied into `maxitor-plugin/<schema>-frontend:<sha12>-<core version>` on `node:22-slim`, run as 65534 with `node server.js`.
 
 ## Errors

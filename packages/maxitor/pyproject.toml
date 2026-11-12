@@ -108,6 +108,11 @@ dev-mode-dirs = ["maxitor-core", "maxitor-web", "tools/repo-graph-port", "tools/
 [tool.hatch.build.targets.wheel.force-include]
 "skills" = "maxitor/skills"
 
+# The core's @maxitor/* packages, which every plugin's frontend is built with (hatch_build.py).
+[tool.hatch.build.targets.wheel.hooks.custom]
+
+[tool.hatch.build.targets.sdist.hooks.custom]
+
 [tool.hatch.build.targets.sdist]
 exclude = [
   "maxitor-web/client/node_modules",
