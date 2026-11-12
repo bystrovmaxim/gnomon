@@ -99,6 +99,20 @@ async def test_a_second_change_of_one_note_keeps_the_base_of_the_first() -> None
     assert update[1][3] == "Mine again"
 
 
+async def test_a_new_note_edited_again_stays_new() -> None:
+    storage, connection = await _open(script(draft=_row(state="new", base_body=None, base_revision=None), published=None))
+    await storage.edit_note(ORG, ITEM, NOTE, "Mine again", None, None, ANN, "EditNoteAction")
+    update = next(statement for statement in connection.statements if statement[0].startswith("UPDATE note_change SET state"))
+    assert update[1][5] == "new"
+
+
+async def test_a_changed_note_edited_again_stays_changed() -> None:
+    storage, connection = await _open(script(draft=_row(), published={"writer_id": ANN, "body": BASE}))
+    await storage.edit_note(ORG, ITEM, NOTE, "Mine again", BASE, 6, ANN, "EditNoteAction")
+    update = next(statement for statement in connection.statements if statement[0].startswith("UPDATE note_change SET state"))
+    assert update[1][5] == "changed"
+
+
 async def test_a_change_that_leaves_the_note_as_published_takes_the_change_out_of_the_draft() -> None:
     storage, connection = await _open(script(draft=_row(), published={"writer_id": ANN, "body": "Mine"}))
     await storage.edit_note(ORG, ITEM, NOTE, "Mine", BASE, 6, ANN, "EditNoteAction")

@@ -285,10 +285,12 @@ class NotesStorage(PostgresStorage):
                     await self._delete_change(organization_id, editor_id, note_id, changed_at, editor_id, operation)
                     await self.commit()
                     return now
+                # A new note edited again is still new: it was never published, so there is nothing it changes.
+                state = "new" if row["state"] == "new" else "changed"
                 await self._execute(
-                    "UPDATE note_change SET state = 'changed', body = $4, updated_at = $5"
+                    "UPDATE note_change SET state = $6, body = $4, updated_at = $5"
                     " WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid AND note_id = $3::text::uuid",
-                    (organization_id, editor_id, note_id, body, changed_at),
+                    (organization_id, editor_id, note_id, body, changed_at, state),
                 )
             await self._close_change_version(organization_id, editor_id, note_id, changed_at, editor_id, operation)
             await self._open_change_version(organization_id, editor_id, note_id, changed_at, editor_id, operation)
