@@ -26,7 +26,7 @@ The core asks `GET /p/<plugin>/api/<organization>/history/<action>` through the 
 
 | Call | Parameters | Answer |
 |---|---|---|
-| bars | the node's path parameters, the page's own address parameters, `from_at`, `to_at`, `width` (seconds, 60 to 2592000) | `{ bars: [{ start, added, changed, removed }] }`, only bars with a change |
+| bars | the node's path parameters, the page's own address parameters, `from_at`, `to_at`, `width` (seconds, 1 to 2592000) | `{ bars: [{ start, added, changed, removed }] }`, only bars with a change |
 | milestones | the node's path parameters, `from_at`, `to_at` | `{ milestones: [{ id, at, ref, title, kind, small?, flag?, comment?, link?, opens? }] }` |
 | card | the node's path parameters, `id`, `at` when the screen is in the past | `{ blocks: [...] }` |
 

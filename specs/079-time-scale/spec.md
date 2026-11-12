@@ -70,7 +70,7 @@ A person opens the pill on the right of the top row; the card hangs from it, wit
 **Acceptance Scenarios**:
 
 1. **Given** any page, **When** the pill is opened, **Then** the card hangs 11 px under it, its right edge under the pill's, holding the page's scale.
-2. **Given** the scale, **When** a moment is clicked, **Then** it is written to the address as `at`, sent to the page as `panel.location`, kept as chosen to the minute — never moved to the start of a publication —, and the page reads at it.
+2. **Given** the scale, **When** a moment is clicked, **Then** it is written to the address as `at`, sent to the page as `panel.location`, kept as chosen — to the minute, or to the second while the scale is zoomed below a minute — never moved to the start of a publication —, and the page reads at it.
 3. **Given** a page at now, **When** the watermark moves, **Then** "now" moves with it, the page receives `panel.watermark` and reads again; a page in the past or in a comparison does not.
 4. **Given** an address whose `at` is later than the watermark, **When** it opens, **Then** the moment is refused and the page says so and leads to now.
 5. **Given** the pill, **When** its arrows or Shift + ← → are used, **Then** the moment steps to the previous or the next change of the page — through its milestones when it has only milestones —, except while one types or on a handle of the scale.
@@ -235,7 +235,7 @@ On a phone the card is a sheet, Side by side shows one panel at a time switched 
 #### The scale and the moment
 
 - **FR-001**: The core MUST have one time control on the right of the top row — the pill and the card hanging from it, 11 px under it, its right edge under the pill's — made from the graph viewer's `VersionButton`, `VersionPicker`, `VersionTrack` and `VersionTip`, keeping their look and behaviour; every plugin MUST use it.
-- **FR-002**: The moment MUST be one for the whole screen — the tree, the panel and everyone following —, written to the address as `at`, sent to the page as `panel.location`, kept as chosen to the minute, never moved to the start of a publication.
+- **FR-002**: The moment MUST be one for the whole screen — the tree, the panel and everyone following —, written to the address as `at`, sent to the page as `panel.location`, kept as chosen — to the minute, or to the second while the scale is zoomed below a minute —, never moved to the start of a publication.
 - **FR-003**: "Now" MUST be a green dashed line with nothing written on it, following the watermark and sending `panel.watermark`; what lies right of it MUST be hatched and MUST NOT be chosen; an `at` later than the watermark MUST be refused, the page saying so and leading to now.
 - **FR-004**: Continuous history and publications MUST be read the same way: reading at a moment gives the state then; between two publications the answer does not change.
 - **FR-005**: The pill's arrows and Shift + ← → MUST step to the previous or the next change of the page, through its milestones when it has only milestones; Shift + ↑ ↓ MUST step a comparison's changes; neither while one types nor on a handle of the scale; the keys MUST work whether the focus is in the core's frame or in the page, passed through the panel protocol.
@@ -251,7 +251,7 @@ On a phone the card is a sheet, Side by side shows one panel at a time switched 
 
 #### Bars and milestones
 
-- **FR-012**: Bars MUST be drawn as a histogram of the page's changes — added green, changed amber, removed red —, zoomed by dragging across a stretch, by the wheel or a pinch around the pointer, moved by a sideways swipe or Shift-wheel, with the presets 1 h, 1 d, 7 d, 30 d and All moving smoothly; they MUST get finer as one zooms in, from a day to a minute; continuous changes MUST NOT be drawn as points; a hovered bar MUST list its changes — who, what, when.
+- **FR-012**: Bars MUST be drawn as a histogram of the page's changes — added green, changed amber, removed red —, zoomed by dragging across a stretch, by the wheel or a pinch around the pointer, moved by a sideways swipe or Shift-wheel, with the presets 1 h, 1 d, 7 d, 30 d and All moving smoothly; they MUST get finer as one zooms in, from a week to a second, the narrowest stretch a minute, so changes seconds apart stand apart; continuous changes MUST NOT be drawn as points; a hovered bar MUST list its changes — who, what, when.
 - **FR-013**: With no `bars`, the SDK MUST give them by running the page's reading action over the interval, every reading query writing its moment condition through one function of the SDK with two forms — at a moment and over an interval —, the bounds inside the interval grouped into bars by `date_bin`.
 - **FR-014**: A milestone MUST be a point on its own lane at the top of the scale, above the bars and the dates, where it happened — never at an equal step —, drawn alike for every plugin from its kind; the point under the pointer MUST keep its size and gain a ring.
 - **FR-015**: A milestone's card MUST be the plugin's list of blocks of `@maxitor/panel` — `line`, `badge`, `title`, `text`, `fields`, `person`, `chips`, `warn` — asked by its `id` on hover or when it is chosen, drawn by the core from data only, with the milestone's `comment` and `link`; a milestone that is not a state at any moment MUST give `opens` and choosing it MUST open that page without changing `at`.

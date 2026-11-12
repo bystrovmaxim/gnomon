@@ -29,7 +29,7 @@
         "width": {
           "type": "string",
           "pattern": "^[0-9]+$",
-          "description": "Seconds, 60 to 2592000"
+          "description": "Seconds, 1 to 2592000"
         }
       }
     },

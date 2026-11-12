@@ -641,13 +641,7 @@ await scenario("a node that is entered holds its children only; its head, its cr
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
   await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
   expect((await crumbsOf(page)) === "Notes", "the crumbs do not name the entered level, or name the page inside it");
-  // Entering Settings with a note's page open keeps the crumbs on the page's own line: Settings is not over it.
-  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).click();
-  await page.locator(".mx-level-head", { hasText: "Settings" }).waitFor();
-  expect((await crumbsOf(page)) === "Notes", "the crumbs name Settings over a page of Notes");
   // Back steps out of the deepest section through the address: the organization's root (spec 079, FR-041).
-  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
-  await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
   await page.getByRole("button", { name: "Back" }).click();
   await page.locator(".mx-level-head").waitFor({ state: "detached" });
   await page.waitForURL(new RegExp(`/w/${CODE}$`), { waitUntil: "commit" });

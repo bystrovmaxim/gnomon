@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { canStep, chosenMoment, laterThan, momentOf, momentText, msOf, spanText, startsDay, stepMoment } from "../lib/moment.ts";
+import { canStep, chosenMoment, laterThan, momentOf, momentText, msOf, spanText, startsDay, stepMoment, unitOf } from "../lib/moment.ts";
 
 const WATERMARK = "2026-11-12T12:00:30.123456Z";
 
@@ -41,7 +41,17 @@ test("a page without changes has no older step; the newer arrow leads back to no
   assert.deepEqual(canStep([], "2026-11-01T00:00:00.000000Z", WATERMARK), { older: false, newer: true });
 });
 
-test("a stretch is said in minutes, hours or days", () => {
+test("zoomed below a minute, a choice is kept to the second, and a moment off a minute's start says its seconds", () => {
+  assert.equal(unitOf(10_000), 1000);
+  assert.equal(unitOf(60_000), 60_000);
+  assert.equal(chosenMoment(Date.parse("2026-11-10T09:41:17.900Z"), WATERMARK, unitOf(1000)), "2026-11-10T09:41:17.000000Z");
+  assert.equal(chosenMoment(Date.parse("2026-11-12T12:00:30.500Z"), WATERMARK, 1000), null);
+  assert.equal(chosenMoment(Date.parse("2026-11-12T12:00:29.500Z"), WATERMARK, 1000), "2026-11-12T12:00:29.000000Z");
+  assert.equal(momentText(Date.parse("2026-11-12T16:47:28.120Z"), Date.parse(WATERMARK)), "12 Nov, 16:47:28");
+});
+
+test("a stretch is said in seconds, minutes, hours or days", () => {
+  assert.equal(spanText(45 * 1000), "45 s");
   assert.equal(spanText(45 * 60_000), "45 min");
   assert.equal(spanText(6 * 3_600_000), "6 h");
   assert.equal(spanText(12 * 86_400_000), "12 days");

@@ -18,7 +18,7 @@ export function legendOf(setup: PageHistory, comparing: boolean): LegendSection[
   if (setup.read || setup.bars) {
     sections.push({
       title: "Bars",
-      items: [{ sample: { kind: "bars" }, term: "Changes", def: "A bar counts what was added, changed and removed in its stretch of time; bars get finer as you zoom in, from a day to a minute." }],
+      items: [{ sample: { kind: "bars" }, term: "Changes", def: "A bar counts what was added, changed and removed in its stretch of time; bars get finer as you zoom in, from a week to a second." }],
     });
   }
   const marks: LegendItem[] = [];

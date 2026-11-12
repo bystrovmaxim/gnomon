@@ -28,8 +28,8 @@ const CHIP = 30;
 const NEAR = 10;
 const NEAR_POINT = 8;
 const CLICK = 6;
-/** The time "now" is said for: within half a minute of the watermark. */
-const NOW_SLACK = 30_000;
+/** The time "now" is said for: within a second of the watermark. */
+const NOW_SLACK = 1000;
 
 /** A handle of the scale: the one moment, or A and B of a comparison. */
 export type Handle = "one" | "a" | "b";
@@ -254,7 +254,7 @@ export function Track({
               <line x1={x} y1={barsTop} x2={x} y2={base} className={tick.day ? "mx-track-day" : "mx-track-hour"} />
               {x < 18 || x > width - 18 ? null : (
                 <text x={x} y={base + DATES} className={`mx-track-date${tick.day ? " day" : ""}`} textAnchor="middle">
-                  {tick.dated ? dayText(tick.time) : clockText(tick.time)}
+                  {tick.dated ? dayText(tick.time) : clockText(tick.time, tick.seconds)}
                 </text>
               )}
             </g>

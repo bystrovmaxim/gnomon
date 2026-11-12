@@ -21,7 +21,7 @@ import { ScaleCard } from "@/components/scale/ScaleCard";
 import type { Mode } from "@/components/scale/bridge";
 import type { HistorySource } from "@/components/scale/source";
 import { Track, type Handle } from "@/components/scale/Track";
-import { chosenMoment, momentOf, momentText, msOf, spanText } from "@/lib/moment";
+import { chosenMoment, momentOf, momentText, msOf, spanText, unitOf } from "@/lib/moment";
 
 /** The width of the scale inside the 760 px card. */
 const TRACK_WIDTH = 720;
@@ -231,7 +231,7 @@ export function Scale({
   // The arrows step through the milestones, or through the bars' ends when the page has bars.
   const changes = milestones && milestones.length
     ? milestones.filter((milestone) => !milestone.opens).map((milestone) => milestone.at)
-    : (bars ?? []).map((bar) => momentOf(msOf(bar.start) + step));
+    : (bars ?? []).map((bar) => momentOf(msOf(bar.start) + step, unitOf(step)));
   const changesKey = changes.join(",");
   useEffect(() => onChanges(changesKey ? changesKey.split(",") : []), [changesKey, onChanges]);
 
@@ -252,7 +252,7 @@ export function Scale({
   };
 
   // Every stretch asked for — a preset, a drag across, the wheel, a pinch — stays inside the history and is never
-  // narrower than 20 minutes, so a bar never grows past the scale.
+  // narrower than a minute, so a bar never grows past the scale.
   const changeView = useCallback(
     (next: View, smooth: boolean) => {
       if (!domain) return;
@@ -272,11 +272,12 @@ export function Scale({
   const comparing = mode !== "one" && from !== null;
   const choose = (time: number, handle: Handle) => {
     if (!watermark || now === null) return;
-    if (!comparing || handle === "one") return onChoose(chosenMoment(time, watermark));
+    const unit = unitOf(step);
+    if (!comparing || handle === "one") return onChoose(chosenMoment(time, watermark, unit));
     let a = handle === "a" ? time : msOf(from as string);
     let b = handle === "b" ? time : at ? msOf(at) : now;
     if (a > b) [a, b] = [b, a];
-    onRange({ from: momentOf(Math.min(a, now)), at: chosenMoment(b, watermark) });
+    onRange({ from: momentOf(Math.min(a, now), unit), at: chosenMoment(b, watermark, unit) });
   };
   const pick = (milestone: Milestone, handle: Handle) => {
     if (milestone.opens || milestone.link || !comparing || handle === "one") return onMilestone(milestone);

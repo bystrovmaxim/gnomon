@@ -4,7 +4,7 @@ A plugin says the cores it runs with in `requires.maxitor` of its passport and i
 
 | Part | Brought by | What a plugin writes |
 |---|---|---|
-| The time scale: the pill, its card, a moment kept to the minute, "now" and the hatched future | Maxitor 4.11.0 | nothing: every page has it |
+| The time scale: the pill, its card, a moment kept to the minute or the second, "now" and the hatched future | Maxitor 4.11.0 | nothing: every page has it |
 | History format 2: `kinds`, `small`, `flag`, `actions` | Maxitor 4.11.0, `maxitor-plugin-sdk` 1.9.0 (`history-2.schema.json`) | `history` in `PanelPage`; `requires.maxitor: ">=4.11,<5"` |
 | Bars from the reading action over a stretch | Maxitor 4.11.0 | the reading action mounted at `history/<action>` |
 | A card of blocks | Maxitor 4.11.0, `maxitor-plugin-sdk` 1.9.0 | the card action answers `{ blocks }` |

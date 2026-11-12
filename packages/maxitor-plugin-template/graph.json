@@ -4233,7 +4233,7 @@
       "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:width",
       "label": "width",
       "properties": {
-        "description": "A bar's width in seconds",
+        "description": "A bar's width in seconds, from one second to thirty days",
         "entity_schema": false,
         "json_schema_value": false,
         "required": false
@@ -4635,7 +4635,7 @@
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:width",
       "label": "width",
       "properties": {
-        "description": "A bar's width in seconds",
+        "description": "A bar's width in seconds, from one second to thirty days",
         "entity_schema": false,
         "json_schema_value": false,
         "required": false
@@ -4802,7 +4802,7 @@
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:width",
       "label": "width",
       "properties": {
-        "description": "A bar's width in seconds",
+        "description": "A bar's width in seconds, from one second to thirty days",
         "entity_schema": false,
         "json_schema_value": false,
         "required": false

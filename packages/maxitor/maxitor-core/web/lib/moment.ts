@@ -1,8 +1,10 @@
 // packages/maxitor/maxitor-core/web/lib/moment.ts
 // The moment of the screen (spec 079, FR-002 – FR-005): written to the address as `at`, a UTC string to the microsecond
-// that compares as text. A moment chosen on the scale is kept as chosen to the minute; one at the watermark's minute or
-// later is "now", which the address writes as no `at` at all. Nothing here reads the clock: "now" is the watermark.
+// that compares as text. A moment chosen on the scale is kept as chosen — to the minute, or to the second while the scale
+// is zoomed below a minute —; one in the watermark's minute or second or later is "now", which the address writes as no
+// `at` at all. Nothing here reads the clock: "now" is the watermark.
 
+const SECOND = 1000;
 const MINUTE = 60_000;
 
 /** A moment as the address writes it: UTC, to the microsecond at most. */
@@ -23,20 +25,25 @@ export function msOf(moment: string): number {
   return Date.parse(padded(moment).replace(/(\.\d{3})\d{3}Z$/, "$1Z"));
 }
 
-/** The address's moment of a time on the scale: the start of its minute, written to the microsecond. */
-export function momentOf(time: number): string {
-  const start = Math.floor(time / MINUTE) * MINUTE;
+/** The address's moment of a time on the scale: the start of its minute — or of its second —, to the microsecond. */
+export function momentOf(time: number, unit: number = MINUTE): string {
+  const start = Math.floor(time / unit) * unit;
   return new Date(start).toISOString().replace(/\.\d{3}Z$/, ".000000Z");
 }
 
+/** What a choice is kept to: the second while a bar of the scale is shorter than a minute, the minute otherwise. */
+export function unitOf(barWidth: number): number {
+  return barWidth < MINUTE ? SECOND : MINUTE;
+}
+
 /**
- * The moment a click on the scale chooses: null — now — at the watermark's minute or later, never past it; otherwise
- * the minute clicked, kept as chosen and never moved to the start of a publication.
+ * The moment a click on the scale chooses: null — now — in the watermark's minute (or second) or later, never past it;
+ * otherwise the minute (or second) clicked, kept as chosen and never moved to the start of a publication.
  */
-export function chosenMoment(time: number, watermark: string): string | null {
+export function chosenMoment(time: number, watermark: string, unit: number = MINUTE): string | null {
   const now = msOf(watermark);
-  if (Math.floor(time / MINUTE) >= Math.floor(now / MINUTE)) return null;
-  return momentOf(time);
+  if (Math.floor(time / unit) >= Math.floor(now / unit)) return null;
+  return momentOf(time, unit);
 }
 
 /**
@@ -73,10 +80,10 @@ export function dayText(time: number): string {
   return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]}`;
 }
 
-/** A minute as a reader says it: "14:05". */
-export function clockText(time: number): string {
+/** A minute as a reader says it: "14:05"; with its seconds, "14:05:28". */
+export function clockText(time: number, seconds = false): string {
   const date = new Date(time);
-  return `${two(date.getUTCHours())}:${two(date.getUTCMinutes())}`;
+  return `${two(date.getUTCHours())}:${two(date.getUTCMinutes())}${seconds ? `:${two(date.getUTCSeconds())}` : ""}`;
 }
 
 /** Whether a time starts a day: the axis draws its line stronger and dates it. */
@@ -85,15 +92,17 @@ export function startsDay(time: number): boolean {
   return date.getUTCHours() === 0 && date.getUTCMinutes() === 0;
 }
 
-/** A moment on the pill and on the scale's chip: "3 Nov, 14:05"; with its year when it is not this year's. */
+/** A moment on the pill and on the scale's chip: "3 Nov, 14:05", "3 Nov, 14:05:28" off a minute's start; with its year
+    when it is not this year's. */
 export function momentText(time: number, now: number): string {
   const date = new Date(time);
   const year = date.getUTCFullYear() === new Date(now).getUTCFullYear() ? "" : ` ${date.getUTCFullYear()}`;
-  return `${dayText(time)}${year}, ${clockText(time)}`;
+  return `${dayText(time)}${year}, ${clockText(time, date.getUTCSeconds() !== 0)}`;
 }
 
-/** A stretch of time as the scale's head says it: "45 min", "6 h", "12 days". */
+/** A stretch of time as the scale's head says it: "30 s", "45 min", "6 h", "12 days". */
 export function spanText(span: number): string {
+  if (span < 2 * MINUTE) return `${Math.round(span / SECOND)} s`;
   const minutes = span / MINUTE;
   if (minutes < 120) return `${Math.round(minutes)} min`;
   const hours = minutes / 60;

@@ -98,6 +98,10 @@ export function PageFrame({
   const [hidden, setHidden] = useState(0);
   // The open page's history, as the page last gave it and the core's check kept it; one moment only until it gives one.
   const [history, setHistory] = useState<PageHistory>(NO_HISTORY);
+  // The frame enters the document only after the core's page is hydrated: a frame in the server's HTML starts loading
+  // before the core listens, and a fast page's panel.ready would reach nobody.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
 
   const tell = useCallback((message: CoreMessage) => {
     frame.current?.contentWindow?.postMessage(message, window.location.origin);
@@ -186,7 +190,7 @@ export function PageFrame({
 
   return (
     <>
-      <iframe
+      {hydrated ? <iframe
         key={attempt}
         ref={frame}
         className={`mx-panel-frame${state === "ready" ? "" : " waiting"}`}
@@ -194,7 +198,7 @@ export function PageFrame({
         src={src}
         data-hidden={hidden}
         data-history={JSON.stringify(history)}
-      />
+      /> : null}
       {unframed && MARK_UNFRAMED ? (
         <div className="mx-unframed" role="alert">This page has no Maxitor frame</div>
       ) : null}

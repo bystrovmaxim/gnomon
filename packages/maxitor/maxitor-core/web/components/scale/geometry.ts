@@ -1,16 +1,17 @@
 // packages/maxitor/maxitor-core/web/components/scale/geometry.ts
 // The scale's geometry (spec 079, FR-003, FR-012), as the accepted mockup of spec 074 draws it: time to x and back,
-// the stretch in view and its presets, the width of a bar — from a day down to a minute as one zooms in —, the steps
+// the stretch in view and its presets, the width of a bar — from a week down to a second as one zooms in —, the steps
 // of the time axis, and "now" with the hatched future right of it. Pure functions: the card draws what they say.
 
+export const SECOND = 1000;
 export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 
 /** The widths a bar may take, the finest first. */
-export const BAR_STEPS = [MINUTE, 2 * MINUTE, 5 * MINUTE, 10 * MINUTE, 15 * MINUTE, 30 * MINUTE, HOUR, 2 * HOUR, 3 * HOUR, 6 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY];
+export const BAR_STEPS = [SECOND, 2 * SECOND, 5 * SECOND, 10 * SECOND, 15 * SECOND, 30 * SECOND, MINUTE, 2 * MINUTE, 5 * MINUTE, 10 * MINUTE, 15 * MINUTE, 30 * MINUTE, HOUR, 2 * HOUR, 3 * HOUR, 6 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY];
 /** The steps of the time axis's lines and dates, the finest first. */
-export const TICK_STEPS = [5 * MINUTE, 10 * MINUTE, 15 * MINUTE, 30 * MINUTE, HOUR, 2 * HOUR, 3 * HOUR, 6 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY, 14 * DAY];
+export const TICK_STEPS = [5 * SECOND, 10 * SECOND, 15 * SECOND, 30 * SECOND, MINUTE, 2 * MINUTE, 5 * MINUTE, 10 * MINUTE, 15 * MINUTE, 30 * MINUTE, HOUR, 2 * HOUR, 3 * HOUR, 6 * HOUR, 12 * HOUR, DAY, 2 * DAY, 7 * DAY, 14 * DAY];
 
 /** The presets of the zoom, in the order the card shows them; All shows the whole history. */
 export const PRESETS: readonly { label: string; span: number | null }[] = [
@@ -21,8 +22,8 @@ export const PRESETS: readonly { label: string; span: number | null }[] = [
   { label: "All", span: null },
 ];
 
-/** The narrowest stretch one can zoom into. */
-export const MIN_SPAN = 20 * MINUTE;
+/** The narrowest stretch one can zoom into: a minute, so changes seconds apart stand apart. */
+export const MIN_SPAN = MINUTE;
 /** A bar is at least this many pixels wide; the axis keeps this many pixels between two dates. */
 const BAR_PIXELS = 9;
 const TICK_PIXELS = 78;
@@ -49,7 +50,7 @@ export function domainOf(first: number | null, now: number): View {
   return { from, to: now + (now - from) * 0.025 };
 }
 
-/** A stretch kept inside the history and no narrower than 20 minutes, its width kept when it is moved against an edge. */
+/** A stretch kept inside the history and no narrower than a minute, its width kept when it is moved against an edge. */
 export function clampView(view: View, domain: View): View {
   const span = Math.min(Math.max(view.to - view.from, MIN_SPAN), domain.to - domain.from);
   const from = Math.min(Math.max(view.from, domain.from), domain.to - span);
@@ -86,13 +87,16 @@ export function timeAt(x: number, view: View, width: number): number {
   return view.from + (x / width) * (view.to - view.from);
 }
 
-/** The ticks of the axis in a stretch: each with whether it starts a day, which the axis draws stronger and dated. */
-export function ticksOf(view: View, width: number, dayStart: (time: number) => boolean): { time: number; day: boolean; dated: boolean }[] {
+/** A tick of the axis: whether it starts a day — drawn stronger and dated —, and whether its time is said to the second. */
+export type Tick = { time: number; day: boolean; dated: boolean; seconds: boolean };
+
+/** The ticks of the axis in a stretch; below a minute apart they say their seconds. */
+export function ticksOf(view: View, width: number, dayStart: (time: number) => boolean): Tick[] {
   const step = tickStep(view.to - view.from, width);
-  const ticks: { time: number; day: boolean; dated: boolean }[] = [];
+  const ticks: Tick[] = [];
   for (let time = Math.ceil(view.from / step) * step; time <= view.to; time += step) {
     const day = dayStart(time);
-    ticks.push({ time, day, dated: step >= DAY || day });
+    ticks.push({ time, day, dated: step >= DAY || day, seconds: step < MINUTE });
   }
   return ticks;
 }
