@@ -8,18 +8,18 @@
 
 ## Phase 2 — The format (US5)
 
-- [ ] T002 `navigation-4.schema.json`: format 4, `opens` on a node; formats 1–3 left as they are.
-- [ ] T003 `checks.py`: format 4 is read, format 1 and 2 are refused naming format 4, and the two `opens` rules name the node.
-- [ ] T004 The core: `Node.opens`, the validator by format, migration 0008, the column written and read, the field in the tree.
-- [ ] T005 The core's `navigation.yaml` and the template's: format 4, `opens` on every node with children, Settings and Notes entered.
-- [ ] T006 Tests: the SDK's two refusals by node name, format 3 still read, the builder carrying `opens`, the check action storing it.
+- [x] T002 `navigation-4.schema.json`: format 4, `opens` on a node; formats 1–3 left as they are.
+- [x] T003 `checks.py`: format 4 is read, format 1 and 2 are refused naming format 4, and the two `opens` rules name the node.
+- [x] T004 The core: `Node.opens`, the validator by format, migration 0008, the column written and read, the field in the tree.
+- [x] T005 The core's `navigation.yaml` and the template's: format 4, `opens` on every node with children, Settings and Notes entered.
+- [x] T006 Tests: the SDK's two refusals by node name, format 3 still read, the builder carrying `opens`, the check action storing it.
 
 ## Phase 3 — The frame (US1–US4)
 
-- [ ] T007 `lib/tree.ts`: `TreeNode.opens`, `enteredLine`; `upOf` removed with the up it served.
-- [ ] T008 `Frame.tsx`: the stack of levels, rebuilt from the address, pushed by entering, popped by Back and by a crumb; the crumbs' titles.
-- [ ] T009 `Tree.tsx` and `frame.css`: one level at a time, the "›" mark, the head of a level, the drawer alike.
-- [ ] T010 `TreeHead.tsx`: the arrow as Back, off at the root; `TopRow.tsx`: crumbs of the entered levels; `#109`'s FR-018 amended.
+- [x] T007 `lib/tree.ts`: `TreeNode.opens`, `enteredLine`; `upOf` removed with the up it served.
+- [x] T008 `Frame.tsx`: the stack of levels, rebuilt from the address, pushed by entering, popped by Back and by a crumb; the crumbs' titles.
+- [x] T009 `Tree.tsx` and `frame.css`: one level at a time, the "›" mark, the head of a level, the drawer alike.
+- [x] T010 `TreeHead.tsx`: the arrow as Back, off at the root; `TopRow.tsx`: crumbs of the entered levels; `#109`'s FR-018 amended.
 
 ## Phase 4 — Tests and the browser check (US1–US4)
 

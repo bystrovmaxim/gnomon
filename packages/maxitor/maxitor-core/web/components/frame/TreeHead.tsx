@@ -1,14 +1,14 @@
 // packages/maxitor/maxitor-core/web/components/frame/TreeHead.tsx
-// The head of the tree (spec 078, FR-018): collapse, which folds the tree to its head and is not kept between visits,
-// and up, which opens the nearest node above the open one that has a page, at the same moment and without the
-// page's own parameters. Up does not repeat the browser's Back, which already steps through the panel's address.
+// The head of the tree (specs 078 and 085): two buttons, collapse and the arrow. Collapse folds the tree to its head
+// and is not kept between visits; on a phone it leaves the tree a drawer. The arrow is Back: it returns the panel to
+// the level it showed before the last entering, keeping what was expanded there and opening no page, and it is off at
+// the root of the tree. The up it served until bystrovmaxim/gnomon#122 — open the nearest node above with a page —
+// is gone, and so is FR-018 of bystrovmaxim/gnomon#109 as it was written.
 "use client";
-
-import Link from "next/link";
 
 import { Icon } from "@/components/marks";
 
-export function TreeHead({ collapsed, onCollapse, up }: { collapsed: boolean | null; onCollapse: () => void; up: string | null }) {
+export function TreeHead({ collapsed, onCollapse, onBack }: { collapsed: boolean | null; onCollapse: () => void; onBack: (() => void) | null }) {
   return (
     <div className="mx-tree-head">
       {collapsed === null ? null : (
@@ -16,13 +16,13 @@ export function TreeHead({ collapsed, onCollapse, up }: { collapsed: boolean | n
           <Icon.sidebar />
         </button>
       )}
-      {up ? (
-        <Link className="mx-tree-button" href={up} aria-label="Up" title="Up">
-          <Icon.up />
-        </Link>
+      {onBack ? (
+        <button type="button" className="mx-tree-button" aria-label="Back" title="Back" onClick={onBack}>
+          <Icon.left />
+        </button>
       ) : (
-        <span className="mx-tree-button off" role="link" aria-disabled="true" aria-label="Up" title="Up">
-          <Icon.up />
+        <span className="mx-tree-button off" role="link" aria-disabled="true" aria-label="Back" title="Back">
+          <Icon.left />
         </span>
       )}
     </div>

@@ -1,6 +1,7 @@
 // packages/maxitor/maxitor-core/web/components/frame/TopRow.tsx
-// The frame's top row (spec 077, FR-004): the organization with its switch, the path to the open node, the places of
-// the time scale (#98) and of who is on the page (#76), and the person's icon with its menu.
+// The frame's top row (spec 077, FR-004, and spec 085, FR-011): the organization with its switch, the crumbs of the
+// entered levels and the open page, the places of the time scale (#98) and of who is on the page (#76), and the
+// person's icon with its menu. A crumb of an entered level steps the panel out to that level.
 "use client";
 
 import Link from "next/link";
@@ -18,14 +19,17 @@ export function TopRow({
   account,
   current,
   path,
+  onCrumb,
   methods,
   switchTo,
   onMenu,
 }: {
   account: Me;
   current: { code: string; name: string };
-  /** The titles from the tree's root to the open node. */
-  path: string[];
+  /** The entered levels of the panel, the deepest last, and the open page: the crumbs of the top row. */
+  path: { title: string; level: number | null }[];
+  /** A crumb of an entered level was clicked: the panel steps out to it. */
+  onCrumb: (level: number) => void;
   /** The sign-in methods dialog to open on arrival, as the address asks after linking a way in. */
   methods: string | null;
   /** The address of the same page in another organization. */
@@ -59,10 +63,16 @@ export function TopRow({
           ) : null}
         </span>
         <nav className="mx-path" aria-label="Path">
-          {path.map((title, index) => (
-            <span key={`${index}-${title}`} style={{ display: "contents" }}>
+          {path.map((step, index) => (
+            <span key={`${index}-${step.title}`} style={{ display: "contents" }}>
               {index > 0 ? <span className="mx-path-sep">›</span> : null}
-              <span className="mx-path-step">{title}</span>
+              {step.level === null ? (
+                <span className="mx-path-step">{step.title}</span>
+              ) : (
+                <button type="button" className="mx-path-step mx-path-link" onClick={() => onCrumb(step.level as number)} title="Step the panel out to this level">
+                  {step.title}
+                </button>
+              )}
             </span>
           ))}
         </nav>

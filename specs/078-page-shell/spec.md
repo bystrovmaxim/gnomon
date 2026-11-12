@@ -201,6 +201,8 @@ A plugin's author reads in the concept and the tutorial how a page sets its cont
 - **FR-017**: What leaves with `controls` MUST be removed: the core's drawing of controls and its styles, the legend among them; the part of the navigation schema that describes controls; the checks of controls and of their sources in `maxitor-plugin-sdk`; the stored controls of a node in the core's tables; and their tests.
 - **FR-018**: The head of the tree MUST have two 32 px ghost buttons: collapse, which folds the tree to its head as maxitor-web's `LeftSidebar` does, is not remembered between visits, and on a phone leaves the tree a drawer; and up, which opens the nearest node above the open one that has a page, at the same `at` and without the page's own parameters, and is unavailable when there is none.
 
+  Amended by bystrovmaxim/gnomon#122 (spec 085, FR-008 – FR-010): the two buttons stay, and the arrow among them is Back — it returns the panel to the level it showed before the last entering, keeps what was expanded there, opens no page, and is off at the root of the tree. The up it used to be, which opened the nearest node above the open one that has a page, is gone.
+
 #### Keeping every page in the shell
 
 - **FR-019**: `maxitor-plugin-check` MUST refuse a frontend whose page's root is not the shell, which places an element `fixed`, or which sets a `z-index` above the shell's layer, naming the file and the line. It MUST NOT refuse what stays inside the content field: positioning there, another component kit, or the plugin's own colours.
