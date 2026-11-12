@@ -32,7 +32,7 @@ title: Notes
 description: >
   Notes on the plugin's own items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.12.0
+version: 0.13.0
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 ```
@@ -84,7 +84,7 @@ the plugin fits maxitor 4.7.0
 and against one outside `requires.maxitor`, with exit 1:
 
 ```text
-core_range: io.github.bystrovmaxim.notes 0.12.0 needs maxitor >=4.7,<5; this core is maxitor 3.29.0
+core_range: io.github.bystrovmaxim.notes 0.13.0 needs maxitor >=4.7,<5; this core is maxitor 3.29.0
 ```
 
 ## Build the frontend as Maxitor will
@@ -96,7 +96,7 @@ uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core
 ```
 
 ```text
-maxitor-plugin/notes_0_12_0-frontend:fad7af0dee62-4.7.0
+maxitor-plugin/notes_0_13_0-frontend:fad7af0dee62-4.7.0
 ```
 
 A page that does not compile ends the build with exit 1 and the line the installer would record:

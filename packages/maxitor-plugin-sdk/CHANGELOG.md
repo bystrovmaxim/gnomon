@@ -1,5 +1,9 @@
 # Changelog — maxitor-plugin-sdk
 
+## 1.7.1 — 2026-11-12
+
+The navigation format's tests name the template's first page `item-draft`, as the template now calls it; the checks are unchanged. ([#121](https://github.com/bystrovmaxim/gnomon/issues/121))
+
 ## 1.7.0 — 2026-11-12
 
 Navigation format 3: `navigation-3.schema.json` is format 2 without `room` and `history` — the tree only. `checks` refuses format 2 with `NAVIGATION_FORMAT_2` and a node declaring `history`, `room` or `controls` with `retired_node`, naming the node; the page gives its history in its code, so the check of a page's history in `navigation.yaml` is gone. ([#116](https://github.com/bystrovmaxim/gnomon/issues/116))

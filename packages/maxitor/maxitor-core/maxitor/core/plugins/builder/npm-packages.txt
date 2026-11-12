@@ -46,6 +46,7 @@ caniuse-lite
 client-only
 csstype
 detect-libc
+diff
 nanoid
 next
 picocolors

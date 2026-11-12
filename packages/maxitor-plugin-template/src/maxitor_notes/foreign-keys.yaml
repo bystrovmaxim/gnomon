@@ -8,3 +8,9 @@ foreign_keys:
   # A revision's publisher is a member of its organization too.
   - from: { table: revision, columns: [organization_id, publisher_id] }
     to:   { schema: core, table: user, columns: [organization_id, account_id] }
+  # A change's person is a member of the organization whose draft it is.
+  - from: { table: note_change, columns: [organization_id, person_id] }
+    to:   { schema: core, table: user, columns: [organization_id, account_id] }
+  # The note's writer is a member of the same organization.
+  - from: { table: note_change, columns: [organization_id, writer_id] }
+    to:   { schema: core, table: user, columns: [organization_id, account_id] }

@@ -29,7 +29,7 @@ def _copy(tmp_path: Path, document: dict) -> Path:
     return copy
 
 
-def _item_notes(document: dict) -> dict:
+def _item_draft(document: dict) -> dict:
     return document["nodes"][0]["children"][0]["children"][0]
 
 
@@ -49,7 +49,7 @@ def test_older_formats_are_refused_by_name(tmp_path: Path, format_: int, refusal
 @pytest.mark.parametrize(("key", "value"), [("history", {"read": "list_item_notes"}), ("room", {"shared": ["view"]}), ("controls", {"views": {}})])
 def test_a_node_that_declares_what_its_page_gives_is_refused_naming_it(tmp_path: Path, key: str, value: dict) -> None:
     document = _template()
-    _item_notes(document)[key] = value
+    _item_draft(document)[key] = value
     assert check_plugin(_copy(tmp_path, document)) == [
-        f"navigation.yaml: 'item-notes' declares {key}; the page gives its history and controls, and a room shares nothing"
+        f"navigation.yaml: 'item-draft' declares {key}; the page gives its history and controls, and a room shares nothing"
     ]

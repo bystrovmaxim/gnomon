@@ -50,8 +50,8 @@ def test_a_list_node_takes_its_titles_from_its_source_not_a_title(plugin, edit) 
 
 
 def test_an_id_used_twice_is_refused(plugin, edit) -> None:
-    edit("navigation.yaml", lambda doc: _root_section(doc).update(id="item-notes"))
-    assert "navigation: the id 'item-notes' is used twice" in check_plugin(plugin)
+    edit("navigation.yaml", lambda doc: _root_section(doc).update(id="item-draft"))
+    assert "navigation: the id 'item-draft' is used twice" in check_plugin(plugin)
 
 
 def test_two_nodes_opening_the_same_page_are_refused(plugin, edit) -> None:
@@ -80,8 +80,8 @@ def test_a_list_key_defined_twice_in_one_scope_is_refused(plugin, edit) -> None:
 
 @pytest.mark.parametrize("key", ["history", "room"])
 def test_a_page_node_declaring_history_or_a_room_is_refused_by_name(plugin, edit, key) -> None:
-    edit("navigation.yaml", lambda doc: _node(doc, "item-notes").update({key: {}}))
-    assert any(f"'item-notes' declares {key}" in problem for problem in check_plugin(plugin))
+    edit("navigation.yaml", lambda doc: _node(doc, "item-draft").update({key: {}}))
+    assert any(f"'item-draft' declares {key}" in problem for problem in check_plugin(plugin))
 
 
 @pytest.mark.parametrize("page", ["items/{item_id}", "/items/../admin", "/items/{Item}", "/items?view=table"])
@@ -110,7 +110,7 @@ def test_the_items_pages_take_item_id_from_the_list_node_above_them() -> None:
     assert item["each"] == {"source": "list_items", "key": "item_id"}
     assert "page" not in item
     pages = {child["id"]: child["page"] for child in item["children"]}
-    assert pages == {"item-notes": "/items/{item_id}", "item-published": "/items/{item_id}/published", "item-draft": "/items/{item_id}/draft"}
+    assert pages == {"item-draft": "/items/{item_id}", "item-published": "/items/{item_id}/published"}
 
 
 def test_a_page_under_the_items_without_the_list_node_above_is_refused(plugin, edit) -> None:

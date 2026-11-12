@@ -509,17 +509,17 @@ nodes:
           key: item_id                 # the parameter each instance adds to the scope
         roles: [member]
         children:
-          - id: item-notes
-            title: Notes
+          - id: item-draft                 # the person's own changes over the published notes
+            title: Draft
             icon: note
             order: 100
             page: /items/{item_id}
             roles: [member]
-          - id: item-draft
-            title: Draft
+          - id: item-published             # everyone's notes of the revision in force, read only
+            title: Published
             icon: note
-            order: 120
-            page: /items/{item_id}/draft
+            order: 110
+            page: /items/{item_id}/published
             roles: [member]
 ```
 
@@ -885,13 +885,17 @@ acme-maxitor-notes/
         organization_auth_coordinator.py
         membership.py
         entities/note_entity.py
+        entities/note_change_entity.py        # one note in one person's draft, with its state and base
+        entities/note_conflict_entity.py      # a change that meets someone else's publication
         entities/note_author_entity.py
+        draft_rules.py                        # a change applies, drops or is a conflict: by value
         storage/notes_storage.py
         actions/add_note_action.py
         actions/list_item_notes_action.py
         actions/list_note_authors_action.py
         actions/edit_note_action.py
         actions/delete_note_action.py
+        actions/revert_note_change_action.py
         actions/publish_notes_action.py
         actions/list_published_notes_action.py
         actions/list_note_draft_action.py
@@ -991,17 +995,17 @@ class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
 
 `user.organization` is the organization of the address (`/p/notes/api/<organization>/notes`): the plugin's auth coordinator takes it from the path the gateway has already checked and puts it into the context beside the token's person, so a write and a read are bound to it alike. `item_access_decide` checks it again, and that the item is one of the organization's now, and answers `Allowed()` or `FORBIDDEN_OBJECT` (6.6): one answer for an item that does not exist and one of another organization. The role is already checked by `@check_roles`, so the step decides only about the organization and the item. The summary looks the organization's `id` up again, because the decision passes no state on. `versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
 
-**5. Tree nodes.** In `navigation.yaml` — the section "Notes" in the root of the tree, under it the list node `item` whose instances come from the action `list_items`, and under every item its pages: "Notes" (`page: /items/{item_id}`), "Published notes" and "Draft", as in section 7.2 — the tree only. The page's controls and its history are its own (sections 7.8, 7.9): it reads its authors from the action `list_note_authors` and gives them to the shell, with the choice of a list or a table. `maxitor plugin check` checks every `{item_id}` against the list node above it.
+**5. Tree nodes.** In `navigation.yaml` — the section "Notes" in the root of the tree, under it the list node `item` whose instances come from the action `list_items`, and under every item its two pages: "Draft" (`page: /items/{item_id}`) and "Published" (`page: /items/{item_id}/published`), as in section 7.2 — the tree only. The page's controls and its history are its own (sections 7.8, 7.9): Draft gives the State filter and its changes, Published gives the Authors filter and reads its writers from the action `list_note_authors`. `maxitor plugin check` checks every `{item_id}` against the list node above it.
 
-**History.** An item's notes are published together under a number, `v1`, `v2`, with the draft between two revisions: the simplest model of a release. A model where every record goes through a lifecycle of its own — in work, shared, published, archived — is the plugin common data environment (bystrovmaxim/gnomon#106).
+**The draft and its revisions.** An item's published notes change only when a revision is published: every edit, deletion and new note waits in the person's own draft, one versioned row per (person, note) in `note_change`, with its state and the published version it was made over. Publishing takes the whole draft as the item's next revision in one transaction and finds its conflicts by value — the published note no longer reads as the change's base, or is deleted — which the person overwrites or gives up for each note. Draft and Published are read at any moment from the version tables. The common data environment of bystrovmaxim/gnomon#106 grows this model: four states and a lifecycle of every record.
 
 **6. The page.** It opens in the right panel at `/w/<organization>/notes/items/<id>?view=…&author=…&at=…`; everything that changes the view is in the address. The plugin's routes start with the organization: `app/[org]/items/[item_id]/page.tsx`.
 
 ```tsx
 // web/app/[org]/items/[item_id]/page.tsx — a server component
-import { headers } from "next/headers";
 import { momentFrom } from "@maxitor/panel";
-import { NotesView } from "./NotesView";
+import { read } from "../../notes/server";
+import { DraftView } from "./DraftView";
 
 export default async function ItemNotesPage({ params, searchParams }) {
   const { org, item_id } = await params;
@@ -1042,7 +1046,7 @@ export function NotesView({ org, itemId, notes, filters, bar }) {
 }
 ```
 
-The shell draws the author filter at the top left and the view in its bottom bar, and writes `?author=` and `?view=` into the address; the page rebuilds from it. Every note lies on the canvas with its anchor `note:<id>`, so a pointer lands on it on every screen. "New note" opens the shell's `Dialog` — a sheet on a phone — and a card edits its note in place: a `changed_since` or `deleted` refusal is said in the card, the person's text kept. Published notes shows the revision in force; Draft the changes since it and publishing.
+The shell draws the State filter on Draft and the Authors filter on Published, and writes `?state=`, `?author=` and `?view=` into the address; the page rebuilds from it. Every note lies on the canvas with its anchor `note:<id>`, so a pointer lands on it on every screen. "New note" opens the shell's `Dialog` — a sheet on a phone — and a card edits its change in place; Revert asks once. Publishing is a dialog with a title, a comment, an optional release and, when someone published over the draft's base, the conflict list: two marked sides for each note and the choice to overwrite or give up. Published is read only and marks what waits in the person's draft.
 
 **7. Running it locally.**
 

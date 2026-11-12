@@ -1,5 +1,5 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/entities/note_change_entity.py
-"""NoteChangeCoreEntity — what happened to one note between the revision in force and a moment: the draft's line."""
+"""NoteChangeCoreEntity — one note in one person's draft of an item's notes, and how it meets the published one."""
 
 from __future__ import annotations
 
@@ -12,19 +12,27 @@ from aoa.action_machine.intents.entity import entity
 from maxitor_notes.notes_domain import NotesDomain
 
 
-@entity(description="A note added, changed or removed since the revision in force", domain=NotesDomain)
+@entity(description="A note added, changed or deleted in one person's draft", domain=NotesDomain)
 class NoteChangeCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN
-    ROLE: One line of the draft.
-    CONTRACT: ``kind`` is added, changed or removed; ``body`` the text at the moment (the last text for a removed note);
-    ``before`` the text in the revision; ``by_name`` and ``at`` who made the last change and when.
+    ROLE: One card of the draft.
+    CONTRACT: ``state`` is new, changed or deleted; ``body`` the text the change gives the note; ``base_body`` and
+    ``base_revision`` the published version it was made over, empty for a new note; ``writer_name`` whose note it is;
+    ``conflict`` and the ``published_*`` fields the other side, when the published note no longer reads as the base.
+    INVARIANTS: A change is one person's; the draft is read by that person alone.
     AI-CORE-END
     """
 
     note_id: str = Field(min_length=1, description="The note")
-    kind: Literal["added", "changed", "removed"] = Field(description="What happened to the note since the revision")
-    body: str = Field(description="The text at the moment, or the last text of a removed note")
-    before: str | None = Field(default=None, description="The text in the revision; none for an added note")
-    by_name: str = Field(description="Who made the last change, as their name read then")
-    at: str = Field(description="When the last change was made, ISO 8601 with microseconds")
+    state: Literal["new", "changed", "deleted"] = Field(description="What the change does to the note")
+    body: str = Field(description="The text the change gives the note")
+    base_body: str | None = Field(default=None, description="The published text the change was made over; empty for a new note")
+    base_revision: int | None = Field(default=None, description="The revision in force when the change was made; empty before the first")
+    writer_id: str = Field(min_length=1, description="The note's writer")
+    writer_name: str = Field(description="The writer's name as it read when the change was made")
+    changed_at: str = Field(description="When the change was last made, ISO 8601 with microseconds")
+    conflict: bool = Field(default=False, description="Whether the published note now reads otherwise than the base or is deleted")
+    published_body: str | None = Field(default=None, description="The other side's text; empty when it deleted the note")
+    published_by_name: str = Field(default="", description="Who changed or deleted the note since the base")
+    published_at: str = Field(default="", description="When they changed or deleted it, ISO 8601 with microseconds")

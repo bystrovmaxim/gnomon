@@ -1,51 +1,30 @@
-// web/app/[org]/items/[item_id]/page.tsx — the notes of one item, opened at /w/<org>/notes/items/<item_id>.
-// Everything the page shows comes from its address: the organization, the item, the view, the author filter and the moment.
-// Its controls are its own: it gives the shell of @maxitor/panel the authors and the choice of a list or a table, and
-// the shell draws them in the same places as every page of Maxitor and writes them into the address.
-import { headers } from "next/headers";
-import { momentFrom, type BarSection, type FilterSection } from "@maxitor/panel";
-import { initials, paletteOf } from "./people";
-import { NotesView, type Note } from "./NotesView";
+// web/app/[org]/items/[item_id]/page.tsx — the item's Draft, opened at /w/<org>/notes/items/<item_id>: the person's
+// own changes over the published notes at the panel's moment. The published notes are read too, so Edit from
+// Published can open here with the note as its base; nothing is written until the editor is saved.
+import { momentFrom } from "@maxitor/panel";
 
-type Props = {
-  params: Promise<{ org: string; item_id: string }>;
-  searchParams: Promise<Record<string, string | undefined>>;
-};
+import { read } from "../../notes/server";
+import type { Change } from "../../notes/draft";
+import type { PublishedNote, Revision } from "../../notes/revision";
+import { DraftView } from "./DraftView";
 
-export default async function ItemNotesPage({ params, searchParams }: Props) {
+type Props = { params: Promise<{ org: string; item_id: string }>; searchParams: Promise<Record<string, string | undefined>> };
+
+export default async function DraftPage({ params, searchParams }: Props) {
   const { org, item_id } = await params;
-  const query = await searchParams;
-  // Maxitor's gateway put a token for this plugin here; the page passes it on to its own backend and keeps nothing.
-  const authorization = (await headers()).get("authorization") ?? "";
-
-  // MAXITOR_PLUGIN_API is the backend's inner address; its routes live under /p/notes/api/<organization>, as the gateway's do.
-  const url = new URL(`${process.env.MAXITOR_PLUGIN_API}/p/notes/api/${encodeURIComponent(org)}/items/${encodeURIComponent(item_id)}/notes`);
-  // The moment stays an opaque string: it never passes through Date, which would cut it to milliseconds.
-  const at = momentFrom(query);
-  if (at) url.searchParams.set("at", at);
-  // The authors the filter offers: the item's writers at the panel's moment, read by the page from its own action.
-  const authorsUrl = new URL(`${process.env.MAXITOR_PLUGIN_API}/p/notes/api/${encodeURIComponent(org)}/lists/list_note_authors`);
-  authorsUrl.searchParams.set("item_id", item_id);
-  authorsUrl.searchParams.set("limit", "200");
-  if (at) authorsUrl.searchParams.set("at", at);
-  const authorsAnswer = await fetch(authorsUrl, { headers: { authorization }, cache: "no-store" });
-  const authors: { key: string; title: string }[] = authorsAnswer.ok ? (await authorsAnswer.json()).entries : [];
-  const filters: FilterSection[] = [
-    { title: "Authors", param: "author", rows: authors.map((author) => ({ key: author.key, label: author.title, mark: initials(author.title), colour: paletteOf(author.key) })) },
-  ];
-  const bar: BarSection[] = [
-    { kind: "choice", param: "view", default: "cards", options: [{ value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" }] },
-  ];
-
-  // The author filter lists the writers switched on, or is absent when every writer is. One writer is asked of
-  // the backend; several are kept from every writer's notes here.
-  const writers = query.author?.split(",").filter(Boolean);
-  if (writers?.length === 1) url.searchParams.set("author", writers[0]);
-
-  const response = await fetch(url, { headers: { authorization }, cache: "no-store" });
-  const all: Note[] = response.ok ? (await response.json()).notes : [];
-  const notes = writers ? all.filter((note) => writers.includes(note.writer_id)) : all;
-
-  // The page's shell, its canvas, its writing and its reading again when "now" moved are drawn by NotesView.
-  return <NotesView org={org} itemId={item_id} notes={notes} filters={filters} bar={bar} />;
+  const at = momentFrom(await searchParams) ?? undefined;
+  const [draft, published] = await Promise.all([
+    read<{ revision: Revision | null; changes: Change[] }>(org, `/items/${encodeURIComponent(item_id)}/draft`, { at }),
+    read<{ revision: Revision | null; notes: PublishedNote[] }>(org, `/items/${encodeURIComponent(item_id)}/published`, { at }),
+  ]);
+  return (
+    <DraftView
+      org={org}
+      itemId={item_id}
+      revision={draft?.revision ?? null}
+      changes={draft?.changes ?? []}
+      published={published?.notes ?? []}
+      publishedRevision={published?.revision ?? null}
+    />
+  );
 }

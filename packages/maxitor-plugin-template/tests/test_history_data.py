@@ -162,9 +162,8 @@ def test_the_pages_give_their_history_and_the_passport_its_comparisons() -> None
     passport = yaml.safe_load((PACKAGE / "maxitor-plugin.yaml").read_text())
     web = PACKAGE.parents[1] / "web" / "app" / "[org]" / "items" / "[item_id]"
     assert passport["history"] == {"compare": ["diff", "side_by_side"]}
-    assert 'history={{ read: "list_item_notes", milestones: "list_note_history", card: "note_milestone_card" }}' in (web / "NotesView.tsx").read_text()
     assert 'history={{ milestones: "list_note_history", card: "note_milestone_card" }}' in (web / "published" / "PublishedView.tsx").read_text()
-    assert "history={{ compare: [] }}" in (web / "draft" / "DraftView.tsx").read_text()
+    assert "history={{ compare: [] }}" in (web / "DraftView.tsx").read_text()
     assert "history" not in (PACKAGE / "navigation.yaml").read_text().replace("# The page's controls and its history", "")
     assert {path.name for path in (PACKAGE / "history").glob("*_action.py")} == {"list_note_history_action.py", "note_milestone_card_action.py"}
 

@@ -19,7 +19,7 @@ READS = {
     "note_authors": lambda storage: storage.note_authors(ORG, ITEM, MOMENT, 50, None),
     "revision_at": lambda storage: storage.revision_at(ORG, ITEM, MOMENT),
     "published_notes": lambda storage: storage.published_notes(ORG, ITEM, MOMENT),
-    "draft": lambda storage: storage.draft(ORG, ITEM, MOMENT),
+    "draft": lambda storage: storage.draft(ORG, ITEM, "33333333-3333-3333-3333-333333333333", MOMENT),
     "note_versions_between": lambda storage: storage.note_versions_between(ORG, ITEM, MOMENT, LATER, None),
     "milestones": lambda storage: storage.milestones(ORG, ITEM, MOMENT, LATER),
 }
