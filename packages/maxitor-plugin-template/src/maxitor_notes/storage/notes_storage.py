@@ -37,17 +37,19 @@ from aoa.action_machine.intents.entities import entities
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources.postgres import PostgresStorage
 from aoa.action_machine.resources.sql import SqlStorageWrapper
+from maxitor_notes.draft_rules import PublishedNote, decide
 from maxitor_notes.entities.item_entry_entity import ItemEntryCoreEntity
 from maxitor_notes.entities.milestone_card_entity import MilestoneCardCoreEntity
 from maxitor_notes.entities.milestone_entity import MilestoneCoreEntity
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_change_entity import NoteChangeCoreEntity
+from maxitor_notes.entities.note_conflict_entity import NoteConflictCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
 from maxitor_notes.entities.revision_entity import RevisionCoreEntity
 from maxitor_notes.notes_refusal_error import NotesRefusalError
 
 #: The plugin's version tables: its change time and watermark follow them.
-VERSION_TABLES = ("item_versions", "note_versions", "revision_versions")
+VERSION_TABLES = ("item_versions", "note_versions", "note_change_versions", "revision_versions")
 
 
 #: Connection key under which actions receive the storage.
@@ -57,7 +59,7 @@ NOTES_CONNECTION_KEY = "notes"
 ITEM_ICON = "folder"
 
 @meta(description="The plugin's own schema, written as its version's user; the core reached only by its functions")
-@entities(ItemEntryCoreEntity, NoteCoreEntity, NoteAuthorCoreEntity, RevisionCoreEntity, NoteChangeCoreEntity, MilestoneCoreEntity, MilestoneCardCoreEntity)
+@entities(ItemEntryCoreEntity, NoteCoreEntity, NoteAuthorCoreEntity, RevisionCoreEntity, NoteChangeCoreEntity, NoteConflictCoreEntity, MilestoneCoreEntity, MilestoneCardCoreEntity)
 class NotesStorage(PostgresStorage):
     """
     AI-CORE-BEGIN
@@ -211,130 +213,228 @@ class NotesStorage(PostgresStorage):
         )
         return [ItemEntryCoreEntity(key=row["key"], title=row["title"], icon=ITEM_ICON) for row in rows]
 
-    async def add_note(self, organization_id: str, item_id: str, writer_id: str, body: str, operation: str) -> str:
-        """Write a new note and its first version in one transaction; return the change time."""
+    async def add_note_change(self, organization_id: str, item_id: str, person_id: str, body: str, operation: str) -> str:
+        """Write a new note into the person's draft and its first version in one transaction; return the change time."""
         await self.begin()
         try:
-            changed_at = await self._fetchval(change_time_sql(VERSION_TABLES), (organization_id,))
-            note_id = str(uuid4())
+            changed_at, now = await self._change_time_now(organization_id)
+            change_id, note_id = str(uuid4()), str(uuid4())
             await self._execute(
-                "INSERT INTO note (id, organization_id, item_id, writer_id, body, created_at, updated_at)"
-                " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4::text::uuid, $5, $6, $6)",
-                (note_id, organization_id, item_id, writer_id, body, changed_at),
+                "INSERT INTO note_change (id, organization_id, item_id, person_id, note_id, writer_id, state, body,"
+                " base_body, base_revision, created_at, updated_at)"
+                " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4::text::uuid, $5::text::uuid,"
+                " $4::text::uuid, 'new', $6, NULL, NULL, $7, $7)",
+                (change_id, organization_id, item_id, person_id, note_id, body, changed_at),
             )
-            await self._execute(
-                "INSERT INTO note_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
-                " item_id, writer_id, body, created_at, updated_at)"
-                " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, writer_id, body, created_at, updated_at"
-                " FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
-                (organization_id, note_id, changed_at, writer_id, operation),
-            )
-            moment = await self._fetchval(f"SELECT {moment_text('$1::timestamptz')}", (changed_at,))
+            await self._open_change_version(organization_id, person_id, note_id, changed_at, person_id, operation)
             await self.commit()
         except BaseException:
             await self.rollback()
             raise
-        return str(moment)
+        return now
 
-    async def edit_note(self, organization_id: str, note_id: str, body: str, base_moment: str, editor_id: str, operation: str) -> str:
+    async def edit_note(
+        self,
+        organization_id: str,
+        item_id: str,
+        note_id: str,
+        body: str,
+        base_body: str | None,
+        base_revision: int | None,
+        editor_id: str,
+        operation: str,
+    ) -> str:
         """
-        Change the text of a note the editor saw at ``base_moment``; return the change time.
+        Change a note in the editor's own draft; return the change time.
 
-        One transaction after the organization's lock: the current row is locked; a note deleted since, or changed by
-        someone else after ``base_moment``, is refused and nothing is written; the same text writes nothing. Otherwise
-        the open version closes and the new one opens, both at the change time.
+        One transaction under the organization's lock. A draft change already there keeps its base and takes the new
+        text; a change that leaves the note as it is published removes the draft's change. A note that never was is
+        refused. The published note is never written.
         """
         await self.begin()
         try:
-            changed_at, now = await self._change_time(organization_id, base_moment)
-            since = await self._open_version(organization_id, note_id, base_moment)
-            if since["body"] == body:
+            changed_at, now = await self._change_time_now(organization_id)
+            row = await self._fetchrow(
+                "SELECT id::text AS id, state, body, base_body, base_revision, writer_id::text AS writer_id"
+                " FROM note_change WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid"
+                " AND note_id = $3::text::uuid FOR UPDATE",
+                (organization_id, editor_id, note_id),
+            )
+            published = await self._fetchrow(
+                "SELECT writer_id::text AS writer_id, body FROM note"
+                " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid FOR UPDATE",
+                (organization_id, note_id),
+            )
+            base = base_body if row is None else row["base_body"]
+            if row is None:
+                writer_id = published["writer_id"] if published is not None else await self._note_writer(organization_id, note_id)
+                if writer_id is None:
+                    raise NotesRefusalError("no_such_note", 404)
+                if body == base or (published is not None and body == published["body"]):
+                    await self.rollback()
+                    return now
+                await self._execute(
+                    "INSERT INTO note_change (id, organization_id, item_id, person_id, note_id, writer_id, state, body,"
+                    " base_body, base_revision, created_at, updated_at)"
+                    " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4::text::uuid, $5::text::uuid,"
+                    " $6::text::uuid, 'changed', $7, $8, $9, $10, $10)",
+                    (str(uuid4()), organization_id, item_id, editor_id, note_id, writer_id, body, base, base_revision, changed_at),
+                )
+            else:
+                if body == base or (published is not None and body == published["body"]):
+                    await self._delete_change(organization_id, editor_id, note_id, changed_at, editor_id, operation)
+                    await self.commit()
+                    return now
+                await self._execute(
+                    "UPDATE note_change SET state = 'changed', body = $4, updated_at = $5"
+                    " WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid AND note_id = $3::text::uuid",
+                    (organization_id, editor_id, note_id, body, changed_at),
+                )
+            await self._close_change_version(organization_id, editor_id, note_id, changed_at, editor_id, operation)
+            await self._open_change_version(organization_id, editor_id, note_id, changed_at, editor_id, operation)
+            await self.commit()
+        except BaseException:
+            await self.rollback()
+            raise
+        return now
+
+    async def delete_note(
+        self,
+        organization_id: str,
+        item_id: str,
+        note_id: str,
+        base_body: str | None,
+        base_revision: int | None,
+        editor_id: str,
+        operation: str,
+    ) -> str:
+        """
+        Delete a note in the editor's own draft; return the change time.
+
+        A new note is removed from the draft; a published note becomes a deletion with its base. At every earlier
+        moment, and for everyone else, the note stays as it is published.
+        """
+        await self.begin()
+        try:
+            changed_at, now = await self._change_time_now(organization_id)
+            row = await self._fetchrow(
+                "SELECT id::text AS id, state, body, base_body, base_revision, writer_id::text AS writer_id"
+                " FROM note_change WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid"
+                " AND note_id = $3::text::uuid FOR UPDATE",
+                (organization_id, editor_id, note_id),
+            )
+            published = await self._fetchrow(
+                "SELECT writer_id::text AS writer_id, body FROM note"
+                " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid FOR UPDATE",
+                (organization_id, note_id),
+            )
+            if row is not None and row["state"] == "new":
+                await self._delete_change(organization_id, editor_id, note_id, changed_at, editor_id, operation)
+                await self.commit()
+                return now
+            writer_id = row["writer_id"] if row is not None else (published["writer_id"] if published is not None else await self._note_writer(organization_id, note_id))
+            if writer_id is None:
                 await self.rollback()
-                return str(since["since"])
-            await self._execute(
-                "UPDATE note SET body = $3, updated_at = $4 WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
-                (organization_id, note_id, body, changed_at),
-            )
-            await self._close_version(organization_id, note_id, changed_at, editor_id, operation)
-            await self._execute(
-                "INSERT INTO note_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
-                " item_id, writer_id, body, created_at, updated_at)"
-                " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, writer_id, body, created_at, updated_at"
-                " FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid"
-                " ON CONFLICT (organization_id, id, valid_from_at) DO UPDATE SET body = EXCLUDED.body, updated_at = EXCLUDED.updated_at",
-                (organization_id, note_id, changed_at, editor_id, operation),
-            )
+                return now
+            if row is None:
+                if published is None:
+                    await self.rollback()
+                    return now
+                await self._execute(
+                    "INSERT INTO note_change (id, organization_id, item_id, person_id, note_id, writer_id, state, body,"
+                    " base_body, base_revision, created_at, updated_at)"
+                    " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4::text::uuid, $5::text::uuid,"
+                    " $6::text::uuid, 'deleted', $7, $7, $8, $9, $9)",
+                    (str(uuid4()), organization_id, item_id, editor_id, note_id, writer_id, published["body"], base_revision, changed_at),
+                )
+            else:
+                await self._execute(
+                    "UPDATE note_change SET state = 'deleted', body = base_body, updated_at = $4"
+                    " WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid AND note_id = $3::text::uuid",
+                    (organization_id, editor_id, note_id, changed_at),
+                )
+            await self._close_change_version(organization_id, editor_id, note_id, changed_at, editor_id, operation)
+            await self._open_change_version(organization_id, editor_id, note_id, changed_at, editor_id, operation)
             await self.commit()
         except BaseException:
             await self.rollback()
             raise
         return now
 
-    async def delete_note(self, organization_id: str, note_id: str, base_moment: str, editor_id: str, operation: str) -> str:
-        """
-        Delete a note the editor saw at ``base_moment``; return the change time.
-
-        The same checks as an edit; the current row is deleted and its open version closed with who deleted it and by
-        which action — no new version. At every earlier moment the note is still there.
-        """
+    async def revert_note_change(self, organization_id: str, note_id: str, person_id: str, operation: str) -> str:
+        """Give one change of the person's draft up; return the change time. The published note is untouched."""
         await self.begin()
         try:
-            changed_at, now = await self._change_time(organization_id, base_moment)
-            await self._open_version(organization_id, note_id, base_moment)
-            await self._execute(
-                "DELETE FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid", (organization_id, note_id)
+            changed_at, now = await self._change_time_now(organization_id)
+            row = await self._fetchrow(
+                "SELECT id::text AS id FROM note_change"
+                " WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid AND note_id = $3::text::uuid FOR UPDATE",
+                (organization_id, person_id, note_id),
             )
-            await self._close_version(organization_id, note_id, changed_at, editor_id, operation)
+            if row is None:
+                await self.rollback()
+                return now
+            await self._delete_change(organization_id, person_id, note_id, changed_at, person_id, operation)
             await self.commit()
         except BaseException:
             await self.rollback()
             raise
         return now
 
-    async def _change_time(self, organization_id: str, base_moment: str) -> tuple[Any, str]:
-        """The change time after the organization's lock, and it as a moment; a ``base_moment`` not come yet is refused."""
+    async def _change_time_now(self, organization_id: str) -> tuple[Any, str]:
+        """The change time after the organization's lock, and it as a moment."""
         changed_at = await self._fetchval(change_time_sql(VERSION_TABLES), (organization_id,))
         now = str(await self._fetchval(f"SELECT {moment_text('$1::timestamptz')}", (changed_at,)))
+        return changed_at, now
+
+    async def _change_time(self, organization_id: str, base_moment: str) -> tuple[Any, str]:
+        """The change time, and it as a moment; a ``base_moment`` not come yet is refused."""
+        changed_at, now = await self._change_time_now(organization_id)
         if base_moment >= now:
             raise NotesRefusalError("moment_not_come", 422, watermark=now)
         return changed_at, now
 
-    async def _open_version(self, organization_id: str, note_id: str, base_moment: str) -> Any:
-        """
-        The note's open version, its current row locked; refused when the note is deleted, or changed by someone
-        else after ``base_moment``. A changing action reads the current table; the version tells only when and who.
-        """
-        row = await self._fetchrow(
-            "SELECT id FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid FOR UPDATE",
+    async def _note_writer(self, organization_id: str, note_id: str) -> str | None:
+        """The writer of a note that is no longer published, from its last version; none when it never was."""
+        value = await self._fetchval(
+            "SELECT writer_id::text AS writer_id FROM note_versions"
+            " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid ORDER BY valid_from_at DESC LIMIT 1",
             (organization_id, note_id),
         )
-        if row is None:
-            closed = await self._fetchrow(
-                f"SELECT {member_name('organization_id', 'closed_by', 'valid_to_at')} AS deleted_by,"
-                f" {moment_text('valid_to_at')} AS deleted_at FROM note_versions"
-                " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND closed_by IS NOT NULL"
-                " ORDER BY valid_to_at DESC LIMIT 1",
-                (organization_id, note_id),
-            )
-            if closed is None:
-                raise NotesRefusalError("no_such_note", 404)
-            raise NotesRefusalError("deleted", 409, deleted_by=closed["deleted_by"], deleted_at=closed["deleted_at"])
-        version = await self._fetchrow(
-            f"SELECT {moment_text('valid_from_at')} AS since, body,"
-            f" {member_name('organization_id', 'author_id', 'valid_from_at')} AS changed_by FROM note_versions"
-            " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND valid_to_at IS NULL",
-            (organization_id, note_id),
-        )
-        if version["since"] > base_moment:
-            raise NotesRefusalError("changed_since", 409, changed_by=version["changed_by"], changed_at=version["since"])
-        return version
+        return None if value is None else str(value)
 
-    async def _close_version(self, organization_id: str, note_id: str, changed_at: Any, editor_id: str, operation: str) -> None:
-        """Close the note's open version at the change time, with who closed it and by which action."""
+    async def _close_change_version(
+        self, organization_id: str, person_id: str, note_id: str, changed_at: Any, editor_id: str, operation: str
+    ) -> None:
+        """Close the draft's open version at the change time, with who closed it and by which action."""
         await self._execute(
-            "UPDATE note_versions SET valid_to_at = $3, closed_by = $4::text::uuid, closed_operation = $5"
-            " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND valid_to_at IS NULL AND valid_from_at < $3",
-            (organization_id, note_id, changed_at, editor_id, operation),
+            "UPDATE note_change_versions SET valid_to_at = $4, closed_by = $5::text::uuid, closed_operation = $6"
+            " WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid AND note_id = $3::text::uuid"
+            " AND valid_to_at IS NULL AND valid_from_at < $4",
+            (organization_id, person_id, note_id, changed_at, editor_id, operation),
+        )
+
+    async def _open_change_version(
+        self, organization_id: str, person_id: str, note_id: str, changed_at: Any, editor_id: str, operation: str
+    ) -> None:
+        """Open the draft's new version at the change time, from the current row."""
+        await self._execute(
+            "INSERT INTO note_change_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
+            " item_id, person_id, note_id, writer_id, state, body, base_body, base_revision, created_at, updated_at)"
+            " SELECT organization_id, id, $4, NULL, $5::text::uuid, $6, item_id, person_id, note_id, writer_id, state,"
+            " body, base_body, base_revision, created_at, updated_at FROM note_change"
+            " WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid AND note_id = $3::text::uuid",
+            (organization_id, person_id, note_id, changed_at, editor_id, operation),
+        )
+
+    async def _delete_change(
+        self, organization_id: str, person_id: str, note_id: str, changed_at: Any, editor_id: str, operation: str
+    ) -> None:
+        """Close the draft's open version and remove the change from the draft."""
+        await self._close_change_version(organization_id, person_id, note_id, changed_at, editor_id, operation)
+        await self._execute(
+            "DELETE FROM note_change WHERE organization_id = $1::text::uuid AND person_id = $2::text::uuid AND note_id = $3::text::uuid",
+            (organization_id, person_id, note_id),
         )
 
     async def notes_of_item(self, organization_id: str, item_id: str, moment: str | None, writer_id: str | None) -> list[NoteCoreEntity]:
@@ -357,52 +457,197 @@ class NotesStorage(PostgresStorage):
         return [NoteCoreEntity(**_mapping(row)) for row in rows]
 
     async def publish_notes(
-        self, organization_id: str, item_id: str, title: str, comment: str, release: str | None, publisher_id: str, operation: str
+        self,
+        organization_id: str,
+        item_id: str,
+        person_id: str,
+        title: str,
+        comment: str,
+        release: str | None,
+        resolutions: dict[str, str],
+        publisher_id: str,
+        operation: str,
     ) -> tuple[int, str]:
         """
-        Publish the item's notes as its next revision; return its number and the change time.
+        Publish the person's whole draft as the item's next revision; return its number and the change time.
 
-        Under the organization's lock the last number is read from the current table, so two editors publishing at
-        once get two consecutive numbers. With no note added, changed or deleted since the last revision there is
-        nothing to publish.
+        Under the organization's lock the conflicts are found by value; while one has no choice the answer is the list
+        and nothing is written. Otherwise the changes are applied — new, changed, restored, deleted — the revision is
+        written, and the draft is emptied.
         """
+        refusal: NotesRefusalError | None = None
+        number = 0
         await self.begin()
         try:
-            changed_at = await self._fetchval(change_time_sql(VERSION_TABLES), (organization_id,))
+            changed_at, now = await self._change_time_now(organization_id)
             last = await self._fetchrow(
                 "SELECT number, created_at FROM revision WHERE organization_id = $1::text::uuid AND item_id = $2::text::uuid"
                 " ORDER BY number DESC LIMIT 1",
                 (organization_id, item_id),
             )
-            since = None if last is None else last["created_at"]
-            changed = await self._fetchval(
-                "SELECT EXISTS (SELECT 1 FROM note_versions"
-                " WHERE organization_id = $1::text::uuid AND item_id = $2::text::uuid"
-                " AND ($3::timestamptz IS NULL OR valid_from_at > $3 OR valid_to_at > $3))",
-                (organization_id, item_id, since),
+            rows = await self._fetch(
+                "SELECT note_id::text AS note_id, state, body, base_body, base_revision,"
+                " writer_id::text AS writer_id,"
+                f" {member_name('organization_id', 'writer_id', 'updated_at')} AS writer_name,"
+                f" {moment_text('updated_at')} AS changed_at"
+                " FROM note_change WHERE organization_id = $1::text::uuid AND item_id = $2::text::uuid"
+                " AND person_id = $3::text::uuid ORDER BY created_at FOR UPDATE",
+                (organization_id, item_id, person_id),
             )
-            if not changed:
+            changes = [NoteChangeCoreEntity(**_mapping(row)) for row in rows]
+            if not changes:
                 raise NotesRefusalError("nothing_to_publish", 409, revision=0 if last is None else last["number"])
-            number = 1 if last is None else int(last["number"]) + 1
-            revision_id = str(uuid4())
-            await self._execute(
-                "INSERT INTO revision (id, organization_id, item_id, number, title, comment, release, publisher_id, created_at, updated_at)"
-                " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4, $5, $6, $7, $8::text::uuid, $9, $9)",
-                (revision_id, organization_id, item_id, number, title, comment, release, publisher_id, changed_at),
-            )
-            await self._execute(
-                "INSERT INTO revision_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
-                " item_id, number, title, comment, release, publisher_id, created_at, updated_at)"
-                " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, number, title, comment, release,"
-                " publisher_id, created_at, updated_at FROM revision WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
-                (organization_id, revision_id, changed_at, publisher_id, operation),
-            )
-            moment = await self._fetchval(f"SELECT {moment_text('$1::timestamptz')}", (changed_at,))
+            published, identities = await self._published_notes_now(organization_id, item_id)
+            decisions = decide(changes, published)
+            conflicts = [decision.conflict for decision in decisions if decision.kind == "conflict" and decision.conflict is not None]
+            if conflicts:
+                unanswered = [conflict for conflict in conflicts if resolutions.get(conflict.note_id) not in ("overwrite", "give_up")]
+                if unanswered:
+                    raise NotesRefusalError("conflicts", 409, conflicts=[conflict.model_dump() for conflict in conflicts])
+            applied = 0
+            for decision in decisions:
+                change = decision.change
+                if decision.kind == "drop":
+                    await self._delete_change(organization_id, person_id, change.note_id, changed_at, publisher_id, operation)
+                    continue
+                if decision.kind == "conflict" and resolutions.get(change.note_id) == "give_up":
+                    await self._delete_change(organization_id, person_id, change.note_id, changed_at, publisher_id, operation)
+                    continue
+                if change.state == "new":
+                    await self._insert_note(organization_id, item_id, change.note_id, change.writer_id, change.body, changed_at)
+                    await self._open_note_version(organization_id, change.note_id, changed_at, publisher_id, operation)
+                elif change.state == "changed":
+                    if change.note_id in published and published[change.note_id].body is not None:
+                        await self._execute(
+                            "UPDATE note SET body = $3, updated_at = $4 WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
+                            (organization_id, change.note_id, change.body, changed_at),
+                        )
+                        await self._close_note_version(organization_id, change.note_id, changed_at, publisher_id, operation)
+                        await self._open_note_version(organization_id, change.note_id, changed_at, publisher_id, operation)
+                    else:
+                        identity = identities.get(change.note_id)
+                        if identity is None:
+                            raise NotesRefusalError("no_such_note", 404)
+                        await self._insert_note(
+                            organization_id, item_id, change.note_id, identity["writer_id"], change.body, changed_at, identity["created_at"]
+                        )
+                        await self._open_note_version(organization_id, change.note_id, changed_at, publisher_id, operation)
+                else:
+                    if change.note_id in published and published[change.note_id].body is not None:
+                        await self._execute(
+                            "DELETE FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
+                            (organization_id, change.note_id),
+                        )
+                        await self._close_note_version(organization_id, change.note_id, changed_at, publisher_id, operation)
+                    else:
+                        await self._delete_change(organization_id, person_id, change.note_id, changed_at, publisher_id, operation)
+                        continue
+                await self._delete_change(organization_id, person_id, change.note_id, changed_at, publisher_id, operation)
+                applied += 1
+            if not applied:
+                refusal = NotesRefusalError("nothing_to_publish", 409, revision=0 if last is None else last["number"])
+            else:
+                number = 1 if last is None else int(last["number"]) + 1
+                revision_id = str(uuid4())
+                await self._execute(
+                    "INSERT INTO revision (id, organization_id, item_id, number, title, comment, release, publisher_id, created_at, updated_at)"
+                    " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4, $5, $6, $7, $8::text::uuid, $9, $9)",
+                    (revision_id, organization_id, item_id, number, title, comment, release, publisher_id, changed_at),
+                )
+                await self._execute(
+                    "INSERT INTO revision_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
+                    " item_id, number, title, comment, release, publisher_id, created_at, updated_at)"
+                    " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, number, title, comment, release,"
+                    " publisher_id, created_at, updated_at FROM revision WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
+                    (organization_id, revision_id, changed_at, publisher_id, operation),
+                )
             await self.commit()
         except BaseException:
             await self.rollback()
             raise
-        return number, str(moment)
+        if refusal is not None:
+            raise refusal
+        return number, now
+
+    async def _insert_note(
+        self,
+        organization_id: str,
+        item_id: str,
+        note_id: str,
+        writer_id: str,
+        body: str,
+        changed_at: Any,
+        created_at: Any | None = None,
+    ) -> None:
+        """Write a published note's current row, new or restored with its own creation moment."""
+        await self._execute(
+            "INSERT INTO note (id, organization_id, item_id, writer_id, body, created_at, updated_at)"
+            " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4::text::uuid, $5, $6, $7)",
+            (note_id, organization_id, item_id, writer_id, body, created_at or changed_at, changed_at),
+        )
+
+    async def _open_note_version(self, organization_id: str, note_id: str, changed_at: Any, author_id: str, operation: str) -> None:
+        """Open the published note's new version at the change time, from its current row."""
+        await self._execute(
+            "INSERT INTO note_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
+            " item_id, writer_id, body, created_at, updated_at)"
+            " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, writer_id, body, created_at, updated_at"
+            " FROM note WHERE organization_id = $1::text::uuid AND id = $2::text::uuid"
+            " ON CONFLICT (organization_id, id, valid_from_at) DO UPDATE SET body = EXCLUDED.body, updated_at = EXCLUDED.updated_at",
+            (organization_id, note_id, changed_at, author_id, operation),
+        )
+
+    async def _close_note_version(
+        self, organization_id: str, note_id: str, changed_at: Any, editor_id: str, operation: str
+    ) -> None:
+        """Close the published note's open version at the change time, with who closed it and by which action."""
+        await self._execute(
+            "UPDATE note_versions SET valid_to_at = $3, closed_by = $4::text::uuid, closed_operation = $5"
+            " WHERE organization_id = $1::text::uuid AND id = $2::text::uuid AND valid_to_at IS NULL AND valid_from_at < $3",
+            (organization_id, note_id, changed_at, editor_id, operation),
+        )
+
+    async def _published_notes_now(self, organization_id: str, item_id: str) -> tuple[dict[str, PublishedNote], dict[str, dict[str, Any]]]:
+        """The item's published notes at now, and the writer and creation moment of every note it ever had."""
+        rows = await self._fetch(
+            f"SELECT n.id::text AS id, n.body AS body, n.writer_id::text AS writer_id,"
+            f" {member_name('n.organization_id', 'n.author_id', 'n.valid_from_at')} AS by_name,"
+            f" {moment_text('n.valid_from_at')} AS at, {moment_text('n.created_at')} AS created_at"
+            f" FROM note_versions n"
+            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND n.valid_to_at IS NULL",
+            (organization_id, item_id),
+        )
+        published: dict[str, PublishedNote] = {}
+        identities: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            published[row["id"]] = PublishedNote(body=row["body"], by_name=row["by_name"], at=row["at"])
+            identities[row["id"]] = {"writer_id": row["writer_id"], "created_at": row["created_at"]}
+        deletions = await self._deleted_notes(organization_id, item_id)
+        for note_id, (by_name, at) in deletions.items():
+            if note_id not in published:
+                published[note_id] = PublishedNote(body=None, by_name=by_name, at=at)
+        identities_rows = await self._fetch(
+            "SELECT DISTINCT ON (n.id) n.id::text AS id, n.writer_id::text AS writer_id,"
+            f" {moment_text('n.created_at')} AS created_at"
+            " FROM note_versions n WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid"
+            " ORDER BY n.id, n.valid_from_at DESC",
+            (organization_id, item_id),
+        )
+        for row in identities_rows:
+            identities.setdefault(row["id"], {"writer_id": row["writer_id"], "created_at": row["created_at"]})
+        return published, identities
+
+    async def _deleted_notes(self, organization_id: str, item_id: str) -> dict[str, tuple[str, str]]:
+        """Who deleted each note of the item, and when: the versions closed with no successor, the last one per note."""
+        rows = await self._fetch(
+            f"SELECT n.id::text AS id, {member_name('n.organization_id', 'n.closed_by', 'n.valid_to_at')} AS by_name,"
+            f" {moment_text('n.valid_to_at')} AS at"
+            f" FROM note_versions n"
+            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid"
+            f" AND n.closed_by IS NOT NULL ORDER BY n.valid_to_at",
+            (organization_id, item_id),
+        )
+        return {row["id"]: (row["by_name"], row["at"]) for row in rows}
 
     async def revision_at(self, organization_id: str, item_id: str, moment: str | None) -> RevisionCoreEntity | None:
         """The revision of the item in force at ``moment`` (the watermark when ``None``): the last one published by then."""
@@ -429,43 +674,49 @@ class NotesStorage(PostgresStorage):
             return None, []
         return revision, await self.notes_of_item(organization_id, item_id, revision.at, None)
 
-    async def draft(self, organization_id: str, item_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteChangeCoreEntity]]:
+    async def draft(self, organization_id: str, item_id: str, person_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteChangeCoreEntity]]:
         """
-        The draft at ``moment``: every note added, changed or removed between the revision in force and the moment,
-        with who made the last change and when.
+        One person's draft of an item's notes at ``moment``: their changes in force then, each with its state, its base
+        and — at now — the published note it meets, when that no longer reads as the base. At now a change that has
+        nothing left to do is left out.
         """
         at = await self._moment(organization_id, moment)
         if at is None:
             return None, []
         revision = await self.revision_at(organization_id, item_id, at)
-        now = {note.id: note for note in await self.notes_of_item(organization_id, item_id, at, None)}
-        then = {} if revision is None else {note.id: note for note in await self.notes_of_item(organization_id, item_id, revision.at, None)}
-        changes: list[NoteChangeCoreEntity] = []
-        for note_id, note in now.items():
-            if note_id not in then:
-                changes.append(NoteChangeCoreEntity(note_id=note_id, kind="added", body=note.body, by_name=note.changed_by, at=note.since))
-            elif then[note_id].body != note.body:
-                changes.append(NoteChangeCoreEntity(note_id=note_id, kind="changed", body=note.body, before=then[note_id].body, by_name=note.changed_by, at=note.since))
-        gone = [note_id for note_id in then if note_id not in now]
-        if gone:
-            deletions = await self._deletions(organization_id, item_id, revision.at if revision else at, at)
-            for note_id in gone:
-                by_name, deleted_at = deletions.get(note_id, ("", at))
-                changes.append(NoteChangeCoreEntity(note_id=note_id, kind="removed", body=then[note_id].body, before=then[note_id].body, by_name=by_name, at=deleted_at))
-        return revision, sorted(changes, key=lambda change: change.at)
-
-    async def _deletions(self, organization_id: str, item_id: str, start: str, end: str) -> dict[str, tuple[str, str]]:
-        """Who deleted each note of the item between ``start`` and ``end``, and when: the versions closed with no successor."""
         rows = await self._fetch(
-            f"SELECT n.id::text AS id, {member_name('n.organization_id', 'n.closed_by', 'n.valid_to_at')} AS by_name,"
-            f" {moment_text('n.valid_to_at')} AS at"
-            f" FROM note_versions n"
-            f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid"
-            f" AND {overlaps('n', '$3::text::timestamptz', '$4::text::timestamptz')}"
-            f" AND n.valid_to_at <= $4::text::timestamptz AND n.closed_by IS NOT NULL",
-            (organization_id, item_id, start, end),
+            f"SELECT d.note_id::text AS note_id, d.state AS state, d.body AS body, d.base_body AS base_body,"
+            f" d.base_revision AS base_revision, d.writer_id::text AS writer_id,"
+            f" {member_name('d.organization_id', 'd.writer_id', 'd.valid_from_at')} AS writer_name,"
+            f" {moment_text('d.valid_from_at')} AS changed_at"
+            f" FROM note_change_versions d"
+            f" WHERE d.organization_id = $1::text::uuid AND d.item_id = $2::text::uuid"
+            f" AND d.person_id = $3::text::uuid AND {in_force('d', '$4::text::timestamptz')}"
+            f" ORDER BY d.valid_from_at, d.note_id",
+            (organization_id, item_id, person_id, at),
         )
-        return {row["id"]: (row["by_name"], row["at"]) for row in rows}
+        changes = [NoteChangeCoreEntity(**_mapping(row)) for row in rows]
+        if moment is not None:
+            return revision, changes
+        published = await self._published_sides(organization_id, item_id, {change.note_id for change in changes})
+        return revision, [with_conflict(decision) for decision in decide(changes, published) if decision.kind != "drop"]
+
+    async def _published_sides(self, organization_id: str, item_id: str, note_ids: set[str]) -> dict[str, PublishedNote]:
+        """The published side of every note a draft names, at now: its text, or its deletion, and who and when."""
+        sides: dict[str, PublishedNote] = {}
+        if not note_ids:
+            return sides
+        notes = await self.notes_of_item(organization_id, item_id, None, None)
+        for note in notes:
+            if note.id in note_ids:
+                sides[note.id] = PublishedNote(body=note.body, by_name=note.changed_by, at=note.since)
+        missing = note_ids - set(sides)
+        if missing:
+            deletions = await self._deleted_notes(organization_id, item_id)
+            for note_id in missing:
+                by_name, deleted_at = deletions.get(note_id, ("", ""))
+                sides[note_id] = PublishedNote(body=None, by_name=by_name, at=deleted_at)
+        return sides
 
     async def note_versions_between(self, organization_id: str, item_id: str, start: str, end: str, writer_id: str | None) -> tuple[str, list[Version]]:
         """
@@ -596,6 +847,20 @@ def _mapping(row: Any) -> dict[str, Any]:
     return dict(row)
 
 
+def with_conflict(decision: Any) -> NoteChangeCoreEntity:
+    """The change as the page shows it, with its conflict's other side when it meets one."""
+    if decision.conflict is None:
+        return cast(NoteChangeCoreEntity, decision.change)
+    return cast(NoteChangeCoreEntity, decision.change.model_copy(
+        update={
+            "conflict": True,
+            "published_body": decision.conflict.published_body,
+            "published_by_name": decision.conflict.published_by_name,
+            "published_at": decision.conflict.published_at,
+        }
+    ))
+
+
 @exclude_graph_model
 class NotesStorageWrapper(SqlStorageWrapper):
     """What a nested action receives: the storage's reads and writes, without control of the transaction."""
@@ -624,29 +889,67 @@ class NotesStorageWrapper(SqlStorageWrapper):
         """Pass on the wrapped storage's read of the items."""
         return await self._storage().items_at(organization_id, moment, limit, after)
 
-    async def edit_note(self, organization_id: str, note_id: str, body: str, base_moment: str, editor_id: str, operation: str) -> str:
-        """Pass on the wrapped storage's edit."""
-        return await self._storage().edit_note(organization_id, note_id, body, base_moment, editor_id, operation)
+    async def add_note_change(self, organization_id: str, item_id: str, person_id: str, body: str, operation: str) -> str:
+        """Pass on the wrapped storage's adding of a change to the draft."""
+        return await self._storage().add_note_change(organization_id, item_id, person_id, body, operation)
 
-    async def delete_note(self, organization_id: str, note_id: str, base_moment: str, editor_id: str, operation: str) -> str:
+    async def edit_note(
+        self,
+        organization_id: str,
+        item_id: str,
+        note_id: str,
+        body: str,
+        base_body: str | None,
+        base_revision: int | None,
+        editor_id: str,
+        operation: str,
+    ) -> str:
+        """Pass on the wrapped storage's edit."""
+        return await self._storage().edit_note(organization_id, item_id, note_id, body, base_body, base_revision, editor_id, operation)
+
+    async def delete_note(
+        self,
+        organization_id: str,
+        item_id: str,
+        note_id: str,
+        base_body: str | None,
+        base_revision: int | None,
+        editor_id: str,
+        operation: str,
+    ) -> str:
         """Pass on the wrapped storage's deletion."""
-        return await self._storage().delete_note(organization_id, note_id, base_moment, editor_id, operation)
+        return await self._storage().delete_note(organization_id, item_id, note_id, base_body, base_revision, editor_id, operation)
+
+    async def revert_note_change(self, organization_id: str, note_id: str, person_id: str, operation: str) -> str:
+        """Pass on the wrapped storage's revert."""
+        return await self._storage().revert_note_change(organization_id, note_id, person_id, operation)
 
     async def notes_of_item(self, organization_id: str, item_id: str, moment: str | None, writer_id: str | None) -> list[NoteCoreEntity]:
         """Pass on the wrapped storage's read of an item's notes."""
         return await self._storage().notes_of_item(organization_id, item_id, moment, writer_id)
 
-    async def publish_notes(self, organization_id: str, item_id: str, title: str, comment: str, release: str | None, publisher_id: str, operation: str) -> tuple[int, str]:
+    async def publish_notes(
+        self,
+        organization_id: str,
+        item_id: str,
+        person_id: str,
+        title: str,
+        comment: str,
+        release: str | None,
+        resolutions: dict[str, str],
+        publisher_id: str,
+        operation: str,
+    ) -> tuple[int, str]:
         """Pass on the wrapped storage's publication."""
-        return await self._storage().publish_notes(organization_id, item_id, title, comment, release, publisher_id, operation)
+        return await self._storage().publish_notes(organization_id, item_id, person_id, title, comment, release, resolutions, publisher_id, operation)
 
     async def published_notes(self, organization_id: str, item_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteCoreEntity]]:
         """Pass on the wrapped storage's read of the published notes."""
         return await self._storage().published_notes(organization_id, item_id, moment)
 
-    async def draft(self, organization_id: str, item_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteChangeCoreEntity]]:
+    async def draft(self, organization_id: str, item_id: str, person_id: str, moment: str | None) -> tuple[RevisionCoreEntity | None, list[NoteChangeCoreEntity]]:
         """Pass on the wrapped storage's read of the draft."""
-        return await self._storage().draft(organization_id, item_id, moment)
+        return await self._storage().draft(organization_id, item_id, person_id, moment)
 
     async def note_versions_between(self, organization_id: str, item_id: str, start: str, end: str, writer_id: str | None) -> tuple[str, list[Version]]:
         """Pass on the wrapped storage's read over a stretch."""

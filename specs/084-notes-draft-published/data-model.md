@@ -21,7 +21,7 @@ One note in one person's draft of one item.
 | `item_id` | uuid | no | The item whose notes the draft is of. |
 | `person_id` | uuid | no | The member whose draft the change is in. |
 | `note_id` | uuid | no | The note, published or not yet. |
-| `author_id` | uuid | no | The published note's author; the person for a new note. |
+| `writer_id` | uuid | no | The published note's writer; the person for a new note. |
 | `state` | text | no | `new`, `changed` or `deleted`. |
 | `body` | text | no | The text the change gives the note; the base text for a deletion. |
 | `base_body` | text | yes | The published text the change was made over; null for a new note. |
@@ -42,7 +42,7 @@ The whole published state published at once: `number`, `title`, `comment`, `rele
 
 ### `NoteChangeCoreEntity`
 
-`note_id`, `state`, `body`, `base_body`, `base_revision`, `author_id`, `author_name`, `changed_at`, and for the read at now the conflict's other side: `conflict` (bool), `published_body` (text or null for a deleted note), `published_by_name`, `published_at`.
+`note_id`, `state`, `body`, `base_body`, `base_revision`, `writer_id`, `author_name`, `changed_at`, and for the read at now the conflict's other side: `conflict` (bool), `published_body` (text or null for a deleted note), `published_by_name`, `published_at`.
 
 ### `NoteConflictCoreEntity`
 

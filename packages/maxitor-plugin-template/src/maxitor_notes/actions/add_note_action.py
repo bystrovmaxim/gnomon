@@ -1,12 +1,12 @@
 # packages/maxitor-plugin-template/src/maxitor_notes/actions/add_note_action.py
 """
-AddNoteAction — a member writes a note on an item.
+AddNoteAction — a member writes a note into their own draft of an item.
 
 ::
 
     POST /p/notes/api/{organization}/notes {item_id, body} ──► AddNoteAction
         ├─ item_access_decide: the person is a member of {organization}, and the item is an item of it now
-        └─ write_summary: the organization's id again; the note and its version in one transaction, the change time back
+        └─ write_summary: the organization's id again; the change and its version in one transaction, the change time back
 """
 
 from __future__ import annotations
@@ -46,14 +46,14 @@ class AddNoteResult(BaseResult):
     changed_at: str = Field(description="The change time, ISO 8601 with microseconds; the client rereads at it")
 
 
-@meta(description="Write a note on an item", domain=NotesDomain)
+@meta(description="Write a note into the member's own draft of an item", domain=NotesDomain)
 @check_roles(MemberRole)
 @connection(NotesStorage, key=NOTES_CONNECTION_KEY, description="The plugin's own schema notes")
 class AddNoteAction(BaseAction[AddNoteParams, AddNoteResult]):
     """
     AI-CORE-BEGIN
-    ROLE: Write one note of a member on an item.
-    CONTRACT: The organization is the one of the address; the writer is the person of the token; the answer is the change time.
+    ROLE: Write one note of a member into their draft on an item.
+    CONTRACT: The draft is the person's alone; the note reaches nobody else until the draft is published.
     INVARIANTS: One transaction, one change; nothing is written for a person outside the organization.
     AI-CORE-END
     """
@@ -66,17 +66,17 @@ class AddNoteAction(BaseAction[AddNoteParams, AddNoteResult]):
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
         return await item_access(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id), params.item_id)
 
-    @summary_aspect("Write the note and its version, and return the change time")
+    @summary_aspect("Write the change and its version, and return the change time")
     @context_requires(Ctx.User.user_id, "user.organization")
     async def write_summary(self, params: AddNoteParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView) -> AddNoteResult:
         """The organization's id again, then one transaction: the organization's lock, the time, the row, its version."""
         _ = (state, box)
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
         organization_id = await member_organization_id(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
-        changed_at = await storage.add_note(
+        changed_at = await storage.add_note_change(
             organization_id=organization_id,
             item_id=params.item_id,
-            writer_id=str(ctx.get(Ctx.User.user_id)),
+            person_id=str(ctx.get(Ctx.User.user_id)),
             body=params.body,
             operation=type(self).__name__,
         )

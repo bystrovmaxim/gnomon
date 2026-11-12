@@ -201,7 +201,7 @@ Every page that shows a changed text marks it alike: the words that went struck 
 - **FR-001**: An item MUST have two pages — Draft and Published notes — and Draft MUST replace Notes; no third page MUST show the same notes.
 - **FR-002**: Draft MUST hold only the changes of the person who reads it; another person's draft MUST never be shown, at any moment.
 - **FR-003**: Every change MUST carry its state — new, changed or deleted — and the published version it was made over: the revision's number and the published text.
-- **FR-004**: A changed note MUST show the published text struck through above the member's text; a deleted note MUST be struck through; a new note MUST stand as written. Every card MUST say whose note it is.
+- **FR-004**: A changed note MUST show the words that went and the words that came marked inside its text, as the accepted mockup draws them; a deleted note MUST be struck through; a new note MUST stand as written. Every card MUST say whose note it is.
 - **FR-005**: The shell's **State** filter MUST choose which of New, Changed and Deleted stand; a state with no change behind it MUST fade and MUST come back when a change of that state is made.
 
 #### My work in the draft

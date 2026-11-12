@@ -41,23 +41,24 @@ async def _open(answer=_answer):
     return storage, connection
 
 
-async def test_a_note_is_written_with_its_version_in_one_transaction_under_the_lock() -> None:
+async def test_a_change_is_written_into_the_draft_with_its_version_in_one_transaction_under_the_lock() -> None:
     storage, connection = await _open()
-    changed_at = await storage.add_note(ORG, ITEM, WRITER, "Check the limits", "AddNoteAction")
+    changed_at = await storage.add_note_change(ORG, ITEM, WRITER, "Check the limits", "AddNoteAction")
     queries = connection.queries()
     assert changed_at == MOMENT
     assert queries[0] == "BEGIN"
     assert queries[1].startswith("SELECT greatest(change_time($1::text::uuid)")
-    assert queries[2].startswith("INSERT INTO note ")
-    assert queries[3].startswith("INSERT INTO note_versions ")
+    assert queries[3].startswith("INSERT INTO note_change ")
+    assert queries[4].startswith("INSERT INTO note_change_versions ")
     assert queries[-1] == "COMMIT"
+    assert not any(query.startswith("INSERT INTO note ") for query in queries)
 
 
 async def test_the_time_comes_from_the_cores_lock_and_follows_the_plugins_own_changes() -> None:
     storage, connection = await _open()
-    await storage.add_note(ORG, ITEM, WRITER, "Check the limits", "AddNoteAction")
+    await storage.add_note_change(ORG, ITEM, WRITER, "Check the limits", "AddNoteAction")
     time = connection.queries()[1]
-    assert "change_time($1::text::uuid)" in time and "FROM note_versions WHERE organization_id = $1::text::uuid" in time
+    assert "change_time($1::text::uuid)" in time and "FROM note_change_versions WHERE organization_id = $1::text::uuid" in time
     assert "+ interval '1 microsecond'" in time
     assert not any("pg_advisory" in q for q in connection.queries())  # the core's function takes the lock
 
@@ -68,7 +69,7 @@ async def test_a_failed_write_rolls_back_and_leaves_nothing() -> None:
     storage = NotesStorage(pool=pool)
     await storage.open()
     with pytest.raises(HandleError):
-        await storage.add_note(ORG, ITEM, WRITER, "Check the limits", "AddNoteAction")
+        await storage.add_note_change(ORG, ITEM, WRITER, "Check the limits", "AddNoteAction")
     assert connection.queries()[-1] == "ROLLBACK"
     assert "COMMIT" not in connection.queries()
 
@@ -77,7 +78,7 @@ def _raising_on_versions(connection):
     original = connection.execute
 
     async def execute(query, *params):
-        if query.startswith("INSERT INTO note_versions"):
+        if query.startswith("INSERT INTO note_change_versions"):
             connection.statements.append((query, params))
             raise RuntimeError("the database refused")
         return await original(query, *params)
