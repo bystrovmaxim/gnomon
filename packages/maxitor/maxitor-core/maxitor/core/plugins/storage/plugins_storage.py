@@ -233,7 +233,7 @@ class PluginsStorage(CoreStorage):
             return []
         rows = await self._fetch(
             "SELECT plugin_version_id::text AS version_id, full_name, parent, position, node_order, title, icon, page,"
-            " each_source, each_key, roles FROM plugin_node"
+            " each_source, each_key, roles, opens FROM plugin_node"
             " WHERE plugin_version_id = ANY($1::text[]::uuid[]) ORDER BY plugin_version_id, position",
             (version_ids,),
         )

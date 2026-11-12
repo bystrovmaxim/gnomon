@@ -247,6 +247,9 @@ class PluginNodeCoreEntity(BaseCoreEntity):
     each_source: str | None = Field(default=None, description="A list node's reading action; empty for an ordinary node")
     each_key: str | None = Field(default=None, description="The parameter a list node's instance adds; empty otherwise")
     roles: list[str] = Field(description="The core's roles needed to see it; empty for every member")
+    opens: str = Field(
+        default="expand", description="How it opens: expand under itself, or enter into a panel of its children (spec 085)"
+    )
 
     plugin_version: Annotated[
         AssociationOne[PluginVersionCoreEntity],

@@ -1,5 +1,9 @@
 # Changelog — maxitor-plugin-sdk
 
+## 1.8.0 — 2026-11-12
+
+Navigation format 4: `navigation-4.schema.json` is format 3 with `opens` — `expand` or `enter` — how the node opens. `checks` reads formats 3 and 4, refuses a node with children and no `opens` and a node without children that says it, naming the node, and refuses formats 1 and 2 naming format 4. Format 3 is read as it is: every node of it expands. ([#122](https://github.com/bystrovmaxim/gnomon/issues/122))
+
 ## 1.7.1 — 2026-11-12
 
 The navigation format's tests name the template's first page `item-draft`, as the template now calls it; the checks are unchanged. ([#121](https://github.com/bystrovmaxim/gnomon/issues/121))

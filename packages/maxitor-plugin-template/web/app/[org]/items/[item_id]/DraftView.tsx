@@ -38,7 +38,9 @@ function DraftHead({ revision, changes }: { revision: Revision | null; changes: 
       <div className="mx-card-head">
         <span className="nt-ref dr">Draft</span>
         <b>Your draft</b>
-        <span>seen by you alone · made over v{base.length ? Math.min(...base) : revision?.number ?? "—"} · published whole, as one revision</span>
+        <span>
+          seen by you alone · {base.length || revision ? `made over v${base.length ? Math.min(...base) : revision?.number}` : "nothing published yet"} · published whole, as one revision
+        </span>
         {shown.length ? (
           <span className="nt-counts">
             {shown.map((state) => (

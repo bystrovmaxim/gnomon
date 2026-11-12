@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/navigation-4.schema.json",
+  "title": "Maxitor navigation, format 4",
+  "description": "navigation.yaml: a plugin's nodes in Maxitor's left tree. A plugin only adds nodes: there is no field to hide, rename or move a node it does not own. A page's controls and its history are its own: the page gives them to the shell of @maxitor/panel, so no node declares them, and a room shares no parameter of a page's address. A node holds its id, attachment, list source and key, title, icon, order, page, roles and the way it opens only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "navigation",
+    "nodes"
+  ],
+  "properties": {
+    "navigation": {
+      "const": 4
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/topNode"
+      }
+    }
+  },
+  "$defs": {
+    "topNode": {
+      "description": "A node the plugin attaches: to the root, to a node of Maxitor, or to a node of a direct dependency.",
+      "type": "object",
+      "required": [
+        "attach"
+      ],
+      "properties": {
+        "attach": {
+          "type": "string",
+          "pattern": "^(root|[a-z][a-z0-9_]{1,30}:[a-z][a-z0-9_.-]{0,62})$"
+        }
+      },
+      "$ref": "#/$defs/nodeBody",
+      "unevaluatedProperties": false
+    },
+    "childNode": {
+      "type": "object",
+      "$ref": "#/$defs/nodeBody",
+      "unevaluatedProperties": false
+    },
+    "nodeBody": {
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,62}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "icon": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,40}$"
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10000
+        },
+        "page": {
+          "type": "string",
+          "maxLength": 300,
+          "pattern": "^/(?:(?:[a-z0-9_.~-]+|\\{[a-z][a-z0-9_]*\\})(?:/(?:[a-z0-9_.~-]+|\\{[a-z][a-z0-9_]*\\}))*)?$",
+          "not": {
+            "pattern": "(^|/)\\.{1,2}(/|$)"
+          },
+          "description": "The page's path inside the owner; {name} is a parameter of the scope. No . or .. segment."
+        },
+        "each": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "key"
+          ],
+          "properties": {
+            "source": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,62}$",
+              "description": "A reading action of the owner."
+            },
+            "key": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,30}$",
+              "description": "The parameter each instance adds to the scope."
+            }
+          }
+        },
+        "roles": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{0,30}$"
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/childNode"
+          }
+        },
+        "opens": {
+          "enum": [
+            "expand",
+            "enter"
+          ],
+          "description": "How the node opens, when it has children: expand shows its children under it in the same tree; enter makes the left panel hold only its children, with the node at its head. Required on every node with children and refused on one without; maxitor-plugin-check names the node that gets either wrong."
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "title"
+          ],
+          "not": {
+            "required": [
+              "each"
+            ]
+          }
+        },
+        {
+          "required": [
+            "each"
+          ],
+          "not": {
+            "required": [
+              "title"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

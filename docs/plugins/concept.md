@@ -94,7 +94,7 @@ database:
 | `requires.maxitor` | the range of core versions — an edge to the node `maxitor` of the dependency graph (section 3.1) |
 | `dependencies` | the plugins this one cannot work without: `id`, a `version` range and a `source` — a pip package or a wheel at an address with a mandatory `sha256` |
 | `frontend.source` | the folder of the frontend's sources in the wheel: `package.json`, `package-lock.json` and the pages, without `node_modules`, `.next` or a built site (section 4.1) |
-| `frontend.navigation` | the file with the plugin's tree nodes and their pages: the tree only (navigation format 3) |
+| `frontend.navigation` | the file with the plugin's tree nodes, how each opens and their pages: the tree only (navigation format 4) |
 | `history.compare` | optional: the comparisons its pages can draw beside one moment, out of `diff` and `side_by_side`; without it every page offers one moment only (section 7.9) |
 
 Why both `id` and `name`. `id` is unique in the world and stands in other plugins' dependencies. `name` is short and fits a schema name; two authors may both call a plugin `notes`, and then only one of them gets into one installation — the installer refuses the second and names the conflict.
@@ -453,18 +453,23 @@ The Maxitor screen is always one: on the left the navigation tree, at the top th
 └────────────────┴──────────────────────────────────────────────┘
 ```
 
+A node opens in one of two ways, and its author picks which in `navigation.yaml`. It either **expands** — its children appear under it in the same tree, as they always have — or it is **entered**, as one enters a folder: the left panel then holds only the children of that node, and the node itself stands at the top of the panel, across its whole width. An entered node carries "›" instead of the arrow and reads nothing of its children before the click.
+
+The panel therefore shows one **level** at a time. The head of the tree has two buttons, collapse and the arrow; the arrow is **Back** — it returns the panel to the level it showed before the last entering, with what was expanded there still expanded, opens no page, and is off at the root. The row's **crumbs** are built from the entered levels and the open page only: the organization, each entered node down to the head of the panel, then the page — never a node that was merely passed by expanding. A click on a crumb steps the panel out to its level. An address names the page alone, so a reload or a shared link enters every entered node above it and lands where the person was; what was expanded in those levels lives in the page's memory and does not come back with the address.
+
 ### 7.1. The core's tree
 
 The core's file `navigation.yaml` describes the structure of the core's tree. Every node with an `id` is an attachment node: plugins' nodes may stand under it. The core keeps no data of its own beyond organizations, people and plugins, so its tree is short: the organization's settings at the foot of the tree. Everything else in the tree comes from plugins, each in a section of its own or under a node of a plugin it depends on.
 
 ```yaml
-navigation: 3
+navigation: 4
 nodes:
   - id: settings
     title: Settings
     icon: settings
     order: 10000                       # at the foot of the tree
     roles: [administrator]
+    opens: enter                       # entered: the panel holds Plugins only, Settings at its head
     children:
       - id: settings.plugins
         title: Plugins
@@ -481,6 +486,7 @@ nodes:
 | `page` | the template of the page's path inside the owner; `{name}` is a parameter of the scope; a node without `page` only groups |
 | `each` | makes the node a list: `source` is a reading action of the owner, `key` the name of the instance's parameter |
 | `roles` | the owner's roles needed to see the node |
+| `opens` | `expand` or `enter`, required on every node with children and refused on a node without: it says how the node opens (7) |
 | `children` | children |
 
 **The scope of parameters.** Each instance of a list node adds its key to the scope (`item_id`). Every descendant sees the parameters of all list nodes above it and puts them into `page` and into the parameters of its own lists. That is how contextual items come about: "Draft" under every item of the template knows its `item_id`.
@@ -493,7 +499,7 @@ A plugin describes its nodes in its own `navigation.yaml` and attaches each of i
 
 ```yaml
 # acme_notes/navigation.yaml
-navigation: 3
+navigation: 4
 nodes:
   - id: notes
     attach: root                       # a section of its own in the root of the tree
@@ -502,12 +508,14 @@ nodes:
     order: 500
     page: /
     roles: [member]
+    opens: enter                       # entered: the panel holds the items only, Notes at its head
     children:
       - id: item                       # a list node: one instance per item of the organization
         each:
           source: list_items           # a reading action of the node's owner
           key: item_id                 # the parameter each instance adds to the scope
         roles: [member]
+        opens: expand                  # expands where it stands, inside the level of Notes
         children:
           - id: item-draft                 # the person's own changes over the published notes
             title: Draft
@@ -547,7 +555,7 @@ Disabling and removing only take nodes away, and an enabled plugin that needs an
 
 The builder refuses when:
 
-1. a file is navigation format 1 or 2 ("navigation format 2 is not read; write format 3: the page gives its history and controls, and a room shares nothing"), a node declares `history`, `room` or `controls` (named: "'item-notes' declares history; …"), or the file fails the JSON schema (`navigation-3.schema.json`): an unknown field, a wrong `id`, an unknown icon;
+1. a file is navigation format 1 or 2 ("navigation format 2 is not read; write format 4: the page gives its history and controls, and a room shares nothing"), a node with children says no `opens` or a node without children says it (named: "'item' has children and no opens; write opens: expand or enter"), a node declares `history`, `room` or `controls` (named: "'item-draft' declares history; …"), or the file fails the JSON schema (`navigation-4.schema.json`): an unknown field, a wrong `id`, an unknown icon, an `opens` that is neither `expand` nor `enter`;
 2. `attach` points at a node that does not exist, or at a plugin that is not a direct dependency;
 3. an `id` repeats within one owner;
 4. a `{name}` in `page` or in a list's parameters is not defined in the scope at the node's place;

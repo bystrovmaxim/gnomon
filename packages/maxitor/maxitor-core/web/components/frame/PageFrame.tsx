@@ -8,7 +8,7 @@
 import { changedReserved } from "@maxitor/panel/address";
 import { checkHistory, coreMessage, NO_HISTORY, pageMessage, trusted, type CoreMessage, type HistoryAllowed, type PageHistory, type Query } from "@maxitor/panel/protocol";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { queryString, windowAddress, type PanelAddress } from "@/lib/address";
 
@@ -90,8 +90,10 @@ export function PageFrame({
     tell({ type: "panel.location", path: address.path, query: address.query, at: address.at });
   }, [address, current, state, tell]);
 
-  // The page's messages: only from this origin and this frame, and only of a known shape.
-  useEffect(() => {
+  // The page's messages: only from this origin and this frame, and only of a known shape. The listener is set in the
+  // same commit that puts the frame in the document — a layout effect, before any task can run — so a page that loads
+  // fast says panel.ready to a listener already there, never to nobody while a busy screen still renders.
+  useLayoutEffect(() => {
     const receive = (event: MessageEvent) => {
       if (!trusted(event, frame.current?.contentWindow)) return;
       const message = pageMessage(event.data);

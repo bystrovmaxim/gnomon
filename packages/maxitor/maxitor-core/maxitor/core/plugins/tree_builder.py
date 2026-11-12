@@ -27,6 +27,8 @@ from jsonschema import Draft202012Validator
 from maxitor_plugin_sdk.checks import (
     NAVIGATION_FORMAT_1,
     NAVIGATION_FORMAT_2,
+    NAVIGATION_FORMAT_UNKNOWN,
+    NAVIGATION_FORMATS,
     PLACEHOLDER,
     SCHEMAS,
     navigation_problems,
@@ -65,6 +67,8 @@ class Node:
     each_source: str | None
     each_key: str | None
     roles: tuple[str, ...]
+    #: How the node opens: expand under itself, or enter into a panel of its children (spec 085). Format 3's nodes expand.
+    opens: str = "expand"
     #: The parameters the list nodes above it define, set by ``build_tree``: every node beneath a list node sees its key.
     scope: tuple[str, ...] = field(default=())
 
@@ -78,8 +82,10 @@ class PluginFile:
     nodes: Sequence[Node]
 
 
-def _validator() -> Draft202012Validator:
-    return Draft202012Validator(json.loads((SCHEMAS / "navigation-3.schema.json").read_text(encoding="utf-8")))
+@lru_cache(maxsize=2)
+def _validator(version: int) -> Draft202012Validator:
+    """The schema of one navigation format: the core reads format 3 as it is and format 4 (spec 085)."""
+    return Draft202012Validator(json.loads((SCHEMAS / f"navigation-{version}.schema.json").read_text(encoding="utf-8")))
 
 
 def _walk(
@@ -111,6 +117,7 @@ def nodes_of(owner: str, navigation: Mapping[str, Any]) -> list[Node]:
                 each_source=None if each is None else str(each["source"]),
                 each_key=None if each is None else str(each["key"]),
                 roles=tuple(node.get("roles", [])),
+                opens=str(node.get("opens", "expand")),
             )
         )
     return found
@@ -126,7 +133,10 @@ def _one_file(owner: str, navigation: Any) -> list[str]:
     retired = retired_node(navigation)
     if retired:
         return [f"navigation: {retired}"]
-    problems = [f"navigation: {error.message}" for error in _validator().iter_errors(navigation)]
+    version = navigation.get("navigation")
+    if version not in NAVIGATION_FORMATS:
+        return [f"navigation: {NAVIGATION_FORMAT_UNKNOWN.format(version=version)}"]
+    problems = [f"navigation: {error.message}" for error in _validator(int(version)).iter_errors(navigation)]
     return problems or navigation_problems(navigation)
 
 

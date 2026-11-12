@@ -323,6 +323,7 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
                         "each_source": node.each_source,
                         "each_key": node.each_key,
                         "roles": list(node.roles),
+                        "opens": node.opens,
                         "created_at": changed,
                         "updated_at": None,
                     },

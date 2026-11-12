@@ -37,6 +37,9 @@
 .mx-menu-mark { width: var(--mx-icon-lg); height: var(--mx-icon-lg); border-radius: var(--mx-radius-xs); font-size: var(--mx-text-tiny); font-weight: var(--mx-weight-heavy); color: var(--mx-on-ink); display: inline-flex; align-items: center; justify-content: center; text-transform: uppercase; }
 .mx-menu hr { border: 0; border-top: var(--mx-line-width) solid var(--mx-line-2); margin: var(--mx-space-3) 0; }
 .mx-veil { position: fixed; inset: 0; z-index: 15; }
+/* A crumb of an entered level steps the panel out to it (spec 085, FR-012). */
+.mx-path-link { border: 0; background: none; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+.mx-path-link:hover { text-decoration: underline; }
 
 /* the tree */
 .mx-tree { width: var(--mx-tree-width); flex-shrink: 0; background: var(--mx-sidebar); border-right: var(--mx-line-width) solid var(--mx-line); display: flex; flex-direction: column; }
@@ -46,6 +49,11 @@
 .mx-tree-button:hover { background: var(--mx-hover); color: var(--mx-ink); }
 .mx-tree-button.off { opacity: 0.4; cursor: default; }
 .mx-tree-button.off:hover { background: transparent; color: var(--mx-muted); }
+/* The head of an entered level (spec 085, FR-006): the node itself, its icon and title across the whole width. */
+.mx-level-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-3); padding: var(--mx-space-3) var(--mx-space-4); border-bottom: var(--mx-line-width) solid var(--mx-line-2); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); min-width: 0; }
+.mx-level-icon { display: inline-flex; align-items: center; color: var(--mx-muted); flex-shrink: 0; }
+.mx-level-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-tree.collapsed .mx-level-head { display: none; }
 .mx-tree-scroll { flex: 1; overflow-y: auto; padding: var(--mx-space-3) var(--mx-space-4) var(--mx-space-2); }
 .mx-tree-foot { padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-4); }
 .mx-tree-empty { margin: var(--mx-space-6); font-size: var(--mx-text-sm); color: var(--mx-faint); line-height: 1.5; border: var(--mx-line-width) dashed var(--mx-line-3); border-radius: var(--mx-radius-md); padding: var(--mx-space-5); text-align: center; }
@@ -57,6 +65,8 @@
 .mx-node-fold.shut { transform: rotate(-90deg); }
 .mx-node-icon { margin-right: var(--mx-space-3); }
 .mx-node-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A node that is entered carries "›" on its right instead of the arrow (spec 085, FR-002): one click makes a level. */
+.mx-node-enter { color: var(--mx-faint); font-size: var(--mx-text-lg); line-height: 1; padding-left: var(--mx-space-2); }
 .mx-node-note { font-size: var(--mx-text-sm); color: var(--mx-faint); padding: var(--mx-space-2) var(--mx-space-4); display: flex; align-items: center; gap: var(--mx-space-4); }
 .mx-node-note.bad { color: var(--mx-bad); }
 .mx-node-note button { border: 0; background: none; color: var(--mx-ink-3); text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; }

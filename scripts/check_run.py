@@ -221,6 +221,13 @@ STEPS: tuple[Step, ...] = (
         "client",
         after=(AUTO_FIX,),
     ),
+    # The core's frame: the line of a node and the entered levels an address gives the panel (spec 085, FR-013).
+    Step(
+        "Maxitor core: the levels of the tree",
+        "node --experimental-strip-types --test packages/maxitor/maxitor-core/web/tests/*.test.ts",
+        "client",
+        after=(AUTO_FIX,),
+    ),
     # @maxitor/panel: the canvas's camera and the panel protocol's shape checks (spec 077, FR-024 – FR-032).
     Step(
         "@maxitor/panel: the camera and the protocol",

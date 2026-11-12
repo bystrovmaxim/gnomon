@@ -1,22 +1,23 @@
 // packages/maxitor/maxitor-core/web/components/frame/Frame.tsx
-// The frame every plugin lives in (spec 077, the plugin concept 7): the top row, the tree on the left and the right
-// panel. It stays mounted while the address changes, so the tree keeps its open nodes and its scroll; what the panel
-// shows comes from the address alone.
+// The frame every plugin lives in (specs 077 and 085): the top row, the tree on the left and the right panel. It stays
+// mounted while the address changes, so the tree keeps what was expanded and its scroll; what the panel shows comes
+// from the address alone. The left panel shows one level at a time — the children of the entered node at its head, or
+// the tree's root — and the address decides the levels it arrives at: every entered node on the line of the open page.
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import "./frame.css";
 import { Panel } from "@/components/frame/Panel";
 import { TopRow } from "@/components/frame/TopRow";
-import { Tree } from "@/components/frame/Tree";
+import { Tree, type Level } from "@/components/frame/Tree";
 import { TreeHead } from "@/components/frame/TreeHead";
 import { readAddress, windowAddress } from "@/lib/address";
 import type { HistoryAllowed } from "@maxitor/panel/protocol";
 
 import type { Me } from "@/lib/core";
-import { lineOf, nodeOf, upOf, type TreeNode } from "@/lib/tree";
+import { enteredLine, nodeOf, type TreeNode } from "@/lib/tree";
 
 export function Frame({
   account,
@@ -47,6 +48,11 @@ export function Frame({
   const [title, setTitle] = useState<string | null>(null);
   const [titles, setTitles] = useState<Record<string, string>>({});
   const keepTitles = useCallback((found: Record<string, string>) => setTitles((was) => ({ ...was, ...found })), []);
+  // The levels of the left panel, the root first and the deepest last (spec 085). Back pops one, a crumb pops to its
+  // own, entering pushes one; the address rebuilds them whenever it changes.
+  const [levels, setLevels] = useState<Level[]>([]);
+  // What was expanded lives here, in the page's memory: a level keeps it, Back keeps it, a reload does not.
+  const [arrived, setArrived] = useState<string | null>(null);
   // After linking a way in, the address asks to open the sign-in methods dialog with its notice.
   const methods = search.get("methods");
 
@@ -55,38 +61,88 @@ export function Frame({
   // A page's title belongs to the page it came from.
   useEffect(() => setTitle(null), [opened?.node.name]);
 
-  // The path in the top row: the titles of the nodes on the way, an instance's from the page when it sends one.
+  // An address arrives: the panel enters every entered node on the line of its page, the deepest last (spec 085,
+  // FR-013). What was expanded in them is not rebuilt — it was never in the address.
+  const arrival = `${pathname}?${search.toString()}`;
+  useEffect(() => {
+    if (arrived === arrival) return;
+    if (!opened) {
+      setArrived(arrival);
+      setLevels([]);
+      return;
+    }
+    const scope = opened.scope;
+    setLevels(
+      enteredLine(nodes, opened.node).map((node) => ({
+        node,
+        scope,
+        title: levelTitle(node, scope, titles),
+      })),
+    );
+    setArrived(arrival);
+  }, [arrival, arrived, nodes, opened, titles]);
+
+  const enter = useCallback(
+    (node: TreeNode, scope: Record<string, string>, label: string) => {
+      setLevels((was) => {
+        const at = was.findIndex((level) => level.node.name === node.name);
+        return at >= 0 ? was.slice(0, at + 1) : [...was, { node, scope, title: label || node.title || node.name }];
+      });
+    },
+    [],
+  );
+
+  const back = levels.length ? () => setLevels((was) => was.slice(0, -1)) : null;
+
+  // The entered levels on the line of the open page, the deepest last: what the crumbs name. They follow the page,
+  // not where the panel stands, so entering Settings while a note's page is open never names Settings over it.
+  const pageLevels = useMemo<Level[]>(
+    () => (opened ? enteredLine(nodes, opened.node).map((node) => ({ node, scope: opened.scope, title: levelTitle(node, opened.scope, titles) })) : []),
+    [nodes, opened, titles],
+  );
+  // A crumb steps the panel out to its level of the page's line; with no page open the crumbs are the panel's levels.
+  const stepTo = useCallback(
+    (index: number) => setLevels((was) => (opened ? pageLevels : was).slice(0, index + 1)),
+    [opened, pageLevels],
+  );
+
+  // The crumbs of the top row (spec 085, FR-011): the entered levels above the open page, the deepest last, then the
+  // page — never a node that was only passed through by expanding. The organization stands at the head of the row.
   const path = useMemo(() => {
-    if (!opened) return [];
-    const line = lineOf(nodes, opened.node);
-    const steps = line.map((node) => {
-      if (!node.each) return node.title;
-      const key = opened.scope[node.each.key] ?? "";
-      return titles[`${node.name}=${key}`] ?? key;
-    });
-    if (title) steps[steps.length - 1] = title;
+    const line = opened ? pageLevels : levels;
+    const steps: { title: string; level: number | null }[] = line.map((level, index) => ({ title: level.title, level: index }));
+    // The page of the node at the head of the line is that node's crumb already: it is not named twice.
+    const head = line.length ? line[line.length - 1] : null;
+    if (opened && opened.node.name !== head?.node.name) {
+      steps.push({ title: title || levelTitle(opened.node, opened.scope, titles), level: null });
+    }
     return steps;
-  }, [nodes, opened, title, titles]);
+  }, [levels, opened, pageLevels, title, titles]);
 
   // Another organization opens the same page, or its root when the page is not there: the tree decides there.
   const switchTo = (code: string) => (address?.owner ? windowAddress(code, address.owner, address.path, address.query, address.at) : `/w/${code}`);
 
-  // Up: the nearest node above the open one with a page, at the same moment, without the page's own parameters.
-  const up = useMemo(() => {
-    const found = opened ? upOf(nodes, opened) : null;
-    return found ? windowAddress(current.code, found.node.owner, found.path, {}, address?.at ?? null) : null;
-  }, [address?.at, current.code, nodes, opened]);
-
+  const level = levels.length ? levels[levels.length - 1] : null;
   const tree = (
-    <Tree code={current.code} nodes={nodes} owners={owners} at={address?.at ?? null} selected={opened} onChosen={() => setDrawer(false)} onTitles={keepTitles} />
+    <Tree
+      code={current.code}
+      nodes={nodes}
+      owners={owners}
+      at={address?.at ?? null}
+      level={level}
+      selected={opened}
+      onEnter={enter}
+      onChosen={() => setDrawer(false)}
+      onTitles={keepTitles}
+    />
   );
 
   return (
     <div className="mx-frame">
-      <TopRow account={account} current={current} path={path} methods={methods} switchTo={switchTo} onMenu={() => setDrawer(true)} />
+      <TopRow account={account} current={current} path={path} onCrumb={stepTo} methods={methods} switchTo={switchTo} onMenu={() => setDrawer(true)} />
       <div className="mx-body">
         <aside className={`mx-tree${collapsed ? " collapsed" : ""}`}>
-          <TreeHead collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} up={up} />
+          <TreeHead collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onBack={back} />
           {collapsed ? null : tree}
         </aside>
         <Panel code={current.code} address={address} opened={opened} dependencies={dependencies} histories={histories} onTitle={setTitle}>
@@ -96,7 +152,7 @@ export function Frame({
           <>
             <div className="mx-scrim" onClick={() => setDrawer(false)} />
             <aside className="mx-tree drawer">
-              <TreeHead collapsed={null} onCollapse={() => undefined} up={up} />
+              <TreeHead collapsed={null} onCollapse={() => undefined} onBack={back} />
               {tree}
             </aside>
           </>
@@ -104,4 +160,11 @@ export function Frame({
       </div>
     </div>
   );
+}
+
+/** The title of a level: a node's own, an instance's from the list it came from, or its name when it has none. */
+function levelTitle(node: TreeNode, scope: Record<string, string>, titles: Record<string, string>): string {
+  if (!node.each) return node.title || node.name;
+  const key = scope[node.each.key] ?? "";
+  return titles[`${node.name}=${key}`] || key || node.name;
 }

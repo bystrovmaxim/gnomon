@@ -28,6 +28,7 @@ def node_from_row(owner: str, row: Mapping[str, Any]) -> Node:
         each_source=row["each_source"],
         each_key=row["each_key"],
         roles=tuple(row["roles"] or ()),
+        opens=str(row["opens"]),
     )
 
 

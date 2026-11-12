@@ -140,6 +140,7 @@ async def test_the_migrator_runs_platform_then_organization_under_their_schemas(
         "plugins/0005_plugin_build.sql",
         "plugins/0006_frontend_generation.sql",
         "plugins/0007_page_gives_history.sql",
+        "plugins/0008_a_node_opens.sql",
     ]
     paths = [q for q in connection.queries() if q.startswith("SET LOCAL search_path")]
     assert paths[0] == 'SET LOCAL search_path TO "platform", "extensions"'

@@ -1,7 +1,7 @@
 # navigation.yaml — the plugin's nodes in Maxitor's left tree.
 # The plugin only adds nodes: it attaches them to the root, to a node of Maxitor or to a node of a direct dependency.
 # Maxitor's installer builds the whole tree and refuses the installation if an attachment does not hold.
-navigation: 3
+navigation: 4
 nodes:
   # A section of its own in the root of the tree: the plugin needs nothing but the core, so it hangs its nodes here.
   - id: notes
@@ -11,6 +11,8 @@ nodes:
     order: 500
     page: /
     roles: [member]
+    # A section of its own is entered: the panel holds its items only, Notes at its head (spec 085).
+    opens: enter
     children:
       # A list node: one instance per item of the organization, read from the plugin's action list_items at the
       # panel's moment. Each instance shows the item's title and puts its key into the scope as item_id, for every
@@ -20,6 +22,8 @@ nodes:
           source: list_items
           key: item_id
         roles: [member]
+        # An item expands where it stands: its two pages appear under it, in the level of Notes.
+        opens: expand
         children:
           # The item's Draft: one person's own changes over the published notes, published whole as one revision.
           - id: item-draft

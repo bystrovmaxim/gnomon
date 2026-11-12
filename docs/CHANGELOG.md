@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-11-12] — A node in the tree opens two ways
+
+Maxitor's left tree used to open every node in place, and with many levels it grew deep and hard to read. Now each node opens one of two ways. A node that **expands** shows its children under it, as before. A node that is **entered** works like a folder: a click makes the left panel show only that node's children, with the node itself across the top of the panel. An entered node carries "›" instead of the arrow, and its children are not read until it is entered. The organization's Settings and the plugin template's Notes are entered; everything else expands.
+
+The arrow at the head of the tree is now **Back**: it returns the panel to the level it showed before the last entering, with what was expanded there still expanded, and opens no page; at the root it is off. The top row's path names only the entered levels and the open page, and a click on one of its steps returns the panel to that level. A reload or a shared link lands inside every entered level above the open page. The phone's drawer works the same way.
+
+A plugin says how each node opens in `navigation.yaml`, format 4: every node with children names `opens: expand` or `opens: enter`, and there is no default. A node with children that says nothing, or a node without children that says it, is refused when the plugin is checked or installed, and the refusal names the node. Format 3 is still read, every node of it expanding. ([#122](https://github.com/bystrovmaxim/gnomon/issues/122))
+
 ## [2026-11-12] — A draft of my own over everyone's published notes
 
 An item of the plugin template now has two pages. **Draft** belongs to the person who opens it: the notes they wrote, changed or deleted since the last publication, and nobody else's. **Published** belongs to everyone: the notes as the latest revision holds them, read only, with a filter by author.

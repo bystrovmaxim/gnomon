@@ -2,7 +2,7 @@
 
 **Builds on**: [6. The backend](06-the-backend.md). **Next**: [8. The page](08-the-page.md).
 
-Your plugin's pages open in Maxitor's frame: the tree on the left, the top row and the right panel. You do not draw any of it. You declare your nodes in `navigation.yaml`, Maxitor joins them into the organization's tree, and your page opens in the right panel when a person chooses one.
+Your plugin's pages open in Maxitor's frame: the tree on the left, the top row and the right panel. You do not draw any of it. Each of your nodes opens the way you say it does — expanding under itself, or entered into a panel of its own children. You declare your nodes in `navigation.yaml`, Maxitor joins them into the organization's tree, and your page opens in the right panel when a person chooses one.
 
 ## Your nodes
 
@@ -17,6 +17,8 @@ The template hangs a section of its own in the root of the tree. Under it is one
     order: 500
     page: /
     roles: [member]
+    # A section of its own is entered: the panel holds its items only, Notes at its head (spec 085).
+    opens: enter
     children:
       # A list node: one instance per item of the organization, read from the plugin's action list_items at the
       # panel's moment. Each instance shows the item's title and puts its key into the scope as item_id, for every
@@ -26,12 +28,15 @@ The template hangs a section of its own in the root of the tree. Under it is one
           source: list_items
           key: item_id
         roles: [member]
+        # An item expands where it stands: its two pages appear under it, in the level of Notes.
+        opens: expand
 ```
 
 - `attach` says where a top node stands: `root`, a node of the core (`core:settings`) or a node of a plugin you depend on directly (`notes:item`). Nothing else.
 - `page` is a path inside your plugin. Maxitor puts the organization and your name in front of it: the page `/items/{item_id}` of an item `4f1c` opens at `/w/<organization>/notes/items/4f1c`.
 - `each` makes a node a list. `source` is a reading action of your plugin, and `key` is the parameter each instance adds for every node beneath it. That is how `{item_id}` reaches the two pages.
 - `roles` asks for the core's `member` or `administrator`; a person without them does not see the node or anything under it.
+- `opens` says how the node opens and has no default: `expand` shows its children under it in the same tree, `enter` makes the left panel hold only its children with the node at its head — as one enters a folder — and gives it "›" instead of the arrow. Every node with children says it; a node without children says nothing.
 
 ## The list a node reads
 
@@ -55,7 +60,7 @@ The tree is built by Maxitor's installer, never in the browser. It refuses a plu
 
 | When | What is refused |
 |---|---|
-| `python -m maxitor_plugin_sdk.checks .`, and again when the version enters the marketplace | a file that breaks the schema; an `id` used twice; two nodes opening one page; a `{name}` no list node above defines; a list key defined twice in one line; a list's `source` that is no action of the plugin; a node attached to a node the core does not have; navigation format 1, which declared controls; a page that does not render `<PanelPage>`, an element placed `fixed` or a layer at the shell's (30) or above |
+| `python -m maxitor_plugin_sdk.checks .`, and again when the version enters the marketplace | a file that breaks the schema; an `id` used twice; two nodes opening one page; a `{name}` no list node above defines; a list key defined twice in one line; a list's `source` that is no action of the plugin; a node attached to a node the core does not have; navigation format 1 or 2; a node with children and no `opens`, or a node without children that says it, the node named; a page that does not render `<PanelPage>`, an element placed `fixed` or a layer at the shell's (30) or above |
 | installing or enabling the plugin in an organization | a node attached to a plugin that is not a direct dependency; to a node that dependency does not have; a parameter the node it attaches to does not give |
 
 A refused installation answers `navigation` with the reason in words, and the organization's tree stays as it was.

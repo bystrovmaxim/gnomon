@@ -80,7 +80,10 @@ class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
             for position, (section_title, path) in enumerate(sections, start=1)
         ] + list(nodes)
         for position, row in enumerate(rows, start=1):
-            self.tables["plugin_node"].append({"plugin_version_id": version_id, "position": position, **row})
+            # ``opens`` is what PluginsStorage.nodes reads; a fake row of format 3 opens as every node of format 3.
+            self.tables["plugin_node"].append(
+                {"plugin_version_id": version_id, "position": position, "opens": "expand", **row}
+            )
         return version_id
 
     def set_state(self, organization_id: str, passport_id: str, state: str, reason: str | None = None) -> None:
