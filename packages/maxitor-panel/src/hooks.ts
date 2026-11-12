@@ -84,3 +84,9 @@ export function useChangeStep(listener: (delta: -1 | 1) => void): void {
   const { onCore } = usePanel();
   useEffect(() => onCore((message) => message.type === "panel.step" && listener(message.delta)), [listener, onCore]);
 }
+
+/** Ask the core for now, one moment: the moment and the comparison are the core's, so a page asks and never writes them. */
+export function useBackToNow(): () => void {
+  const { send } = usePanel();
+  return () => send({ type: "panel.now" });
+}

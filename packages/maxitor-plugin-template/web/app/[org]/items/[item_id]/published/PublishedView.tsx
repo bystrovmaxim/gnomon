@@ -5,7 +5,7 @@
 // Changes, the stepper walks the changes with each one's card, and the counts go to the pill.
 "use client";
 
-import { ChangeStepper, countsOf, DataTable, Dialog, DiffCard, MaxitorCanvas, PanelPage, useCanvas, useCounts, useMoment, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
+import { ChangeStepper, countsOf, DataTable, Dialog, DiffCard, MaxitorCanvas, PanelPage, useBackToNow, useCanvas, useCounts, useMoment, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -31,6 +31,7 @@ export function PublishedView({
   notes,
   changes,
   other,
+  latest,
 }: {
   org: string;
   itemId: string;
@@ -39,6 +40,8 @@ export function PublishedView({
   changes: Change[];
   /** The notes at the other moment of a comparison; null at one moment. */
   other: PublishedNote[] | null;
+  /** The number of the revision in force now: only an older one can be rolled back to. */
+  latest: number | null;
 }) {
   const query = usePanelQuery();
   const { view = "cards", at, author, change, paint } = query;
@@ -52,6 +55,28 @@ export function PublishedView({
   const [said, setSaid] = useState("");
   const [busy, setBusy] = useState(false);
   const [menu, setMenu] = useState<PublishedNote | null>(null);
+  const backToNow = useBackToNow();
+  // Roll back, offered by the core exactly on a past publication: the dialog, and what it changes against now.
+  const [rolling, setRolling] = useState<{ to: number; title: string; comment: string; current: PublishedNote[] | null } | null>(null);
+  const openRollback = async (milestone: string) => {
+    const to = Number(milestone.replace(/^v/, ""));
+    setRolling({ to, title: `Back to v${to}`, comment: "", current: null });
+    const answer = await call(org, "GET", `/items/${encodeURIComponent(itemId)}/published`);
+    const current = answer.ok ? ((answer.data as { notes: PublishedNote[] }).notes ?? []) : [];
+    setRolling((was) => (was && was.to === to ? { ...was, current } : was));
+  };
+  const rollBack = async () => {
+    if (!rolling) return;
+    setBusy(true);
+    const answer = await call(org, "POST", "/revisions/rollback", { item_id: itemId, to_revision: rolling.to, title: rolling.title, comment: rolling.comment });
+    setBusy(false);
+    if (!answer.ok) {
+      setSaid(refusalText(answer.refusal, answer.status));
+      return;
+    }
+    setRolling(null);
+    backToNow();
+  };
 
   const marks = marksInDraft(changes);
   const authors = [...new Map(notes.map((note) => [note.writer_id, note.writer_name])).entries()];
@@ -88,6 +113,11 @@ export function PublishedView({
       title="Published"
       history={PUBLISHED_HISTORY}
       stepper={other !== null ? <ChangeStepper entries={compared.steps} position={position} onGo={setPosition} /> : undefined}
+      onMilestoneAction={
+        revision && latest !== null && revision.number < latest
+          ? (action, milestone) => action.action === "rollback_publication" && void openRollback(milestone)
+          : undefined
+      }
       filters={[
         // A comparison's changes come first and paint by default; the halo marks a note, the rest fades.
         ...(other !== null
@@ -178,6 +208,25 @@ export function PublishedView({
           </div>
         )}
       </MaxitorCanvas>
+      {rolling ? (
+        <Dialog title={`Roll back to v${rolling.to}?`} onClose={() => setRolling(null)}>
+          <div className="nt-foot">
+            Published becomes the next revision, holding the notes of v{rolling.to}. Nothing is lost: everything published after v{rolling.to} stays in the history and
+            on the scale, and the new revision stands on it as a red point.
+          </div>
+          <label>Title<input value={rolling.title} onChange={(event) => setRolling({ ...rolling, title: event.currentTarget.value })} autoFocus /></label>
+          <label>Comment<textarea rows={3} value={rolling.comment} onChange={(event) => setRolling({ ...rolling, comment: event.currentTarget.value })} placeholder="Why the notes go back" /></label>
+          <div className="nt-sec">What the rollback changes against now</div>
+          <div className="nt-foot">{rolling.current === null ? "Reading…" : rollbackSummary(compareNotes(notes, rolling.current, null).steps)}</div>
+          {said ? <div className="nt-said" role="status">{said}</div> : null}
+          <div className="nt-row">
+            <button type="button" onClick={() => setRolling(null)}>Cancel</button>
+            <button type="button" className="nt-primary nt-danger" disabled={busy || !rolling.title.trim() || !rolling.comment.trim()} onClick={() => void rollBack()}>
+              Roll back to v{rolling.to}
+            </button>
+          </div>
+        </Dialog>
+      ) : null}
       {menu ? (
         <Dialog title="Note" onClose={() => setMenu(null)}>
           <button type="button" className="nt-sheet-button" onClick={() => { setMenu(null); edit(menu); }}>Edit in my draft</button>
@@ -198,4 +247,12 @@ function Bring({ anchor }: { anchor: string | null }) {
     if (anchor) canvas.current.bring(anchor);
   }, [anchor]);
   return null;
+}
+
+/** What a rollback changes, as the dialog says it: "+2 notes · 1 changed · −1 note", or "no changes". */
+function rollbackSummary(steps: readonly { status: "added" | "changed" | "removed" }[]): string {
+  const count = (status: string) => steps.filter((step) => step.status === status).length;
+  const notes = (n: number) => `${n} ${n === 1 ? "note" : "notes"}`;
+  const parts = [count("added") ? `+${notes(count("added"))}` : "", count("changed") ? `${count("changed")} changed` : "", count("removed") ? `−${notes(count("removed"))}` : ""].filter(Boolean);
+  return parts.join(" · ") || "no changes";
 }

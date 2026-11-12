@@ -34,3 +34,4 @@ class MilestoneCardCoreEntity(BaseCoreEntity):
     summary: dict[str, int] = Field(description="Notes added, changed and removed against the revision before")
     notes: int = Field(ge=0, description="How many notes it holds")
     comment: str = Field(description="Its own words, shown under the scale when it is in force")
+    back: int | None = Field(default=None, description="For a rollback, the revision it brought back")

@@ -127,13 +127,13 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 ## Phase 10: The template on the scale, Roll back (issue 1.5, 1.4 item 7, US7)
 
-- [ ] T053 [US7] `TPL/src/maxitor_notes/schema.yaml`: `revision.back_revision: {type: integer, nullable: true, description: 'The number of the revision a rollback brings back; empty for a revision published from a draft.'}`
-- [ ] T054 [US7] `TPL/src/maxitor_notes/history/list_note_history_action.py`, `entities/milestone_entity.py`, `storage/notes_storage.py`: milestones format 2 — `kind` `published` or `rollback`, no `minor`, no `release` flag, no draft milestone
-- [ ] T055 [US7] `TPL/src/maxitor_notes/history/note_milestone_card_action.py`: badge `Published` / `Rolled back`, ref, time, title, author, notes held and what changed, `to v<back>` for a rollback
-- [ ] T056 [US7] `TPL/src/maxitor_notes/actions/rollback_publication_action.py` + storage method per [contracts/rollback.md](contracts/rollback.md); route in `app.py`; graph files
-- [ ] T057 [US7] Pages' setups per the contract's table: Published `read`, `milestones`, `card`, `kinds`, `actions` (Roll back); Draft `read: list_note_draft`, the same kinds, `compare: ["diff"]`; the Roll back dialog (title `Back to vN`, comment, what changes) in `PublishedView.tsx`
-- [ ] T058 [P] [US7] Tests: `TPL/tests/test_revisions.py` (rollback: new publication, history kept, refusals), `TPL/tests/test_history_data.py` (format 2 milestones and cards)
-- [ ] T059 [US7] [US8] Extend `CORE/scripts/check-core.mjs` with the walk of `specs/074-notes-history/mockup` on the stand, desktop and 375 px
+- [x] T053 [US7] `TPL/src/maxitor_notes/schema.yaml`: `revision.back_revision: {type: integer, nullable: true, description: 'The number of the revision a rollback brings back; empty for a revision published from a draft.'}`
+- [x] T054 [US7] `TPL/src/maxitor_notes/history/list_note_history_action.py`, `entities/milestone_entity.py`, `storage/notes_storage.py`: milestones format 2 — `kind` `published` or `rollback`, no `minor`, no `release` flag, no draft milestone
+- [x] T055 [US7] `TPL/src/maxitor_notes/history/note_milestone_card_action.py`: badge `Published` / `Rolled back`, ref, time, title, author, notes held and what changed, `to v<back>` for a rollback
+- [x] T056 [US7] `TPL/src/maxitor_notes/actions/rollback_publication_action.py` + storage method per [contracts/rollback.md](contracts/rollback.md); route in `app.py`; graph files
+- [x] T057 [US7] Pages' setups per the contract's table: Published `read`, `milestones`, `card`, `kinds`, `actions` (Roll back); Draft `read: list_note_draft`, the same kinds, `compare: ["diff"]`; the Roll back dialog (title `Back to vN`, comment, what changes) in `PublishedView.tsx`
+- [x] T058 [P] [US7] Tests: `TPL/tests/test_revisions.py` (rollback: new publication, history kept, refusals), `TPL/tests/test_history_data.py` (format 2 milestones and cards)
+- [x] T059 [US7] [US8] Extend `CORE/scripts/check-core.mjs` with the walk of `specs/074-notes-history/mockup` on the stand, desktop and 375 px
 
 **Checkpoint**: commit.
 

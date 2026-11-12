@@ -142,6 +142,11 @@ export function PageFrame({
         scale.giveHistory(kept);
       } else if (message.type === "panel.keys") scale.pressed(message.key);
       else if (message.type === "panel.pointer" || message.type === "panel.choose" || message.type === "panel.shown" || message.type === "panel.counts") onMessage?.(message);
+      else if (message.type === "panel.now") {
+        // Now, one moment: the moment and a comparison's names leave the address; the page's own parameters stay.
+        const { mode: _mode, from: _from, ...rest } = address.query;
+        router.push(windowAddress(code, owner, address.path, rest, null), { scroll: false });
+      }
       else if (message.type === "panel.hidden") {
         hiddenAnchors.current = new Set(message.anchors);
         setHidden(message.anchors.length);

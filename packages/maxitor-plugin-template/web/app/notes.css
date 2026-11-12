@@ -25,6 +25,8 @@
 .nt-row .nt-primary:hover { background: var(--mx-ink-2); color: var(--mx-on-ink); }
 .nt-row button:disabled, .nt-choice button:disabled { opacity: 0.4; cursor: default; }
 .nt-danger { color: var(--mx-bad) !important; }
+/* A primary button that writes something one cannot take back by a click — Roll back — is red. */
+.nt-row .nt-primary.nt-danger, .nt-row .nt-primary.nt-danger:hover { background: var(--mx-bad); color: var(--mx-on-ink) !important; }
 .nt-said { font-size: var(--mx-text-sm); color: var(--mx-warn); line-height: 1.45; }
 .nt-over { position: absolute; left: 0; }
 .nt-sheet-button { border: 0; background: var(--mx-hover); border-radius: var(--mx-radius-md); padding: var(--mx-space-5); font: inherit; font-size: var(--mx-text-md); text-align: left; cursor: pointer; }

@@ -29,3 +29,4 @@ class RevisionCoreEntity(BaseCoreEntity):
     publisher_name: str = Field(description="The publisher's name as it read when the revision was published")
     at: str = Field(description="When it was published, ISO 8601 with microseconds")
     first_at: str = Field(default="", description="When the item's first revision was published: the page's ready stretch starts there")
+    back_revision: int | None = Field(default=None, description="The revision a rollback brought back; none for one published from a draft")

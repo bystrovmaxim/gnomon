@@ -4,7 +4,7 @@ export { PanelPage } from "./PanelPage";
 export { Icon, hasIcon, type IconName } from "./shell/icons";
 export { LAYER, PAINT, isReserved } from "./shell/address";
 export type { BarSection, ButtonSection, ChoiceFilter, ChoiceSection, FilterRow, FilterSection, LayerOption, Layers, PageAction, RangeFilter, SwitchSection, TextFilter } from "./shell/types";
-export { useChangeStep, useCounts, useMoment, useOpenPanel, usePanelHidden, usePanelPath, usePanelQuery, usePanelRouter, useWatermark } from "./hooks";
+export { useBackToNow, useChangeStep, useCounts, useMoment, useOpenPanel, usePanelHidden, usePanelPath, usePanelQuery, usePanelRouter, useWatermark } from "./hooks";
 export { momentFrom } from "./moment";
 export { MaxitorCanvas, useCanvas, type Locator } from "./canvas/MaxitorCanvas";
 export type { Bounds, Camera, Insets, Point } from "./canvas/camera";

@@ -54,6 +54,7 @@ from maxitor_notes.actions.list_published_notes_action import ListPublishedNotes
 from maxitor_notes.actions.publish_notes_action import PublishNotesAction
 from maxitor_notes.actions.rename_item_action import RenameItemAction
 from maxitor_notes.actions.revert_note_change_action import RevertNoteChangeAction
+from maxitor_notes.actions.rollback_publication_action import RollbackPublicationAction
 from maxitor_notes.history.list_note_history_action import ListNoteHistoryAction
 from maxitor_notes.history.note_milestone_card_action import NoteMilestoneCardAction
 from maxitor_notes.notes_refusal_error import NotesRefusalError
@@ -116,10 +117,15 @@ def create_app(dsn: str | None = None, jwks_url: str | None = None) -> FastAPI:
     adapter.get(f"{prefix}/items/{{item_id}}/notes", ListItemNotesAction, connections=connections)
     adapter.get(f"{prefix}/lists/list_note_authors", ListNoteAuthorsAction, connections=connections)
     adapter.post(f"{prefix}/revisions", PublishNotesAction, connections=connections)
+    adapter.post(f"{prefix}/revisions/rollback", RollbackPublicationAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/published", ListPublishedNotesAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/draft", ListNoteDraftAction, connections=connections)
     adapter.get(f"{prefix}/history/list_note_history", ListNoteHistoryAction, connections=connections)
     adapter.get(f"{prefix}/history/note_milestone_card", NoteMilestoneCardAction, connections=connections)
+    # The core's time scale asks every action a page's history names at history/<action>: the pages' reading actions
+    # answer their bars there, over a stretch.
+    adapter.get(f"{prefix}/history/list_published_notes", ListPublishedNotesAction, connections=connections)
+    adapter.get(f"{prefix}/history/list_note_draft", ListNoteDraftAction, connections=connections)
     app = adapter.build(lifespan=lifespan)
 
     @app.exception_handler(NotesRefusalError)

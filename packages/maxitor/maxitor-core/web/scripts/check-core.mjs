@@ -332,7 +332,8 @@ await scenario("the whole draft is published as one revision; Published marks my
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   const published = page.frameLocator("iframe.mx-panel-frame");
-  await published.locator(".nt-revision", { hasText: "v1 · First release · 2026.11" }).waitFor();
+  // The revision's head: its ref, its title, and who published it with the release (spec 079, 1.4).
+  await published.locator(".nt-revision", { hasText: /v1\s*First release.*2026\.11/ }).waitFor();
   await published.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
   await published.getByRole("radio", { name: "Table" }).click();
   await page.waitForURL(/view=table/);
@@ -363,6 +364,45 @@ await scenario("the whole draft is published as one revision; Published marks my
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   await page.frameLocator("iframe.mx-panel-frame").locator(".nt-card", { hasText: "Retry three times" }).waitFor();
+});
+
+await scenario("Published on the scale: its publications as purple points, Roll back exactly on a past one, and the rollback a red point after them", async () => {
+  // A second publication, so there is a past one to go back to.
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  const draft = page.frameLocator("iframe.mx-panel-frame");
+  await draft.getByRole("button", { name: "New note" }).click();
+  await draft.getByLabel("The note's text").fill("Payouts run twice a day");
+  await draft.locator(".mx-dialog").getByRole("button", { name: "Write" }).click();
+  await draft.locator(".nt-card", { hasText: "Payouts run twice a day" }).waitFor();
+  await draft.getByRole("button", { name: "Publish" }).click();
+  await draft.getByLabel("Title").fill("Payouts");
+  await draft.getByLabel("Comment").fill("Payouts move to twice a day");
+  await draft.locator(".mx-dialog").getByRole("button", { name: "Publish" }).click();
+  await page.waitForURL(/\/published/);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  await page.locator(".mx-pill-main").click();
+  await page.locator(".mx-card .mx-point-ref", { hasText: "v2" }).waitFor();
+  const fills = await page.locator(".mx-card .mx-point-filled").evaluateAll((points) => points.map((point) => point.style.fill));
+  expect(fills.length === 2 && fills.every((fill) => fill.includes("--mx-tone-purple")), `the publications are not two purple points: ${fills}`);
+  // Exactly on v1: the page offers Roll back to v1.
+  const v1 = await page.locator(".mx-card .mx-point-ref", { hasText: "v1" }).boundingBox();
+  await page.mouse.click(v1.x + v1.width / 2, v1.y - 17 + v1.height / 2);
+  await page.waitForURL(/at=/);
+  const past = page.frameLocator("iframe.mx-panel-frame");
+  await past.getByRole("button", { name: "Roll back to v1" }).click();
+  await past.getByLabel("Comment").fill("Payouts go back to once a day");
+  await past.locator(".mx-dialog").getByRole("button", { name: "Roll back to v1" }).click();
+  // Back to now: v3 is a red point after v1 and v2, which stay on the scale.
+  await page.waitForURL((url) => !url.search.includes("at="));
+  await page.locator(".mx-pill-main").click();
+  await page.locator(".mx-card .mx-point-ref", { hasText: "v3" }).waitFor();
+  const after = await page.locator(".mx-card .mx-point-filled").evaluateAll((points) => points.map((point) => point.style.fill));
+  expect(after.length === 3 && after[2].includes("--mx-tone-red"), `the rollback is not a red point after two: ${after}`);
+  await page.keyboard.press("Escape");
+  const now = page.frameLocator("iframe.mx-panel-frame");
+  await now.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
+  expect((await now.locator(".nt-card", { hasText: "Payouts run twice a day" }).count()) === 0, "the rollback kept a note v1 did not hold");
 });
 
 await scenario("a plugin's page opened by itself goes to its panel address", async () => {

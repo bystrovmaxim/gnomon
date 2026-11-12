@@ -14,8 +14,15 @@ export const NOTE_KINDS: Record<string, Kind> = {
   },
 };
 
-/** Published on the scale: its publications as points, each with its card. */
-export const PUBLISHED_HISTORY: PageHistory = { milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS };
+/** Published on the scale: the bars of its notes' changes, its publications as points with their cards, and Roll back
+    offered exactly on a past publication. */
+export const PUBLISHED_HISTORY: PageHistory = {
+  read: "list_published_notes",
+  milestones: "list_note_history",
+  card: "note_milestone_card",
+  kinds: NOTE_KINDS,
+  actions: [{ on: "milestone", kinds: ["published", "rollback"], title: "Roll back to {ref}", action: "rollback_publication", ask: true }],
+};
 
 /** Draft on the scale: the same publications, and Diff alone — the draft is a comparison with Published already. */
-export const DRAFT_HISTORY: PageHistory = { milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS, compare: ["diff"] };
+export const DRAFT_HISTORY: PageHistory = { read: "list_note_draft", milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS, compare: ["diff"] };

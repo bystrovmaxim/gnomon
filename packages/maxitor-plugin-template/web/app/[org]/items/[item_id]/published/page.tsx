@@ -18,10 +18,12 @@ export default async function PublishedNotesPage({ params, searchParams }: Props
   // The filters of dates are read on the server, so the page and its bars choose the same notes (spec 079, FR-046).
   const filters = { written: query.written, changed: query.changed };
   const path = `/items/${encodeURIComponent(item_id)}`;
-  const [published, draft, other] = await Promise.all([
+  const [published, draft, other, current] = await Promise.all([
     read<{ revision: Revision | null; notes: PublishedNote[] }>(org, `${path}/published`, { at, ...filters }),
     read<{ revision: Revision | null; changes: Change[] }>(org, `${path}/draft`, { at }),
     against ? read<{ revision: Revision | null; notes: PublishedNote[] }>(org, `${path}/published`, { at: against, ...filters }) : null,
+    // In the past, the revision in force now: only an older one can be rolled back to.
+    at ? read<{ revision: Revision | null }>(org, `${path}/published`, {}) : null,
   ]);
   return (
     <PublishedView
@@ -31,6 +33,7 @@ export default async function PublishedNotesPage({ params, searchParams }: Props
       notes={published?.notes ?? []}
       changes={draft?.changes ?? []}
       other={against ? (other?.notes ?? []) : null}
+      latest={at ? (current?.revision?.number ?? null) : (published?.revision?.number ?? null)}
     />
   );
 }

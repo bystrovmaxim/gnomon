@@ -508,6 +508,49 @@ class NotesStorage(PostgresStorage):
             raise refusal
         return number, now
 
+    async def rollback_publication(
+        self, organization_id: str, item_id: str, to_revision: int, title: str, comment: str, publisher_id: str, operation: str
+    ) -> tuple[int, str]:
+        """
+        Publish the notes revision ``to_revision`` held as the item's next revision, which names it as the one it
+        brings back; return its number and the change time.
+
+        Under the organization's lock: a note it held and the item no longer publishes is opened again with its own
+        creation moment, a note it did not hold is closed, a note whose text differs gets a new version. Nothing else is
+        touched — no draft, no revision between: everything published after it stays in the history.
+        """
+        await self.begin()
+        try:
+            changed_at, now = await self._change_time_now(organization_id)
+            last = await self._last_revision(organization_id, item_id)
+            if last is None or not 1 <= to_revision < int(last["number"]):
+                raise NotesRefusalError("not_a_past_revision", 422, revision=0 if last is None else last["number"])
+            row = await self._fetchrow(
+                f"SELECT {moment_text('created_at')} AS at FROM revision"
+                " WHERE organization_id = $1::text::uuid AND item_id = $2::text::uuid AND number = $3",
+                (organization_id, item_id, to_revision),
+            )
+            target = {note.id: note for note in await self.notes_of_item(organization_id, item_id, row["at"], None)}
+            published, identities = await self._published_notes_now(organization_id, item_id)
+            for note_id, note in target.items():
+                now_body = published[note_id].body if note_id in published else None
+                if now_body == note.body:
+                    continue
+                change = NoteChangeCoreEntity(note_id=note_id, state="changed", body=note.body, writer_id=note.writer_id, writer_name=note.writer_name, changed_at=now)
+                await self._apply_note(change, organization_id, item_id, published, identities, changed_at, publisher_id, operation)
+            for note_id, side in published.items():
+                if note_id in target or side.body is None:
+                    continue
+                change = NoteChangeCoreEntity(note_id=note_id, state="deleted", body=side.body, writer_id=identities[note_id]["writer_id"], writer_name="", changed_at=now)
+                await self._apply_note(change, organization_id, item_id, published, identities, changed_at, publisher_id, operation)
+            number = int(last["number"]) + 1
+            await self._write_revision(organization_id, item_id, number, title, comment, None, changed_at, publisher_id, operation, back_revision=to_revision)
+            await self.commit()
+        except BaseException:
+            await self.rollback()
+            raise
+        return number, now
+
     async def _last_revision(self, organization_id: str, item_id: str) -> Any:
         """The item's last revision's number and moment, or nothing before the first."""
         return await self._fetchrow(
@@ -607,19 +650,20 @@ class NotesStorage(PostgresStorage):
         changed_at: Any,
         publisher_id: str,
         operation: str,
+        back_revision: int | None = None,
     ) -> None:
-        """Write the revision and its first version in one statement each."""
+        """Write the revision and its first version in one statement each; a rollback names the revision it brings back."""
         revision_id = str(uuid4())
         await self._execute(
-            "INSERT INTO revision (id, organization_id, item_id, number, title, comment, release, publisher_id, created_at, updated_at)"
-            " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4, $5, $6, $7, $8::text::uuid, $9, $9)",
-            (revision_id, organization_id, item_id, number, title, comment, release, publisher_id, changed_at),
+            "INSERT INTO revision (id, organization_id, item_id, number, title, comment, release, publisher_id, back_revision, created_at, updated_at)"
+            " VALUES ($1::text::uuid, $2::text::uuid, $3::text::uuid, $4, $5, $6, $7, $8::text::uuid, $10, $9, $9)",
+            (revision_id, organization_id, item_id, number, title, comment, release, publisher_id, changed_at, back_revision),
         )
         await self._execute(
             "INSERT INTO revision_versions (organization_id, id, valid_from_at, valid_to_at, author_id, operation,"
-            " item_id, number, title, comment, release, publisher_id, created_at, updated_at)"
+            " item_id, number, title, comment, release, publisher_id, back_revision, created_at, updated_at)"
             " SELECT organization_id, id, $3, NULL, $4::text::uuid, $5, item_id, number, title, comment, release,"
-            " publisher_id, created_at, updated_at FROM revision WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
+            " publisher_id, back_revision, created_at, updated_at FROM revision WHERE organization_id = $1::text::uuid AND id = $2::text::uuid",
             (organization_id, revision_id, changed_at, publisher_id, operation),
         )
 
@@ -713,7 +757,7 @@ class NotesStorage(PostgresStorage):
             f"SELECT r.number AS number, 'v' || r.number AS ref, r.title AS title, r.comment AS comment, r.release AS release,"
             f" r.publisher_id::text AS publisher_id,"
             f" {member_name('r.organization_id', 'r.publisher_id', 'r.created_at')} AS publisher_name,"
-            f" {moment_text('r.created_at')} AS at,"
+            f" {moment_text('r.created_at')} AS at, r.back_revision AS back_revision,"
             f" (SELECT {moment_text('f.created_at')} FROM revision_versions f"
             f" WHERE f.organization_id = r.organization_id AND f.item_id = r.item_id AND f.number = 1 AND {in_force('f', when)} LIMIT 1) AS first_at"
             f" FROM revision_versions r"
@@ -794,6 +838,24 @@ class NotesStorage(PostgresStorage):
         )
         return end, [Version(entity_id=row["id"], valid_from=row["valid_from"], valid_to=row["valid_to"]) for row in rows]
 
+    async def draft_versions_between(self, organization_id: str, item_id: str, person_id: str, start: str, end: str) -> tuple[str, list[Version]]:
+        """
+        Every version of one person's draft of an item in force at some time between ``start`` and ``end`` — the
+        draft's own query over the stretch — and the end the stretch was cut to: the watermark when ``end`` is later.
+        """
+        watermark = await self._watermark(organization_id)
+        if watermark is None:
+            return start, []
+        end = min(end, watermark)
+        rows = await self._fetch(
+            f"SELECT d.note_id::text AS id, {moment_text('d.valid_from_at')} AS valid_from, {moment_text('d.valid_to_at')} AS valid_to"
+            f" FROM note_change_versions d"
+            f" WHERE d.organization_id = $1::text::uuid AND d.item_id = $2::text::uuid AND d.person_id = $3::text::uuid"
+            f" AND {overlaps('d', '$4::text::timestamptz', '$5::text::timestamptz')}",
+            (organization_id, item_id, person_id, start, end),
+        )
+        return end, [Version(entity_id=row["id"], valid_from=row["valid_from"], valid_to=row["valid_to"]) for row in rows]
+
     async def milestones(self, organization_id: str, item_id: str, start: str, end: str) -> list[MilestoneCoreEntity]:
         """The publications of the stretch, in order."""
         cards = await self._cards(organization_id, item_id, end)
@@ -820,7 +882,7 @@ class NotesStorage(PostgresStorage):
             f"SELECT r.number AS number, 'v' || r.number AS ref, r.title AS title, r.comment AS comment, r.release AS release,"
             f" r.publisher_id::text AS publisher_id,"
             f" {member_name('r.organization_id', 'r.publisher_id', 'r.created_at')} AS publisher_name,"
-            f" {moment_text('r.created_at')} AS at"
+            f" {moment_text('r.created_at')} AS at, r.back_revision AS back_revision"
             f" FROM revision_versions r"
             f" WHERE r.organization_id = $1::text::uuid AND r.item_id = $2::text::uuid AND {in_force('r', '$3::text::timestamptz')}"
             f" ORDER BY r.number",
@@ -834,9 +896,10 @@ class NotesStorage(PostgresStorage):
             summary = _summary(before, notes)
             cards.append(
                 MilestoneCardCoreEntity(
-                    id=revision.ref, at=revision.at, kind="published", ref=revision.ref, title=revision.title,
-                    release=revision.release, author_id=revision.publisher_id, author_name=revision.publisher_name,
-                    summary=summary, notes=len(notes), comment=revision.comment,
+                    id=revision.ref, at=revision.at, kind="published" if revision.back_revision is None else "rollback",
+                    ref=revision.ref, title=revision.title, release=revision.release, author_id=revision.publisher_id,
+                    author_name=revision.publisher_name, summary=summary, notes=len(notes), comment=revision.comment,
+                    back=revision.back_revision,
                 )
             )
             before = notes
@@ -999,6 +1062,16 @@ class NotesStorageWrapper(SqlStorageWrapper):
     async def note_versions_between(self, organization_id: str, item_id: str, start: str, end: str, writer_id: str | None) -> tuple[str, list[Version]]:
         """Pass on the wrapped storage's read over a stretch."""
         return await self._storage().note_versions_between(organization_id, item_id, start, end, writer_id)
+
+    async def draft_versions_between(self, organization_id: str, item_id: str, person_id: str, start: str, end: str) -> tuple[str, list[Version]]:
+        """Pass on the wrapped storage's read of a draft over a stretch."""
+        return await self._storage().draft_versions_between(organization_id, item_id, person_id, start, end)
+
+    async def rollback_publication(
+        self, organization_id: str, item_id: str, to_revision: int, title: str, comment: str, publisher_id: str, operation: str
+    ) -> tuple[int, str]:
+        """Pass on the wrapped storage's rollback."""
+        return await self._storage().rollback_publication(organization_id, item_id, to_revision, title, comment, publisher_id, operation)
 
     async def milestones(self, organization_id: str, item_id: str, start: str, end: str) -> list[MilestoneCoreEntity]:
         """Pass on the wrapped storage's milestones."""

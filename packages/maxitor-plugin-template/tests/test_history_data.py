@@ -140,10 +140,22 @@ async def test_a_card_is_the_blocks_of_a_publication_what_it_changed_its_notes_a
     _valid("card", {"blocks": blocks})
 
 
-def test_a_rollback_card_carries_the_red_badge() -> None:
-    card = MilestoneCardCoreEntity(id="v4", at=V3, kind="rollback", ref="v4", title="Back to v2", summary={"added": 0, "changed": 0, "removed": 1}, notes=2, comment="Back")
-    assert card_blocks(card)[0]["line"][0] == {"badge": {"icon": "undo", "label": "Rolled back", "tone": "red"}}
-    assert card_blocks(card)[-1] == {"chips": [{"chip": "2 notes"}, {"text": "−1 note"}]}
+def test_a_rollback_card_carries_the_red_badge_and_names_the_revision_it_brought_back() -> None:
+    card = MilestoneCardCoreEntity(id="v4", at=V3, kind="rollback", ref="v4", title="Back to v2", summary={"added": 0, "changed": 0, "removed": 1}, notes=2, comment="Back", back=2)
+    blocks = card_blocks(card)
+    assert blocks[0]["line"][0] == {"badge": {"icon": "undo", "label": "Rolled back", "tone": "red"}}
+    assert blocks[2] == {"text": "to v2 · everything published after it stays in the history"}
+    assert blocks[-1] == {"chips": [{"chip": "2 notes"}, {"text": "−1 note"}]}
+    _valid("card", {"blocks": blocks})
+
+
+async def test_a_revision_that_brought_another_back_is_a_milestone_of_the_kind_rollback(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(REVISIONS[2], "back_revision", 1)
+    storage, _connection = await _open()
+    milestones = await storage.milestones(ORG, ITEM, "2026-10-01T00:00:00.000000Z", "2026-12-01T00:00:00.000000Z")
+    assert [(m.id, m.kind) for m in milestones] == [("v1", "published"), ("v2", "published"), ("v3", "rollback")]
+    card = await storage.milestone_card(ORG, ITEM, "v3", None)
+    assert (card.kind, card.back) == ("rollback", 1)
 
 
 async def test_an_unknown_milestone_is_not_found() -> None:
@@ -171,6 +183,8 @@ def test_the_pages_give_their_history_and_the_passport_its_comparisons() -> None
     assert "history={PUBLISHED_HISTORY}" in (web / "published" / "PublishedView.tsx").read_text()
     history = (PACKAGE.parents[1] / "web" / "app" / "[org]" / "notes" / "history.ts").read_text()
     assert 'milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS' in history
+    assert 'read: "list_published_notes"' in history and 'read: "list_note_draft"' in history
+    assert 'title: "Roll back to {ref}", action: "rollback_publication", ask: true' in history
     assert "published:" in history and "rollback:" in history and "small:" not in history and "flag:" not in history
     assert "history={DRAFT_HISTORY}" in (web / "DraftView.tsx").read_text()
     assert 'kinds: NOTE_KINDS, compare: ["diff"]' in (PACKAGE.parents[1] / "web" / "app" / "[org]" / "notes" / "history.ts").read_text()

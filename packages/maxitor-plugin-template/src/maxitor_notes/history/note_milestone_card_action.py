@@ -85,6 +85,8 @@ def card_blocks(card: MilestoneCardCoreEntity) -> list[dict[str, Any]]:
     """A publication's card as the core draws it: a purple Published badge or a red Rolled back one, then the rest."""
     badge = {"icon": "undo", "label": "Rolled back", "tone": "red"} if card.kind == "rollback" else {"icon": "tag", "label": "Published", "tone": "purple"}
     blocks: list[dict[str, Any]] = [{"line": [{"badge": badge}, {"ref": card.ref}, {"ago": card.at}]}, {"title": card.title}]
+    if card.kind == "rollback" and card.back is not None:
+        blocks.append({"text": f"to v{card.back} · everything published after it stays in the history"})
     if card.author_id and card.author_name:
         blocks.append({"person": {"id": card.author_id, "name": card.author_name}})
     chips: list[dict[str, Any]] = [{"chip": f"{card.notes} {'note' if card.notes == 1 else 'notes'}"}, {"text": summary_text(card.summary)}]

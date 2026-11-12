@@ -17,7 +17,8 @@ from typing import cast
 from maxitor_plugin_sdk import date_bounds
 from maxitor_plugin_sdk.moments import MOMENT_PATTERN
 from maxitor_plugin_sdk.roles import MemberRole
-from pydantic import Field
+from maxitor_plugin_sdk.history import bars_of
+from pydantic import Field, model_validator
 
 from aoa.action_machine.context.context_view import ContextView
 from aoa.action_machine.context.ctx_constants import Ctx
@@ -33,6 +34,7 @@ from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
 from maxitor_notes.entities.note_entity import NoteCoreEntity
 from maxitor_notes.entities.revision_entity import RevisionCoreEntity
+from maxitor_notes.entities.bar_entity import BarCoreEntity
 from maxitor_notes.membership import member_organization_id, organization_access
 from maxitor_notes.notes_domain import NotesDomain
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage
@@ -45,13 +47,27 @@ class ListPublishedNotesParams(BaseParams):
     at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The panel's moment; none means now, the watermark")
     written: str | None = Field(default=None, max_length=64, description="The filter Written: a range of days the note was first written in, as the shell writes it")
     changed: str | None = Field(default=None, max_length=64, description="The filter Last change: a range of days the note last changed in, as the shell writes it")
+    from_at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The stretch's start, for the scale's bars")
+    to_at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The stretch's end; cut to the watermark")
+    width: int | None = Field(default=None, ge=60, le=2592000, description="A bar's width in seconds")
+
+    @model_validator(mode="after")
+    def _one_question(self) -> ListPublishedNotesParams:
+        """Either a moment or a whole stretch: from_at, to_at and width come together, and never with at."""
+        stretch = (self.from_at, self.to_at, self.width)
+        if any(value is not None for value in stretch) and (any(value is None for value in stretch) or self.at is not None):
+            raise ValueError("from_at, to_at and width come together, and never with at")
+        if self.from_at is not None and self.to_at is not None and self.from_at >= self.to_at:
+            raise ValueError("A stretch ends after it starts")
+        return self
 
 
 class ListPublishedNotesResult(BaseResult):
     """The revision in force and its notes."""
 
-    revision: RevisionCoreEntity | None = Field(description="The revision in force at the moment; none before the first")
-    notes: list[NoteCoreEntity] = Field(description="Its notes as they read when it was published")
+    revision: RevisionCoreEntity | None = Field(default=None, description="The revision in force at the moment; none before the first")
+    notes: list[NoteCoreEntity] = Field(default_factory=list, description="Its notes as they read when it was published; none over a stretch")
+    bars: list[BarCoreEntity] = Field(default_factory=list, description="Over a stretch: the bars of the published notes' changes, in time order")
 
 
 @meta(description="The published notes of an item at one moment", domain=NotesDomain)
@@ -81,6 +97,11 @@ class ListPublishedNotesAction(BaseAction[ListPublishedNotesParams, ListPublishe
         _ = (state, box)
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
         organization_id = await member_organization_id(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
+        if params.from_at is not None and params.to_at is not None and params.width is not None:
+            # The core's time scale asks for bars: the published notes' versions over the stretch, by what they say.
+            end, versions = await storage.note_versions_between(organization_id, params.item_id, params.from_at, params.to_at, None)
+            bars = bars_of(versions, params.from_at, end, params.width) if params.from_at < end else []
+            return ListPublishedNotesResult(bars=[BarCoreEntity(start=bar.start, added=bar.added, changed=bar.changed, removed=bar.removed) for bar in bars])
         revision, found = await storage.published_notes(organization_id, params.item_id, params.at)
         # The filters of dates choose among the notes the page shows, as the shell's ranges read them (spec 079, FR-046).
         today = datetime.now(UTC).date()

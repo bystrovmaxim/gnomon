@@ -84,3 +84,7 @@ test("panel.shown names an anchor of its chain; the counts are whole numbers", (
   assert.ok(pageMessage({ type: "panel.counts", added: 2, removed: 1, changed: 0 }));
   assert.equal(pageMessage({ type: "panel.counts", added: -1, removed: 1, changed: 0 }), null);
 });
+
+test("a page asks for now with panel.now and nothing else", () => {
+  assert.deepEqual(pageMessage({ type: "panel.now", at: "2026-11-01T00:00:00.000000Z" }), { type: "panel.now" });
+});

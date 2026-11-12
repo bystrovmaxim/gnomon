@@ -29,7 +29,9 @@ export type PageMessage =
       filters hid it, whether it moved the camera. */
   | { type: "panel.shown"; chain: string[]; anchor: string | null; held: boolean; hidden: boolean; brought: boolean }
   /** What a comparison counts, for the pill. */
-  | { type: "panel.counts"; added: number; removed: number; changed: number };
+  | { type: "panel.counts"; added: number; removed: number; changed: number }
+  /** Back to now, one moment: after a page's own writing in the past — a rollback — the screen shows its result. */
+  | { type: "panel.now" };
 
 /** Which panel of Side by side a page is drawn in. */
 export type Side = "a" | "b";
@@ -97,6 +99,8 @@ export function pageMessage(data: unknown): PageMessage | null {
       return chain(m.chain) && (m.anchor === null || (text(m.anchor) && m.chain.includes(m.anchor))) && typeof m.held === "boolean" && typeof m.hidden === "boolean" && typeof m.brought === "boolean"
         ? { type: m.type, chain: m.chain, anchor: m.anchor, held: m.held, hidden: m.hidden, brought: m.brought }
         : null;
+    case "panel.now":
+      return { type: m.type };
     case "panel.counts":
       return count(m.added) && count(m.removed) && count(m.changed) ? { type: m.type, added: m.added, removed: m.removed, changed: m.changed } : null;
     default:
