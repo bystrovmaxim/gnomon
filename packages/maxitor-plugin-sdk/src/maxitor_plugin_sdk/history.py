@@ -24,7 +24,6 @@ from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 #: The folder of a plugin's package holding its history actions, one per file: ``history/<name>_action.py``.
 HISTORY_FOLDER = "history"
@@ -80,23 +79,6 @@ def bars_of(versions: Iterable[Version], start: str, end: str, width: int) -> li
         Bar(start=_text(origin + timedelta(seconds=index * width)), added=added, changed=changed, removed=removed)
         for index, (added, changed, removed) in sorted(counts.items())
     ]
-
-
-def history_problems(passport_history: dict[str, Any] | None, node_id: str, node_history: dict[str, Any], actions: set[str]) -> list[str]:
-    """
-    The faults of one page's history: comparisons wider than the passport's, and history names with no action in
-    the plugin's folder ``history/``. ``actions`` holds the names found there, without ``_action``.
-    """
-    problems: list[str] = []
-    allowed = set((passport_history or {}).get("compare", []))
-    for comparison in node_history.get("compare", []):
-        if comparison not in allowed:
-            problems.append(f"navigation: {node_id!r} offers {comparison!r}, which the passport's history does not")
-    for role in ("bars", "milestones", "card"):
-        name = node_history.get(role)
-        if name is not None and name not in actions:
-            problems.append(f"navigation: {node_id!r} names {role} {name!r}, but there is no {HISTORY_FOLDER}/{name}_action.py")
-    return problems
 
 
 def _time(moment: str) -> datetime:

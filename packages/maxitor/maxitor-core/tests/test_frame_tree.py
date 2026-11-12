@@ -26,7 +26,6 @@ ITEM = {
     "each_source": "list_items",
     "each_key": "item_id",
     "roles": ["member"],
-    "room": None,
 }
 ITEM_NOTES = {
     "full_name": "notes:item-notes",
@@ -38,7 +37,6 @@ ITEM_NOTES = {
     "each_source": None,
     "each_key": None,
     "roles": ["member"],
-    "room": None,
 }
 ROOT = {
     "full_name": "notes:notes",
@@ -50,7 +48,6 @@ ROOT = {
     "each_source": None,
     "each_key": None,
     "roles": ["member"],
-    "room": None,
 }
 
 
@@ -65,7 +62,6 @@ def _reviews(parent: str) -> dict[str, Any]:
         "each_source": None,
         "each_key": None,
         "roles": [],
-        "room": None,
     }
 
 

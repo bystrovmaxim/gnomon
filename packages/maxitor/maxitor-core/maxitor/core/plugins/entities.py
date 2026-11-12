@@ -178,6 +178,12 @@ class PluginVersionCoreEntity(BaseCoreEntity):
     purl: str = Field(description="The wheel's source as a Package URL")
     sha256: str = Field(description="The wheel's SHA-256, 64 lower-case hexadecimal characters")
     core_range: str | None = Field(default=None, description="The core range of its passport; empty until checked")
+    history_actions: list[str] | None = Field(
+        default=None, description="The names of the actions its wheel holds: what a page's history may name; empty until checked"
+    )
+    history_compare: list[str] | None = Field(
+        default=None, description="The comparisons its passport's history offers, which a page narrows; empty until checked"
+    )
     state: PluginVersionLifecycle = Field(description="draft, active, rejected or withdrawn")
     reason: str | None = Field(
         default=None, description="Why it was rejected or why its check waits; empty when there is nothing to say"
@@ -241,7 +247,6 @@ class PluginNodeCoreEntity(BaseCoreEntity):
     each_source: str | None = Field(default=None, description="A list node's reading action; empty for an ordinary node")
     each_key: str | None = Field(default=None, description="The parameter a list node's instance adds; empty otherwise")
     roles: list[str] = Field(description="The core's roles needed to see it; empty for every member")
-    room: str | None = Field(default=None, description="The page's behaviour with other people as the file writes it, as JSON")
 
     plugin_version: Annotated[
         AssociationOne[PluginVersionCoreEntity],

@@ -16,3 +16,4 @@ export { openDatePicker, openDateRangePicker, type Anchor, type DatePickerOption
 export { inRange, readRange, writeRange, resolve as resolveBound, type Bound, type Preset, type Range } from "./pickers/dates";
 export { numberIn, readNumbers } from "./shell/address";
 export { coreMessage, pageMessage, trusted, type CoreMessage, type PageMessage, type Query } from "./protocol";
+export { checkHistory, COMPARISONS, historyOf, NO_HISTORY, type Comparison, type HistoryAllowed, type PageHistory } from "./protocol";

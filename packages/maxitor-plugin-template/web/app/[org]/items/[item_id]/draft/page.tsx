@@ -4,7 +4,8 @@ import { Card, PanelPage } from "@maxitor/panel";
 
 export default function DraftPage() {
   return (
-    <PanelPage title="Draft">
+    // The draft is a comparison already: it offers one moment only.
+    <PanelPage title="Draft" history={{ compare: [] }}>
       <Card>What was added, changed or removed since the last revision, with who and when, will be here.</Card>
     </PanelPage>
   );

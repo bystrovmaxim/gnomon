@@ -202,8 +202,9 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
             return CheckResult(state="gone")
         try:
             data = await self._wheel(found, connections)
-            passport, nodes = inspect(read_wheel(data))
-            await self._activate(store, found, passport, nodes)
+            contents = read_wheel(data)
+            passport, nodes = inspect(contents)
+            await self._activate(store, found, passport, nodes, contents.actions)
         except WheelSourceError as error:
             await self._record(store, found, "draft", f"{error.reason}: {error.detail}")
             await box.warning(
@@ -252,7 +253,7 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
         return data
 
     async def _activate(
-        self, store: DeployStorage, found: dict[str, Any], passport: dict[str, Any], nodes: list[Node]
+        self, store: DeployStorage, found: dict[str, Any], passport: dict[str, Any], nodes: list[Node], actions: frozenset[str]
     ) -> None:
         """Give the version its plugin, dependencies and navigation's nodes, and make it active — or raise ``VersionRejectedError``."""
         owner = found["owner_organization_id"]
@@ -322,7 +323,6 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
                         "each_source": node.each_source,
                         "each_key": node.each_key,
                         "roles": list(node.roles),
-                        "room": None if node.room is None else json.dumps(node.room),
                         "created_at": changed,
                         "updated_at": None,
                     },
@@ -337,6 +337,9 @@ class CheckVersionAction(BaseAction[CheckParams, CheckResult]):
                     "plugin_id": target,
                     "version": passport["version"],
                     "core_range": passport["requires"]["maxitor"],
+                    # What a page's history is checked against when the page gives it (spec 082).
+                    "history_actions": sorted(actions),
+                    "history_compare": list((passport.get("history") or {}).get("compare") or []),
                     "state": "active",
                     "reason": None,
                     "checked_at": changed,

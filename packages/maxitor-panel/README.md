@@ -37,7 +37,7 @@ export function Notes() {
 | Export | What it does |
 |---|---|
 | `PanelDocument` | the page's document and the protocol's listener |
-| `PanelPage {title, filters, layers, bar, actions}` | the shell: the root of every page, which draws the page's controls from what it gives and writes them into the address; its title goes to the top row and the browser tab |
+| `PanelPage {title, filters, layers, bar, actions, history}` | the shell: the root of every page, which draws the page's controls from what it gives and writes them into the address, and gives the core the page's history (`read`, `bars`, `milestones`, `card`, `compare`, `legend`) — without it the page is offered one moment only; its title goes to the top row and the browser tab |
 | `usePanelRouter()` | `push` adds one history entry to the window's address, `replace` changes it in place; a change of `at`, `mode`, `from` or a `_…` name is refused |
 | `usePanelQuery()` | the page's parameters, `at` among them when a moment is chosen |
 | `usePanelPath()` | the page's path inside its plugin, without the organization |

@@ -76,7 +76,7 @@ class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
         # A section is a node attached to the root; ``nodes`` are rows as PluginsStorage.nodes reads them.
         rows = [
             {"full_name": f"{name}:section-{position}", "parent": "root", "node_order": position * 100, "title": section_title,
-             "icon": None, "page": path, "each_source": None, "each_key": None, "roles": [], "room": None}
+             "icon": None, "page": path, "each_source": None, "each_key": None, "roles": []}
             for position, (section_title, path) in enumerate(sections, start=1)
         ] + list(nodes)
         for position, row in enumerate(rows, start=1):
@@ -258,3 +258,10 @@ class MemoryPluginsStorage(MemoryRuntimeReadings, PluginsStorage):
                 found.append({"passport_id": plugin["passport_id"], "name": plugin["name"], "title": plugin["title"],
                               "version_id": r["plugin_version_id"]})
         return sorted(found, key=lambda p: p["title"])
+
+    async def plugin_histories(self, organization_id: str) -> dict[str, dict[str, list[str]]]:
+        found: dict[str, dict[str, list[str]]] = {}
+        for row in await self.enabled_plugins(organization_id):
+            version = self._version_of(row["version_id"])
+            found[row["name"]] = {"actions": list(version.get("history_actions") or []), "compare": list(version.get("history_compare") or [])}
+        return found

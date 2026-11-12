@@ -9,7 +9,7 @@ id: maxitor
 reads:
   plugin-passport: [3]
   plugin-schema: [1]
-  navigation: [2]
+  navigation: [3]
   foreign-keys: [1]
 
 # The major version of maxitor-plugin-sdk this core is built with; a plugin built with another is refused.

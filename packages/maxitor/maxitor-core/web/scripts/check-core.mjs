@@ -252,19 +252,19 @@ await scenario("the notes page opens in the right panel from the tree, with its 
   expect(card.x >= filters.x + filters.width + 8, `the notes touch the filters: ${card.x} against ${filters.x + filters.width}`);
   await frame.getByRole("radio", { name: "Table" }).click();
   await page.waitForURL(/view=table/);
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await frame.locator(".mx-filter-row").first().click();
   await page.waitForURL(/author=/);
   await frame.locator(".mx-empty-state", { hasText: "No notes yet" }).waitFor();
   await page.goBack();
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await page.goBack();
   await frame.locator(".mx-card", { hasText: "Retry three times" }).waitFor();
   await page.goForward();
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await page.reload();
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
-  await page.frameLocator("iframe.mx-panel-frame").locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await page.frameLocator("iframe.mx-panel-frame").locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
 });
 
 await scenario("a plugin's page opened by itself goes to its panel address", async () => {
@@ -338,6 +338,20 @@ await scenario("the test drawing: layers with counts, filters, the bottom bar an
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
   await frame.locator(".mx-filter-title", { hasText: "Changes" }).waitFor();
   expect((await frame.locator(".mx-actions").count()) === 0, "the actions show in a comparison");
+});
+
+await scenario("a page gives its history; the core keeps what holds and refuses the rest by name", async () => {
+  const errors = [];
+  const listen = (message) => message.type() === "error" && errors.push(message.text());
+  page.on("console", listen);
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/drawing`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  await page.waitForFunction(() => document.querySelector("iframe.mx-panel-frame")?.dataset.history?.includes("list_test_history"));
+  const history = JSON.parse(await page.locator("iframe.mx-panel-frame").getAttribute("data-history"));
+  page.off("console", listen);
+  expect(JSON.stringify(history) === JSON.stringify({ milestones: "list_test_history", compare: ["diff"] }), `the core kept ${JSON.stringify(history)}`);
+  expect(errors.some((text) => text.includes('card names "no_such_card"')), "the unknown name was not refused by name");
+  expect(errors.some((text) => text.includes('compare offers "side_by_side"')), "the wider comparison was not refused");
 });
 
 await scenario("a page without the shell is marked by a red strip on the stand", async () => {

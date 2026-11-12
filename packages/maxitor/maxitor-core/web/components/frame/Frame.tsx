@@ -13,6 +13,8 @@ import { TopRow } from "@/components/frame/TopRow";
 import { Tree } from "@/components/frame/Tree";
 import { TreeHead } from "@/components/frame/TreeHead";
 import { readAddress, windowAddress } from "@/lib/address";
+import type { HistoryAllowed } from "@maxitor/panel/protocol";
+
 import type { Me } from "@/lib/core";
 import { lineOf, nodeOf, upOf, type TreeNode } from "@/lib/tree";
 
@@ -22,6 +24,7 @@ export function Frame({
   nodes,
   owners,
   dependencies,
+  histories,
   children,
 }: {
   account: Me;
@@ -31,6 +34,8 @@ export function Frame({
   owners: string[];
   /** Each enabled plugin's direct dependencies. */
   dependencies: Record<string, string[]>;
+  /** Each enabled plugin's history actions and comparisons: what its pages' histories are checked against. */
+  histories: Record<string, HistoryAllowed>;
   /** The core's own page for the address, drawn in the panel; nothing for a plugin's page. */
   children: ReactNode;
 }) {
@@ -84,7 +89,7 @@ export function Frame({
           <TreeHead collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} up={up} />
           {collapsed ? null : tree}
         </aside>
-        <Panel code={current.code} address={address} opened={opened} dependencies={dependencies} onTitle={setTitle}>
+        <Panel code={current.code} address={address} opened={opened} dependencies={dependencies} histories={histories} onTitle={setTitle}>
           {children}
         </Panel>
         {drawer ? (

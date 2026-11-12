@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "maxitor-plugin-sdk"
-version = "1.6.0"
+version = "1.7.0"
 description = "The Maxitor plugin SDK: the schemas of a plugin's files, its checks, and the compatibility decision."
 readme = "README.md"
 license = "Apache-2.0"

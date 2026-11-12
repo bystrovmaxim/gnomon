@@ -32,7 +32,7 @@ title: Notes
 description: >
   Notes on the plugin's own items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.10.0
+version: 0.11.0
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 ```
@@ -74,17 +74,17 @@ passport: a plugin declares no roles of its own; its actions check the core's me
 Against a given core:
 
 ```bash
-uv run --all-extras maxitor plugin check packages/maxitor-plugin-template --core 4.5.0
+uv run --all-extras maxitor plugin check packages/maxitor-plugin-template --core 4.7.0
 ```
 
 ```text
-the plugin fits maxitor 4.5.0
+the plugin fits maxitor 4.7.0
 ```
 
 and against one outside `requires.maxitor`, with exit 1:
 
 ```text
-core_range: io.github.bystrovmaxim.notes 0.10.0 needs maxitor >=4.5,<5; this core is maxitor 3.29.0
+core_range: io.github.bystrovmaxim.notes 0.11.0 needs maxitor >=4.7,<5; this core is maxitor 3.29.0
 ```
 
 ## Build the frontend as Maxitor will
@@ -92,11 +92,11 @@ core_range: io.github.bystrovmaxim.notes 0.10.0 needs maxitor >=4.5,<5; this cor
 Your wheel carries `web/` as sources; Maxitor's installer builds them with the core's own `@maxitor/panel`, whatever version your `package.json` names, and installs only what the core's npm list allows. Run the same step yourself, with Docker running and the core you target installed:
 
 ```bash
-uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.5.0
+uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.7.0
 ```
 
 ```text
-maxitor-plugin/notes_0_10_0-frontend:fad7af0dee62-4.5.0
+maxitor-plugin/notes_0_11_0-frontend:fad7af0dee62-4.7.0
 ```
 
 A page that does not compile ends the build with exit 1 and the line the installer would record:

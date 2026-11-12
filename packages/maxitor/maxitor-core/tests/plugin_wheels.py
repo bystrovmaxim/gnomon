@@ -37,7 +37,7 @@ KEYS = """foreign_keys:
   - from: { table: note, columns: [organization_id, writer_id] }
     to:   { schema: core, table: user, columns: [organization_id, id] }
 """
-NAVIGATION = """navigation: 2
+NAVIGATION = """navigation: 3
 nodes:
   - id: tags
     attach: root

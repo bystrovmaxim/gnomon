@@ -1,54 +1,55 @@
-# packages/maxitor-plugin-sdk/tests/test_navigation_format.py
-"""Navigation format 2 (spec 078, FR-016): format 1 is refused by name, and no node declares controls."""
+"""
+Navigation format 3 (spec 082, FR-006, FR-007): the tree only. Formats 1 and 2 are refused by name, and a node that
+declares what its page gives — its history, its controls — or a room is refused naming the node.
+"""
 
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import pytest
 import yaml
 from jsonschema import Draft202012Validator
-from maxitor_plugin_sdk.checks import NAVIGATION_FORMAT_1, SCHEMAS, check_plugin
+from maxitor_plugin_sdk.checks import NAVIGATION_FORMAT_1, NAVIGATION_FORMAT_2, SCHEMAS, check_plugin
 
 TEMPLATE = Path(__file__).resolve().parents[2] / "maxitor-plugin-template"
-NAVIGATION = TEMPLATE / "src" / "maxitor_notes" / "navigation.yaml"
-
-
-def _schema_errors(document: object) -> list[str]:
-    validator = Draft202012Validator(json.loads((SCHEMAS / "navigation-2.schema.json").read_text(encoding="utf-8")))
-    return [error.message for error in validator.iter_errors(document)]
+NAVIGATION = Path("src") / "maxitor_notes" / "navigation.yaml"
 
 
 def _template() -> dict:
-    return yaml.safe_load(NAVIGATION.read_text(encoding="utf-8"))
+    return yaml.safe_load((TEMPLATE / NAVIGATION).read_text(encoding="utf-8"))
 
 
-def test_the_template_is_format_2_and_passes() -> None:
-    assert _template()["navigation"] == 2
-    assert _schema_errors(_template()) == []
-
-
-def test_format_1_is_refused_by_name(tmp_path: Path) -> None:
+def _copy(tmp_path: Path, document: dict) -> Path:
     copy = tmp_path / "plugin"
-    import shutil
+    shutil.copytree(TEMPLATE, copy, ignore=shutil.ignore_patterns("node_modules", ".next", "__pycache__"))
+    (copy / NAVIGATION).write_text(yaml.safe_dump(document), encoding="utf-8")
+    return copy
 
-    shutil.copytree(TEMPLATE, copy, ignore=shutil.ignore_patterns("node_modules", ".next", "_web", "__pycache__"))
-    navigation = copy / "src" / "maxitor_notes" / "navigation.yaml"
+
+def _item_notes(document: dict) -> dict:
+    return document["nodes"][0]["children"][0]["children"][0]
+
+
+def test_the_template_is_format_3_and_passes() -> None:
+    validator = Draft202012Validator(json.loads((SCHEMAS / "navigation-3.schema.json").read_text(encoding="utf-8")))
+    assert _template()["navigation"] == 3
+    assert list(validator.iter_errors(_template())) == []
+
+
+@pytest.mark.parametrize(("format_", "refusal"), [(1, NAVIGATION_FORMAT_1), (2, NAVIGATION_FORMAT_2)])
+def test_older_formats_are_refused_by_name(tmp_path: Path, format_: int, refusal: str) -> None:
     document = _template()
-    document["navigation"] = 1
-    navigation.write_text(yaml.safe_dump(document), encoding="utf-8")
-    assert f"navigation.yaml: {NAVIGATION_FORMAT_1}" in check_plugin(copy)
+    document["navigation"] = format_
+    assert check_plugin(_copy(tmp_path, document)) == [f"navigation.yaml: {refusal}"]
 
 
-def test_a_node_with_controls_is_refused() -> None:
+@pytest.mark.parametrize(("key", "value"), [("history", {"read": "list_item_notes"}), ("room", {"shared": ["view"]}), ("controls", {"views": {}})])
+def test_a_node_that_declares_what_its_page_gives_is_refused_naming_it(tmp_path: Path, key: str, value: dict) -> None:
     document = _template()
-    document["nodes"][0]["controls"] = {"views": {"param": "view", "default": "list", "options": []}}
-    assert any("controls" in message for message in _schema_errors(document))
-
-
-@pytest.mark.parametrize("name", ["at", "mode", "from", "_room"])
-def test_room_shared_may_not_name_the_cores_parameters(name: str) -> None:
-    document = _template()
-    document["nodes"][0]["room"] = {"shared": [name]}
-    assert _schema_errors(document)
+    _item_notes(document)[key] = value
+    assert check_plugin(_copy(tmp_path, document)) == [
+        f"navigation.yaml: 'item-notes' declares {key}; the page gives its history and controls, and a room shares nothing"
+    ]

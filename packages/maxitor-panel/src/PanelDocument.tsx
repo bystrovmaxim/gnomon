@@ -9,15 +9,12 @@ import { PanelProvider } from "./PanelProvider";
 export function PanelDocument({
   children,
   build = "",
-  surface = "document",
   prefixSegments = 1,
   lang = "en",
 }: {
   children: ReactNode;
   /** The plugin's version, sent with panel.ready. */
   build?: string;
-  /** "canvas" for a page that lays its content on the canvas, "document" for lists, cards and forms. */
-  surface?: "document" | "canvas";
   /** How many segments of the page's route stand before its panel path: one, the organization, for a plugin. */
   prefixSegments?: number;
   lang?: string;
@@ -26,7 +23,7 @@ export function PanelDocument({
     <html lang={lang}>
       <body className="mx-panel-document">
         <Suspense>
-          <PanelProvider build={build} surface={surface} prefixSegments={prefixSegments}>
+          <PanelProvider build={build} prefixSegments={prefixSegments}>
             {children}
           </PanelProvider>
         </Suspense>

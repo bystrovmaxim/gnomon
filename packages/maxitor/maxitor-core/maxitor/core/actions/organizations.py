@@ -256,6 +256,10 @@ class OpenedResult(BaseResult):
     dependencies: dict[str, list[str]] = Field(
         default_factory=dict, description="Each enabled plugin's direct dependencies: the plugins a page of it may open"
     )
+    histories: dict[str, dict[str, list[str]]] = Field(
+        default_factory=dict,
+        description="Each enabled plugin's actions and its passport's comparisons: what a page's history is checked against",
+    )
 
 
 @meta(description="Open an organization the account has an active user in", domain=OrganizationDomain)
@@ -321,6 +325,7 @@ class OpenOrganizationAction(BaseAction[OpenParams, OpenedResult]):
             ],
             owners=[file.owner for file in files],
             dependencies={file.owner: sorted(file.dependencies) for file in files},
+            histories=await store.plugin_histories(found["id"]),
         )
 
 

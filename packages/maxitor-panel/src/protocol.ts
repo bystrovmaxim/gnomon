@@ -7,7 +7,9 @@ export type Query = Record<string, string>;
 /** From the page to the core. */
 export type PageMessage =
   /** `shell`: the page renders the shell of @maxitor/panel, `shellVersion` its version (spec 078, FR-020). */
-  | { type: "panel.ready"; build: string; surface: "document" | "canvas"; shell: boolean; shellVersion: string }
+  | { type: "panel.ready"; build: string; shell: boolean; shellVersion: string }
+  /** How the page answers the core's time scale, given when it opens and whenever it gives a new one (spec 082). */
+  | { type: "panel.history"; history: PageHistory }
   | { type: "panel.navigate"; path: string; query: Query; mode: "push" | "replace" }
   | { type: "panel.title"; text: string }
   | { type: "panel.open"; owner: string; path: string; query: Query }
@@ -34,9 +36,13 @@ export function pageMessage(data: unknown): PageMessage | null {
   switch (m.type) {
     case "panel.ready":
       // A page built before the shell sends neither field: it is a page without the shell.
-      if (!text(m.build) || (m.surface !== "document" && m.surface !== "canvas")) return null;
+      if (!text(m.build)) return null;
       if ((m.shell !== undefined && typeof m.shell !== "boolean") || (m.shellVersion !== undefined && !text(m.shellVersion))) return null;
-      return { type: m.type, build: m.build, surface: m.surface, shell: m.shell === true, shellVersion: text(m.shellVersion) ? m.shellVersion : "" };
+      return { type: m.type, build: m.build, shell: m.shell === true, shellVersion: text(m.shellVersion) ? m.shellVersion : "" };
+    case "panel.history": {
+      const history = historyOf(m.history);
+      return history ? { type: m.type, history } : null;
+    }
     case "panel.navigate":
       return path(m.path) && query(m.query) && (m.mode === "push" || m.mode === "replace") ? { type: m.type, path: m.path, query: m.query, mode: m.mode } : null;
     case "panel.title":
@@ -68,3 +74,81 @@ export function coreMessage(data: unknown): CoreMessage | null {
 export function trusted(event: MessageEvent, expected: Window | null | undefined): boolean {
   return expected !== null && expected !== undefined && event.origin === window.location.origin && event.source === expected;
 }
+
+// ── a page's history (spec 082, FR-001 – FR-005): how a page answers the core's time scale, given by the page in its
+// code, never declared in navigation.yaml; the shape a message may carry, and the core's check of every name.
+
+/** The comparisons a page may offer beside one moment. */
+export const COMPARISONS = ["diff", "side_by_side"] as const;
+export type Comparison = (typeof COMPARISONS)[number];
+
+/**
+ * A page's history: its reading action (the bars over a stretch are counted from it), its own bars, its milestones
+ * and a milestone's card — actions of the plugin — its comparisons, narrowing the passport's, and the legend's words.
+ * A page that gives none is offered one moment only, with no bars and no milestones.
+ */
+export type PageHistory = {
+  read?: string;
+  bars?: string;
+  milestones?: string;
+  card?: string;
+  compare?: Comparison[];
+  legend?: Record<string, string>;
+};
+
+/** What a plugin version allows: its actions' names and its passport's `history.compare`. */
+export type HistoryAllowed = { actions: readonly string[]; compare: readonly string[] };
+
+const NAME = /^[a-z][a-z0-9_]{0,62}$/;
+const ROLES = ["read", "bars", "milestones", "card"] as const;
+
+/** The history, when a message carries one of a known shape; null otherwise. */
+export function historyOf(value: unknown): PageHistory | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const given = value as Record<string, unknown>;
+  const history: PageHistory = {};
+  for (const role of ROLES) {
+    const name = given[role];
+    if (name === undefined) continue;
+    if (typeof name !== "string" || !NAME.test(name)) return null;
+    history[role] = name;
+  }
+  if (given.compare !== undefined) {
+    if (!Array.isArray(given.compare) || !given.compare.every((each) => (COMPARISONS as readonly unknown[]).includes(each))) return null;
+    history.compare = [...new Set(given.compare as Comparison[])];
+  }
+  if (given.legend !== undefined) {
+    const legend = given.legend;
+    if (typeof legend !== "object" || legend === null || Array.isArray(legend) || !Object.values(legend).every((word) => typeof word === "string")) return null;
+    history.legend = Object.fromEntries(Object.entries(legend as Record<string, string>).map(([key, word]) => [key, word.slice(0, 80)]));
+  }
+  return history;
+}
+
+/**
+ * The core's check of a page's history: every action it names must be one of the version's, and its comparisons
+ * must narrow the passport's. A name that does not hold is refused by name and left out; the rest is kept.
+ */
+export function checkHistory(history: PageHistory, allowed: HistoryAllowed): { kept: PageHistory; refused: string[] } {
+  const actions = new Set(allowed.actions);
+  const refused: string[] = [];
+  const kept: PageHistory = { ...history };
+  for (const role of ROLES) {
+    const name = history[role];
+    if (name !== undefined && !actions.has(name)) {
+      refused.push(`${role} names ${JSON.stringify(name)}, which is no action of the plugin`);
+      delete kept[role];
+    }
+  }
+  if (history.compare) {
+    const wider = history.compare.filter((each) => !allowed.compare.includes(each));
+    for (const each of wider) refused.push(`compare offers ${JSON.stringify(each)}, which the passport's history does not`);
+    kept.compare = history.compare.filter((each) => allowed.compare.includes(each));
+  } else {
+    kept.compare = allowed.compare.filter((each): each is Comparison => (COMPARISONS as readonly string[]).includes(each));
+  }
+  return { kept, refused };
+}
+
+/** What a page that gives no history is offered: one moment, no bars, no milestones, no comparison. */
+export const NO_HISTORY: PageHistory = { compare: [] };
