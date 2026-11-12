@@ -666,7 +666,7 @@ class NotesStorage(PostgresStorage):
         rows = await self._fetch(
             f"SELECT n.id::text AS id, n.body AS body, n.writer_id::text AS writer_id,"
             f" {member_name('n.organization_id', 'n.author_id', 'n.valid_from_at')} AS by_name,"
-            f" {moment_text('n.valid_from_at')} AS at, {moment_text('n.created_at')} AS created_at"
+            f" {moment_text('n.valid_from_at')} AS at, n.created_at AS created_at"
             f" FROM note_versions n"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND n.valid_to_at IS NULL",
             (organization_id, item_id),
@@ -681,8 +681,8 @@ class NotesStorage(PostgresStorage):
             if note_id not in published:
                 published[note_id] = PublishedNote(body=None, by_name=by_name, at=at)
         identities_rows = await self._fetch(
-            "SELECT DISTINCT ON (n.id) n.id::text AS id, n.writer_id::text AS writer_id,"
-            f" {moment_text('n.created_at')} AS created_at"
+            # The creation moment as the database keeps it: a restored note is written back with it, into a timestamptz.
+            "SELECT DISTINCT ON (n.id) n.id::text AS id, n.writer_id::text AS writer_id, n.created_at AS created_at"
             " FROM note_versions n WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid"
             " ORDER BY n.id, n.valid_from_at DESC",
             (organization_id, item_id),

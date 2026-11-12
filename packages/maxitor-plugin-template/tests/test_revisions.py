@@ -165,6 +165,11 @@ async def test_a_note_deleted_since_is_restored_with_the_member_text_and_its_own
     insert = next(statement for statement in connection.statements if statement[0].startswith("INSERT INTO note "))
     assert insert[1][3] == ANN
     assert "INSERT INTO note_versions " in "".join(connection.queries())
+    # The restored note keeps its creation moment as the database gave it: a timestamp, never its text, which the
+    # driver refuses for a timestamptz column.
+    identities = next(query for query in connection.queries() if query.startswith("SELECT DISTINCT ON (n.id)"))
+    assert "n.created_at AS created_at" in identities
+    assert "to_char(n.created_at" not in identities
 
 
 async def test_the_published_notes_at_a_past_moment_are_the_revision_in_force_then() -> None:

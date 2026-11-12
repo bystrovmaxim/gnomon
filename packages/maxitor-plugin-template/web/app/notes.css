@@ -11,7 +11,8 @@
 .nt-card.nt-state-changed { border-left: 3px solid var(--mx-palette-amber); }
 .nt-card.nt-state-deleted { border-left: 3px solid var(--mx-palette-red); background: color-mix(in srgb, var(--mx-palette-red) 3%, var(--mx-surface)); }
 .nt-new { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); color: var(--mx-palette-blue); }
-.nt-tools { margin-left: auto; display: inline-flex; gap: var(--mx-space-2); }
+.nt-tools { margin-left: auto; display: inline-flex; gap: var(--mx-space-2); flex-shrink: 0; }
+.nt-tools button { white-space: nowrap; }
 .nt-tools button, .nt-row button, .nt-choice button, .nt-mark { border: 0; background: transparent; color: var(--mx-muted); font: inherit; font-size: var(--mx-text-sm); cursor: pointer; border-radius: var(--mx-radius-sm); padding: var(--mx-space-1) var(--mx-space-3); }
 .nt-tools button:hover, .nt-row button:hover, .nt-choice button:hover, .nt-mark:hover { background: var(--mx-hover); color: var(--mx-ink); }
 .nt-more { display: none; }
