@@ -13,9 +13,9 @@ from __future__ import annotations
 
 from typing import cast
 
+from maxitor_plugin_sdk.history import bars_of
 from maxitor_plugin_sdk.moments import MOMENT_PATTERN
 from maxitor_plugin_sdk.roles import MemberRole
-from maxitor_plugin_sdk.history import bars_of
 from pydantic import Field, model_validator
 
 from aoa.action_machine.context.context_view import ContextView
@@ -30,9 +30,9 @@ from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.model import BaseAction, BaseParams, BaseResult, BaseState
 from aoa.action_machine.resources import Connections
 from aoa.action_machine.runtime.tools_box import ToolsBox
+from maxitor_notes.entities.bar_entity import BarCoreEntity
 from maxitor_notes.entities.note_change_entity import NoteChangeCoreEntity
 from maxitor_notes.entities.revision_entity import RevisionCoreEntity
-from maxitor_notes.entities.bar_entity import BarCoreEntity
 from maxitor_notes.membership import member_organization_id, organization_access
 from maxitor_notes.notes_domain import NotesDomain
 from maxitor_notes.storage.notes_storage import NOTES_CONNECTION_KEY, NotesStorage

@@ -4,7 +4,6 @@
 from datetime import date
 
 import pytest
-
 from maxitor_plugin_sdk.date_bounds import parse, resolve, shift, within
 
 TODAY = date(2026, 11, 12)

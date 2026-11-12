@@ -7,11 +7,15 @@ import pytest
 import yaml
 from jsonschema import Draft202012Validator
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction, ListItemNotesParams
+from maxitor_notes.entities.milestone_card_entity import MilestoneCardCoreEntity
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
 from maxitor_notes.history.list_note_history_action import ListNoteHistoryAction, ListNoteHistoryParams
-from maxitor_notes.entities.milestone_card_entity import MilestoneCardCoreEntity
-from maxitor_notes.history.note_milestone_card_action import NoteMilestoneCardAction, NoteMilestoneCardParams, card_blocks
+from maxitor_notes.history.note_milestone_card_action import (
+    NoteMilestoneCardAction,
+    NoteMilestoneCardParams,
+    card_blocks,
+)
 from maxitor_notes.notes_refusal_error import NotesRefusalError
 from maxitor_notes.storage.notes_storage import NotesStorage
 from maxitor_plugin_sdk import history as sdk_history

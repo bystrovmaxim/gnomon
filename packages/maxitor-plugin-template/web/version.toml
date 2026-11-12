@@ -1,3 +1,3 @@
 # version.toml — the template's Next.js frontend is a component of the package, versioned here like Maxitor's own parts.
 kind = "component"
-version = "0.8.0"
+version = "0.9.0"

@@ -1,5 +1,9 @@
 # Changelog — maxitor-plugin-sdk
 
+## 1.9.0 — 2026-11-12
+
+History format 2: `history-2.schema.json` replaces `history-1.schema.json`, and `HISTORY_FORMAT` is 2. A milestone names one of the kinds its page declared, with `small`, `flag`, `comment`, `link` and `opens` optional; a card is `{ blocks }` — `line`, `title`, `text`, `fields`, `person`, `chips`, `warn` —, each block of a known shape. `date_bounds` reads a filter's range of dates on the server the way the shell writes it, so a page and its bars choose the same rows. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))
+
 ## 1.8.0 — 2026-11-12
 
 Navigation format 4: `navigation-4.schema.json` is format 3 with `opens` — `expand` or `enter` — how the node opens. `checks` reads formats 3 and 4, refuses a node with children and no `opens` and a node without children that says it, naming the node, and refuses formats 1 and 2 naming format 4. Format 3 is read as it is: every node of it expands. ([#122](https://github.com/bystrovmaxim/gnomon/issues/122))

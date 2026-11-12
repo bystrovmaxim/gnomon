@@ -1,5 +1,9 @@
 # Changelog of @maxitor/panel
 
+## 0.7.0
+
+What a page compares with and how it sets the time scale up (#98). History format 2: `PageHistory` gains `kinds` — `{ tone, look, lead, term, def }` each —, `small`, `flag` and `actions` on a milestone, and `checkHistory` refuses by name a kind of words the core does not draw, more than 12 kinds, a promise longer than 160 characters and an action naming an undeclared kind; `legend` leaves. `@maxitor/panel/history` gives the answers' shapes — `Bar`, `Milestone`, `CardBlock` — and `acceptMilestones`, which drops and names a milestone of an undeclared kind, a small point without `small` and a flag without `flag`. The page's context: `panel.location` carries `against`, `side` and `milestone`, read with `useMoment()`; `useCounts` sends the pill a comparison's counts, `useChangeStep` takes Shift + ↑ ↓ as `panel.step`, `useBackToNow` asks for now with `panel.now`, and Shift + an arrow pressed in a page goes to the core as `panel.keys`. The canvas answers by anchors — the chain of `data-room-anchor` under the pointer as `panel.pointer`, a click as `panel.choose`, `panel.mark` and `panel.bring` lit and brought into view with a glide, answered by `panel.shown` — and `bring(anchor)` brings a page's own step to the middle. `ChangeStepper`, `DiffCard`, `StatusIcon` and `VersionsBetween`, ported from the graph viewer; `marks.css` lights an element another panel points at; a table's row carries its change; `PanelPage` takes `stepper` and `onMilestoneAction` and puts the stepper first in its corner in a comparison and an action on a milestone exactly on it. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))
+
 ## 0.6.0
 
 `Dialog` is a page's dialog over the canvas, a sheet from below on a phone: a page places nothing fixed of its own, so writing and asking happen in the shell's dialog. ([#102](https://github.com/bystrovmaxim/gnomon/issues/102))

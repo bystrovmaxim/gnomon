@@ -8,7 +8,7 @@ Your page is a Next.js application under `/p/<name>`, shown in Maxitor's right p
 
 An item has two pages. **Published** is everyone's notes as the revision in force holds them: read only, with the Authors filter. **Draft** is the page of the person who reads it: their own changes over those published notes, and nobody else's. No edit writes the published notes; the only write that reaches them is publishing a revision.
 
-The Draft page reads its own draft and, for an Edit opened from Published, the published notes too; the server part hands both to a client component:
+The Draft page reads its own draft and, for an Edit opened from Published, the published notes too — in Diff the draft at the other moment as well (chapter 11) —; the server part hands them to a client component:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/page.tsx -->
 ```tsx
@@ -20,6 +20,7 @@ The Draft page reads its own draft and, for an Edit opened from Published, the p
       changes={draft?.changes ?? []}
       published={published?.notes ?? []}
       publishedRevision={published?.revision ?? null}
+      other={against ? (other?.changes ?? []) : null}
     />
   );
 ```

@@ -14,11 +14,11 @@ The [plugin concept](../concept.md) explains how plugins are built and why; [ver
 | 6 | [The backend](06-the-backend.md) | `app.py`, the gateway's token, the core's roles | bystrovmaxim/gnomon#99 |
 | 7 | [A place in the tree](07-a-place-in-the-tree.md) | `navigation.yaml`, list nodes, what Maxitor checks, the page in the right panel, its three kinds of filter | bystrovmaxim/gnomon#103, bystrovmaxim/gnomon#74, bystrovmaxim/gnomon#109, bystrovmaxim/gnomon#115 |
 | 8 | [The page](08-the-page.md) | The Next.js frontend on `@maxitor/panel`, the canvas, the draft with its states and reverts, publishing with its conflicts | bystrovmaxim/gnomon#102, bystrovmaxim/gnomon#121 |
-| 9 | [Now and the past](09-now-and-the-past.md) | `at` in the address, `panel.watermark`, the draft private until publication | bystrovmaxim/gnomon#102 (now), bystrovmaxim/gnomon#121 (the draft), bystrovmaxim/gnomon#100 |
-| 10 | History on the scale | `history` in the passport and the pages | bystrovmaxim/gnomon#100 |
-| 11 | Comparing | Diff and side by side | bystrovmaxim/gnomon#100 |
+| 9 | [Now and the past](09-now-and-the-past.md) | `at` in the address, `panel.watermark`, the draft private until publication, read only in the past | bystrovmaxim/gnomon#102 (now), bystrovmaxim/gnomon#121 (the draft), bystrovmaxim/gnomon#98 (the past) |
+| 10 | [History on the scale](10-history-on-the-scale.md) | The page's history: its kinds of points, bars from its reading action, a card of blocks, Roll back as a publication | bystrovmaxim/gnomon#98 |
+| 11 | [Comparing](11-comparing.md) | Diff and Side by side from the page's context, the halo and the faded rest, the stepper and its card, Track through anchors | bystrovmaxim/gnomon#98 |
 | 12 | Presence and following | What works with no code | bystrovmaxim/gnomon#76 |
-| 13 | [Tests](13-tests.md) | What a plugin must prove | bystrovmaxim/gnomon#99, grown by every step; bystrovmaxim/gnomon#110: the frontend's build; bystrovmaxim/gnomon#115: filters and dates; bystrovmaxim/gnomon#116: the page's history; bystrovmaxim/gnomon#102: the pages now; bystrovmaxim/gnomon#121: the draft, its conflicts and the past |
+| 13 | [Tests](13-tests.md) | What a plugin must prove | bystrovmaxim/gnomon#99, grown by every step; bystrovmaxim/gnomon#110: the frontend's build; bystrovmaxim/gnomon#115: filters and dates; bystrovmaxim/gnomon#116: the page's history; bystrovmaxim/gnomon#102: the pages now; bystrovmaxim/gnomon#121: the draft, its conflicts and the past; bystrovmaxim/gnomon#98: the history's format 2, comparing and the rollback |
 | 14 | A release | The wheel, the marketplace | bystrovmaxim/gnomon#92 |
 | 15 | In an organization | Installing, disabling, enabling | bystrovmaxim/gnomon#92 |
 | 16 | Versions and compatibility | `requires.maxitor`, `sdk`, the major version | bystrovmaxim/gnomon#77 |

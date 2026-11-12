@@ -1,5 +1,9 @@
 # Changelog of @maxitor/tokens
 
+## 0.5.0
+
+The time scale's look and a comparison's (#98): the canvas's surface and dots as the graph viewer draws them, a change's colours, its halo and the fading of what did not change; the pill, its card, the scale's axis, hatch, range and brush; the milestones' palette — a point's colour, its badge's tint and ink for `neutral`, `purple`, `blue`, `green`, `amber`, `red`; the card's blocks, the legend, the stepper and the change card; Side by side's A brown and B blue, and the glow of an element another panel points at. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))
+
 ## 0.4.0
 
 The date pickers' colours and sizes — the band between two days, the side of ready stretches, a day's cell, a field, the wheels, a sheet's corners and its scrim — and `--mx-mono` for a monospace cell. ([#115](https://github.com/bystrovmaxim/gnomon/issues/115))
