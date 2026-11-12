@@ -15,6 +15,8 @@ export const TICK_STEPS = [5 * SECOND, 10 * SECOND, 15 * SECOND, 30 * SECOND, MI
 
 /** The presets of the zoom, in the order the card shows them; All shows the whole history. */
 export const PRESETS: readonly { label: string; span: number | null }[] = [
+  { label: "1 min", span: MINUTE },
+  { label: "10 min", span: 10 * MINUTE },
   { label: "1 h", span: HOUR },
   { label: "1 d", span: DAY },
   { label: "7 d", span: 7 * DAY },

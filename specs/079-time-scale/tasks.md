@@ -48,7 +48,7 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 - [x] T015 [P] [US1] Port `GV/components/history/VersionButton/VersionButton.tsx` to `CORE/components/scale/Pill.tsx` + `scale.css` (arrows, moment label, live dot, counts slot), keeping sizes and colours
 - [x] T016 [P] [US1] Port the card frame of `GV/components/history/VersionPicker/VersionPicker.tsx` to `CORE/components/scale/ScaleCard.tsx` (head: title, subtitle, switch of small points slot, "i", modes; hangs 11 px under the pill, right edges aligned; a sheet on a phone)
-- [x] T017 [P] [US1] `CORE/components/scale/geometry.ts`: time ↔ x, presets 1 h, 1 d, 7 d, 30 d, All, bar width from a day to a minute, the watermark and the hatched future
+- [x] T017 [P] [US1] `CORE/components/scale/geometry.ts`: time ↔ x, presets 1 min, 10 min, 1 h, 1 d, 7 d, 30 d, All, bar width from a week to a second, the watermark and the hatched future
 - [x] T018 [US1] Wire the pill into `CORE/components/frame/TopRow.tsx` and `PageFrame.tsx`: `at` in the address, `panel.location` with `at`, `panel.watermark` on watermark moves, refusal of `at` later than the watermark with the page's message and a link to now
 - [x] T019 [US1] Stepping: port `GV/lib/stepKeys.ts` to `PANEL/src/keys.ts`, shared by the core's frame and the page; the pill's arrows and Shift + ← → step changes (or milestones); `panel.keys` from the page in `PANEL/src/protocol.ts` and `PanelProvider.tsx`
 - [x] T020 [P] [US1] Tests: `CORE/tests/geometry.test.ts`, `CORE/tests/moment.test.ts` (refusal past the watermark, kept to the minute), `PANEL/tests/protocol.test.ts` (`panel.keys`)

@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { barStep, clampView, DAY, domainOf, hatchFrom, HOUR, MIN_SPAN, MINUTE, moveView, presetView, SECOND, ticksOf, tickStep, timeAt, xOf, zoomView } from "../components/scale/geometry.ts";
+import { barStep, clampView, DAY, PRESETS, domainOf, hatchFrom, HOUR, MIN_SPAN, MINUTE, moveView, presetView, SECOND, ticksOf, tickStep, timeAt, xOf, zoomView } from "../components/scale/geometry.ts";
 
 const NOW = Date.parse("2026-11-12T12:00:00Z");
 
@@ -69,4 +69,8 @@ test("the hatch starts at now, never left of the view, and is absent when now is
   assert.equal(hatchFrom(NOW, view, 720), 360);
   assert.equal(hatchFrom(NOW, { from: NOW + HOUR, to: NOW + DAY }, 720), 0);
   assert.equal(hatchFrom(NOW, { from: NOW - DAY, to: NOW - HOUR }, 720), null);
+});
+
+test("the presets run from a minute to the whole history", () => {
+  assert.deepEqual(PRESETS.map((preset) => preset.label), ["1 min", "10 min", "1 h", "1 d", "7 d", "30 d", "All"]);
 });

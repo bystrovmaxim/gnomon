@@ -102,7 +102,7 @@ export function momentText(time: number, now: number): string {
 
 /** A stretch of time as the scale's head says it: "30 s", "45 min", "6 h", "12 days". */
 export function spanText(span: number): string {
-  if (span < 2 * MINUTE) return `${Math.round(span / SECOND)} s`;
+  if (span < MINUTE - SECOND / 2) return `${Math.round(span / SECOND)} s`;
   const minutes = span / MINUTE;
   if (minutes < 120) return `${Math.round(minutes)} min`;
   const hours = minutes / 60;

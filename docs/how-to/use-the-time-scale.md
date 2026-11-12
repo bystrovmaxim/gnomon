@@ -10,7 +10,7 @@ Every page in Maxitor can be read as it was at any past moment, and compared wit
 
 The green dashed line is "now"; what lies right of it is hatched and cannot be chosen. In the past a page is read only: nothing can be written there, except what the page itself offers on a point — the template's **Roll back to v3**, which publishes v3's notes again as a new publication.
 
-Move on the scale as on a map: drag across a stretch to zoom into it, use the wheel to zoom round the pointer, Shift-wheel to move; on a phone, drag to move and pinch to zoom. The presets 1 h, 1 d, 7 d, 30 d and All show a stretch at once. Hover a point to read its card; hover a bar to see what it counts. The "i" explains every mark the page uses. Shift + ← → step to the previous or the next change from anywhere.
+Move on the scale as on a map: drag across a stretch to zoom into it, use the wheel to zoom round the pointer, Shift-wheel to move; on a phone, drag to move and pinch to zoom. The presets 1 min, 10 min, 1 h, 1 d, 7 d, 30 d and All show a stretch at once. Hover a point to read its card; hover a bar to see what it counts. The "i" explains every mark the page uses. Shift + ← → step to the previous or the next change from anywhere.
 
 ## Compare two moments
 

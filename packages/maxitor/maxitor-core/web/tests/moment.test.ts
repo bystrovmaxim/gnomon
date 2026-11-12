@@ -52,6 +52,7 @@ test("zoomed below a minute, a choice is kept to the second, and a moment off a 
 
 test("a stretch is said in seconds, minutes, hours or days", () => {
   assert.equal(spanText(45 * 1000), "45 s");
+  assert.equal(spanText(60 * 1000), "1 min");
   assert.equal(spanText(45 * 60_000), "45 min");
   assert.equal(spanText(6 * 3_600_000), "6 h");
   assert.equal(spanText(12 * 86_400_000), "12 days");
