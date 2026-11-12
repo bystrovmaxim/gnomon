@@ -3,7 +3,7 @@
 // waiting there is marked. In the past the page is read only and has no tools.
 "use client";
 
-import { DataTable, MaxitorCanvas, PanelPage, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
+import { DataTable, Dialog, MaxitorCanvas, PanelPage, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -37,6 +37,7 @@ export function PublishedView({
   useFresh(notes.map((note) => note.id), now);
   const [said, setSaid] = useState("");
   const [busy, setBusy] = useState(false);
+  const [menu, setMenu] = useState<PublishedNote | null>(null);
 
   const marks = marksInDraft(changes);
   const authors = [...new Map(notes.map((note) => [note.writer_id, note.writer_name])).entries()];
@@ -113,7 +114,7 @@ export function PublishedView({
                         <span className="nt-tools">
                           <button type="button" title="Change it in my draft" onClick={() => edit(note)}>Edit</button>
                           <button type="button" title="Delete it in my draft" disabled={busy} onClick={() => remove(note)}>Delete</button>
-                          <button type="button" className="nt-more" aria-label="Note actions" onClick={() => edit(note)}>⋯</button>
+                          <button type="button" className="nt-more" aria-label="Note actions" onClick={() => setMenu(note)}>⋯</button>
                         </span>
                       ) : null}
                     </div>
@@ -130,6 +131,12 @@ export function PublishedView({
           </div>
         )}
       </MaxitorCanvas>
+      {menu ? (
+        <Dialog title="Note" onClose={() => setMenu(null)}>
+          <button type="button" className="nt-sheet-button" onClick={() => { setMenu(null); edit(menu); }}>Edit in my draft</button>
+          <button type="button" className="nt-sheet-button nt-danger" disabled={busy} onClick={() => { setMenu(null); void remove(menu); }}>Delete in my draft</button>
+        </Dialog>
+      ) : null}
     </PanelPage>
   );
 }

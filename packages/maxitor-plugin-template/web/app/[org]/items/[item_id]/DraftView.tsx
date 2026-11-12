@@ -77,6 +77,7 @@ export function DraftView({
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [reverting, setReverting] = useState<Change | null>(null);
+  const [menu, setMenu] = useState<Change | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [form, setForm] = useState({ title: "", comment: "", release: "" });
   const [conflicts, setConflicts] = useState<Change[] | null>(null);
@@ -84,6 +85,7 @@ export function DraftView({
 
   const ordered = draftOrder(changes);
   const visible = visibleChanges(ordered, stateParam);
+  const editingShown = editing !== null && !visible.some((change) => change.note_id === editing.noteId);
   const race = raceLine(changes);
   const below = cardsBounds(Math.max(visible.length, 1));
   const gridTop = HEAD + (race ? 72 : 0) + CARD_GAP;
@@ -195,7 +197,7 @@ export function DraftView({
         <DraftHead revision={revision} changes={changes} />
         {race ? <div className="nt-race" style={{ top: HEAD }}>{race}</div> : null}
         <div className="mx-cards nt-grid" style={{ top: gridTop, width: below.width }}>
-          {visible.length === 0 ? (
+          {visible.length === 0 && !editingShown ? (
             <div className="mx-empty-state" style={{ margin: 0, maxWidth: "none" }}>
               <b>{changes.length ? "Nothing to show" : "Your draft is empty"}</b>
               {changes.length
@@ -220,7 +222,7 @@ export function DraftView({
                         </button>
                       ) : null}
                       <button type="button" onClick={() => setReverting(change)}>Revert</button>
-                      <button type="button" className="nt-more" aria-label="Change actions" onClick={() => setReverting(change)}>⋯</button>
+                      <button type="button" className="nt-more" aria-label="Change actions" onClick={() => setMenu(change)}>⋯</button>
                     </span>
                   ) : null}
                 </div>
@@ -253,6 +255,23 @@ export function DraftView({
               </article>
             ))
           )}
+          {editingShown && editing ? (
+            <article className="mx-card nt-card nt-state-changed" data-room-anchor={`note:${editing.noteId}`}>
+              <div className="mx-card-head">
+                <b>{published.find((note) => note.id === editing.noteId)?.writer_name ?? "A note"}</b>
+                <span>in my draft</span>
+              </div>
+              <span className="nt-kind changed">Changed</span>
+              <div className="nt-edit">
+                <textarea value={editing.body} onChange={(event) => setEditing({ ...editing, body: event.currentTarget.value })} aria-label="The note's text" rows={4} autoFocus />
+                <div className="nt-row">
+                  <button type="button" onClick={closeEditing}>Cancel</button>
+                  <button type="button" className="nt-primary" disabled={busy || !editing.body.trim()} onClick={save}>Save</button>
+                </div>
+              </div>
+              <div className="nt-foot">as v{publishedRevision?.number ?? "—"} has it · you changed it</div>
+            </article>
+          ) : null}
         </div>
       </MaxitorCanvas>
 
@@ -265,6 +284,17 @@ export function DraftView({
             <button type="button" onClick={() => setWriting(false)}>Cancel</button>
             <button type="button" className="nt-primary" disabled={busy || !text.trim()} onClick={write}>Write</button>
           </div>
+        </Dialog>
+      ) : null}
+
+      {menu ? (
+        <Dialog title="Note" onClose={() => setMenu(null)}>
+          {menu.state !== "deleted" ? (
+            <button type="button" className="nt-sheet-button" onClick={() => { setMenu(null); setEditing({ noteId: menu.note_id, body: menu.body, baseBody: menu.base_body, baseRevision: menu.base_revision, stored: true }); }}>
+              Edit
+            </button>
+          ) : null}
+          <button type="button" className="nt-sheet-button" onClick={() => { setMenu(null); setReverting(menu); }}>Revert</button>
         </Dialog>
       ) : null}
 

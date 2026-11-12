@@ -32,8 +32,8 @@ Phases follow the issue's five; one phase is one commit. `[P]` — may run in pa
 
 ## Phase 4 — Tests, the browser check, the walk (US7)
 
-- [ ] T017 `web/tests/draft.test.ts`: every rule of the pages broken and its test seen failing; the marking's losslessness as a pure check.
-- [ ] T018 `packages/maxitor/maxitor-core/web/scripts/check-core.mjs`: the walk of 1.6 on the stand — two people, private drafts, publication, the conflict with the other's name and value, overwrite and give up, a deletion and a restoration, a revert; on a desktop and at 375 px.
+- [x] T017 `web/tests/draft.test.ts`: every rule of the pages broken and its test seen failing; the marking's losslessness as a pure check.
+- [x] T018 `packages/maxitor/maxitor-core/web/scripts/check-core.mjs`: the walk of 1.6 on the stand — two people, private drafts, publication, the conflict with the other's name and value, overwrite and give up, a deletion and a restoration, a revert; on a desktop and at 375 px.
 - [ ] T019 The walk of 1.6 on the local stand by two people; its result in the phase's commit message and the template's README.
 
 ## Phase 5 — Documentation, changelog, versions (US7)
