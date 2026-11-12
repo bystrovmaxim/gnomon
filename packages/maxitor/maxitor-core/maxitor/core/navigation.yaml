@@ -20,6 +20,13 @@ nodes:
         order: 50
         page: /settings/organization
         roles: [administrator]
+      # The organization's users and its invitations (issue #13).
+      - id: settings.users
+        title: Users
+        icon: users
+        order: 60
+        page: /settings/users
+        roles: [administrator]
       - id: settings.plugins
         title: Plugins
         icon: puzzle

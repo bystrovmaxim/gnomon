@@ -47,6 +47,13 @@ from maxitor.core.actions.password_reset import RequestPasswordResetAction, Rese
 from maxitor.core.actions.provider_sign_in import FinishSignInAction, StartSignInAction
 from maxitor.core.actions.region import SignInOptionsAction
 from maxitor.core.actions.sign_ins import LinkEmailAction, LinkSignInAction, ListSignInsAction, UnlinkSignInAction
+from maxitor.core.actions.users import (
+    BlockUserAction,
+    ListUsersAction,
+    RemoveUserAction,
+    SetAdministratorAction,
+    UnblockUserAction,
+)
 from maxitor.core.auth_coordinator import CoreAuthCoordinator
 from maxitor.core.errors import CoreRefusalError
 from maxitor.core.gateways.geoip import GEOIP_CONNECTION_KEY, GeoIpGateway
@@ -107,6 +114,11 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
     ("get", "/api/v1/organizations/{code}/watermark", ReadWatermarkAction),
     ("get", "/api/v1/organizations/{code}/settings", ReadOrganizationSettingsAction),
+    ("get", "/api/v1/organizations/{code}/users", ListUsersAction),
+    ("post", "/api/v1/organizations/users/block", BlockUserAction),
+    ("post", "/api/v1/organizations/users/unblock", UnblockUserAction),
+    ("post", "/api/v1/organizations/users/remove", RemoveUserAction),
+    ("post", "/api/v1/organizations/users/administrator", SetAdministratorAction),
     ("post", "/api/v1/organizations/settings/who-may-invite", SetWhoMayInviteAction),
     ("post", "/api/v1/organizations/invitations", SendInvitationAction),
     ("get", "/api/v1/organizations/{code}/invitations/mine", ListMyInvitationsAction),

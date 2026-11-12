@@ -87,7 +87,11 @@ def invitation_schema(row: dict[str, Any], at: datetime) -> InvitationSchema:
         decided_at=row["expires_at"] if expired else row["decided_at"],
         decided_by=person(row, "decided_by"),
         by_setting=bool(row["by_setting"]),
-        accepted_user=person(row, "accepted_user_id") if row.get("accepted_user_id") else None,
+        accepted_user=(
+            PersonSchema(id=str(row["accepted_user_id"]), name=str(row.get("accepted_user_name") or ""))
+            if row.get("accepted_user_id")
+            else None
+        ),
     )
 
 
