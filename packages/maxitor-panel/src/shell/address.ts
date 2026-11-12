@@ -2,7 +2,7 @@
 // Pure functions, so the rules are checked without a browser: a filter lists the options switched on and is absent
 // when all are on; a choice drops its default; a value missing from the page's new options gives way to the
 // default; the core's names are never written by a page.
-import type { Query } from "../protocol";
+import type { MilestoneAction, MomentContext, Query } from "../protocol";
 
 /** The layer pills' parameter. */
 export const LAYER = "layer";
@@ -98,6 +98,16 @@ export function withParam(query: Query, name: string, value: string | null): Que
 /** Whether the page's actions show: only at now, never in the past or in a comparison. */
 export function actionsShown(query: Query, at: string | null | undefined): boolean {
   return !at && query.mode === undefined;
+}
+
+/**
+ * The actions a page offers on the milestone the moment stands on exactly (spec 079, FR-027): only there, only outside
+ * a comparison, each titled with the milestone — "Roll back to {ref}" on v3 is "Roll back to v3".
+ */
+export function milestoneActions(actions: readonly MilestoneAction[], context: MomentContext): { title: string; action: MilestoneAction; milestone: string }[] {
+  const milestone = context.at && context.against === null ? context.milestone : null;
+  if (!milestone) return [];
+  return actions.filter((each) => each.on === "milestone").map((action) => ({ title: action.title.replace("{ref}", milestone), action, milestone }));
 }
 
 /** The core's names a write would change — add, alter or drop — against the address it starts from. */

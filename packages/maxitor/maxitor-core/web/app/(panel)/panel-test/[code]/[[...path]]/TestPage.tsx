@@ -2,7 +2,9 @@
 "use client";
 
 import {
+  ChangeStepper,
   DataTable,
+  DiffCard,
   inRange,
   MaxitorCanvas,
   numberIn,
@@ -19,6 +21,7 @@ import {
   useMoment,
   type FilterSection,
   type Layers,
+  type ChangeEntry,
   type PageHistory,
 } from "@maxitor/panel";
 import { useCallback, useMemo, useState } from "react";
@@ -212,8 +215,22 @@ function TestHistory({ fixture }: { fixture: string }) {
       ? { added: shown.filter((card) => changeOf(card) === "added").length, removed: removed.length || before.filter((card) => !shown.some((each) => each.id === card.id)).length, changed: shown.filter((card) => changeOf(card) === "changed").length }
       : null,
   );
+  // The stepper through the changes, and the card of the change it stands on.
+  const entries: ChangeEntry[] = [
+    ...shown.filter((card) => changeOf(card) !== "unchanged" && changeOf(card) !== undefined).map((card) => ({ key: `table:${card.title}`, title: card.title, status: changeOf(card) as "added" | "changed" | "removed", group: "Tables", detail: changeOf(card) === "changed" ? "1 field" : undefined })),
+    ...removed.map((card) => ({ key: `table:${card.title}`, title: card.title, status: "removed" as const, group: "Tables" })),
+  ];
+  const [position, setPosition] = useState<number | null>(null);
+  const step = entries[position ?? -1];
   return (
-    <PanelPage title={`History: ${fixture}`} history={history}>
+    <PanelPage title={`History: ${fixture}`} history={history} stepper={<ChangeStepper entries={entries} position={position} onGo={setPosition} />}>
+      {step ? (
+        <DiffCard
+          target={{ title: step.title, status: step.status, differences: step.status === "changed" ? [{ path: ["email"], change: "added", after: "text" }] : undefined }}
+          at={{ x: 200, y: 60 }}
+          onClose={() => setPosition(null)}
+        />
+      ) : null}
       <output data-testid="history-fixture" hidden>{history ? fixture : "no such fixture"}</output>
       <MaxitorCanvas bounds={{ x: 0, y: 0, width: 900, height: 320 }} label="History fixture">
         {[...shown.map((card) => ({ card, change: changeOf(card) })), ...removed.map((card) => ({ card, change: "removed" as const }))].map(({ card, change }, index) => (

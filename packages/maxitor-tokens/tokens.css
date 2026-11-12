@@ -234,4 +234,10 @@
   --mx-track-on: rgba(37, 99, 235, 0.1);
   --mx-note: rgba(15, 23, 42, 0.86);
   --mx-note-code: rgba(255, 255, 255, 0.14);
+
+  /* What a page compares with: the graph viewer's DiffCard, StatusIcon and ChangeStepper. */
+  --mx-text-status: 9px;
+  --mx-diff-card: 300px;
+  --mx-stepper-list: 340px;
+  --mx-stepper-height: 360px;
 }

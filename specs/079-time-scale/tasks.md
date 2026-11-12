@@ -92,12 +92,12 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 ## Phase 6: `DiffCard`, `StatusIcon`, `VersionsBetween`, `ChangeStepper` in `@maxitor/panel` (issue 1.1, items 11–12, US3)
 
-- [ ] T038 [P] [US3] Port `GV/components/history/DiffCard/DiffCard.tsx` and `StatusIcon.tsx` to `PANEL/src/compare/DiffCard.tsx`, `StatusIcon.tsx`: title, StatusIcon 14 px, "Added in B", property rows path | struck before → after, groups (600, `#475569`), part = coloured sign + label with rows; Escape and click outside close; a stepper click moves on
-- [ ] T039 [P] [US3] Port `GV/components/history/VersionsBetween/VersionsBetween.tsx` to `PANEL/src/compare/VersionsBetween.tsx`
-- [ ] T040 [US3] Port `GV/components/diagrams/MapViewer/ChangeStepper.tsx` to `PANEL/src/compare/ChangeStepper.tsx`: arrows, list grouped by object with coloured text signs, step brings and opens the card
-- [ ] T041 [US3] `PANEL/src/shell/Actions.tsx`: the row in the panel's top right corner — stepper first, then the page's actions; actions when B is now (`actionsShown` by `at`), actions declared `on: "milestone"` only when `milestone` is set and no comparison; on a phone above the zoom
-- [ ] T042 [US3] `panel.counts` from the page to the pill
-- [ ] T043 [P] [US3] Tests: `PANEL/tests/compare.test.ts` (grouping, the card's rows), `PANEL/tests/shell.test.ts` (the row, milestone actions)
+- [x] T038 [P] [US3] Port `GV/components/history/DiffCard/DiffCard.tsx` and `StatusIcon.tsx` to `PANEL/src/compare/DiffCard.tsx`, `StatusIcon.tsx`: title, StatusIcon 14 px, "Added in B", property rows path | struck before → after, groups (600, `#475569`), part = coloured sign + label with rows; Escape and click outside close; a stepper click moves on
+- [x] T039 [P] [US3] Port `GV/components/history/VersionsBetween/VersionsBetween.tsx` to `PANEL/src/compare/VersionsBetween.tsx`
+- [x] T040 [US3] Port `GV/components/diagrams/MapViewer/ChangeStepper.tsx` to `PANEL/src/compare/ChangeStepper.tsx`: arrows, list grouped by object with coloured text signs, step brings and opens the card
+- [x] T041 [US3] `PANEL/src/shell/Actions.tsx`: the row in the panel's top right corner — stepper first, then the page's actions; actions when B is now (`actionsShown` by `at`), actions declared `on: "milestone"` only when `milestone` is set and no comparison; on a phone above the zoom
+- [x] T042 [US3] `panel.counts` from the page to the pill
+- [x] T043 [P] [US3] Tests: `PANEL/tests/compare.test.ts` (grouping, the card's rows), `PANEL/tests/shell.test.ts` (the row, milestone actions)
 
 **Checkpoint**: commit.
 

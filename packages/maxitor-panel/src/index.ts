@@ -19,3 +19,8 @@ export { numberIn, readNumbers } from "./shell/address";
 export { coreMessage, pageMessage, trusted, type CoreMessage, type MomentContext, type PageMessage, type Query, type Side } from "./protocol";
 export { checkHistory, COMPARISONS, historyOf, LEADS, LOOKS, NO_HISTORY, TONES, type Comparison, type HistoryAllowed, type Kind, type Lead, type Look, type MilestoneAction, type PageHistory, type Tone } from "./protocol";
 export { BADGE_ICONS, type Bar, type BadgeIcon, type CardBlock, type Chip, type LinePart, type Milestone } from "./history";
+export { ChangeStepper } from "./compare/ChangeStepper";
+export { DiffCard, shownValue, type ChangedPart, type Difference, type DiffTarget } from "./compare/DiffCard";
+export { StatusIcon } from "./compare/StatusIcon";
+export { VersionsBetween, type Between } from "./compare/VersionsBetween";
+export { CHANGE_SIGN, changeLines, countsOf, nextChange, stepperText, type Change, type ChangeEntry, type ChangeLine } from "./compare/changes";
