@@ -64,6 +64,23 @@ export function cardsBounds(count: number): { x: number; y: number; width: numbe
   return { x: 0, y: 0, width: CARD_COLUMNS * CARD_WIDTH + (CARD_COLUMNS - 1) * CARD_GAP, height: rows * CARD_ROW + (rows - 1) * CARD_GAP };
 }
 
+/**
+ * Published's head line, as the accepted mockup of #121 writes it:
+ * `Anna Kovaleva published it 10 Nov 2026, 09:40 · release handbook 2026.11 · 7 notes by 3 authors · read only`.
+ */
+export function publishedLine(revision: { publisher_name: string; at: string; release?: string | null }, notes: readonly { writer_id: string }[]): string {
+  const authors = new Set(notes.map((note) => note.writer_id)).size;
+  const counted = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  return [
+    `${revision.publisher_name} published it ${when(revision.at)}`,
+    revision.release ? `release ${revision.release}` : null,
+    `${counted(notes.length, "note", "notes")} by ${counted(authors, "author", "authors")}`,
+    "read only",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 /** A revision's line: `v3 · First release · 2026.11`. */
 export function revisionLine(revision: { ref: string; title: string; release?: string | null }): string {
   return [revision.ref, revision.title, revision.release].filter(Boolean).join(" · ");

@@ -54,7 +54,6 @@
 .nt-race .nt-icon { margin-top: 2px; }
 .nt-link { border: 0; background: none; padding: 0; font: inherit; color: inherit; font-weight: var(--mx-weight-bold); text-decoration: underline; cursor: pointer; }
 /* Published: the button that leads to the draft, and the mark on a note waiting there. */
-.nt-waiting { position: absolute; right: 0; border: 0; background: transparent; color: var(--mx-cal-link); font: inherit; font-size: var(--mx-text-sm); cursor: pointer; }
 .nt-mark { display: inline-flex; gap: var(--mx-space-2); align-items: center; background: color-mix(in srgb, var(--mx-palette-blue) 12%, transparent); color: var(--mx-palette-blue); font-weight: var(--mx-weight-bold); align-self: flex-start; }
 .nt-mark.deleted { background: color-mix(in srgb, var(--mx-bad) 12%, transparent); color: var(--mx-bad); }
 /* The publishing dialog: the conflicts, their two sides and their choices. */
@@ -74,3 +73,7 @@
   .nt-tools button:not(.nt-more) { display: none; }
   .nt-more { display: inline-flex; }
 }
+/* The revision's head on Published and Draft, as the accepted mockup of #121 draws it. */
+.nt-head { display: flex; align-items: center; gap: var(--mx-space-4); flex-wrap: wrap; min-height: var(--mx-control); }
+.nt-head span { color: var(--mx-muted); font-size: var(--mx-text-sm); }
+.nt-head button { margin-left: auto; border: var(--mx-line-width) solid var(--mx-line-3); background: var(--mx-surface); border-radius: var(--mx-radius-md); padding: var(--mx-space-2) var(--mx-space-4); font: inherit; font-size: var(--mx-text-sm); color: var(--mx-ink); cursor: pointer; }

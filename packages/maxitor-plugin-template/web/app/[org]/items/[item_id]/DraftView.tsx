@@ -24,7 +24,7 @@ import {
 import { Alert, Marking, StateDisk } from "../../notes/marking";
 import { CARD_GAP, cardsBounds, refusalText, when } from "../../notes/notes";
 import { useFresh } from "../../notes/parts";
-import { HEAD, RevisionCard, type PublishedNote, type Revision } from "../../notes/revision";
+import { HEAD, type PublishedNote, type Revision } from "../../notes/revision";
 
 type Editing = { noteId: string; body: string; baseBody: string | null; baseRevision: number | null; stored: boolean };
 
@@ -187,8 +187,9 @@ export function DraftView({
     });
     setBusy(false);
     if (answer.ok) {
+      // A publication that succeeds opens the item's Published, which shows it; the draft starts empty.
       close();
-      router.refresh();
+      panelRouter.push({ path: `${panelPath}/published`, query: {} });
       return;
     }
     if (answer.refusal?.error === "conflicts") {

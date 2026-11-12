@@ -8,12 +8,17 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { call } from "../../../notes/api";
-import { marksInDraft, waitingLine, STATE_LABEL, type Change } from "../../../notes/draft";
+import { marksInDraft, STATE_LABEL, type Change } from "../../../notes/draft";
 import { DraftIcon } from "../../../notes/marking";
 import { CARD_GAP, cardsBounds, refusalText } from "../../../notes/notes";
 import { useFresh } from "../../../notes/parts";
-import { HEAD, RevisionCard, VIEWS, type PublishedNote, type Revision } from "../../../notes/revision";
+import { HEAD, RevisionCard, type PublishedNote, type Revision } from "../../../notes/revision";
 import { initials, paletteOf } from "../people";
+
+/** The page's own ready stretch of the date range picker: since the first publication, when there is one. */
+function SINCE_FIRST(revision: Revision | null) {
+  return revision?.first_at ? [{ label: "Since the first publication", from: revision.first_at.slice(0, 10), to: "now" }] : [];
+}
 
 export function PublishedView({
   org,
@@ -46,7 +51,6 @@ export function PublishedView({
   const shown = chosen ? notes.filter((note) => chosen.has(note.writer_id)) : notes;
   const below = cardsBounds(Math.max(shown.length, 1));
   const bounds = { x: 0, y: 0, width: below.width, height: HEAD + CARD_GAP + below.height };
-  const waiting = waitingLine(changes);
 
   const edit = (note: PublishedNote) => panelRouter.push({ path: draftPath, query: { edit: note.id } });
   const openDraft = () => panelRouter.push({ path: draftPath, query: {} });
@@ -62,27 +66,16 @@ export function PublishedView({
   return (
     <PanelPage
       title="Published"
-      bar={VIEWS}
       history={{ milestones: "list_note_history", card: "note_milestone_card" }}
-      filters={
-        authors.length
-          ? [
-              {
-                title: "Authors",
-                param: "author",
-                rows: authors.map(([key, name]) => ({ key, label: name, mark: initials(name), colour: paletteOf(key) })),
-              },
-            ]
-          : []
-      }
+      filters={[
+        ...(authors.length ? [{ title: "Authors", param: "author", rows: authors.map(([key, name]) => ({ key, label: name, mark: initials(name), colour: paletteOf(key) })) }] : []),
+        // Two ranges of dates, named by the table's columns: when a note was first written and when it last changed.
+        { kind: "range", title: "Written", param: "written", unit: "date", presets: SINCE_FIRST(revision) },
+        { kind: "range", title: "Last change", param: "changed", unit: "date", presets: SINCE_FIRST(revision) },
+      ]}
     >
       <MaxitorCanvas bounds={bounds} label="Published">
-        <RevisionCard revision={revision} empty="Nothing is published yet: publish the draft to make the first revision." />
-        {changes.length ? (
-          <button type="button" className="nt-waiting" style={{ top: HEAD - 34 }} onClick={openDraft}>
-            Your draft: {waiting}
-          </button>
-        ) : null}
+        <RevisionCard revision={revision} notes={notes} waiting={changes.length} onOpenDraft={openDraft} empty="Nothing is published yet: publish the draft to make the first revision." />
         {said ? <div className="nt-said nt-over" style={{ top: HEAD - 58 }}>{said}</div> : null}
         {view === "table" ? (
           <DataTable
@@ -94,14 +87,15 @@ export function PublishedView({
             columns={[
               { title: "Writer", kind: "person", value: (note) => note.writer_name, colour: (note) => paletteOf(note.writer_id), width: 1 },
               { title: "Note", value: (note) => note.body, width: 3 },
-              { title: "Changed", kind: "date", value: (note) => note.updated_at, width: 1 },
+              { title: "Written", kind: "date", value: (note) => note.written ?? "", width: 1 },
+              { title: "Last change", kind: "date", value: (note) => note.updated_at, width: 1 },
             ]}
           />
         ) : (
           <div className="mx-cards nt-grid" style={{ top: HEAD + CARD_GAP, width: below.width }}>
-            {shown.length === 0 ? (
+            {revision && shown.length === 0 ? (
               <div className="mx-empty-state" style={{ margin: 0, maxWidth: "none" }}>
-                <b>Nothing to show</b>The Authors filter hides every published note.
+                <b>Nothing to show</b>The filters hide every published note.
               </div>
             ) : (
               shown.map((note) => {

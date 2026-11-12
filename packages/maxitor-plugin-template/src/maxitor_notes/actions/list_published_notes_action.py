@@ -11,8 +11,10 @@ ListPublishedNotesAction — the published notes of an item at one moment.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import cast
 
+from maxitor_plugin_sdk import date_bounds
 from maxitor_plugin_sdk.moments import MOMENT_PATTERN
 from maxitor_plugin_sdk.roles import MemberRole
 from pydantic import Field
@@ -41,6 +43,8 @@ class ListPublishedNotesParams(BaseParams):
 
     item_id: str = Field(min_length=1, max_length=64, description="The item")
     at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The panel's moment; none means now, the watermark")
+    written: str | None = Field(default=None, max_length=64, description="The filter Written: a range of days the note was first written in, as the shell writes it")
+    changed: str | None = Field(default=None, max_length=64, description="The filter Last change: a range of days the note last changed in, as the shell writes it")
 
 
 class ListPublishedNotesResult(BaseResult):
@@ -78,4 +82,8 @@ class ListPublishedNotesAction(BaseAction[ListPublishedNotesParams, ListPublishe
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
         organization_id = await member_organization_id(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
         revision, found = await storage.published_notes(organization_id, params.item_id, params.at)
-        return ListPublishedNotesResult(revision=revision, notes=found)
+        # The filters of dates choose among the notes the page shows, as the shell's ranges read them (spec 079, FR-046).
+        today = datetime.now(UTC).date()
+        written, changed = date_bounds.parse(params.written, today), date_bounds.parse(params.changed, today)
+        kept = [note for note in found if date_bounds.within(note.written, written) and date_bounds.within(note.updated_at, changed)]
+        return ListPublishedNotesResult(revision=revision, notes=kept)

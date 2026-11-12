@@ -447,7 +447,7 @@ class NotesStorage(PostgresStorage):
         rows = await self._fetch(
             f"SELECT n.id::text AS id, n.item_id::text AS item_id, n.writer_id::text AS writer_id,"
             f" {member_name('n.organization_id', 'n.writer_id', when)} AS writer_name, n.body AS body,"
-            f" {moment_text('n.updated_at')} AS updated_at, {moment_text('n.valid_from_at')} AS since,"
+            f" {moment_text('n.updated_at')} AS updated_at, {moment_text('n.created_at')} AS written, {moment_text('n.valid_from_at')} AS since,"
             f" {member_name('n.organization_id', 'n.author_id', 'n.valid_from_at')} AS changed_by"
             f" FROM note_versions n"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {in_force('n', when)}"
@@ -713,7 +713,9 @@ class NotesStorage(PostgresStorage):
             f"SELECT r.number AS number, 'v' || r.number AS ref, r.title AS title, r.comment AS comment, r.release AS release,"
             f" r.publisher_id::text AS publisher_id,"
             f" {member_name('r.organization_id', 'r.publisher_id', 'r.created_at')} AS publisher_name,"
-            f" {moment_text('r.created_at')} AS at"
+            f" {moment_text('r.created_at')} AS at,"
+            f" (SELECT {moment_text('f.created_at')} FROM revision_versions f"
+            f" WHERE f.organization_id = r.organization_id AND f.item_id = r.item_id AND f.number = 1 AND {in_force('f', when)} LIMIT 1) AS first_at"
             f" FROM revision_versions r"
             f" WHERE r.organization_id = $1::text::uuid AND r.item_id = $2::text::uuid AND {in_force('r', when)}"
             f" ORDER BY r.number DESC LIMIT 1",

@@ -273,3 +273,31 @@ async def test_the_published_notes_and_the_draft_are_read_at_the_moment_of_the_a
     assert storage.calls[-1] == ("published_notes", ACME, ITEM, MOMENT)
     _result, storage = await _run(ListNoteDraftAction(), ListNoteDraftParams(item_id=ITEM, at=MOMENT))
     assert storage.calls[-1] == ("draft", ACME, ITEM, ANN, MOMENT)
+
+
+@meta(description="The notes storage answering dated published notes")
+@entities(ItemEntryCoreEntity, NoteCoreEntity, NoteAuthorCoreEntity)
+class DatedNotesStorage(ScriptedNotesStorage):
+    """Published notes written and changed on different days, for the filters Written and Last change."""
+
+    async def published_notes(self, organization_id, item_id, moment):
+        self.calls.append(("published_notes", organization_id, item_id, moment))
+        dated = [
+            ("sept", "2026-09-10T08:00:00.000000Z", "2026-11-01T09:00:00.000000Z"),
+            ("oct", "2026-10-05T08:00:00.000000Z", "2026-10-06T09:00:00.000000Z"),
+            ("undated", "", "2026-10-20T09:00:00.000000Z"),
+        ]
+        notes = [NoteCoreEntity(id=key, item_id=item_id, writer_id=ANN, writer_name="Ann", body=key, updated_at=changed, written=written, since=changed) for key, written, changed in dated]
+        return None, notes
+
+
+async def test_written_and_last_change_choose_among_the_published_notes_as_the_shell_writes_their_ranges() -> None:
+    async def read(**filters: str) -> list[str]:
+        answer, _storage = await _run(ListPublishedNotesAction(), ListPublishedNotesParams(item_id=ITEM, **filters), storage=DatedNotesStorage())
+        return [note.id for note in answer.notes]
+
+    assert await read() == ["sept", "oct", "undated"]
+    assert await read(written="2026-09-01..2026-09-30") == ["sept"]
+    assert await read(written="2026-10..") == ["oct"]
+    assert await read(changed="2026-10-01..2026-10-31") == ["oct", "undated"]
+    assert await read(written="2026-09-01..", changed="..2026-10-31") == ["oct"]

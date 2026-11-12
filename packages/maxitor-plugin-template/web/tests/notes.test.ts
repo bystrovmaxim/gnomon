@@ -34,3 +34,14 @@ test("the cards' grid takes three columns and as many rows as the notes need", (
   assert.equal(when("2026-03-05T08:30:00.000000Z"), "5 Mar 2026, 08:30");
   assert.equal(revisionLine({ ref: "v3", title: "First release", release: "2026.11" }), "v3 · First release · 2026.11");
 });
+
+// ── Published's head as the accepted mockup of #121 writes it (spec 079, FR-042)
+
+import { publishedLine } from "../app/[org]/notes/notes.ts";
+
+test("Published's head line says who published it, when, the release and how many notes by how many authors", () => {
+  const revision = { publisher_name: "Anna Kovaleva", at: "2026-11-10T09:40:00.000000Z", release: "handbook 2026.11" };
+  const notes = [{ writer_id: "a" }, { writer_id: "b" }, { writer_id: "a" }];
+  assert.equal(publishedLine(revision, notes), "Anna Kovaleva published it 10 Nov 2026, 09:40 · release handbook 2026.11 · 3 notes by 2 authors · read only");
+  assert.equal(publishedLine({ ...revision, release: null }, [{ writer_id: "a" }]), "Anna Kovaleva published it 10 Nov 2026, 09:40 · 1 note by 1 author · read only");
+});

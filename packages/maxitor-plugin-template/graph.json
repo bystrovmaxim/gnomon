@@ -1423,12 +1423,30 @@
       "type": "field"
     },
     {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:changed",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
+      "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:changed",
+      "type": "field"
+    },
+    {
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:item_id",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
       "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:item_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:written",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
+      "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:written",
       "type": "field"
     },
     {
@@ -2666,7 +2684,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "changed_by",
-        "ordinal": 6
+        "ordinal": 7
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.note_entity.NoteCoreEntity",
@@ -2702,7 +2720,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "since",
-        "ordinal": 7
+        "ordinal": 8
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.note_entity.NoteCoreEntity",
@@ -2746,6 +2764,18 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor_notes.entities.note_entity.NoteCoreEntity|entity_field|maxitor_notes.entities.note_entity.NoteCoreEntity:written",
+      "is_dag": false,
+      "properties": {
+        "field_name": "written",
+        "ordinal": 6
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_entity.NoteCoreEntity",
+      "target_id": "maxitor_notes.entities.note_entity.NoteCoreEntity:written",
+      "type": "entity_field"
+    },
+    {
       "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity|domain|maxitor_notes.notes_domain.NotesDomain",
       "is_dag": true,
       "properties": {},
@@ -2776,6 +2806,18 @@
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
       "target_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:comment",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity|entity_field|maxitor_notes.entities.revision_entity.RevisionCoreEntity:first_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "first_at",
+        "ordinal": 9
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
+      "target_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:first_at",
       "type": "entity_field"
     },
     {
@@ -4439,6 +4481,17 @@
       "type": "Field"
     },
     {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:changed",
+      "label": "changed",
+      "properties": {
+        "description": "The filter Last change: a range of days the note last changed in, as the shell writes it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:item_id",
       "label": "item_id",
       "properties": {
@@ -4446,6 +4499,17 @@
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:written",
+      "label": "written",
+      "properties": {
+        "description": "The filter Written: a range of days the note was first written in, as the shell writes it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
       },
       "type": "Field"
     },
@@ -5600,6 +5664,17 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor_notes.entities.note_entity.NoteCoreEntity:written",
+      "label": "written",
+      "properties": {
+        "description": "When the note was first written, ISO 8601 with microseconds: the filter Written reads it",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
       "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
       "label": "RevisionCoreEntity",
       "properties": {
@@ -5625,6 +5700,17 @@
       "label": "comment",
       "properties": {
         "description": "The revision's own words",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:first_at",
+      "label": "first_at",
+      "properties": {
+        "description": "When the item's first revision was published: the page's ready stretch starts there",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false

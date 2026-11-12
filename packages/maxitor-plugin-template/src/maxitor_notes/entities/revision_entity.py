@@ -28,3 +28,4 @@ class RevisionCoreEntity(BaseCoreEntity):
     publisher_id: str = Field(min_length=1, description="The member who published it")
     publisher_name: str = Field(description="The publisher's name as it read when the revision was published")
     at: str = Field(description="When it was published, ISO 8601 with microseconds")
+    first_at: str = Field(default="", description="When the item's first revision was published: the page's ready stretch starts there")
