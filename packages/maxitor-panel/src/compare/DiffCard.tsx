@@ -75,8 +75,9 @@ export function DiffCard({
     let frame = 0;
     const follow = () => {
       const element = document.querySelector(`[data-room-anchor="${CSS.escape(beside)}"]`);
+      // Beside an element the card stands in the window's own pixels, wherever the page put it among its parts.
       const own = card.current;
-      const panel = own?.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+      const panel = { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
       const box = element?.getBoundingClientRect();
       const next = own && box && box.right > panel.left && box.left < panel.right ? besideBox(panel, box, own.offsetWidth, own.offsetHeight) : at;
       setPlace((was) => (Math.abs(was.x - next.x) < 0.5 && Math.abs(was.y - next.y) < 0.5 ? was : next));
@@ -103,7 +104,7 @@ export function DiffCard({
   const parts = grouped(target.parts ?? []);
   const inside = parts.length > 0;
   return (
-    <div ref={card} className="mx-diff-card" role="dialog" aria-label={`What changed in ${target.title}`} style={{ left: place.x, top: place.y }}>
+    <div ref={card} className="mx-diff-card" role="dialog" aria-label={`What changed in ${target.title}`} style={{ left: place.x, top: place.y, position: beside ? "fixed" : undefined }}>
       <div className="mx-diff-head">
         <span>{target.title}</span>
         <StatusIcon status={target.status} />
