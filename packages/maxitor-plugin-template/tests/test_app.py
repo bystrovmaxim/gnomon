@@ -35,6 +35,7 @@ def test_every_route_lies_under_the_plugins_path_and_the_organization() -> None:
         ("POST", "/p/notes/api/{organization}/notes"),
         ("PATCH", "/p/notes/api/{organization}/notes"),
         ("DELETE", "/p/notes/api/{organization}/notes/{note_id}"),
+        ("DELETE", "/p/notes/api/{organization}/draft/{note_id}"),
         ("GET", "/p/notes/api/{organization}/items/{item_id}/notes"),
         ("GET", "/p/notes/api/{organization}/lists/list_note_authors"),
         ("POST", "/p/notes/api/{organization}/revisions"),
@@ -110,3 +111,15 @@ def test_the_app_accepts_only_a_token_the_core_issued_for_this_plugin_with_membe
         assert call("io.github.bystrovmaxim.notes", ["service"]) == 403
         # A member passes the role; the organization's decision reads the core's tables, empty here: not found.
         assert call("io.github.bystrovmaxim.notes", ["member"]) == 404
+
+
+def test_a_moment_not_written_as_one_is_refused_by_name_not_a_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("maxitor_notes.app.PostgresPool", Pool)
+    with TestClient(create_app(dsn=DSN, jwks_url=JWKS_URL), raise_server_exceptions=False) as client:
+        now = int(time.time())
+        claims = {"iss": "maxitor", "aud": "io.github.bystrovmaxim.notes", "sub": "u1", "sid": "s1", "org": "acme", "roles": ["member"], "iat": now, "exp": now + 60}
+        token = jwt.encode(claims, CORE, algorithm="EdDSA", headers={"kid": "core"})
+        for moment in ("2099-01-01T00:00:00Z", "garbage"):
+            response = client.get(f"/p/notes/api/acme/items/i/published?at={moment}", headers={"authorization": f"Bearer {token}"})
+            assert response.status_code == 422, moment
+            assert response.json() == {"error": "invalid", "fields": ["at"]}

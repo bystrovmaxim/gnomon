@@ -7,8 +7,8 @@ A plugin's tests run without a database: the template's recording connection rec
 What a plugin must prove so far:
 
 1. **Every reading reads at a moment and in one organization.** `test_reading_sql.py` reads the SQL of every reading method and refuses one without the moment condition or the organization.
-2. **The past never changes.** `test_notes_changes.py` writes, edits and deletes, and reads each moment between them.
-3. **A conflict loses nothing.** An edit with an old `base_moment` writes nothing and names who changed the note.
+2. **A draft is one person's, and the past never changes.** `test_notes_changes.py` writes a change, keeps its base through a second edit, reverts it and reads the draft at a moment; the query names the person, so nobody else's change is read. `test_revisions.py` reads Published at a past moment from the revision in force then.
+3. **A conflict loses nothing, and it is found by value.** `test_draft_rules.py` decides every state against the published note: a change over the published text applies, one over another text is a conflict with both sides, and a change whose own text was published has nothing left to do; `test_revisions.py` publishes with the conflict list, an overwrite, a given-up change and a restored note, and refuses an empty draft in words.
 4. **A note stands only on an item of its organization.** `test_items.py` writes a note, a revision and a rename on an item that does not exist and on another organization's, and each is refused before anything is written; a title another item has is refused only after the organization's lock.
 5. **Only the core's token for this plugin passes.** `test_app.py` sends a token for another plugin, one signed with another key and one with the role `service`, and gets 403 for each:
 
@@ -48,10 +48,10 @@ assert.equal(inRange("2026-09-01", readRange("now-90d..now"), "2026-11-10"), tru
 
 10. **Its pages give their history, and its tree holds nothing else.** `test_history_data.py` reads the history each page gives in its code and the passport's comparisons; `test_navigation.py` adds `history` or `room` to a page's node and sees it refused by name.
 
-11. **Its pages work now.** `web/tests/notes.test.ts` proves that reading again marks a colleague's note new and the first reading marks none, that the note written last stands first, and that every refusal — `changed_since`, `deleted`, `nothing_to_publish` and the rest — is said in words; the core's browser check writes, edits through a conflict, deletes and publishes on the stand, on a desktop and on a phone.
+11. **Its pages work now, by the rules of the draft.** `web/tests/draft.test.ts` proves that the State filter keeps what it chooses and fades a state with nothing behind it, that the change made last stands first, that only a change meeting someone else's publication is a conflict and its choice says what it does, and that Published marks the state each note waits in; `web/tests/notes.test.ts` proves the refusals' words. The core's browser check walks 1.6 on the stand: the draft is private until published, the states and reverts, publishing as one revision with its release, Published's marks and Edit in the draft, the State and Authors filters, on a desktop and at 375 px.
 
 ```bash
-node --experimental-strip-types --test packages/maxitor-plugin-template/web/tests/notes.test.ts
+node --experimental-strip-types --test packages/maxitor-plugin-template/web/tests/*.test.ts
 ```
 
 ## Run them
@@ -61,5 +61,5 @@ uv run --extra dev pytest packages/maxitor-plugin-template/tests -q
 ```
 
 ```text
-232 passed
+256 passed
 ```

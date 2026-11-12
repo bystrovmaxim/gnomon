@@ -13,6 +13,7 @@ from maxitor_notes.actions.list_note_draft_action import ListNoteDraftAction, Li
 from maxitor_notes.actions.list_published_notes_action import ListPublishedNotesAction, ListPublishedNotesParams
 from maxitor_notes.actions.publish_notes_action import PublishNotesAction, PublishNotesParams
 from maxitor_notes.actions.rename_item_action import RenameItemAction, RenameItemParams
+from maxitor_notes.actions.revert_note_change_action import RevertNoteChangeAction, RevertNoteChangeParams
 from maxitor_notes.entities.item_entry_entity import ItemEntryCoreEntity
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
@@ -73,28 +74,32 @@ class ScriptedNotesStorage(NotesStorage):
         start = 0 if after is None else keys.index(after) + 1
         return [ItemEntryCoreEntity(key=key, title=title, icon="folder") for key, title in zip(keys, self._items, strict=True)][start : start + limit]
 
-    async def add_note(self, organization_id, item_id, writer_id, body, operation):
-        self.calls.append(("add_note", organization_id, item_id, writer_id, body, operation))
+    async def add_note_change(self, organization_id, item_id, person_id, body, operation):
+        self.calls.append(("add_note_change", organization_id, item_id, person_id, body, operation))
         return MOMENT
 
-    async def edit_note(self, organization_id, note_id, body, base_moment, editor_id, operation):
-        self.calls.append(("edit_note", organization_id, note_id, body, base_moment, editor_id, operation))
+    async def edit_note(self, organization_id, item_id, note_id, body, base_body, base_revision, editor_id, operation):
+        self.calls.append(("edit_note", organization_id, item_id, note_id, body, base_body, base_revision, editor_id, operation))
         return MOMENT
 
-    async def delete_note(self, organization_id, note_id, base_moment, editor_id, operation):
-        self.calls.append(("delete_note", organization_id, note_id, base_moment, editor_id, operation))
+    async def delete_note(self, organization_id, item_id, note_id, base_revision, editor_id, operation):
+        self.calls.append(("delete_note", organization_id, item_id, note_id, base_revision, editor_id, operation))
         return MOMENT
 
-    async def publish_notes(self, organization_id, item_id, title, comment, release, publisher_id, operation):
-        self.calls.append(("publish_notes", organization_id, item_id, title, comment, release, publisher_id, operation))
+    async def revert_note_change(self, organization_id, note_id, person_id, operation):
+        self.calls.append(("revert_note_change", organization_id, note_id, person_id, operation))
+        return MOMENT
+
+    async def publish_notes(self, organization_id, item_id, person_id, title, comment, release, resolutions, publisher_id, operation):
+        self.calls.append(("publish_notes", organization_id, item_id, person_id, title, comment, release, resolutions, publisher_id, operation))
         return 1, MOMENT
 
     async def published_notes(self, organization_id, item_id, moment):
         self.calls.append(("published_notes", organization_id, item_id, moment))
         return None, []
 
-    async def draft(self, organization_id, item_id, moment):
-        self.calls.append(("draft", organization_id, item_id, moment))
+    async def draft(self, organization_id, item_id, person_id, moment):
+        self.calls.append(("draft", organization_id, item_id, person_id, moment))
         return None, []
 
     async def milestones(self, organization_id, item_id, start, end):
@@ -133,8 +138,9 @@ ACTION_CALLS = [
     (AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check the limits")),
     (ListItemNotesAction(), ListItemNotesParams(item_id=ITEM)),
     (ListNoteAuthorsAction(), ListNoteAuthorsParams(item_id=ITEM)),
-    (EditNoteAction(), EditNoteParams(note_id="n1", body="Check", base_moment=MOMENT)),
-    (DeleteNoteAction(), DeleteNoteParams(note_id="n1", base_moment=MOMENT)),
+    (EditNoteAction(), EditNoteParams(item_id=ITEM, note_id="n1", body="Check", base_body="Old", base_revision=3)),
+    (DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_revision=3)),
+    (RevertNoteChangeAction(), RevertNoteChangeParams(note_id="n1")),
     (PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="First review", comment="Agreed")),
     (ListPublishedNotesAction(), ListPublishedNotesParams(item_id=ITEM)),
     (ListNoteDraftAction(), ListNoteDraftParams(item_id=ITEM)),
@@ -155,7 +161,7 @@ def _decision(action, organization: str) -> list[tuple]:
 async def test_a_member_writes_a_note_in_the_organization_of_the_address_as_herself() -> None:
     result, storage = await _run(AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check the limits"))
     assert result.changed_at == MOMENT
-    assert storage.calls[-1] == ("add_note", ACME, ITEM, ANN, "Check the limits", "AddNoteAction")
+    assert storage.calls[-1] == ("add_note_change", ACME, ITEM, ANN, "Check the limits", "AddNoteAction")
 
 
 @pytest.mark.parametrize(("action", "params"), ACTION_CALLS)
@@ -228,14 +234,26 @@ async def test_an_address_or_a_token_without_an_organization_or_a_person_is_refu
     assert storage.calls == []
 
 
-async def test_an_editor_edits_and_deletes_with_the_moment_they_saw_as_themselves() -> None:
-    _result, storage = await _run(EditNoteAction(), EditNoteParams(note_id="n1", body="Check", base_moment=MOMENT))
-    assert storage.calls[-1] == ("edit_note", ACME, "n1", "Check", MOMENT, ANN, "EditNoteAction")
-    _result, storage = await _run(DeleteNoteAction(), DeleteNoteParams(note_id="n1", base_moment=MOMENT))
-    assert storage.calls[-1] == ("delete_note", ACME, "n1", MOMENT, ANN, "DeleteNoteAction")
+async def test_an_editor_edits_and_deletes_in_her_draft_over_the_version_she_saw() -> None:
+    _result, storage = await _run(EditNoteAction(), EditNoteParams(item_id=ITEM, note_id="n1", body="Check", base_body="Old", base_revision=3))
+    assert storage.calls[-1] == ("edit_note", ACME, ITEM, "n1", "Check", "Old", 3, ANN, "EditNoteAction")
+    _result, storage = await _run(DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_revision=3))
+    assert storage.calls[-1] == ("delete_note", ACME, ITEM, "n1", 3, ANN, "DeleteNoteAction")
 
 
-@pytest.mark.parametrize(("action", "params"), [(EditNoteAction(), EditNoteParams(note_id="n1", body="Check", base_moment=MOMENT)), (DeleteNoteAction(), DeleteNoteParams(note_id="n1", base_moment=MOMENT))])
+async def test_a_member_gives_one_change_of_her_draft_up() -> None:
+    _result, storage = await _run(RevertNoteChangeAction(), RevertNoteChangeParams(note_id="n1"))
+    assert storage.calls[-1] == ("revert_note_change", ACME, "n1", ANN, "RevertNoteChangeAction")
+
+
+@pytest.mark.parametrize(
+    ("action", "params"),
+    [
+        (EditNoteAction(), EditNoteParams(item_id=ITEM, note_id="n1", body="Check", base_body="Old", base_revision=3)),
+        (DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_revision=3)),
+        (RevertNoteChangeAction(), RevertNoteChangeParams(note_id="n1")),
+    ],
+)
 async def test_a_call_without_member_cannot_edit_or_delete(action, params) -> None:
     with pytest.raises(AccessDenied) as refusal:
         await _run(action, params, roles=(ServiceRole,))
@@ -245,7 +263,7 @@ async def test_a_call_without_member_cannot_edit_or_delete(action, params) -> No
 async def test_a_member_publishes_as_themselves_and_a_call_without_member_cannot() -> None:
     result, storage = await _run(PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="First review", comment="Agreed", release="handbook 2026.11"))
     assert (result.number, result.changed_at) == (1, MOMENT)
-    assert storage.calls[-1] == ("publish_notes", ACME, ITEM, "First review", "Agreed", "handbook 2026.11", ANN, "PublishNotesAction")
+    assert storage.calls[-1] == ("publish_notes", ACME, ITEM, ANN, "First review", "Agreed", "handbook 2026.11", {}, ANN, "PublishNotesAction")
     with pytest.raises(AccessDenied):
         await _run(PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="T", comment="C"), roles=(ServiceRole,))
 
@@ -254,4 +272,4 @@ async def test_the_published_notes_and_the_draft_are_read_at_the_moment_of_the_a
     _result, storage = await _run(ListPublishedNotesAction(), ListPublishedNotesParams(item_id=ITEM, at=MOMENT))
     assert storage.calls[-1] == ("published_notes", ACME, ITEM, MOMENT)
     _result, storage = await _run(ListNoteDraftAction(), ListNoteDraftParams(item_id=ITEM, at=MOMENT))
-    assert storage.calls[-1] == ("draft", ACME, ITEM, MOMENT)
+    assert storage.calls[-1] == ("draft", ACME, ITEM, ANN, MOMENT)

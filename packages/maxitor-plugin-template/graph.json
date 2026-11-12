@@ -412,12 +412,21 @@
       "type": "generic:result"
     },
     {
-      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams|field|maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_moment",
+      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams|field|maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_revision",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams",
-      "target_id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_moment",
+      "target_id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_revision",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams|field|maxitor_notes.actions.delete_note_action.DeleteNoteParams:item_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams",
+      "target_id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:item_id",
       "type": "field"
     },
     {
@@ -549,12 +558,21 @@
       "type": "generic:result"
     },
     {
-      "id": "maxitor_notes.actions.edit_note_action.EditNoteParams|field|maxitor_notes.actions.edit_note_action.EditNoteParams:base_moment",
+      "id": "maxitor_notes.actions.edit_note_action.EditNoteParams|field|maxitor_notes.actions.edit_note_action.EditNoteParams:base_body",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.edit_note_action.EditNoteParams",
-      "target_id": "maxitor_notes.actions.edit_note_action.EditNoteParams:base_moment",
+      "target_id": "maxitor_notes.actions.edit_note_action.EditNoteParams:base_body",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.edit_note_action.EditNoteParams|field|maxitor_notes.actions.edit_note_action.EditNoteParams:base_revision",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.edit_note_action.EditNoteParams",
+      "target_id": "maxitor_notes.actions.edit_note_action.EditNoteParams:base_revision",
       "type": "field"
     },
     {
@@ -564,6 +582,15 @@
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.edit_note_action.EditNoteParams",
       "target_id": "maxitor_notes.actions.edit_note_action.EditNoteParams:body",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.edit_note_action.EditNoteParams|field|maxitor_notes.actions.edit_note_action.EditNoteParams:item_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.edit_note_action.EditNoteParams",
+      "target_id": "maxitor_notes.actions.edit_note_action.EditNoteParams:item_id",
       "type": "field"
     },
     {
@@ -1578,6 +1605,15 @@
       "type": "field"
     },
     {
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesParams|field|maxitor_notes.actions.publish_notes_action.PublishNotesParams:resolutions",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.publish_notes_action.PublishNotesParams",
+      "target_id": "maxitor_notes.actions.publish_notes_action.PublishNotesParams:resolutions",
+      "type": "field"
+    },
+    {
       "id": "maxitor_notes.actions.publish_notes_action.PublishNotesParams|field|maxitor_notes.actions.publish_notes_action.PublishNotesParams:title",
       "is_dag": false,
       "properties": {},
@@ -1602,6 +1638,24 @@
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.publish_notes_action.PublishNotesResult",
       "target_id": "maxitor_notes.actions.publish_notes_action.PublishNotesResult:number",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams|field|maxitor_notes.actions.publish_notes_action.PublishResolutionParams:choice",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams",
+      "target_id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams:choice",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams|field|maxitor_notes.actions.publish_notes_action.PublishResolutionParams:note_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams",
+      "target_id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams:note_id",
       "type": "field"
     },
     {
@@ -1757,6 +1811,134 @@
       "relationship": "Composition",
       "source_id": "maxitor_notes.actions.rename_item_action.RenameItemResult",
       "target_id": "maxitor_notes.actions.rename_item_action.RenameItemResult:changed_at",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide|@required_context|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide|@required_context|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary|@required_context|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary|@required_context|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction|@access_decide|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide",
+      "type": "@access_decide"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
+      "type": "@check_roles"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction|@connection|maxitor_notes.storage.notes_storage.NotesStorage",
+      "is_dag": true,
+      "properties": {
+        "description": "The plugin's own schema notes",
+        "key": "notes"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction",
+      "target_id": "maxitor_notes.storage.notes_storage.NotesStorage",
+      "type": "@connection"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction|@summary_aspect|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary",
+      "type": "@summary_aspect"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction|domain|maxitor_notes.notes_domain.NotesDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction",
+      "target_id": "maxitor_notes.notes_domain.NotesDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction|generic:params|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeParams",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeParams",
+      "type": "generic:params"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction|generic:result|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeResult",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeResult",
+      "type": "generic:result"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeParams|field|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeParams:note_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeParams",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeParams:note_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeResult|field|maxitor_notes.actions.revert_note_change_action.RevertNoteChangeResult:changed_at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeResult",
+      "target_id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeResult:changed_at",
       "type": "field"
     },
     {
@@ -2198,27 +2380,27 @@
       "type": "domain"
     },
     {
-      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:at",
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:base_body",
       "is_dag": false,
       "properties": {
-        "field_name": "at",
-        "ordinal": 6
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
-      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:at",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:before",
-      "is_dag": false,
-      "properties": {
-        "field_name": "before",
+        "field_name": "base_body",
         "ordinal": 4
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
-      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:before",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:base_body",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:base_revision",
+      "is_dag": false,
+      "properties": {
+        "field_name": "base_revision",
+        "ordinal": 5
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:base_revision",
       "type": "entity_field"
     },
     {
@@ -2234,15 +2416,27 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:by_name",
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:changed_at",
       "is_dag": false,
       "properties": {
-        "field_name": "by_name",
-        "ordinal": 5
+        "field_name": "changed_at",
+        "ordinal": 8
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
-      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:by_name",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:changed_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:conflict",
+      "is_dag": false,
+      "properties": {
+        "field_name": "conflict",
+        "ordinal": 9
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:conflict",
       "type": "entity_field"
     },
     {
@@ -2258,18 +2452,6 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:kind",
-      "is_dag": false,
-      "properties": {
-        "field_name": "kind",
-        "ordinal": 2
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
-      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:kind",
-      "type": "entity_field"
-    },
-    {
       "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:note_id",
       "is_dag": false,
       "properties": {
@@ -2279,6 +2461,183 @@
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
       "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:note_id",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "published_at",
+        "ordinal": 12
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_body",
+      "is_dag": false,
+      "properties": {
+        "field_name": "published_body",
+        "ordinal": 10
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_body",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_by_name",
+      "is_dag": false,
+      "properties": {
+        "field_name": "published_by_name",
+        "ordinal": 11
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_by_name",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:state",
+      "is_dag": false,
+      "properties": {
+        "field_name": "state",
+        "ordinal": 2
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:state",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:writer_id",
+      "is_dag": false,
+      "properties": {
+        "field_name": "writer_id",
+        "ordinal": 6
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:writer_id",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity|entity_field|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:writer_name",
+      "is_dag": false,
+      "properties": {
+        "field_name": "writer_name",
+        "ordinal": 7
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
+      "target_id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:writer_name",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|domain|maxitor_notes.notes_domain.NotesDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.notes_domain.NotesDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|entity_field|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:base_body",
+      "is_dag": false,
+      "properties": {
+        "field_name": "base_body",
+        "ordinal": 4
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:base_body",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|entity_field|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:body",
+      "is_dag": false,
+      "properties": {
+        "field_name": "body",
+        "ordinal": 3
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:body",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|entity_field|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:id",
+      "is_dag": false,
+      "properties": {
+        "field_name": "id",
+        "ordinal": 0
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:id",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|entity_field|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:note_id",
+      "is_dag": false,
+      "properties": {
+        "field_name": "note_id",
+        "ordinal": 1
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:note_id",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|entity_field|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "published_at",
+        "ordinal": 7
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|entity_field|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_body",
+      "is_dag": false,
+      "properties": {
+        "field_name": "published_body",
+        "ordinal": 5
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_body",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|entity_field|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_by_name",
+      "is_dag": false,
+      "properties": {
+        "field_name": "published_by_name",
+        "ordinal": 6
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_by_name",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity|entity_field|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:state",
+      "is_dag": false,
+      "properties": {
+        "field_name": "state",
+        "ordinal": 2
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:state",
       "type": "entity_field"
     },
     {
@@ -2931,6 +3290,15 @@
       "type": "resource_entity"
     },
     {
+      "id": "maxitor_notes.storage.notes_storage.NotesStorage|resource_entity|maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.storage.notes_storage.NotesStorage",
+      "target_id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "type": "resource_entity"
+    },
+    {
       "id": "maxitor_notes.storage.notes_storage.NotesStorage|resource_entity|maxitor_notes.entities.note_entity.NoteCoreEntity",
       "is_dag": true,
       "properties": {},
@@ -3129,7 +3497,7 @@
       "id": "maxitor_notes.actions.add_note_action.AddNoteAction",
       "label": "AddNoteAction",
       "properties": {
-        "description": "Write a note on an item"
+        "description": "Write a note into the member's own draft of an item"
       },
       "type": "Action"
     },
@@ -3161,7 +3529,7 @@
       "id": "maxitor_notes.actions.add_note_action.AddNoteAction:write_summary",
       "label": "write_summary",
       "properties": {
-        "description": "Write the note and its version, and return the change time"
+        "description": "Write the change and its version, and return the change time"
       },
       "type": "SummaryAspect"
     },
@@ -3230,7 +3598,7 @@
       "id": "maxitor_notes.actions.delete_note_action.DeleteNoteAction",
       "label": "DeleteNoteAction",
       "properties": {
-        "description": "Delete a note, refusing when someone changed it after the editor saw it"
+        "description": "Delete a note in the member's own draft, over the published version they saw"
       },
       "type": "Action"
     },
@@ -3238,7 +3606,7 @@
       "id": "maxitor_notes.actions.delete_note_action.DeleteNoteAction:delete_summary",
       "label": "delete_summary",
       "properties": {
-        "description": "Delete the note's row and close its version, and return the change time"
+        "description": "Write the draft's deletion and its version, and return the change time"
       },
       "type": "SummaryAspect"
     },
@@ -3289,10 +3657,21 @@
       "type": "Params"
     },
     {
-      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_moment",
-      "label": "base_moment",
+      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_revision",
+      "label": "base_revision",
       "properties": {
-        "description": "The start of the version the editor saw; a later version is a conflict",
+        "description": "The revision in force the editor saw; empty before the first",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:item_id",
+      "label": "item_id",
+      "properties": {
+        "description": "The item the note is about",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -3331,7 +3710,7 @@
       "id": "maxitor_notes.actions.edit_note_action.EditNoteAction",
       "label": "EditNoteAction",
       "properties": {
-        "description": "Change the text of a note, refusing when someone changed it after the editor saw it"
+        "description": "Change a note in the member's own draft, over the published version they saw"
       },
       "type": "Action"
     },
@@ -3339,7 +3718,7 @@
       "id": "maxitor_notes.actions.edit_note_action.EditNoteAction:edit_summary",
       "label": "edit_summary",
       "properties": {
-        "description": "Close the note's open version and open the new one, and return the change time"
+        "description": "Write the draft's change and its version, and return the change time"
       },
       "type": "SummaryAspect"
     },
@@ -3390,13 +3769,24 @@
       "type": "Params"
     },
     {
-      "id": "maxitor_notes.actions.edit_note_action.EditNoteParams:base_moment",
-      "label": "base_moment",
+      "id": "maxitor_notes.actions.edit_note_action.EditNoteParams:base_body",
+      "label": "base_body",
       "properties": {
-        "description": "The start of the version the editor saw; a later version is a conflict",
+        "description": "The published text the editor saw; empty for a note that is new",
         "entity_schema": false,
         "json_schema_value": false,
-        "required": true
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.edit_note_action.EditNoteParams:base_revision",
+      "label": "base_revision",
+      "properties": {
+        "description": "The revision in force the editor saw; empty before the first",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
       },
       "type": "Field"
     },
@@ -3405,6 +3795,17 @@
       "label": "body",
       "properties": {
         "description": "The new text of the note",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.edit_note_action.EditNoteParams:item_id",
+      "label": "item_id",
+      "properties": {
+        "description": "The item the note is about",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -4080,7 +4481,7 @@
       "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction",
       "label": "PublishNotesAction",
       "properties": {
-        "description": "Publish an item's notes as its next numbered revision"
+        "description": "Publish the member's whole draft as the item's next numbered revision"
       },
       "type": "Action"
     },
@@ -4112,7 +4513,7 @@
       "id": "maxitor_notes.actions.publish_notes_action.PublishNotesAction:publish_summary",
       "label": "publish_summary",
       "properties": {
-        "description": "Write the next revision and return its number and moment"
+        "description": "Write the next revision from the draft and return its number and moment"
       },
       "type": "SummaryAspect"
     },
@@ -4172,6 +4573,17 @@
       "type": "Field"
     },
     {
+      "id": "maxitor_notes.actions.publish_notes_action.PublishNotesParams:resolutions",
+      "label": "resolutions",
+      "properties": {
+        "description": "One choice per conflict; absent on the call that reads the conflicts",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.publish_notes_action.PublishNotesParams:title",
       "label": "title",
       "properties": {
@@ -4204,6 +4616,34 @@
       "label": "number",
       "properties": {
         "description": "The revision's number for its item",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams",
+      "label": "PublishResolutionParams",
+      "properties": {},
+      "type": "Params"
+    },
+    {
+      "id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams:choice",
+      "label": "choice",
+      "properties": {
+        "description": "Overwrite with the member's value, or give the change up",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.publish_notes_action.PublishResolutionParams:note_id",
+      "label": "note_id",
+      "properties": {
+        "description": "The note whose conflict is resolved",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -4316,6 +4756,96 @@
       "label": "changed_at",
       "properties": {
         "description": "The change time, ISO 8601 with microseconds; the open version's start when nothing changed",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction",
+      "label": "RevertNoteChangeAction",
+      "properties": {
+        "description": "Give one change of the member's own draft up"
+      },
+      "type": "Action"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide",
+      "label": "organization_access_decide",
+      "properties": {
+        "description": "Refuse a person who is not a member of the organization of the address"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:organization_access_decide:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary",
+      "label": "revert_summary",
+      "properties": {
+        "description": "Remove the draft's change and close its version, and return the change time"
+      },
+      "type": "SummaryAspect"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeAction:revert_summary:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeParams",
+      "label": "RevertNoteChangeParams",
+      "properties": {},
+      "type": "Params"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeParams:note_id",
+      "label": "note_id",
+      "properties": {
+        "description": "The note whose change is given up",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeResult",
+      "label": "RevertNoteChangeResult",
+      "properties": {},
+      "type": "Result"
+    },
+    {
+      "id": "maxitor_notes.actions.revert_note_change_action.RevertNoteChangeResult:changed_at",
+      "label": "changed_at",
+      "properties": {
+        "description": "The change time, ISO 8601 with microseconds; the client rereads at it",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -4726,30 +5256,30 @@
       "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
       "label": "NoteChangeCoreEntity",
       "properties": {
-        "description": "A note added, changed or removed since the revision in force",
+        "description": "A note added, changed or deleted in one person's draft",
         "entity_kind": "core",
         "entity_kind_label": "Core"
       },
       "type": "Entity"
     },
     {
-      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:at",
-      "label": "at",
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:base_body",
+      "label": "base_body",
       "properties": {
-        "description": "When the last change was made, ISO 8601 with microseconds",
-        "field_annotation": "str",
-        "field_type": "str",
+        "description": "The published text the change was made over; empty for a new note",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
     },
     {
-      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:before",
-      "label": "before",
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:base_revision",
+      "label": "base_revision",
       "properties": {
-        "description": "The text in the revision; none for an added note",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
+        "description": "The revision in force when the change was made; empty before the first",
+        "field_annotation": "Union[int, NoneType]",
+        "field_type": "int | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -4758,7 +5288,7 @@
       "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:body",
       "label": "body",
       "properties": {
-        "description": "The text at the moment, or the last text of a removed note",
+        "description": "The text the change gives the note",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false
@@ -4766,12 +5296,23 @@
       "type": "EntityField"
     },
     {
-      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:by_name",
-      "label": "by_name",
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:changed_at",
+      "label": "changed_at",
       "properties": {
-        "description": "Who made the last change, as their name read then",
+        "description": "When the change was last made, ISO 8601 with microseconds",
         "field_annotation": "str",
         "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:conflict",
+      "label": "conflict",
+      "properties": {
+        "description": "Whether the published note now reads otherwise than the base or is deleted",
+        "field_annotation": "bool",
+        "field_type": "bool",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -4787,23 +5328,175 @@
       "type": "EntityField"
     },
     {
-      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:kind",
-      "label": "kind",
-      "properties": {
-        "description": "What happened to the note since the revision",
-        "field_annotation": "Literal[added, changed, removed]",
-        "field_type": "\"added\" | \"changed\" | \"removed\"",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
       "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:note_id",
       "label": "note_id",
       "properties": {
         "description": "The note",
         "field_annotation": "str",
         "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_at",
+      "label": "published_at",
+      "properties": {
+        "description": "When they changed or deleted it, ISO 8601 with microseconds",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_body",
+      "label": "published_body",
+      "properties": {
+        "description": "The other side's text; empty when it deleted the note",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:published_by_name",
+      "label": "published_by_name",
+      "properties": {
+        "description": "Who changed or deleted the note since the base",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:state",
+      "label": "state",
+      "properties": {
+        "description": "What the change does to the note",
+        "field_annotation": "Literal[new, changed, deleted]",
+        "field_type": "\"new\" | \"changed\" | \"deleted\"",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:writer_id",
+      "label": "writer_id",
+      "properties": {
+        "description": "The note's writer",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity:writer_name",
+      "label": "writer_name",
+      "properties": {
+        "description": "The writer's name as it read when the change was made",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity",
+      "label": "NoteConflictCoreEntity",
+      "properties": {
+        "description": "A change whose published note no longer reads as its base",
+        "entity_kind": "core",
+        "entity_kind_label": "Core"
+      },
+      "type": "Entity"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:base_body",
+      "label": "base_body",
+      "properties": {
+        "description": "The published text the change was made over",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:body",
+      "label": "body",
+      "properties": {
+        "description": "The member's text, or the base text for a deletion",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:id",
+      "label": "id",
+      "properties": {
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": true
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:note_id",
+      "label": "note_id",
+      "properties": {
+        "description": "The note",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_at",
+      "label": "published_at",
+      "properties": {
+        "description": "When they changed or deleted it, ISO 8601 with microseconds",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_body",
+      "label": "published_body",
+      "properties": {
+        "description": "The other side's text; empty when it deleted the note",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:published_by_name",
+      "label": "published_by_name",
+      "properties": {
+        "description": "Who changed or deleted the note since the base",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.note_conflict_entity.NoteConflictCoreEntity:state",
+      "label": "state",
+      "properties": {
+        "description": "What the change does to the note",
+        "field_annotation": "Literal[new, changed, deleted]",
+        "field_type": "\"new\" | \"changed\" | \"deleted\"",
         "primary_key_hint": false
       },
       "type": "EntityField"

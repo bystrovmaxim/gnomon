@@ -8,6 +8,16 @@ The panel now shows one level at a time. The head of the tree keeps its two butt
 
 `navigation.yaml` rises to format 4: every node with children says `opens`, `expand` or `enter`, with no default, and a node without children says nothing. The check of a plugin and its installation refuse either fault with the node named, format 3 is read as it is — every node of it expands — and the core and the template have moved to format 4. The core's browser check walks entering, Back, the crumbs and a reload inside an entered node, on a desktop and on a phone. ([#122](https://github.com/bystrovmaxim/gnomon/issues/122))
 
+## [2026-11-12] — A draft of my own over everyone's published notes
+
+An item of the plugin template now has two pages. **Draft** belongs to the person who opens it: the notes they wrote, changed or deleted since the last publication, and nobody else's. **Published** belongs to everyone: the notes as the latest revision holds them, read only, with a filter by author.
+
+Nothing a person writes reaches the others until they publish. A new note, an edit or a deletion — of their own note or of anyone's — waits in their draft, marked New, Changed or Deleted. A changed note shows the words that went struck through in red and the words that came in green, inside the one text. The State filter shows only the states the person wants, and a state with nothing in it fades. Each change can be reverted after one question. On Published, a note waiting in the person's draft is marked so, and its Edit and Delete open the change in the draft instead of touching what everyone reads.
+
+Publish takes the whole draft at once as the item's next revision, with a title, a comment and an optional release. Every change remembers the text it was made over. If someone else has published a different text since, or deleted the note, the draft says so before anything is sent: a notice above the cards, the meeting cards marked, and the publishing dialog listing each conflict with both texts side by side — the person's and the one they would overwrite, whose and when. For each one the person overwrites or gives their change up; a given-up change leaves the draft. Overwriting a note someone deleted brings it back with the person's text. Nothing is published until every conflict has an answer.
+
+The draft is kept with its history, so the server can read Draft and Published at any past moment; choosing that moment on screen comes with the core's time scale. The template's tutorial, the plugin concept and the template's README describe the two pages, the draft and publishing. ([#121](https://github.com/bystrovmaxim/gnomon/issues/121))
+
 ## [2026-11-12] — The page shell looks like the mockup
 
 The shell every plugin's page lies in now looks the way the mockup and maxitor-web draw it. The filters are 148 px and stand clear of the page: each section opens with an arrow, and a person is a disk of a palette colour with their initials. The bottom bar is flat, with zoom in, zoom out, fit and the percentage before the page's own buttons. A page with nothing to show says so in a dashed card in the middle instead of bare text, and the template's notes show as cards in a grid by default, or as a table. The browser check now measures the filters' width and their distance from the page.

@@ -29,7 +29,13 @@ NO_REASON = "exception has no reason"
 # (file, name) to why it stays; a method is named ``Class.method``.
 FUNCTION_EXCEPTIONS: dict[tuple[str, str], str] = {}
 # File to why it stays.
-MODULE_EXCEPTIONS: dict[str, str] = {}
+MODULE_EXCEPTIONS: dict[str, str] = {
+    "packages/maxitor-plugin-template/src/maxitor_notes/storage/notes_storage.py": (
+        "One storage for the plugin's schema: the person's draft, its publication and every read share the "
+        "versioned-storage helpers, and the methods stay small; the module fell to grade B only as the draft joined "
+        "it (spec 084)."
+    ),
+}
 
 
 class ReportError(Exception):

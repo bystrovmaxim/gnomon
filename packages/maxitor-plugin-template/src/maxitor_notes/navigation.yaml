@@ -16,38 +16,27 @@ nodes:
     children:
       # A list node: one instance per item of the organization, read from the plugin's action list_items at the
       # panel's moment. Each instance shows the item's title and puts its key into the scope as item_id, for every
-      # node beneath it. It opens no page of its own: its three pages stand under it.
+      # node beneath it. It opens no page of its own: its two pages stand under it.
       - id: item
         each:
           source: list_items
           key: item_id
         roles: [member]
-        # An item expands where it stands: its three pages appear under it, in the level of Notes.
+        # An item expands where it stands: its two pages appear under it, in the level of Notes.
         opens: expand
         children:
-          - id: item-notes
-            title: Notes
-            icon: note
-            order: 100
-            # The page's path inside the plugin; Maxitor opens it in the right panel at
-            # /w/<organization>/notes/items/<item_id>.
-            page: /items/{item_id}
-            roles: [member]
-            # The page's controls and its history are the page's own: it gives them to the shell of @maxitor/panel
-            # when it opens. This file holds the tree only.
-
-          # The item's notes as the revision in force holds them: milestones alone on the scale, a point per revision.
-          - id: item-published
-            title: Published notes
-            icon: note
-            order: 110
-            page: /items/{item_id}/published
-            roles: [member]
-
-          # What changed since the last revision. The draft is a comparison already: it offers one moment only.
+          # The item's Draft: one person's own changes over the published notes, published whole as one revision.
           - id: item-draft
             title: Draft
             icon: note
-            order: 120
-            page: /items/{item_id}/draft
+            order: 100
+            page: /items/{item_id}
+            roles: [member]
+
+          # The item's published notes: everyone's notes of the revision in force, read only.
+          - id: item-published
+            title: Published
+            icon: note
+            order: 110
+            page: /items/{item_id}/published
             roles: [member]

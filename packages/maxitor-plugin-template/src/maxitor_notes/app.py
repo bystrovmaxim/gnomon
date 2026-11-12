@@ -31,6 +31,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from maxitor_plugin_sdk.roles import CORE_ROLES
+from pydantic import ValidationError
 
 from aoa.action_machine.auth.jwt_auth.jwt_auth_coordinator import JwtAuthCoordinator
 from aoa.action_machine.exceptions.access_denied import AccessDenied
@@ -52,6 +53,7 @@ from maxitor_notes.actions.list_note_draft_action import ListNoteDraftAction
 from maxitor_notes.actions.list_published_notes_action import ListPublishedNotesAction
 from maxitor_notes.actions.publish_notes_action import PublishNotesAction
 from maxitor_notes.actions.rename_item_action import RenameItemAction
+from maxitor_notes.actions.revert_note_change_action import RevertNoteChangeAction
 from maxitor_notes.history.list_note_history_action import ListNoteHistoryAction
 from maxitor_notes.history.note_milestone_card_action import NoteMilestoneCardAction
 from maxitor_notes.notes_refusal_error import NotesRefusalError
@@ -110,6 +112,7 @@ def create_app(dsn: str | None = None, jwks_url: str | None = None) -> FastAPI:
     adapter.post(f"{prefix}/notes", AddNoteAction, connections=connections)
     adapter.patch(f"{prefix}/notes", EditNoteAction, connections=connections)
     adapter.delete(f"{prefix}/notes/{{note_id}}", DeleteNoteAction, connections=connections)
+    adapter.delete(f"{prefix}/draft/{{note_id}}", RevertNoteChangeAction, connections=connections)
     adapter.get(f"{prefix}/items/{{item_id}}/notes", ListItemNotesAction, connections=connections)
     adapter.get(f"{prefix}/lists/list_note_authors", ListNoteAuthorsAction, connections=connections)
     adapter.post(f"{prefix}/revisions", PublishNotesAction, connections=connections)
@@ -123,6 +126,11 @@ def create_app(dsn: str | None = None, jwks_url: str | None = None) -> FastAPI:
     async def refused(_request: Request, error: NotesRefusalError) -> JSONResponse:
         """A refusal of an action becomes its status and its reason, as the core's refusals do."""
         return JSONResponse(status_code=error.status, content=error.body)
+
+    @app.exception_handler(ValidationError)
+    async def malformed(_request: Request, error: ValidationError) -> JSONResponse:
+        """A query parameter the action's params refuse — a moment not written as one — is 422, named, not a failure."""
+        return JSONResponse(status_code=422, content={"error": "invalid", "fields": sorted({str(item["loc"][0]) for item in error.errors() if item["loc"]})})
 
     @app.exception_handler(AccessDenied)
     async def denied(_request: Request, error: AccessDenied) -> JSONResponse:

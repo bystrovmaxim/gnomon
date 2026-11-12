@@ -88,10 +88,10 @@ def test_a_title_empty_or_longer_than_200_characters_is_refused(title) -> None:
 @pytest.mark.parametrize(
     ("action", "params", "written"),
     [
-        (AddNoteAction(), AddNoteParams(item_id=ELSEWHERE, body="Check"), "add_note"),
+        (AddNoteAction(), AddNoteParams(item_id=ELSEWHERE, body="Check"), "add_note_change"),
         (PublishNotesAction(), PublishNotesParams(item_id=ELSEWHERE, title="T", comment="C"), "publish_notes"),
         (RenameItemAction(), RenameItemParams(item_id=ELSEWHERE, title="Billing", base_moment=MOMENT), "rename_item"),
-        (AddNoteAction(), AddNoteParams(item_id="not-a-uuid", body="Check"), "add_note"),
+        (AddNoteAction(), AddNoteParams(item_id="not-a-uuid", body="Check"), "add_note_change"),
     ],
 )
 async def test_an_item_that_is_not_one_of_the_organization_is_refused_and_nothing_is_written(action, params, written) -> None:
@@ -105,7 +105,7 @@ async def test_an_item_that_is_not_one_of_the_organization_is_refused_and_nothin
 async def test_a_note_on_an_item_of_the_organization_is_written() -> None:
     _result, storage, _logger = await _run(AddNoteAction(), AddNoteParams(item_id=ITEM, body="Check"))
     assert ("item_of", ACME, ITEM) in storage.calls
-    assert storage.calls[-1][0] == "add_note"
+    assert storage.calls[-1][0] == "add_note_change"
 
 
 async def test_a_rename_says_the_old_and_the_new_title() -> None:

@@ -6,7 +6,7 @@ Your plugin's pages open in Maxitor's frame: the tree on the left, the top row a
 
 ## Your nodes
 
-The template hangs a section of its own in the root of the tree. Under it is one node per item of the organization, and under every item are its three pages.
+The template hangs a section of its own in the root of the tree. Under it is one node per item of the organization, and under every item are its two pages: Draft and Published.
 
 <!-- quote: packages/maxitor-plugin-template/src/maxitor_notes/navigation.yaml -->
 ```yaml
@@ -22,7 +22,7 @@ The template hangs a section of its own in the root of the tree. Under it is one
     children:
       # A list node: one instance per item of the organization, read from the plugin's action list_items at the
       # panel's moment. Each instance shows the item's title and puts its key into the scope as item_id, for every
-      # node beneath it. It opens no page of its own: its three pages stand under it.
+      # node beneath it. It opens no page of its own: its two pages stand under it.
       - id: item
         each:
           source: list_items
@@ -34,7 +34,7 @@ The template hangs a section of its own in the root of the tree. Under it is one
 
 - `attach` says where a top node stands: `root`, a node of the core (`core:settings`) or a node of a plugin you depend on directly (`notes:item`). Nothing else.
 - `page` is a path inside your plugin. Maxitor puts the organization and your name in front of it: the page `/items/{item_id}` of an item `4f1c` opens at `/w/<organization>/notes/items/4f1c`.
-- `each` makes a node a list. `source` is a reading action of your plugin, and `key` is the parameter each instance adds for every node beneath it. That is how `{item_id}` reaches the three pages.
+- `each` makes a node a list. `source` is a reading action of your plugin, and `key` is the parameter each instance adds for every node beneath it. That is how `{item_id}` reaches the two pages.
 - `roles` asks for the core's `member` or `administrator`; a person without them does not see the node or anything under it.
 - `opens` says how the node opens and has no default: `expand` shows its children under it in the same tree, `enter` makes the left panel hold only its children with the node at its head — as one enters a folder — and gives it "›" instead of the arrow. Every node with children says it; a node without children says nothing.
 
@@ -76,24 +76,22 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-The page's controls are its own, and it does not draw them. It gives them to the shell — `PanelPage` of `@maxitor/panel` — as data when it opens: the item's writers for the filter at the top left, each with initials in a disk of a palette colour, and the choice of cards or a table for the bottom bar. The shell draws them in the same places as on every page of Maxitor and writes each into the address:
+The page's controls are its own, and it does not draw them. It gives them to the shell — `PanelPage` of `@maxitor/panel` — as data when it opens: Draft gives the State filter and its two actions, Published gives the item's writers for the filter at the top left and the choice of cards or a table for the bottom bar. The shell draws them in the same places as on every page of Maxitor and writes each into the address:
 
-<!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/page.tsx -->
+<!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/DraftView.tsx -->
 ```tsx
-  const filters: FilterSection[] = [
-    { title: "Authors", param: "author", rows: authors.map((author) => ({ key: author.key, label: author.title, mark: initials(author.title), colour: paletteOf(author.key) })) },
-  ];
-  const bar: BarSection[] = [
-    { kind: "choice", param: "view", default: "cards", options: [{ value: "cards", title: "Cards", icon: "cards" }, { value: "table", title: "Table", icon: "table" }] },
-  ];
+      filters={[{ title: "State", param: "state", rows: stateRows(changes) }]}
+      actions={[
+        { title: "New note", icon: "plus", onClick: () => { setWriting(true); setSaid(""); } },
+        { title: "Publish", onClick: () => openPublishing() },
+      ]}
 ```
 
 The page then reads the view like any parameter of its address:
 
-<!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/NotesView.tsx -->
+<!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/published/PublishedView.tsx -->
 ```tsx
-  // The view is the page's own choice in the shell's bottom bar: the shell writes ?view= into the address.
-  const { view = "cards", at } = usePanelQuery();
+  const { view = "cards", at, author } = query;
 ```
 
 A section of the filters is one of three kinds. The writers above are a **choice**: a disk and a label per row, the address listing those switched on; a choice of more than eight rows gets a search and "N more" by itself. A **text** is `{ kind: "text", title: "Search", param: "q", placeholder: "Note or writer" }`. A **range** is `{ kind: "range", title: "Written", param: "written", unit: "date" }` — two rows, From and To, a date chosen in the date range picker and written as `?written=now-30d..now` — or `unit: "number"`, typed in the rows. The page filters its own notes by these parameters; `inRange` and `numberIn` of `@maxitor/panel` read a range the way the shell writes it. A page that needs one date from a person — "Review on…" — calls `openDatePicker({ anchor: button })` and gets the date back as the address would write it.

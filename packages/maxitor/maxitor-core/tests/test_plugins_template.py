@@ -21,9 +21,11 @@ def test_the_templates_tables_and_key_are_built() -> None:
     assert [(k.table, k.columns, k.target, k.references) for k in keys] == [
         ("note", ("organization_id", "writer_id"), "user", ("organization_id", "account_id")),
         ("revision", ("organization_id", "publisher_id"), "user", ("organization_id", "account_id")),
+        ("note_change", ("organization_id", "person_id"), "user", ("organization_id", "account_id")),
+        ("note_change", ("organization_id", "writer_id"), "user", ("organization_id", "account_id")),
     ]
     statements = build_statements(schema)
-    for table in ("note", "note_versions", "revision", "revision_versions"):
+    for table in ("note", "note_versions", "note_change", "note_change_versions", "revision", "revision_versions"):
         assert any(s.startswith(f'CREATE TABLE "{table}" (') for s in statements)
 
 
@@ -31,4 +33,4 @@ def test_the_templates_version_is_named_after_its_passport() -> None:
     passport = yaml.safe_load((TEMPLATE / "maxitor-plugin.yaml").read_text(encoding="utf-8"))
     assert passport["passport"] == 3 and "migrate" not in passport["backend"]
     schema = schema_name_of(passport["name"], passport["version"])
-    assert (schema, f"plg_{schema}") == ("notes_0_13_0", "plg_notes_0_13_0")
+    assert (schema, f"plg_{schema}") == ("notes_0_14_0", "plg_notes_0_14_0")

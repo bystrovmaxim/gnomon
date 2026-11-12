@@ -10,9 +10,10 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
 import yaml
 from jsonschema import Draft202012Validator
-from maxitor_plugin_sdk.checks import SCHEMAS, check_plugin
+from maxitor_plugin_sdk.checks import NAVIGATION_FORMAT_1, NAVIGATION_FORMAT_2, SCHEMAS, check_plugin
 
 TEMPLATE = Path(__file__).resolve().parents[2] / "maxitor-plugin-template"
 NAVIGATION = Path("src") / "maxitor_notes" / "navigation.yaml"
@@ -29,7 +30,7 @@ def _copy(tmp_path: Path, document: dict) -> Path:
     return copy
 
 
-def _item_notes(document: dict) -> dict:
+def _item_draft(document: dict) -> dict:
     return document["nodes"][0]["children"][0]["children"][0]
 
 
@@ -51,7 +52,23 @@ def test_a_node_with_children_and_no_opens_is_refused_naming_it(tmp_path: Path) 
 
 def test_a_node_without_children_that_says_opens_is_refused_naming_it(tmp_path: Path) -> None:
     document = _template()
-    _item_notes(document)["opens"] = "expand"
+    _item_draft(document)["opens"] = "expand"
     assert check_plugin(_copy(tmp_path, document)) == [
-        "navigation: 'item-notes' has no children and says opens; write it only on a node with children"
+        "navigation: 'item-draft' has no children and says opens; write it only on a node with children"
+    ]
+
+
+@pytest.mark.parametrize(("format_", "refusal"), [(1, NAVIGATION_FORMAT_1), (2, NAVIGATION_FORMAT_2)])
+def test_older_formats_are_refused_by_name(tmp_path: Path, format_: int, refusal: str) -> None:
+    document = _template()
+    document["navigation"] = format_
+    assert check_plugin(_copy(tmp_path, document)) == [f"navigation.yaml: {refusal}"]
+
+
+@pytest.mark.parametrize(("key", "value"), [("history", {"read": "list_item_notes"}), ("room", {"shared": ["view"]}), ("controls", {"views": {}})])
+def test_a_node_that_declares_what_its_page_gives_is_refused_naming_it(tmp_path: Path, key: str, value: dict) -> None:
+    document = _template()
+    _item_draft(document)[key] = value
+    assert check_plugin(_copy(tmp_path, document)) == [
+        f"navigation.yaml: 'item-draft' declares {key}; the page gives its history and controls, and a room shares nothing"
     ]

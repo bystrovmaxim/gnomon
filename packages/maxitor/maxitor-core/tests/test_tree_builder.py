@@ -45,7 +45,8 @@ def test_the_core_and_the_template_make_one_tree() -> None:
     assert tree["core:settings.plugins"].parent == "core:settings"
     assert tree["notes:notes"].parent == "root"
     assert (tree["notes:item"].each_source, tree["notes:item"].each_key) == ("list_items", "item_id")
-    assert tree["notes:item-notes"].scope == ("item_id",)
+    assert tree["notes:item-draft"].scope == ("item_id",)
+    assert tree["notes:item-published"].scope == ("item_id",)
 
 
 def test_a_node_carries_the_way_it_opens() -> None:
@@ -122,7 +123,7 @@ def _item_notes(navigation: dict[str, Any]) -> dict[str, Any]:
         # A file that fails its schema: an unknown field.
         (_with(lambda n: n["nodes"][0].update(colour="red")), ACTIONS, "not allowed"),
         # An id used twice within one owner.
-        (_with(lambda n: n["nodes"][0]["children"][0]["children"][1].update(id="item-notes")), ACTIONS, "used twice"),
+        (_with(lambda n: n["nodes"][0]["children"][0]["children"][1].update(id="item-draft")), ACTIONS, "used twice"),
         # Two nodes of one owner open the same page.
         (
             _with(lambda n: n["nodes"][0]["children"][0]["children"][1].update(page="/items/{item_id}")),
@@ -150,9 +151,9 @@ def _item_notes(navigation: dict[str, Any]) -> dict[str, Any]:
         # Navigation format 2, which carried a page's history and a room's shared parameters.
         (_with(lambda n: n.update(navigation=2)), ACTIONS, "navigation format 2 is not read; write format 4"),
         # A node that declares what its page gives or a room it no longer has, named.
-        (_with(lambda n: _item_notes(n).update(controls={"views": {}})), ACTIONS, "'item-notes' declares controls"),
-        (_with(lambda n: _item_notes(n).update(history={"read": "list_item_notes"})), ACTIONS, "'item-notes' declares history"),
-        (_with(lambda n: _item_notes(n).update(room={"shared": ["view"]})), ACTIONS, "'item-notes' declares room"),
+        (_with(lambda n: _item_notes(n).update(controls={"views": {}})), ACTIONS, "'item-draft' declares controls"),
+        (_with(lambda n: _item_notes(n).update(history={"read": "list_item_notes"})), ACTIONS, "'item-draft' declares history"),
+        (_with(lambda n: _item_notes(n).update(room={"shared": ["view"]})), ACTIONS, "'item-draft' declares room"),
         # A list whose source is no action of the plugin.
         (NAVIGATION, ACTIONS - {"list_items"}, "is no action of the plugin"),
         # Attached to a node the core does not have.

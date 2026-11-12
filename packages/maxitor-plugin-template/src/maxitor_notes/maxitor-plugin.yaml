@@ -10,13 +10,13 @@ title: Notes
 description: >
   Notes on the plugin's own items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.13.0
+version: 0.14.0
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 
 requires:
   # 4.9 is the first core that reads navigation format 4, where a node says how it opens.
-  maxitor: ">=4.9,<5"
+  maxitor: ">=4.10,<5"
   node: ">=22"
 
 # Plugins this one cannot work without. The template needs only Maxitor itself.

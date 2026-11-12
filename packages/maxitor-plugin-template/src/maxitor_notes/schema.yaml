@@ -35,3 +35,21 @@ tables:
       - [item_id]
     keys:
       - {columns: [item_id], table: item, references: [id]}
+
+  note_change:
+    description: 'One note in one person''s draft of an item''s notes: its state, its text, and the published version it was made over.'
+    columns:
+      item_id: {type: uuid, nullable: false, description: The item whose notes the draft is of.}
+      person_id: {type: uuid, nullable: false, description: 'The member whose draft the change is in: its reader, and the only one who sees it.'}
+      note_id: {type: uuid, nullable: false, description: 'The note: a published one, or the one this change brings.'}
+      writer_id: {type: uuid, nullable: false, description: 'The note''s writer: the published note''s, or the person for a note that is new.'}
+      state: {type: text, nullable: false, description: 'What the change does to the note: new, changed or deleted.'}
+      body: {type: text, nullable: false, description: 'The text the change gives the note; the published text for a deletion.'}
+      base_body: {type: text, nullable: true, description: 'The published text the change was made over; empty for a new note.'}
+      base_revision: {type: integer, nullable: true, description: 'The revision in force when the change was made; empty before the first.'}
+    unique:
+      - [person_id, note_id]
+    indexes:
+      - [item_id, person_id]
+    keys:
+      - {columns: [item_id], table: item, references: [id]}

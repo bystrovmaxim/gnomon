@@ -44,7 +44,7 @@ class ListNoteDraftParams(BaseParams):
 
 
 class ListNoteDraftResult(BaseResult):
-    """The revision the draft counts from, and the changes since it."""
+    """The revision in force, and the person's changes."""
 
     revision: RevisionCoreEntity | None = Field(description="The revision the draft counts from; none before the first")
     changes: list[NoteChangeCoreEntity] = Field(description="Every note added, changed or removed since it, in time order")
@@ -77,5 +77,5 @@ class ListNoteDraftAction(BaseAction[ListNoteDraftParams, ListNoteDraftResult]):
         _ = (state, box)
         storage = cast(NotesStorage, connections[NOTES_CONNECTION_KEY])
         organization_id = await member_organization_id(storage, ctx.get("user.organization"), ctx.get(Ctx.User.user_id))
-        revision, found = await storage.draft(organization_id, params.item_id, params.at)
+        revision, found = await storage.draft(organization_id, params.item_id, str(ctx.get(Ctx.User.user_id)), params.at)
         return ListNoteDraftResult(revision=revision, changes=found)
