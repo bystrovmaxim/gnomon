@@ -47,7 +47,11 @@ export function Notes() {
 | `MaxitorCanvas {bounds}`, `useCanvas()` | the canvas: moving and zooming, fit, the field of dots, the camera; its zoom stands first in the shell's bottom bar |
 | `Icon`, `hasIcon` | the shell's icon set, which every control draws with |
 | `LAYER`, `PAINT`, `isReserved` | the layer pills' and the paint switch's parameters, and the core's names |
-| `Card`, `DataTable` | the common content, drawn with the tokens; `mx-cards` lays cards in a grid |
+| `Card` | a card of content, drawn with the tokens; `mx-cards` lays cards in a grid |
+| `DataTable {name, rows, total, columns, rowKey, anchor, at}` | a list lying whole on the canvas: a card at full length, only the rows in view drawn, its head sticking to the top of the view; a column's `kind` is text, mono, number, date, person or status; alone on a page it lays its own canvas |
+| `openDateRangePicker(options)`, `openDatePicker(options)` | the date pickers: `{anchor, unit, min, max, value, presets}`; they answer the choice as the address writes it, or `null` |
+| `readRange`, `writeRange`, `inRange`, `readNumbers`, `numberIn` | a range filter's address value, and whether a date or a number lies in it |
+| `usePanelHidden(anchors)` | tells the core what the page's filters hide now (`panel.hidden`) |
 | `EmptyState {title}` | what a page shows when it has nothing to show: a dashed card with a title and a line, never bare text |
 | `pageMessage`, `coreMessage`, `trusted` | the protocol's shape checks, for whoever speaks it by hand |
 
@@ -72,7 +76,7 @@ Every page's root is `PanelPage`. A page gives it what it offers now, as data, a
 
 | Part | Place | Address |
 |---|---|---|
-| `filters` | top left: an accordion, a colour disk and a label per row, the paint switch when two sections paint | the rows switched on, absent when all are; `paint` |
+| `filters` | top left: an accordion of three kinds of section — a choice (a long one with a search and "N more"), a text, a range of numbers or dates — and the paint switch when two sections paint; a sheet from below on a phone | a choice's rows switched on, absent when all are; a text's words; a range's `from..to`; `paint` |
 | `layers` | top centre: one chosen, an icon and a count each | `layer` |
 | `bar` | bottom left, after the canvas's zoom: a choice, buttons, a switch, each behind a hairline | a choice's own parameter |
 | `actions` | top right, bottom right on a phone; only at now | — |

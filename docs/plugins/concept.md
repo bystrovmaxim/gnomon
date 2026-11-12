@@ -664,7 +664,7 @@ Every page of every plugin shows its controls in the same places and with the sa
 
 | Part | Place | What the page gives | What the shell decides |
 |---|---|---|---|
-| filters | top left | sections, rows (a colour disk of the palette, a label, absent from the data), the paint switch when two sections paint | 148 px, an accordion with one section open, folding behind a button on a phone |
+| filters | top left | sections of three kinds — a choice of values (a colour disk of the palette, a label, absent from the data), a text, a range of numbers or dates — and which choices paint | 148 px, an accordion with one section open; a long choice's search and "N more"; the paint switch when two sections paint; one button and a sheet from below on a phone |
 | layer pills | top centre | options with an icon and a count | one chosen, the parameter `layer`; on a phone the icon and the count |
 | bottom bar | bottom left | sections after the zoom, each behind a hairline: a choice of one, buttons, a switch; each item an icon of the shell's set | zoom out, the percentage, zoom in and fit first on a canvas; sections that do not fit fold into "⋯" on a phone |
 | page actions | top right, bottom right on a phone | buttons such as "New note" | shown only now: in the past and in a comparison everything is read only |
@@ -698,6 +698,20 @@ The rules of controls:
 - **The core's names are the core's.** `at`, `mode`, `from` and every `_…` are written by the core; a page carries them as the address holds them and may not change them. The panel router refuses such a write — an error in development and in tests, a line in the console in production — and the core refuses it too, and a parameter named like one of the node's path parameters.
 - **Colours come from the palette** (`colour: green`), icons from the shell's set: a plugin's buttons look like every other plugin's.
 - **The content field is the plugin's.** On a document page the shell pads it clear of the controls; on a canvas the fitted scene stays clear of them. Inside it a plugin lays out what it likes.
+
+**Three kinds of filter.** A section is a choice of values, a text or a range, and that is all; a filter that is on or off is a choice of one value.
+
+| Kind | What the page gives | How it shows | Address |
+|---|---|---|---|
+| choice | `{title, param, rows, paints?, search?}`, rows in the order of how many records each holds | a colour disk — a person's disk with initials — and a label per row, no counts; more than eight rows: a search at the top, the first eight and "N more" | the rows switched on, absent when all are: `?status=active,trial` |
+| text | `{kind: "text", title, param, placeholder}` | a row with a magnifier and a field, in the page's words ("Account or email") | what is typed: `?q=anna` |
+| range | `{kind: "range", title, param, unit, min?, max?, presets?}` | two rows, From and To; a number typed in the row; a date chosen in the date range picker, the date first and how a moving bound is set under it | the bounds as written, either side open: `?balance=100..250`, `?created=now-90d..now` |
+
+A range of dates is named by its column ("Created"), never "Time", and never takes the time scale's look. A bound that moves with today — `now`, `now-90d`, `now/M`, `now-1y/y` — is counted from the real today whatever moment the page is read at. The page filters its own data by its address; it tells the core what its filters hide with `usePanelHidden(anchors)` (`panel.hidden`), so a pointer at a hidden row shows as hidden. Moving the paint switch repaints the content and opens the section it paints by.
+
+**The date pickers.** `openDateRangePicker({anchor, unit, min, max, value, presets})` answers `{from, to}` as the address writes them, or `null` when closed without a choice; `openDatePicker` with the same arguments answers one date. Both follow Apple's layout in Maxitor's colours and sizes: the core's ready stretches (today, the last 7, 30 and 90 days, this month, quarter and year, last year) with the page's own under a hairline, fields that take typing (`5 Mar 2026`, `2026-03-05`, `today`, `30 days ago`, `30d`) with an arrow that makes a date move with today or fixes it, two months (one for a date and on a phone) with wheels behind a month's title, and the foot with the choice in words. Nothing changes before Apply; Cancel, Escape and a press outside leave everything as it was. On a phone both are sheets from below with the ready stretches as chips.
+
+**A list lies whole on the canvas.** `DataTable` is a card at its full length in canvas units, moved and zoomed by the camera like everything else: no scroll of its own, no pages. Only the rows inside the view are drawn, and the canvas knows every row's place by its anchor (`useCanvas().locate`). Its head — the list's name, how many rows pass of how many, the column names — sticks to the top of the view while the rows go up under it. A column has a title and a kind of cell: text, mono, number, date, person, status. Several lists, a scheme and a picture lie on one canvas, each list with its own head.
 
 **The shell's boundary.** `maxitor-plugin-check` refuses a frontend whose page does not render `<PanelPage>`, which places an element `fixed`, or which raises a layer to the shell's (`--mx-layer-shell`, 30) or above, naming the file and the line; positioning, another component kit and the plugin's own colours inside the content field pass. `panel.ready` carries `shell` and the shell's version; a page without the shell opens under a red strip "This page has no Maxitor frame" on the local stand and in development, and is written to the console elsewhere.
 
