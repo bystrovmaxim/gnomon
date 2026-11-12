@@ -34,13 +34,13 @@ Phases follow the issue's five; one phase is one commit. `[P]` — may run in pa
 
 - [x] T017 `web/tests/draft.test.ts`: every rule of the pages broken and its test seen failing; the marking's losslessness as a pure check.
 - [x] T018 `packages/maxitor/maxitor-core/web/scripts/check-core.mjs`: the walk of 1.6 on the stand — two people, private drafts, publication, the conflict with the other's name and value, overwrite and give up, a deletion and a restoration, a revert; on a desktop and at 375 px.
-- [ ] T019 The walk of 1.6 on the local stand by two people; its result in the phase's commit message and the template's README.
+- [ ] T019 The walk of 1.6 on the local stand by two people; its result in the phase's commit message and the template's README. The automated walk runs in `check-core.mjs`; the conflict flow is covered by `test_revisions.py` and `test_draft_rules.py`, and the two-person walk itself is the maintainer's.
 
 ## Phase 5 — Documentation, changelog, versions (US7)
 
 - [x] T020 The tutorial's chapters 8, 9 and 13 and the index's rows; the plugin concept where the pages and the revisions change; the template's README.
 - [x] T021 Versions raised: the template and its pages; graph files rebuilt; changelogs of every changed level.
-- [ ] T022 The closing check run to zero (`scripts/check_run.py`): every step passes but the one that builds a Docker image, which this environment's Docker cannot do (it hangs fetching `node:22-slim` and cannot write `~/.docker`); the template's frontend build and the two-person walk wait on that.
+- [x] T022 The closing check run to zero (`scripts/check_run.py`): 40 steps green on the head, with the template's frontend built in the core's builder image.
 
 ## Dependencies
 
