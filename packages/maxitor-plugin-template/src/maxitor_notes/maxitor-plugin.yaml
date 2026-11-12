@@ -10,12 +10,13 @@ title: Notes
 description: >
   Notes on the plugin's own items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.9.1
+version: 0.10.0
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 
 requires:
-  maxitor: ">=4.4,<5"
+  # 4.5 is the first core that builds a plugin's frontend from its sources (passport format 3).
+  maxitor: ">=4.5,<5"
   node: ">=22"
 
 # Plugins this one cannot work without. The template needs only Maxitor itself.

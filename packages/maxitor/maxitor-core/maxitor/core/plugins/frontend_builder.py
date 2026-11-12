@@ -17,6 +17,7 @@ alone. A step that fails ends the build with the first error it printed.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import importlib.metadata
 import os
@@ -45,8 +46,11 @@ CONTEXT_LABEL = "maxitor.builder.context"
 NEXT_BUILD = "node node_modules/next/dist/bin/next build"
 #: A Next.js type error is printed under the line naming its file: ``./app/page.tsx:3:7``.
 _FILE_LINE = re.compile(r"^\.?/?[\w@./-]+\.\w+:\d+:\d+$")
-#: The lines that say what failed: npm's, Next.js's and Node's.
-_FIRST_ERROR = re.compile(r"^(npm error .*|npm ERR! .*|Type error: .*|Error: .*|Failed to compile.*)$")
+#: The lines that say what failed: npm's, TypeScript's as Next.js 16 prints them (``app/page.tsx(12,7): error TS2322: …``),
+#: Next.js's own and Node's.
+_FIRST_ERROR = re.compile(
+    r"^(npm error .*|npm ERR! .*|\S+\(\d+,\d+\): error TS\d+: .*|Type error: .*|Error: .*|Failed to compile.*|Failed to type check.*)$"
+)
 #: npm's lines that only classify an error it states on another line.
 _NPM_DETAIL = re.compile(r"^npm (error|ERR!) (code|errno|syscall) ")
 
@@ -73,9 +77,9 @@ def base_image(dockerfile: Path = BUILDER / "Dockerfile") -> str:
 
 def first_error(output: str, code: int) -> str:
     """
-    Why a build container failed: the first error line it printed — npm's ``npm error …``, Next.js's
-    ``Type error: …`` with the file and line printed above it, Node's ``Error: …`` — else its last line; at most
-    500 characters.
+    Why a build container failed: the first error line it printed — npm's ``npm error …``, TypeScript's
+    ``app/page.tsx(12,7): error TS2322: …``, Next.js's ``Type error: …`` with the file and line printed above it,
+    Node's ``Error: …`` — else its last line; at most 500 characters.
     """
     lines = [line.strip() for line in output.splitlines() if line.strip()]
     for index, line in enumerate(lines):
@@ -84,6 +88,15 @@ def first_error(output: str, code: int) -> str:
                 line = f"{lines[index - 1]} {line}"
             return line[:500]
     return (lines[-1] if lines else f"exit {code}")[:500]
+
+
+async def docker_output(*args: str) -> tuple[int, str]:
+    """Run ``docker`` with ``args``; answer its exit code and everything it printed, both streams in order."""
+    process = await asyncio.create_subprocess_exec(
+        "docker", *args, stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+    )
+    out, _ = await process.communicate()
+    return (process.returncode if process.returncode is not None else -1), out.decode("utf-8", "replace")
 
 
 def _context_digest(folder: Path) -> str:
@@ -196,7 +209,8 @@ class FrontendBuilderController(BaseController):
         ]
         if not network:
             args += ["--network", "none"]
-        code, output = await docker(*args, self.builder_image, *command)
+        # npm and Next.js print an error on either stream: TypeScript's line on the output, the summary on errors.
+        code, output = await docker_output(*args, self.builder_image, *command)
         if code != 0:
             raise EnvironmentInstallError(first_error(output, code))
 

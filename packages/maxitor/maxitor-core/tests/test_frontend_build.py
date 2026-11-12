@@ -123,6 +123,11 @@ def test_a_type_error_is_named_with_its_file_and_line() -> None:
     assert first_error(output, 1) == "./app/page.tsx:3:7 Type error: Type 'number' is not assignable to type 'string'."
 
 
+def test_a_type_error_of_next_16_is_named_by_typescripts_line() -> None:
+    output = "  Running TypeScript ...\napp/[org]/page.tsx(12,7): error TS2322: Type 'number' is not assignable to type 'string'.\nFailed to type check.\n"
+    assert first_error(output, 1) == "app/[org]/page.tsx(12,7): error TS2322: Type 'number' is not assignable to type 'string'."
+
+
 def test_npms_error_is_the_line_that_states_it() -> None:
     output = "npm error code E404\nnpm error 404 Not Found - GET https://registry.npmjs.org/nope\n"
     assert first_error(output, 1) == "npm error 404 Not Found - GET https://registry.npmjs.org/nope"
@@ -140,6 +145,7 @@ async def test_the_fetch_runs_no_plugin_code_and_the_build_has_no_network(tmp_pa
         return (1, "") if args[:2] == ("image", "inspect") else (0, "")
 
     monkeypatch.setattr("maxitor.core.plugins.frontend_builder.docker", docker)
+    monkeypatch.setattr("maxitor.core.plugins.frontend_builder.docker_output", docker)
     builder = FrontendBuilderController(tmp_path / "work", version=CORE)
     image = await builder.build("notes", "a" * 64, TEMPLATE_WEB)
     assert image == "maxitor-plugin/notes-frontend:aaaaaaaaaaaa-9.9.9"
@@ -159,6 +165,7 @@ async def test_a_failing_step_ends_the_build_with_its_first_error(tmp_path: Path
         return (1, "") if args[:2] == ("image", "inspect") else (0, "")
 
     monkeypatch.setattr("maxitor.core.plugins.frontend_builder.docker", docker)
+    monkeypatch.setattr("maxitor.core.plugins.frontend_builder.docker_output", docker)
     builder = FrontendBuilderController(tmp_path / "work", version=CORE)
     with pytest.raises(EnvironmentInstallError) as caught:
         await builder.build("notes", "a" * 64, TEMPLATE_WEB)

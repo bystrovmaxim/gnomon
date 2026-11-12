@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "maxitor"
-version = "4.4.2"
+version = "4.5.0"
 description = "Maxitor: its web part and its tools, one package with extras."
 readme = "README.md"
 license = "Apache-2.0"
@@ -61,9 +61,11 @@ plugin-installer = [
 plugin-runner = [
     "maxitor[core]",
 ]
-# maxitor plugin check: the SDK holds the schemas of a plugin's files and the compatibility decision. It joins
+# maxitor plugin check and maxitor plugin build: the SDK holds the schemas of a plugin's files and the
+# compatibility decision; the build runs the core's own step, a controller of the action machine. It joins
 # ``all`` once maxitor-plugin-sdk is published, so that installing ``all`` never asks for what an index lacks.
 plugins = [
+    "aoa-action-machine>=1.0.1a0",
     "maxitor-plugin-sdk>=1.0,<2",
     "PyYAML>=6.0,<7",
 ]
