@@ -3009,7 +3009,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "created_at",
-        "ordinal": 11
+        "ordinal": 12
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
@@ -3089,6 +3089,18 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:opens",
+      "is_dag": false,
+      "properties": {
+        "field_name": "opens",
+        "ordinal": 11
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
+      "target_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:opens",
+      "type": "entity_field"
+    },
+    {
       "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity|entity_field|maxitor.core.plugins.entities.PluginNodeCoreEntity:page",
       "is_dag": false,
       "properties": {
@@ -3153,7 +3165,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "updated_at",
-        "ordinal": 12
+        "ordinal": 13
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.plugins.entities.PluginNodeCoreEntity",
@@ -7258,6 +7270,17 @@
         "description": "Its order among the children of its parent; 0 when the file names none",
         "field_annotation": "int",
         "field_type": "int",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.plugins.entities.PluginNodeCoreEntity:opens",
+      "label": "opens",
+      "properties": {
+        "description": "How it opens: expand under itself, or enter into a panel of its children (spec 085)",
+        "field_annotation": "str",
+        "field_type": "str",
         "primary_key_hint": false
       },
       "type": "EntityField"
