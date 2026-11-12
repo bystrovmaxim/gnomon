@@ -4,7 +4,7 @@
 
 ## Phase 1 — The mockup (US1–US5)
 
-- [ ] T001 `mockup/index.html`: the tree at the root with Settings entered ("›") and expanded nodes, the entered level of Settings with its head and Back, the level of Notes with an item expanded, the crumbs of the entered levels, a reload inside an entered node, and the phone drawer with the same head and Back.
+- [x] T001 `mockup/index.html`: the tree at the root with Settings entered ("›") and expanded nodes, the entered level of Settings with its head and Back, the level of Notes with an item expanded, the crumbs of the entered levels, a reload inside an entered node, and the phone drawer with the same head and Back.
 
 ## Phase 2 — The format (US5)
 

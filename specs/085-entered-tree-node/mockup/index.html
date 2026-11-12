@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maxitor core — a tree node that is entered · mockup (spec 085, issue #122)</title>
+<style>
+  /* The visual language of the mockups of spec 059 and of issues #73 and #96: the same colours, header, tree and head. */
+  :root {
+    --page-bg: #e9edf1; --ink: #0f172a; --ink2: #1e293b; --muted: #64748b; --faint: #94a3b8;
+    --line: rgba(15,23,42,.1); --line2: rgba(15,23,42,.06);
+    --sidebar: #EBF2F5; --canvas: #f6f8fa;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: var(--font); color: var(--ink); background: var(--page-bg); display: flex; }
+  button { font: inherit; color: inherit; }
+  code { font-family: var(--mono); }
+
+  /* ---------- the mockup's navigator ---------- */
+  .nav { width: 310px; flex-shrink: 0; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--line); padding: 18px 12px 32px; }
+  .nav h1 { font-size: 15px; margin: 0 6px 4px; }
+  .nav .sub { font-size: 12px; color: var(--muted); margin: 0 6px 12px; line-height: 1.45; }
+  .nav .group { font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 14px 6px 4px; }
+  .nav button.screen { display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+  .nav button.screen:hover { background: rgba(15,23,42,.05); }
+  .nav button.screen.on { background: rgba(15,23,42,.08); font-weight: 600; }
+  .nav button.screen .n { color: var(--muted); font-size: 11px; min-width: 22px; font-variant-numeric: tabular-nums; }
+  .seg { display: flex; margin: 4px 6px 6px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: #f8fafc; }
+  .seg button { flex: 1; border: 0; background: none; border-radius: 6px; font-size: 12.5px; padding: 5px 0; cursor: pointer; color: var(--muted); }
+  .seg button.on { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+  .notes { margin-top: 14px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 14px; }
+  .notes h2 { font-size: 13px; margin: 0 0 6px; }
+  .notes ul { padding-left: 16px; margin: 6px 0 0; }
+  .notes li { font-size: 12px; line-height: 1.55; color: #334155; }
+  .notes code { font-size: 11px; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; }
+
+  /* ---------- the stage ---------- */
+  .stage { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; padding: 18px 24px 48px; }
+  .cap { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .cap b { color: var(--ink); }
+  .device { width: 1360px; height: 840px; background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 8px 28px rgba(15,23,42,.12); transition: width .18s, height .18s; }
+  .device.phone { width: 390px; height: 780px; border-radius: 26px; }
+  /* The frame fills the device: the top row keeps its height, the body takes the rest. */
+  #screen { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .urlbar { height: 34px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #f1f5f9; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .urlbar .u { flex: 1; height: 22px; border-radius: 6px; background: #fff; border: 1px solid var(--line); display: flex; align-items: center; padding: 0 10px; color: #334155; white-space: nowrap; overflow: hidden; }
+  .urlbar .u b { color: var(--ink); font-weight: 600; }
+  .device.phone .urlbar { display: none; }
+
+  /* ---------- the top row ---------- */
+  .hdr { height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 12px; background: #fff; border-bottom: 1px solid var(--line); position: relative; z-index: 20; }
+  .burger { display: none; width: 32px; height: 32px; border: 0; background: none; border-radius: 7px; align-items: center; justify-content: center; cursor: pointer; margin-left: -6px; }
+  .device.phone .burger { display: inline-flex; }
+  .logo { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13.5px; margin-right: 6px; }
+  .logo .mk { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .device.phone .logo .nm { display: none; }
+  .crumbs { display: flex; align-items: center; gap: 2px; min-width: 0; overflow: hidden; }
+  .crumb { display: inline-flex; align-items: baseline; gap: 5px; height: 28px; line-height: 28px; padding: 0 6px; font-size: 13px; font-weight: 600; white-space: nowrap; border: 0; background: none; border-radius: 6px; cursor: pointer; min-width: 0; }
+  .crumb:hover { background: rgba(15,23,42,.06); }
+  .crumb .lv { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .crumb.now { color: var(--ink); cursor: default; }
+  .crumb.now:hover { background: none; }
+  .crumb.dim { color: var(--muted); font-weight: 500; }
+  .sep { color: var(--faint); font-size: 12px; }
+  .hdr .spacer { flex: 1; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #cbd5e1; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ico { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ---------- the body, the tree and its head ---------- */
+  .body { flex: 1; min-height: 0; display: flex; position: relative; }
+  .sb { width: 268px; flex-shrink: 0; background: var(--sidebar); border-right: 1px solid rgba(15,23,42,.08); display: flex; flex-direction: column; }
+  .sbh { flex-shrink: 0; display: flex; align-items: center; gap: 4px; padding: 4px 8px 2px; }
+  .sbb { width: 32px; height: 32px; border: 0; padding: 0; border-radius: 6px; background: transparent; color: rgb(100,116,139); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .sbb:hover { background: rgba(15,23,42,.07); }
+  .sbb.off { opacity: .35; cursor: default; }
+  .sbb.off:hover { background: transparent; }
+  .sb.collapsed { width: 48px; }
+  .sb.collapsed .sbh { flex-direction: column; padding: 4px 8px; }
+
+  /* The head of an entered level: the node itself, across the whole width of the panel. */
+  .lvhead { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid rgba(15,23,42,.08); font-size: 13.5px; font-weight: 650; letter-spacing: -.01em; min-width: 0; }
+  .lvhead .ico { width: 18px; height: 18px; color: rgba(51,65,85,.85); }
+  .lvhead .lb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sb.collapsed .lvhead { display: none; }
+
+  .tree { flex: 1; overflow-y: auto; padding: 6px 8px 8px; }
+  .row { display: flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 8px; border-radius: 6px; cursor: pointer; color: rgb(30,41,59); font-size: 13px; line-height: 1.35; min-width: 0; border: 0; background: none; width: 100%; text-align: left; }
+  .row:hover { background: rgba(15,23,42,.07); }
+  .row.on { background: rgba(15,23,42,.09); }
+  .row.top { min-height: 36px; font-weight: 600; letter-spacing: -.01em; margin-top: 4px; }
+  .row .fold { width: 20px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: rgb(100,116,139); }
+  .row .fold .ico { width: 14px; height: 14px; transition: transform .12s; }
+  .row .fold.open .ico { transform: rotate(90deg); }
+  .row .slot { width: 24px; flex-shrink: 0; display: inline-flex; align-items: center; color: rgb(100,116,139); }
+  .row .slot .ico { width: 16px; height: 16px; }
+  .row .lb { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* A node that is entered carries "›" instead of the arrow, and reads none of its children before the click. */
+  .row .ent { color: var(--faint); font-size: 16px; line-height: 1; padding-right: 2px; }
+  .row:hover .ent { color: var(--muted); }
+  .tree .kids { }
+  .tree .none { font-size: 12px; color: var(--muted); padding: 6px 10px; }
+  .sb.collapsed .tree { display: none; }
+  .foot { border-top: 1px solid rgba(15,23,42,.08); padding: 6px 8px 8px; }
+  .sb.collapsed .foot { display: none; }
+
+  /* ---------- the right panel ---------- */
+  .content { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; background: var(--canvas); }
+  .page { flex: 1; overflow-y: auto; padding: 22px 32px 48px; }
+  .page h2 { font-size: 16px; margin: 0 0 4px; }
+  .page p { font-size: 13px; color: var(--muted); margin: 0 0 16px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.5; }
+  .card .who { font-size: 11.5px; color: var(--muted); margin-top: 8px; display: flex; gap: 6px; align-items: center; }
+  .card .who .avatar { width: 20px; height: 20px; font-size: 9px; }
+  .plug { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .plug .pr { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line2); font-size: 13px; }
+  .plug .pr:last-child { border-bottom: 0; }
+  .plug .pr b { font-weight: 600; }
+  .plug .pr .st { margin-left: auto; font-size: 11px; color: #166534; background: #dcfce7; border-radius: 999px; padding: 2px 8px; }
+  .empty { color: var(--muted); font-size: 13px; }
+
+  /* ---------- the phone's drawer ---------- */
+  /* On a phone the tree is a drawer: the panel is the screen, and the tree opens over it. */
+  .device.phone .sb { display: none; }
+  .scrim { position: absolute; inset: 0; background: rgba(15,23,42,.35); z-index: 30; }
+  .drawer { position: absolute; top: 0; bottom: 0; left: 0; width: 86%; max-width: 330px; background: var(--sidebar); z-index: 31; display: flex; flex-direction: column; box-shadow: 6px 0 20px rgba(15,23,42,.18); }
+  .device:not(.phone) .drawer, .device:not(.phone) .scrim { display: none; }
+  .device.phone .page { padding: 18px 18px 32px; }
+  .device.phone .cards { grid-template-columns: 1fr; }
+  .device.phone .crumb { font-size: 12px; padding: 0 4px; }
+  .device.phone .crumb.dim .lv { display: none; }
+
+  .why { margin-top: 10px; font-size: 12px; color: #334155; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; max-width: 1360px; }
+  .why b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <h1>A tree node that is entered</h1>
+  <p class="sub">spec 085 · issue #122. A node either expands under itself or is entered: the left panel then holds only its children, and the node stands at the head of the panel.</p>
+
+  <div class="group">Screens</div>
+  <button class="screen" data-s="1" onclick="screen(1)"><span class="n">1</span><span>The root: Settings and Notes are entered</span></button>
+  <button class="screen" data-s="2" onclick="screen(2)"><span class="n">2</span><span>Settings entered: the panel holds Plugins only</span></button>
+  <button class="screen" data-s="3" onclick="screen(3)"><span class="n">3</span><span>Notes entered: the panel holds the items</span></button>
+  <button class="screen" data-s="4" onclick="screen(4)"><span class="n">4</span><span>Inside Notes: an item expands to its pages</span></button>
+  <button class="screen" data-s="5" onclick="screen(5)"><span class="n">5</span><span>A reload inside Notes: the levels come from the address</span></button>
+  <button class="screen" data-s="6" onclick="screen(6)"><span class="n">6</span><span>The phone: the same entering in the drawer</span></button>
+  <button class="screen" data-s="7" onclick="screen(7)"><span class="n">7</span><span>Back: the level before, expansions kept</span></button>
+
+  <div class="group">Device</div>
+  <div class="seg">
+    <button id="seg-d" class="on" onclick="device(false)">Desktop</button>
+    <button id="seg-p" onclick="device(true)">Phone</button>
+  </div>
+
+  <div class="notes">
+    <h2>What to look at</h2>
+    <ul>
+      <li>A node that expands has the arrow; a node that is entered has <b>›</b> on its right and shows no children until it is clicked.</li>
+      <li>An entered level holds only the children of its node; the node itself stands at the head, across the width.</li>
+      <li>The head of the tree has <b>two</b> buttons: collapse and the arrow, which is <b>Back</b> — off at the root.</li>
+      <li>Back returns to the level before the last entering and keeps what was expanded there; it opens no page.</li>
+      <li>The crumbs name the organization, the entered nodes and the open page, never a node passed by expanding; a click on a crumb steps out to its level.</li>
+      <li>A reload rebuilds the levels from the address; what was expanded in them is not kept.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="stage">
+  <p class="cap" id="cap"></p>
+  <div class="device" id="device"><div id="screen"></div></div>
+  <div class="why" id="why"></div>
+</div>
+
+<script>
+/* ======================= the tree ======================= */
+/* Node: { name, title, icon, opens, page, children: [...], each: "items" } */
+const TREE = [
+  { name: "notes", owner: "notes", title: "Notes", icon: "note", opens: "enter", page: "/", children: [
+    { name: "item", owner: "notes", each: "items", opens: "expand", children: [
+      { name: "item-notes", owner: "notes", title: "Notes", icon: "note", page: "/items/<id>" },
+      { name: "item-published", owner: "notes", title: "Published notes", icon: "note", page: "/items/<id>/published" },
+      { name: "item-draft", owner: "notes", title: "Draft", icon: "note", page: "/items/<id>/draft" },
+    ] },
+  ] },
+  { name: "settings", owner: "core", title: "Settings", icon: "gear", opens: "enter", children: [
+    { name: "settings.plugins", owner: "core", title: "Plugins", icon: "puzzle", page: "/settings/plugins" },
+  ] },
+];
+const ITEMS = [
+  { key: "4f1c", title: "Checkout flow" },
+  { key: "9a02", title: "Payments cut-over" },
+  { key: "1b77", title: "Ledger import" },
+];
+const ORG = { code: "acme", name: "Acme" };
+
+/* The panel's state: the entered levels, the nodes expanded in them, the open page and the phone's drawer. */
+const S = { levels: [], expanded: new Set(), page: null, drawer: false, collapsed: false, phone: false };
+
+/* ======================= icons ======================= */
+const I = {
+  chevron: '<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg>',
+  back: '<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 8H3M7 4L3 8l4 4"/></svg>',
+  panel: '<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2.5" width="12" height="11" rx="2"/><path d="M6.5 2.5v11"/></svg>',
+  gear: '<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.4"/><path d="M8 1.6v2M8 12.4v2M1.6 8h2M12.4 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M12.5 3.5l-1.4 1.4M4.9 11.1L3.5 12.5"/></svg>',
+  puzzle: '<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 6h2.2a1.3 1.3 0 1 0 0 .1H8V3.6h2.2a1.3 1.3 0 1 1 0 .1H13V13H3z"/></svg>',
+  note: '<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3.5 2.5h5l4 4v7h-9z"/><path d="M8.5 2.5v4h4"/></svg>',
+  menu: '<svg class="ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 4h11M2.5 8h11M2.5 12h11"/></svg>',
+};
+const iconOf = (name) => name === "gear" ? I.gear : name === "puzzle" ? I.puzzle : I.note;
+
+/* ======================= the tree's walk ======================= */
+const all = [];
+(function walk(nodes, parent) { for (const n of nodes) { all.push({ ...n, parent }); if (n.children) walk(n.children, n.name); } })(TREE, "root");
+const byName = new Map(all.map((n) => [n.name, n]));
+const childrenOf = (parent) => all.filter((n) => n.parent === parent);
+
+/* The line from the root to a node, the node last. */
+function lineOf(name) {
+  const line = [];
+  let node = byName.get(name);
+  while (node) { line.unshift(node); node = byName.get(node.parent); }
+  return line;
+}
+/* The entered levels above a page: every entered node on its line, the deepest last. That is what an address gives. */
+const enteredLine = (name) => lineOf(name).filter((n) => n.opens === "enter").map((n) => n.name);
+
+/* ======================= the frame ======================= */
+const titleOf = (name) => byName.get(name)?.title || name;
+const crumbOf = (name) => byName.get(name)?.title || name;
+
+function url() {
+  if (S.page === "plugins") return `/w/${ORG.code}/settings/plugins`;
+  if (!S.page) return `/w/${ORG.code}`;
+  return `/w/${ORG.code}/notes/items/4f1c` + (S.page === "published" ? "/published" : S.page === "draft" ? "/draft" : "");
+}
+
+function header() {
+  const parts = [`<span class="crumb dim"><span class="lv">org</span>${ORG.name}</span>`];
+  for (const level of S.levels) {
+    parts.push(`<span class="sep">›</span>`, `<button class="crumb" onclick="stepTo(${S.levels.indexOf(level)})" title="Step the panel out to this level">${crumbOf(level)}</button>`);
+  }
+  if (S.page) parts.push(`<span class="sep">›</span>`, `<span class="crumb now">${pageTitle()}</span>`);
+  return `<div class="hdr">
+    <button class="burger" aria-label="The organization's tree" onclick="go({ drawer: !S.drawer })">${I.menu}</button>
+    <span class="logo"><span class="mk">M</span><span class="nm">Maxitor</span></span>
+    <span class="crumbs">${parts.join("")}</span>
+    <span class="spacer"></span>
+    <span class="avatar" title="Maxim">MB</span>
+  </div>`;
+}
+
+function pageTitle() {
+  if (!S.page) return "";
+  if (S.page === "plugins") return "Plugins";
+  if (S.page === "notes") return "Notes";
+  if (S.page === "published") return "Published notes";
+  return "Draft";
+}
+
+/* The head of the tree: collapse, and the arrow, which is Back — off at the root. */
+function treeHead() {
+  return `<div class="sbh">
+    <button class="sbb" title="${S.collapsed ? "Expand sidebar" : "Collapse sidebar"}" aria-label="${S.collapsed ? "Expand sidebar" : "Collapse sidebar"}" onclick="go({ collapsed: !S.collapsed })">${I.panel}</button>
+    <button class="sbb${S.levels.length ? "" : " off"}" title="Back" aria-label="Back" ${S.levels.length ? 'onclick="back()"' : 'aria-disabled="true"'}>${I.back}</button>
+  </div>`;
+}
+
+/* The tree of one level: the children of the deepest entered node, or the root. */
+function treeBody() {
+  const parent = S.levels.length ? S.levels[S.levels.length - 1] : "root";
+  const roots = childrenOf(parent);
+  const core = roots.filter((n) => n.owner === "core");
+  const rest = roots.filter((n) => n.owner !== "core");
+  // A list node is drawn once per item of the organization: its instances are the rows of the level.
+  const draw = (node, depth) => node.each
+    ? ITEMS.map((item) => `<div>${row(node, depth, { item: item.key })}${expandedKids(node, depth, item.key)}</div>`).join("")
+    : `<div>${row(node, depth)}${expandedKids(node, depth)}</div>`;
+  const main = rest.map((n) => draw(n, 0)).join("");
+  const foot = core.map((n) => draw(n, 0)).join("");
+  return `<div class="tree" role="tree" aria-label="The organization's tree">
+    ${main || `<div class="none">Nothing here yet. Plugins add their sections to this tree.</div>`}
+  </div>${foot ? `<div class="foot" role="tree" aria-label="Settings">${foot}</div>` : ""}`;
+}
+
+function row(node, depth, scope = {}) {
+  const place = node.name + (scope.item ? "@" + scope.item : "");
+  const kids = childrenOf(node.name);
+  const isEntered = node.opens === "enter";
+  const open = S.expanded.has(place);
+  const label = node.each ? (ITEMS.find((i) => i.key === scope.item) || {}).title || "" : node.title;
+  const pad = `padding-left:${8 + depth * 16}px`;
+  const fold = isEntered
+    ? `<span class="fold"></span>`
+    : kids.length ? `<span class="fold${open ? " open" : ""}">${I.chevron}</span>` : `<span class="fold"></span>`;
+  const mark = isEntered ? `<span class="ent" title="Entered">›</span>` : "";
+  const cls = `row${node === byName.get(S.levels[S.levels.length - 1]) ? "" : ""}`;
+  const onclick = isEntered
+    ? `onclick="enter('${node.name}')"`
+    : kids.length
+      ? `onclick="toggle('${place}', event)"`
+      : `onclick="openPage('${node.name}')"`;
+  const inner = `${fold}<span class="slot">${iconOf(node.icon)}</span><span class="lb">${esc(label || "—")}</span>${mark}`;
+  const rowHtml = `<button class="${cls}" style="${pad}" ${onclick} role="treeitem">${inner}</button>`;
+  if (isEntered || !kids.length || !open || node.each) return rowHtml;
+  return `${rowHtml}${kids.map((kid) => `<div>${row(kid, depth + 1)}${expandedKids(kid, depth + 1)}</div>`).join("")}`;
+}
+
+function expandedKids(node, depth, key) {
+  const place = node.name + (key ? "@" + key : "");
+  const kids = childrenOf(node.name);
+  if (!kids.length || !S.expanded.has(place)) return "";
+  return kids.map((kid) => row(kid, depth + 1, key ? { item: key } : {})).join("");
+}
+
+function sidebar() {
+  const head = S.levels.length ? `<div class="lvhead">${iconOf(byName.get(S.levels[S.levels.length - 1]).icon)}<span class="lb">${crumbOf(S.levels[S.levels.length - 1])}</span></div>` : "";
+  return `<div class="sb${S.collapsed ? " collapsed" : ""}">${treeHead()}${head}${treeBody()}</div>`;
+}
+
+function drawer() {
+  if (!S.drawer) return "";
+  const head = S.levels.length ? `<div class="lvhead">${iconOf(byName.get(S.levels[S.levels.length - 1]).icon)}<span class="lb">${crumbOf(S.levels[S.levels.length - 1])}</span></div>` : "";
+  return `<div class="scrim" onclick="go({ drawer: false })"></div><div class="drawer">${treeHead()}${head}${treeBody()}</div>`;
+}
+
+function content() {
+  if (S.page === "plugins") return `<div class="page"><h2>Plugins</h2><p>The organization's plugins, installed and enabled.</p>
+    <div class="plug">
+      <div class="pr"><b>notes</b><span>0.13.0</span><span class="st">enabled</span></div>
+      <div class="pr"><b>graph-viewer</b><span>2.1.0</span><span class="st">enabled</span></div>
+    </div></div>`;
+  if (S.page === "notes" || S.page === "published" || S.page === "draft") {
+    const notes = S.page === "published" ? ["The notes as the last revision holds them."] : S.page === "draft" ? ["One change since the last revision."] : ["Checkout takes three steps now.", "The payment form moves into the drawer.", "Ledger import is on by default."];
+    return `<div class="page"><h2>${pageTitle()}</h2><p>${esc(ITEMS.find((i) => i.key === "4f1c").title)}</p>
+      <div class="cards">${notes.map((n, i) => `<div class="card">${esc(n)}<div class="who"><span class="avatar" style="background:#dbeafe">OA</span>Olga A. · ${2 + i} h ago</div></div>`).join("")}</div></div>`;
+  }
+  if (S.levels.length) {
+    const level = byName.get(S.levels[S.levels.length - 1]);
+    return `<div class="page"><h2>${crumbOf(level.name)}</h2><p>This level holds the children of the node at the head of the panel. Choose one of them on the left.</p></div>`;
+  }
+  return `<div class="page"><p class="empty">Choose a node in the tree.</p></div>`;
+}
+
+/* ======================= the state's verbs ======================= */
+function enter(name) {
+  S.levels = [...S.levels, name];
+  S.drawer = false;
+  const node = byName.get(name);
+  // A node that is entered and has a page opens it as well; Settings has none.
+  if (!node.page) S.page = null;
+  render();
+}
+function stepTo(index) {
+  // A crumb of an entered level: the panel goes back to that level, and to its page if it has one.
+  S.levels = index < 0 ? [] : S.levels.slice(0, index + 1);
+  S.page = null;
+  render();
+}
+function back() {
+  // The level before the last entering: the expanded nodes of it are still in S.expanded, so they are still expanded.
+  if (!S.levels.length) return;
+  S.levels = S.levels.slice(0, -1);
+  S.page = null;
+  render();
+}
+function toggle(place, event) {
+  if (event) event.stopPropagation();
+  if (S.expanded.has(place)) S.expanded.delete(place);
+  else S.expanded.add(place);
+  render();
+}
+function openPage(name) {
+  const page = name === "settings.plugins" ? "plugins" : name === "item-notes" ? "notes" : name === "item-published" ? "published" : name === "item-draft" ? "draft" : null;
+  if (!page) return;
+  S.page = page;
+  // An address gives its entered levels: entering every entered node on the line of the open page.
+  S.levels = enteredLine(name);
+  S.drawer = false;
+  render();
+}
+function go(patch) { Object.assign(S, patch); render(); }
+
+/* ======================= the screens ======================= */
+const SCREENS = {
+  1: { levels: [], expanded: new Set(), page: null, caption: "<b>1 · The root.</b> Settings and Notes both carry “›”: both are entered, and neither reads its children before the click. Back is off — there is no level above the root." },
+  2: { levels: ["settings"], expanded: new Set(), page: "plugins", caption: "<b>2 · Settings entered.</b> The panel holds only Plugins, and Settings stands at the head across the width. Back is on: it returns to the root and keeps the page." },
+  3: { levels: ["notes"], expanded: new Set(), page: null, caption: "<b>3 · Notes entered.</b> The panel holds the items only, and the head names Notes. Each item expands in its own way; nothing under them is read yet." },
+  4: { levels: ["notes"], expanded: new Set(["item@4f1c"]), page: "notes", caption: "<b>4 · Inside Notes.</b> An item expands to its three pages, and its Notes page opens on the right. The crumbs name the organization, Notes and the open page — not the item, which was only passed by expanding." },
+  5: { levels: ["notes"], expanded: new Set(), page: "notes", caption: "<b>5 · A reload inside Notes.</b> The address names the page only; the panel enters every entered node above it, the deepest last. What was expanded before the reload is not kept, and Back still steps out to the root." },
+  6: { levels: ["notes"], expanded: new Set(), page: null, drawer: true, phone: true, caption: "<b>6 · The phone.</b> The same entering in the drawer: the head, the “›” mark, Back and the crumbs. A click on a node closes the drawer." },
+  7: { levels: [], expanded: new Set(["item@4f1c"]), page: "notes", caption: "<b>7 · Back.</b> The level before the last entering is back — the root — and the page stays: Back opens nothing. What was expanded in Notes is still in that level's memory, so entering Notes again finds the item still expanded." },
+};
+const CAPTIONS = {
+  1: "The root: Settings and Notes are entered, everything else expands",
+  2: "Settings entered: Plugins only",
+  3: "Notes entered: the items",
+  4: "Inside Notes: an item expanded to its pages",
+  5: "A reload inside Notes",
+  6: "The phone drawer",
+  7: "Back: the level before, expansions kept",
+};
+
+function screen(n) {
+  const s = SCREENS[n];
+  Object.assign(S, { levels: [...s.levels], expanded: new Set(s.expanded), page: s.page || null, drawer: !!s.drawer, collapsed: false });
+  if (s.phone !== undefined) device(s.phone);
+  setCaption(s.caption);
+  document.querySelectorAll(".nav button.screen").forEach((b) => b.classList.toggle("on", Number(b.dataset.s) === n));
+  render();
+}
+function device(phone) {
+  S.phone = phone;
+  document.getElementById("device").classList.toggle("phone", phone);
+  document.getElementById("seg-d").classList.toggle("on", !phone);
+  document.getElementById("seg-p").classList.toggle("on", phone);
+  if (!phone) S.drawer = false;
+  render();
+}
+function setCaption(html) { document.getElementById("cap").innerHTML = html; }
+
+/* ======================= render ======================= */
+function esc(text) { return String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function render() {
+  const drawerHtml = S.phone ? drawer() : "";
+  document.getElementById("screen").innerHTML = `
+    <div class="urlbar"><span>🔒</span><span class="u">maxitor.aoa.run<b>${url()}</b></span></div>
+    ${header()}
+    <div class="body">${sidebar()}<div class="content">${content()}</div>${drawerHtml}</div>`;
+  document.getElementById("why").innerHTML = `<b>The address:</b> <code>${url()}</code> · <b>levels:</b> ${S.levels.length ? S.levels.map((l) => crumbOf(l)).join(" › ") : "root"} · <b>Back:</b> ${S.levels.length ? "on" : "off"} · <b>expanded:</b> ${[...S.expanded].join(", ") || "none"}`;
+}
+
+/* An address such as index.html?screen=4 opens one screen; without it, the first. */
+const asked = new URLSearchParams(location.search).get("screen");
+screen(SCREENS[asked] ? Number(asked) : 1);
+</script>
+</body>
+</html>
