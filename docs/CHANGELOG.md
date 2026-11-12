@@ -1,5 +1,13 @@
 # Changelog
 
+## [2026-11-12] — A node in the tree opens two ways
+
+The left tree of Maxitor used to open every node in place: a click showed its children under it, and with many levels the tree grew deep and hard to read. Now a node's author picks how it opens. A node that **expands** keeps the arrow and shows its children under itself, as before; a node that is **entered** carries "›" instead and, when clicked, makes the left panel hold only its children, with the node itself at the top of the panel across its whole width. The organization's Settings and the plugin template's Notes are entered; everything else expands. An entered node reads nothing of its children until it is clicked.
+
+The panel now shows one level at a time. The head of the tree keeps its two buttons, and the arrow among them is **Back**: it returns the panel to the level it showed before the last entering, with what was expanded there still expanded, opens no page, and is off at the root. The up it used to be — open the nearest node above with a page — is gone. The crumbs of the top row are built from the entered levels and the open page only, never from a node that was passed by expanding, and a click on a crumb steps the panel out to its level. An address still names the page alone: a reload or a shared link enters every entered node above it, so a person lands where they were, while what was expanded in those levels lives in the page's memory and does not come back.
+
+`navigation.yaml` rises to format 4: every node with children says `opens`, `expand` or `enter`, with no default, and a node without children says nothing. The check of a plugin and its installation refuse either fault with the node named, format 3 is read as it is — every node of it expands — and the core and the template have moved to format 4. The core's browser check walks entering, Back, the crumbs and a reload inside an entered node, on a desktop and on a phone. ([#122](https://github.com/bystrovmaxim/gnomon/issues/122))
+
 ## [2026-11-12] — The page shell looks like the mockup
 
 The shell every plugin's page lies in now looks the way the mockup and maxitor-web draw it. The filters are 148 px and stand clear of the page: each section opens with an arrow, and a person is a disk of a palette colour with their initials. The bottom bar is flat, with zoom in, zoom out, fit and the percentage before the page's own buttons. A page with nothing to show says so in a dashed card in the middle instead of bare text, and the template's notes show as cards in a grid by default, or as a table. The browser check now measures the filters' width and their distance from the page.

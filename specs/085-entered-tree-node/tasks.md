@@ -23,10 +23,10 @@
 
 ## Phase 4 — Tests and the browser check (US1–US4)
 
-- [ ] T011 `node --test` over `lib/tree.ts`: the entered line of a page, the levels of an address.
-- [ ] T012 `check-core.mjs`: entering Settings, Back, Notes, an item expanded, the crumbs, a reload, the phone; the walk on the stand.
+- [x] T011 `node --test` over `lib/tree.ts`: the entered line of a page, the levels of an address.
+- [x] T012 `check-core.mjs`: entering Settings, Back, Notes, an item expanded, the crumbs, a reload, the phone; the walk on the stand.
 
 ## Phase 5 — Documentation, changelog, versions (US5)
 
-- [ ] T013 The plugin concept and the tutorial's chapter 7; the core's README of the tree; the format's table.
-- [ ] T014 Versions and changelogs: `maxitor-plugin-sdk`, the core and its web, `maxitor`, the template.
+- [x] T013 The plugin concept and the tutorial's chapter 7; the core's README of the tree; the format's table.
+- [x] T014 Versions and changelogs: `maxitor-plugin-sdk`, the core and its web, `maxitor`, the template.
