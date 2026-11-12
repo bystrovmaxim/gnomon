@@ -28,7 +28,7 @@ The template hangs a section of its own in the root of the tree. Under it is one
           source: list_items
           key: item_id
         roles: [member]
-        # An item expands where it stands: its three pages appear under it, in the level of Notes.
+        # An item expands where it stands: its two pages appear under it, in the level of Notes.
         opens: expand
 ```
 

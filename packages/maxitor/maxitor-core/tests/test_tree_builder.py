@@ -55,7 +55,7 @@ def test_a_node_carries_the_way_it_opens() -> None:
     assert tree["core:settings"].opens == "enter"
     assert tree["notes:notes"].opens == "enter"
     assert tree["notes:item"].opens == "expand"
-    assert tree["notes:item-notes"].opens == "expand"
+    assert tree["notes:item-draft"].opens == "expand"
 
 
 def test_format_3_is_read_as_it_is_and_every_node_of_it_expands() -> None:
@@ -78,7 +78,7 @@ def test_a_format_4_node_with_children_must_say_how_it_opens() -> None:
 def test_a_format_4_leaf_must_not_say_how_it_opens() -> None:
     navigation = copy.deepcopy(NAVIGATION)
     navigation["nodes"][0]["children"][0]["children"][0]["opens"] = "expand"
-    assert "'item-notes' has no children and says opens" in _refused(
+    assert "'item-draft' has no children and says opens" in _refused(
         lambda: check_version("notes", navigation, ACTIONS)
     )
 
