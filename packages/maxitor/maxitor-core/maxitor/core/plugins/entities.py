@@ -332,6 +332,25 @@ class PluginBuildCoreEntity(BaseCoreEntity):
     ] = Field(description="The plugin version whose frontend was built")
 
 
+@entity(description="The core version whose frontend builds the site serves, and the one an upgrade builds for", domain=PluginsDomain)
+class FrontendGenerationCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: Which core version's builds the runner runs, so the site holds one @maxitor library at a time.
+    CONTRACT: One row, written only by the installer; the serving version moves to the target in one transaction
+        once every enabled version has a built build for the target.
+    INVARIANTS: Mechanics of work: kept without versions; its id is always 1.
+    AI-CORE-END
+    """
+
+    id: int = Field(description="Always 1")
+    serving_core_version: str = Field(description="The builds of this core version are the ones the runner runs")
+    target_core_version: str | None = Field(
+        default=None, description="The core version an upgrade builds every enabled version for; empty when none waits"
+    )
+    moved_at: datetime = Field(description="When the serving core version was set last")
+
+
 # Relations name classes declared later in the module; resolve them now.
 PluginCoreEntity.model_rebuild()
 PluginVersionCoreEntity.model_rebuild()

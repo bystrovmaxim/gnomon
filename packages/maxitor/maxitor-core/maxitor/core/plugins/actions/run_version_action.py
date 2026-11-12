@@ -4,10 +4,11 @@ RunVersionAction — keep one version's backend and frontend containers running,
 
 ::
 
-    the images ──► the backend's built once from the wheel, the frontend's the installer built for this core version;
-                   a failure waits for the next round
+    the images ──► the backend's built once from the wheel, the frontend's the installer built for the serving core
+                   version; a failure waits for the next round
     for backend, then frontend (once its build is there):
-        running                      ──► nothing; after a minute of running, its failures are forgotten
+        running its image            ──► nothing; after a minute of running, its failures are forgotten
+        running another image        ──► restarted on its image: the site moved to the builds of a new core version
         exited since the last round  ──► removed; the row loses its address, the next start waits 5 s · 2^(n-1), ≤ 5 min
         waiting or never started     ──► started once its pause is over; its address recorded once it answers
 """
@@ -84,6 +85,10 @@ async def _keep(
     now = datetime.now(UTC)
     code = await processes.exit_code(params.version_id, kind)
     failures = int(row["failures"]) if row else 0
+    if code is None and row is not None and row["address"] and await processes.image_of(params.version_id, kind) != image:
+        # The site moved to new builds: the container stops, and starts again below on its new image.
+        await processes.stop_one(params.version_id, kind)
+        code = -1
     if code is None and row is not None and row["address"]:
         if failures and row["started_at"] is not None and now - row["started_at"] >= STEADY:
             await store.put_process({**row, "version_id": params.version_id, "failures": 0, "updated_at": now})
@@ -162,8 +167,8 @@ class RunVersionAction(BaseAction[RunVersionParams, RunVersionResult]):
     ROLE: Start what is missing, notice what exited, and keep the rows the gateway reads.
     CONTRACT: The images first; then each kind: left alone while it runs, restarted after its pause once it
         exited, started when it never ran; a row has an address only while its process accepts.
-    INVARIANTS: Never starts a frontend without the installer's build for this core version; a failure is an event,
-        never an exception.
+    INVARIANTS: Never starts a frontend without the installer's build for the serving core version; a failure is an
+        event, never an exception.
     AI-CORE-END
     """
 
@@ -176,7 +181,9 @@ class RunVersionAction(BaseAction[RunVersionParams, RunVersionResult]):
         _ = state
         store = cast(PluginsStorage, connections[PLUGINS_CONNECTION_KEY])
         processes = cast(PluginProcessesController, connections[PROCESSES_CONNECTION_KEY])
-        build = await store.build(params.version_id, core_version())
+        generation = await store.generation()
+        serving = str(generation["serving_core_version"]) if generation is not None else core_version()
+        build = await store.build(params.version_id, serving)
         # Only a built build has an image: a building or failed one starts no frontend.
         frontend = build["image"] if build is not None else None
         try:

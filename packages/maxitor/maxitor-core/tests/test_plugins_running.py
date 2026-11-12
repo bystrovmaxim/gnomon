@@ -110,6 +110,7 @@ class PretendController(PluginProcessesController):
         )
         self.broken, self.refuse = broken, refuse
         self.codes: dict[tuple[str, str], int | None] = {}
+        self.images: dict[tuple[str, str], str] = {}
         self.starts: list[tuple[str, str]] = []
         self.port = 40000
 
@@ -127,10 +128,14 @@ class PretendController(PluginProcessesController):
         self.port += 1
         self.starts.append((kind, image))
         self.codes[(version_id, kind)] = None
+        self.images[(version_id, kind)] = image
         return Started(f"maxitor-{schema}-{kind}", f"http://127.0.0.1:{self.port}")
 
     async def exit_code(self, version_id: str, kind: str) -> int | None:
         return self.codes.get((version_id, kind), -1)
+
+    async def image_of(self, version_id: str, kind: str) -> str | None:
+        return self.images.get((version_id, kind))
 
     async def stop_one(self, version_id: str, kind: str) -> None:
         self.codes.pop((version_id, kind), None)
@@ -182,6 +187,21 @@ async def test_the_frontend_starts_after_the_backend_from_the_installers_build()
     await storage.put_build(built(core_version()))
     assert (await run(storage, processes, RunVersionAction(), VERSION)).running == ["backend", "frontend"]
     assert processes.starts[1] == ("frontend", f"maxitor-plugin/notes_1_0_0-frontend:aaaaaaaaaaaa-{core_version()}")
+
+
+async def test_the_frontend_runs_the_build_of_the_serving_core_version_and_restarts_when_the_site_moves() -> None:
+    storage, processes = store(), PretendController()
+    await storage.put_generation("4.4.1", core_version(), datetime.now(UTC))
+    await storage.put_build(built("4.4.1"))
+    await storage.put_build(built(core_version()))
+    await run(storage, processes, RunVersionAction(), VERSION)
+    assert processes.starts[-1] == ("frontend", "maxitor-plugin/notes_1_0_0-frontend:aaaaaaaaaaaa-4.4.1")
+    await run(storage, processes, RunVersionAction(), VERSION)
+    assert len(processes.starts) == 2
+    await storage.put_generation(core_version(), None, datetime.now(UTC))
+    assert (await run(storage, processes, RunVersionAction(), VERSION)).running == ["backend", "frontend"]
+    assert processes.starts[2:] == [("frontend", f"maxitor-plugin/notes_1_0_0-frontend:aaaaaaaaaaaa-{core_version()}")]
+    assert [row["failures"] for row in storage.tables["plugin_process"]] == [0, 0]
 
 
 async def test_no_frontend_runs_without_a_build_for_this_core_version() -> None:

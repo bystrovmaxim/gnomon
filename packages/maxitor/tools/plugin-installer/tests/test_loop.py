@@ -13,6 +13,7 @@ from typing import Any
 from maxitor.core.plugins.actions.build_frontend_action import BuildFrontendAction, BuildResult
 from maxitor.core.plugins.actions.check_version_action import CheckResult, CheckVersionAction
 from maxitor.core.plugins.actions.deploy_and_install_action import DeployAndInstallAction, DeployResult
+from maxitor.core.plugins.actions.move_frontend_generation_action import MoveFrontendGenerationAction, MoveResult
 from maxitor.core.plugins.actions.take_up_pending_action import PendingInstallSchema, TakeUpPendingAction, TakeUpResult
 from maxitor.core.plugins.frontend_builder import FrontendBuilderController
 from maxitor.core.plugins.gateways.wheel_source_gateway import WheelSourceGateway
@@ -27,8 +28,9 @@ from maxitor.plugin_installer.settings import InstallerSettings
 class Machine:
     """A machine that records what it is asked to run and answers from a script."""
 
-    def __init__(self) -> None:
+    def __init__(self, to_build: list[str] | None = None) -> None:
         self.runs: list[tuple[Any, Any, Any, set[str]]] = []
+        self.to_build = to_build or []
 
     async def run(self, context: Any, action: Any, params: Any, connections: Any) -> Any:
         self.runs.append((context, action, params, set(connections or {})))
@@ -44,6 +46,9 @@ class Machine:
             return CheckResult(state="active")
         if isinstance(action, BuildFrontendAction):
             return BuildResult(state="built")
+        if isinstance(action, MoveFrontendGenerationAction):
+            moves = sum(isinstance(a, MoveFrontendGenerationAction) for _c, a, _p, _k in self.runs)
+            return MoveResult(state="waiting", to_build=self.to_build) if moves == 1 else MoveResult(state="moved", to_build=[])
         return DeployResult(state="enabled")
 
 
@@ -60,7 +65,8 @@ async def test_a_round_takes_up_the_queue_then_each_install(tmp_path: Path) -> N
     assert await one_round(machine, connections, started=True) == 3  # type: ignore[arg-type]
     actions = [type(action) for _ctx, action, _params, _keys in machine.runs]
     assert actions == [
-        TakeUpPendingAction, CheckVersionAction, BuildFrontendAction, DeployAndInstallAction, BuildFrontendAction, DeployAndInstallAction
+        TakeUpPendingAction, CheckVersionAction, BuildFrontendAction, DeployAndInstallAction, BuildFrontendAction, DeployAndInstallAction,
+        MoveFrontendGenerationAction,
     ]
     assert machine.runs[0][2].started is True and machine.runs[1][2].version_id == "v1"
     assert [p.version_id for _c, a, p, _k in machine.runs if isinstance(a, BuildFrontendAction)] == ["v1", "v2"]
@@ -71,6 +77,26 @@ async def test_a_round_takes_up_the_queue_then_each_install(tmp_path: Path) -> N
     assert machine.runs[1][3] == {"deploy", "wheels", "wheel_source"}
     assert all(context is INSTALLER for context, *_ in machine.runs)
     assert INSTALLER.user.roles == (InstallerRole,)
+
+
+async def test_the_upgrade_round_builds_what_the_core_lacks_one_at_a_time_then_moves(tmp_path: Path) -> None:
+    from maxitor.plugin_installer.loop import upgrade_round
+
+    machine = Machine(to_build=["v3", "v4"])
+    connections = {
+        "deploy": DeployStorage(connection_params="postgresql://unused"),
+        "wheels": WheelStorage(tmp_path / "wheels"),
+        "frontend_builder": FrontendBuilderController(tmp_path / "builds", version="9.9.9"),
+    }
+    await upgrade_round(machine, connections)  # type: ignore[arg-type]
+    steps = [(type(a).__name__, getattr(p, "version_id", None)) for _c, a, p, _k in machine.runs]
+    assert steps == [
+        ("MoveFrontendGenerationAction", None),
+        ("BuildFrontendAction", "v3"),
+        ("BuildFrontendAction", "v4"),
+        ("MoveFrontendGenerationAction", None),
+    ]
+    assert machine.runs[0][3] == {"deploy"}
 
 
 def test_declared_takes_only_what_an_action_names() -> None:

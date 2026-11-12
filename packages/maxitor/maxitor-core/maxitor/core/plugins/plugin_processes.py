@@ -274,6 +274,14 @@ class PluginProcessesController(BaseController):
         running, _, exit_code = output.partition(" ")
         return None if running == "true" else int(exit_code or "-1")
 
+    async def image_of(self, version_id: str, kind: str) -> str | None:
+        """The image a version's container runs; ``None`` when there is no such container."""
+        container = await self._container(version_id, kind)
+        if container is None:
+            return None
+        code, output = await docker("inspect", "--format", "{{.Config.Image}}", container)
+        return output if code == 0 and output else None
+
     async def stop_one(self, version_id: str, kind: str) -> None:
         """Remove one container of a version, running or not."""
         container = await self._container(version_id, kind)

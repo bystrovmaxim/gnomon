@@ -29,9 +29,11 @@ Both follow the schema's rules: a description on every table and column. Like `p
 | `id` | smallint, always 1 | The one row |
 | `serving_core_version` | text | Builds of this core version are served |
 | `target_core_version` | text, null | The core version being built for during an upgrade; null when none |
+| `moved_at` | timestamptz | When the serving core version was set last |
 
 - The move: in one transaction, when every enabled version has a `built` build for `target_core_version`, `serving_core_version := target_core_version` and `target_core_version := null`.
-- A first start (no row) or a core version equal to the serving one is no upgrade.
+- A first start (no row) serves the running core version; a core version equal to the serving one is no upgrade, yet an enabled version without a build for it is built (a version deployed before builds existed).
+- A failed build holds the move; it is built again an hour after it failed, or no longer waited for once its version is disabled everywhere.
 
 ## Files
 

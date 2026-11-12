@@ -13,6 +13,7 @@ from maxitor.core.plugins.events import (
     FailedInstallDroppedEvent,
     FrontendBuildFailedEvent,
     FrontendBuiltEvent,
+    FrontendGenerationMovedEvent,
     InstallerConnectionRefusedEvent,
     InstallerStartedEvent,
     InstallRefusedEvent,
@@ -67,4 +68,5 @@ class PluginsDomain(BaseDomain):
         BuilderImageBuiltEvent,
         FrontendBuiltEvent,
         FrontendBuildFailedEvent,
+        FrontendGenerationMovedEvent,
     )

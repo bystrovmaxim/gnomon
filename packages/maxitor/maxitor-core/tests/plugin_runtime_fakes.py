@@ -49,6 +49,15 @@ class MemoryRuntimeReadings:
         rows = self.tables.setdefault("plugin_build", [])
         return next((dict(r) for r in rows if (r["version_id"], r["core_version"]) == (version_id, core_version)), None)
 
+    async def generation(self) -> dict[str, Any] | None:
+        rows = self.tables.setdefault("frontend_generation", [])
+        return dict(rows[0]) if rows else None
+
+    async def put_generation(self, serving: str, target: str | None, moved_at: Any) -> None:
+        self.tables["frontend_generation"] = [
+            {"serving_core_version": serving, "target_core_version": target, "moved_at": moved_at}
+        ]
+
     async def put_build(self, row: Any) -> None:
         rows = self.tables.setdefault("plugin_build", [])
         rows[:] = [r for r in rows if (r["version_id"], r["core_version"]) != (row["version_id"], row["core_version"])]

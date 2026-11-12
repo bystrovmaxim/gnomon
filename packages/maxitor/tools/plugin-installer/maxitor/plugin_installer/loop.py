@@ -6,6 +6,8 @@ The installer's loop: on start and then every period, take up the queue and fini
 
     TakeUpPendingAction ──► for each version: CheckVersionAction
                         └─► for each install: BuildFrontendAction, then DeployAndInstallAction
+    MoveFrontendGenerationAction ──► for each enabled version without a build for this core: BuildFrontendAction
+                                 └─► MoveFrontendGenerationAction again: the site moves once all are built
     the database refuses the connection ──► ReportConnectionRefusedAction, and the next round tries again
 
 Every step is an action of the domain plugins run by the machine with the installer's own context; there is no
@@ -21,6 +23,7 @@ from typing import Any
 from maxitor.core.plugins.actions.build_frontend_action import BuildFrontendAction, BuildParams
 from maxitor.core.plugins.actions.check_version_action import CheckParams, CheckVersionAction
 from maxitor.core.plugins.actions.deploy_and_install_action import DeployAndInstallAction, DeployParams
+from maxitor.core.plugins.actions.move_frontend_generation_action import MoveFrontendGenerationAction, MoveParams
 from maxitor.core.plugins.actions.report_connection_refused_action import RefusedParams, ReportConnectionRefusedAction
 from maxitor.core.plugins.actions.take_up_pending_action import TakeUpParams, TakeUpPendingAction
 from maxitor.core.plugins.installer_role import InstallerRole
@@ -60,7 +63,17 @@ async def one_round(machine: ActionProductMachine, connections: Mapping[str, Any
             DeployAndInstallAction(),
             DeployParams(organization_id=install.organization_id, row_id=install.row_id),
         )
+    await upgrade_round(machine, connections)
     return len(queue.versions) + len(queue.installs)
+
+
+async def upgrade_round(machine: ActionProductMachine, connections: Mapping[str, Any]) -> None:
+    """Build, one at a time, what the running core version lacks; then let the site move to those builds."""
+    upgrade = await run_action(machine, connections, MoveFrontendGenerationAction(), MoveParams())
+    for version_id in upgrade.to_build:
+        await run_action(machine, connections, BuildFrontendAction(), BuildParams(version_id=version_id))
+    if upgrade.to_build:
+        await run_action(machine, connections, MoveFrontendGenerationAction(), MoveParams())
 
 
 async def run_forever(machine: ActionProductMachine, connections: Mapping[str, Any], period_seconds: float) -> None:

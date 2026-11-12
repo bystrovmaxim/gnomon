@@ -121,6 +121,14 @@ class FrontendBuiltEvent(BaseEvent):
     seconds: float = Field(description="How long the build took")
 
 
+class FrontendGenerationMovedEvent(BaseEvent):
+    """The site moved to the frontend builds of a new core version, every enabled version at once (info)."""
+
+    moved_from: str = Field(description="The core version whose builds were served")
+    moved_to: str = Field(description="The core version whose builds are served now")
+    versions: int = Field(description="How many enabled versions moved")
+
+
 class RunnerStartedEvent(BaseEvent):
     """The runner started, forgot the processes a stopped runner left, and found the versions to run (info)."""
 

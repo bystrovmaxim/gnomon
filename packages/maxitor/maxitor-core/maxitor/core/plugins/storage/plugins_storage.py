@@ -21,6 +21,7 @@ from datetime import datetime
 from typing import Any, ClassVar
 
 from maxitor.core.plugins.entities import (
+    FrontendGenerationCoreEntity,
     OrganizationPluginCoreEntity,
     PluginBuildCoreEntity,
     PluginCoreEntity,
@@ -87,6 +88,7 @@ def like_pattern(query: str) -> str:
     OrganizationPluginCoreEntity,
     PluginProcessCoreEntity,
     PluginBuildCoreEntity,
+    FrontendGenerationCoreEntity,
 )
 class PluginsStorage(CoreStorage):
     """
@@ -95,7 +97,7 @@ class PluginsStorage(CoreStorage):
     CONTRACT: ``plugin_lock`` and ``organization_lock`` take the lock and answer the change time; the core's
         ``insert`` and ``update`` write a row with its version; the readers answer what one page or one step needs.
     INVARIANTS: Names no schema in SQL; every reading of organization_plugin names its organization; a private plugin
-        is read only for its owner; plugin_process is mechanics of work, written without versions by the runner only; so is plugin_build, by the installer.
+        is read only for its owner; plugin_process is mechanics of work, written without versions by the runner only; so are plugin_build and frontend_generation, by the installer.
     AI-CORE-END
     """
 
@@ -409,6 +411,26 @@ class PluginsStorage(CoreStorage):
                 row["finished_at"],
             ),
         )
+
+    async def generation(self) -> dict[str, Any] | None:
+        """The serving core version and the upgrade's target; ``None`` before the installer's first round."""
+        row = await self._fetchrow(
+            "SELECT serving_core_version, target_core_version, moved_at FROM frontend_generation WHERE id = 1", ()
+        )
+        return None if row is None else dict(row)
+
+    async def put_generation(self, serving: str, target: str | None, moved_at: datetime) -> None:
+        """Set the serving core version and the upgrade's target."""
+        await self._execute(
+            "INSERT INTO frontend_generation (id, serving_core_version, target_core_version, moved_at) VALUES (1, $1, $2, $3)"
+            " ON CONFLICT (id) DO UPDATE SET serving_core_version = EXCLUDED.serving_core_version,"
+            " target_core_version = EXCLUDED.target_core_version, moved_at = EXCLUDED.moved_at",
+            (serving, target, moved_at),
+        )
+
+    async def generation_lock(self) -> None:
+        """Moving the serving core version: two installers never move it at once."""
+        await self._fetchval("SELECT pg_advisory_xact_lock(hashtext($1))", ("frontend-generation",))
 
     # ── the gateway ───────────────────────────────────────────────────────────
 

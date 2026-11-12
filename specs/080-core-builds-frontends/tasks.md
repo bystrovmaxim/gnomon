@@ -26,10 +26,10 @@ Phases follow the issue's five; one phase is one commit. `[P]` — may run in pa
 
 ## Phase 3 — Upgrading the core (US3)
 
-- [ ] T015 `migrations/plugins/0006_frontend_generation.sql`, `entities.py`, `events.py` (`FrontendGenerationMovedEvent`), `actions/move_frontend_generation_action.py`: on a core version differing from the serving one, set the target; when every enabled version has a `built` build for it, move the serving version in one transaction and emit `FrontendGenerationMovedEvent`; a failed build holds the move and emits `FrontendBuildFailedEvent`; a disabled version is no longer waited for.
-- [ ] T016 `tools/plugin-installer/.../loop.py`: the upgrade round in the background, after the deploy round, one build at a time.
-- [ ] T017 `tools/plugin-runner/.../loop.py`: when the serving core version changes, restart each version's frontend container on its new image.
-- [ ] T018 Tests: no move while one build is missing or failed; the move switches all at once; a disabled plugin stops holding the move; the runner restarts on a move.
+- [x] T015 `migrations/plugins/0006_frontend_generation.sql`, `entities.py`, `events.py` (`FrontendGenerationMovedEvent`), `actions/move_frontend_generation_action.py`: on a core version differing from the serving one, set the target; when every enabled version has a `built` build for it, move the serving version in one transaction and emit `FrontendGenerationMovedEvent`; a failed build holds the move and emits `FrontendBuildFailedEvent`; a disabled version is no longer waited for.
+- [x] T016 `tools/plugin-installer/.../loop.py`: the upgrade round in the background, after the deploy round, one build at a time.
+- [x] T017 `actions/run_version_action.py`, `plugin_processes.py`: the runner takes the serving core version's build; a container running another image is restarted on the new one.
+- [x] T018 Tests: no move while one build is missing or failed; the move switches all at once; a disabled plugin stops holding the move; the runner restarts on a move.
 
 ## Phase 4 — The author, the stand, the template, CI (US4, US5)
 
