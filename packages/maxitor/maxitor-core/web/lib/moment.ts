@@ -64,22 +64,31 @@ export function canStep(changes: readonly string[], at: string | null, watermark
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const two = (n: number) => String(n).padStart(2, "0");
 
-/** A day as a reader says it, in the reader's time: "3 Nov". */
+// Times are said in UTC, as the address writes them and as every plugin's page says them, so one moment reads the same
+// on the scale, in a card and on the page.
+
+/** A day as a reader says it: "3 Nov". */
 export function dayText(time: number): string {
   const date = new Date(time);
-  return `${date.getDate()} ${MONTHS[date.getMonth()]}`;
+  return `${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]}`;
 }
 
 /** A minute as a reader says it: "14:05". */
 export function clockText(time: number): string {
   const date = new Date(time);
-  return `${two(date.getHours())}:${two(date.getMinutes())}`;
+  return `${two(date.getUTCHours())}:${two(date.getUTCMinutes())}`;
+}
+
+/** Whether a time starts a day: the axis draws its line stronger and dates it. */
+export function startsDay(time: number): boolean {
+  const date = new Date(time);
+  return date.getUTCHours() === 0 && date.getUTCMinutes() === 0;
 }
 
 /** A moment on the pill and on the scale's chip: "3 Nov, 14:05"; with its year when it is not this year's. */
 export function momentText(time: number, now: number): string {
   const date = new Date(time);
-  const year = date.getFullYear() === new Date(now).getFullYear() ? "" : ` ${date.getFullYear()}`;
+  const year = date.getUTCFullYear() === new Date(now).getUTCFullYear() ? "" : ` ${date.getUTCFullYear()}`;
   return `${dayText(time)}${year}, ${clockText(time)}`;
 }
 

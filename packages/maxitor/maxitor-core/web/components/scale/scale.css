@@ -60,7 +60,7 @@
 /* the scale */
 .mx-track { position: relative; cursor: crosshair; touch-action: none; user-select: none; }
 .mx-track.grabbing { cursor: grabbing; }
-.mx-track-svg { display: block; overflow: visible; }
+.mx-track-svg { display: block; overflow: hidden; }
 .mx-track-hatch { stroke: var(--mx-scale-hatch); stroke-width: 2.5; }
 .mx-track-day { stroke: var(--mx-scale-day); }
 .mx-track-hour { stroke: var(--mx-scale-hour); }

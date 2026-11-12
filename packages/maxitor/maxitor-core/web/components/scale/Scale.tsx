@@ -251,10 +251,17 @@ export function Scale({
     return null;
   };
 
-  const changeView = useCallback((next: View, smooth: boolean) => {
-    setTarget(next);
-    if (!smooth) setView(next);
-  }, []);
+  // Every stretch asked for — a preset, a drag across, the wheel, a pinch — stays inside the history and is never
+  // narrower than 20 minutes, so a bar never grows past the scale.
+  const changeView = useCallback(
+    (next: View, smooth: boolean) => {
+      if (!domain) return;
+      const kept = clampView(next, domain);
+      setTarget(kept);
+      if (!smooth) setView(kept);
+    },
+    [domain],
+  );
 
   const preset = (span: number | null) => {
     if (!domain || now === null) return;

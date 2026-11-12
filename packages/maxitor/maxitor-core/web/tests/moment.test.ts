@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { canStep, chosenMoment, laterThan, momentOf, msOf, spanText, stepMoment } from "../lib/moment.ts";
+import { canStep, chosenMoment, laterThan, momentOf, momentText, msOf, spanText, startsDay, stepMoment } from "../lib/moment.ts";
 
 const WATERMARK = "2026-11-12T12:00:30.123456Z";
 
@@ -45,4 +45,11 @@ test("a stretch is said in minutes, hours or days", () => {
   assert.equal(spanText(45 * 60_000), "45 min");
   assert.equal(spanText(6 * 3_600_000), "6 h");
   assert.equal(spanText(12 * 86_400_000), "12 days");
+});
+
+test("a moment reads in UTC, as the address and every plugin's page write it, whatever the reader's zone", () => {
+  const at = Date.parse("2026-11-12T17:04:00Z");
+  assert.equal(momentText(at, at), "12 Nov, 17:04");
+  assert.equal(startsDay(Date.parse("2026-11-12T00:00:00Z")), true);
+  assert.equal(startsDay(Date.parse("2026-11-12T21:00:00Z")), false);
 });

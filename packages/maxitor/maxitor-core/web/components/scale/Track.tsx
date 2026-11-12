@@ -14,7 +14,7 @@ import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEv
 import { hatchFrom, moveView, ticksOf, timeAt, xOf, zoomView, type View } from "@/components/scale/geometry";
 import { Flag, Point, POINT, SMALL_POINT, toneColour } from "@/components/scale/Point";
 import { Tip } from "@/components/scale/Tip";
-import { clockText, dayText, momentText, msOf } from "@/lib/moment";
+import { clockText, dayText, momentText, msOf, startsDay } from "@/lib/moment";
 
 /** The rows of the scale: the room over the body, the lane, the bars, the dates under the axis and the chip. */
 const TOP = 22;
@@ -201,10 +201,7 @@ export function Track({
 
   const nowX = X(now);
   const hatchX = hatchFrom(now, view, width);
-  const ticks = ticksOf(view, width, (time) => {
-    const date = new Date(time);
-    return date.getHours() === 0 && date.getMinutes() === 0;
-  });
+  const ticks = ticksOf(view, width, startsDay);
   const label = (time: number) => (time >= now - NOW_SLACK ? "Now" : momentText(time, now));
   const brush = drag?.kind === "brush" ? { from: Math.min(drag.x0, drag.x1), to: Math.max(drag.x0, drag.x1) } : null;
   const inLane = hover !== null && lane && hover.y < barsTop;
@@ -274,8 +271,12 @@ export function Track({
           />
         ) : null}
         {(bars ?? []).map((bar) => {
-          const x = X(msOf(bar.start)) + gap / 2;
-          const w = Math.max(1.2, barWidth - gap);
+          // A bar is drawn only where the view is: one that starts left of it or ends right of it is cut at the edge.
+          const left = Math.max(0, X(msOf(bar.start)) + gap / 2);
+          const right = Math.min(width, X(msOf(bar.start)) + barWidth - gap / 2);
+          if (right <= left) return null;
+          const x = left;
+          const w = Math.max(1.2, right - left);
           const on = hoveredBar === bar;
           let y = base;
           return (

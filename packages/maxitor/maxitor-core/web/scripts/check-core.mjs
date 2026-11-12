@@ -53,6 +53,11 @@ function expect(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+/** The crumbs after the organization, as one line: each crumb stands after its separator (spec 079, FR-040). */
+async function crumbsOf(at) {
+  return (await at.locator(".mx-path").innerText()).replace(/\s+/g, " ").replace(/^›\s*/, "").trim();
+}
+
 /** The code of the newest letter to an address, waiting for it to arrive. */
 async function codeFor(email, after) {
   for (let i = 0; i < 50; i += 1) {
@@ -247,14 +252,16 @@ await scenario("the Draft page opens in the right panel from the tree, with its 
   await page.waitForURL(`**/w/${CODE}/notes/items/${ITEM}`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   const frame = page.frameLocator("iframe.mx-panel-frame");
-  // The crumbs name the entered levels and the open page only: the item was passed by expanding (spec 085).
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Draft", "the crumbs name a node passed by expanding");
+  // The crumbs name the sections entered only: the item was passed by expanding, and a page inside a section adds
+  // nothing (spec 079, FR-040).
+  expect((await crumbsOf(page)) === "Notes", "the crumbs name more than the sections entered");
   // The note written through the gateway waits in the draft, marked new and seen by its writer alone.
   await frame.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
   await frame.locator(".nt-kind", { hasText: "New" }).first().waitFor();
   await frame.locator(".nt-foot", { hasText: "Written by you; not published yet" }).first().waitFor();
-  // The core draws nothing over the panel: the filters and the actions are the page's, in its shell.
-  expect((await page.locator(".mx-pill, .mx-filters, .mx-views, .mx-legend, .mx-bar").count()) === 0, "the core draws controls over the panel");
+  // The core draws nothing over the panel: the filters and the actions are the page's, in its shell; the time
+  // scale's pill stands in the top row, not over the panel.
+  expect((await page.locator(".mx-panel .mx-pill, .mx-panel .mx-filters, .mx-panel .mx-views, .mx-panel .mx-legend, .mx-panel .mx-bar").count()) === 0, "the core draws controls over the panel");
   await frame.locator(".mx-filters .mx-filter-row").first().waitFor();
   // The filters are the mockup's 148 px and stand clear of the page's content.
   const filters = await frame.locator(".mx-filters").boundingBox();
@@ -320,6 +327,11 @@ await scenario("the whole draft is published as one revision; Published marks my
   await frame.getByLabel("Comment").fill("The notes the team agreed on");
   await frame.getByLabel("Release, if any").fill("2026.11");
   await frame.locator(".mx-dialog").getByRole("button", { name: "Publish" }).click();
+  // A publication opens Published, which shows it (spec 079, 1.4); the draft is empty after it.
+  await page.waitForURL(/\/published/, { waitUntil: "commit" });
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  frame = page.frameLocator("iframe.mx-panel-frame");
   await frame.locator(".mx-empty-state", { hasText: "Your draft is empty" }).waitFor();
   // Publishing again with nothing in the draft is said in words.
   await frame.getByRole("button", { name: "Publish" }).click();
@@ -335,11 +347,13 @@ await scenario("the whole draft is published as one revision; Published marks my
   // The revision's head: its ref, its title, and who published it with the release (spec 079, 1.4).
   await published.locator(".nt-revision", { hasText: /v1\s*First release.*2026\.11/ }).waitFor();
   await published.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
-  await published.getByRole("radio", { name: "Table" }).click();
-  await page.waitForURL(/view=table/);
-  await published.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
-  await published.getByRole("radio", { name: "Cards" }).click();
-  await page.waitForURL((url) => !url.search.includes("view="));
+  // Published's bottom bar holds the zoom alone, as its mockup draws it (spec 079, 1.4); the table is the address's.
+  expect((await published.getByRole("radio", { name: "Table" }).count()) === 0, "Published's bar offers more than the zoom");
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published?view=table`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  await page.frameLocator("iframe.mx-panel-frame").locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   // Edit acts in my draft: nothing is published until the editor is saved, and a cancel writes nothing.
   const note = published.locator(".nt-card", { hasText: "Retry three times" });
   await note.getByRole("button", { name: "Edit" }).click();
@@ -379,16 +393,20 @@ await scenario("Published on the scale: its publications as purple points, Roll 
   await draft.getByLabel("Title").fill("Payouts");
   await draft.getByLabel("Comment").fill("Payouts move to twice a day");
   await draft.locator(".mx-dialog").getByRole("button", { name: "Publish" }).click();
-  await page.waitForURL(/\/published/);
+  await page.waitForURL(/\/published/, { waitUntil: "commit" });
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   await page.locator(".mx-pill-main").click();
   await page.locator(".mx-card .mx-point-ref", { hasText: "v2" }).waitFor();
   const fills = await page.locator(".mx-card .mx-point-filled").evaluateAll((points) => points.map((point) => point.style.fill));
   expect(fills.length === 2 && fills.every((fill) => fill.includes("--mx-tone-purple")), `the publications are not two purple points: ${fills}`);
-  // Exactly on v1: the page offers Roll back to v1.
-  const v1 = await page.locator(".mx-card .mx-point-ref", { hasText: "v1" }).boundingBox();
-  await page.mouse.click(v1.x + v1.width / 2, v1.y - 17 + v1.height / 2);
-  await page.waitForURL(/at=/);
+  // Exactly on v1: the page offers Roll back to v1. The pill's arrow steps through the publications — first to v2,
+  // the one in force, which offers nothing, then to v1.
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "The previous change" }).click();
+  await page.waitForURL(/at=/, { waitUntil: "commit" });
+  const at = page.url();
+  await page.getByRole("button", { name: "The previous change" }).click();
+  await page.waitForURL((url) => url.href !== at && url.search.includes("at="), { waitUntil: "commit" });
   const past = page.frameLocator("iframe.mx-panel-frame");
   await past.getByRole("button", { name: "Roll back to v1" }).click();
   await past.getByLabel("Comment").fill("Payouts go back to once a day");
@@ -606,7 +624,7 @@ await scenario("a node that is entered holds its children only; its head, its cr
   await page.locator(".mx-node", { hasText: "Notes" }).first().click();
   await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
   await page.locator(".mx-node", { hasText: "Payments" }).waitFor();
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes", "the crumbs do not name the entered level");
+  expect((await crumbsOf(page)) === "Notes", "the crumbs do not name the entered level");
   // An item expands where it stands, inside the level; Back returns to the root and opens nothing.
   await page.locator(".mx-node", { hasText: "Payments" }).click();
   await page.locator(`a.mx-node[href$="/items/${ITEM}"]`).waitFor();
@@ -622,15 +640,17 @@ await scenario("a node that is entered holds its children only; its head, its cr
   // A reload on a page inside Notes enters Notes again from the address, and the page's own line is expanded.
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
   await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Draft", "the crumbs do not name the entered level and the page");
-  await page.getByRole("button", { name: "Back" }).click();
-  await page.locator(".mx-level-head").waitFor({ state: "detached" });
-  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).waitFor();
-  expect(page.url().includes(`/notes/items/${ITEM}`), "Back changed the address");
+  expect((await crumbsOf(page)) === "Notes", "the crumbs do not name the entered level, or name the page inside it");
   // Entering Settings with a note's page open keeps the crumbs on the page's own line: Settings is not over it.
   await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).click();
   await page.locator(".mx-level-head", { hasText: "Settings" }).waitFor();
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Draft", "the crumbs name Settings over a page of Notes");
+  expect((await crumbsOf(page)) === "Notes", "the crumbs name Settings over a page of Notes");
+  // Back steps out of the deepest section through the address: the organization's root (spec 079, FR-041).
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
+  await page.getByRole("button", { name: "Back" }).click();
+  await page.locator(".mx-level-head").waitFor({ state: "detached" });
+  await page.waitForURL(new RegExp(`/w/${CODE}$`), { waitUntil: "commit" });
 });
 
 await scenario("the tree's head: collapse folds the tree, the arrow is Back and steps out of the entered level", async () => {
@@ -640,14 +660,13 @@ await scenario("the tree's head: collapse folds the tree, the arrow is Back and 
   expect((await page.locator(".mx-body > .mx-tree.collapsed .mx-node").count()) === 0, "the collapsed tree still shows its nodes");
   await page.getByRole("button", { name: "Expand sidebar" }).click();
   await page.locator(".mx-body > .mx-tree .mx-node").first().waitFor();
-  // Back returns to the level before the last entering and opens nothing: the address and the panel's page stay.
+  // Back steps out of the entered level through the address: the tree, the crumbs, the address and the panel agree.
   await page.getByRole("button", { name: "Back" }).click();
   await page.locator(".mx-level-head").waitFor({ state: "detached" });
   expect((await page.locator(".mx-node", { hasText: "Notes" }).count()) === 1, "the root of the tree is not back");
-  expect((await page.locator("iframe.mx-panel-frame:not(.waiting)").count()) === 1, "Back closed the page");
-  expect(page.url().includes(`/notes/items/${ITEM}`), "Back changed the address");
-  // At the root the arrow is off.
-  expect((await page.locator(".mx-tree-head .mx-tree-button.off[aria-label='Back']").count()) === 1, "Back is on at the root");
+  await page.waitForURL(new RegExp(`/w/${CODE}$`), { waitUntil: "commit" });
+  // At the root there is no level above: Back is not drawn.
+  expect((await page.locator(".mx-tree-head [aria-label='Back']").count()) === 0, "Back stands at the root");
 });
 
 await scenario("a second organization installs the deployed version without building it", async () => {
