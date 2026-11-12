@@ -17,7 +17,9 @@ import { ScaleContext, useWatermark, type Mode, type ScaleBridge } from "@/compo
 import { fixtureSource } from "@/components/scale/fixtures";
 import { Scale } from "@/components/scale/Scale";
 import { gatewaySource } from "@/components/scale/source";
+import { keepPlace } from "@/app/actions";
 import { carried, queryString, readAddress, windowAddress } from "@/lib/address";
+import { placeOf } from "@/lib/place";
 import { canStep, momentOf, MOMENT_TEXT, msOf, stepMoment } from "@/lib/moment";
 import { changeStepOfKey, stepOfKey } from "@maxitor/panel/keys";
 import type { Milestone } from "@maxitor/panel/history";
@@ -67,6 +69,11 @@ export function Frame({
   const methods = search.get("methods");
 
   const address = useMemo(() => readAddress(pathname, search), [pathname, search]);
+  // The account's last place: the page in the present, kept with the account whenever it changes (spec 086, FR-022).
+  const place = placeOf(pathname, search.toString());
+  useEffect(() => {
+    if (place) void keepPlace(place);
+  }, [place]);
   // The moment and the comparison stay with the screen from page to page and from one owner's page to another's.
   const carryKey = JSON.stringify(carried(address?.query ?? {}));
   const carry = useMemo(() => JSON.parse(carryKey) as Record<string, string>, [carryKey]);

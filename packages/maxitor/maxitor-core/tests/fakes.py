@@ -42,6 +42,7 @@ class MemoryCoreStorage(CoreStorage):
             t: []
             for t in [
                 "account",
+                "account_place",
                 "sign_in",
                 "sign_in_code",
                 "sign_in_attempt",
@@ -143,6 +144,16 @@ class MemoryCoreStorage(CoreStorage):
         for r in self.tables["sign_in"]:
             if r["id"] == sign_in_id:
                 r["last_used_at"] = at
+
+    async def last_place(self, account_id: str) -> str | None:
+        return next((r["address"] for r in self.tables["account_place"] if r["account_id"] == account_id), None)
+
+    async def keep_place(self, account_id: str, address: str, at: datetime) -> None:
+        for r in self.tables["account_place"]:
+            if r["account_id"] == account_id:
+                r.update(address=address, changed_at=at)
+                return
+        self.tables["account_place"].append({"account_id": account_id, "address": address, "changed_at": at})
 
     async def code_counts(self, email: str, ip: str, minute_ago: datetime, hour_ago: datetime) -> tuple[int, int, int]:
         rows = self.tables["sign_in_code"]

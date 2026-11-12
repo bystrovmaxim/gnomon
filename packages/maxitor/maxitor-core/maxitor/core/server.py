@@ -20,6 +20,7 @@ from maxitor.core.actions.account import (
     AcceptPolicyAction,
     CreateAccountAction,
     CurrentUserAction,
+    KeepLastPlaceAction,
     RenewSessionAction,
     SignOutAction,
 )
@@ -105,6 +106,7 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/session/accept-policy", AcceptPolicyAction),
     ("post", "/api/v1/sign-out", SignOutAction),
     ("get", "/api/v1/me", CurrentUserAction),
+    ("post", "/api/v1/me/place", KeepLastPlaceAction),
     ("get", "/api/v1/sign-ins", ListSignInsAction),
     ("post", "/api/v1/sign-ins/link", LinkSignInAction),
     ("post", "/api/v1/sign-ins/email", LinkEmailAction),

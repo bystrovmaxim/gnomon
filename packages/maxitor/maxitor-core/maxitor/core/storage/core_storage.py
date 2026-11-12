@@ -271,6 +271,19 @@ class CoreStorage(PostgresStorage):
         )
         return value  # type: ignore[no-any-return]
 
+    async def last_place(self, account_id: str) -> str | None:
+        """The address the account had open last, or ``None``."""
+        value = await self._fetchval("SELECT address FROM account_place WHERE account_id = $1::text::uuid", (account_id,))
+        return None if value is None else str(value)
+
+    async def keep_place(self, account_id: str, address: str, at: datetime) -> None:
+        """Remember where the account is now; not versioned."""
+        await self._execute(
+            "INSERT INTO account_place (account_id, address, changed_at) VALUES ($1::text::uuid, $2, $3)"
+            " ON CONFLICT (account_id) DO UPDATE SET address = EXCLUDED.address, changed_at = EXCLUDED.changed_at",
+            (account_id, address, at),
+        )
+
     async def touch_sign_in(self, sign_in_id: str, at: datetime) -> None:
         """Record when a sign-in last signed its account in; not versioned."""
         await self._execute("UPDATE sign_in SET last_used_at = $1 WHERE id = $2::text::uuid", (at, sign_in_id))

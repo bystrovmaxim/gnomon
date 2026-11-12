@@ -1,13 +1,32 @@
 // packages/maxitor/maxitor-core/web/app/w/page.tsx
-// After signing in (mockup 3, 8.10, 8.12, 8.14): the invitations waiting for the account first, with Accept and
-// Decline; then no organization → register one; one → straight there; several → choose.
+// After signing in (mockup 3, 8.10, 8.12, 8.14, 11.1): the invitations waiting for the account first, with Accept
+// and Decline; then the last place, when the account can still open it; then no organization → register one; one →
+// straight there; several → choose.
 import { redirect } from "next/navigation";
 
 import { listInvitations } from "@/app/actions";
 import { Icon } from "@/components/marks";
 import { InvitationChoice } from "@/components/InvitationChoice";
+import { readAddress } from "@/lib/address";
 import { colorOf } from "@/lib/colors";
-import { me } from "@/lib/core";
+import { core, me } from "@/lib/core";
+import { nodeOf, type TreeNode } from "@/lib/tree";
+
+type Opened = { code: string; tree: TreeNode[] };
+
+/**
+ * The address the last place opens, when the account can still open it: the page itself, that organization's root
+ * when the page is gone, nothing when the organization is no longer the account's (spec 086, FR-022).
+ */
+async function landing(lastPlace: string, codes: string[]): Promise<string | null> {
+  const [pathname, search = ""] = lastPlace.split("?");
+  const address = readAddress(pathname, search);
+  if (!address || !codes.includes(address.code)) return null;
+  if (!address.owner) return `/w/${address.code}`;
+  const opened = await core<Opened>("GET", `/api/v1/organizations/${encodeURIComponent(address.code)}`);
+  if (!opened.ok) return null;
+  return nodeOf(opened.data.tree, address.owner, address.path) ? lastPlace : `/w/${address.code}`;
+}
 
 export default async function ChoosePage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const query = await searchParams;
@@ -17,6 +36,8 @@ export default async function ChoosePage({ searchParams }: { searchParams: Promi
   const invitations = account.invitations_waiting > 0 ? await listInvitations() : [];
   const declined = query.declined ?? null;
   if (invitations.length === 0 && !declined) {
+    const place = account.last_place ? await landing(account.last_place, orgs.map((o) => o.code)) : null;
+    if (place) redirect(place);
     if (orgs.length === 0) redirect("/new");
     if (orgs.length === 1) redirect(`/w/${orgs[0].code}`);
   }

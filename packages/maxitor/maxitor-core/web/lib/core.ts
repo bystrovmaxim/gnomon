@@ -88,6 +88,8 @@ export type Me = {
   organizations: { code: string; name: string; is_admin: boolean }[];
   /** How many invitations wait for the account's confirmed emails. */
   invitations_waiting: number;
+  /** The address of Maxitor the account had open last, under /w/; null if none. */
+  last_place: string | null;
 };
 
 /** A user named in an answer of the organization. */

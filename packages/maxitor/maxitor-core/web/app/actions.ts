@@ -101,6 +101,11 @@ export async function unlinkSignIn(signInId: string): Promise<{ linked: boolean 
   return answer.ok ? answer.data : { refused: answer.refusal };
 }
 
+/** Where the account is now: kept with the account, so signing in opens there (spec 086, FR-022). */
+export async function keepPlace(address: string): Promise<void> {
+  await core("POST", "/api/v1/me/place", { address });
+}
+
 /** The invitations waiting for the account: shown on the screen of choosing an organization. */
 export async function listInvitations(): Promise<WaitingInvitation[]> {
   const answer = await core<{ invitations: WaitingInvitation[] }>("GET", "/api/v1/invitations");

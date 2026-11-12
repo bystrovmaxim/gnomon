@@ -1,13 +1,15 @@
 # packages/maxitor/maxitor-core/maxitor/core/actions/account.py
 """
 The account and its session: CreateAccountAction, AcceptPolicyAction, RenewSessionAction, SignOutAction,
-CurrentUserAction.
+CurrentUserAction, KeepLastPlaceAction.
 """
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import UTC, datetime
+from urllib.parse import parse_qsl, urlencode
 
 from maxitor.core.actions.common import client_ip, country_word, now, region_of, storage, tokens
 from maxitor.core.domains import PlatformDomain
@@ -312,6 +314,7 @@ class MeResult(BaseResult):
         description="The organizations the account has an active user in"
     )
     invitations_waiting: int = Field(description="How many invitations wait for the account's confirmed emails")
+    last_place: str | None = Field(description="The address of Maxitor the account had open last, under /w/; empty if none")
 
 
 @meta(description="Answer the signed-in account and its organizations", domain=PlatformDomain)
@@ -349,4 +352,62 @@ class CurrentUserAction(BaseAction[EmptyParams, MeResult]):
             policy_current=account["policy_version"] >= keys.policy_version,
             organizations=organizations,
             invitations_waiting=len(await waiting_for(store, account_id, now())),
+            last_place=await store.last_place(account_id),
         )
+
+
+class PlaceParams(BaseParams):
+    """Where the account is now."""
+
+    address: str = Field(max_length=2000, description="The window's address: /w/<organization>/<owner>/<path>?<parameters>")
+
+
+class PlaceResult(BaseResult):
+    """The place as it is kept."""
+
+    address: str = Field(description="The address kept: without at, mode and from")
+
+
+class NotAPlaceError(CoreRefusalError):
+    """An address that is not a page of Maxitor under /w/."""
+
+    status = 422
+
+
+#: The parameters of the time scale, which a place never keeps: the page opens at Now (spec 086, FR-022).
+TIME_SCALE = frozenset({"at", "mode", "from"})
+
+
+def clean_place(address: str) -> str | None:
+    """``address`` as a place: a path under ``/w/<organization>`` with its own parameters, or ``None``."""
+    path, _, query = address.partition("?")
+    if not re.fullmatch(r"/w/[a-z0-9][a-z0-9-]{0,62}(?:/[^?#]*)?", path):
+        return None
+    kept = [(k, v) for k, v in parse_qsl(query, keep_blank_values=True) if k not in TIME_SCALE]
+    return path + (f"?{urlencode(kept)}" if kept else "")
+
+
+@meta(description="Remember where the account is, so signing in opens there", domain=PlatformDomain)
+@check_roles(AccountRole)
+@connection(CoreStorage, key=CORE_CONNECTION_KEY, description="The core's database")
+class KeepLastPlaceAction(BaseAction[PlaceParams, PlaceResult]):
+    """
+    AI-CORE-BEGIN
+    ROLE: The account's last place.
+    CONTRACT: Keeps a path under /w/ with the page's own parameters, the time scale's at, mode and from removed;
+        anything else is refused (422 ``not_a_place``). Not versioned: the interface's state.
+    AI-CORE-END
+    """
+
+    @summary_aspect("Clean the address and keep it")
+    @context_requires(Ctx.User.user_id)
+    async def keep_summary(
+        self, params: PlaceParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView
+    ) -> PlaceResult:
+        """One row per account, overwritten."""
+        _ = (state, box)
+        place = clean_place(params.address)
+        if place is None:
+            raise NotAPlaceError("not_a_place")
+        await storage(connections).keep_place(str(ctx.get(Ctx.User.user_id)), place, now())
+        return PlaceResult(address=place)
