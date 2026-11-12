@@ -10,3 +10,8 @@
   box-shadow: 0 0 var(--mx-halo-blur) var(--mx-halo-spread) color-mix(in srgb, var(--mx-change) var(--mx-halo-strength), transparent);
 }
 [data-paint="changes"] [data-change="unchanged"] { opacity: var(--mx-faded); }
+
+/* The element another panel points at or chose (spec 079, FR-021), as the mockup of spec 079 lights it: a blue glow
+   round a card, a tint and an inner line on a row. */
+[data-marked] { filter: drop-shadow(0 0 var(--mx-glow) var(--mx-glow-colour)); border-color: var(--mx-glow-line); }
+.mx-list-row[data-marked] { filter: none; background: var(--mx-glow-tint); box-shadow: inset 0 0 0 var(--mx-dashed-width) var(--mx-glow-line); }

@@ -8,7 +8,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import "./canvas.css";
+import { usePanelOrNull } from "../PanelProvider";
 import { useShell } from "../shell/ShellContext";
+import { useAnchors } from "./useAnchors";
 import { centreOn, fitInside, key, pinch, toCanvas, toScreen, wheel, zoomAround, ZOOM_STEP, type Bounds, type Camera, type Point } from "./camera";
 
 /** Finds where an anchor lies on the canvas, or null when it is not one of its own. */
@@ -144,6 +146,29 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
     [camera, fitTo, size, viewport],
   );
 
+  // A glide of the camera to a target, 450 ms eased, as the graph viewer brings an element into view.
+  const glideFrame = useRef(0);
+  const glideTo = useCallback((target: Camera) => {
+    cancelAnimationFrame(glideFrame.current);
+    const start = performance.now();
+    let from: Camera | null = null;
+    const step = (time: number) => {
+      const t = Math.min(1, (time - start) / 450);
+      const eased = 1 - (1 - t) ** 3;
+      setCamera((was) => {
+        from ??= was;
+        return { x: from.x + (target.x - from.x) * eased, y: from.y + (target.y - from.y) * eased, zoom: from.zoom + (target.zoom - from.zoom) * eased };
+      });
+      if (t < 1) glideFrame.current = requestAnimationFrame(step);
+    };
+    glideFrame.current = requestAnimationFrame(step);
+  }, []);
+  useEffect(() => () => cancelAnimationFrame(glideFrame.current), []);
+
+  const panel = usePanelOrNull();
+  const pointer = useAnchors({ field, panel, api, size, glideTo, touch: () => void (touched.current = true) });
+  const pressedAt = useRef<Point | null>(null);
+
   const middle = useCallback(() => {
     const { width, height } = size();
     return { x: width / 2, y: height / 2 };
@@ -189,6 +214,7 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
           }
         }}
         onPointerDown={(event) => {
+          pressedAt.current = local(event);
           if ((event.target as HTMLElement).closest("button, a, input, textarea, select")) return;
           touched.current = true;
           field.current?.setPointerCapture(event.pointerId);
@@ -196,6 +222,7 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
           begin();
         }}
         onPointerMove={(event) => {
+          if (!pointers.current.size) pointer.over(event.target as Element);
           if (!pointers.current.has(event.pointerId) || !gesture.current) return;
           pointers.current.set(event.pointerId, local(event));
           const now = [...pointers.current.values()];
@@ -206,7 +233,13 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
         onPointerUp={(event) => {
           pointers.current.delete(event.pointerId);
           begin();
+          // A press that did not move the camera chooses what it was on.
+          const was = pressedAt.current;
+          const now = local(event);
+          if (was && Math.hypot(now.x - was.x, now.y - was.y) < 4) pointer.chose(event.target as Element);
+          pressedAt.current = null;
         }}
+        onPointerLeave={() => pointer.over(null)}
         onPointerCancel={(event) => {
           pointers.current.delete(event.pointerId);
           begin();

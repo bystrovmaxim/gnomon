@@ -447,9 +447,9 @@ await scenario("a page gives its history; the core keeps what holds and refuses 
   await page.waitForFunction(() => document.querySelector("iframe.mx-panel-frame")?.dataset.history?.includes("list_test_history"));
   const history = JSON.parse(await page.locator("iframe.mx-panel-frame").getAttribute("data-history"));
   page.off("console", listen);
-  expect(JSON.stringify(history) === JSON.stringify({ milestones: "list_test_history", compare: ["diff"] }), `the core kept ${JSON.stringify(history)}`);
+  // The test page's passport offers both comparisons; a wider one is refused as the panel's unit tests check.
+  expect(JSON.stringify(history) === JSON.stringify({ milestones: "list_test_history", compare: ["diff", "side_by_side"] }), `the core kept ${JSON.stringify(history)}`);
   expect(errors.some((text) => text.includes('card names "no_such_card"')), "the unknown name was not refused by name");
-  expect(errors.some((text) => text.includes('compare offers "side_by_side"')), "the wider comparison was not refused");
 });
 
 await scenario("a page without the shell is marked by a red strip on the stand", async () => {

@@ -11,7 +11,7 @@ import { Legend } from "@/components/scale/Legend";
 import type { LegendSection } from "@/components/scale/legendRows";
 import { PRESETS } from "@/components/scale/geometry";
 
-export type Mode = "one" | "diff" | "side_by_side";
+import type { Mode } from "@/components/scale/bridge";
 
 /** The graph viewer's mode switch pictograms, 14 px strokes. */
 const MODES: { value: Mode; label: string; phone: string; icon: ReactNode }[] = [

@@ -17,9 +17,10 @@ import { BarCache, chunksOf } from "@/components/scale/cache";
 import { barStep, clampView, domainOf, glide, presetView, type View } from "@/components/scale/geometry";
 import { legendOf } from "@/components/scale/legendRows";
 import { Pill } from "@/components/scale/Pill";
-import { ScaleCard, type Mode } from "@/components/scale/ScaleCard";
+import { ScaleCard } from "@/components/scale/ScaleCard";
+import type { Mode } from "@/components/scale/bridge";
 import type { HistorySource } from "@/components/scale/source";
-import { Track } from "@/components/scale/Track";
+import { Track, type Handle } from "@/components/scale/Track";
 import { chosenMoment, momentOf, momentText, msOf, spanText } from "@/lib/moment";
 
 /** The width of the scale inside the 760 px card. */
@@ -58,11 +59,17 @@ export function Scale({
   page,
   history,
   source,
+  mode,
+  from,
+  counts,
   canStep,
   onStep,
   onChoose,
+  onRange,
+  onMode,
   onMilestone,
   onChanges,
+  onMilestones,
 }: {
   /** The address's moment; null is now. */
   at: string | null;
@@ -75,14 +82,25 @@ export function Scale({
   /** The page's history as the core kept it; null when the page gave none. */
   history: PageHistory | null;
   source: HistorySource | null;
+  /** One moment, or two compared; A is `from` in a comparison. */
+  mode: Mode;
+  from: string | null;
+  /** What the page counts in a comparison; null at one moment or until it counts. */
+  counts: { added: number; removed: number; changed: number } | null;
   canStep: { older: boolean; newer: boolean };
   onStep: (delta: -1 | 1) => void;
   /** A moment was chosen; null is now. */
   onChoose: (at: string | null) => void;
+  /** A or B of a comparison was moved: A is `from`, B `at`, null is now. */
+  onRange: (range: { from: string; at: string | null }) => void;
+  /** The mode switch; null when the page offers no comparison. */
+  onMode: ((mode: Mode) => void) | null;
   /** A milestone was chosen: its moment, or the page it opens. */
   onMilestone: (milestone: Milestone) => void;
   /** The moments of the page's changes the arrows step through. */
   onChanges: (changes: string[]) => void;
+  /** The page's milestones as the core kept them: which one a moment stands on. */
+  onMilestones: (milestones: Milestone[]) => void;
 }) {
   const phone = usePhone();
   const [open, setOpen] = useState(false);
@@ -106,13 +124,15 @@ export function Scale({
         if (!live) return;
         const { kept, refused } = acceptMilestones(answer, setup);
         refused.forEach((reason) => name(page, reason));
-        setMilestones(kept.filter((milestone) => milestone.at <= watermark));
+        const shown = kept.filter((milestone) => milestone.at <= watermark);
+        setMilestones(shown);
+        onMilestones(shown);
       })
       .catch((error: unknown) => live && name(page, `milestones could not be read: ${String(error)}`));
     return () => {
       live = false;
     };
-  }, [page, setup, source, watermark]);
+  }, [onMilestones, page, setup, source, watermark]);
   useEffect(() => {
     setFirstBar(null);
     if (!source?.bars || !watermark) return;
@@ -241,16 +261,44 @@ export function Scale({
     setTarget(presetView(span, at ? msOf(at) : null, now, domain));
   };
 
-  const choose = (time: number) => {
-    if (!watermark) return;
-    onChoose(chosenMoment(time, watermark));
+  // A handle moved: the one moment, or A or B, never past now; A and B swap when A passes B.
+  const comparing = mode !== "one" && from !== null;
+  const choose = (time: number, handle: Handle) => {
+    if (!watermark || now === null) return;
+    if (!comparing || handle === "one") return onChoose(chosenMoment(time, watermark));
+    let a = handle === "a" ? time : msOf(from as string);
+    let b = handle === "b" ? time : at ? msOf(at) : now;
+    if (a > b) [a, b] = [b, a];
+    onRange({ from: momentOf(Math.min(a, now)), at: chosenMoment(b, watermark) });
+  };
+  const pick = (milestone: Milestone, handle: Handle) => {
+    if (milestone.opens || milestone.link || !comparing || handle === "one") return onMilestone(milestone);
+    const time = msOf(milestone.at);
+    const a = handle === "a" ? milestone.at : (from as string);
+    const b = handle === "b" ? milestone.at : at;
+    if (msOf(a) > (b ? msOf(b) : (now ?? time))) onRange({ from: b ?? milestone.at, at: a });
+    else onRange({ from: a, at: b });
   };
 
   const hasSmall = Boolean(setup.small) && (milestones ?? []).some((milestone) => milestone.small);
-  const drawn = milestones === null ? (source?.milestones ? [] : null) : milestones.filter((milestone) => !(hideSmall && milestone.small));
-  const label = at === null || now === null ? "Now" : momentText(msOf(at), now);
+  // Drawn are the points of the kinds of the setup in force: while a page gives its history anew, none of the old.
+  const kinds = setup.kinds ?? {};
+  const drawn = milestones === null || !source?.milestones ? (source?.milestones ? [] : null) : milestones.filter((milestone) => milestone.kind in kinds && !(hideSmall && milestone.small));
+  const say = (moment: string | null) => (moment === null || now === null ? "Now" : momentText(msOf(moment), now));
+  const label = comparing ? (
+    <>
+      <span className="mx-pill-ab">A</span>
+      {say(from)}
+      <span className="mx-pill-to">→</span>
+      <span className="mx-pill-ab">B</span>
+      {say(at)}
+      <span className="mx-pill-mode"> · {mode === "diff" ? "diff" : "side by side"}</span>
+    </>
+  ) : (
+    say(at)
+  );
   const offered = (setup.compare ?? []) as Mode[];
-  const sections = legendOf(setup, false);
+  const sections = legendOf(setup, comparing);
   const subtitle = milestones && milestones.length
     ? `${milestones.length} ${milestones.length === 1 ? "milestone" : "milestones"} since ${momentText(msOf(milestones[0].at), 0)}`
     : source?.bars
@@ -258,10 +306,42 @@ export function Scale({
       : "Read the page at any moment up to now";
   const shownMoment = at ?? watermark;
   const current = milestones && shownMoment ? inForce(milestones, shownMoment) : null;
+  const atA = milestones && comparing ? inForce(milestones, from as string) : null;
+  const between = milestones && comparing && shownMoment ? milestones.filter((milestone) => !milestone.opens && milestone.at > (from as string) && milestone.at <= shownMoment && milestone !== current) : [];
+  const message = (milestone: Milestone | null, tag: "A" | "B" | null) => (
+    <div className="mx-message" key={tag ?? "one"}>
+      <b>
+        {tag ? <span className={tag === "A" ? "mx-chip-a" : "mx-chip-b"}>{tag}</span> : null}
+        {milestone ? `${milestone.ref} · ${milestone.title}` : "Nothing yet"}
+      </b>
+      {milestone?.comment ? <div className="mx-message-body">{milestone.comment}</div> : null}
+    </div>
+  );
 
   return (
     <span className="mx-scale" ref={holder}>
-      <Pill label={label} live={at === null} open={open} onOpen={() => setOpen(!open)} onStep={onStep} canStep={canStep} onNow={at === null ? null : () => onChoose(null)} />
+      <Pill
+        label={label}
+        live={at === null}
+        open={open}
+        onOpen={() => setOpen(!open)}
+        onStep={onStep}
+        canStep={canStep}
+        onNow={at === null || comparing ? null : () => onChoose(null)}
+        counts={
+          comparing && counts ? (
+            counts.added + counts.removed + counts.changed === 0 ? (
+              <span className="mx-pill-none">no changes</span>
+            ) : (
+              <span className="mx-pill-counts">
+                <span className="mx-count-added">+{counts.added}</span>
+                <span className="mx-count-removed">−{counts.removed}</span>
+                <span className="mx-count-changed">~{counts.changed}</span>
+              </span>
+            )
+          ) : null
+        }
+      />
       {open ? (
         <ScaleCard
           title={title}
@@ -289,9 +369,9 @@ export function Scale({
             ) : null
           }
           legend={sections}
-          mode="one"
+          mode={comparing ? mode : "one"}
           offered={offered}
-          onMode={null}
+          onMode={onMode}
           span={
             shownView && now !== null
               ? { text: `${spanText(Math.min(shownView.to, now) - shownView.from)}${source?.bars ? ` · bar ${spanText(step)}` : ""}`, title: `${momentText(shownView.from, 0)} – ${momentText(Math.min(shownView.to, now), 0)}` }
@@ -302,12 +382,19 @@ export function Scale({
           onClose={close}
           under={
             milestones && milestones.length ? (
-              <div className="mx-messages">
-                <div className="mx-message">
-                  <b>{current ? `${current.ref} · ${current.title}` : "Nothing yet"}</b>
-                  {current?.comment ? <div className="mx-message-body">{current.comment}</div> : null}
-                </div>
-              </div>
+              <>
+                <div className={`mx-messages${comparing ? " two" : ""}`}>{comparing ? [message(atA, "A"), message(current, "B")] : message(current, null)}</div>
+                {between.length ? (
+                  <div className="mx-between">
+                    <b>Between A and B</b>
+                    {between.map((milestone) => (
+                      <div key={milestone.id}>
+                        {milestone.ref} · {milestone.title}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </>
             ) : null
           }
         >
@@ -319,15 +406,16 @@ export function Scale({
                 width={width}
                 now={now}
                 shown={at ? msOf(at) : now}
+                against={comparing ? msOf(from as string) : null}
                 phone={phone}
                 bars={bars}
                 step={step}
                 milestones={drawn}
-                kinds={setup.kinds ?? {}}
+                kinds={kinds}
                 cardOf={cardOf}
                 onView={changeView}
                 onChoose={choose}
-                onMilestone={onMilestone}
+                onMilestone={pick}
               />
             ) : (
               <div className="mx-card-wait">Reading now…</div>

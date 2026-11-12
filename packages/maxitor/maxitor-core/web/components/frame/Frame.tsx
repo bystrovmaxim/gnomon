@@ -13,13 +13,13 @@ import { Panel } from "@/components/frame/Panel";
 import { TopRow } from "@/components/frame/TopRow";
 import { Tree, type Level } from "@/components/frame/Tree";
 import { TreeHead } from "@/components/frame/TreeHead";
-import { ScaleContext, useWatermark, type ScaleBridge } from "@/components/scale/bridge";
+import { ScaleContext, useWatermark, type Mode, type ScaleBridge } from "@/components/scale/bridge";
 import { fixtureSource } from "@/components/scale/fixtures";
 import { Scale } from "@/components/scale/Scale";
 import { gatewaySource } from "@/components/scale/source";
 import { queryString, readAddress, windowAddress } from "@/lib/address";
-import { canStep, stepMoment } from "@/lib/moment";
-import { stepOfKey } from "@maxitor/panel/keys";
+import { canStep, momentOf, MOMENT_TEXT, msOf, stepMoment } from "@/lib/moment";
+import { changeStepOfKey, stepOfKey } from "@maxitor/panel/keys";
 import type { Milestone } from "@maxitor/panel/history";
 import type { HistoryAllowed, PageHistory, StepKeyName } from "@maxitor/panel/protocol";
 
@@ -155,32 +155,75 @@ export function Frame({
   const at = address?.at ?? null;
   // The moments of the page's changes the arrows step through: its milestones, or its bars (spec 079, FR-005).
   const [changes, setChanges] = useState<string[]>([]);
-  const choose = useCallback(
-    (moment: string | null) => {
-      if (address?.owner) router.push(windowAddress(current.code, address.owner, address.path, address.query, moment), { scroll: false });
-      else router.push(`${home}${queryString(address?.query ?? {}, moment)}`, { scroll: false });
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  // A comparison (spec 079, FR-018): `mode` and `from` beside `at` in the address; a mode the page does not offer opens
+  // `at` as one moment.
+  const offered = useMemo(() => (history?.compare ?? []) as Mode[], [history]);
+  const asked = address?.query.mode;
+  const from = address?.query.from && MOMENT_TEXT.test(address.query.from) ? address.query.from : null;
+  // Until the page says what it offers, the address's mode is taken as it is; the page's answer then narrows it.
+  const mode: Mode = (asked === "diff" || asked === "side_by_side") && from && (history === null || offered.includes(asked)) ? asked : "one";
+  // Another page gives its own history: the last one leaves the scale when the page changes, not when a panel closes.
+  const pageKey = `${address?.owner ?? ""}${address?.path ?? ""}`;
+  useEffect(() => setHistory(null), [pageKey]);
+  const go = useCallback(
+    (query: Record<string, string>, moment: string | null) => {
+      if (address?.owner) router.push(windowAddress(current.code, address.owner, address.path, query, moment), { scroll: false });
+      else router.push(`${home}${queryString(query, moment)}`, { scroll: false });
     },
     [address, current.code, home, router],
+  );
+  const choose = useCallback((moment: string | null) => go(address?.query ?? {}, moment), [address?.query, go]);
+  const chooseRange = useCallback(
+    (range: { from: string; at: string | null }) => go({ ...(address?.query ?? {}), from: range.from }, range.at),
+    [address?.query, go],
+  );
+  const changeMode = useCallback(
+    (next: Mode) => {
+      const { mode: _mode, from: _from, ...rest } = address?.query ?? {};
+      if (next === "one" || !watermark) return go(rest, at);
+      // A starts at the change before B, or a day before it.
+      const before = stepMoment(changes, at, watermark, -1);
+      const a = from ?? (typeof before === "string" ? before : momentOf(msOf(at ?? watermark) - 24 * 3600_000));
+      go({ ...rest, mode: next, from: a }, at);
+    },
+    [address?.query, at, changes, from, go, watermark],
   );
   const step = useCallback(
     (delta: -1 | 1) => {
       if (!watermark) return;
       const next = stepMoment(changes, at, watermark, delta);
-      if (next !== undefined) choose(next);
+      if (next === undefined) return;
+      if (mode === "one" || !from) return choose(next);
+      // With two compared, both move and keep their distance.
+      const shift = msOf(next ?? watermark) - msOf(at ?? watermark);
+      chooseRange({ from: momentOf(msOf(from) + shift), at: next });
     },
-    [at, changes, choose, watermark],
+    [at, changes, choose, chooseRange, from, mode, watermark],
   );
-  // Shift + ← → step the moment with the focus in the frame; pressed in the page, they come by panel.keys.
+  // Shift + ↑ ↓ step a comparison's changes: the panels pass them to the page that draws them.
+  const stepper = useRef<((delta: -1 | 1) => void) | null>(null);
+  const connectStepper = useCallback((next: (delta: -1 | 1) => void) => {
+    stepper.current = next;
+    return () => {
+      if (stepper.current === next) stepper.current = null;
+    };
+  }, []);
+  // Shift + arrows with the focus in the frame; pressed in the page, they come by panel.keys.
   useEffect(() => {
     const press = (event: KeyboardEvent) => {
       const delta = stepOfKey(event);
-      if (delta === null) return;
+      const change = changeStepOfKey(event);
+      if (delta !== null) step(delta);
+      else if (change !== null && mode !== "one") stepper.current?.(change);
+      else return;
       event.preventDefault();
-      step(delta);
     };
     window.addEventListener("keydown", press);
     return () => window.removeEventListener("keydown", press);
-  }, [step]);
+  }, [mode, step]);
+  const [counts, setCounts] = useState<{ added: number; removed: number; changed: number } | null>(null);
+  const milestoneOn = useCallback((moment: string | null) => (moment ? milestones.find((each) => each.at === moment)?.id ?? null : null), [milestones]);
   const bridge = useMemo<ScaleBridge>(
     () => ({
       watermark,
@@ -188,9 +231,14 @@ export function Frame({
       pressed: (key: StepKeyName) => {
         if (key === "ArrowLeft") step(-1);
         else if (key === "ArrowRight") step(1);
+        else if (mode !== "one") stepper.current?.(key === "ArrowUp" ? -1 : 1);
       },
+      moment: { at, mode, from },
+      milestoneOn,
+      counts: setCounts,
+      connectStepper,
     }),
-    [step, watermark],
+    [at, connectStepper, from, milestoneOn, mode, step, watermark],
   );
   // Where the scale reads the open page's history: the plugin's history actions through the gateway, with the node's
   // path parameters and the page's own; the core's test page from its fixtures. The page's filters are part of it.
@@ -220,11 +268,17 @@ export function Frame({
       page={address?.path ?? "/"}
       history={history}
       source={source}
+      mode={mode}
+      from={from}
+      counts={mode === "one" ? null : counts}
       canStep={watermark ? canStep(changes, at, watermark) : { older: false, newer: at !== null }}
       onStep={step}
       onChoose={choose}
+      onRange={chooseRange}
+      onMode={offered.length ? changeMode : null}
       onMilestone={milestone}
       onChanges={setChanges}
+      onMilestones={setMilestones}
     />
   );
 

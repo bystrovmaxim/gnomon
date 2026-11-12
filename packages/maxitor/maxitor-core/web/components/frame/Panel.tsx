@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 
 import type { HistoryAllowed } from "@maxitor/panel/protocol";
 
-import { PageFrame } from "@/components/frame/PageFrame";
+import { ComparedFrames } from "@/components/frame/SidePanels";
 import { useScale } from "@/components/scale/bridge";
 import { windowAddress, type PanelAddress } from "@/lib/address";
 import { laterThan, MOMENT_TEXT } from "@/lib/moment";
@@ -94,7 +94,7 @@ export function Panel({
   return (
     <main className="mx-panel">
       {/* Another owner is another frame: the key gives it a new frame and a new address. */}
-      <PageFrame
+      <ComparedFrames
         key={owner}
         code={code}
         address={address}

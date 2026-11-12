@@ -20,18 +20,48 @@ export type PageMessage =
   /** The anchors of what the page holds but its filters leave out now (spec 081, FR-013). */
   | { type: "panel.hidden"; anchors: string[] }
   /** Shift and an arrow pressed in the page: the core steps the moment (← →) or a comparison's changes (↑ ↓) (spec 079, FR-005). */
-  | { type: "panel.keys"; key: StepKeyName };
+  | { type: "panel.keys"; key: StepKeyName }
+  /** The anchor chain under the pointer, the deepest first; null when the pointer left (spec 079, FR-021). */
+  | { type: "panel.pointer"; chain: string[] | null }
+  /** An element chosen — a click, a selection, a step. */
+  | { type: "panel.choose"; chain: string[] }
+  /** What the page did with panel.mark or panel.bring: the anchor it showed, whether it was the deepest, whether its
+      filters hid it, whether it moved the camera. */
+  | { type: "panel.shown"; chain: string[]; anchor: string | null; held: boolean; hidden: boolean; brought: boolean }
+  /** What a comparison counts, for the pill. */
+  | { type: "panel.counts"; added: number; removed: number; changed: number };
+
+/** Which panel of Side by side a page is drawn in. */
+export type Side = "a" | "b";
+
+/** The page's moment and what it is compared with (spec 079, FR-019): One `at`; Diff `at` = B, `against` = A; Side by
+    side `at` its own moment, `against` the other's, `side` which panel it is. `milestone`: the id `at` stands on exactly. */
+export type MomentContext = { at: string | null; against: string | null; side: Side | null; milestone: string | null };
 
 /** From the core to the page. */
 export type CoreMessage =
-  | { type: "panel.location"; path: string; query: Query; at: string | null }
-  | { type: "panel.watermark"; at: string };
+  | { type: "panel.location"; path: string; query: Query; at: string | null; against: string | null; side: Side | null; milestone: string | null }
+  | { type: "panel.watermark"; at: string }
+  /** Light the deepest anchor of the chain the page holds, if it is in view; null clears. */
+  | { type: "panel.mark"; chain: string[] | null }
+  /** Bring the deepest anchor of the chain the page holds into view, keeping the zoom, and light it. */
+  | { type: "panel.bring"; chain: string[] }
+  /** Shift + ↑ ↓ pressed in the core's frame: step the comparison's changes. */
+  | { type: "panel.step"; delta: -1 | 1 };
 
 const text = (value: unknown): value is string => typeof value === "string";
 const path = (value: unknown): value is string => text(value) && value.startsWith("/") && !value.startsWith("//");
 /** The most anchors one message may carry: a list of 10,000 rows and its other marks. */
 export const MAX_HIDDEN = 20_000;
 const anchors = (value: unknown): value is string[] => Array.isArray(value) && value.length <= MAX_HIDDEN && value.every(text);
+/** The most anchors a chain holds, and the longest anchor. */
+export const MAX_CHAIN = 8;
+export const MAX_ANCHOR = 200;
+const chain = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.length > 0 && value.length <= MAX_CHAIN && value.every((anchor) => text(anchor) && anchor.length > 0 && anchor.length <= MAX_ANCHOR);
+const count = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
+const moment = (value: unknown): value is string | null => value === null || text(value);
+const side = (value: unknown): value is Side | null => value === null || value === "a" || value === "b";
 const query = (value: unknown): value is Query =>
   typeof value === "object" && value !== null && !Array.isArray(value) && Object.values(value).every(text);
 
@@ -59,6 +89,16 @@ export function pageMessage(data: unknown): PageMessage | null {
       return anchors(m.anchors) ? { type: m.type, anchors: m.anchors } : null;
     case "panel.keys":
       return (STEP_KEYS as readonly unknown[]).includes(m.key) ? { type: m.type, key: m.key as StepKeyName } : null;
+    case "panel.pointer":
+      return m.chain === null || chain(m.chain) ? { type: m.type, chain: m.chain } : null;
+    case "panel.choose":
+      return chain(m.chain) ? { type: m.type, chain: m.chain } : null;
+    case "panel.shown":
+      return chain(m.chain) && (m.anchor === null || (text(m.anchor) && m.chain.includes(m.anchor))) && typeof m.held === "boolean" && typeof m.hidden === "boolean" && typeof m.brought === "boolean"
+        ? { type: m.type, chain: m.chain, anchor: m.anchor, held: m.held, hidden: m.hidden, brought: m.brought }
+        : null;
+    case "panel.counts":
+      return count(m.added) && count(m.removed) && count(m.changed) ? { type: m.type, added: m.added, removed: m.removed, changed: m.changed } : null;
     default:
       return null;
   }
@@ -69,10 +109,23 @@ export function coreMessage(data: unknown): CoreMessage | null {
   if (typeof data !== "object" || data === null) return null;
   const m = data as Record<string, unknown>;
   switch (m.type) {
-    case "panel.location":
-      return path(m.path) && query(m.query) && (m.at === null || text(m.at)) ? { type: m.type, path: m.path, query: m.query, at: m.at } : null;
+    case "panel.location": {
+      // A core before the scale's context sends none of its fields: they are null, one moment.
+      const against = m.against ?? null;
+      const where = m.side ?? null;
+      const milestone = m.milestone ?? null;
+      return path(m.path) && query(m.query) && moment(m.at) && moment(against) && side(where) && moment(milestone)
+        ? { type: m.type, path: m.path, query: m.query, at: m.at, against, side: where, milestone }
+        : null;
+    }
     case "panel.watermark":
       return text(m.at) ? { type: m.type, at: m.at } : null;
+    case "panel.mark":
+      return m.chain === null || chain(m.chain) ? { type: m.type, chain: m.chain } : null;
+    case "panel.bring":
+      return chain(m.chain) ? { type: m.type, chain: m.chain } : null;
+    case "panel.step":
+      return m.delta === -1 || m.delta === 1 ? { type: m.type, delta: m.delta } : null;
     default:
       return null;
   }

@@ -54,3 +54,33 @@ test("Shift and an arrow pressed in the page pass as panel.keys; another key doe
   assert.equal(pageMessage({ type: "panel.keys", key: "Enter" }), null);
   assert.equal(pageMessage({ type: "panel.keys" }), null);
 });
+
+test("the context travels with panel.location; a core without it means one moment", () => {
+  const at = "2026-11-08T10:15:00.123456Z";
+  assert.deepEqual(coreMessage({ type: "panel.location", path: "/", query: {}, at, against: "2026-11-01T00:00:00.000000Z", side: "a", milestone: "v3" }), {
+    type: "panel.location", path: "/", query: {}, at, against: "2026-11-01T00:00:00.000000Z", side: "a", milestone: "v3",
+  });
+  assert.deepEqual(coreMessage({ type: "panel.location", path: "/", query: {}, at }), { type: "panel.location", path: "/", query: {}, at, against: null, side: null, milestone: null });
+  assert.equal(coreMessage({ type: "panel.location", path: "/", query: {}, at, side: "c" }), null);
+});
+
+test("anchors travel in chains of at most 8 anchors of at most 200 characters", () => {
+  assert.ok(pageMessage({ type: "panel.pointer", chain: ["field:Account.email", "table:Account"] }));
+  assert.ok(pageMessage({ type: "panel.pointer", chain: null }));
+  assert.equal(pageMessage({ type: "panel.pointer", chain: Array.from({ length: 9 }, (_, index) => `n:${index}`) }), null);
+  assert.equal(pageMessage({ type: "panel.choose", chain: ["x".repeat(201)] }), null);
+  assert.equal(pageMessage({ type: "panel.choose", chain: [] }), null);
+  assert.ok(coreMessage({ type: "panel.mark", chain: null }));
+  assert.ok(coreMessage({ type: "panel.bring", chain: ["row:acc-06213"] }));
+  assert.equal(coreMessage({ type: "panel.bring", chain: null }), null);
+  assert.ok(coreMessage({ type: "panel.step", delta: -1 }));
+  assert.equal(coreMessage({ type: "panel.step", delta: 2 }), null);
+});
+
+test("panel.shown names an anchor of its chain; the counts are whole numbers", () => {
+  const chain = ["field:Account.email", "table:Account"];
+  assert.ok(pageMessage({ type: "panel.shown", chain, anchor: "table:Account", held: false, hidden: false, brought: false }));
+  assert.equal(pageMessage({ type: "panel.shown", chain, anchor: "table:Other", held: false, hidden: false, brought: false }), null);
+  assert.ok(pageMessage({ type: "panel.counts", added: 2, removed: 1, changed: 0 }));
+  assert.equal(pageMessage({ type: "panel.counts", added: -1, removed: 1, changed: 0 }), null);
+});

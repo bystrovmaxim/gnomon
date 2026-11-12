@@ -15,6 +15,8 @@ import {
   usePanelQuery,
   usePanelRouter,
   useWatermark,
+  useCounts,
+  useMoment,
   type FilterSection,
   type Layers,
   type PageHistory,
@@ -155,9 +157,9 @@ const GRAPH_KINDS = {
 
 /** The histories of the scale's fixtures (spec 079, T028): each set up as a plugin's page sets it up. */
 const HISTORIES: Record<string, PageHistory> = {
-  bars: { read: "list_test_notes", compare: ["diff"] },
+  bars: { read: "list_test_notes", compare: ["diff", "side_by_side"] },
   milestones: { milestones: "list_test_history", card: "test_milestone_card", kinds: PUBLISHED_KINDS },
-  both: { read: "list_test_notes", milestones: "list_test_history", card: "test_milestone_card", kinds: PUBLISHED_KINDS, compare: ["diff"] },
+  both: { read: "list_test_notes", milestones: "list_test_history", card: "test_milestone_card", kinds: PUBLISHED_KINDS, compare: ["diff", "side_by_side"] },
   graph: {
     milestones: "list_graph_history",
     card: "test_milestone_card",
@@ -168,12 +170,66 @@ const HISTORIES: Record<string, PageHistory> = {
   undeclared: { milestones: "list_odd_history", card: "test_milestone_card", kinds: { published: PUBLISHED_KINDS.published } },
 };
 
-/** A page of the scale's fixtures: its history alone, as the time scale reads it. */
+const DAY = 86_400_000;
+
+/** The cards of the history fixtures: each written some days before now, a line of it added later, one removed. */
+const CARDS = [
+  { id: "payment", title: "Payment", born: 19, line: 12, gone: null },
+  { id: "account", title: "Account", born: 17, line: 3, gone: null },
+  { id: "refund", title: "Refund", born: 8, line: null, gone: null },
+  { id: "ledger", title: "Ledger", born: 15, line: 6, gone: 5 },
+  { id: "audit", title: "Audit", born: 2, line: 1, gone: null },
+];
+
+/** A page of the scale's fixtures: its history as the time scale reads it, and cards drawn from its moment — in a
+    comparison marked by what changed between A and B, and counted for the pill. */
 function TestHistory({ fixture }: { fixture: string }) {
   const history = HISTORIES[fixture];
+  const { at, against, side } = useMoment();
+  const [watermarks, setWatermarks] = useState<string[]>([]);
+  useWatermark(useCallback((moment: string) => setWatermarks((was) => [...was, moment]), []));
+  const now = Date.parse(watermarks.at(-1) ?? new Date().toISOString());
+  const momentOf = (moment: string | null) => (moment ? Date.parse(moment) : now);
+  const stateAt = (moment: number) =>
+    CARDS.filter((card) => now - card.born * DAY <= moment && (card.gone === null || now - card.gone * DAY > moment)).map((card) => ({
+      ...card,
+      lined: card.line !== null && now - card.line * DAY <= moment,
+    }));
+  const shown = stateAt(momentOf(at));
+  const other = against === null ? null : stateAt(momentOf(against));
+  // Side by side: each panel draws its own moment — A marks what B lacks as removed, B what A lacks as added. Diff
+  // draws B with what A had and B lost as removed.
+  const changeOf = (card: (typeof shown)[number]) => {
+    if (!other) return undefined;
+    const was = other.find((each) => each.id === card.id);
+    if (!was) return side === "a" ? "removed" : "added";
+    return was.lined !== card.lined ? "changed" : "unchanged";
+  };
+  const removed = other && side === null ? other.filter((card) => !shown.some((each) => each.id === card.id)) : [];
+  const before = other;
+  useCounts(
+    before && side !== "a"
+      ? { added: shown.filter((card) => changeOf(card) === "added").length, removed: removed.length || before.filter((card) => !shown.some((each) => each.id === card.id)).length, changed: shown.filter((card) => changeOf(card) === "changed").length }
+      : null,
+  );
   return (
     <PanelPage title={`History: ${fixture}`} history={history}>
-      <output data-testid="history-fixture">{history ? fixture : "no such fixture"}</output>
+      <output data-testid="history-fixture" hidden>{history ? fixture : "no such fixture"}</output>
+      <MaxitorCanvas bounds={{ x: 0, y: 0, width: 900, height: 320 }} label="History fixture">
+        {[...shown.map((card) => ({ card, change: changeOf(card) })), ...removed.map((card) => ({ card, change: "removed" as const }))].map(({ card, change }, index) => (
+          <div
+            key={card.id}
+            data-room-anchor={`table:${card.title}`}
+            data-change={change}
+            className="mx-card"
+            style={{ position: "absolute", left: 20 + (index % 3) * 300, top: 20 + Math.floor(index / 3) * 160, width: 240, padding: 12 }}
+          >
+            <b>{card.title}</b>
+            <div data-room-anchor={`field:${card.title}.id`}>id</div>
+            {card.lined ? <div data-room-anchor={`field:${card.title}.email`}>email</div> : null}
+          </div>
+        ))}
+      </MaxitorCanvas>
     </PanelPage>
   );
 }

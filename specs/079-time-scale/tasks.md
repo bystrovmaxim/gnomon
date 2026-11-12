@@ -79,14 +79,14 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 **Independent test**: the screens 1.1–1.9, 2.1–2.17, 3.1–3.4 of `specs/079-time-scale/mockup` on the test page.
 
-- [ ] T030 [US3] Modes in `CORE/components/scale/ScaleCard.tsx` and the address: `mode`, `from`; A and B handles; only the page's offered modes; an unoffered mode opens `at` as one moment
-- [ ] T031 [US3] `PANEL/src/protocol.ts`: `panel.location` gains `against`, `side`, `milestone`; `PanelProvider.tsx` exposes them in `useMoment()`/`useContext`
-- [ ] T032 [US3] `CORE/components/frame/SidePanels.tsx`: port `GV/components/diagrams/SideBySide/SideBySide.tsx` and `HalfNote.tsx` — two panels with their heads (A brown, B blue, their moment), Track on B, one panel with an A / B switch on a phone
-- [ ] T033 [US4] `PANEL/src/canvas/anchors.ts`: chain under the pointer (`panel.pointer`, once per frame), `panel.choose`, obeying `panel.mark` / `panel.bring` (deepest held anchor, keep zoom, glide 450 ms) and answering `panel.shown`; wire into `MaxitorCanvas.tsx`
-- [ ] T034 [US4] `PANEL/src/content/DataTable.tsx` and `list.ts`: keep anchors of all rows; bring a row into view by its anchor; `panel.shown` with `hidden` for a row the filters leave out
-- [ ] T035 [US4] Core relay in `CORE/components/frame/SidePanels.tsx`: pointer → mark on the other panel; choose → bring; the notes of [contracts/panel-protocol-time.md](contracts/panel-protocol-time.md) from `panel.shown`; on a phone bring on the A / B switch
-- [ ] T036 [US3] Shift + ↑ ↓ relayed as `panel.step`; comments under the scale for A and B
-- [ ] T037 [P] [US3] [US4] Tests: `PANEL/tests/anchors.test.ts` (deepest held, notes), `PANEL/tests/protocol.test.ts` (new messages and limits), `CORE/tests/sidepanels.test.ts` (relay rules)
+- [x] T030 [US3] Modes in `CORE/components/scale/ScaleCard.tsx` and the address: `mode`, `from`; A and B handles; only the page's offered modes; an unoffered mode opens `at` as one moment
+- [x] T031 [US3] `PANEL/src/protocol.ts`: `panel.location` gains `against`, `side`, `milestone`; `PanelProvider.tsx` exposes them in `useMoment()`/`useContext`
+- [x] T032 [US3] `CORE/components/frame/SidePanels.tsx`: port `GV/components/diagrams/SideBySide/SideBySide.tsx` and `HalfNote.tsx` — two panels with their heads (A brown, B blue, their moment), Track on B, one panel with an A / B switch on a phone
+- [x] T033 [US4] `PANEL/src/canvas/anchors.ts`: chain under the pointer (`panel.pointer`, once per frame), `panel.choose`, obeying `panel.mark` / `panel.bring` (deepest held anchor, keep zoom, glide 450 ms) and answering `panel.shown`; wire into `MaxitorCanvas.tsx`
+- [x] T034 [US4] `PANEL/src/content/DataTable.tsx` and `list.ts`: keep anchors of all rows; bring a row into view by its anchor; `panel.shown` with `hidden` for a row the filters leave out
+- [x] T035 [US4] Core relay in `CORE/components/frame/SidePanels.tsx`: pointer → mark on the other panel; choose → bring; the notes of [contracts/panel-protocol-time.md](contracts/panel-protocol-time.md) from `panel.shown`; on a phone bring on the A / B switch
+- [x] T036 [US3] Shift + ↑ ↓ relayed as `panel.step`; comments under the scale for A and B
+- [x] T037 [P] [US3] [US4] Tests: `PANEL/tests/anchors.test.ts` (deepest held, notes), `PANEL/tests/protocol.test.ts` (new messages and limits), `CORE/tests/sidepanels.test.ts` (relay rules)
 
 **Checkpoint**: commit.
 

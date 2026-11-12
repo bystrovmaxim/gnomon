@@ -221,4 +221,17 @@
   --mx-text-card-title: 13.5px;
   --mx-legend-width: 640px;
   --mx-legend-keys: 200px;
+
+  /* An element another panel points at: a blue glow, as the mockup of spec 079 draws it. */
+  --mx-glow: 5px;
+  --mx-glow-colour: rgba(37, 99, 235, 0.95);
+  --mx-glow-line: #2563eb;
+  --mx-glow-tint: rgba(37, 99, 235, 0.12);
+  /* Side by side: A brown, B blue, as the graph viewer's two panels name them. */
+  --mx-side-a: #b45309;
+  --mx-side-b: #1d4ed8;
+  --mx-side-head: 30px;
+  --mx-track-on: rgba(37, 99, 235, 0.1);
+  --mx-note: rgba(15, 23, 42, 0.86);
+  --mx-note-code: rgba(255, 255, 255, 0.14);
 }
