@@ -1,34 +1,59 @@
 /* web/app/notes.css — the template's own look inside the content field, drawn with Maxitor's tokens: the cards' grid
-   on the canvas, a card's tools, its editing and its words, a dialog's fields. Nothing is placed fixed and no layer
-   reaches the shell's: dialogs are the shell's own. */
+   on the canvas, a change's state and the words that changed, a card's tools and editing, the race notice, the
+   publishing dialog's conflicts and its two choices. Nothing is placed fixed and no layer reaches the shell's:
+   dialogs are the shell's own. */
 .nt-grid { position: absolute; left: 0; top: 0; grid-template-columns: repeat(3, 280px); gap: 16px; }
 .nt-card { min-height: 120px; display: flex; flex-direction: column; gap: var(--mx-space-3); }
 .nt-card.fresh { box-shadow: 0 0 0 var(--mx-ring) var(--mx-palette-blue), var(--mx-shadow-float); }
+.nt-card.meets { box-shadow: 0 0 0 var(--mx-ring) var(--mx-warn), var(--mx-shadow-float); }
 .nt-new { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); color: var(--mx-palette-blue); }
 .nt-tools { margin-left: auto; display: inline-flex; gap: var(--mx-space-2); }
-.nt-tools button, .nt-row button, .nt-ask button { border: 0; background: transparent; color: var(--mx-muted); font: inherit; font-size: var(--mx-text-sm); cursor: pointer; border-radius: var(--mx-radius-sm); padding: var(--mx-space-1) var(--mx-space-3); }
-.nt-tools button:hover, .nt-row button:hover, .nt-ask button:hover { background: var(--mx-hover); color: var(--mx-ink); }
+.nt-tools button, .nt-row button, .nt-choice button, .nt-mark { border: 0; background: transparent; color: var(--mx-muted); font: inherit; font-size: var(--mx-text-sm); cursor: pointer; border-radius: var(--mx-radius-sm); padding: var(--mx-space-1) var(--mx-space-3); }
+.nt-tools button:hover, .nt-row button:hover, .nt-choice button:hover, .nt-mark:hover { background: var(--mx-hover); color: var(--mx-ink); }
 .nt-more { display: none; }
 .nt-body { white-space: pre-wrap; }
 .nt-edit, .mx-dialog textarea { display: flex; flex-direction: column; gap: var(--mx-space-3); }
 .nt-edit textarea, .mx-dialog textarea, .mx-dialog input { width: 100%; box-sizing: border-box; font: inherit; font-size: var(--mx-text-md); color: var(--mx-ink); border: var(--mx-line-width) solid var(--mx-line-3); border-radius: var(--mx-radius-md); padding: var(--mx-space-4) var(--mx-space-5); resize: vertical; }
 .mx-dialog label { display: flex; flex-direction: column; gap: var(--mx-space-2); font-size: var(--mx-text-sm); color: var(--mx-muted); }
-.nt-row { display: flex; justify-content: flex-end; gap: var(--mx-space-3); }
+.nt-row { display: flex; justify-content: flex-end; align-items: center; gap: var(--mx-space-3); flex-wrap: wrap; }
 .nt-row .nt-primary { background: var(--mx-ink); color: var(--mx-on-ink); padding: var(--mx-space-3) var(--mx-space-5); }
 .nt-row .nt-primary:hover { background: var(--mx-ink-2); color: var(--mx-on-ink); }
-.nt-row button:disabled { opacity: 0.4; cursor: default; }
-.nt-ask { display: flex; align-items: center; gap: var(--mx-space-3); flex-wrap: wrap; font-size: var(--mx-text-sm); color: var(--mx-ink-3); }
-.nt-danger { color: var(--mx-bad) !important; }
+.nt-row button:disabled, .nt-choice button:disabled { opacity: 0.4; cursor: default; }
 .nt-said { font-size: var(--mx-text-sm); color: var(--mx-warn); line-height: 1.45; }
+.nt-over { position: absolute; left: 0; }
 .nt-sheet-button { border: 0; background: var(--mx-hover); border-radius: var(--mx-radius-md); padding: var(--mx-space-5); font: inherit; font-size: var(--mx-text-md); text-align: left; cursor: pointer; }
 .nt-revision { position: absolute; left: 0; top: 0; width: 872px; box-sizing: border-box; }
 .nt-revision b { font-size: var(--mx-text-lg); color: var(--mx-ink); }
-.nt-below { position: absolute; left: 0; }
+.nt-ref { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); color: var(--mx-muted); }
+.nt-ref.dr { color: var(--mx-warn); }
+.nt-counts { margin-left: auto; font-size: var(--mx-text-xs); color: var(--mx-muted); }
+/* The state of a change, as the template's revision page says it. */
 .nt-kind { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); }
-.nt-kind.added { color: var(--mx-ok); }
+.nt-kind.new { color: var(--mx-ok); }
 .nt-kind.changed { color: var(--mx-warn); }
-.nt-kind.removed { color: var(--mx-bad); }
-.nt-before { color: var(--mx-muted); text-decoration: line-through; white-space: pre-wrap; }
+.nt-kind.deleted { color: var(--mx-bad); }
+.nt-foot { font-size: var(--mx-text-xs); color: var(--mx-faint); line-height: 1.4; }
+.nt-meet { font-size: var(--mx-text-xs); color: var(--mx-warn); line-height: 1.4; }
+/* The words that changed, inside the one text: struck red what went, green what came. */
+.nt-marking { white-space: pre-wrap; }
+.nt-gone { color: var(--mx-bad); text-decoration: line-through; }
+.nt-came { color: var(--mx-ok); text-decoration: none; background: color-mix(in srgb, var(--mx-ok) 12%, transparent); }
+/* The notice above the cards when someone published over the draft's base. */
+.nt-race { position: absolute; left: 0; width: 872px; box-sizing: border-box; display: flex; gap: var(--mx-space-3); padding: var(--mx-space-4) var(--mx-space-5); border: var(--mx-line-width) solid var(--mx-warn); border-radius: var(--mx-radius-md); background: color-mix(in srgb, var(--mx-warn) 8%, var(--mx-surface)); font-size: var(--mx-text-sm); color: var(--mx-ink-3); line-height: 1.45; }
+/* Published: the button that leads to the draft, and the mark on a note waiting there. */
+.nt-waiting { position: absolute; right: 0; border: 0; background: transparent; color: var(--mx-cal-link); font: inherit; font-size: var(--mx-text-sm); cursor: pointer; }
+.nt-mark { background: color-mix(in srgb, var(--mx-palette-blue) 12%, transparent); color: var(--mx-palette-blue); font-weight: var(--mx-weight-bold); align-self: flex-start; }
+.nt-mark.deleted { background: color-mix(in srgb, var(--mx-bad) 12%, transparent); color: var(--mx-bad); }
+/* The publishing dialog: the conflicts, their two sides and their choices. */
+.nt-sec { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); color: var(--mx-muted); margin-top: var(--mx-space-4); }
+.nt-conflict { display: flex; flex-direction: column; gap: var(--mx-space-3); padding: var(--mx-space-4); border: var(--mx-line-width) solid var(--mx-line-3); border-radius: var(--mx-radius-md); }
+.nt-conflict.overwrite { border-color: var(--mx-warn); }
+.nt-conflict.give_up { border-color: var(--mx-muted); }
+.nt-side { display: flex; flex-direction: column; gap: var(--mx-space-1); padding: var(--mx-space-3); border-radius: var(--mx-radius-sm); background: var(--mx-surface-2); font-size: var(--mx-text-sm); line-height: 1.45; }
+.nt-side i { font-style: normal; font-size: var(--mx-text-xs); color: var(--mx-muted); }
+.nt-choice { display: flex; gap: var(--mx-space-3); }
+.nt-choice button { border: var(--mx-line-width) solid var(--mx-line-3); padding: var(--mx-space-3) var(--mx-space-4); }
+.nt-choice button.on { background: var(--mx-ink); border-color: var(--mx-ink); color: var(--mx-on-ink); }
 @media (max-width: 520px) {
   .nt-tools button:not(.nt-more) { display: none; }
   .nt-more { display: inline-flex; }

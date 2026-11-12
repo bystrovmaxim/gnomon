@@ -22,13 +22,13 @@ Phases follow the issue's five; one phase is one commit. `[P]` — may run in pa
 ## Phase 3 — The template's pages (US1, US2, US3, US5, US6)
 
 - [ ] T009 `web/package.json`, `web/package-lock.json`: `diff` (jsdiff) added.
-- [ ] T010 `web/app/[org]/notes/marking.tsx`: the one marking — `diffWords` drawn as struck and green spans, every part rendered.
-- [ ] T011 `web/app/[org]/notes/draft.ts`: the pages' rules — the state's label and colour, the State filter's rows with `absent`, the conflict's words, the draft's order, the counts; `web/tests/draft.test.ts`.
-- [ ] T012 `web/app/[org]/notes/parts.tsx`, `DraftView.tsx`: Draft on the canvas at `/items/{item_id}` — cards with state, author, base and marking, the race notice, Edit and Revert (menu on a phone), New note, Publish, the State filter, read only in the past.
-- [ ] T013 `web/app/[org]/items/[item_id]/published/*`: Published notes reads the draft too — "In your draft" marks, the waiting count, Edit opening Draft with `?edit=`, Delete in my draft, the Authors filter, read only in the past.
-- [ ] T014 The publishing dialog: title, comment, release, the list of what goes in, the conflicts with both marked sides and the two choices; Publish off until each conflict has one; `nothing_to_publish` in words — a sheet on a phone.
-- [ ] T015 `navigation.yaml`: the Notes node goes; Draft at `/items/{item_id}`, Published notes at `/items/{item_id}/published`; `NotesView.tsx` and the notes route removed; `notes.css` for the states, the marking, the race notice, the conflict blocks and the phone.
-- [ ] T016 `tests/test_navigation.py`, `tests/test_history_data.py`, `tests/test_shell.py`: the two pages as built; the history the pages give.
+- [x] T010 `web/app/[org]/notes/marking.tsx`: the one marking — `diffWords` drawn as struck and green spans, every part rendered.
+- [x] T011 `web/app/[org]/notes/draft.ts`: the pages' rules — the state's label and colour, the State filter's rows with `absent`, the conflict's words, the draft's order, the counts; `web/tests/draft.test.ts`.
+- [x] T012 `web/app/[org]/notes/parts.tsx`, `DraftView.tsx`: Draft on the canvas at `/items/{item_id}` — cards with state, author, base and marking, the race notice, Edit and Revert (menu on a phone), New note, Publish, the State filter, read only in the past.
+- [x] T013 `web/app/[org]/items/[item_id]/published/*`: Published notes reads the draft too — "In your draft" marks, the waiting count, Edit opening Draft with `?edit=`, Delete in my draft, the Authors filter, read only in the past.
+- [x] T014 The publishing dialog: title, comment, release, the list of what goes in, the conflicts with both marked sides and the two choices; Publish off until each conflict has one; `nothing_to_publish` in words — a sheet on a phone.
+- [x] T015 `navigation.yaml`: the Notes node goes; Draft at `/items/{item_id}`, Published notes at `/items/{item_id}/published`; `NotesView.tsx` and the notes route removed; `notes.css` for the states, the marking, the race notice, the conflict blocks and the phone.
+- [x] T016 `tests/test_navigation.py`, `tests/test_history_data.py`, `tests/test_shell.py`: the two pages as built; the history the pages give.
 
 ## Phase 4 — Tests, the browser check, the walk (US7)
 
