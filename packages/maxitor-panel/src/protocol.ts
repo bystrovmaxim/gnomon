@@ -10,7 +10,9 @@ export type PageMessage =
   | { type: "panel.ready"; build: string; surface: "document" | "canvas"; shell: boolean; shellVersion: string }
   | { type: "panel.navigate"; path: string; query: Query; mode: "push" | "replace" }
   | { type: "panel.title"; text: string }
-  | { type: "panel.open"; owner: string; path: string; query: Query };
+  | { type: "panel.open"; owner: string; path: string; query: Query }
+  /** The anchors of what the page holds but its filters leave out now (spec 081, FR-013). */
+  | { type: "panel.hidden"; anchors: string[] };
 
 /** From the core to the page. */
 export type CoreMessage =
@@ -19,6 +21,9 @@ export type CoreMessage =
 
 const text = (value: unknown): value is string => typeof value === "string";
 const path = (value: unknown): value is string => text(value) && value.startsWith("/") && !value.startsWith("//");
+/** The most anchors one message may carry: a list of 10,000 rows and its other marks. */
+export const MAX_HIDDEN = 20_000;
+const anchors = (value: unknown): value is string[] => Array.isArray(value) && value.length <= MAX_HIDDEN && value.every(text);
 const query = (value: unknown): value is Query =>
   typeof value === "object" && value !== null && !Array.isArray(value) && Object.values(value).every(text);
 
@@ -38,6 +43,8 @@ export function pageMessage(data: unknown): PageMessage | null {
       return text(m.text) ? { type: m.type, text: m.text.slice(0, 200) } : null;
     case "panel.open":
       return text(m.owner) && path(m.path) && query(m.query) ? { type: m.type, owner: m.owner, path: m.path, query: m.query } : null;
+    case "panel.hidden":
+      return anchors(m.anchors) ? { type: m.type, anchors: m.anchors } : null;
     default:
       return null;
   }

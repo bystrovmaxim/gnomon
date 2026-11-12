@@ -39,6 +39,13 @@ def test_a_page_that_places_an_element_fixed_is_refused(plugin) -> None:
 uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.5.0
 ```
 
+9. **Its filters read the address the way the shell writes it.** A range of dates is `from..to` with bounds that may move with today; a test of the page's filtering reads `?written=now-30d..now` on a fixed day and expects exactly the notes of those 30 days, and a note with no date only while both ends are open — `inRange` of `@maxitor/panel` gives the same answer the core's test list relies on:
+
+```ts
+import { inRange, readRange } from "@maxitor/panel";
+assert.equal(inRange("2026-09-01", readRange("now-90d..now"), "2026-11-10"), true);
+```
+
 ## Run them
 
 ```bash

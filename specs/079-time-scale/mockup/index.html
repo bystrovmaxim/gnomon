@@ -1,0 +1,1705 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maxitor core — the panels follow one element · mockup</title>
+<style>
+  /* The visual language of the mockups of spec 059 and of issues #73 and #82: the same colours, header, tree and dialogs. */
+  :root {
+    --page-bg: #e9edf1; --ink: #0f172a; --ink2: #1e293b; --muted: #64748b; --faint: #94a3b8;
+    --line: rgba(15,23,42,.1); --line2: rgba(15,23,42,.06);
+    --sidebar: #EBF2F5; --canvas: #f6f8fa;
+    --ok: #16a34a; --bad: #b91c1c; --warn: #b45309;
+    --add: #16a34a; --rem: #dc2626; --chg: #d97706;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: var(--font); color: var(--ink); background: var(--page-bg); display: flex; }
+  button, textarea, input { font: inherit; color: inherit; }
+  code, .mono { font-family: var(--mono); }
+
+  /* ---------- mockup navigator ---------- */
+  .nav { width: 300px; flex-shrink: 0; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid var(--line); padding: 18px 12px 32px; }
+  .nav h1 { font-size: 15px; margin: 0 6px 4px; }
+  .nav .sub { font-size: 12px; color: var(--muted); margin: 0 6px 12px; line-height: 1.45; }
+  .nav .group { font-size: 10px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 14px 6px 4px; }
+  .nav button.screen { display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+  .nav button.screen:hover { background: rgba(15,23,42,.05); }
+  .nav button.screen.on { background: rgba(15,23,42,.08); font-weight: 600; }
+  .nav button.screen .n { color: var(--muted); font-size: 11px; min-width: 24px; font-variant-numeric: tabular-nums; }
+  .seg { display: flex; margin: 4px 6px 6px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: #f8fafc; }
+  .seg button { flex: 1; border: 0; background: none; border-radius: 6px; font-size: 12.5px; padding: 5px 0; cursor: pointer; color: var(--muted); }
+  .seg button.on { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+  .path { margin: 6px 4px 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  .path .pt { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .path .pf { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .path .steps { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .path .steps button { border: 1px solid var(--line); background: #f8fafc; border-radius: 6px; font-size: 11px; padding: 2px 6px; cursor: pointer; }
+  .path .steps span { color: var(--faint); font-size: 11px; }
+
+  .stage { flex: 1; min-width: 0; height: 100vh; overflow-y: auto; padding: 18px 24px 48px; }
+  .frame-cap { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+  .frame-cap b { color: var(--ink); }
+  .frame-box { position: relative; }
+  .frame-scale { transform-origin: top left; position: absolute; top: 0; left: 0; }
+  .notes { max-width: 980px; margin-top: 18px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 20px 16px; }
+  .notes h2 { font-size: 15px; margin: 0 0 6px; }
+  .notes li { font-size: 13px; line-height: 1.55; }
+  .notes ul { padding-left: 18px; margin: 6px 0 0; }
+  .notes code { font-size: 12px; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; }
+
+  /* ---------- device ---------- */
+  .device { width: 1360px; height: 840px; background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; position: relative;
+            box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 8px 28px rgba(15,23,42,.12); }
+  .urlbar { height: 34px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #f1f5f9; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .urlbar .u { flex: 1; max-width: 760px; height: 22px; border-radius: 6px; background: #fff; border: 1px solid var(--line); display: flex; align-items: center; padding: 0 10px; color: #334155; white-space: nowrap; overflow: hidden; }
+  .urlbar .u b { color: var(--ink); font-weight: 600; }
+  .urlbar .u i { font-style: normal; color: #1d4ed8; }
+
+  .hdr { height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 12px; background: #fff; border-bottom: 1px solid var(--line); position: relative; z-index: 20; }
+  .burger { display: none; width: 32px; height: 32px; border: 0; background: none; border-radius: 7px; align-items: center; justify-content: center; cursor: pointer; margin-left: -6px; }
+  .burger:hover { background: rgba(15,23,42,.06); }
+  .logo { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13.5px; margin-right: 8px; }
+  .logo .mk { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+  .crumb { display: inline-flex; align-items: baseline; gap: 6px; height: 28px; line-height: 28px; padding: 0 8px; font-size: 13px; font-weight: 600; white-space: nowrap; min-width: 0; }
+  .crumb .lv { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .crumb .sep { color: var(--faint); font-weight: 400; margin: 0 2px; }
+  .hdr .spacer { flex: 1; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #cbd5e1; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .avatar.sm { width: 24px; height: 24px; font-size: 10px; }
+  .ico { width: 16px; height: 16px; flex-shrink: 0; }
+  .ico.sm { width: 14px; height: 14px; }
+
+  /* The core's moment in the top row: the graph viewer's pill (VersionButton) — clock, the moment in bold, chevron. */
+  .pill { height: 28px; display: inline-flex; align-items: center; border-radius: 8px; background: rgba(15,23,42,.05); margin-left: 6px; min-width: 0; }
+  .pill.open { background: rgba(15,23,42,.1); }
+  .pill .pb2 { height: 28px; border: 0; background: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 6px 0 8px; font-size: 12.5px; color: #334155; cursor: pointer; white-space: nowrap; min-width: 0; border-radius: 8px; }
+  .pill .pb2 b { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+  .pill .pb2 .live { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+  .pill .pb2 .past { width: 7px; height: 7px; border-radius: 50%; background: #2563eb; flex-shrink: 0; }
+  .pill .stp { width: 26px; height: 28px; border: 0; background: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: #475569; }
+  .pill .stp.off { color: #cbd5e1; cursor: default; }
+  .pill .dv { width: 1px; height: 16px; background: rgba(15,23,42,.12); }
+  .pill .nowb { border: 0; background: none; font-size: 12px; color: #1d4ed8; font-weight: 600; padding: 0 9px; height: 28px; cursor: pointer; white-space: nowrap; }
+
+  /* ---------- the organization's frame ---------- */
+  .body { flex: 1; min-height: 0; display: flex; position: relative; }
+  .sb { width: 255px; flex-shrink: 0; background: var(--sidebar); border-right: 1px solid rgba(15,23,42,.08); display: flex; flex-direction: column; }
+  .sbh { flex-shrink: 0; display: flex; align-items: center; gap: 4px; padding: 4px 8px 2px; }
+  .sbb { width: 32px; height: 32px; border: 0; padding: 0; border-radius: 6px; background: transparent; color: rgb(100,116,139); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .sbb:hover { background: rgba(15,23,42,.07); }
+  .sbb.off { opacity: .4; cursor: default; } .sbb.off:hover { background: transparent; }
+  .sb.collapsed { width: 48px; }
+  .sb.collapsed .sbh { flex-direction: column; padding: 4px 8px; }
+  .tree { flex: 1; overflow-y: auto; padding: 6px 8px 4px; }
+  .tg, .ti { display: flex; align-items: center; min-width: 0; border-radius: 6px; cursor: pointer; color: rgb(30,41,59); font-size: 13px; line-height: 1.35; }
+  .tg { min-height: 36px; padding: 0 8px; font-weight: 600; letter-spacing: -.01em; margin-top: 4px; }
+  .ti { min-height: 32px; padding: 0 8px 0 32px; font-weight: 400; }
+  .ti.l2 { padding-left: 56px; }
+  .tg:hover, .ti:hover { background: rgba(15,23,42,.07); }
+  .ti.on, .ti.on:hover { background: rgba(15,23,42,.09); }
+  .tg .slot, .ti .slot { width: 32px; flex-shrink: 0; display: inline-flex; align-items: center; color: rgb(100,116,139); }
+  .tg .slot .ico { width: 20px; height: 20px; }
+  .ti .slot .ico { width: 16px; height: 16px; opacity: .88; }
+  .tg .lb, .ti .lb { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .content { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; }
+
+  /* Maxitor's controls over the right panel, declared in navigation.yaml: the same place for every plugin. */
+  .ctl { height: 42px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--line2); background: #fff; }
+  .ctl .vseg { display: flex; border: 1px solid var(--line); border-radius: 7px; padding: 2px; background: #f8fafc; }
+  .ctl .vseg span { font-size: 12px; padding: 3px 10px; border-radius: 5px; color: var(--muted); cursor: pointer; }
+  .ctl .vseg span.on { background: #fff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+  .ctl .flt { height: 28px; border: 1px solid var(--line); border-radius: 7px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; font-size: 12px; color: #334155; background: #fff; cursor: pointer; }
+  .ctl .who { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+  .ctl .who .avatar { width: 22px; height: 22px; font-size: 9px; border: 2px solid #fff; margin-left: -8px; }
+
+  /* ---------- the plugin's page ---------- */
+  .page { flex: 1; overflow-y: auto; background: var(--canvas); padding: 22px 32px 48px; }
+  .page .inner { max-width: 760px; margin: 0 auto; }
+  .ph { display: flex; align-items: flex-end; gap: 16px; }
+  .ph .tx { flex: 1; min-width: 0; }
+  .ph .k { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .ph h2 { font-size: 22px; margin: 2px 0 0; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: 14px 0 16px; }
+  .tabs button { border: 0; background: none; padding: 8px 12px; font-size: 13px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+  .tabs button.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+  .tabs .cnt { font-size: 11px; background: #fef3c7; color: #92400e; border-radius: 9px; padding: 0 6px; font-weight: 600; }
+  .tabs .cnt.z { background: #e2e8f0; color: #475569; }
+
+  .banner { display: flex; gap: 10px; align-items: center; border-radius: 9px; padding: 10px 12px; font-size: 13px; line-height: 1.45; margin-bottom: 14px; }
+  .banner .ico { flex-shrink: 0; }
+  .banner .tx { flex: 1; min-width: 0; }
+  .banner.past { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+  .banner.rev { background: #f5f3ff; border: 1px solid #ddd6fe; color: #4c1d95; }
+  .banner.draft { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
+  .banner .btn2 { flex-shrink: 0; }
+
+  .composer { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .composer textarea { flex: 1; border: 0; outline: 0; resize: none; font-size: 13.5px; line-height: 1.5; min-height: 22px; padding: 3px 0; background: none; }
+  .composer.focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+
+  .note { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; position: relative; }
+  .note.fresh { border-color: #86efac; box-shadow: 0 0 0 3px rgba(22,163,74,.1); }
+  .note.editing { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .note.conflict { border-color: #fca5a5; box-shadow: 0 0 0 3px rgba(239,68,68,.08); }
+  .note.gone .nb { color: var(--muted); }
+  .nh { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .nh b { font-weight: 600; }
+  .nh .tm { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .nh .acts { margin-left: auto; display: flex; gap: 2px; flex-shrink: 0; }
+  .ib { width: 28px; height: 28px; border: 0; background: none; border-radius: 7px; display: inline-flex; align-items: center; justify-content: center; color: #64748b; cursor: pointer; }
+  .ib:hover { background: rgba(15,23,42,.06); color: var(--ink); }
+  .ib.del:hover { color: var(--bad); background: #fef2f2; }
+  .ib.more { display: none; }
+  .nb { font-size: 13.5px; line-height: 1.55; color: var(--ink2); margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+  .note { min-width: 0; overflow: hidden; }
+  .tagnew { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 6px; background: #dcfce7; color: #166534; }
+  .note textarea { width: 100%; border: 1px solid rgba(15,23,42,.2); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; line-height: 1.5; resize: vertical; min-height: 66px; margin-top: 8px; outline: 0; }
+  .note textarea:focus { border-color: #0f172a; }
+  .eft { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+  .eft .hint { font-size: 11.5px; color: var(--muted); margin-right: auto; }
+  .eft .hint code { font-size: 11px; background: #f1f5f9; padding: 0 4px; border-radius: 4px; }
+
+  .since { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 9px; display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; color: #475569; line-height: 1.5; }
+  .since .mk { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 7px; white-space: nowrap; flex-shrink: 0; margin-top: 1px; }
+  .since .mk.chg { background: #fef3c7; color: #92400e; }
+  .since .mk.del { background: #fee2e2; color: #991b1b; }
+  .since .mk.same { background: #dcfce7; color: #166534; }
+  .since .tx { flex: 1; min-width: 0; }
+  .since .now { color: var(--muted); }
+  .since .btn2 { flex-shrink: 0; }
+
+  .cbox { margin-top: 10px; border-radius: 8px; background: #fef2f2; border: 1px solid #fecaca; padding: 10px 12px; font-size: 12.5px; color: #7f1d1d; line-height: 1.5; }
+  .cbox .t { font-weight: 600; display: flex; gap: 7px; align-items: center; }
+  .cbox .mine { background: #fff; border: 1px solid #fecaca; border-radius: 7px; padding: 8px 10px; margin-top: 8px; color: var(--ink2); font-size: 13px; }
+  .cbox .mine .lbl { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 2px; }
+  .cbox .ft { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  .del-w { background: #fee2e2; color: #991b1b; text-decoration: line-through; border-radius: 3px; padding: 0 1px; }
+  .ins-w { background: #dcfce7; color: #166534; border-radius: 3px; padding: 0 1px; }
+
+  .revhd { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; }
+  .revhd .ref { font-size: 15px; font-weight: 700; background: #ede9fe; color: #5b21b6; border-radius: 7px; padding: 4px 9px; font-variant-numeric: tabular-nums; }
+  .revhd .tt { flex: 1; min-width: 0; }
+  .revhd .tt b { font-size: 14px; }
+  .revhd .tt div { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .sum { display: inline-flex; gap: 8px; font-size: 12px; font-weight: 600; flex-wrap: wrap; }
+  .sum .a { color: var(--add); } .sum .r { color: var(--rem); } .sum .c { color: var(--chg); } .sum .z { color: var(--muted); font-weight: 400; }
+
+  .chrow { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: flex; gap: 10px; }
+  .chrow .st { width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .chrow .st.a { background: #dcfce7; color: #166534; } .chrow .st.r { background: #fee2e2; color: #991b1b; } .chrow .st.c { background: #fef3c7; color: #92400e; }
+  .chrow .bd { flex: 1; min-width: 0; }
+  .chrow .bd .w { font-size: 12px; color: var(--muted); }
+  .chrow .bd .nb { margin-top: 3px; }
+
+  .empty-st { background: #fff; border: 1.5px dashed rgba(15,23,42,.16); border-radius: 12px; padding: 34px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
+  .empty-st b { color: var(--ink2); font-size: 15px; display: block; margin-bottom: 4px; }
+  .empty-st .btn2 { margin-top: 14px; }
+
+  .nf { flex: 1; display: flex; align-items: center; justify-content: center; background: var(--canvas); padding: 20px; }
+  .nf .box { text-align: center; max-width: 420px; }
+  .nf .big { width: 54px; height: 54px; border-radius: 50%; background: #e2e8f0; color: #64748b; display: inline-flex; align-items: center; justify-content: center; }
+  .nf .big .ico { width: 26px; height: 26px; }
+  .nf h2 { font-size: 19px; margin: 12px 0 6px; }
+  .nf p { font-size: 13px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+  .nf code { font-size: 12px; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #334155; }
+
+  /* ---------- buttons ---------- */
+  .btn2 { height: 30px; border-radius: 7px; border: 1px solid rgba(15,23,42,.18); background: #fff; font-size: 12.5px; padding: 0 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; justify-content: center; }
+  .btn2:hover { border-color: rgba(15,23,42,.4); }
+  .btn2.pri { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+  .btn2.dis { opacity: .45; cursor: not-allowed; }
+  .btn2.dpri { background: var(--bad); color: #fff; border-color: var(--bad); font-weight: 600; }
+  .btn2.blue { color: #1d4ed8; border-color: #bfdbfe; background: #fff; }
+  .btn2.blue:hover { border-color: #60a5fa; }
+  .lnk { color: #1d4ed8; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+
+
+  /* ---------- the core's moment, on the right of the top row ---------- */
+  .hdr .pill { margin: 0 8px 0 0; }
+  .pill .md { font-weight: 400; color: #475569; }
+  .pill .cnts { display: inline-flex; gap: 5px; font-weight: 600; margin-left: 4px; flex-shrink: 0; }
+  .pill .ab { font-weight: 600; color: #475569; }
+
+  /* ---------- the picker card: the graph viewer's VersionPicker, 760 × auto, opened under the pill ---------- */
+  .card { position: absolute; z-index: 50; top: 89px; right: 10px; width: 760px; max-height: calc(100% - 100px); overflow-y: auto; background: #fff;
+          border: 1px solid rgba(15,23,42,.1); border-radius: 10px; box-shadow: 0 12px 40px rgba(15,23,42,.16), 0 1px 2px rgba(15,23,42,.06); padding: 14px 20px 12px; }
+  .device:not(.phone) .card { overflow: visible; max-height: none; }
+  .card .grab { display: none; }
+  .chd { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .chd .tt { min-width: 0; }
+  .chd .tt b { font-size: 13px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chd .tt span { font-size: 11.5px; color: var(--muted); line-height: 16px; }
+  .chd .rt { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .ib2 { width: 28px; height: 28px; border: 0; background: none; border-radius: 8px; color: #64748b; display: inline-flex; align-items: center; justify-content: center; cursor: help; }
+  .ib2.sm { cursor: pointer; }
+  .ib2.sm.on { color: #8250df; }
+  .ib2:hover { background: rgba(15,23,42,.06); color: var(--ink); }
+  .modes { display: inline-flex; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; padding: 2px; gap: 2px; }
+  .modes button { height: 24px; border: 0; background: none; border-radius: 6px; padding: 0 8px; font-size: 12px; color: #475569; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+  .modes button:hover { background: rgba(15,23,42,.05); }
+  .modes button.on { background: rgba(15,23,42,.08); color: var(--ink); font-weight: 600; }
+  .modes .ph-lab { display: none; }
+
+  /* the continuous history: a histogram of changes, zoomed and moved like Kibana's */
+  .hbar { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 11.5px; color: var(--muted); flex-wrap: nowrap; white-space: nowrap; }
+  .zm { display: inline-flex; border: 1px solid rgba(15,23,42,.12); border-radius: 7px; padding: 1px; gap: 1px; }
+  .zm button { border: 0; background: none; height: 22px; padding: 0 7px; border-radius: 5px; font-size: 11.5px; color: #475569; cursor: pointer; }
+  .zm button:hover { background: rgba(15,23,42,.06); color: var(--ink); }
+  .zm button.on { background: rgba(15,23,42,.08); color: var(--ink); font-weight: 600; }
+  .zm .pm { width: 24px; font-size: 14px; line-height: 1; }
+  .span { font-variant-numeric: tabular-nums; color: #334155; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .lg { margin-left: auto; display: inline-flex; gap: 10px; flex-shrink: 0; }
+  .lg span { display: inline-flex; align-items: center; gap: 4px; }
+  .lg i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .hist { position: relative; cursor: crosshair; touch-action: none; user-select: none; }
+  .hist.grabbing { cursor: grabbing; }
+  .htip { position: absolute; z-index: 3; width: 270px; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 8px; box-shadow: 0 8px 30px rgba(15,23,42,.14), 0 1px 2px rgba(15,23,42,.06);
+          padding: 9px 11px; font-size: 12px; line-height: 1.45; color: #1e293b; pointer-events: none; }
+  .htip .h { font-weight: 600; margin-bottom: 4px; }
+  .htip .c { display: flex; gap: 10px; font-weight: 600; margin-bottom: 4px; }
+  .htip .e { color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .htip .f { color: var(--faint); margin-top: 4px; font-size: 11px; }
+  .hhint { font-size: 11px; color: var(--faint); margin: 6px 0 0; }
+
+  /* under the track: the chosen moment's message — in Diff A's on the left and B's on the right — and what lies between */
+  .msgs { display: grid; grid-template-columns: minmax(0,1fr); column-gap: 16px; }
+  .msgs.two { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  .msg { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(15,23,42,.06); display: flex; flex-direction: column; }
+  .msg .mb { flex-grow: 1; margin: 2px 0 6px; padding: 8px 10px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; font-size: 12px; line-height: 1.5; color: #334155; background: #f8fafc; border: 1px solid rgba(15,23,42,.06); border-radius: 6px; }
+  .msg .mb b { color: var(--ink); }
+  .chipA, .chipB { display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 9px; font-size: 10.5px; font-weight: 600; white-space: nowrap; }
+  .chipA { border: 1.4px solid var(--ink); color: var(--ink); background: #fff; }
+  .chipB { background: var(--ink); color: #fff; }
+  .betw { margin-top: 8px; }
+  .betw > button { border: 0; padding: 0; background: none; cursor: pointer; font-size: 12px; color: #475569; }
+  .betw > button:hover { color: var(--ink); }
+  .betw ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 150px; overflow-y: auto; }
+  .betw li { border-top: 1px solid rgba(15,23,42,.06); display: flex; gap: 8px; padding: 5px 0; font-size: 12px; color: #334155; cursor: pointer; min-width: 0; }
+  .betw li b { color: var(--ink); white-space: nowrap; font-weight: 600; }
+  .betw li span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- the page in Diff and Side by side: drawn by the plugin with @maxitor/panel's parts ---------- */
+  .banner.cmp { background: #fff; border: 1px solid var(--line); color: var(--ink2); flex-wrap: wrap; }
+  .banner.cmp .tx { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .paint-authors .note[class*="dk-"] { border-left: 3px solid var(--au) !important; }
+  .note.dk-a { border-left: 3px solid #16a34a; }
+  .note.dk-c { border-left: 3px solid #d97706; }
+  .note.dk-r { border-left: 3px solid #dc2626; background: #fffafa; }
+  .note.dk-r .nb { color: #94a3b8; text-decoration: line-through; }
+  .note.dk-u { opacity: .75; }
+  .note.hl { box-shadow: 0 0 0 3px rgba(37,99,235,.28); border-color: #2563eb; }
+  .ckb { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+  .ckb.a { background: #dcfce7; color: #166534; } .ckb.c { background: #fef3c7; color: #92400e; } .ckb.r { background: #fee2e2; color: #991b1b; }
+  .unch { font-size: 12.5px; color: var(--muted); padding: 9px 12px; border: 1px dashed rgba(15,23,42,.16); border-radius: 10px; margin-bottom: 8px; cursor: pointer; background: #fbfcfd; }
+  .unch:hover { color: var(--ink); }
+  .sx-h { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px; color: #475569; margin-bottom: 8px; position: sticky; top: -22px; background: var(--canvas); padding: 6px 0; z-index: 2; }
+  .sx-h > div { display: flex; gap: 6px; align-items: center; min-width: 0; }
+  .sx-r { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; border-radius: 12px; }
+  .sx-r.hl { box-shadow: 0 0 0 3px rgba(37,99,235,.28); }
+  .sx-c { min-width: 0; display: flex; }
+  .sx-c .note { margin: 0; flex: 1; }
+  .sx-c .side { display: none; }
+  .ph0 { flex: 1; border: 1.5px dashed rgba(15,23,42,.12); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--faint); min-height: 64px; padding: 8px; text-align: center; }
+
+  /* @maxitor/panel's ChangeStepper, placed by the page over its content */
+  .cwrap { position: relative; display: inline-flex; }
+  .cwrap .pill { margin: 0; }
+  .cdrop { position: absolute; z-index: 40; top: 36px; left: 0; width: 380px; max-height: 430px; overflow-y: auto; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 12px;
+           box-shadow: 0 12px 40px rgba(15,23,42,.16); padding: 10px 6px; }
+  .cdrop .gh { font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 2px 10px 6px; }
+  .cr { display: flex; gap: 12px; align-items: center; padding: 7px 10px; border-radius: 7px; font-size: 13px; cursor: pointer; }
+  .cr:hover, .cr.on { background: rgba(15,23,42,.05); }
+  .cr .sg { width: 10px; font-weight: 700; text-align: center; }
+  .cr .sg.a { color: #16a34a; } .cr .sg.c { color: #d97706; } .cr .sg.r { color: #dc2626; }
+  .cr .cx { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cr .ck { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+  /* ---------- dialogs ---------- */
+  .scrim { position: absolute; inset: 0; background: rgba(15,23,42,.18); z-index: 55; }
+  .scrim.clear { background: transparent; z-index: 45; }
+  .dlg { position: absolute; z-index: 60; top: 110px; left: 50%; transform: translateX(-50%); width: 540px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 16px 50px rgba(15,23,42,.2); padding: 20px 22px 18px; }
+  .dlg .grab { display: none; }
+  .dlg h3 { margin: 0 0 4px; font-size: 17px; }
+  .dlg .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
+  .dlg .sub b { color: var(--ink); }
+  .dlg .ft { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .dlg .ft .btn2 { height: 32px; }
+  .dsec { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 12px 0 5px; }
+  .qt { border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; font-size: 13px; line-height: 1.55; background: #fbfcfd; }
+  .inp { width: 100%; min-height: 38px; border: 1px solid rgba(15,23,42,.2); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; outline: 0; }
+  .inp:focus { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .lab { font-size: 12px; font-weight: 600; color: #334155; margin-bottom: 5px; }
+
+  .toast { position: absolute; z-index: 70; bottom: 22px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #fff; font-size: 13px; border-radius: 9px; padding: 10px 14px; display: flex; gap: 9px; align-items: center; box-shadow: 0 10px 30px rgba(15,23,42,.25); white-space: nowrap; }
+  .toast .ico { color: #86efac; }
+  .toast a { color: #cbd5e1; text-decoration: underline; cursor: pointer; margin-left: 6px; }
+
+  .sheet { position: absolute; z-index: 60; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 20px 20px 0 0; padding: 8px 12px 22px; box-shadow: 0 -10px 40px rgba(15,23,42,.18); }
+  .sheet .grab { width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 10px; }
+  .sheet .sq { font-size: 12.5px; color: var(--muted); padding: 0 6px 10px; border-bottom: 1px solid var(--line2); margin-bottom: 6px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .sheet .it { display: flex; gap: 12px; align-items: center; height: 48px; padding: 0 8px; font-size: 15px; border-radius: 10px; cursor: pointer; }
+  .sheet .it:hover { background: rgba(15,23,42,.05); }
+  .sheet .it.bad { color: var(--bad); }
+  .sheet .it .ico { width: 18px; height: 18px; }
+
+  /* ---------- the phone: 375 × 812, one column, no horizontal scrolling ---------- */
+  .device.phone { width: 375px; height: 812px; border-radius: 34px; }
+  .device.phone .urlbar { height: 44px; padding: 0 14px; }
+  .device.phone .urlbar .u { max-width: none; font-size: 11.5px; }
+  .device.phone .hdr { gap: 4px; padding: 0 8px 0 12px; }
+  .device.phone .burger { display: inline-flex; }
+  .device.phone .logo { margin-right: 0; }
+  .device.phone .logo .nm, .device.phone .crumb, .device.phone .hdr .spacer { display: none; }
+  .device.phone .hdr .pill { flex: 1; margin: 0 2px; }
+  .device.phone .hdr .pill .pb2 { flex: 1; justify-content: flex-start; }
+  .device.phone .hdr .pill .pb2 b { flex-shrink: 1; }
+  .device.phone .pill .stp { width: 34px; }
+  .device.phone .pill, .device.phone .pill .pb2, .device.phone .pill .stp, .device.phone .pill .nowb { height: 34px; }
+  .device.phone .pill .nowb, .device.phone .pill .dv:has(+ .nowb) { display: none; }
+  .device.phone .body > .sb { display: none; }
+  .device.phone .sb.drawer { display: flex; position: absolute; z-index: 60; top: 0; left: 0; bottom: 0; width: 296px; box-shadow: 12px 0 40px rgba(15,23,42,.18); }
+  .device.phone .ti, .device.phone .tg { min-height: 42px; font-size: 14.5px; }
+  .device.phone .ctl { padding: 0 12px; height: 50px; }
+  .device.phone .ctl .who, .device.phone .ctl .flt.au { display: none; }
+  .device.phone .ctl .vseg span { padding: 6px 12px; font-size: 13px; }
+  .device.phone .page { padding: 14px 12px 28px; }
+  .device.phone .ph h2 { font-size: 20px; }
+  .device.phone .tabs { margin: 10px 0 12px; }
+  .device.phone .tabs button { flex: 1; justify-content: center; font-size: 14px; padding: 10px 4px; }
+  .device.phone .banner { flex-wrap: wrap; font-size: 13px; }
+  .device.phone .banner .tx { flex-basis: calc(100% - 30px); }
+  .device.phone .banner .btn2 { width: 100%; height: 40px; font-size: 14px; }
+  .device.phone .composer { flex-direction: column; align-items: stretch; }
+  .device.phone .composer textarea { font-size: 15px; }
+  .device.phone .composer .btn2 { height: 40px; font-size: 14px; }
+  .device.phone .note { padding: 12px; }
+  .device.phone .nb { font-size: 14.5px; }
+  .device.phone .nh .tm { font-size: 11.5px; }
+  .device.phone .ib.ed, .device.phone .ib.del { display: none; }
+  .device.phone .ib.more { display: inline-flex; width: 36px; height: 36px; margin: -6px -6px -6px 0; }
+  .device.phone .note textarea { font-size: 15px; min-height: 96px; }
+  .device.phone .eft { flex-wrap: wrap; }
+  .device.phone .eft .hint { flex-basis: 100%; }
+  .device.phone .eft .btn2 { flex: 1; height: 40px; font-size: 14px; }
+  .device.phone .cbox .ft .btn2 { flex: 1; height: 40px; font-size: 13.5px; }
+  .device.phone .revhd { flex-wrap: wrap; }
+  .device.phone .revhd .btn2 { width: 100%; height: 40px; font-size: 14px; }
+  .device.phone .card { top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 86%; border-radius: 12px 12px 0 0; border: 0; padding: 8px 16px 18px; }
+  .device.phone .card .grab { display: block; width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 10px; }
+  .device.phone .chd { flex-wrap: wrap; }
+  .device.phone .chd .rt { width: 100%; }
+  .device.phone .modes { flex: 1; }
+  .device.phone .modes button { flex: 1; justify-content: center; height: 32px; font-size: 13px; }
+  .device.phone .modes .dt-lab { display: none; }
+  .device.phone .modes .ph-lab { display: inline; }
+  .device.phone .hbar { flex-wrap: wrap; }
+  .device.phone .lg { margin-left: 0; width: 100%; }
+  .device.phone .zm button { height: 30px; padding: 0 9px; font-size: 12.5px; }
+  .device.phone .msgs.two { grid-template-columns: minmax(0,1fr); }
+  .device.phone .cdrop { position: fixed; }
+  .device.phone .sx-h { display: none; }
+  .device.phone .sx-r { grid-template-columns: minmax(0,1fr); gap: 4px; padding: 6px; background: #eef2f6; margin-bottom: 10px; }
+  .device.phone .sx-c .side { display: inline-flex; margin-right: 6px; }
+  .device.phone .dlg { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; border-radius: 20px 20px 0 0; max-height: 88%; overflow-y: auto; padding: 8px 16px 22px; border: 0; }
+  .device.phone .dlg .grab { display: block; width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 12px; }
+  .device.phone .dlg .ft { flex-direction: column-reverse; gap: 8px; }
+  .device.phone .dlg .ft .btn2 { width: 100%; height: 46px; font-size: 15px; }
+  .device.phone .inp { font-size: 15px; min-height: 44px; }
+  .device.phone .toast { left: 12px; right: 12px; transform: none; bottom: 16px; white-space: normal; }
+  .device.phone .nf .btn2 { height: 44px; padding: 0 22px; font-size: 15px; }
+
+  /* ---------- the canvas: every view of Maxitor lies on it and is handled like a graph (spec 059, ux 8) ---------- */
+  .strip { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 7px 14px; font-size: 12.5px; border-bottom: 1px solid; flex-wrap: wrap; }
+  .strip b { font-weight: 600; }
+  .strip .lnk2 { margin-left: auto; text-decoration: underline; cursor: pointer; font-weight: 600; }
+  .strip.past { background: #eff6ff; color: #1e3a8a; border-color: #bfdbfe; }
+  .strip.cmp { background: #eef2ff; color: #312e81; border-color: #c7d2fe; }
+  .strip.rev { background: #f5f3ff; color: #4c1d95; border-color: #ddd6fe; }
+  .strip .chipA, .strip .chipB { height: 17px; }
+  .cvs { flex: 1; min-height: 0; display: flex; position: relative; }
+  .cv { flex: 1; min-width: 0; position: relative; overflow: hidden; cursor: grab; user-select: none;
+        background-color: var(--canvas); background-image: radial-gradient(rgba(15,23,42,.13) 1px, transparent 1px); background-size: 18px 18px; }
+  .half { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; flex-direction: column; position: relative; }
+  .half + .half { border-left: 1px solid rgba(15,23,42,.14); }
+  .hh { flex-shrink: 0; height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 12px; color: #334155; background: #fff; border-bottom: 1px solid rgba(15,23,42,.08); }
+  .hh .sd { font-weight: 700; } .hh .sd.a { color: #b45309; } .hh .sd.b { color: #1d4ed8; }
+  .hh b { flex: 1; min-width: 0; color: #0f172a; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hh .n { color: var(--muted); white-space: nowrap; }
+  .trk { flex-shrink: 0; height: 20px; padding: 0 8px; font-size: 11.5px; font-weight: 600; border: 0; border-radius: 6px; color: #64748b; background: transparent; cursor: pointer; }
+  .trk.on { color: #1d4ed8; background: rgba(37,99,235,.1); }
+  .flip { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid rgba(15,23,42,.12); border-radius: 8px; flex-shrink: 0; }
+  .flip button { width: 30px; height: 20px; border: 0; border-radius: 6px; font-size: 12px; font-weight: 700; color: #334155; background: transparent; cursor: pointer; }
+  .flip button.a.on { background: #b45309; color: #fff; } .flip button.b.on { background: #1d4ed8; color: #fff; }
+  .half .cv { flex: 1; }
+  .device:not(.phone) .half .vtabs { left: calc(172px + (100% - 172px) / 2); }
+  .half .cstep-o { top: auto; bottom: 10px; right: 12px; }
+  .half .cstep-o .cdrop { top: auto; bottom: 40px; }
+  .dcard { position: absolute; z-index: 9; width: 300px; box-sizing: border-box; padding: 10px 12px; font-size: 12px; line-height: 1.45; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 8px; box-shadow: 0 8px 30px rgba(15,23,42,.14), 0 1px 2px rgba(15,23,42,.06); color: #0f172a; }
+  .dcard .dh { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; margin-bottom: 4px; }
+  .dcard .bd { border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0; }
+  .dcard .drow { display: grid; grid-template-columns: minmax(70px, auto) 1fr; gap: 6px; padding: 4px 0; border-top: 1px solid rgba(15,23,42,.06); }
+  .dcard .drow > span:first-child { color: #64748b; }
+  .dcard .drow > span:last-child { overflow-wrap: anywhere; }
+  .cvnote { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 8; background: rgba(15,23,42,.88); color: #fff; font-size: 12px; border-radius: 8px; padding: 6px 10px; opacity: 0; transition: opacity 160ms ease; pointer-events: none; white-space: nowrap; }
+  .cvnote.on { opacity: 1; }
+  .note.across { box-shadow: 0 0 0 2px rgba(37,99,235,.45); }
+  .cv.drag { cursor: grabbing; }
+  .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; width: max-content; }
+  .world.glide { transition: transform .45s cubic-bezier(.2,.7,.2,1); }
+  /* maxitor-web's ErdModelPill: the view's tabs at the top centre */
+  .vtabs { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; padding: 2px; gap: 1px; background: rgba(241,245,249,.88); backdrop-filter: blur(8px); border-radius: 999px; border: 1px solid rgba(15,23,42,.07); white-space: nowrap; }
+  .vtabs button { display: flex; align-items: center; gap: 6px; padding: 0 12px; height: 26px; border: 0; border-radius: 999px; font-size: 12px; font-weight: 500; color: #64748b; background: transparent; cursor: pointer; }
+  .vtabs button:hover { color: #0f172a; }
+  .vtabs button.on { color: #0f172a; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.10), 0 0 0 .5px rgba(15,23,42,.06); }
+  .vtabs .n { font-size: 10.5px; font-weight: 400; color: #94a3b8; font-variant-numeric: tabular-nums; }
+  /* maxitor-web's ErdFilterPanel: 148 px, a strict accordion, the gear shift at its foot */
+  .fp { position: absolute; top: 12px; left: 12px; z-index: 6; width: 148px; max-height: calc(100% - 68px); display: flex; flex-direction: column; overflow: hidden; cursor: default;
+        background: rgba(255,255,255,.88); backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,.08); border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,.07); padding: 0 10px; }
+  .fp .secs { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0; }
+  .fp .sh { display: flex; align-items: center; gap: 4px; padding: 6px 0; cursor: pointer; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: rgba(0,0,0,.6); }
+  .fp .sh svg { width: 16px; height: 16px; transition: transform 120ms ease; }
+  .fp .sh.closed svg { transform: rotate(-90deg); }
+  .fp .rows { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; }
+  .fp .row { display: flex; align-items: center; gap: 8px; cursor: pointer; transition: opacity 120ms ease; min-width: 0; }
+  .fp .row.off { opacity: .42; }
+  .fp .row .lb { font-size: 11px; color: rgba(0,0,0,.87); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .fp .bd { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); display: inline-flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; font-size: 8px; font-weight: 700; box-sizing: border-box; }
+  .fp .gear { border-top: 1px solid rgba(0,0,0,.07); display: flex; justify-content: center; padding: 6px 0; flex-shrink: 0; margin: 0 -10px; }
+  .gs { position: relative; height: 20px; display: inline-flex; }
+  .gs i { position: absolute; left: 8px; right: 8px; top: 9.5px; height: 1px; background: #cbd5e1; }
+  .gs button { position: absolute; top: 0; width: 16px; height: 20px; border: 0; padding: 0; background: transparent; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .gs button span { width: 6px; height: 6px; border-radius: 50%; background: #fff; border: 1px solid #cbd5e1; transition: all 120ms ease; box-sizing: border-box; }
+  .gs button.on { cursor: default; } .gs button.on span { width: 8px; height: 8px; background: #475569; border: 0; box-shadow: 0 0 0 3px rgba(71,85,105,.12); }
+  .gs button:hover span { border-color: #94a3b8; }
+  /* maxitor-web's ZoomToolbar: ghost buttons, no card */
+  .zoombar { position: absolute; bottom: 10px; left: 10px; z-index: 6; display: flex; align-items: center; gap: 2px; padding: 2px 0; }
+  .zoombar [data-z] { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #64748b; font-size: 15px; font-weight: 500; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .zoombar [data-z]:hover { background: rgba(15,23,42,.06); color: #0f172a; }
+  .zoombar .zpct { min-width: 3.1em; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; color: #64748b; padding: 0 6px 0 4px; user-select: none; }
+  .zoombar .tdiv { width: 1px; height: 22px; background: rgba(15,23,42,.12); margin: 0 2px; }
+  .zoombar .vb { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #64748b; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .zoombar .vb:hover { background: rgba(15,23,42,.06); color: #0f172a; }
+  .zoombar .vb.on, .zoombar .vb.on:hover { color: #1d4ed8; }
+  .device.phone .zoombar [data-z], .device.phone .zoombar .vb { width: 44px; height: 44px; }
+  .lgd { position: absolute; right: 12px; bottom: 10px; z-index: 6; display: flex; gap: 12px; font-size: 11.5px; color: var(--muted); cursor: default;
+         background: rgba(255,255,255,.92); border: 1px solid var(--line2); padding: 6px 12px; border-radius: 8px; }
+  .lgd span { display: inline-flex; align-items: center; gap: 5px; }
+  .lgd i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .newb { position: absolute; top: 12px; right: 12px; z-index: 7; }
+  .newb .btn2 { height: 30px; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
+  .device.phone .newb { top: auto; bottom: 12px; right: 12px; }
+  .device.phone .newb .btn2 { height: 44px; padding: 0 16px; font-size: 14px; border-radius: 22px; }
+  .cstep-o { position: absolute; top: 12px; right: 12px; z-index: 7; }
+  .cstep-o .pill { background: rgba(255,255,255,.95); border: 1px solid rgba(15,23,42,.1); box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+  .cstep-o .cdrop { left: auto; right: 0; }
+
+  /* the world: notes as cards on the canvas */
+  .grid { display: grid; grid-template-columns: repeat(3, 300px); gap: 14px; align-items: start; }
+  .grid > .wide { grid-column: 1 / -1; }
+  .grid.g2 { grid-template-columns: repeat(2, 300px); }
+  .grid.g1 { grid-template-columns: 300px; }
+  .grid .note, .grid .composer, .grid .ph0 { margin: 0; cursor: default; }
+  .grid .note { box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .grid .nh b { white-space: nowrap; }
+  .edl { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
+  .edl .ico { width: 12px; height: 12px; }
+  .grid .composer { flex-direction: column; align-items: stretch; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  .grid .composer .ch { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; }
+  .grid .composer textarea { min-height: 66px; border: 1px dashed rgba(15,23,42,.16); border-radius: 8px; padding: 8px 10px; }
+  .grid .ph0 { min-height: 96px; background: rgba(255,255,255,.5); }
+  .grid .revhd, .grid .wcard { margin: 0; }
+  .wcard { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 3px rgba(15,23,42,.06); cursor: default; }
+  .wcard h4 { margin: 0 0 4px; font-size: 15px; display: flex; align-items: center; gap: 10px; }
+  .wcard .cap { font-size: 12px; color: var(--muted); margin: 0 0 10px; line-height: 1.45; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tbl th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  .tbl td { padding: 9px 8px; border-bottom: 1px solid var(--line2); vertical-align: top; line-height: 1.45; }
+  .tbl td.who { white-space: nowrap; }
+  .tbl tr.hlrow td { background: rgba(37,99,235,.08); }
+  .tbl td.tm { white-space: nowrap; color: var(--muted); font-size: 12px; }
+  .hdr .room { display: inline-flex; align-items: center; margin-right: 10px; }
+  .hdr .room .avatar { width: 24px; height: 24px; font-size: 9.5px; border: 2px solid #fff; margin-left: -6px; }
+  .device.phone .hdr .pill .cnts { display: none; }
+  .device.phone .grid, .device.phone .grid.g2 { grid-template-columns: 300px; }
+  .device.phone .fp, .device.phone .lgd, .device.phone .hdr .room { display: none; }
+  .device.phone .strip { font-size: 13px; }
+  .device.phone .cstep-o { top: auto; bottom: 10px; right: 12px; }
+  .device.phone .cstep-o .cdrop { top: auto; bottom: 40px; width: 330px; }
+
+  /* a milestone's card: the graph viewer's VersionTip, drawn by the core from the plugin's data */
+  .htip.mt { width: 320px; padding: 12px 14px; }
+  .mtip .r1 { display: flex; align-items: center; gap: 8px; }
+  .mtip .badge { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 11px; font-size: 12px; font-weight: 500; }
+  .mtip .badge .ico { width: 13px; height: 13px; }
+  .mtip .ref { color: #64748b; font-size: 12.5px; }
+  .mtip .ago { margin-left: auto; color: #64748b; font-size: 12px; }
+  .mtip .tt { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-top: 8px; line-height: 1.4; }
+  .mtip .meta { font-size: 11.5px; color: #64748b; margin-top: 3px; }
+  .mtip .au { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 12.5px; color: #475569; }
+  .mtip .r2 { display: flex; align-items: center; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+  .mtip .chip { background: #f1f5f9; border-radius: 9px; padding: 2px 8px; font-size: 12px; font-weight: 600; color: #334155; }
+  .mtip .sm { font-size: 12px; color: #64748b; }
+
+  /* ---------- this mockup: the core's test page in the core's panels ---------- */
+  .nav .tgl { display: flex; align-items: center; gap: 8px; margin: 8px 6px 2px; font-size: 12px; color: #334155; cursor: pointer; user-select: none; }
+  .nav .tgl input { margin: 0; }
+  .nav .tgl small { color: var(--muted); }
+
+  /* The canvas of @maxitor/panel: tables with fields and the links between them. */
+  .ent { position: absolute; width: 210px; background: #fff; border: 1px solid rgba(15,23,42,.16); border-radius: 8px; font-size: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.06); }
+  .ent .eh { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 10px; font-weight: 600; color: #0f172a; border-bottom: 1px solid rgba(15,23,42,.08); border-radius: 8px 8px 0 0; position: relative; }
+  .ent .eh .sch { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 8px 0 0 0; }
+  .ent .eh .fold { margin-left: auto; color: var(--muted); font-weight: 400; font-size: 11px; }
+  .ent .ef { height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 10px; color: #334155; }
+  .ent .ef + .ef { border-top: 1px solid rgba(15,23,42,.05); }
+  .ent .ef .fn { flex: 1; font-family: var(--mono); font-size: 11.5px; }
+  .ent .ef .ft { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+  .ent .ef .ft s { color: #dc2626; margin-right: 4px; }
+  .ent.folded .eh { border-bottom: 0; border-radius: 8px; }
+  .sdk { width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; line-height: 1; }
+  .sdk.a { background: #16a34a; } .sdk.c { background: #d97706; } .sdk.r { background: #dc2626; } .sdk.u { display: none; }
+  .ef .sdk { width: 13px; height: 13px; font-size: 9.5px; }
+  .links { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+  .links path.ln { fill: none; stroke: #94a3b8; stroke-width: 1.6; }
+  .links path.ln.a { stroke: #16a34a; stroke-dasharray: 5 3; }
+  .links path.hit { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; cursor: pointer; }
+  .links circle { fill: #94a3b8; }
+
+  /* The mark: what lies under the pointer, or what is selected, lit in both panels. A glow follows the element's own
+     shape — a box, a row, a curved line alike — as maxitor-web's halfPicking does today. */
+  .glow { filter: drop-shadow(0 0 5px rgba(37,99,235,.95)); }
+  .ent.glow { border-color: #2563eb; }
+  .ef.glow { filter: none; background: rgba(37,99,235,.12); box-shadow: inset 0 0 0 1.5px #2563eb; }
+  .links path.ln.glow { stroke: #2563eb; stroke-width: 2.2; }
+  .ent.parent { border-color: #2563eb; border-style: dashed; filter: drop-shadow(0 0 4px rgba(37,99,235,.55)); }
+
+  /* maxitor-web's HalfNote: a dark chip at the top centre of the panel. */
+  .hnote { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 4px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: #fff; background: rgba(15,23,42,.86); white-space: nowrap; pointer-events: none; }
+  .hnote code { font-family: var(--mono); font-size: 12px; background: rgba(255,255,255,.14); padding: 0 4px; border-radius: 4px; }
+
+  /* The anchors themselves, only when the mockup is asked to show them: they are never drawn on the real screen. */
+  .show-anchors [data-anchor] { outline: 1px dashed #db2777; outline-offset: 2px; }
+  .show-anchors .ef[data-anchor] { outline-offset: -2px; }
+  .alab { display: none; }
+  .show-anchors .alab { display: block; position: absolute; z-index: 9; font-family: var(--mono); font-size: 9.5px; color: #fff; background: #db2777; padding: 0 4px; border-radius: 3px; white-space: nowrap; pointer-events: none; }
+  .show-anchors .ent > .alab { left: -1px; top: -16px; }
+  .show-anchors .ef { position: relative; }
+  .show-anchors .ef > .alab { right: 4px; top: 5px; opacity: .92; }
+  .show-anchors .vrow { outline: 1px dashed #db2777; outline-offset: -2px; }
+
+  /* The list of @maxitor/panel: 10,000 rows, only those in view drawn; an arrow at the edge towards a row out of view. */
+  .vt { position: absolute; left: 0; top: 0; width: 820px; display: flex; flex-direction: column; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 10px; overflow: hidden; }
+  .vt .vh { flex-shrink: 0; height: 32px; display: grid; grid-template-columns: 46px 16px 86px 1fr 128px 64px 78px; align-items: center; gap: 8px; padding: 0 12px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid rgba(15,23,42,.1); }
+  .vt .vs { position: relative; }
+  .vt .vhw { position: relative; z-index: 2; background: #fff; border-radius: 10px 10px 0 0; box-shadow: 0 1px 0 rgba(15,23,42,.1); }
+  .vt .vhw .vh { border-bottom: 0; box-shadow: none; }
+  .vt .vcap { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; font-size: 12.5px; color: #0f172a; }
+  .vt .vcap .rvw { margin-left: auto; align-self: center; display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 12px; border: 1px solid #2563eb; border-radius: 14px; background: #eff6ff; font-size: 13px; font-weight: 600; color: #1d4ed8; cursor: pointer; }
+  .vt .vcap .rvw:hover { background: #dbeafe; }
+  .vt .vcap .rvw span { color: inherit; font-size: inherit; }
+  .vt .vcap span { font-size: 11.5px; color: var(--muted); }
+  .vrow .bl { margin-left: 6px; font-size: 10px; font-weight: 600; color: #b91c1c; background: #fee2e2; border-radius: 4px; padding: 0 4px; }
+  .fp .clrl { border: 0; background: none; padding: 0; font-size: 10.5px; color: #1d4ed8; cursor: pointer; align-self: flex-start; }
+  .dk.sm { width: 14px !important; height: 14px !important; display: block; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); box-sizing: border-box; }
+  .fp .dk { flex-shrink: 0; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); box-sizing: border-box; width: 20px; height: 20px; }
+  .fp .frow { cursor: text; }
+  .fp .frow[onclick] { cursor: pointer; }
+  .fp .bd.mg { width: 20px; height: 20px; background: #fff; color: #64748b; border: 1px solid rgba(0,0,0,.12); }
+  .fp .frow.on .bd.mg { color: #0f172a; }
+  .fp .fin { flex: 1; min-width: 0; height: 20px; border: 0; border-bottom: 1px solid transparent; padding: 0; font-size: 11px; color: rgba(0,0,0,.87); background: transparent; outline: none; }
+  .fp .fin::placeholder { color: rgba(0,0,0,.38); }
+  .fp .fin:focus { border-bottom-color: #94a3b8; }
+  .fp .frow.open .bd.mg { color: #0f172a; border-color: #475569; }
+  .fp .lb .pre { color: rgba(0,0,0,.5); }
+  .fp .frow .clrl { margin-left: auto; }
+  .fp .mgrid { margin: -2px 0 4px 28px; }
+  .fp .mgrid .any { width: 100%; text-align: left; padding: 0 6px; margin-top: 2px; }
+  .fp .mgrid .yr { font-size: 10px; color: rgba(0,0,0,.5); margin: 4px 0 2px; }
+  .fp .mgrid .mm { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+  .fp .mgrid button { height: 20px; border: 0; border-radius: 4px; background: transparent; font-size: 10.5px; color: rgba(0,0,0,.87); cursor: pointer; padding: 0; }
+  .fp .mgrid button:hover { background: rgba(15,23,42,.06); }
+  .fp .mgrid button.in { background: #f1f5f9; }
+  .fp .mgrid button.on { background: #475569; color: #fff; }
+  .fp .mgrid button:disabled { color: rgba(0,0,0,.25); cursor: default; background: transparent; }
+  .fp .rlab { display: flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(0,0,0,.87); }
+  .fp .rlab span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fp .clrl { flex-shrink: 0; width: 16px; height: 16px; border: 0; border-radius: 4px; background: none; color: #64748b; font-size: 13px; line-height: 1; cursor: pointer; padding: 0; }
+  .fp .clrl:hover { background: rgba(15,23,42,.08); color: #0f172a; }
+  .vt .vempty { padding: 18px 12px; font-size: 12.5px; color: var(--muted); }
+  .vt .vsp { position: relative; }
+  .vrow { position: absolute; left: 0; right: 0; height: 30px; display: grid; grid-template-columns: 46px 16px 86px 1fr 128px 64px 78px; align-items: center; gap: 8px; padding: 0 12px; font-size: 12.5px; white-space: nowrap; color: #334155; border-bottom: 1px solid rgba(15,23,42,.05); cursor: default; }
+  .vrow .ix { color: var(--faint); font-variant-numeric: tabular-nums; font-size: 11.5px; }
+  .vrow .id { font-family: var(--mono); font-size: 11.5px; }
+  .vrow .em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vrow .em s { color: #dc2626; margin-right: 6px; }
+  .vrow .dt { color: var(--muted); font-size: 11.5px; }
+  .vrow:hover { background: rgba(15,23,42,.03); }
+  .vrow.glow { filter: none; background: rgba(37,99,235,.1); box-shadow: inset 0 0 0 1.5px #2563eb; }
+
+  /* The milestones of a page on the scale. */
+  .mscard { position: absolute; z-index: 50; width: 760px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 12px; box-shadow: 0 12px 36px rgba(15,23,42,.18); padding: 12px 16px 14px; }
+  .mscard .mh { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .mscard .mh .sub2 { font-weight: 400; color: var(--muted); font-size: 12px; }
+  .mscard .mh .sp { flex: 1; }
+  .mscard .tr { position: relative; margin-top: 10px; }
+  .mscard .cap2 { font-size: 11.5px; color: var(--muted); margin-top: 6px; line-height: 1.45; }
+  .mtip2 { position: absolute; z-index: 60; width: 320px; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 10px; box-shadow: 0 8px 24px rgba(15,23,42,.16); padding: 10px 12px 11px; font-size: 12px; pointer-events: none; }
+  .mtip2 .r1 { display: flex; align-items: center; gap: 7px; }
+  .mtip2 .ref { font-weight: 600; color: #0f172a; }
+  .mtip2 .ago { margin-left: auto; color: var(--muted); font-size: 11.5px; }
+  .mtip2 .tt { margin-top: 7px; font-size: 13px; font-weight: 500; color: #0f172a; line-height: 1.4; }
+  .mtip2 .meta { margin-top: 4px; color: var(--muted); font-size: 11.5px; }
+  .mtip2 .au { display: flex; align-items: center; gap: 7px; margin-top: 8px; color: #475569; }
+  .mtip2 .r2 { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; align-items: center; }
+  .mtip2 .chip { height: 20px; display: inline-flex; align-items: center; padding: 0 8px; border-radius: 10px; background: #f1f5f9; color: #334155; font-size: 11.5px; font-weight: 600; }
+  .mtip2 .sm { color: #475569; font-size: 11.5px; }
+  .mtip2 .rf { margin-top: 6px; color: #dc2626; font-size: 11.5px; }
+  .badge2 { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: 10px; font-size: 11.5px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+  .badge2 svg { width: 12px; height: 12px; }
+  .rel { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px; border-radius: 10px; background: #0f172a; color: #fff; font-size: 11.5px; font-weight: 500; }
+
+  /* The sheet: what a plugin chooses for a milestone. */
+  .sheet2 { position: absolute; left: 172px; top: 16px; right: 16px; bottom: 16px; overflow: auto; background: #fff; border: 1px solid rgba(15,23,42,.12); border-radius: 12px; padding: 18px 22px; font-size: 13px; color: #334155; }
+  .device.phone .sheet2 { left: 10px; right: 10px; top: 10px; bottom: 10px; padding: 14px; }
+  .sheet2 h3 { margin: 0 0 4px; font-size: 15px; color: #0f172a; }
+  .sheet2 h4 { margin: 18px 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .sheet2 .lead { color: var(--muted); font-size: 12.5px; line-height: 1.5; max-width: 760px; }
+  .sheet2 .row3 { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+  .sheet2 .cell { display: inline-flex; align-items: center; gap: 8px; min-width: 150px; font-size: 12px; }
+  .sheet2 .cell code { font-size: 11.5px; color: #475569; }
+  .sheet2 table { border-collapse: collapse; font-size: 12px; }
+  .sheet2 td, .sheet2 th { padding: 6px 12px 6px 0; text-align: left; vertical-align: middle; }
+  .sheet2 th { font-size: 11px; color: var(--muted); font-weight: 600; }
+  .sheet2 pre { margin: 0; font-family: var(--mono); font-size: 11.5px; background: #f8fafc; border: 1px solid rgba(15,23,42,.08); border-radius: 8px; padding: 10px 12px; line-height: 1.5; color: #0f172a; overflow-x: auto; }
+  .tp { display: flex; flex-direction: column; gap: 10px; }
+  .tpage { position: absolute; left: 172px; top: 16px; right: 16px; padding: 14px 18px; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 10px; font-size: 12.5px; color: var(--muted); }
+  /* The date pickers: Apple's layout — round days, a band for a range, a chevron on the month, wheels for a jump — in Maxitor's own colours and sizes. */
+  .calpop { --ac: #475569; --ink: #0f172a; --ac-soft: #eef2f7; --lbl: #0f172a; --lbl2: #64748b; --lbl3: #94a3b8; --fill: #f1f5f9; --sep: rgba(15,23,42,.08);
+    position: absolute; z-index: 60; display: flex; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 12px; box-shadow: 0 16px 48px rgba(15,23,42,.2), 0 1px 2px rgba(15,23,42,.06);
+    font-family: var(--font); font-size: 12px; color: var(--lbl); cursor: default; overflow: hidden; }
+  .calpop button, .calpop input { font: inherit; color: inherit; }
+  .calpop .cbody { display: flex; align-items: stretch; }
+  .calpop .cq { width: 150px; flex-shrink: 0; background: #f8fafc; border-right: 1px solid var(--sep); padding: 10px 6px; display: flex; flex-direction: column; gap: 1px; }
+  .calpop .cq button { text-align: left; border: 0; background: transparent; border-radius: 6px; height: 26px; padding: 0 8px; font-size: 12px; color: #334155; cursor: pointer; }
+  .calpop .cq button:hover { background: rgba(15,23,42,.06); }
+  .calpop .cq button.on { background: var(--ac); color: #fff; }
+  .calpop .cq .qsep { height: 1px; background: var(--sep); margin: 6px 8px; }
+  .calpop .cpr { width: 470px; padding: 12px 14px 0; display: flex; flex-direction: column; gap: 10px; }
+  .calpop.one .cpr { width: 270px; }
+  .calpop .cfs { display: flex; align-items: flex-start; gap: 8px; }
+  .calpop .car { padding-top: 24px; color: var(--lbl3); }
+  .calpop .cf { flex: 1; min-width: 0; }
+  .calpop .cf label { display: block; font-size: 10.5px; color: var(--lbl2); margin: 0 0 3px 2px; }
+  .calpop .cfb { display: flex; align-items: center; height: 32px; border: 1px solid rgba(15,23,42,.16); border-radius: 8px; background: #fff; padding: 0 4px 0 10px; }
+  .calpop .cf.on .cfb { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .calpop .cfb input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .calpop .cfb input::placeholder { font-weight: 400; color: var(--lbl3); }
+  .calpop .cfb .rl { width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--lbl3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .calpop .cfb .rl:hover:not(:disabled) { background: rgba(15,23,42,.06); color: #334155; }
+  .calpop .cfb .rl.on { color: #2563eb; }
+  .calpop .cfb .rl:disabled { opacity: .35; cursor: default; }
+  .calpop .cf i { display: block; font-style: normal; font-size: 10.5px; color: #2563eb; margin: 3px 0 0 2px; min-height: 13px; }
+  .calpop .cms { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .calpop .cms.j, .calpop .cms.one { display: block; }
+  .calpop .cmh { display: flex; align-items: center; height: 26px; margin-bottom: 2px; }
+  .calpop .cmt { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; border-radius: 6px; padding: 0 4px; height: 24px; font-size: 12.5px; font-weight: 600; color: var(--lbl); cursor: pointer; }
+  .calpop .cmt:hover { background: rgba(15,23,42,.06); }
+  .calpop .cmt .chv { width: 6px; height: 10px; color: var(--lbl2); transition: transform .2s; }
+  .calpop .cmt.open .chv { transform: rotate(90deg); color: var(--lbl); }
+  .calpop .cnav { margin-left: auto; display: inline-flex; gap: 2px; }
+  .calpop .cnav button { width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: #334155; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .calpop .cnav button svg { width: 7px; height: 11px; }
+  .calpop .cnav button:hover:not(:disabled) { background: rgba(15,23,42,.06); }
+  .calpop .cnav button:disabled { color: #cbd5e1; cursor: default; }
+  .calpop .cwd, .calpop .cgrid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .calpop .cwd span { text-align: center; font-size: 10px; color: var(--lbl3); padding: 3px 0; }
+  .calpop .cgrid .d { position: relative; height: 30px; border: 0; padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .calpop .cgrid .d span { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--lbl); position: relative; z-index: 1; }
+  .calpop .cgrid .d.x { cursor: default; }
+  .calpop .cgrid .d.in { background: var(--ac-soft); }
+  .calpop .cgrid .d.rs { background: linear-gradient(90deg, transparent 50%, var(--ac-soft) 50%); }
+  .calpop .cgrid .d.re { background: linear-gradient(90deg, var(--ac-soft) 50%, transparent 50%); }
+  .calpop .cgrid .d:hover:not(.dis):not(.sel) span, .calpop .cgrid .d.hv:not(.sel) span { background: rgba(15,23,42,.08); }
+  .calpop .cgrid .d.today span { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .calpop .cgrid .d.sel span { background: var(--ac); color: #fff; font-weight: 600; }
+  .calpop .cgrid .d.dis { cursor: default; }
+  .calpop .cgrid .d.dis span { color: #d6dde6; }
+  .calpop .whs { position: relative; display: flex; justify-content: center; height: 196px; margin-top: 8px; }
+  .calpop .whband { position: absolute; left: 0; right: 0; top: 84px; height: 28px; border-radius: 7px; background: var(--fill); pointer-events: none; }
+  .calpop .wh { position: relative; height: 196px; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
+  .calpop .wh::-webkit-scrollbar { display: none; }
+  .calpop .wh[data-wh="m"] { width: 60%; text-align: right; padding-right: 14px; }
+  .calpop .wh[data-wh="y"] { width: 40%; text-align: left; padding-left: 14px; }
+  .calpop .whp { height: 84px; }
+  .calpop .whi { height: 28px; line-height: 28px; scroll-snap-align: center; font-size: 13px; color: var(--lbl2); cursor: pointer; font-variant-numeric: tabular-nums; }
+  .calpop .whi.on { color: var(--lbl); font-weight: 600; }
+  .calpop .whi.off { color: #cbd5e1; }
+  .calpop .cft { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px; margin: auto -14px 0; padding: 10px 14px; border-top: 1px solid var(--sep); }
+  .calpop .cft .sum { justify-self: start; max-width: 100%; height: 28px; line-height: 28px; font-size: 12px; color: var(--lbl2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .calpop .cft button { justify-self: end; height: 28px; line-height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; font-size: 12px; color: #475569; cursor: pointer; }
+  .calpop .cft button:hover { background: rgba(15,23,42,.06); }
+  .calpop .cft button.done { background: var(--ink); color: #fff; }
+  .vrow .mg2 { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: #334155; }
+  .vrow .mg2 .pd { width: 16px; height: 16px; border: 0; flex-shrink: 0; }
+  .vrow .mg2 i { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .vrow .bl2, .vt .vh .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .vrow .bl2 { font-family: var(--mono); font-size: 11.5px; color: #334155; }
+  .fp .pd { border: 1px solid rgba(0,0,0,.12); border-radius: 50%; box-sizing: border-box; flex-shrink: 0; }
+  .fp .more { align-self: flex-start; border: 0; background: none; padding: 0 0 0 28px; font-size: 11px; color: #2563eb; cursor: pointer; }
+  .fp .fnone { font-size: 11px; color: #94a3b8; padding-left: 28px; }
+  .fp .n123 { font-size: 7px; font-weight: 700; letter-spacing: -.03em; color: inherit; }
+  .fp .nin { text-align: right; font-variant-numeric: tabular-nums; }
+  .fbtn { position: absolute; top: 10px; left: 10px; z-index: 6; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px 0 10px; border: 1px solid rgba(15,23,42,.12); border-radius: 17px; background: #fff; box-shadow: 0 2px 10px rgba(15,23,42,.1); font-size: 13px; font-weight: 600; color: #0f172a; cursor: pointer; }
+  .fbtn .fchev { transform: rotate(-90deg); color: #64748b; }
+  .fbtn .fn { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #0f172a; color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; }
+  .fscrim { position: absolute; inset: 0; z-index: 45; background: rgba(15,23,42,.32); }
+  .fsheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; max-height: 80%; display: flex; flex-direction: column; background: #fff; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(15,23,42,.18); }
+  .fsheet .fgrab { width: 36px; height: 4px; border-radius: 2px; background: #cbd5e1; margin: 8px auto 0; }
+  .fsheet .fsh { display: flex; align-items: center; justify-content: space-between; padding: 6px 16px 4px; }
+  .fsheet .fsh b { font-size: 15px; }
+  .fsheet .fsh button { border: 0; background: #0f172a; color: #fff; border-radius: 8px; height: 30px; padding: 0 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .fsheet .fp { position: static; width: auto; max-height: none; flex: 0 1 auto; min-height: 0; overflow-y: auto; box-shadow: none; border: 0; border-radius: 0; background: transparent; padding: 0 16px 18px; }
+  .fsheet .fp .lb, .fsheet .fp .fin { font-size: 13px; }
+  .fsheet .fp .rows { gap: 10px; }
+  .fsheet .fp .secs { flex: 0 0 auto; overflow: visible; }
+  .device.phone .fsheet .fp { display: flex !important; flex-direction: column; }
+  .device.phone .calpop { left: 0 !important; right: 0 !important; top: auto !important; bottom: 0; max-height: 94%; overflow-y: auto; border-radius: 16px 16px 0 0; border: 0; box-shadow: 0 -10px 30px rgba(15,23,42,.22); }
+  .device.phone .calpop .cbody { flex-direction: column; width: 100%; min-width: 0; }
+  .device.phone .calpop .cq, .device.phone .calpop .cpr { min-width: 0; max-width: 100%; }
+  .device.phone .calpop .cq { width: auto; flex-direction: row; overflow-x: auto; gap: 6px; padding: 12px 14px 10px; border-right: 0; border-bottom: 1px solid var(--sep); background: #fff; scrollbar-width: none; }
+  .device.phone .calpop .cq::-webkit-scrollbar { display: none; }
+  .device.phone .calpop .cq button { flex-shrink: 0; height: 30px; padding: 0 12px; border: 1px solid rgba(15,23,42,.12); border-radius: 15px; white-space: nowrap; }
+  .device.phone .calpop .cq .qsep { width: 1px; height: 22px; margin: 4px 2px; flex-shrink: 0; }
+  .device.phone .calpop .cpr, .device.phone .calpop.one .cpr { width: auto; }
+  .device.phone .calpop .cms { grid-template-columns: 1fr; }
+  .device.phone .calpop .cgrid .d { height: 40px; }
+  .device.phone .calpop .cgrid .d span { width: 36px; height: 36px; font-size: 14px; }
+</style>
+</head>
+<body>
+<aside class="nav" id="nav"></aside>
+<main class="stage" id="stage">
+  <p class="frame-cap" id="cap"></p>
+  <div class="frame-box" id="box"><div class="frame-scale" id="scale"><div class="device" id="app"></div></div></div>
+  <div class="notes" id="notes"></div>
+</main>
+<script>
+/* ======================= icons ======================= */
+const P = (d, cls = "ico") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const I = {
+  left: P('<path d="M15 6l-6 6 6 6"/>', "ico sm"), right: P('<path d="M9 6l6 6-6 6"/>', "ico sm"),
+  chevron: P('<path d="M6 9l6 6 6-6"/>'), chev: P('<path d="M6 9l6 6 6-6"/>', "ico sm"),
+  clock: P('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', "ico sm"),
+  alert: P('<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>'),
+  info: P('<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.2M12 7.9v.2"/>'),
+  check: P('<path d="M5 12l5 5 9-10"/>', "ico sm"),
+  pen: P('<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>', "ico sm"),
+  trash: P('<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>', "ico sm"),
+  dots: P('<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>'),
+  menu: P('<path d="M4 7h16M4 12h16M4 17h16"/>'),
+  note: P('<path d="M6 4h9l4 4v12H6z"/><path d="M14 4v5h5M9 13h6M9 16.5h4"/>', "ico sm"),
+  box: P('<path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/>', "ico sm"),
+  user: P('<circle cx="12" cy="9" r="3.5"/><path d="M5 20a7 7 0 0114 0"/>', "ico sm"),
+  send: P('<path d="M5 12h14M13 6l6 6-6 6"/>', "ico sm"),
+  panel: '<svg width="17.6" height="17.6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.38" stroke-linecap="round" stroke-linejoin="round"><path d="M4.75 5.75h14.5c.55 0 1 .45 1 1v10.5c0 .55-.45 1-1 1H4.75c-.55 0-1-.45-1-1V6.75c0-.55.45-1 1-1z"/><path d="M9.25 6.25v11.5"/></svg>',
+  back: '<svg width="17.6" height="17.6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.38" stroke-linecap="round" stroke-linejoin="round"><path d="M19.25 12H4.75M10.25 6.5L4.75 12l5.5 5.5"/></svg>',
+  plus: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  three: '<svg width="18" height="18" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="3.4" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
+  branch: P('<circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="9" r="2.2"/><path d="M6 8.2v7.6M18 11.2c0 3-4 3.5-10.5 5.4"/>', "ico sm"),
+  hourglass: P('<path d="M7 4h10M7 20h10M8 4c0 5 8 5 8 8s-8 3-8 8M16 4c0 5-8 5-8 8"/>'),
+  one: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>',
+  diff: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 7.5v5M9.5 10h5M9.5 16h5"/></svg>',
+  split: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M12 5v14"/></svg>',
+};
+
+
+/* ======================= sample data: the core's test page answering from fixtures ======================= */
+const ORG = { name: "Severny Veter", code: "severny-veter" };
+const PEOPLE = {
+  anna: { name: "Anna Kovaleva", ini: "AK", bg: "#cbd5e1" },
+  ilya: { name: "Ilya Petrov", ini: "IP", bg: "#bae6fd" },
+  olga: { name: "Olga Sidorova", ini: "OS", bg: "#fde68a" },
+};
+const ME = "anna";
+const A_LAB = "3 Nov, 12:00", B_LAB = "10 Nov, 11:24 · now";
+const SCHEMA = { billing: { c: "#0284c7", name: "billing" }, audit: { c: "#ca8a04", name: "audit" } };
+
+/* The drawing at A and at B. Each panel lays it out by itself, so one table stands in different places in A and in B:
+   the core cannot pass a place, only a name. */
+const W = {
+  a: {
+    tables: {
+      Account: { x: 0, y: 0, s: "billing", k: "c", f: [["id", "uuid"], ["phone", "text"]] },
+      Payment: { x: 250, y: 40, s: "billing", k: "c", f: [["id", "uuid"], ["amount", "int"], ["account_id", "uuid"]] },
+      Ledger: { x: 0, y: 260, s: "audit", k: "c", f: [["id", "uuid"], ["entry", "text"]] },
+      Audit: { x: 1240, y: 820, s: "audit", k: "u", f: [["id", "uuid"], ["at", "timestamp"]] },
+    },
+    links: [["Payment", "account_id", "Account", "id"]],
+  },
+  b: {
+    tables: {
+      Account: { x: 0, y: 170, s: "billing", k: "c", f: [["id", "uuid"], ["email", "text", "a"], ["phone", "text"]] },
+      Payment: { x: 250, y: 0, s: "billing", k: "c", f: [["id", "uuid"], ["amount", "decimal", "c", "int"], ["account_id", "uuid"]] },
+      Refund: { x: 250, y: 290, s: "billing", k: "a", f: [["id", "uuid", "a"], ["payment_id", "uuid", "a"]] },
+      Ledger: { x: 0, y: 400, s: "billing", k: "c", f: [["id", "uuid"], ["entry", "text"]] },
+      Audit: { x: 250, y: 470, s: "audit", k: "u", f: [["id", "uuid"], ["at", "timestamp"]] },
+    },
+    links: [["Payment", "account_id", "Account", "id"], ["Refund", "payment_id", "Payment", "id", "a"]],
+  },
+};
+const EW = 210, EH = 30, FH = 24;
+
+/* The list: 10,000 accounts at B; 33 of them (acc-06000 … acc-06032) were added after A, so at A a row stands 33 places higher. */
+const N_B = 10000, ADDED0 = 6000, ADDED1 = 6032, N_A = N_B - (ADDED1 - ADDED0 + 1), RH = 30;
+const pad = n => String(n).padStart(5, "0");
+const FIRST = ["anna", "boris", "dina", "egor", "farida", "gleb", "inna", "kirill", "lena", "maxim", "nadia", "oleg", "polina", "roman", "sofia", "timur"];
+/* Forty-six account managers: the first ones hold most accounts, the last ones a handful — a long choice. */
+const MANAGERS = (() => { const f = ["Anna", "Boris", "Dina", "Egor", "Farida", "Gleb", "Inna", "Kirill", "Lena", "Maxim", "Nadia", "Oleg", "Polina", "Roman", "Sofia", "Timur", "Ulyana", "Vadim", "Yana", "Zakhar", "Alina", "Denis", "Eva"], l = ["Petrova", "Orlov", "Sokolova", "Volkov", "Lebedeva", "Kozlov", "Novikova", "Morozov", "Pavlova", "Fedorov"]; const out = []; for (let i = 0; out.length < 46; i++) out.push(`${f[i % f.length]} ${l[(i * 3) % l.length]}`); return out; })();
+function rowOf(side, i) {
+  const id = side === "b" ? i + 1 : (i + 1 < ADDED0 ? i + 1 : i + 1 + (ADDED1 - ADDED0 + 1));
+  const nm = FIRST[id % FIRST.length], dom = ["mail.ru", "gmail.com", "yandex.ru", "proton.me"][id % 4];
+  let k = "u", email = `${nm}.${id}@${dom}`, was = null;
+  if (side === "b" && id >= ADDED0 && id <= ADDED1) k = "a";
+  if (id === 6213) { k = "c"; if (side === "b") { was = email; email = `${nm}.billing@${dom}`; } }
+  const span = Date.UTC(2026, 10, 10) - Date.UTC(2019, 0, 1), d = new Date(Date.UTC(2019, 0, 1) + span * Math.sqrt(id / (N_B + 1)) + (id % 7) * 36e5);
+  const mgr = MANAGERS[Math.floor(MANAGERS.length * Math.pow(((id * 7919) % 1000) / 1000, 2.2))], bal = ((id * 104729) % 100000) / 100;
+  return { id, key: `acc-${pad(id)}`, email, was, k, mgr, bal, dom: email.split("@")[1], date: id % 101 === 0 ? "" : d.toISOString().slice(0, 10), blocked: id % 37 === 0 };
+}
+function indexOf(side, id) {
+  if (side === "b") return id - 1;
+  if (id >= ADDED0 && id <= ADDED1) return -1;
+  return id < ADDED0 ? id - 1 : id - 1 - (ADDED1 - ADDED0 + 1);
+}
+const NROWS = { a: N_A, b: N_B };
+
+/* ======================= state ======================= */
+const DEF = { mq: "", mexp: false, fs: null, one: null, review: null, cal: null, tf: null, fsec: null, paintL: null, paintC: null, fsecC: null, hideKc: [], view: "canvas", hover: null, sel: null, fold: [], hideS: [], cam: { a: null, b: null }, side: "b", note: {}, glide: false };
+const S = Object.assign(JSON.parse(JSON.stringify(DEF)), { phone: false, anchors: false });
+function go(patch) { Object.assign(S, patch); render(); }
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+/* ======================= anchors: what passes between the panels is a name, never a place ======================= */
+const tA = t => `table:${t}`, fA = (t, f) => `field:${t}.${f}`, lA = l => `link:${l[0]}.${l[1]}->${l[2]}.${l[3]}`;
+function parse(a) { const [kind, rest] = a.split(/:(.+)/); return { kind, rest }; }
+function holds(side, a) {
+  const w = W[side], { kind, rest } = parse(a);
+  if (kind === "table") return !!w.tables[rest];
+  if (kind === "field") { const [t, f] = rest.split("."); return !!(w.tables[t] && w.tables[t].f.some(x => x[0] === f)); }
+  if (kind === "link") return w.links.some(l => lA(l) === a);
+  if (kind === "row") return indexOf(side, +rest.slice(4)) >= 0;
+  return false;
+}
+function tableOf(a) { const { kind, rest } = parse(a); return kind === "table" ? rest : kind === "field" ? rest.split(".")[0] : null; }
+function hiddenIn(side, a) { if (a.startsWith("row:")) return posOf(side, +a.slice(8)) < 0; const t = tableOf(a); return !!(t && W[side].tables[t] && (S.hideS.includes(W[side].tables[t].s) || (S.hideKc || []).includes(W[side].tables[t].k))); }
+/* The other panel takes the deepest anchor of the chain that it holds, and says why when it shows less. */
+function resolve(side, chain) {
+  const other = side === "a" ? "B" : "A", me = side.toUpperCase();
+  for (let i = 0; i < chain.length; i++) {
+    const a = chain[i];
+    if (!holds(side, a)) continue;
+    if (hiddenIn(side, a)) return { mark: null, note: "Hidden by the filters" };
+    if (i === 0) {
+      const { kind, rest } = parse(a);
+      if (kind === "field" && S.fold.includes(`${side}:${rest.split(".")[0]}`)) {
+        const [t, f] = rest.split(".");
+        return { mark: tA(t), parent: true, note: `<code>${esc(f)}</code> is inside the folded ${esc(t)}` };
+      }
+      return { mark: a };
+    }
+    const { rest } = parse(chain[0]);
+    return { mark: a, parent: true, note: `<code>${esc(rest.split(".").pop())}</code> is not in ${me} · showing ${esc(parse(a).rest)}` };
+  }
+  void other;
+  return { mark: null, note: `Not in ${me}` };
+}
+
+/* ======================= the frame: url, header, tree ======================= */
+const PAGES = { canvas: "Canvas", table: "Table" };
+function urlbar() {
+  const path = S.view === "canvas" ? "canvas" : S.view === "table" ? "table" : "milestones";
+  const q = S.view === "canvas" || S.view === "table" ? "?mode=<i>side_by_side</i>&amp;from=<i>2026-11-03T12:00</i>" : "";
+  return `<div class="urlbar"><span>🔒</span><span class="u">maxitor.aoa.run<b>/w/${ORG.code}/core/panel-test/${path}</b>${q}</span></div>`;
+}
+function av(who, cls = "avatar sm") { const p = PEOPLE[who] || PIC[who]; return `<span class="${cls}" style="background:${p.bg}" title="${esc(p.name)}">${p.ini}</span>`; }
+function pill() {
+  const cmp = S.view === "canvas" || S.view === "table";
+  const label = cmp
+    ? `<span class="ab">A</span><b>3 Nov</b>→<span class="ab">B</span><b>now</b>${S.phone ? "" : `<span class="md">· side by side</span>`}<span class="cnts">${S.view === "canvas" ? `<span style="color:#16a34a">+3</span><span style="color:#dc2626">−0</span><span style="color:#d97706">~4</span>` : `<span style="color:#16a34a">+33</span><span style="color:#dc2626">−0</span><span style="color:#d97706">~1</span>`}</span>`
+    : `<span class="live"></span><b>Now</b>`;
+  return `<span class="pill"><button class="stp">${I.left}</button><span class="dv"></span><button class="pb2" >${I.clock}${label}${I.chev}</button><span class="dv"></span><button class="stp off">${I.right}</button></span>`;
+}
+function header() {
+  return `<div class="hdr">
+    <button class="burger" aria-label="The organization's tree">${I.menu}</button>
+    <span class="logo"><span class="mk">M</span><span class="nm">Maxitor</span></span>
+    <span class="crumb"><span class="lv">org</span>${esc(ORG.name)}<span class="sep">/</span>Panel test<span class="sep">/</span>${PAGES[S.view]}</span>
+    <span class="spacer"></span>
+    <span class="room" title="Here now">${av("ilya", "avatar")}${av("olga", "avatar")}</span>
+    ${pill()}${av(ME, "avatar")}
+  </div>`;
+}
+function sidebar() {
+  const it = (lb, v, on) => `<div class="ti l2${on ? " on" : ""}" onclick="openView('${v}')"><span class="slot">${I.box}</span><span class="lb">${lb}</span></div>`;
+  return `<div class="sb"><div class="sbh"><button class="sbb">${I.panel}</button><button class="sbb off">${I.back}</button></div><div class="tree">
+    <div class="tg"><span class="slot">${I.chevron}</span><span class="lb">Core</span></div>
+    <div class="ti"><span class="slot">${I.box}</span><span class="lb"><b>Panel test</b></span></div>
+    ${it("Canvas", "canvas", S.view === "canvas")}${it("Table", "table", S.view === "table")}
+    <div class="tg"><span class="slot">${I.chevron}</span><span class="lb">Settings</span></div>
+  </div></div>`;
+}
+function openView(v) { const ph = S.phone, an = S.anchors; Object.assign(S, JSON.parse(JSON.stringify(DEF)), { view: v, phone: ph, anchors: an }); render(); }
+
+/* ======================= the canvas: tables with fields, and the links ======================= */
+function fieldY(t, i) { return t.y + EH + i * FH + FH / 2; }
+function entHtml(side, name, t) {
+  const folded = S.fold.includes(`${side}:${name}`);
+  const rows = folded ? "" : t.f.map(([n, ty, k, was]) => `<div class="ef" data-anchor="${fA(name, n)}"><span class="alab">${fA(name, n)}</span>${k ? `<span class="sdk ${k}">${{ a: "+", c: "~", r: "−" }[k]}</span>` : ""}<span class="fn">${n}</span><span class="ft">${was && side === "b" ? `<s>${was}</s>` : ""}${ty}</span></div>`).join("");
+  return `<div class="ent${folded ? " folded" : ""}" data-anchor="${tA(name)}" style="left:${t.x}px;top:${t.y}px"><span class="alab">${tA(name)}</span>
+    <div class="eh"><span class="sch" style="background:${(S.paintC || "schema") === "changes" ? KC[t.k] : SCHEMA[t.s].c}"></span><span class="sdk ${t.k}">${{ a: "+", c: "~", r: "−", u: "" }[t.k]}</span>${name}${folded ? `<span class="fold">${t.f.length} fields ▸</span>` : ""}</div>${rows}</div>`;
+}
+function linkPath(side, l) {
+  const w = W[side], s = w.tables[l[0]], d = w.tables[l[2]];
+  const si = s.f.findIndex(x => x[0] === l[1]), di = d.f.findIndex(x => x[0] === l[3]);
+  const sf = S.fold.includes(`${side}:${l[0]}`), df = S.fold.includes(`${side}:${l[2]}`);
+  const sy = sf ? s.y + EH / 2 : fieldY(s, si), dy = df ? d.y + EH / 2 : fieldY(d, di);
+  const right = d.x > s.x + EW / 2;
+  const sx = right ? s.x + EW : s.x, dx = right ? d.x : d.x + EW;
+  const c = Math.max(60, Math.abs(dx - sx) / 2) * (right ? 1 : -1);
+  return { d: `M${sx} ${sy} C${sx + c} ${sy}, ${dx - c} ${dy}, ${dx} ${dy}`, dx, dy };
+}
+function worldHtml(side) {
+  const w = W[side];
+  const vis = Object.entries(w.tables).filter(([, t]) => !S.hideS.includes(t.s) && !(S.hideKc || []).includes(t.k));
+  const visSet = new Set(vis.map(([n]) => n));
+  const links = w.links.filter(l => visSet.has(l[0]) && visSet.has(l[2])).map(l => {
+    const p = linkPath(side, l);
+    return `<g data-anchor="${lA(l)}"><path class="ln${l[4] ? " a" : ""}" d="${p.d}"/><circle cx="${p.dx}" cy="${p.dy}" r="3"/><path class="hit" d="${p.d}" data-anchor="${lA(l)}"/></g>`;
+  }).join("");
+  return `<svg class="links" width="1500" height="1000">${links}</svg>${vis.map(([n, t]) => entHtml(side, n, t)).join("")}`;
+}
+function fpanel(side) {
+  const paint = S.paintC || "schema", open = S.fsecC || paint;
+  const schema = Object.entries(SCHEMA).map(([k, sc]) => `<div class="row${S.hideS.includes(k) ? " off" : ""}" onclick="tglS('${k}')">${disk(sc.c, "none")}<span class="lb">${sc.name}</span></div>`).join("");
+  const kinds = [...new Set(Object.values(W[side].tables).map(t => t.k))];
+  const changes = [["a", "Added"], ["c", "Changed"], ["u", "Unchanged"]].filter(([k]) => kinds.includes(k)).map(([k, l]) => `<div class="row${(S.hideKc || []).includes(k) ? " off" : ""}" onclick="tglKc('${k}')">${disk(KC[k], k)}<span class="lb">${l}</span></div>`).join("");
+  const sec = (id, title, body) => `<div><div class="sh${open === id ? "" : " closed"}" onclick="go({fsecC:'${open === id ? "none" : id}'})">${I.chev}<span>${title}</span></div>${open === id ? `<div class="rows">${body}</div>` : ""}</div>`;
+  return `<div class="fp"><div class="secs">${sec("schema", "Schema", schema)}${sec("changes", "Changes", changes)}</div>${gear([["schema", "Schema"], ["changes", "Changes"]], paint, "paintCanvas")}</div>`;
+}
+function tglKc(k) { const h = new Set(S.hideKc || []); h.has(k) ? h.delete(k) : h.add(k); go({ hideKc: [...h] }); }
+function paintCanvas(id) { go({ paintC: id, fsecC: id }); }
+function tglS(k) { const h = new Set(S.hideS); h.has(k) ? h.delete(k) : h.add(k); go({ hideS: [...h] }); }
+const zoombar = () => `<div class="zoombar"><button data-z="in">+</button><button data-z="out">−</button><button data-z="fit">⊡</button><span class="zpct">100%</span></div>`;
+
+function camOf(side) {
+  if (S.cam[side]) return S.cam[side];
+  const cv = document.querySelector(`.cv[data-side="${side}"]`), left = S.phone ? 16 : 172, w = cv ? cv.offsetWidth : 560;
+  const sw = S.view === "table" ? 820 : 250 + EW;
+  const k = Math.min(1, (w - left - 24) / sw);
+  return { x: left, y: S.view === "table" ? 50 : 56, k };
+}
+
+function half(side) {
+  const lab = side === "a" ? A_LAB : B_LAB, n = Object.keys(W[side].tables).length;
+  const head = S.phone ? `<span class="flip">${["a", "b"].map(x => `<button class="${x}${S.side === x ? " on" : ""}" onclick="go({side:'${x}'})">${x.toUpperCase()}</button>`).join("")}</span>`
+    : side === "b" ? `<button class="trk on" role="switch" aria-checked="true">Track</button>` : "";
+  const body = S.view === "canvas"
+    ? `<div class="cv" data-side="${side}"><div class="world" data-side="${side}">${worldHtml(side)}</div>${S.phone ? "" : fpanel(side)}${zoombar()}<div class="hnote" data-note="${side}" style="display:none"></div></div>`
+    : `<div class="cv" data-side="${side}"><div class="world" data-side="${side}"><div class="vt"><div class="vhw"><div class="vcap"><b>Accounts</b><span data-count="${side}">${listCount(side)}</span><button class="rvw" data-rvw="${side}" onclick="event.stopPropagation();openOne('${side}')">${CAL}<span>${S.review ? `Review on ${dLab(bd(S.review, false))}` : "Review on…"}</span></button></div><div class="vh"><span>#</span><span></span><span>Account</span><span>Email</span><span>Manager</span><span class="r">Balance</span><span>Created</span></div></div><div class="vs" data-side="${side}" style="height:${Math.max(1, listOf(side).length) * RH}px"></div></div></div>${S.phone ? phoneFilterButton(side) : listPanel(side)}${zoombar()}
+        <div class="hnote" data-note="${side}" style="display:none"></div></div>`;
+  return `<div class="half"><div class="hh"><span class="sd ${side}">${side.toUpperCase()}</span><b>${lab}</b>${head}</div>${body}</div>`;
+}
+
+/* ======================= milestones on the scale ======================= */
+/* ======================= render ======================= */
+function content() {
+  if (S.view === "canvas" || S.view === "table") return `<div class="cvs">${S.phone ? half(S.side) : half("a") + half("b")}</div>`;
+  return "";
+}
+function render() {
+  const app = document.getElementById("app");
+  app.className = "device" + (S.phone ? " phone" : "") + (S.anchors ? " show-anchors" : "");
+  app.innerHTML = `${urlbar()}${header()}<div class="body">${S.phone ? "" : sidebar()}<div class="content">${content()}</div></div>`;
+  if (S.view === "canvas" || S.view === "table") { applyCams(); bindCanvas(); }
+  if (S.view === "table") { bindLists(); renderFS(); renderCal(); renderOne(); }
+  applyMarks();
+  renderNav(); renderNotes(); fit();
+}
+const GLIDES = {};
+function glideTo(side, to) {
+  const from = { ...camOf(side) }, t0 = performance.now();
+  cancelAnimationFrame(GLIDES[side]);
+  if (document.hidden) { S.cam[side] = to; applyCams(); return; }
+  const step = now => {
+    const p = Math.min(1, (now - t0) / 450), e = 1 - Math.pow(1 - p, 3);
+    S.cam[side] = { k: from.k + (to.k - from.k) * e, x: from.x + (to.x - from.x) * e, y: from.y + (to.y - from.y) * e };
+    applyCams(); applyMarks();
+    if (p < 1) GLIDES[side] = requestAnimationFrame(step);
+  };
+  GLIDES[side] = requestAnimationFrame(step);
+}
+function applyCams() {
+  for (const w of document.querySelectorAll(".world")) {
+    const c = camOf(w.dataset.side);
+    w.classList.toggle("glide", !!S.glide);
+    w.style.transform = `translate(${c.x}px,${c.y}px) scale(${c.k})`;
+    const z = w.parentElement.querySelector(".zpct"); if (z) z.textContent = Math.round(c.k * 100) + "%";
+    if (S.view === "table") {
+      drawRows(w.dataset.side);
+      const vh = w.querySelector(".vhw"); if (vh) vh.style.transform = `translateY(${Math.max(0, -c.y / c.k)}px)`;
+    }
+  }
+}
+
+/* The pointer or the selection in one panel → its chain of anchors → the other panel marks the deepest it holds. */
+function chainOf(el) { const out = []; for (let n = el.closest("[data-anchor]"); n; n = n.parentElement && n.parentElement.closest("[data-anchor]")) out.push(n.dataset.anchor); return out; }
+function target() { return S.sel || S.hover; }
+function applyMarks() {
+  if (S.view !== "canvas" && S.view !== "table") return;
+  document.querySelectorAll(".glow,.parent").forEach(e => e.classList.remove("glow", "parent"));
+  const t = target();
+  for (const side of ["a", "b"]) {
+    const noteEl = document.querySelector(`[data-note="${side}"]`);
+    let note = S.note[side] || null;
+    if (t) {
+      let mark, parent = false;
+      if (t.side === side) mark = t.chain[0];
+      else { const r = resolve(side, t.chain); mark = r.mark; parent = r.parent; if (!note) note = r.note || null; }
+      if (mark) {
+        if (S.view === "canvas") {
+          document.querySelectorAll(`.world[data-side="${side}"] [data-anchor="${CSS.escape(mark)}"]`).forEach(e => {
+            if (e.tagName === "g") e.querySelector(".ln").classList.add("glow");
+            else if (!e.classList.contains("hit")) e.classList.add(parent ? "parent" : "glow");
+          });
+        } else markRow(side, mark);
+      }
+    }
+    if (noteEl) { noteEl.style.display = note ? "" : "none"; noteEl.innerHTML = note || ""; }
+  }
+}
+
+/* The camera of each panel: dragging moves, the wheel zooms around the pointer. */
+function bindCanvas() {
+  for (const cv of document.querySelectorAll(".cv[data-side]")) {
+    const side = cv.dataset.side;
+    cv.addEventListener("mouseover", e => { const a = e.target.closest("[data-anchor]"); const ch = a ? chainOf(a) : null; const was = S.hover; if (ch ? (was && was.side === side && was.chain[0] === ch[0]) : !was) return; S.hover = ch ? { side, chain: ch } : null; S.note = {}; applyMarks(); });
+    cv.addEventListener("mouseleave", () => { if (S.hover) { S.hover = null; applyMarks(); } });
+    cv.addEventListener("click", e => { if (e.target.closest(".fp,.calpop")) return; const a = e.target.closest("[data-anchor]"); if (!a) { if (S.sel) go({ sel: null, note: {} }); return; } select(side, chainOf(a)); });
+    cv.addEventListener("dblclick", e => { const a = e.target.closest(".ent"); if (!a) return; const n = parse(a.dataset.anchor).rest, k = `${side}:${n}`; const f = new Set(S.fold); f.has(k) ? f.delete(k) : f.add(k); go({ fold: [...f] }); });
+    let drag = null;
+    cv.addEventListener("mousedown", e => { if (e.target.closest(".fp,.zoombar,.calpop,.rvw")) return; cancelAnimationFrame(GLIDES[side]); const c = camOf(side); drag = { x: e.clientX, y: e.clientY, c: { ...c } }; });
+    window.addEventListener("mousemove", e => { if (!drag) return; const k = cv.getBoundingClientRect().width / cv.offsetWidth; S.cam[side] = { ...drag.c, x: drag.c.x + (e.clientX - drag.x) / k, y: drag.c.y + (e.clientY - drag.y) / k }; S.glide = false; applyCams(); });
+    window.addEventListener("mouseup", () => { drag = null; });
+    cv.addEventListener("wheel", e => {
+      if (e.target.closest(".calpop, .fp, .fsheet")) return;  // the filters scroll themselves
+      const c = camOf(side), r = cv.getBoundingClientRect(), k0 = r.width / cv.offsetWidth;
+      if (!(e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const dx = e.shiftKey ? e.deltaY : e.deltaX, dy = e.shiftKey ? 0 : e.deltaY;
+        S.cam[side] = { ...c, x: c.x - dx / k0, y: c.y - dy / k0 }; S.glide = false; applyCams(); return;
+      }
+      e.preventDefault();
+      const px = (e.clientX - r.left) / k0, py = (e.clientY - r.top) / k0; const nk = Math.min(2.5, Math.max(.3, c.k * Math.exp(-e.deltaY / 200)));
+      S.cam[side] = { k: nk, x: px - (px - c.x) * nk / c.k, y: py - (py - c.y) * nk / c.k }; S.glide = false; applyCams();
+    }, { passive: false });
+    cv.querySelectorAll("[data-z]").forEach(b => b.addEventListener("click", e => { e.stopPropagation(); const c = camOf(side); const to = b.dataset.z === "fit" ? (() => { const keep = S.cam[side]; S.cam[side] = null; const d = camOf(side); S.cam[side] = keep; return d; })() : { ...c, k: c.k * (b.dataset.z === "in" ? 1.2 : 1 / 1.2) }; glideTo(side, to); }));
+  }
+}
+/* A selection asks the other panel to bring the element into view, keeping its zoom. */
+function select(side, chain) {
+  const other = side === "a" ? "b" : "a", r = resolve(other, chain), note = {};
+  const cv = document.querySelector(`.cv[data-side="${other}"]`), c = camOf(other);
+  let to = null;
+  if (r.mark && cv && S.view === "canvas") {
+    const t = W[other].tables[tableOf(r.mark) || parse(r.mark).rest.split(".")[0]];
+    if (t) {
+      const vw = cv.offsetWidth, vh = cv.offsetHeight, bx = c.x + t.x * c.k, by = c.y + t.y * c.k;
+      if (!(bx >= 0 && by >= 0 && bx + EW * c.k <= vw && by + (EH + FH * t.f.length) * c.k <= vh)) to = { k: c.k, x: vw / 2 - (t.x + EW / 2) * c.k, y: vh / 2 - (t.y + EH) * c.k };
+    }
+  }
+  if (r.mark && cv && S.view === "table") {
+    const i = posOf(other, +r.mark.slice(8));
+    if (i >= 0 && !rowInView(other, i)) { const x = c.x + 820 * c.k > 0 && c.x < cv.offsetWidth ? c.x : camOf(null).x; to = { k: c.k, x, y: cv.offsetHeight / 2 - (HEADH + i * RH + RH / 2) * c.k }; }
+  }
+  if (to) note[other] = r.note || "Brought to the centre";
+  else if (r.note) note[other] = r.note;
+  S.sel = { side, chain }; S.note = note;
+  if (to) glideTo(other, to); else { applyCams(); }
+  applyMarks();
+  if (to) setTimeout(() => { if (S.note[other] === "Brought to the centre") { S.note = {}; applyMarks(); } }, 2500);
+}
+
+/* ======================= the list: only the rows in view are drawn ======================= */
+function bindLists() { for (const side of ["a", "b"]) drawRows(side); }
+/* The list is drawn whole on the canvas, 30 px a row; only the rows inside the camera's view are in the page. */
+function viewRows(side) {
+  const cv = document.querySelector(`.cv[data-side="${side}"]`), c = camOf(side), H = cv ? cv.offsetHeight : 700;
+  const top = -c.y / c.k - HEADH, bottom = (H - c.y) / c.k - HEADH;
+  return [Math.max(0, Math.floor(top / RH) - 2), Math.min(listOf(side).length, Math.ceil(bottom / RH) + 2)];
+}
+function drawRows(side) {
+  const vs = document.querySelector(`.vs[data-side="${side}"]`); if (!vs) return;
+  const [i0, i1] = viewRows(side);
+  if (vs.dataset.range === `${i0}-${i1}`) return;
+  vs.dataset.range = `${i0}-${i1}`;
+  let h = "";
+  const L = listOf(side);
+  if (!L.length) h = `<div class="vempty">No rows pass the filters.</div>`;
+  for (let i = i0; i < Math.min(i1, L.length); i++) {
+    const r = rowOf(side, L[i]);
+    h += `<div class="vrow" data-anchor="row:${r.key}" style="top:${i * RH}px"><span class="ix">${(L[i] + 1).toLocaleString("en")}</span><span>${rowDot(r)}</span><span class="id">${r.key}</span><span class="em">${r.was ? `<s>${esc(r.was)}</s>` : ""}${esc(r.email)}${r.blocked ? `<span class="bl">blocked</span>` : ""}</span><span class="mg2">${pdisk(r.mgr, 16)}<i>${esc(r.mgr)}</i></span><span class="bl2">${r.bal.toFixed(2)}</span><span class="dt">${r.date || "—"}</span></div>`;
+  }
+  vs.innerHTML = h;
+}
+const HEADH = 72;
+const TF0 = { k: [], dom: [], mgr: [], bmin: "", bmax: "", q: "", from: "", to: "", hideBlocked: false };
+const DOMS = { "gmail.com": "#0284c7", "yandex.ru": "#ca8a04", "mail.ru": "#7c3aed", "proton.me": "#0f766e" };
+function tf() { return Object.assign({}, TF0, S.tf || {}); }
+const LISTS = {};
+const ym = d => d.slice(0, 7);
+function passes(r, skip) {
+  const f = tf();
+  if (skip !== "k" && f.k.includes(r.k)) return false;
+  if (f.dom.includes(r.dom)) return false;
+  if (f.mgr.includes(r.mgr)) return false;
+  const bmin = parseFloat(f.bmin), bmax = parseFloat(f.bmax);
+  if (!isNaN(bmin) && r.bal < bmin) return false;
+  if (!isNaN(bmax) && r.bal > bmax) return false;
+  if (f.q && !(r.key.includes(f.q.toLowerCase()) || r.email.toLowerCase().includes(f.q.toLowerCase()))) return false;
+  if (!r.date) { if (f.from || f.to) return false; }
+  else { const lo = bd(f.from, false), hi = bd(f.to, true); if (lo && r.date < lo) return false; if (hi && r.date > hi) return false; }
+  if (skip !== "bl" && f.hideBlocked && r.blocked) return false;
+  return true;
+}
+function listOf(side) {
+  const key = side + JSON.stringify(tf());
+  if (!LISTS[key]) { const out = []; for (let i = 0; i < NROWS[side]; i++) if (passes(rowOf(side, i))) out.push(i); LISTS[key] = out; }
+  return LISTS[key];
+}
+/* What each value of a section would count with the other sections as they are: the numbers beside its rows. */
+function statusCounts(side) {
+  const key = "k" + side + JSON.stringify(tf());
+  if (!LISTS[key]) { const c = { a: 0, c: 0, u: 0 }; for (let i = 0; i < NROWS[side]; i++) { const r = rowOf(side, i); if (passes(r, "k")) c[r.k]++; } LISTS[key] = c; }
+  return LISTS[key];
+}
+const MONTHS = []; for (let y = 2024, m = 0; y < 2025 || m < 9; m++) { if (m === 12) { m = 0; y++; } MONTHS.push(`${y}-${String(m + 1).padStart(2, "0")}`); if (y === 2025 && m === 8) break; }
+function blockedCount(side) {
+  const key = "bl" + side + JSON.stringify(tf());
+  if (LISTS[key] === undefined) { let n = 0; for (let i = 0; i < NROWS[side]; i++) { const r = rowOf(side, i); if (r.blocked && passes(r, "bl")) n++; } LISTS[key] = n; }
+  return LISTS[key];
+}
+function posOf(side, id) { const i = indexOf(side, id); if (i < 0) return -1; const L = listOf(side); let lo = 0, hi = L.length - 1; while (lo <= hi) { const m = (lo + hi) >> 1; if (L[m] === i) return m; if (L[m] < i) lo = m + 1; else hi = m - 1; } return -1; }
+function listCount(side) { const n = listOf(side).length; return n === NROWS[side] ? `${n.toLocaleString("en")} rows` : `${n.toLocaleString("en")} of ${NROWS[side].toLocaleString("en")} rows`; }
+const GLYPH = {
+  a: '<path d="M12 7.5v9M7.5 12h9"/>', c: '<path d="M7 13.2c1.6-2.6 3.4-2.6 5 0s3.4 2.6 5 0"/>', r: '<path d="M7.5 12h9"/>', u: '<path d="M7.5 10h9M7.5 14h9"/>',
+  bl: '<circle cx="12" cy="12" r="4.6"/><path d="M8.8 15.2l6.4-6.4"/>',
+};
+const disk = (fill, g) => `<svg class="dk" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${fill}"/><g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${GLYPH[g]}</g></svg>`;
+function gear(secs, paint, fn) {
+  if (secs.length < 2) return "";
+  return `<div class="gear"><span class="gs" style="width:${18 * (secs.length - 1) + 16}px"><i></i>${secs.map(([id, title], i) => `<button class="${paint === id ? "on" : ""}" style="left:${i * 18}px" title="Paint by ${title}" onclick="${fn}('${id}')"><span></span></button>`).join("")}</span></div>`;
+}
+GLYPH.none = "";
+const KC = { a: "#16a34a", c: "#d97706", r: "#dc2626", u: "#94a3b8" };
+const monLab2 = v => v ? `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+v.slice(5) - 1]} ${v.slice(0, 4)}` : "";
+const monLong = v => v ? `${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][+v.slice(5) - 1]} ${v.slice(0, 4)}` : "";
+const MN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monLab = v => v ? `${MN[+v.slice(5) - 1]} ${v.slice(2, 4)}` : "";
+/* The shell's panel of filters: an accordion with one section open, as spec 078 has it; a closed section says in its head what it holds. */
+function listPanel(side) {
+  const f = tf(), paint = S.paintL || "status", open = S.fsec || paint;
+  const sec = (id, title, body) => `<div><div class="sh${open === id ? "" : " closed"}" onclick="openSec('${id}')">${I.chev}<span>${title}</span></div>${open === id ? `<div class="rows">${body}</div>` : ""}</div>`;
+  const status = [["a", "+", "Added", "#16a34a"], ["c", "~", "Changed", "#d97706"], ["u", "=", "Unchanged", "#94a3b8"]].filter(r => side === "b" || r[0] !== "a")
+    .map(([k, sg, l, c]) => `<div class="row${f.k.includes(k) ? " off" : ""}" data-k="${k}" onclick="tglK('${k}')">${disk(c, k)}<span class="lb">${l}</span></div>`).join("");
+  const domain = Object.entries(DOMS).map(([d, c]) => `<div class="row${f.dom.includes(d) ? " off" : ""}" onclick="tglDom('${d}')">${disk(c, "none")}<span class="lb">${d}</span></div>`).join("");
+  const manager = managerSection();
+  const balance = numRow("bmin", "From", f.bmin, "the lowest") + numRow("bmax", "To", f.bmax, "the highest");
+  const search = `<label class="row frow${f.q ? " on" : ""}"><span class="bd mg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></span><input class="fin" data-f="q" placeholder="Account or email" value="${esc(f.q)}" oninput="setTf('q', this.value)"></label>`;
+  const created = rangeRow(side, "from", "From", f.from) + rangeRow(side, "to", "To", f.to);
+  const blocked = `<div class="row${f.hideBlocked ? " off" : ""}" onclick="setTf('hideBlocked', !tf().hideBlocked)">${disk("#dc2626", "bl")}<span class="lb">Blocked accounts</span></div>`;
+  return `<div class="fp" data-lp="${side}"><div class="secs">${sec("search", "Search", search)}${sec("status", "Status", status)}${sec("domain", "Domain", domain)}${sec("manager", "Manager", manager)}${sec("balance", "Balance", balance)}${sec("created", "Created", created)}${sec("blocked", "Blocked", blocked)}</div>${gear([["status", "Status"], ["domain", "Domain"]], paint, "paintList")}</div>`;
+}
+/* A range of dates: the distribution of the rows by month, the chosen stretch dark. */
+const CAL = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>';
+function rangeRow(side, which, pre, v) {
+  const open = S.cal && S.cal.side === side && S.cal.active === which;
+  return `<div class="row frow${v ? " on" : ""}${open ? " open" : ""}" data-rr="${which}" onclick="openCal('${side}','${which}')"><span class="bd mg">${CAL}</span><span class="lb" title="${v ? `${pre} ${dLong(bd(v, which === "to"))}${v.startsWith("now") ? ` — ${boundLabel(v, which)}` : ""}` : which === "from" ? "From the start: no lower bound" : "To the end: no upper bound"}"><span class="pre">${pre}</span> ${boundDate(v, which)}</span></div>`;
+}
+/* The months of the page's span, a year to a line of four rows; the months the other bound rules out are pale. */
+function openSec(id) { S.fsec = S.fsec === id || (!S.fsec && id === "status") ? "none" : id; redrawPanels(); }
+/* A person's disk: the initials on a colour of the palette, as ErdFilterPanel draws a person. */
+const PCOL = ["#0284c7", "#7c3aed", "#ca8a04", "#0f766e", "#db2777", "#475569", "#16a34a", "#ea580c"];
+function pdisk(name, size = 20) { const ini = name.split(" ").map(w => w[0]).join("").slice(0, 2), c = PCOL[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % PCOL.length]; return `<svg class="dk pd" width="${size}" height="${size}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${c}"/><text x="12" y="15.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif">${ini}</text></svg>`; }
+/* The managers by how many accounts each holds, most first: the order a long choice shows its first values in. */
+let MGR_ORDER = null;
+function managerOrder() { if (!MGR_ORDER) { const c = {}; for (let i = 0; i < N_B; i++) { const m = rowOf("b", i).mgr; c[m] = (c[m] || 0) + 1; } MGR_ORDER = MANAGERS.slice().sort((a, b) => (c[b] || 0) - (c[a] || 0)); } return MGR_ORDER; }
+const MGR_SHOW = 8;
+/* A long choice: a search inside the section, the first values, then "N more"; every row turns on and off as any row does. */
+function managerSection() {
+  const f = tf(), q = (S.mq || "").trim().toLowerCase(), all = managerOrder();
+  let list = q ? all.filter(n => n.toLowerCase().includes(q)) : all;
+  const more = !q && !S.mexp && list.length > MGR_SHOW ? list.length - MGR_SHOW : 0;
+  if (more) list = list.slice(0, MGR_SHOW);
+  const find = `<label class="row frow${q ? " on" : ""}"><span class="bd mg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></span><input class="fin" data-f="mq" placeholder="Find a manager" value="${esc(S.mq || "")}" oninput="S.mq=this.value;redrawPanels()"></label>`;
+  const rows = list.map(n => `<div class="row${f.mgr.includes(n) ? " off" : ""}" onclick="tglMgr(${JSON.stringify(n).replace(/"/g, "&quot;")})">${pdisk(n)}<span class="lb" title="${esc(n)}">${esc(n)}</span></div>`).join("");
+  const tail = more ? `<button class="more" onclick="S.mexp=true;redrawPanels()">${more} more</button>`
+    : !q && S.mexp ? `<button class="more" onclick="S.mexp=false;redrawPanels()">Show fewer</button>`
+    : q && !list.length ? `<div class="fnone">No manager matches</div>` : "";
+  return find + rows + tail;
+}
+function tglMgr(n) { const f = tf(); f.mgr = f.mgr.includes(n) ? f.mgr.filter(x => x !== n) : f.mgr.concat(n); S.tf = f; refilter(); }
+/* A range of numbers: two rows like the others, the bound typed in the label's place. */
+function numRow(key, pre, v, hint) {
+  return `<label class="row frow${v ? " on" : ""}"><span class="bd mg"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9.5 4L7.5 20M16.5 4l-2 16M4.5 9h16M3.5 15h16"/></svg></span><span class="lb"><span class="pre">${pre}</span></span><input class="fin nin" data-f="${key}" inputmode="decimal" placeholder="${hint}" value="${esc(v)}" oninput="setTf('${key}', this.value)"></label>`;
+}
+function tglDom(d) { const f = tf(); f.dom = f.dom.includes(d) ? f.dom.filter(x => x !== d) : f.dom.concat(d); S.tf = f; refilter(); }
+/* Moving the paint switch repaints the rows and opens the section it paints by. */
+function paintList(id) { S.paintL = id; S.fsec = id; for (const side of ["a", "b"]) { const vs = document.querySelector(`.vs[data-side="${side}"]`); if (vs) vs.dataset.range = ""; } redrawPanels(); applyCams(); applyMarks(); }
+function rowDot(r) { return (S.paintL || "status") === "domain" ? disk(DOMS[r.dom], "none").replace('class="dk"', 'class="dk sm"') : disk(KC[r.k], r.k).replace('class="dk"', 'class="dk sm"'); }
+function tglK(k) { const f = tf(); f.k = f.k.includes(k) ? f.k.filter(x => x !== k) : f.k.concat(k); S.tf = f; refilter(); }
+function setTf(field, v) { S.tf = { ...tf(), [field]: v }; refilter(); }
+/* Redraw the panels, except the field being typed in, which keeps its focus. */
+/* The bounds a page gives the calendar: the first and the last year and month it may show. "now" is the mockup's moment. */
+const NOW = "2026-11-10";
+const CALOPT = { min: "2019-01", max: "2026-11" };
+/* The first and the last day inside the bounds. */
+const CAL_LO = CALOPT.min + "-01";
+const CAL_HI = (() => { const [y, m] = CALOPT.max.split("-").map(Number); return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); })();
+/* The left month of the two shown, kept so that both months lie inside the bounds. */
+function calView(month) {
+  const [y, m] = CALOPT.max.split("-").map(Number), last = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 7);
+  return month > last ? (last < CALOPT.min ? CALOPT.min : last) : month < CALOPT.min ? CALOPT.min : month;
+}
+const MFULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const UNITS = { d: ["day", "days"], w: ["week", "weeks"], M: ["month", "months"], y: ["year", "years"] };
+const dLab = v => { const [y, m, d] = v.split("-"); return `${+d} ${MN[+m - 1]} ${y}`; };
+const dLong = v => { const [y, m, d] = v.split("-"); return `${+d} ${MFULL[+m - 1]} ${y}`; };
+const isoOf = t => new Date(t).toISOString().slice(0, 10);
+const ms0 = v => Date.parse(v + "T00:00:00Z");
+function shiftIso(iso, n, u) { const t = new Date(ms0(iso)); if (u === "d") t.setUTCDate(t.getUTCDate() - n); if (u === "w") t.setUTCDate(t.getUTCDate() - 7 * n); if (u === "M") t.setUTCMonth(t.getUTCMonth() - n); if (u === "y") t.setUTCFullYear(t.getUTCFullYear() - n); return isoOf(t); }
+function periodOf(iso, u, end) {
+  const [y, m] = iso.split("-").map(Number);
+  if (u === "M") return end ? isoOf(Date.UTC(y, m, 0)) : isoOf(Date.UTC(y, m - 1, 1));
+  if (u === "Q") { const q = Math.floor((m - 1) / 3) * 3; return end ? isoOf(Date.UTC(y, q + 3, 0)) : isoOf(Date.UTC(y, q, 1)); }
+  if (u === "y") return end ? `${y}-12-31` : `${y}-01-01`;
+  return iso;
+}
+/* A bound as written in the address: "2025-03-05", "now", "now-90d", "now/M", "now-1y/y". */
+function bd(v, isTo) {
+  if (!v) return "";
+  if (!v.startsWith("now")) return v;
+  const m = v.match(/^now(?:-(\d+)([dwMy]))?(?:\/([dMQy]))?$/); if (!m) return "";
+  let iso = m[1] ? shiftIso(NOW, +m[1], m[2]) : NOW;
+  if (m[3]) iso = periodOf(iso, m[3], isTo);
+  return iso;
+}
+/* The date a bound reads today, the same for an absolute and a relative bound; how it is set goes under it. */
+function boundDate(v, which) { return v ? dLab(bd(v, which === "to")) : which === "from" ? "the start" : "the end"; }
+function boundHow(v, which) { return v && v.startsWith("now") ? boundLabel(v, which) : ""; }
+function boundLabel(v, which) {
+  if (!v) return which === "from" ? "the start" : "the end";
+  if (v === "now") return "now";
+  const m = v.match(/^now(?:-(\d+)([dwMy]))?(?:\/([dMQy]))?$/);
+  if (m) {
+    if (m[3] === "d" && !m[1]) return which === "from" ? "today" : "end of today";
+    if (m[3]) return `${m[1] ? (m[1] === "1" ? "last " : `${m[1]} ${UNITS[m[2]][1]} ago, `) : "this "}${{ M: "month", Q: "quarter", y: "year" }[m[3]]}${which === "from" ? ", start" : ", end"}`;
+    return `${m[1]} ${UNITS[m[2]][+m[1] === 1 ? 0 : 1]} ago`;
+  }
+  return dLab(v);
+}
+/* Ready stretches: the core's common ones, then the page's own. */
+const QUICK = [
+  ["Today", "now/d", "now"], ["Last 7 days", "now-7d", "now"], ["Last 30 days", "now-30d", "now"], ["Last 90 days", "now-90d", "now"],
+  ["This month", "now/M", "now"], ["This quarter", "now/Q", "now"], ["This year", "now/y", "now"], ["Last year", "now-1y/y", "now-1y/y"],
+];
+const PAGE_QUICK = [["Since the launch", "2025-04-14", "now"], ["Summer 2026", "2026-06-01", "2026-08-31"]];
+function modeOf(v) { return !v ? "open" : v.startsWith("now") ? "rel" : "abs"; }
+function openCal(side, which) {
+  if (S.cal && S.cal.side === side) { S.cal = null; redrawPanels(); return; }
+  const f = tf(), first = bd(f[which], which === "to") || NOW;
+  S.cal = { side, active: which, draft: { from: f.from, to: f.to }, view: calView(isoOf(Date.UTC(+first.slice(0, 4), +first.slice(5, 7) - (which === "to" ? 2 : 1), 1)).slice(0, 7)), hover: null };
+  redrawPanels();
+}
+function monthGridHtml(view, lo, hi, a, b, st = S.cal, pick = "calPick", hover = "calHover", jump = "calJump", nav = "") {
+  const [y, m] = view.split("-").map(Number), first = Date.UTC(y, m - 1, 1), off = (new Date(first).getUTCDay() + 6) % 7, c = st;
+  let cells = "";
+  for (let i = 0; i < 42; i++) {
+    const iso = isoOf(first + (i - off) * 864e5), inMonth = +iso.slice(5, 7) === m;
+    if (!inMonth) { cells += `<span class="d x"></span>`; continue; }
+    const dis = iso < lo || iso > hi, both = a && b && a !== b;
+    const cls = ["d", dis ? "dis" : "", iso === NOW ? "today" : "", iso === a || iso === b ? "sel" : "", both && iso > a && iso < b ? "in" : "", both && iso === a ? "rs" : "", both && iso === b ? "re" : "", iso === c.hover && !dis ? "hv" : ""].filter(Boolean).join(" ");
+    cells += `<button class="${cls}" ${dis ? "disabled" : `onclick="${pick}('${iso}')" onmouseenter="${hover}('${iso}')"`}><span>${+iso.slice(8)}</span></button>`;
+  }
+  return `<div class="cm"><div class="cmh"><button class="cmt" onclick="${jump}('${view}')">${MFULL[m - 1]} ${y}<svg class="chv" width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l5 5-5 5"/></svg></button>${nav}</div><div class="cwd">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map(d => `<span>${d}</span>`).join("")}</div><div class="cgrid">${cells}</div></div>`;
+}
+function calHtml() {
+  const c = S.cal, d = c.draft, act = c.active;
+  const a = bd(d.from, false), b = bd(d.to, true);
+  const lo = CAL_LO, hi = CAL_HI;
+  const [vy, vm] = c.view.split("-").map(Number), next = isoOf(Date.UTC(vy, vm, 1)).slice(0, 7);
+  const canPrev = c.view > CALOPT.min, canNext = next < CALOPT.max;
+  const quick = list => `${list.map(([l, f1, t1]) => `<button class="${d.from === f1 && d.to === t1 ? "on" : ""}" onclick="calQuick('${f1}','${t1}')">${l}</button>`).join("")}`;
+  const field = w => {
+    const val = d[w], rel = !!val && val.startsWith("now");
+    return `<div class="cf${act === w ? " on" : ""}"><label>${w === "from" ? "From" : "To"}</label><div class="cfb"><input data-cf="${w}" value="${val ? dLab(bd(val, w === "to")) : ""}" placeholder="${w === "from" ? "the start" : "the end"}" onfocus="calFocus('${w}')" onkeydown="if(event.key==='Enter'){calType('${w}',this.value);this.blur()}" onblur="calType('${w}',this.value)"><button class="rl${rel ? " on" : ""}" title="${rel ? "Moves with today — click to fix the date" : "A fixed date — click to make it move with today"}" ${val ? `onclick="calToggleRel('${w}')"` : "disabled"}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div><i>${rel ? boundLabel(val, w) : ""}</i></div>`;
+  };
+  const editor = `<div class="cfs">${field("from")}<span class="car">→</span>${field("to")}</div>
+    <div class="cms${c.jump ? " j" : ""}" onmouseleave="calHover(null)">${c.jump ? jumpHtml(c, CALOPT, "calJump") : (S.phone ? monthGridHtml(c.view, lo, hi, a, b, S.cal, "calPick", "calHover", "calJump", navHtml(canPrev, c.view < CALOPT.max, "calMove")) : monthGridHtml(c.view, lo, hi, a, b) + monthGridHtml(next, lo, hi, a, b, S.cal, "calPick", "calHover", "calJump", navHtml(canPrev, canNext, "calMove")))}</div>`;
+  const days = a && b ? Math.round((ms0(b) - ms0(a)) / 864e5) + 1 : null;
+  return `<div class="calpop" role="dialog" aria-label="Choose dates"><div class="cbody"><div class="cq">${quick(QUICK)}<div class="qsep"></div>${quick(PAGE_QUICK)}</div>
+    <div class="cpr">${editor}
+    <div class="cft"><span class="sum">${boundDate(d.from, "from")} → ${boundDate(d.to, "to")}${days ? ` · ${days} ${days === 1 ? "day" : "days"}` : ""}</span><button onclick="calCancel()">Cancel</button><button class="done" onclick="calApply()">Apply</button></div></div></div></div>`;
+}
+function renderCal() {
+  document.querySelectorAll(".calpop").forEach(e => e.remove());
+  if (!S.cal) return;
+  const app = document.getElementById("app"), row = document.querySelector(`.fp[data-lp="${S.cal.side}"] [data-rr="from"]`);
+  if (!row) return;
+  const k = app.getBoundingClientRect().width / app.offsetWidth, ar = app.getBoundingClientRect(), rr = row.closest(".fp").getBoundingClientRect();
+  app.insertAdjacentHTML("beforeend", calHtml());
+  const pop = app.querySelector(".calpop");
+  pop.style.left = Math.min((rr.right - ar.left) / k + 10, app.offsetWidth - pop.offsetWidth - 10) + "px";
+  pop.style.top = Math.max(50, Math.min((rr.top - ar.top) / k, app.offsetHeight - pop.offsetHeight - 10)) + "px";
+  bindWheels();
+}
+function calMove(dlt) { const [y, m] = S.cal.view.split("-").map(Number); S.cal.view = calView(isoOf(Date.UTC(y, m - 1 + dlt, 1)).slice(0, 7)); renderCal(); }
+function calHover(iso) { if (S.cal.jump || S.cal.hover === iso) return; S.cal.hover = iso; renderCal(); }
+/* Typed: 2026-03-05, 5 Mar 2026, today, 30 days ago, 30d, 6 months ago, 1y. Empty is no bound. */
+function parseBound(t) {
+  t = t.trim().toLowerCase();
+  if (!t) return "";
+  if (t === "today" || t === "now") return "now";
+  let m = t.match(/^(\d+)\s*(d|days?|w|weeks?|m|months?|y|years?)(\s+ago)?$/);
+  if (m) { const u = { d: "d", w: "w", m: "M", y: "y" }[m[2][0]]; return +m[1] ? `now-${+m[1]}${u}` : "now"; }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  m = t.match(/^(\d{1,2})\s+([a-z]{3})[a-z]*\s+(\d{4})$/);
+  if (m) { const mi = MN.findIndex(x => x.toLowerCase() === m[2]); if (mi >= 0) return `${m[3]}-${String(mi + 1).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`; }
+  return null;
+}
+function calType(w, t) {
+  const cur = S.cal.draft[w], shown = cur ? dLab(bd(cur, w === "to")) : "";
+  if (t.trim() === shown) return;
+  let v = parseBound(t); if (v === null) { renderCal(); return; }
+  if (v && !v.startsWith("now")) v = v < CAL_LO ? CAL_LO : v > CAL_HI ? CAL_HI : v;
+  S.cal.draft[w] = v;
+  /* A start typed after the end, or an end typed before the start, takes the other's place. */
+  const a = bd(S.cal.draft.from, false), b = bd(S.cal.draft.to, true);
+  if (a && b && a > b) S.cal.draft = { from: S.cal.draft.to, to: S.cal.draft.from };
+  if (v) { const iso = bd(v, w === "to"); S.cal.view = calView(isoOf(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - (w === "to" ? 2 : 1), 1)).slice(0, 7)); }
+  renderCal();
+}
+function calToggleRel(w) {
+  const v = S.cal.draft[w]; if (!v) return;
+  if (v.startsWith("now")) S.cal.draft[w] = bd(v, w === "to");
+  else { const n = Math.round((ms0(NOW) - ms0(v)) / 864e5); S.cal.draft[w] = n > 0 ? `now-${n}d` : "now"; }
+  renderCal();
+}
+/* Choosing a field makes it the bound the calendar sets; the field keeps its focus. */
+function calFocus(w) { if (S.cal.active === w) return; S.cal.active = w; renderCal(); const i = document.querySelector(`.calpop [data-cf="${w}"]`); if (i) { i.focus(); i.select(); } }
+/* A day chosen for From moves on to To, and drops an end that lay before it.
+   A day chosen for To that lies before the start becomes the start instead; any other stays the end, for Apply.
+   So any day inside the bounds can always be chosen, and a chosen stretch can always be changed. */
+function calPick(iso) {
+  const d = S.cal.draft, a = bd(d.from, false), b = bd(d.to, true);
+  if (S.cal.active === "from") { d.from = iso; if (b && b < iso) d.to = ""; S.cal.active = "to"; }
+  else if (a && iso < a) d.from = iso;
+  else d.to = iso;
+  S.cal.hover = null; renderCal();
+}
+function calQuick(f1, t1) { S.cal.draft = { from: f1, to: t1 }; const v = bd(t1, true); S.cal.view = calView(isoOf(Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 2, 1)).slice(0, 7)); renderCal(); }
+function calApply() { S.tf = { ...tf(), from: S.cal.draft.from, to: S.cal.draft.to }; S.cal = null; refilter(); }
+function calCancel() { S.cal = null; redrawPanels(); }
+const QUICK_ONE = [["Today", "now"], ["Yesterday", "now-1d"], ["A week ago", "now-7d"], ["Start of this month", "now/M"], ["Start of this quarter", "now/Q"], ["Start of this year", "now/y"]];
+const PAGE_ONE = [["Next release", "2026-12-01"]];
+const WDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+function openOne(side) {
+  if (S.one) { S.one = null; renderOne(); return; }
+  const v = S.review || "", iso = bd(v, false) || NOW;
+  S.one = { side, draft: v, view: iso.slice(0, 7), hover: null }; renderOne();
+}
+function oneHtml() {
+  const c = S.one, v = c.draft, iso = v ? bd(v, false) : "", rel = !!v && v.startsWith("now");
+  const [vy, vm] = c.view.split("-").map(Number);
+  const canPrev = c.view > ONEOPT.min.slice(0, 7), canNext = c.view < ONEOPT.max.slice(0, 7);
+  const quick = list => list.map(([l, q]) => `<button class="${v === q ? "on" : ""}" onclick="onePick('${q}')">${l}</button>`).join("");
+  const wd = iso ? `${WDAY[new Date(ms0(iso)).getUTCDay()]}, ${dLab(iso)}` : "No date";
+  return `<div class="calpop one" role="dialog" aria-label="Choose a date"><div class="cbody"><div class="cq">${quick(QUICK_ONE)}<div class="qsep"></div>${quick(PAGE_ONE)}</div>
+    <div class="cpr"><div class="cfs"><div class="cf on"><label>Date</label><div class="cfb"><input data-one value="${iso ? dLab(iso) : ""}" placeholder="No date" onkeydown="if(event.key==='Enter'){oneType(this.value);this.blur()}" onblur="oneType(this.value)"><button class="rl${rel ? " on" : ""}" title="${rel ? "Moves with today — click to fix the date" : "A fixed date — click to make it move with today"}" ${v ? `onclick="oneToggleRel()"` : "disabled"}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div><i>${rel ? boundLabel(v, "from").replace(", start", "") : ""}</i></div></div>
+    <div class="cms one" onmouseleave="oneHover(null)">${c.jump ? jumpHtml(c, ONEOPT, "oneJump") : monthGridHtml(c.view, ONEOPT.min, ONEOPT.max, iso, null, c, "onePickDay", "oneHover", "oneJump", navHtml(canPrev, canNext, "oneMove"))}</div>
+    <div class="cft"><span class="sum">${wd}</span><button onclick="oneCancel()">Cancel</button><button class="done" onclick="oneApply()">Apply</button></div></div></div></div>`;
+}
+const ONEOPT = { min: "2019-01-01", max: "2027-12-31" };
+function renderOne() {
+  document.querySelectorAll(".calpop.one").forEach(e => e.remove());
+  if (!S.one) return;
+  const app = document.getElementById("app"), btn = document.querySelector(`[data-rvw="${S.one.side}"]`); if (!btn) return;
+  const k = app.getBoundingClientRect().width / app.offsetWidth, ar = app.getBoundingClientRect(), br = btn.getBoundingClientRect();
+  app.insertAdjacentHTML("beforeend", oneHtml());
+  const pop = app.querySelector(".calpop.one");
+  pop.style.left = Math.max(10, Math.min((br.right - ar.left) / k - pop.offsetWidth, app.offsetWidth - pop.offsetWidth - 10)) + "px";
+  pop.style.top = Math.max(50, Math.min((br.bottom - ar.top) / k + 8, app.offsetHeight - pop.offsetHeight - 10)) + "px";
+  bindWheels();
+}
+function oneMove(d) { const [y, m] = S.one.view.split("-").map(Number); S.one.view = isoOf(Date.UTC(y, m - 1 + d, 1)).slice(0, 7); renderOne(); }
+function oneHover(iso) { if (S.one.jump || S.one.hover === iso) return; S.one.hover = iso; renderOne(); }
+function onePickDay(iso) { S.one.draft = iso; renderOne(); }
+function onePick(q) { S.one.draft = q; const iso = bd(q, false); S.one.view = iso.slice(0, 7); renderOne(); }
+function oneType(t) { const cur = S.one.draft ? dLab(bd(S.one.draft, false)) : ""; if (t.trim() === cur) return; const v = parseBound(t); if (v === null) { renderOne(); return; } S.one.draft = v; if (v) S.one.view = bd(v, false).slice(0, 7); renderOne(); }
+function oneToggleRel() { const v = S.one.draft; if (!v) return; if (v.startsWith("now")) S.one.draft = bd(v, false); else { const n = Math.round((ms0(NOW) - ms0(v)) / 864e5); S.one.draft = n > 0 ? `now-${n}d` : "now"; } renderOne(); }
+function oneApply() { S.review = S.one.draft; S.one = null; render(); }
+function oneCancel() { S.one = null; renderOne(); }
+/* Years in a row, months in a grid of four; the months outside the bounds are pale. */
+/* Months turn round and round; years outside the bounds show pale, so the wheel is full on both sides, and it rolls back to the nearest year allowed. */
+const WH_PAD = 3, RH_W = 28;
+function wheelYears(opt) { const y0 = +opt.min.slice(0, 4) - WH_PAD, y1 = +opt.max.slice(0, 4) + WH_PAD, out = []; for (let y = y0; y <= y1; y++) out.push(y); return out; }
+function jumpHtml(st, opt, prefix) {
+  const [jy, jm] = st.jumpFrom.split("-").map(Number), years = wheelYears(opt), ylo = +opt.min.slice(0, 4), yhi = +opt.max.slice(0, 4);
+  const months = [0, 1, 2].flatMap(k => MFULL.map((n, i) => [n, k * 12 + i]));
+  const mcol = `<div class="wh" data-wh="m" data-pre="${prefix}"><div class="whp"></div>${months.map(([n, i]) => `<div class="whi${i % 12 === jm - 1 ? " on" : ""}" data-i="${i}">${n}</div>`).join("")}<div class="whp"></div></div>`;
+  const ycol = `<div class="wh" data-wh="y" data-pre="${prefix}"><div class="whp"></div>${years.map((y, i) => `<div class="whi${y === jy ? " on" : ""}${y < ylo || y > yhi ? " off" : ""}" data-i="${i}">${y}</div>`).join("")}<div class="whp"></div></div>`;
+  return `<div class="cm jumping"><div class="cmh"><button class="cmt open" onclick="${prefix}Close()">${MFULL[jm - 1]} ${jy}<svg class="chv" width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l5 5-5 5"/></svg></button></div>
+    <div class="whs"><div class="whband"></div>${mcol}${ycol}</div></div>`;
+}
+function bindWheels() {
+  for (const wh of document.querySelectorAll(".calpop .wh")) {
+    const pre = wh.dataset.pre, st = pre === "calJump" ? S.cal : S.one, opt = pre === "calJump" ? CALOPT : ONEOPT;
+    const [jy, jm] = st.jumpFrom.split("-").map(Number), y0 = wheelYears(opt)[0];
+    wh.scrollTop = (wh.dataset.wh === "m" ? 12 + jm - 1 : jy - y0) * RH_W;
+    let t = 0;
+    wh.addEventListener("scroll", () => { clearTimeout(t); t = setTimeout(() => wheelStop(pre), 110); });
+    wh.addEventListener("click", e => { const it = e.target.closest(".whi"); if (it) wh.scrollTo({ top: +it.dataset.i * RH_W, behavior: "smooth" }); });
+  }
+}
+function wheelStop(pre) {
+  const st = pre === "calJump" ? S.cal : S.one, opt = pre === "calJump" ? CALOPT : ONEOPT, y0 = wheelYears(opt)[0];
+  const mw = document.querySelector(`.calpop .wh[data-wh="m"][data-pre="${pre}"]`), yw = document.querySelector(`.calpop .wh[data-wh="y"][data-pre="${pre}"]`);
+  if (!mw || !yw) return;
+  const mi = Math.round(mw.scrollTop / RH_W) % 12, yi = Math.round(yw.scrollTop / RH_W);
+  // the months' wheel is kept on its middle turn, so it never runs out either way
+  if (Math.round(mw.scrollTop / RH_W) !== 12 + mi) mw.scrollTop = (12 + mi) * RH_W;
+  let v = `${y0 + yi}-${String(mi + 1).padStart(2, "0")}`;
+  const lo = opt.min.slice(0, 7), hi = opt.max.slice(0, 7);
+  if (v < lo || v > hi) { v = v < lo ? lo : hi; const [cy, cm] = v.split("-").map(Number); mw.scrollTo({ top: (12 + cm - 1) * RH_W, behavior: "smooth" }); yw.scrollTo({ top: (cy - y0) * RH_W, behavior: "smooth" }); }
+  st.jumpFrom = v;
+  mw.querySelectorAll(".whi").forEach(e => e.classList.toggle("on", +e.dataset.i % 12 === +v.slice(5) - 1));
+  yw.querySelectorAll(".whi").forEach(e => e.classList.toggle("on", +e.textContent === +v.slice(0, 4)));
+  const t = document.querySelector(`.calpop .cmt.open`); if (t) t.firstChild.textContent = `${MFULL[+v.slice(5) - 1]} ${v.slice(0, 4)}`;
+}
+function calJump(view) { S.cal.jump = true; S.cal.jumpFrom = view; S.cal.jumpOff = view === S.cal.view ? 0 : 1; renderCal(); }
+function calJumpClose() { const [y, m] = S.cal.jumpFrom.split("-").map(Number); S.cal.view = calView(isoOf(Date.UTC(y, m - 1 - (S.cal.jumpOff || 0), 1)).slice(0, 7)); S.cal.jump = false; renderCal(); }
+function oneJump(view) { S.one.jump = true; S.one.jumpFrom = view; renderOne(); }
+function oneJumpClose() { S.one.view = S.one.jumpFrom; S.one.jump = false; renderOne(); }
+function navHtml(canPrev, canNext, fn) {
+  const arrow = d => `<svg width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  return `<span class="cnav"><button ${canPrev ? `onclick="${fn}(-1)"` : "disabled"} aria-label="Previous month">${arrow("M7 2L2 7l5 5")}</button><button ${canNext ? `onclick="${fn}(1)"` : "disabled"} aria-label="Next month">${arrow("M2 2l5 5-5 5")}</button></span>`;
+}
+function activeFilters() { const f = tf(); return [f.k.length, f.dom.length, f.mgr.length, f.q, f.bmin || f.bmax, f.from || f.to, f.hideBlocked].filter(Boolean).length; }
+function phoneFilterButton(side) { const n = activeFilters(); return `<button class="fbtn" onclick="event.stopPropagation();S.fs='${side}';renderFS()">${I.chev.replace('class="ico sm"', 'class="ico sm fchev"')}Filters${n ? `<span class="fn">${n}</span>` : ""}</button>`; }
+/* On a phone the filters are one button; it opens them in a sheet from below, the same sections as on a desktop. */
+function renderFS() {
+  document.querySelectorAll(".fsheet, .fscrim").forEach(e => e.remove());
+  if (!S.fs || !S.phone) return;
+  const app = document.getElementById("app");
+  app.insertAdjacentHTML("beforeend", `<div class="fscrim" onclick="closeFS()"></div><div class="fsheet"><div class="fgrab"></div><div class="fsh"><b>Filters</b><button onclick="closeFS()">Done</button></div>${listPanel(S.fs)}</div>`);
+}
+function closeFS() { S.fs = null; renderFS(); const b = document.querySelector(".fbtn"); if (b) b.outerHTML = phoneFilterButton(S.side); }
+function redrawPanels() {
+  for (const side of ["a", "b"]) {
+    const fp = document.querySelector(`.fp[data-lp="${side}"]`); if (!fp) continue;
+    const active = document.activeElement && fp.contains(document.activeElement) ? document.activeElement.dataset.f : null;
+    const caret = active ? document.activeElement.selectionStart : 0;
+    fp.outerHTML = listPanel(side);
+    if (active) { const inp = document.querySelector(`.fp[data-lp="${side}"] [data-f="${active}"]`); if (inp) { inp.focus(); inp.setSelectionRange(caret, caret); } }
+  }
+  renderCal();
+}
+/* A filter changes the rows of both panels at once. */
+function refilter() {
+  for (const side of ["a", "b"]) {
+    const vs = document.querySelector(`.vs[data-side="${side}"]`); if (!vs) continue;
+    vs.style.height = Math.max(1, listOf(side).length) * RH + "px"; vs.dataset.range = "";
+    const cnt = document.querySelector(`[data-count="${side}"]`); if (cnt) cnt.textContent = listCount(side);
+  }
+  redrawPanels(); applyCams(); applyMarks();
+}
+
+/* A row in the camera's view is lit; a row out of view is not pointed at: a click brings it, nothing else. */
+function markRow(side, a) {
+  const el = document.querySelector(`.vs[data-side="${side}"] [data-anchor="${CSS.escape(a)}"]`);
+  if (!el) return;
+  const cv = el.closest(".cv"), r = el.getBoundingClientRect(), v = cv.getBoundingClientRect();
+  if (r.bottom > v.top && r.top < v.bottom) el.classList.add("glow");
+}
+function rowInView(side, i) {
+  const cv = document.querySelector(`.cv[data-side="${side}"]`), c = camOf(side), y = c.y + (HEADH + i * RH) * c.k;
+  return y >= HEADH * c.k && y + RH * c.k <= cv.offsetHeight && c.x + 820 * c.k > 0 && c.x < cv.offsetWidth;
+}
+
+/* ======================= the screens ======================= */
+const SCREENS = [
+  ["Track through anchors · a canvas", [
+    ["1.1", "The same table in both panels", { view: "canvas", hover: { side: "b", chain: ["table:Payment"] } }],
+    ["1.2", "A field A does not have", { view: "canvas", hover: { side: "b", chain: ["field:Account.email", "table:Account"] } }],
+    ["1.3", "A field inside a folded table", { view: "canvas", fold: ["a:Account"], hover: { side: "b", chain: ["field:Account.phone", "table:Account"] } }],
+    ["1.4", "Not in A", { view: "canvas", hover: { side: "b", chain: ["table:Refund"] } }],
+    ["1.5", "Hidden by the filters", { view: "canvas", hideS: ["audit"], hover: { side: "b", chain: ["table:Ledger"] } }],
+    ["1.6", "Brought to the centre", { view: "canvas", sel: { side: "b", chain: ["table:Audit"] }, _bring: true }],
+    ["1.7", "A link: the glow follows the line", { view: "canvas", hover: { side: "b", chain: ["link:Payment.account_id->Account.id"] } }],
+    ["1.8", "Painted by the changes", { view: "canvas", paintC: "changes" }],
+  ]],
+  ["Track through anchors · a list of 10,000 rows", [
+    ["2.1", "A row in view in both", { view: "table", hover: { side: "b", chain: ["row:acc-00007"] } }],
+    ["2.2", "Chosen in B, brought into A", { view: "table", _row: { b: 6212 }, sel: { side: "b", chain: ["row:acc-06213"] }, _bring: true }],
+    ["2.3", "Pointing at a row A has out of view", { view: "table", _row: { a: 9000 }, hover: { side: "b", chain: ["row:acc-00012"] } }],
+    ["2.4", "A row added after A", { view: "table", _row: { a: 5980, b: 6005 }, sel: { side: "b", chain: ["row:acc-06010"] }, _bring: true }],
+    ["2.5", "Filters: a choice of values", { view: "table", tf: { k: ["u"] } }],
+    ["2.6", "Filters: a text", { view: "table", fsec: "search", tf: { q: "billing" }, sel: { side: "b", chain: ["row:acc-06213"] }, _bring: true }],
+    ["2.7", "Date range picker", { view: "table", fsec: "created", cal: { side: "b", active: "from", view: "2026-03", hover: null, draft: { from: "2026-03-05", to: "now" } }, tf: { from: "2026-03-05", to: "now" } }],
+    ["2.8", "Filters: one value", { view: "table", fsec: "blocked", tf: { hideBlocked: true } }],
+    ["2.9", "Painted by the domain", { view: "table", paintL: "domain" }],
+    ["2.10", "Date picker", { view: "table", review: "2026-11-24", one: { side: "b", draft: "2026-11-24", view: "2026-11", hover: null } }],
+    ["2.11", "A long choice", { view: "table", fsec: "manager" }],
+    ["2.12", "A long choice, searched", { view: "table", fsec: "manager", mq: "ol", tf: { mgr: ["Oleg Volkov"] } }],
+    ["2.13", "A range of numbers", { view: "table", fsec: "balance", tf: { bmin: "100", bmax: "250" } }],
+    ["2.14", "Phone: the filters", { view: "table", phone: true, fs: "b", fsec: "manager", tf: { k: ["u"] } }],
+    ["2.15", "Phone: the date range picker", { view: "table", phone: true, fs: "b", fsec: "created", cal: { side: "b", active: "from", view: "2026-03", hover: null, draft: { from: "2026-03-05", to: "now" } }, tf: { from: "2026-03-05", to: "now" } }],
+    ["2.16", "Phone: the date picker", { view: "table", phone: true, review: "2026-11-24", one: { side: "b", draft: "2026-11-24", view: "2026-11", hover: null } }],
+  ]],
+];
+const NOTES = {
+  "1.1": ["The same table in both panels", [
+    "The core's test page of #74 draws a scheme of tables on <code>&lt;MaxitorCanvas&gt;</code>, opened in the core's two panels, A and B. Each panel lays the scheme out by itself: <b>Payment</b> stands in different places in A and in B.",
+    "The pointer is on <b>Payment</b> in B. The canvas reports the anchor under it, <code>table:Payment</code>; the core passes that name to A; A's canvas finds its own <code>table:Payment</code> and lights it. The light is maxitor-web's glow, which follows the element's own shape.",
+    "Tick <b>Show the anchors</b> in the navigator to see the names: they are never drawn on the real screen.",
+  ]],
+  "1.2": ["A field A does not have", [
+    "The pointer is on the field <b>email</b> of <b>Account</b> in B. Its anchor sits inside the table's, so the canvas reports the chain <code>field:Account.email</code> ← <code>table:Account</code>.",
+    "A holds <code>table:Account</code> but not the field — it was added after A. A takes the deepest anchor it holds: it outlines <b>Account</b>, dashed, and says what it could not show.",
+  ]],
+  "1.3": ["A field inside a folded table", [
+    "In A <b>Account</b> is folded (double-click a table to fold it). A holds <code>field:Account.phone</code>, but does not draw it: it outlines the table and says the field is inside.",
+  ]],
+  "1.4": ["Not in A", ["<b>Refund</b> was added after A: A holds nothing of the chain and says so. Nothing is lit in A."]],
+  "1.5": ["Hidden by the filters", [
+    "The schema <b>audit</b> is switched off. The address parameters are one for both panels, but <b>Ledger</b> moved from audit to billing between A and B: B shows it, A holds it and hides it.",
+  ]],
+  "1.6": ["Brought to the centre", [
+    "A click selects. <b>Audit</b> is selected in B; in A it lies far outside the view. A's camera glides to it keeping its zoom, lights it, and says so for 2.5 s.",
+    "Click any table in B to try it; drag a panel to move its camera away first.",
+  ]],
+  "1.7": ["A link: the glow follows the line", [
+    "A link has its own anchor, <code>link:Payment.account_id-&gt;Account.id</code>. The glow is a drop shadow of the element itself, so a curved line is lit along its curve, not by a rectangle around it.",
+    "This is how maxitor-web lights an element of a drawing today (<code>lib/halfPicking.ts</code>): it does not depend on what the element is.",
+  ]],
+  "2.1": ["A row in view in both", [
+    "The test page shows 10,000 accounts with the list of <code>@maxitor/panel</code>. The list lies on the canvas as every view of Maxitor does, drawn whole — 30 px a row, 300,000 px long — and moved and zoomed with the panel's camera: the wheel or a two-finger swipe moves the picture, a pinch or Ctrl/⌘ with the wheel zooms it. It has no scroll of its own and no pages: one motion everywhere.",
+    "Only the rows inside the camera's view are in the page; the list keeps the anchors of all its rows, <code>row:acc-00007</code>, so it can bring any of them into view.",
+    "The pointer is on a row in B; A has the same row in view and lights it.",
+  ]],
+  "2.2": ["Chosen in B, brought into A", [
+    "A click on <b>acc-06213</b> in B selects it. A has the row — 33 rows higher, because 33 accounts were added after A — far below its view: A's camera glides down to it keeping its zoom, lights it, and says so. Exactly what the scheme does with a table (1.6).",
+    "The list's head sticks to the top of the view while the list goes up under it, so the columns are always named.",
+    "Click any row in either panel to try it.",
+  ]],
+  "2.3": ["Pointing at a row A has out of view", ["Hovering only lights what is in view. A holds <b>acc-00012</b> far above its view and shows nothing: nothing to read as a button, nothing moves under the pointer. A click brings it."]],
+  "2.5": ["Filters: a choice of values", [
+    "The list's filters are the shell's, in its panel at the top left, as on every page (spec 078): an accordion with one section open. They stay where they are however the camera moves or zooms the list.",
+    "The shell draws three kinds of section from the page's data; the page filters its own rows. <b>A choice of values</b>: a row per value with its colour disk and its label, as <code>ErdFilterPanel</code> draws them. Here “unchanged” is off: B keeps its 33 added rows and the changed one.",
+    "Every filter is an address parameter, one for both panels: switch one in A and B follows. The list's own head says how many of its rows pass of how many: only the page knows its rows, and a page may hold several lists.",
+  ]],
+  "2.6": ["Filters: a text", ["<b>A text</b>: a row like the others, a magnifier in the disk's place and the field in the label's; the page says what it searches — here the account or the email. “billing” is only in <b>acc-06213</b>'s email at B: chosen in B, A holds the row but its filters leave it out, says so and does not move."]],
+  "2.7": ["Date range picker", [
+    "<b>Where to click:</b> in the filters on the left open “Created”, then click “From” or “To”.",
+    "<b>A range</b> of numbers or dates: two rows like the others, From and To, a calendar in the disk's place and the bound in the label's; a bound not set reads “From the start” or “To the end”. A row with no date is outside any range: it shows only while both bounds are open. A range of numbers takes a field in the label's place.",
+    "A row opens <b>the date picker of <code>@maxitor/panel</code></b>. On the left, ready stretches: the core's common ones (today, the last 7, 30, 90 days, this month, quarter, year, last year), then under a hairline the page's own. On the right, two fields, From → To: a click chooses the bound the calendar sets, and the field takes typing — <code>5 Mar 2026</code>, <code>2026-03-05</code>, <code>today</code>, <code>30 days ago</code>, <code>30d</code>; an empty field is no bound. A field always shows its date; a bound that moves with today says so under it in blue (“30 days ago”), and the arrow in the field turns a fixed date into a moving one and back. Under them, two months side by side, turned with ‹ ›; a click on a month's title opens the years and the months, to jump far in one click. At the foot, what the choice is and how many days it spans; nothing changes before Apply; Cancel, Escape or a press outside the window leaves it as it was.",
+    "The address keeps a bound as written: <code>created=2026-03-05..now</code>, <code>created=now-90d..now</code>, <code>created=now-1y/y..now-1y/y</code> — a relative bound is read again every day.",
+    "The picker is one control for the shell and for every plugin: a page calls it like a function, <code>await openDateRangePicker({ anchor, unit, min, max, value, presets })</code>, and gets <code>{ from, to }</code> back as written, or <code>null</code> when it is closed without a choice. <code>min</code> and <code>max</code> are the bounds no choice may leave; <code>presets</code> are the page's own stretches; <code>unit</code> may be a month. Its sibling for one date is on 2.10.",
+    "It filters the rows by their own date, in the answer already read. It is not the time scale, which chooses the moment the page is read at: it is named by its column, “Created”, never “Time”.",
+  ]],
+
+
+  "2.8": ["Filters: one value", ["A section may hold a single value: “Blocked accounts”, a row like any other, switched off here. Every 37th account is blocked; both panels leave them out and each list's head counts the rows that are left. There is no switch of another look: every row of the filters turns on and off the same way."]],
+  "1.8": ["Painted by the changes", [
+    "The scheme's filters have two sections that can paint: Schema and Changes. The page says which of its sections can paint; with more than one, the shell puts the paint switch at the foot of the filters, as <code>ErdFilterPanel</code> does today.",
+    "Moving the switch repaints the tables' stripe — by their schema, or by what happened to them between A and B — and opens the section it paints by. It is an address parameter like the filters, one for both panels.",
+  ]],
+  "2.10": ["Date picker", [
+    "<b>Where to click:</b> the blue “Review on…” button at the top right of the list.",
+    "The second control of the pair: <b>the date picker of <code>@maxitor/panel</code></b> for one date, with the range picker's look. On the left, ready dates — the core's (today, yesterday, a week ago, the start of this month, quarter and year), then under a hairline the page's own (here “Next release”); on the right, one field that takes typing like the range's fields, with the same arrow between a fixed date and one that moves with today; under it one month; at the foot the date with its weekday, Cancel and Apply.",
+    "The core's test page calls it from the list's head, “Review on…”, as a plugin would: <code>await openDatePicker({ anchor, unit, min, max, value, presets })</code> gives the date as written — <code>2026-11-24</code> or <code>now-7d</code> — or <code>null</code> when it is closed without a choice. Here <code>max</code> lies in the future: a page's bounds are its own.",
+  ]],
+  "2.11": ["A long choice", [
+    "<b>Where to click:</b> open “Manager” in the filters on the left.",
+    "A choice of many values — 46 managers here — shows a search at the top of its section, then its first eight values, the ones that hold the most rows, then “38 more”. Every row turns on and off as any row does; a person's disk carries their initials.",
+    "“38 more” shows them all, and the panel scrolls inside itself; “Show fewer” folds them back. The search and the folding are the panel's own, never in the address: the address holds only the values switched off.",
+  ]],
+  "2.12": ["A long choice, searched", ["Typing in the section's search keeps only the values that hold it, all of them, folded or not; “Oleg Volkov” is switched off and stays so while searched. “No manager matches” when none does."]],
+  "2.13": ["A range of numbers", [
+    "<b>Where to click:</b> open “Balance” in the filters on the left.",
+    "A range of numbers is the range's two rows, From and To, with the number typed in the label's place; an empty row is no bound. The address holds <code>balance=100..250</code>.",
+  ]],
+  "2.14": ["Phone: the filters", [
+    "On a phone the filters are one button at the top left of the panel, with how many are on; it opens them in a sheet from below — the same sections, the same rows, larger — and Done closes it. The rows change as they are switched, behind the sheet.",
+  ]],
+  "2.15": ["Phone: the date range picker", ["On a phone the date range picker is a sheet from below: the ready stretches as a row of chips that scrolls sideways, the two fields, one month with its arrows, and the foot with Cancel and Apply."]],
+  "2.16": ["Phone: the date picker", ["The date picker the same way: the ready dates as chips, the field, one month, the date with its weekday, Cancel and Apply."]],
+  "2.9": ["Painted by the domain", ["The list's sections Status and Domain can both paint: the switch at the foot of the filters chooses what colours the disk of every row. Here the rows are painted by their email's domain."]],
+  "2.4": ["A row added after A", ["<b>acc-06010</b> was added after A: A's camera stays, A says “Not in A”."]],
+};
+function base(o) { return Object.assign(JSON.parse(JSON.stringify(DEF)), JSON.parse(JSON.stringify(o))); }
+let CUR = null;
+function openNum(n) {
+  for (const [, items] of SCREENS) for (const [k, , st] of items) if (k === n) {
+    const ph = S.phone, an = S.anchors;
+    for (const key of Object.keys(S)) delete S[key];
+    Object.assign(S, base(st), { phone: st.phone === undefined ? ph : st.phone, anchors: an });
+    if (S.phone && (S.view === "canvas" || S.view === "table") && S.hover) S.side = S.hover.side === "b" ? "a" : "b";
+    if (S.phone && S.sel) S.side = S.sel.side === "b" ? "a" : "b";
+    CUR = n;
+    const bring = S._bring, rows = S._row; delete S._bring; delete S._row;
+    render();
+    if (rows) { for (const [sd, i] of Object.entries(rows)) { S.cam[sd] = null; const c = camOf(sd), cv = document.querySelector(`.cv[data-side="${sd}"]`); S.cam[sd] = { ...c, y: cv.offsetHeight / 2 - (HEADH + i * RH + RH / 2) * c.k }; } applyCams(); applyMarks(); }
+    if (bring) { const t = S.sel; S.sel = null; select(t.side, t.chain); }
+    return;
+  }
+}
+function renderNav() {
+  let h = `<h1>Maxitor core: the panels follow one element</h1><div class="sub">The parts of issue #98 the notes cannot show: anchors nested in anchors and a list of 10,000 rows, on the core's test page of #74, from fixtures. The scale, its legend and the milestones of other plugins are in the notes' mockup, specs/074-notes-history/mockup, 3.5–3.10.</div>`;
+  h += `<div class="seg"><button class="${S.phone ? "" : "on"}" onclick="go({phone:false})">Desktop</button><button class="${S.phone ? "on" : ""}" onclick="go({phone:true})">Phone</button></div>`;
+  h += `<label class="tgl"><input type="checkbox" ${S.anchors ? "checked" : ""} onchange="go({anchors:this.checked})">Show the anchors <small>— not on the real screen</small></label>`;
+  for (const [g, items] of SCREENS) {
+    h += `<div class="group">${g}</div>`;
+    for (const [n, t] of items) h += `<button class="screen${CUR === n ? " on" : ""}" onclick="openNum('${n}')"><span class="n">${n}</span>${t}</button>`;
+  }
+  document.getElementById("nav").innerHTML = h;
+}
+function renderNotes() {
+  const note = NOTES[CUR], dev = S.phone ? "phone, 375 × 812" : "desktop, 1360 × 840";
+  document.getElementById("cap").innerHTML = note ? `<b>${CUR} · ${note[0]}</b> — ${dev}, the screen is live` : `Free navigation — ${dev}`;
+  document.getElementById("notes").innerHTML = note ? `<h2>${CUR} · ${note[0]}</h2><ul>${note[1].map(x => `<li>${x}</li>`).join("")}</ul>` : "";
+}
+function fit() {
+  const stage = document.getElementById("stage"), sc = document.getElementById("scale"), box = document.getElementById("box");
+  const w = S.phone ? 375 : 1360, h = S.phone ? 812 : 840;
+  const k = Math.min(1, (stage.clientWidth - (stage.style.padding === "0px" ? 0 : 48)) / w);
+  sc.style.transform = `scale(${k})`; box.style.height = h * k + "px";
+}
+window.addEventListener("resize", fit);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && S.cal) calCancel(); if (e.key === "Escape" && S.one) oneCancel(); });
+/* A press outside a picker closes it as Cancel does; the control that opened it closes it too, by its own click. */
+document.addEventListener("mousedown", e => {
+  if (S.cal && !e.target.closest(".calpop, .fp [data-rr]")) calCancel();
+  if (S.one && !e.target.closest(".calpop.one, .rvw")) oneCancel();
+}, true);
+(function fromHash() {
+  const h = location.hash.slice(1), m = h.match(/(\d+\.\d+)/);
+  S.phone = h.includes("phone");
+  openNum(m ? m[1] : "1.1");
+})();
+</script>
+</body>
+</html>

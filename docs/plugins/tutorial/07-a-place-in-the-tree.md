@@ -92,6 +92,8 @@ The page then reads the view like any parameter of its address:
   const { view = "cards" } = usePanelQuery();
 ```
 
+A section of the filters is one of three kinds. The writers above are a **choice**: a disk and a label per row, the address listing those switched on; a choice of more than eight rows gets a search and "N more" by itself. A **text** is `{ kind: "text", title: "Search", param: "q", placeholder: "Note or writer" }`. A **range** is `{ kind: "range", title: "Written", param: "written", unit: "date" }` — two rows, From and To, a date chosen in the date range picker and written as `?written=now-30d..now` — or `unit: "number"`, typed in the rows. The page filters its own notes by these parameters; `inRange` and `numberIn` of `@maxitor/panel` read a range the way the shell writes it. A page that needs one date from a person — "Review on…" — calls `openDatePicker({ anchor: button })` and gets the date back as the address would write it.
+
 A page may name any parameter but the core's: `at`, `mode`, `from` and every name starting with `_`. The panel router refuses to change them, and in development the refusal is an error naming the parameter.
 
 The address is everything the panel shows. A reload, a link to a colleague, Back and Forward all give exactly what was on screen, so a page builds its view from its address alone and never keeps a filter in its own state.

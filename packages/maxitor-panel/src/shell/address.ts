@@ -53,6 +53,40 @@ export function writeChoice(value: string, fallback: string): string | null {
   return value === fallback ? null : value;
 }
 
+/** The two numbers a range of numbers holds — `100..250`, either side empty — each null when open or not a number. */
+export function readNumbers(value: string | undefined): { from: number | null; to: number | null } {
+  const [from = "", to = ""] = value?.includes("..") ? value.split("..", 2) : [];
+  const number = (text: string) => (text.trim() !== "" && Number.isFinite(Number(text)) ? Number(text) : null);
+  return { from: number(from), to: number(to) };
+}
+
+/** The address value of a range of numbers, or null when both bounds are open. A bound that is not a number stays out. */
+export function writeNumbers(from: string, to: string): string | null {
+  const clean = (text: string) => (text.trim() !== "" && Number.isFinite(Number(text)) ? text.trim() : "");
+  const range = `${clean(from)}..${clean(to)}`;
+  return range === ".." ? null : range;
+}
+
+/** Whether a number lies inside a range of numbers written in the address; a missing number only in an open range. */
+export function numberIn(value: number | null | undefined, range: string | undefined): boolean {
+  const { from, to } = readNumbers(range);
+  if (value === null || value === undefined) return from === null && to === null;
+  return (from === null || value >= from) && (to === null || value <= to);
+}
+
+/** How many sections the address filters by: the count the phone's Filters button shows. */
+export function filtersOn(params: readonly string[], query: Query): number {
+  return params.filter((param) => query[param] !== undefined).length;
+}
+
+/** The values of a long choice a search keeps, or its first ``shown`` when nothing is searched and it is folded. */
+export function visibleRows<Row extends { label: string }>(rows: readonly Row[], search: string, unfolded: boolean, shown = 8): { rows: Row[]; more: number } {
+  const text = search.trim().toLowerCase();
+  if (text) return { rows: rows.filter((row) => row.label.toLowerCase().includes(text)), more: 0 };
+  if (unfolded || rows.length <= shown) return { rows: [...rows], more: 0 };
+  return { rows: rows.slice(0, shown), more: rows.length - shown };
+}
+
 /** The query with one parameter set, or removed when the value is null. */
 export function withParam(query: Query, name: string, value: string | null): Query {
   const next = { ...query };

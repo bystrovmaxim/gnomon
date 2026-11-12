@@ -6,6 +6,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { PHONE_MEDIA } from "@maxitor/tokens";
+
 import { usePanelQuery, usePanelRouter } from "./hooks";
 import { usePanel } from "./PanelProvider";
 import { Actions } from "./shell/Actions";
@@ -73,9 +75,16 @@ export function PanelPage({
       setZoom,
       reserve: (): Reserve => {
         const root = filtersRef.current;
+        const filters = root?.querySelector('[data-shell="filters"]') ?? null;
+        // On a phone the filters fold into one button at the top: they take the top, not the left.
+        const phone = window.matchMedia(PHONE_MEDIA).matches;
         return {
-          left: edge(root?.querySelector('[data-shell="filters"]') ?? null, "right"),
-          top: Math.max(edge(root?.querySelector('[data-shell="layers"]') ?? null, "bottom"), edge(root?.querySelector('[data-shell="actions"]') ?? null, "bottom")),
+          left: phone ? 0 : edge(filters, "right"),
+          top: Math.max(
+            phone ? edge(filters, "bottom") : 0,
+            edge(root?.querySelector('[data-shell="layers"]') ?? null, "bottom"),
+            edge(root?.querySelector('[data-shell="actions"]') ?? null, "bottom"),
+          ),
           bottom: edge(root?.querySelector('[data-shell="bar"]') ?? null, "top"),
         };
       },
