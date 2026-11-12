@@ -31,6 +31,8 @@ function placeOf(node: TreeNode, scope: Scope): string {
 function NodeIcon({ name }: { name: string }) {
   if (name === "settings") return <TreeMark.settings />;
   if (name === "plugins" || name === "puzzle") return <TreeMark.plugins />;
+  if (name === "organization") return <TreeMark.organization />;
+  if (name === "users") return <TreeMark.users />;
   return <TreeMark.page />;
 }
 

@@ -35,6 +35,7 @@ from maxitor.core.actions.invitations import (
     SendInvitationAction,
     WithdrawInvitationAction,
 )
+from maxitor.core.actions.organization_settings import ReadOrganizationSettingsAction, SetWhoMayInviteAction
 from maxitor.core.actions.organizations import (
     CheckAddressCodeAction,
     OpenOrganizationAction,
@@ -105,6 +106,8 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/organizations", RegisterOrganizationAction),
     ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
     ("get", "/api/v1/organizations/{code}/watermark", ReadWatermarkAction),
+    ("get", "/api/v1/organizations/{code}/settings", ReadOrganizationSettingsAction),
+    ("post", "/api/v1/organizations/settings/who-may-invite", SetWhoMayInviteAction),
     ("post", "/api/v1/organizations/invitations", SendInvitationAction),
     ("get", "/api/v1/organizations/{code}/invitations/mine", ListMyInvitationsAction),
     ("post", "/api/v1/organizations/invitations/resend", ResendInvitationAction),

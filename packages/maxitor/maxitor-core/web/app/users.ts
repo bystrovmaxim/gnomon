@@ -28,3 +28,17 @@ export async function listMyInvitations(code: string): Promise<Invitation[]> {
   const answer = await core<{ invitations: Invitation[] }>("GET", `/api/v1/organizations/${encodeURIComponent(code)}/invitations/mine`);
   return answer.ok ? answer.data.invitations : [];
 }
+
+/** The organization's settings as its administrator sees them. */
+export type Settings = {
+  code: string;
+  name: string;
+  who_may_invite: "any_user" | "administrators";
+  invitation_days: number;
+  pending_by_users: Invitation[];
+};
+
+export async function setWhoMayInvite(code: string, value: "any_user" | "administrators"): Promise<{ who_may_invite: string; withdrawn: Invitation[] } | Refused> {
+  const answer = await core<{ who_may_invite: string; withdrawn: Invitation[] }>("POST", "/api/v1/organizations/settings/who-may-invite", { code, who_may_invite: value });
+  return answer.ok ? answer.data : { refused: answer.refusal };
+}

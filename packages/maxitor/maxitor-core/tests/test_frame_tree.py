@@ -88,7 +88,7 @@ def _tree(world: World) -> dict[str, dict[str, Any]]:
 
 
 def test_an_administrator_sees_settings_and_the_enabled_plugins_nodes_with_their_scope(world: World) -> None:
-    assert set(_tree(world)) == {"core:settings", "core:settings.plugins"}
+    assert set(_tree(world)) == {"core:settings", "core:settings.organization", "core:settings.plugins"}
     assert _act(world, NOTES, "install") == (200, {"state": "installing"})
     world.plugins.set_state(_org_id(world), NOTES, "enabled")
     tree = _tree(world)

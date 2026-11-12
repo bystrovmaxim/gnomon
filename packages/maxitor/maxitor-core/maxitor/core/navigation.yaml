@@ -13,6 +13,13 @@ nodes:
     # The organization's settings are entered: the panel holds its children only, Settings at its head (spec 085).
     opens: enter
     children:
+      # The organization itself: its name and address, and who may invite into it (issue #13).
+      - id: settings.organization
+        title: Organization
+        icon: organization
+        order: 50
+        page: /settings/organization
+        roles: [administrator]
       - id: settings.plugins
         title: Plugins
         icon: puzzle
