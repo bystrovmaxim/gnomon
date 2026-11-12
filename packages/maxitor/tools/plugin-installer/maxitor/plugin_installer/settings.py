@@ -19,8 +19,8 @@ class InstallerSettings:
     AI-CORE-BEGIN
     ROLE: What the installer's process is configured with.
     CONTRACT: ``from_environment`` reads MAXITOR_INSTALLER_DSN (required), MAXITOR_WHEEL_STORE,
-        MAXITOR_PLUGIN_RUNTIME, MAXITOR_WHEEL_MAX_BYTES, MAXITOR_WHEEL_TIMEOUT_SECONDS and
-        MAXITOR_INSTALLER_PERIOD_SECONDS.
+        MAXITOR_PLUGIN_RUNTIME, MAXITOR_PLUGIN_BUILDS, MAXITOR_WHEEL_MAX_BYTES, MAXITOR_WHEEL_TIMEOUT_SECONDS
+        and MAXITOR_INSTALLER_PERIOD_SECONDS.
     INVARIANTS: The DSN is never in the ``repr``.
     AI-CORE-END
     """
@@ -28,6 +28,8 @@ class InstallerSettings:
     dsn: str = field(repr=False)
     wheel_store: Path = Path(".core-stand/wheels")
     runtime: Path = Path(".core-stand/plugins")
+    #: Where the frontends' builds work: the sources out of the wheel, npm's cache, the image's files.
+    builds: Path = Path(".core-stand/builds")
     wheel_max_bytes: int = 50 * 1024 * 1024
     wheel_timeout_seconds: float = 60.0
     period_seconds: float = 60.0
@@ -40,6 +42,7 @@ class InstallerSettings:
             dsn=env["MAXITOR_INSTALLER_DSN"],
             wheel_store=Path(env.get("MAXITOR_WHEEL_STORE", ".core-stand/wheels")),
             runtime=Path(env.get("MAXITOR_PLUGIN_RUNTIME", ".core-stand/plugins")),
+            builds=Path(env.get("MAXITOR_PLUGIN_BUILDS", ".core-stand/builds")),
             wheel_max_bytes=int(env.get("MAXITOR_WHEEL_MAX_BYTES", str(50 * 1024 * 1024))),
             wheel_timeout_seconds=float(env.get("MAXITOR_WHEEL_TIMEOUT_SECONDS", "60")),
             period_seconds=float(env.get("MAXITOR_INSTALLER_PERIOD_SECONDS", "60")),

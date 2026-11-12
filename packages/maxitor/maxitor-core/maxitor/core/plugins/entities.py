@@ -178,6 +178,12 @@ class PluginVersionCoreEntity(BaseCoreEntity):
     purl: str = Field(description="The wheel's source as a Package URL")
     sha256: str = Field(description="The wheel's SHA-256, 64 lower-case hexadecimal characters")
     core_range: str | None = Field(default=None, description="The core range of its passport; empty until checked")
+    history_actions: list[str] | None = Field(
+        default=None, description="The names of the actions its wheel holds: what a page's history may name; empty until checked"
+    )
+    history_compare: list[str] | None = Field(
+        default=None, description="The comparisons its passport's history offers, which a page narrows; empty until checked"
+    )
     state: PluginVersionLifecycle = Field(description="draft, active, rejected or withdrawn")
     reason: str | None = Field(
         default=None, description="Why it was rejected or why its check waits; empty when there is nothing to say"
@@ -241,7 +247,6 @@ class PluginNodeCoreEntity(BaseCoreEntity):
     each_source: str | None = Field(default=None, description="A list node's reading action; empty for an ordinary node")
     each_key: str | None = Field(default=None, description="The parameter a list node's instance adds; empty otherwise")
     roles: list[str] = Field(description="The core's roles needed to see it; empty for every member")
-    room: str | None = Field(default=None, description="The page's behaviour with other people as the file writes it, as JSON")
 
     plugin_version: Annotated[
         AssociationOne[PluginVersionCoreEntity],
@@ -305,6 +310,50 @@ class PluginProcessCoreEntity(BaseCoreEntity):
     ] = Field(description="The deployed version the process runs")
 
     updated_at: datetime = Field(description="When the row last changed")
+
+
+@entity(description="One build of a plugin version's frontend for one core version, kept by the installer", domain=PluginsDomain)
+class PluginBuildCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: Which image runs a version's frontend under a core version, or why there is none.
+    CONTRACT: Written only by the installer; one row per version and core version; a built row names its image, a
+        failed one its error.
+    INVARIANTS: Mechanics of work: kept without versions; a retry moves a failed row back to building.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Build id")
+    core_version: str = Field(description="The core version whose builder image and @maxitor packages made it")
+    state: str = Field(description="building, built or failed")
+    image: str | None = Field(default=None, description="The frontend's image once built; empty otherwise")
+    error: str | None = Field(default=None, description="The first error of the step that failed; empty unless failed")
+    started_at: datetime = Field(description="When the build started")
+    finished_at: datetime | None = Field(default=None, description="When the build ended; empty while it runs")
+
+    plugin_version: Annotated[
+        AssociationOne[PluginVersionCoreEntity],
+        NoInverse(),
+    ] = Field(description="The plugin version whose frontend was built")
+
+
+@entity(description="The core version whose frontend builds the site serves, and the one an upgrade builds for", domain=PluginsDomain)
+class FrontendGenerationCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: Which core version's builds the runner runs, so the site holds one @maxitor library at a time.
+    CONTRACT: One row, written only by the installer; the serving version moves to the target in one transaction
+        once every enabled version has a built build for the target.
+    INVARIANTS: Mechanics of work: kept without versions; its id is always 1.
+    AI-CORE-END
+    """
+
+    id: int = Field(description="Always 1")
+    serving_core_version: str = Field(description="The builds of this core version are the ones the runner runs")
+    target_core_version: str | None = Field(
+        default=None, description="The core version an upgrade builds every enabled version for; empty when none waits"
+    )
+    moved_at: datetime = Field(description="When the serving core version was set last")
 
 
 # Relations name classes declared later in the module; resolve them now.

@@ -252,19 +252,19 @@ await scenario("the notes page opens in the right panel from the tree, with its 
   expect(card.x >= filters.x + filters.width + 8, `the notes touch the filters: ${card.x} against ${filters.x + filters.width}`);
   await frame.getByRole("radio", { name: "Table" }).click();
   await page.waitForURL(/view=table/);
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await frame.locator(".mx-filter-row").first().click();
   await page.waitForURL(/author=/);
   await frame.locator(".mx-empty-state", { hasText: "No notes yet" }).waitFor();
   await page.goBack();
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await page.goBack();
   await frame.locator(".mx-card", { hasText: "Retry three times" }).waitFor();
   await page.goForward();
-  await frame.locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await frame.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
   await page.reload();
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
-  await page.frameLocator("iframe.mx-panel-frame").locator("table tr", { hasText: "Retry three times" }).waitFor();
+  await page.frameLocator("iframe.mx-panel-frame").locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
 });
 
 await scenario("a plugin's page opened by itself goes to its panel address", async () => {
@@ -338,6 +338,20 @@ await scenario("the test drawing: layers with counts, filters, the bottom bar an
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
   await frame.locator(".mx-filter-title", { hasText: "Changes" }).waitFor();
   expect((await frame.locator(".mx-actions").count()) === 0, "the actions show in a comparison");
+});
+
+await scenario("a page gives its history; the core keeps what holds and refuses the rest by name", async () => {
+  const errors = [];
+  const listen = (message) => message.type() === "error" && errors.push(message.text());
+  page.on("console", listen);
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/drawing`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  await page.waitForFunction(() => document.querySelector("iframe.mx-panel-frame")?.dataset.history?.includes("list_test_history"));
+  const history = JSON.parse(await page.locator("iframe.mx-panel-frame").getAttribute("data-history"));
+  page.off("console", listen);
+  expect(JSON.stringify(history) === JSON.stringify({ milestones: "list_test_history", compare: ["diff"] }), `the core kept ${JSON.stringify(history)}`);
+  expect(errors.some((text) => text.includes('card names "no_such_card"')), "the unknown name was not refused by name");
+  expect(errors.some((text) => text.includes('compare offers "side_by_side"')), "the wider comparison was not refused");
 });
 
 await scenario("a page without the shell is marked by a red strip on the stand", async () => {
@@ -513,6 +527,102 @@ await scenario("on a phone the shell folds: the filters into a button, the pills
   expect(!(await frame.locator(".mx-pill-label").first().isVisible()), "the pills keep their labels on a phone");
   const actions = await frame.locator(".mx-actions").boundingBox();
   expect(actions.y > 812 / 2, "the actions are not at the bottom on a phone");
+  await phone.close();
+});
+
+await scenario("a list of 10,000 rows lies whole on the canvas: rows in view only, the head sticking, the camera moving it", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/list`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".mx-list-row").first().waitFor();
+  expect((await frame.locator(".mx-list").getAttribute("data-rows")) === "10000", "the list does not hold 10,000 rows");
+  const drawn = await frame.locator(".mx-list-row").count();
+  expect(drawn > 0 && drawn < 80, `the page draws ${drawn} rows, not those in view`);
+  const head = async () => (await frame.locator(".mx-list-head").boundingBox()).y;
+  const before = await head();
+  const canvas = await frame.locator(".mx-canvas").boundingBox();
+  await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
+  for (let i = 0; i < 20; i += 1) await page.mouse.wheel(0, 600);
+  await page.waitForTimeout(300);
+  expect(Math.abs((await head()) - before) < 40, "the head does not stick to the top of the view");
+  const first = await frame.locator(".mx-list-row").first().innerText();
+  expect(!first.includes("Account 00001"), "the wheel did not move the list");
+  expect((await frame.locator(".mx-list-row").count()) < 80, "moving the camera draws more than the view");
+});
+
+await scenario("the three kinds of filter write the address, and the address gives the same rows in a new tab", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/list`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  const count = () => frame.locator(".mx-list-count").innerText();
+  await frame.locator(".mx-filter-title", { hasText: "Manager" }).click();
+  await frame.getByText("38 more").waitFor();
+  await frame.getByPlaceholder("Find a manager").fill("orlov");
+  expect((await frame.locator('[data-filter="manager"] [role="checkbox"]').count()) === 23, "the search does not keep the matching values");
+  await frame.locator(".mx-filter-title", { hasText: "Search" }).click();
+  await frame.getByPlaceholder("Account or email").fill("account1@");
+  await page.waitForURL(/q=account1/);
+  expect((await count()) === "1 of 10000 rows", `the text did not filter: ${await count()}`);
+  await frame.getByPlaceholder("Account or email").fill("");
+  await page.waitForURL((url) => !url.search.includes("q="));
+  await frame.locator(".mx-filter-title", { hasText: "Balance" }).click();
+  await frame.getByLabel("Balance from").fill("100");
+  await frame.getByLabel("Balance to").fill("250");
+  await frame.getByLabel("Balance to").press("Enter");
+  await page.waitForURL(/balance=100\.\.250/);
+  const filtered = await count();
+  const again = await context.newPage();
+  await again.goto(page.url());
+  await again.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  const copy = again.frameLocator("iframe.mx-panel-frame");
+  await copy.locator(".mx-list-count").waitFor();
+  expect((await copy.locator(".mx-list-count").innerText()) === filtered, "the address does not give the same rows in a new tab");
+  await again.close();
+  expect(Number(await page.locator("iframe.mx-panel-frame").getAttribute("data-hidden")) > 0, "the page did not report its hidden rows");
+});
+
+await scenario("the date range picker: a ready stretch, Apply, Cancel and Escape; the date picker called as a plugin would", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/list`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".mx-filter-title", { hasText: "Created" }).click();
+  await frame.locator('[data-filter="created"] [data-bound="from"]').click();
+  await frame.locator(".mx-cal").waitFor();
+  expect((await frame.locator(".mx-cal-month").count()) === 2, "the range picker does not show two months");
+  await frame.getByRole("button", { name: "Last 90 days" }).click();
+  await frame.getByRole("button", { name: "Apply" }).click();
+  await page.waitForURL(/created=now-90d\.\.now/);
+  await frame.locator('[data-filter="created"]', { hasText: "90 days ago" }).waitFor();
+  await frame.locator('[data-filter="created"] [data-bound="from"]').click();
+  await frame.getByRole("button", { name: "This year" }).click();
+  await frame.getByRole("button", { name: "Cancel" }).click();
+  expect(page.url().includes("created=now-90d..now"), "Cancel changed the range");
+  await frame.locator('[data-filter="created"] [data-bound="from"]').click();
+  await frame.getByRole("button", { name: "This year" }).click();
+  await frame.locator(".mx-cal").press("Escape");
+  expect(page.url().includes("created=now-90d..now"), "Escape changed the range");
+  await frame.getByTestId("review").click();
+  await frame.getByRole("button", { name: "A week ago" }).click();
+  await frame.getByRole("button", { name: "Apply" }).click();
+  expect((await frame.getByTestId("reviewed").textContent()) === "now-7d", "the date picker did not give its date back");
+});
+
+await scenario("on a phone the filters are a sheet from below and the pickers sheets with chips and one month", async () => {
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+  await phone.addCookies(await context.cookies());
+  const p = await phone.newPage();
+  await p.goto(`${BASE}/w/${CODE}/core/panel-test/list?created=now-90d..now`);
+  await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  const frame = p.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".mx-filters-button", { hasText: "1" }).click();
+  const sheet = await frame.locator(".mx-filters-body").boundingBox();
+  expect(sheet.width >= 370 && sheet.y + sheet.height >= 700, "the filters are not a sheet from below");
+  await frame.getByRole("button", { name: "Done" }).click();
+  await frame.getByTestId("review").click();
+  const picker = await frame.locator(".mx-cal.sheet").boundingBox();
+  expect(picker.width <= 375 && (await frame.locator(".mx-cal-month").count()) === 1, "the picker is not a sheet with one month");
+  expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the page scrolls sideways on a phone");
   await phone.close();
 });
 

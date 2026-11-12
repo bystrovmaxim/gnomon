@@ -6,7 +6,7 @@
 "use client";
 
 import { changedReserved } from "@maxitor/panel/address";
-import { coreMessage, pageMessage, trusted, type CoreMessage, type Query } from "@maxitor/panel/protocol";
+import { checkHistory, coreMessage, NO_HISTORY, pageMessage, trusted, type CoreMessage, type HistoryAllowed, type PageHistory, type Query } from "@maxitor/panel/protocol";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -44,6 +44,7 @@ export function PageFrame({
   title,
   canOpen,
   pathNames = [],
+  historyAllowed = { actions: [], compare: [] },
   onTitle,
 }: {
   code: string;
@@ -57,6 +58,8 @@ export function PageFrame({
   canOpen: (owner: string) => boolean;
   /** The open node's path parameters: a page may not put them in its query. */
   pathNames?: readonly string[];
+  /** The plugin version's actions and its passport's comparisons: what a page's history is checked against. */
+  historyAllowed?: HistoryAllowed;
   onTitle: (title: string | null) => void;
 }) {
   const router = useRouter();
@@ -69,6 +72,11 @@ export function PageFrame({
   // What the page shows now: what it asked for, or what it was last told.
   const shown = useRef(keyOf(address.path, address.query, address.at));
   const watermark = useRef<string | null>(null);
+  // What the page holds but its filters leave out: a pointer at one of them is shown as hidden (spec 081, FR-013).
+  const hiddenAnchors = useRef<ReadonlySet<string>>(new Set());
+  const [hidden, setHidden] = useState(0);
+  // The open page's history, as the page last gave it and the core's check kept it; one moment only until it gives one.
+  const [history, setHistory] = useState<PageHistory>(NO_HISTORY);
 
   const tell = useCallback((message: CoreMessage) => {
     frame.current?.contentWindow?.postMessage(message, window.location.origin);
@@ -94,6 +102,18 @@ export function PageFrame({
         if (!message.shell) console.warn(`Maxitor: the page ${address.path} of ${owner} has no Maxitor frame: it does not render the shell of @maxitor/panel`);
       }
       else if (message.type === "panel.title") onTitle(message.text);
+      else if (message.type === "panel.history") {
+        const { kept, refused } = checkHistory(message.history, historyAllowed);
+        for (const reason of refused) {
+          const text = `Maxitor: the page ${address.path} of ${owner}: its history ${reason}; the rest is kept`;
+          if (process.env.NODE_ENV === "production") console.warn(text);
+          else console.error(text);
+        }
+        setHistory(kept);
+      } else if (message.type === "panel.hidden") {
+        hiddenAnchors.current = new Set(message.anchors);
+        setHidden(message.anchors.length);
+      }
       else if (message.type === "panel.navigate") {
         const refused = refusedNames(message.query, address.query, pathNames);
         if (refused.length) {
@@ -110,7 +130,7 @@ export function PageFrame({
     };
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [address.at, address.path, address.query, canOpen, code, onTitle, owner, pathNames, router]);
+  }, [address.at, address.path, address.query, canOpen, code, historyAllowed, onTitle, owner, pathNames, router]);
 
   // A page that never says it is ready is shown as not answering.
   useEffect(() => {
@@ -150,6 +170,8 @@ export function PageFrame({
         className={`mx-panel-frame${state === "ready" ? "" : " waiting"}`}
         title={title}
         src={src}
+        data-hidden={hidden}
+        data-history={JSON.stringify(history)}
       />
       {unframed && MARK_UNFRAMED ? (
         <div className="mx-unframed" role="alert">This page has no Maxitor frame</div>

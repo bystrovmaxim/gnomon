@@ -17,7 +17,7 @@ You build "Notes": members of an organization add items, like folders, which the
 ./scripts/core-stand.sh up
 ```
 
-It starts PostgreSQL in Docker, the core's backend, the plugin installer, the plugin runner and the core's application with the gateway on `http://localhost:3000`, and fills the marketplace with the template's wheel. [Run Maxitor core locally](../../how-to/run-the-core-locally.md) explains every step of it.
+It starts PostgreSQL in Docker, the core's backend, the plugin installer, the plugin runner and the core's application with the gateway on `http://localhost:3000`, and fills the marketplace with the template's wheel. The wheel carries the frontend's sources, not a built site: when you install Notes, the installer builds its frontend in the core's builder image with the core's own `@maxitor/panel` — the first time it also builds that image — and only then deploys it. [Run Maxitor core locally](../../how-to/run-the-core-locally.md) explains every step of it.
 
 ## Check it runs
 
@@ -27,4 +27,10 @@ Create an account, register an organization, install Notes in Settings → Plugi
 {"notes":[],"bars":[]}
 ```
 
-That answer came from the template's backend in its own container, through the gateway, with your sign-in. The next chapters build exactly that.
+That answer came from the template's backend in its own container, through the gateway, with your sign-in. The installer's log shows the frontend's build before the deployment:
+
+```text
+The frontend of io.github.bystrovmaxim.notes 0.11.0 built for the core 4.7.0 as maxitor-plugin/notes_0_11_0-frontend:<sha12>-4.7.0
+```
+
+The next chapters build exactly that.

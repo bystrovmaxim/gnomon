@@ -39,12 +39,10 @@ function search(query: Query, at: string | null): string {
 
 export function PanelProvider({
   build,
-  surface,
   prefixSegments,
   children,
 }: {
   build: string;
-  surface: "document" | "canvas";
   /** How many segments of the route stand before the page's path: the organization, for a plugin. */
   prefixSegments: number;
   children: ReactNode;
@@ -90,9 +88,9 @@ export function PanelProvider({
     };
     window.addEventListener("message", receive);
     // The children's effects ran first: a page drawn in the shell has marked it by now.
-    send({ type: "panel.ready", build, surface, shell: shelled.current, shellVersion: shelled.current ? SHELL_VERSION : "" });
+    send({ type: "panel.ready", build, shell: shelled.current, shellVersion: shelled.current ? SHELL_VERSION : "" });
     return () => window.removeEventListener("message", receive);
-  }, [build, send, show, surface]);
+  }, [build, send, show]);
 
   const onWatermark = useCallback((listener: (at: string) => void) => {
     listeners.current.add(listener);

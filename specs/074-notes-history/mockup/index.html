@@ -544,6 +544,20 @@
   .mtip .r2 { display: flex; align-items: center; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
   .mtip .chip { background: #f1f5f9; border-radius: 9px; padding: 2px 8px; font-size: 12px; font-weight: 600; color: #334155; }
   .mtip .sm { font-size: 12px; color: #64748b; }
+  /* The legend behind the card's "i": maxitor-web's TrackLegend — the page's points, the core's marks, the keys. */
+  .lgpop { position: absolute; z-index: 70; width: 640px; max-height: calc(100% - 20px); overflow-y: auto; background: #fff; color: #1e293b; border: 1px solid rgba(15,23,42,.1); border-radius: 10px; box-shadow: 0 12px 40px rgba(15,23,42,.16), 0 1px 2px rgba(15,23,42,.06); padding: 14px 16px 16px; line-height: 1.45; display: grid; grid-template-columns: 1fr 200px; gap: 24px; }
+  .device.phone .lgpop { left: 8px !important; right: 8px !important; width: auto; grid-template-columns: 1fr; }
+  .lgpop code { font-size: 11.5px; background: #f1f5f9; padding: 1px 4px; border-radius: 4px; color: #0f172a; }
+  .lgpop .grp { display: grid; gap: 10px; align-content: start; }
+  .lgpop .grp + .grp { margin-top: 16px; }
+  .lgpop .gt { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; }
+  .lgpop .lr { display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; align-items: start; }
+  .lgpop .lr svg { display: block; margin-top: 1px; }
+  .lgpop .term { font-size: 12.5px; font-weight: 600; color: #0f172a; }
+  .lgpop .def { font-size: 12px; color: #475569; margin-top: 1px; }
+  .lgpop .sc kbd { display: inline-block; margin-right: 3px; padding: 0 5px; color: #0f172a; background: #f1f5f9; border: 1px solid rgba(15,23,42,.1); border-radius: 4px; font-family: inherit; font-size: 11px; line-height: 18px; }
+  .lgpop .sc .def { margin-top: 2px; }
+  .ib2.on2 { background: rgba(15,23,42,.08); color: #0f172a; }
 </style>
 </head>
 <body>
@@ -1081,7 +1095,7 @@ function canvasArea() {
         : `<div class="grid g1">${rows.map(r => sideCard(r, side, ch.indexOf(r))).join("")}</div>`;
       const own = { au: {}, k: counts.k }; mine.forEach(r => { const n = side === "a" ? r.a : r.b; own.au[n.writer] = (own.au[n.writer] || 0) + 1; });
       const extra = (S.phone ? "" : fpanel(own, false, side === "a" ? ["r", "c", "u"] : ["a", "c", "u"])) + vtabs(mine.length, true) + zoombar() + (side === "b" ? changeStepper(rows) : "");
-      return `<div class="half"><div class="hh"><span class="sd ${side}">${side.toUpperCase()}</span><b>${esc(lab)}</b><span class="n">${n} notes</span>${head}</div>
+      return `<div class="half"><div class="hh"><span class="sd ${side}">${side.toUpperCase()}</span><b>${esc(lab)}</b>${head}</div>
         <div class="cv" data-side="${side}" data-left="${S.phone ? 20 : 172}"><div class="world">${world}</div>${extra}</div></div>`;
     };
     return `<div class="cvs">${S.phone ? half(S.side) : half("a") + half("b")}</div>`;
@@ -1195,13 +1209,13 @@ function modeSwitch() {
 function card() {
   if (!S.picker) return "";
   const notes = S.page === "notes";
-  const head = notes
+  const head = S._plugin ? FIX[S._plugin].head : notes
     ? [`${ITEM.title} · Notes`, `${events().length} changes since ${fmtY(events()[0].t)} · live`, "Bars count the changes of the notes in each stretch of time: green added, amber changed, red deleted. Points on the lane above are published revisions; a small point only edited notes; a flag carries the release a revision was published as. Hatched: later than now."]
     : [`${ITEM.title} · Published notes`, `${revisions().length} revisions${historyDraft() ? " · a draft waiting" : ""}`, "A point is a published revision, where it was published; a small point only edited notes, adding or removing none; a flag above it carries the release it was published as. Amber, dashed: the draft."];
   const body = histBlock();
   return `<div class="scrim clear" onclick="go({picker:false})"></div><div class="card" role="dialog" aria-label="Pick a moment"><div class="grab"></div>
-    <div class="chd"><div class="tt"><b>${esc(head[0])}</b><span>${esc(head[1])}</span></div><div class="rt">${variant() !== "bars" && milestones().some(m => m.minor) ? `<button class="ib2 sm${S.hideSmall ? "" : " on"}" title="${S.hideSmall ? "Show the small points" : "Hide the small points"}" onclick="go({hideSmall:!S.hideSmall})">${I.three}</button>` : ""}<button class="ib2" title="${esc(head[2])}">${I.info}</button>${modeSwitch()}</div></div>
-    ${body}</div>`;
+    <div class="chd"><div class="tt"><b>${esc(head[0])}</b><span>${esc(head[1])}</span></div><div class="rt">${variant() !== "bars" && milestones().some(m => m.minor) ? `<button class="ib2 sm${S.hideSmall ? "" : " on"}" title="${S.hideSmall ? "Show the small points" : "Hide the small points"}" onclick="go({hideSmall:!S.hideSmall})">${I.three}</button>` : ""}<button class="ib2 lgb${S.legend ? " on2" : ""}" aria-label="Reading the scale" onclick="go({legend:!S.legend})">${I.info}</button>${modeSwitch()}</div></div>
+    ${body}</div>${S.legend ? legendHtml() : ""}`;
 }
 /* What the page's history declares: "both" (read + milestones), "ms" (milestones alone), "bars" (read alone). */
 function variant() { return S._variant || (S.page === "notes" ? "both" : "ms"); }
@@ -1213,7 +1227,7 @@ function histBlock() {
   const z = `<span class="zm">${presets.map(([l, s]) => `<button onclick="preset(${s})">${l}</button>`).join("")}</span>`;
   const lg = variant() === "ms" ? "" : `<span class="lg">${Object.keys(KIND_COL).map(k => `<span><i style="background:${KIND_COL[k]}"></i>${KIND_NAME[k]}</span>`).join("")}</span>`;
   const hint = S.phone ? "Pinch to zoom · swipe to move · tap to choose" : "Drag across the scale to zoom into a stretch · wheel or pinch to zoom · swipe sideways or Shift-wheel to move · click to choose";
-  const msgs = variant() === "bars" ? "" : revMsgs();
+  const msgs = variant() === "bars" ? "" : S._plugin ? fixMsgs() : revMsgs();
   return `<div class="hbar">${z}<span class="span" id="hspan"></span>${lg}</div><div class="hist" id="hist"></div><div class="hhint">${hint}</div>${msgs}`;
 }
 function lastBody(id, t) { let b = null; for (const e of events()) { if (e.t >= t) break; if (e.id === id && e.body) b = e.body; } return b; }
@@ -1255,27 +1269,165 @@ function pickRev(key) {
 
 /* ======================= milestones: what list_note_history answers, and the card note_milestone_card answers ======================= */
 function milestones() {
+  if (S._plugin) return FIX[S._plugin].pts.map(m => Object.assign({}, m, { minor: !!m.point.minor, release: m.point.release || null }));
   const out = []; let prev = [];
   for (const v of revisions()) {
-    const cur = notesAt(v.t);
-    const sm0 = count(changes(prev, cur));
-    out.push({ id: "v" + v.n, at: v.t, minor: !sm0.a && !sm0.r, kind: v.direct ? "direct" : "revision", ref: "v" + v.n, title: v.title, author: v.who, summary: count(changes(prev, cur)), chips: [`${cur.length} notes`], meta: v.release ? `release: ${v.release}` : "published to: Published notes", release: v.release || null, comment: v.comment });
+    const cur = notesAt(v.t), c = count(changes(prev, cur)), minor = !c.a && !c.r;
+    out.push({ id: "v" + v.n, at: v.t, minor, release: v.release || null, ref: "v" + v.n, comment: v.comment, title: v.title, who: v.who,
+      point: { tone: v.direct ? "neutral" : "purple", look: "filled", minor, release: v.release || null },
+      card: [{ line: [{ badge: v.direct ? { icon: "commit", label: "Published directly", tone: "neutral" } : { icon: "tag", label: "Revision", tone: "purple" } }, { ref: "v" + v.n }, { ago: v.t }] },
+        { title: v.title }, { text: v.release ? `release: ${v.release}` : "published to: Published notes" }, { person: v.who },
+        { chips: [{ chip: `${cur.length} notes` }, { text: summaryText(c) }] }] });
     prev = cur;
   }
   const d = count(changes(prev, notesAt(WM())));
-  if (d.a + d.c + d.r) out.push({ id: "draft", at: WM(), kind: "proposal", ref: "draft", title: "Draft — waiting to be published", author: null, summary: d, chips: [], meta: "opens the draft's page", link: "draft" });
+  if (d.a + d.c + d.r) out.push({ id: "draft", at: WM(), atEdge: true, ref: "draft", link: "draft", foot: "Click to open the draft",
+    point: { tone: "amber", look: "dashed", lead: "dashed" },
+    card: [{ line: [{ badge: { icon: "pencil", label: "Draft", tone: "amber" } }, { ref: "draft" }, { now: true }] }, { title: "Draft — waiting to be published" }, { text: "opens the draft's page" }, { chips: [{ text: summaryText(d) }] }] });
   return out;
 }
-/* The core's fixed set of looks; a plugin names one per milestone and gives it its meaning (the graph: how a pull request was merged). */
-const MS_LOOK = { revision: { c: "#8250df", tint: "#fbefff", name: "Revision" }, direct: { c: "#8c959f", tint: "#f6f8fa", name: "Published directly" }, proposal: { c: "#9a6700", tint: "#fff8c5", name: "Draft" } };
+/* A milestone's point is drawn by the core alike for every plugin, so the lane reads the same on every page: the plugin
+   chooses a tone of the core's palette, a look, whether it is small and a release flag. */
+const TONE = {
+  neutral: { c: "#8c959f", tint: "#f6f8fa", ink: "#59636e" }, purple: { c: "#8250df", tint: "#fbefff", ink: "#8250df" },
+  blue: { c: "#0969da", tint: "#ddf4ff", ink: "#0969da" }, green: { c: "#1a7f37", tint: "#dafbe1", ink: "#1a7f37" },
+  amber: { c: "#9a6700", tint: "#fff8c5", ink: "#9a6700" }, red: { c: "#d1242f", tint: "#ffebe9", ink: "#d1242f" },
+};
+const MS_ICON = {
+  merge: '<circle cx="6" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M6 7.2v9.6M6 8c0 3 3 4 9.8 4"/>',
+  commit: '<circle cx="12" cy="12" r="3.2"/><path d="M3 12h5.8M15.2 12H21"/>',
+  pull: '<circle cx="6" cy="5" r="2.2"/><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="19" r="2.2"/><path d="M6 7.2v9.6M18 16.8V9a3 3 0 00-3-3h-4M13 4l-2 2 2 2"/>',
+  tag: '<path d="M4 12V4h8l8 8-8 8z"/><circle cx="8.5" cy="8.5" r="1.3"/>', pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/>',
+  dot: '<circle cx="12" cy="12" r="4"/>', gate: '<path d="M5 20V8l7-4 7 4v12M9 20v-6h6v6"/>', cross: '<path d="M6 6l12 12M18 6L6 18"/>',
+  flag: '<path d="M6 21V4M6 4h11l-2.5 3.5L17 11H6"/>',
+};
+const msIc = k => `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${MS_ICON[k]}</svg>`;
+function msPoint(m, x, y, r) {
+  const c = TONE[m.point.tone].c, look = m.point.look;
+  if (look === "dashed") return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${c}" stroke-width="1.8" stroke-dasharray="2.2 2"/>`;
+  if (look === "hollow") return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${c}" stroke-width="1.8"/>`;
+  if (look === "ring") return `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" stroke="${c}" stroke-width="1.6"/><circle cx="${x}" cy="${y}" r="1.8" fill="${c}"/>`;
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
+}
+/* A person is data: a name and the picture their own service gives (a GitHub avatar), or initials — not an icon of Maxitor. */
+const PIC = { bystrovmaxim: { name: "bystrovmaxim", ini: "BM", bg: "#e0e7ff" }, dependabot: { name: "dependabot[bot]", ini: "DB", bg: "#dcfce7" } };
 function summaryText(c) { const p = []; if (c.a) p.push(`+${c.a} ${c.a > 1 ? "notes" : "note"}`); if (c.c) p.push(`${c.c} changed`); if (c.r) p.push(`−${c.r} ${c.r > 1 ? "notes" : "note"}`); return p.join(" · ") || "no changes"; }
-/* The core draws the card from data only: badge, ref, when, title, meta, author, chips, summary — the graph viewer's VersionTip. */
-function milestoneCard(m) {
-  const lk = MS_LOOK[m.kind];
-  return `<div class="mtip"><div class="r1"><span class="badge" style="background:${lk.tint};color:${lk.c}">${m.kind === "proposal" ? I.clock : I.branch}${lk.name}</span><span class="ref">${esc(m.ref)}</span><span class="ago">${m.kind === "proposal" ? "now" : ago(m.at)}</span></div>
-    <div class="tt">${esc(m.title)}</div><div class="meta">${esc(m.meta)}</div>
-    ${m.author ? `<div class="au">${av(m.author)}${esc(PEOPLE[m.author].name)}</div>` : ""}
-    <div class="r2">${m.chips.map(c => `<span class="chip">${esc(c)}</span>`).join("")}<span class="sm">${summaryText(m.summary)}</span></div></div>`;
+/* The card is the plugin's own: a list of blocks of @maxitor/panel in the order it wants; the core draws each block from data. */
+function msBlock(b) {
+  if (b.line) return `<div class="r1">${b.line.map(x => x.badge ? `<span class="badge" style="background:${x.badge.outline ? "#fff" : TONE[x.badge.tone].tint};color:${TONE[x.badge.tone].ink}${x.badge.outline ? `;box-shadow:inset 0 0 0 1.2px ${TONE[x.badge.tone].c}` : ""}">${msIc(x.badge.icon)}${esc(x.badge.label)}</span>` : x.ref ? `<span class="ref">${esc(x.ref)}</span>` : x.ago ? `<span class="ago">${ago(x.ago)}</span>` : x.now ? `<span class="ago">now</span>` : x.time ? `<span class="ago">${esc(x.time)}</span>` : "").join("")}</div>`;
+  if (b.title) return `<div class="tt">${esc(b.title)}</div>`;
+  if (b.text) return `<div class="meta">${esc(b.text)}</div>`;
+  if (b.fields) return `<div class="meta">${b.fields.map(([k, v]) => `${esc(k)}: <span style="color:#0f172a">${esc(v)}</span>`).join("<br>")}</div>`;
+  if (b.person) { const p = PEOPLE[b.person] || PIC[b.person]; return `<div class="au"><span class="avatar sm" style="background:${p.bg}">${p.ini}</span>${esc(p.name)}</div>`; }
+  if (b.chips) return `<div class="r2">${b.chips.map(c => c.counts ? `<span class="chip"><span style="color:#16a34a">+${c.counts[0]}</span>&nbsp;<span style="color:#dc2626">−${c.counts[1]}</span></span>` : c.chip ? `<span class="chip">${esc(c.chip)}</span>` : c.release ? `<span class="chip" style="background:#0f172a;color:#fff">${msIc("flag")}&nbsp;${esc(c.release)}</span>` : `<span class="sm">${esc(c.text)}</span>`).join("")}</div>`;
+  if (b.warn) return `<div class="meta" style="color:#dc2626">${esc(b.warn)}</div>`;
+  return "";
+}
+function milestoneCard(m) { return `<div class="mtip">${m.card.map(msBlock).join("")}</div>`; }
+
+/* The milestones of two other plugins' pages, in the same card of the core: what they answer is theirs, the card is the same. */
+const FIX = {
+  graph: {
+    head: ["checkout-web · Graph", "9 pull requests since 1 Oct 2026 · live", "A point is a pull request where it was merged: purple merged, grey pushed directly; hollow green or red, still open; the ring is what runs live. A small point did not change the graph; a flag is a release."],
+    pts: [
+      { id: "pr41", at: "2026-10-06T10:00", ref: "#41", point: { tone: "purple", look: "filled" }, comment: "Payments follow the logical data model: two entities, three links.", by: "bystrovmaxim",
+        card: [{ line: [{ badge: { icon: "merge", label: "Merged", tone: "purple" } }, { ref: "#41" }, { ago: "2026-10-06T10:00" }] }, { title: "Payments follow the logical data model" }, { person: "bystrovmaxim" }, { chips: [{ counts: [312, 40] }, { chip: "22 files" }, { text: "+2 entities · +3 links" }] }] },
+      { id: "pr44", at: "2026-10-13T15:00", ref: "#44", point: { tone: "purple", look: "filled", minor: true }, comment: "Bumps vite from 5.4.8 to 5.4.11.", by: "dependabot",
+        card: [{ line: [{ badge: { icon: "merge", label: "Merged", tone: "purple" } }, { ref: "#44" }, { ago: "2026-10-13T15:00" }] }, { title: "Bump vite from 5.4.8 to 5.4.11" }, { person: "dependabot" }, { chips: [{ counts: [6, 6] }, { chip: "2 files" }, { text: "the graph did not change" }] }] },
+      { id: "a3f", at: "2026-10-20T09:30", ref: "a3f9e1c", point: { tone: "neutral", look: "filled", release: "maxitor-v4.2.0" }, comment: "Release 4.2.0.", by: "bystrovmaxim",
+        card: [{ line: [{ badge: { icon: "commit", label: "Pushed directly", tone: "neutral" } }, { ref: "a3f9e1c" }, { ago: "2026-10-20T09:30" }] }, { title: "Release 4.2.0" }, { fields: [["tags", "maxitor-v4.2.0"]] }, { person: "bystrovmaxim" }, { chips: [{ release: "maxitor-v4.2.0" }, { chip: "1 file" }] }] },
+      { id: "pr62", at: "2026-10-30T12:00", ref: "#62", point: { tone: "purple", look: "filled" }, comment: "The constitution and Maxitor follow the logical data model (#60). Every data source is named once; links are read from the model, not written by hand.", by: "bystrovmaxim",
+        card: [{ line: [{ badge: { icon: "merge", label: "Merged", tone: "purple" } }, { ref: "#62" }, { ago: "2026-10-30T12:00" }] }, { title: "The constitution and Maxitor follow the logical data model (#60)" }, { person: "bystrovmaxim" }, { chips: [{ counts: [220, 39] }, { chip: "18 files" }, { text: "+1 data source · +2 links" }] }] },
+      { id: "pr65", at: "2026-11-02T10:00", ref: "#65", opens: "pull request #65", point: { tone: "amber", look: "filled", lead: "dashed" },
+        card: [{ line: [{ badge: { icon: "pull", label: "Review required", tone: "amber" } }, { ref: "#65" }, { time: "open" }] }, { title: "Settlement files carry their own schema" }, { person: "anna" }, { chips: [{ counts: [64, 8] }, { text: "1 entity changed" }] }] },
+      { id: "pr66", at: "2026-11-04T17:00", ref: "#66", opens: "pull request #66", point: { tone: "green", look: "filled", lead: "dashed" },
+        card: [{ line: [{ badge: { icon: "pull", label: "Approved", tone: "green" } }, { ref: "#66" }, { time: "open" }] }, { title: "Refunds get their own table" }, { person: "ilya" }, { chips: [{ counts: [148, 12] }, { text: "+1 entity · +1 link" }] }] },
+      { id: "pr67", at: "2026-11-07T09:00", ref: "#67", opens: "pull request #67", point: { tone: "red", look: "filled", lead: "dashed" },
+        card: [{ line: [{ badge: { icon: "pull", label: "Changes requested", tone: "red" } }, { ref: "#67" }, { time: "open" }] }, { title: "Ledger moves to the billing schema" }, { person: "olga" }, { chips: [{ counts: [31, 30] }, { text: "1 entity changed" }] }] },
+      { id: "live", at: "2026-11-10T11:24", atEdge: true, ref: "live", point: { tone: "neutral", look: "hollow", lead: "dashed" },
+        card: [{ line: [{ badge: { icon: "dot", label: "Live", tone: "neutral", outline: true } }, { now: true }] }, { title: "What production runs" }, { fields: [["image", "checkout-web:4.3.0"], ["since", "10 Nov, 08:12"]] }] },
+    ],
+  },
+  projects: {
+    head: ["Refunds v2 · Gates", "4 gates since 1 Oct 2026", "A point is a gate where it was decided: green passed, red failed; a hollow red point could not be read. A flag is a stage the project entered."],
+    pts: [
+      { id: "g1", at: "2026-10-05T09:00", ref: "G1", point: { tone: "green", look: "filled" }, comment: "The product council accepted the idea: refunds without a call to support.", by: "anna",
+        card: [{ line: [{ badge: { icon: "gate", label: "Gate passed", tone: "green" } }, { ago: "2026-10-05T09:00" }] }, { title: "G1 · Idea accepted" }, { fields: [["owner", "Product council"], ["criteria", "4 of 4"]] }] },
+      { id: "g2a", at: "2026-10-19T09:00", ref: "G2", point: { tone: "red", look: "filled" }, comment: "Not passed: no threat model, no load test of the refund queue.", by: "olga",
+        card: [{ line: [{ badge: { icon: "cross", label: "Gate failed", tone: "red" } }, { ago: "2026-10-19T09:00" }] }, { title: "G2 · Design review" }, { fields: [["missing", "threat model, load test"]] }, { person: "olga" }] },
+      { id: "g2b", at: "2026-10-28T09:00", ref: "G2", point: { tone: "green", look: "filled", release: "beta" }, comment: "Passed on the second try; the project enters beta.", by: "olga",
+        card: [{ line: [{ badge: { icon: "gate", label: "Gate passed", tone: "green" } }, { ago: "2026-10-28T09:00" }] }, { title: "G2 · Design review, second try" }, { fields: [["criteria", "6 of 6"]] }, { chips: [{ release: "beta" }] }] },
+      { id: "g3", at: "2026-11-06T14:00", ref: "G3", point: { tone: "red", look: "hollow" },
+        card: [{ line: [{ badge: { icon: "gate", label: "Gate", tone: "neutral" } }, { ago: "2026-11-06T14:00" }] }, { title: "G3 · Launch readiness" }, { warn: "Could not be read: the checklist file is missing in the repository." }] },
+    ],
+  },
+};
+/* The legend's words that are the plugin's: one row per kind of point its page draws, in the order they stand, and what
+   a small point and a flag mean on this page. The marks, the bars and the keys are the core's. */
+const LEGEND = {
+  notes: {
+    points: [
+      { tone: "purple", look: "filled", term: "Revision", def: "A published revision: the notes as they were published, in force until the next one." },
+      { tone: "amber", look: "dashed", lead: "dashed", term: "Draft", def: "What changed since the last revision and is not published yet — always last. Choosing it opens the draft." },
+    ],
+    small: "A larger point added or removed notes; a smaller one only edited them.",
+    flag: "The revision was published as a release; the release's name is on its card.",
+  },
+  graph: {
+    points: [
+      { tone: "neutral", look: "filled", term: "Direct push", def: "A change pushed straight to the branch, with no pull request." },
+      { tone: "purple", look: "filled", term: "Merged", def: "A merged pull request." },
+      { tone: "amber", look: "filled", lead: "dashed", term: "Review required", def: "An open pull request no reviewer has answered yet: no approval, no request for changes." },
+      { tone: "green", look: "filled", lead: "dashed", term: "Approved", def: "An open pull request a reviewer approved: it can be merged." },
+      { tone: "red", look: "filled", lead: "dashed", term: "Changes requested", def: "An open pull request a reviewer asked to fix: it cannot be merged as it is." },
+      { tone: "neutral", look: "hollow", lead: "dashed", term: "Live", def: "What the service runs now — always last; one point with the newest version when their graphs are the same." },
+    ],
+    small: "A larger point changed the graph; a smaller one changed only the version.",
+    flag: "That version was released: its tag is published as a GitHub Release.",
+  },
+  projects: {
+    points: [
+      { tone: "green", look: "filled", term: "Gate passed", def: "The gate was held and its criteria were met." },
+      { tone: "red", look: "filled", term: "Gate failed", def: "The gate was held and not passed: what was missing is on its card." },
+      { tone: "red", look: "hollow", term: "Not read", def: "The plugin could not read the gate; its card says why." },
+    ],
+    small: null,
+    flag: "The project entered a stage there: beta, general availability.",
+  },
+};
+function lgSample(inner) { return `<svg viewBox="0 0 40 20" width="40" height="20">${inner}</svg>`; }
+function lgPoint(p) {
+  const c = TONE[p.tone].c, lead = `<line x1="4" y1="10" x2="28" y2="10" stroke="${c}" stroke-opacity=".35" stroke-width="2" ${p.lead === "dashed" ? 'stroke-dasharray="2 4"' : ""} stroke-linecap="round"/>`;
+  const dot = p.look === "hollow" ? `<circle cx="30" cy="10" r="3.8" fill="#fff" stroke="${c}" stroke-width="1.5"/>` : p.look === "dashed" ? `<circle cx="30" cy="10" r="3.8" fill="#fff" stroke="${c}" stroke-width="1.5" stroke-dasharray="1.8 1.6"/>` : `<circle cx="30" cy="10" r="3.4" fill="${c}"/>`;
+  return lgSample(lead + dot);
+}
+const lgRow = (sample, term, def) => `<div class="lr">${sample}<div><div class="term">${term}</div><div class="def">${def}</div></div></div>`;
+const lgKey = (keys, def) => `<div class="sc"><div>${keys.map(k => `<kbd>${k}</kbd>`).join("")}</div><div class="def">${def}</div></div>`;
+function legendHtml() {
+  const L = LEGEND[S._plugin || "notes"], vr = variant(), first = TONE[L.points[0].tone].c, P = "#8250df";
+  let left = "";
+  if (vr !== "bars") left += `<div class="grp"><div class="gt">Points</div>${L.points.map(p => lgRow(lgPoint(p), esc(p.term), esc(p.def))).join("")}</div>`;
+  if (vr !== "ms") left += `<div class="grp"><div class="gt">Bars</div>${lgRow(lgSample(`<rect x="8" y="12" width="7" height="6" fill="#16a34a"/><rect x="17" y="6" width="7" height="12" fill="#d97706"/><rect x="26" y="9" width="7" height="9" fill="#dc2626"/>`), "Changes", "A bar counts what was added, changed and deleted in its stretch of time; bars get finer as you zoom in, from a day to a minute.")}</div>`;
+  const marks = [];
+  if (vr !== "bars" && L.small) marks.push(lgRow(lgSample(`<circle cx="13" cy="10" r="2.4" fill="${first === TONE.neutral.c ? P : first}"/><circle cx="27" cy="10" r="3.4" fill="${first === TONE.neutral.c ? P : first}"/>`), "Size", `${esc(L.small)} The three points in the card's head hide the smaller ones.`));
+  if (vr !== "bars" && L.flag) marks.push(lgRow(lgSample(`<path d="M20 14V3" stroke="#94a3b8" stroke-width="1.2"/><path d="M20 3h7l-2 2.4 2 2.4h-7z" fill="#94a3b8"/><circle cx="20" cy="14" r="2.6" fill="${P}"/>`), "Flag", `${esc(L.flag)} With smaller points hidden, their flags stand on the point before them.`));
+  if (vr !== "bars" && L.small) marks.push(lgRow(lgSample(`<path d="M9 10h22" stroke="${P}" stroke-width="1.2" stroke-opacity=".4"/><circle cx="10" cy="10" r="3" fill="${P}"/><circle cx="20" cy="10" r="1.9" fill="${P}"/><circle cx="30" cy="10" r="3" fill="${P}"/>`), "Three points", "In the card's head: coloured while the smaller points are shown, grey while they are hidden. Only you see it; a chosen point stays."));
+  marks.push(lgRow(lgSample(`<line x1="20" y1="2" x2="20" y2="18" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3 3"/><rect x="21" y="2" width="17" height="16" fill="url(#lghatch)"/><defs><pattern id="lghatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="#cbd5e1" stroke-width="1.5"/></pattern></defs>`), "Now", "The green dashed line. What lies right of it is hatched: it cannot be chosen yet."));
+  marks.push(lgRow(lgSample(`<line x1="20" y1="2" x2="20" y2="13" stroke="#0f172a" stroke-width="1.6"/><circle cx="20" cy="13" r="3.6" fill="#0f172a" stroke="#fff" stroke-width="1.4"/>`), "The chosen moment", "A dark line with its chip under the axis; in a comparison A is hollow above, B dark below. Drag it, or click anywhere to move it."));
+  left += `<div class="grp"><div class="gt">Marks</div>${marks.join("")}</div>`;
+  const keys = `<div class="grp"><div class="gt">Anywhere</div>${lgKey(["⇧", "←", "→"], "One step older or newer; with two compared, both move and keep their distance")}${lgKey(["⇧", "↑", "↓"], "The previous or the next change, when two moments are compared")}${lgKey(["Esc"], "Close a card or a list")}</div>
+    <div class="grp"><div class="gt">In this picker, after clicking a point or handle A or B</div>${lgKey(["←", "→"], "Move the chosen point or that handle")}${lgKey(["Home", "End"], "Take it to an end of the scale")}</div>
+    <div class="grp"><div class="gt">On a canvas</div>${lgKey(["Ctrl / ⌘", "wheel"], "Zoom around the pointer")}${lgKey(["⇧", "wheel"], "Move sideways")}</div>`;
+  return `<div class="lgpop" role="tooltip"><div>${left}</div><div>${keys}</div></div>`;
+}
+
+/* Under the scale: the comment of the milestone in force at the moment, and in a comparison at A and at B. */
+function fixMsgs() {
+  const inForce = m => { let r = null; for (const p of milestones()) if (p.comment && p.at <= (m || WM())) r = p; return r; };
+  const one = (m, tag) => { const p = inForce(m), who = p && (PEOPLE[p.by] || PIC[p.by]);
+    const head = `${tag ? `<span class="${tag === "A" ? "chipA" : "chipB"}">${tag}</span>` : ""}<b style="font-size:12px">${p ? `${esc(p.ref)} · ${esc(p.card.find(b => b.title).title)}` : "Nothing yet"}</b>`;
+    return `<div class="msg"><div style="display:flex;gap:6px;align-items:center;margin:2px 0 4px">${head}</div>${p ? `<div class="mb">${esc(p.comment)}\n\n<span style="color:var(--muted)">${esc(who.name)}, ${fmtY(p.at)}</span></div>` : ""}</div>`; };
+  return cmp() ? `<div class="msgs two">${one(S.from, "A")}${one(S.at, "B")}</div>` : `<div class="msgs">${one(S.at)}</div>`;
 }
 
 /* ======================= the histogram: Kibana's way of moving through time ======================= */
@@ -1351,14 +1503,13 @@ function drawHist() {
   s += `<line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="#cbd5e1"/>`;
   const msl = showMs ? milestones().filter(m => !(m.minor && S.hideSmall)) : [], hm = !showMs ? null : HV.hover !== null && !HV.drag ? (inLane ? nearMilestone(HV.hover, X, W) : null) : HV.hover === null && S._ms ? msl.find(m => m.id === S._ms) || null : null;
   if (showMs) s += `<line x1="0" y1="${laneY}" x2="${W}" y2="${laneY}" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>`;
+  if (showMs) { let px = null; for (const m of msl) { const x = m.atEdge ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); if (px !== null && x > -2 && px < W + 2) s += `<line x1="${Math.max(px, 0)}" y1="${laneY}" x2="${Math.min(x, W)}" y2="${laneY}" stroke="${TONE[m.point.tone].c}" stroke-opacity=".35" stroke-width="2" ${m.point.lead === "dashed" ? 'stroke-dasharray="2 4"' : ""} stroke-linecap="round"/>`; px = x; } }
   for (const m of msl) {
-    const x = m.kind === "proposal" ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); if (x < -2 || x > W + 2) continue;
-    const c = MS_LOOK[m.kind].c, on = hm === m, r = on ? 6 : m.minor ? 3 : 4.6;
+    const x = m.atEdge ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); if (x < -2 || x > W + 2) continue;
+    const c = TONE[m.point.tone].c, on = hm === m, r = on ? 6 : m.minor ? 3 : 4.6;
     // the release's flag: a stem and a pennant over the point, as the graph's track draws a tag
     if (m.release) s += `<path d="M${x} ${laneY - r - 1}V${laneY - 22}" stroke="#64748b" stroke-width="1.4"/><path d="M${x} ${laneY - 22}h10l-2.8 3.2 2.8 3.2h-10z" fill="#64748b"/>`;
-    s += m.kind === "proposal"
-      ? `<circle cx="${x}" cy="${laneY}" r="${r}" fill="#fff" stroke="${c}" stroke-width="1.8" stroke-dasharray="2.2 2"/>`
-      : `<circle cx="${x}" cy="${laneY}" r="${r}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
+    s += msPoint(m, x, laneY, r);
     s += `<text x="${Math.min(Math.max(x, 10), W - 12)}" y="${laneY + 17}" font-size="${m.minor ? 10 : 10.5}" font-weight="${on ? 700 : 500}" fill="${on ? c : m.minor ? "#94a3b8" : "#64748b"}" text-anchor="middle">${m.ref}</text>`;
   }
 
@@ -1375,7 +1526,7 @@ function drawHist() {
   else { s += handle(h.a, "A " + lab(h.a), true, HT - 11); s += handle(h.b, "B " + lab(h.b), false, chipY); }
   if (HV.drag && HV.drag.kind === "brush") { const a = Math.min(HV.drag.x0, HV.drag.x1), b = Math.max(HV.drag.x0, HV.drag.x1); s += `<rect x="${a}" y="${HT}" width="${b - a}" height="${B0 - HT}" fill="rgba(37,99,235,.12)" stroke="#2563eb" stroke-dasharray="3 2"/>`; }
   let tip = "";
-  if (hm) { const x = Math.min(X(ms(hm.at)), W); tip = `<div class="htip mt" style="left:${Math.min(Math.max(x - 160, 0), W - 320)}px;top:${H + 2}px">${milestoneCard(hm)}<div class="f">${hm.kind === "proposal" ? "Click to open the draft" : `Click to read the notes at ${fmt(hm.at)}`}</div></div>`; }
+  if (hm) { const x = Math.min(X(ms(hm.at)), W); tip = `<div class="htip mt" style="left:${Math.min(Math.max(x - 160, 0), W - 320)}px;top:${H + 2}px">${milestoneCard(hm)}<div class="f">${hm.foot || (hm.opens ? `Click to open ${hm.opens}; the moment does not change` : `Click to read the page at ${fmt(hm.at)}`)}</div></div>`; }
   else if (bars && hb >= 0 && HV.hover !== null && !HV.drag) {
     const x = HV.hover, t = v0 + x / W * span;
     s += `<line x1="${x}" y1="${HT}" x2="${x}" y2="${base}" stroke="#2563eb" stroke-width="1" stroke-dasharray="2 2"/>`;
@@ -1389,7 +1540,7 @@ function drawHist() {
   el.innerHTML = s + "</svg>" + tip;
   const sp = document.getElementById("hspan"); if (sp) sp.textContent = `${spanText(Math.min(v1, wm) - v0)} · bar ${spanText(step)}`; sp.title = `${fmtY(iso(v0))} – ${fmtY(iso(Math.min(v1, wm)))}`;
 }
-function nearMilestone(x, X, W) { let best = null, d = 8; for (const m of milestones().filter(mm => !(mm.minor && S.hideSmall))) { const mx = m.kind === "proposal" ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); const dd = Math.abs(mx - x); if (dd < d) { d = dd; best = m; } } return best; }
+function nearMilestone(x, X, W) { let best = null, d = 8; for (const m of milestones().filter(mm => !(mm.minor && S.hideSmall))) { const mx = m.atEdge ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); const dd = Math.abs(mx - x); if (dd < d) { d = dd; best = m; } } return best; }
 function localX(el, e) { const r = el.getBoundingClientRect(); return (e.clientX - r.left) * el.clientWidth / r.width; }
 function commitMoment(h, t) {
   const wm = ms(WM()); t = Math.min(t, wm);
@@ -1427,6 +1578,7 @@ function mountHist() {
     const rr = el.getBoundingClientRect(), y = (e.clientY - rr.top) * el.clientWidth / rr.width, laneBottom = HT + 50;
     const W = el.clientWidth, m = variant() === "bars" || y > laneBottom ? null : nearMilestone(x, tt => (tt - HV.v0) / (HV.v1 - HV.v0) * W, W);
     if (m && m.link) return go({ page: "draft", picker: false, mode: "one", from: null });
+    if (m && m.opens) return go({ toast: { text: `Opens ${m.opens}: a proposal is not a state at any moment` } });
     const t = m ? ms(m.at) : tAt(x); if (t > ms(WM())) { drawHist(); return; }
     if (!cmp()) return commitMoment("one", t);
     const h = handles(); commitMoment(Math.abs(t - h.a) < Math.abs(t - h.b) ? "a" : "b", t);
@@ -1495,6 +1647,8 @@ function anchorCard() {
   const k = body.getBoundingClientRect().width / body.offsetWidth, pr = pill.getBoundingClientRect(), br = body.getBoundingClientRect();
   card.style.top = ((pr.bottom - br.top) / k + 11) + "px";
   card.style.right = Math.max(10, (br.right - pr.right) / k) + "px";
+  const lg = document.querySelector(".lgpop"), ib = document.querySelector(".lgb");
+  if (lg && ib) { const ir = ib.getBoundingClientRect(); lg.style.top = ((ir.bottom - br.top) / k + 6) + "px"; lg.style.right = Math.max(10, (br.right - ir.right) / k) + "px"; }
 }
 
 /* ======================= the screens ======================= */
@@ -1538,6 +1692,12 @@ const SCREENS = [
     ["5.7", "Publishing", { page: "draft", dlg: { kind: "publish", title: "Partial refunds" } }],
     ["5.8", "Published", Object.assign({ page: "published", toast: { text: "Published as v6" } }, AFTER_V5)],
   ]],
+  ["Milestones of other plugins (#98)", [
+    ["3.7", "The graph's pull requests", { picker: true, _plugin: "graph", _variant: "ms", _ms: "pr62", _view: ["2026-09-28T00:00", "2026-11-11T12:00"] }],
+    ["3.8", "A project's gates", { picker: true, _plugin: "projects", _variant: "ms", _ms: "g3", _view: ["2026-09-28T00:00", "2026-11-11T12:00"] }],
+    ["3.9", "Reading the scale: the notes", { picker: true, legend: true }],
+    ["3.10", "Reading the scale: the graph", { picker: true, legend: true, _plugin: "graph", _variant: "ms", _view: ["2026-09-28T00:00", "2026-11-11T12:00"] }],
+  ]],
   ["Phone only", [
     ["6.1", "A note's actions", { phone: true, sheet: "n2" }],
     ["6.2", "The tree in a drawer", { phone: true, drawer: true }],
@@ -1560,7 +1720,7 @@ const NOTES = {
     "The core sends <code>panel.watermark</code>; a page at “now” reads again, so Olga's note appears without a reload, marked <b>new</b>. A page in the past or in a comparison does not read again: its answer cannot change.",
     "<span class=\"lnk\" onclick=\"arrive()\">This link</span> plays the event on any “now” screen.",
   ]],
-  "1.4": ["An item with no notes", ["Only the field to write the first one."]],
+  "1.4": ["An item with no notes", ["The canvas says there are no notes yet; “New note” stands at the top right, as on every screen at “now”."]],
   "2.1": ["Editing a note", ["The edit carries <code>base_moment</code>: the start of the version the person saw. Save writes a new version and closes the old one; the old text stays readable at every earlier moment."]],
   "2.2": ["Someone changed it meanwhile", [
     "Olga saved first, so the note's open version began after <code>base_moment</code>: <code>EditNoteAction</code> answers with a conflict and the page reads again.",
@@ -1578,9 +1738,9 @@ const NOTES = {
   "3.3": ["A moment chosen", ["The chosen moment is a dark line with its chip under the axis, as the graph's knob is; it can be dragged. Under the scale: the comment of the milestone in force at that moment — the revision v3 here — as the plugin returns it for the chosen milestone."]],
   "3.6": ["Bars alone", ["A page that declares only <code>read</code>: its history is the histogram and nothing else, as a list of files or a page with no milestones of its own. Without milestones there are no comments, so nothing stands under the scale."]],
   "3.5": ["A revision over the bars", [
-    "The notes page declares both: <code>read</code> gives the bars, <code>milestones</code> the published revisions. A milestone is drawn the same in every variant: a point on the axis where it happened, over bars or alone.",
-    "Its colour is its <code>kind</code>, one of the core's fixed looks to which the plugin gives a meaning: here purple is a revision and amber the draft — in the graph the colours say how a pull request was merged. Its size is the plugin's <code>minor</code>: here a small point is a revision that only edited notes, adding or removing none — in the graph a pull request that did not change the graph; the switch of three dots in the card's head hides the small points. A flag over a point is the plugin's <code>release</code>: here the release a revision was published as, an optional label of publishing; in the graph a release, in the story map a shipped release. The draft is an amber dashed point at the right edge.",
-    "Hovering a flag asks <code>note_milestone_card</code> for that milestone and the core draws its card from the data: badge, ref, when, title, meta, author, chips, summary — the graph viewer's card. A click reads the notes at the revision's moment; a click on the draft opens the draft's page.",
+    "The notes page declares both: <code>read</code> gives the bars, <code>milestones</code> the published revisions. A milestone is drawn the same in every variant: a point on its own lane above the bars and the dates, where it happened, over bars or alone.",
+    "The point is drawn by the core alike for every plugin: the plugin chooses its tone from the core's palette (here purple a revision, amber the draft; in the graph, how a pull request was merged), its look (the draft dashed), whether it is small (here a revision that only edited notes, adding or removing none; the switch of three dots in the card's head hides the small points) and a release flag (the release a revision was published as). The draft stands at the right edge.",
+    "Hovering a point asks <code>note_milestone_card</code> for that milestone. Its card is the plugin's own: a list of blocks of <code>@maxitor/panel</code> in the order the plugin wants — here a line with the badge, the ref and the time, the title, where it was published, the author, the chips. The core draws each block from data. A click reads the notes at the revision's moment; a click on the draft opens the draft's page.",
   ]],
   "3.4": ["Two moments, A and B", [
     "Diff and Side by side hold two handles: A's hollow chip above, B's dark chip below, the stretch between them shaded. Each is dragged; a click moves the nearer one.",
@@ -1618,12 +1778,27 @@ const NOTES = {
   "5.6": ["The draft", ["What changed since the last revision, note by note. The draft is itself a comparison, so Diff and Side by side are not offered on it."]],
   "5.7": ["Publishing", ["<code>PublishNotesAction</code>: the next number, a title, a comment, an optional release, the author and the moment. The comment is what the scale shows under itself when the revision is chosen; the release puts a flag over the revision's point."]],
   "5.8": ["Published", ["v6 is in force; the draft is empty."]],
+  "3.7": ["The graph's pull requests", [
+    "The same card of the core, with the milestones of another plugin's page: the graph's pull requests. Everything around them — the head, the switch of small points, the modes, the presets, the axis, the moment, the comment under the scale — is the core's and does not change.",
+    "On the lane every plugin's points look alike: the plugin chooses a tone of the core's palette (purple merged, grey pushed directly, green and red still open), a look (filled; hollow for an open proposal; a ring for what runs live), whether a point is small (<b>#44</b> did not change the graph) and a release flag.",
+    "The card under the pointer is the plugin's own: a list of blocks of <code>@maxitor/panel</code> in its order — a line with a badge, a ref and the time; a title; a person, whose picture is data (a GitHub avatar), not an icon of Maxitor; chips. Hover the points: the template's revisions (3.5) and the gates (3.8) build theirs from the same blocks differently.",
+    "An open pull request is a proposal: choosing it opens it and does not change the moment.",
+  ]],
+  "3.9": ["Reading the scale: the notes", [
+    "The “i” in the card's head opens what the scale's marks mean, as the graph viewer's TrackLegend does today: what is on the scale on the left, the keys on the right.",
+    "<b>Points</b> are the page's own: one row per kind of point it draws — a sample with the stretch of line that leads to it, a name, one sentence. The plugin gives them with its history, beside the milestones; the core draws them. <b>Bars</b>, <b>Marks</b> and the keys are the core's, the same on every page; only what a small point and a flag mean on this page is the plugin's sentence.",
+    "A page with bars alone has no points and no marks of milestones; a page with milestones alone has no bars.",
+  ]],
+  "3.10": ["Reading the scale: the graph", ["The graph's page: six kinds of points — the rows of today's TrackLegend, now given by the plugin — and its own words for the size and the flag. Everything else in the legend is the same as on the notes."]],
+  "3.8": ["A project's gates", [
+    "A gate's card is mostly labelled lines: its owner, its criteria, what is missing. <b>G3</b> could not be read: a hollow red point and a warning block. The flag over the second G2 is the stage the project entered.",
+  ]],
   "6.1": ["A note's actions on a phone", ["The “⋯” button opens a sheet with Edit and Delete."]],
   "6.2": ["The tree in a drawer", ["The button left of the logo opens the organization's tree; the pill takes the rest of the top row."]],
 };
 function base(o) { const s = JSON.parse(JSON.stringify(DEF)); Object.assign(s, JSON.parse(JSON.stringify(o))); return s; }
 function full(n) { for (const [, items] of SCREENS) for (const [k, , st] of items) if (k === n) return base(st); return null; }
-const KEYS = ["page", "view", "mode", "at", "from", "compose", "extra", "revs", "edit", "conflict", "dlg", "picker", "sheet", "drawer", "_empty", "stepper", "stepIdx", "_view", "_ms", "_variant"];
+const KEYS = ["_plugin", "legend", "page", "view", "mode", "at", "from", "compose", "extra", "revs", "edit", "conflict", "dlg", "picker", "sheet", "drawer", "_empty", "stepper", "stepIdx", "_view", "_ms", "_variant"];
 function norm(o) { return JSON.stringify(KEYS.map(k => k === "dlg" && o.dlg ? { kind: o.dlg.kind, id: o.dlg.id } : o[k] === undefined ? null : o[k])); }
 function curNum() { const me = norm(S); for (const [, items] of SCREENS) for (const [n] of items) if (norm(full(n)) === me) return n; return null; }
 const EV_ALL = EV.slice(), REV_ALL = REV.slice();
@@ -1670,7 +1845,7 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); step(e.key === "ArrowLeft" ? -1 : 1); }
   else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && cmp()) { e.preventDefault(); stepCh(e.key === "ArrowUp" ? -1 : 1); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") go({ dcard: false, dlg: null, drawer: false, picker: false, sheet: null, stepper: false }); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") go({ legend: false, dcard: false, dlg: null, drawer: false, picker: false, sheet: null, stepper: false }); });
 fitAll(false);
 /* An address like #3.4 opens that screen; #3.4-phone opens its phone version; #bare hides the navigator and the notes. */
 (function fromHash() {

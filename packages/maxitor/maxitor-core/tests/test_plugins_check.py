@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime
+from importlib.metadata import version as package_version
 from pathlib import Path
 from typing import Any
 
@@ -69,15 +70,26 @@ def test_a_list_reads_an_action_the_wheel_carries() -> None:
 @pytest.mark.parametrize(
     ("files", "reason"),
     [
-        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("passport: 2", "passport: 1")}, "passport"),
+        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("passport: 3", "passport: 1")}, "passport"),
+        # Format 2 named a built site; the core builds the frontend from its sources.
+        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("passport: 3", "passport: 2")}, "passport"),
+        ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("source: maxitor_notes/web", "build: maxitor_notes/_web")}, "passport"),
+        ({"maxitor_notes/web/package-lock.json": None}, "frontend"),
+        ({"maxitor_notes/web/package.json": None}, "frontend"),
+        ({"maxitor_notes/web/node_modules/next/package.json": "{}"}, "frontend"),
+        ({"maxitor_notes/web/.next/BUILD_ID": "x"}, "frontend"),
+        ({"maxitor_notes/web/server.js": "x"}, "frontend"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("name: notes", "name: Notes!")}, "passport"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("version: 0.4.0", "version: 0.4.1")}, "passport"),
         ({"maxitor_notes/schema.yaml": SCHEMA.replace("type: text", "type: varchar")}, "schema"),
         ({"maxitor_notes/schema.yaml": None}, "schema"),
         ({"maxitor_notes/foreign-keys.yaml": KEYS.replace("schema: core, table: user", "schema: tags, table: tag")}, "foreign_keys"),
         ({"maxitor_notes/navigation.yaml": None}, "navigation"),
-        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 2", "navigation: 7")}, "navigation"),
-        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 2", "navigation: 1")}, "navigation"),
+        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 3", "navigation: 7")}, "navigation"),
+        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 3", "navigation: 1")}, "navigation"),
+        # Navigation format 2 carried a page's history and a room's shared parameters.
+        ({"maxitor_notes/navigation.yaml": NAVIGATION.replace("navigation: 3", "navigation: 2")}, "navigation"),
+        ({"maxitor_notes/navigation.yaml": NAVIGATION + "    history: {read: list_items}\n"}, "navigation"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace('">=4.0,<5"', '">=5.0,<6"')}, "core_range"),
         ({"maxitor_notes/maxitor-plugin.yaml": PASSPORT + "roles:\n  - name: reader\n    description: Reads.\n"}, "passport"),
         ({"maxitor_notes/navigation.yaml": NAVIGATION + "    roles: [reader]\n"}, "navigation"),
@@ -243,7 +255,7 @@ class World:
 
 
 async def test_a_good_version_becomes_active_under_its_passports_identity(tmp_path: Path) -> None:
-    world = World(tmp_path)
+    world = World(tmp_path, data=wheel({"maxitor_notes/history/list_note_history_action.py": "", "maxitor_notes/actions/list_items_action.py": ""}))
     assert await world.run() == "active"
     plugin = world.updates("plugin")
     assert plugin[0][0].startswith("UPDATE plugin SET passport_id = $1, name = $2, title = $3, description = $4")
@@ -251,7 +263,9 @@ async def test_a_good_version_becomes_active_under_its_passports_identity(tmp_pa
     nodes = [p for q, p in world.connection.statements if q.startswith("INSERT INTO plugin_node (")]
     assert [(p[2], p[6]) for p in nodes] == [("notes:tags", "Tags"), ("notes:notes", "All notes")]
     version = world.updates("plugin_version")[-1]
-    assert "state = $4" in version[0] and version[1][:4] == (PLACEHOLDER, "0.4.0", ">=4.0,<5", "active")
+    assert "state = $6" in version[0] and version[1][:3] == (PLACEHOLDER, "0.4.0", ">=4.0,<5") and version[1][5] == "active"
+    # What a page's history is checked against: the wheel's actions and the passport's comparisons.
+    assert "history_actions = $4" in version[0] and version[1][3] == ["list_items", "list_note_history"] and version[1][4] == []
 
 
 async def test_a_wheel_not_in_the_store_is_downloaded_and_kept(tmp_path: Path) -> None:
@@ -310,3 +324,17 @@ async def test_the_hold_is_let_go_whatever_the_verdict(tmp_path: Path) -> None:
         assert queries[0] == "SELECT pg_try_advisory_lock(hashtext($1))"
         assert queries[-1] == "SELECT pg_advisory_unlock(hashtext($1))"
         assert world.connection.statements[0][1] == world.connection.statements[-1][1] == (f"check:{VERSION}",)
+
+
+def test_a_passport_of_format_2_is_refused_by_name() -> None:
+    with pytest.raises(VersionRejectedError) as refused:
+        inspect(read_wheel(wheel({"maxitor_notes/maxitor-plugin.yaml": PASSPORT.replace("passport: 3", "passport: 2")})))
+    assert refused.value.detail == (
+        f"the passport is format 2; the core {package_version('maxitor')} reads format 3 — the frontend ships as sources (frontend.source)"
+    )
+
+
+def test_sources_without_their_lock_are_refused_by_name() -> None:
+    with pytest.raises(VersionRejectedError) as refused:
+        inspect(read_wheel(wheel({"maxitor_notes/web/package-lock.json": None})))
+    assert refused.value.detail == "frontend.source holds no package-lock.json; the core builds the frontend strictly by its lock file"

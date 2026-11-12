@@ -104,6 +104,31 @@ class RowTakenUpEvent(BaseEvent):
     row_id: str = Field(description="The row's id")
 
 
+class BuilderImageBuiltEvent(BaseEvent):
+    """The builder image of the running core version was built on the host (info)."""
+
+    core_version: str = Field(description="The core version the image builds for")
+    seconds: float = Field(description="How long building it took")
+
+
+class FrontendBuiltEvent(BaseEvent):
+    """A plugin version's frontend was built with the core's own @maxitor packages (info)."""
+
+    passport_id: str = Field(description="The plugin's id from its passport")
+    version: str = Field(description="The version, x.y.z")
+    core_version: str = Field(description="The core version it was built for")
+    image: str = Field(description="The frontend's image")
+    seconds: float = Field(description="How long the build took")
+
+
+class FrontendGenerationMovedEvent(BaseEvent):
+    """The site moved to the frontend builds of a new core version, every enabled version at once (info)."""
+
+    moved_from: str = Field(description="The core version whose builds were served")
+    moved_to: str = Field(description="The core version whose builds are served now")
+    versions: int = Field(description="How many enabled versions moved")
+
+
 class RunnerStartedEvent(BaseEvent):
     """The runner started, forgot the processes a stopped runner left, and found the versions to run (info)."""
 
@@ -212,3 +237,12 @@ class EnvironmentFailedEvent(BaseEvent):
     passport_id: str = Field(description="The plugin's id from its passport")
     version: str = Field(description="The version, x.y.z")
     reason: str = Field(description="The last line Docker answered, without any secret")
+
+
+class FrontendBuildFailedEvent(BaseEvent):
+    """A plugin version's frontend could not be built; it is not deployed (critical)."""
+
+    passport_id: str = Field(description="The plugin's id from its passport")
+    version: str = Field(description="The version, x.y.z")
+    core_version: str = Field(description="The core version it was built for")
+    error: str = Field(description="The first error of the step that failed")

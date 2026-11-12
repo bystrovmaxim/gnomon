@@ -5,6 +5,18 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] — 2026-11-12
+
+### Changed
+
+- **Its pages give their history in their code.** The notes page gives its reading action, milestones and card, the published notes their milestones and card, the draft no comparison; `navigation.yaml` is format 3, the tree only, with no room. It requires Maxitor `>=4.7,<5`. Its pages 0.5.0. ([#116](https://github.com/bystrovmaxim/gnomon/issues/116))
+
+## [0.10.0] — 2026-11-12
+
+### Changed
+
+- **Its frontend travels as sources, and Maxitor builds it.** The passport is format 3 with `frontend.source: maxitor_notes/web`; the wheel carries `web/` without `node_modules`, `.next` and `.npmrc`, and no built site — `copy-build.mjs` and `_web` are gone. It requires Maxitor `>=4.5,<5`, the first core that builds frontends; `maxitor plugin build . --core 4.5.0` builds it as the installer will. Its pages 0.4.0. ([#110](https://github.com/bystrovmaxim/gnomon/issues/110))
+
 ## [0.9.1] — 2026-11-12
 
 ### Changed

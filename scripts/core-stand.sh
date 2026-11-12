@@ -23,7 +23,8 @@
 # MAXITOR_STAND_CONTAINER, MAXITOR_STAND_DB_PORT, MAXITOR_STAND_API_PORT and MAXITOR_STAND_WEB_PORT run a second stand
 # beside a first one; its plugin runner takes the container's name, so each stand starts and removes only its own
 # plugin containers and networks.
-# The plugin template's wheel carries its built frontend: npm builds it before the wheel is made.
+# The plugin template's wheel carries its frontend's sources; the installer builds them in the core's builder image
+# (Docker) with the core's own @maxitor/panel, in .core-stand/builds, before it deploys the version.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -117,7 +118,6 @@ open(sys.argv[1], "wb").write(pem)
   if [ "$(docker exec "$CONTAINER" psql -U postgres -d maxitor -tAc "SELECT count(*) FROM plugins.plugin")" = "0" ]; then
     say "Filling the marketplace with the plugin template's wheel"
     rm -rf "$STAND/dist"
-    (cd "$ROOT/packages/maxitor-plugin-template/web" && npm ci --no-audit --no-fund && npm run build)
     (cd "$ROOT" && uv build --wheel -q -o "$STAND/dist" packages/maxitor-plugin-template)
     (cd "$ROOT" && MAXITOR_INSTALLER_DSN="$installer_dsn" uv run --all-extras --all-packages maxitor-plugin-installer add-wheel "$STAND"/dist/*.whl)
   fi
@@ -126,7 +126,7 @@ open(sys.argv[1], "wb").write(pem)
   (cd "$ROOT" && exec uv run --all-extras --all-packages maxitor-core serve --port "$API_PORT") &
   local api=$!
   (cd "$ROOT" && MAXITOR_CORE_DSN="" MAXITOR_INSTALLER_DSN="$installer_dsn" MAXITOR_INSTALLER_PERIOD_SECONDS=5 \
-    exec uv run --all-extras --all-packages maxitor-plugin-installer run) &
+    MAXITOR_PLUGIN_BUILDS="$STAND/builds" exec uv run --all-extras --all-packages maxitor-plugin-installer run) &
   local installer=$!
   (cd "$ROOT" && MAXITOR_PLUGIN_FIND_LINKS="$STAND/find-links" MAXITOR_PLUGIN_DB_ADDRESS="maxitor-db:5432" \
     MAXITOR_PLUGIN_DB_CONTAINER="$CONTAINER" MAXITOR_PLUGIN_GATEWAY_URL="http://host.docker.internal:$WEB_PORT" \

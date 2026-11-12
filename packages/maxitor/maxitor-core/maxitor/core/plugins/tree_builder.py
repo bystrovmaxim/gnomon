@@ -24,7 +24,15 @@ from typing import Any
 
 import yaml
 from jsonschema import Draft202012Validator
-from maxitor_plugin_sdk.checks import NAVIGATION_FORMAT_1, PLACEHOLDER, SCHEMAS, navigation_problems, source_problems
+from maxitor_plugin_sdk.checks import (
+    NAVIGATION_FORMAT_1,
+    NAVIGATION_FORMAT_2,
+    PLACEHOLDER,
+    SCHEMAS,
+    navigation_problems,
+    retired_node,
+    source_problems,
+)
 
 #: The core's own file.
 CORE_NAVIGATION = Path(__file__).resolve().parents[1] / "navigation.yaml"
@@ -57,7 +65,6 @@ class Node:
     each_source: str | None
     each_key: str | None
     roles: tuple[str, ...]
-    room: Mapping[str, Any] | None
     #: The parameters the list nodes above it define, set by ``build_tree``: every node beneath a list node sees its key.
     scope: tuple[str, ...] = field(default=())
 
@@ -72,7 +79,7 @@ class PluginFile:
 
 
 def _validator() -> Draft202012Validator:
-    return Draft202012Validator(json.loads((SCHEMAS / "navigation-2.schema.json").read_text(encoding="utf-8")))
+    return Draft202012Validator(json.loads((SCHEMAS / "navigation-3.schema.json").read_text(encoding="utf-8")))
 
 
 def _walk(
@@ -104,7 +111,6 @@ def nodes_of(owner: str, navigation: Mapping[str, Any]) -> list[Node]:
                 each_source=None if each is None else str(each["source"]),
                 each_key=None if each is None else str(each["key"]),
                 roles=tuple(node.get("roles", [])),
-                room=node.get("room"),
             )
         )
     return found
@@ -115,6 +121,11 @@ def _one_file(owner: str, navigation: Any) -> list[str]:
         return ["navigation: the file is not a mapping"]
     if navigation.get("navigation") == 1:
         return [f"navigation: {NAVIGATION_FORMAT_1}"]
+    if navigation.get("navigation") == 2:
+        return [f"navigation: {NAVIGATION_FORMAT_2}"]
+    retired = retired_node(navigation)
+    if retired:
+        return [f"navigation: {retired}"]
     problems = [f"navigation: {error.message}" for error in _validator().iter_errors(navigation)]
     return problems or navigation_problems(navigation)
 

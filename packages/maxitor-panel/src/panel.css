@@ -11,3 +11,21 @@ html, body.mx-panel-document { margin: 0; background: transparent; font-family: 
 .mx-table tr:last-child td { border-bottom: 0; }
 .mx-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--mx-card-min), 1fr)); gap: var(--mx-space-5); align-items: start; }
 .mx-empty { color: var(--mx-muted); font-size: var(--mx-text-md); text-align: center; padding: var(--mx-space-7); }
+
+/* a list on the canvas (spec 081): a card at full length, its head sticking to the top of the view, rows placed at
+   fixed heights so only those in view are drawn */
+.mx-list { position: absolute; box-sizing: border-box; background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); box-shadow: var(--mx-shadow-card); font-size: var(--mx-text-md); color: var(--mx-ink); }
+.mx-list-head { position: absolute; left: 0; right: 0; z-index: 1; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; background: var(--mx-surface); border-bottom: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md) var(--mx-radius-md) 0 0; }
+.mx-list-name { display: flex; align-items: baseline; gap: var(--mx-space-4); padding: var(--mx-space-5) var(--mx-space-6) var(--mx-space-3); }
+.mx-list-name b { font-size: var(--mx-text-lg); font-weight: var(--mx-weight-bold); }
+.mx-list-count { color: var(--mx-muted); font-size: var(--mx-text-sm); font-variant-numeric: tabular-nums; }
+.mx-list-columns, .mx-list-row { display: grid; align-items: center; gap: var(--mx-space-5); padding: 0 var(--mx-space-6); }
+.mx-list-columns { padding-bottom: var(--mx-space-3); font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); color: var(--mx-muted); }
+.mx-list-row { position: absolute; left: 0; right: 0; box-sizing: border-box; border-bottom: var(--mx-line-width) solid var(--mx-line-2); }
+.mx-list-row span, .mx-list-columns span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-list .kind-number { text-align: right; font-variant-numeric: tabular-nums; }
+.mx-list .kind-mono { font-family: var(--mx-mono); font-size: var(--mx-text-sm); color: var(--mx-ink-3); }
+.mx-list .kind-date { font-variant-numeric: tabular-nums; color: var(--mx-ink-3); }
+.mx-list-person, .mx-list-status { display: inline-flex; align-items: center; gap: var(--mx-space-3); min-width: 0; }
+.mx-list-dot { width: var(--mx-space-4); height: var(--mx-space-4); border-radius: var(--mx-radius-round); flex-shrink: 0; }
+.mx-list-empty { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: center; color: var(--mx-muted); }

@@ -29,6 +29,6 @@ def test_the_templates_tables_and_key_are_built() -> None:
 
 def test_the_templates_version_is_named_after_its_passport() -> None:
     passport = yaml.safe_load((TEMPLATE / "maxitor-plugin.yaml").read_text(encoding="utf-8"))
-    assert passport["passport"] == 2 and "migrate" not in passport["backend"]
+    assert passport["passport"] == 3 and "migrate" not in passport["backend"]
     schema = schema_name_of(passport["name"], passport["version"])
-    assert (schema, f"plg_{schema}") == ("notes_0_9_1", "plg_notes_0_9_1")
+    assert (schema, f"plg_{schema}") == ("notes_0_11_0", "plg_notes_0_11_0")

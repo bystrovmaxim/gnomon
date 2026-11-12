@@ -47,3 +47,13 @@ export function useOpenPanel() {
   const panel = usePanel();
   return (owner: string, path: string, query: Query = {}) => panel.send({ type: "panel.open", owner, path, query });
 }
+
+/**
+ * Tell the core what the page holds but its filters leave out now — the anchors of its hidden rows and elements —
+ * so a pointer at one of them is shown as hidden (spec 081, FR-013). Sent again whenever the list changes.
+ */
+export function usePanelHidden(anchors: readonly string[]): void {
+  const { send } = usePanel();
+  const key = anchors.join("\n");
+  useEffect(() => send({ type: "panel.hidden", anchors: [...anchors] }), [key, send]);
+}

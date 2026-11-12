@@ -380,7 +380,7 @@ def test_ci_does_not_wait_for_the_proof() -> None:
 def test_text_only_changes_skip_every_gate_job_but_versions() -> None:
     """Each heavy job names the ``changes`` job, so a text-only pull request does not run it."""
     workflow = (REPO_ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-    assert workflow.count("needs.changes.outputs.code == 'true'") == 3
+    assert workflow.count("needs.changes.outputs.code == 'true'") == 4
 
 
 def _pr_repo(tmp_path: Path) -> tuple[Path, Path]:

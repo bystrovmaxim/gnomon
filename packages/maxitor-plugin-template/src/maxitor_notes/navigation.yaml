@@ -1,7 +1,7 @@
 # navigation.yaml — the plugin's nodes in Maxitor's left tree.
 # The plugin only adds nodes: it attaches them to the root, to a node of Maxitor or to a node of a direct dependency.
 # Maxitor's installer builds the whole tree and refuses the installation if an attachment does not hold.
-navigation: 2
+navigation: 3
 nodes:
   # A section of its own in the root of the tree: the plugin needs nothing but the core, so it hangs its nodes here.
   - id: notes
@@ -29,20 +29,8 @@ nodes:
             # /w/<organization>/notes/items/<item_id>.
             page: /items/{item_id}
             roles: [member]
-            # The page's controls — the author filter, list or table — are the page's own: it gives them to the shell of
-            # @maxitor/panel, which draws them and writes them into the address. This file declares none.
-            room:
-              # Address parameters the whole room shares on this page: one participant switches the view, all see it.
-              shared: [view]
-              # Pointers travel as an anchor and a fraction inside it; the page marks its notes with data-room-anchor.
-              surface: document
-            # How the page answers the core's time scale. read is its reading action: over a stretch it counts the
-            # page's own bars. milestones and card are actions of the folder history/ (history/<name>_action.py). The
-            # comparisons are the passport's, as no compare narrows them here.
-            history:
-              read: list_item_notes
-              milestones: list_note_history
-              card: note_milestone_card
+            # The page's controls and its history are the page's own: it gives them to the shell of @maxitor/panel
+            # when it opens. This file holds the tree only.
 
           # The item's notes as the revision in force holds them: milestones alone on the scale, a point per revision.
           - id: item-published
@@ -51,9 +39,6 @@ nodes:
             order: 110
             page: /items/{item_id}/published
             roles: [member]
-            history:
-              milestones: list_note_history
-              card: note_milestone_card
 
           # What changed since the last revision. The draft is a comparison already: it offers one moment only.
           - id: item-draft
@@ -62,5 +47,3 @@ nodes:
             order: 120
             page: /items/{item_id}/draft
             roles: [member]
-            history:
-              compare: []

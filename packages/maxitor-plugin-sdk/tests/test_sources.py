@@ -9,7 +9,7 @@ import pytest
 from maxitor_plugin_sdk.checks import action_names, source_problems
 
 NAVIGATION = {
-    "navigation": 2,
+    "navigation": 3,
     "nodes": [
         {
             "id": "notes",

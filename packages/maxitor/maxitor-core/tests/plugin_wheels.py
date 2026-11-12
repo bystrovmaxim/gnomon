@@ -6,7 +6,7 @@ from __future__ import annotations
 import io
 import zipfile
 
-PASSPORT = """passport: 2
+PASSPORT = """passport: 3
 id: run.aoa.maxitor.notes
 name: notes
 title: Notes
@@ -19,7 +19,7 @@ dependencies: []
 backend:
   app: maxitor_notes.app:create_app
 frontend:
-  build: maxitor_notes/_web
+  source: maxitor_notes/web
   navigation: maxitor_notes/navigation.yaml
 database:
   schema: maxitor_notes/schema.yaml
@@ -37,7 +37,7 @@ KEYS = """foreign_keys:
   - from: { table: note, columns: [organization_id, writer_id] }
     to:   { schema: core, table: user, columns: [organization_id, id] }
 """
-NAVIGATION = """navigation: 2
+NAVIGATION = """navigation: 3
 nodes:
   - id: tags
     attach: root
@@ -52,6 +52,11 @@ nodes:
 """
 
 
+#: The frontend's sources the wheel carries: the core builds them strictly by the lock.
+PACKAGE = '{"name": "maxitor-notes-web", "private": true, "dependencies": {"next": "^16.4.6"}}\n'
+LOCK = '{"lockfileVersion": 3, "packages": {"": {"name": "maxitor-notes-web", "dependencies": {"next": "^16.4.6"}}}}\n'
+
+
 def wheel(files: dict[str, str | None] | None = None) -> bytes:
     """The template's wheel; a file mapped to ``None`` is left out."""
     contents: dict[str, str | None] = {
@@ -60,6 +65,9 @@ def wheel(files: dict[str, str | None] | None = None) -> bytes:
         "maxitor_notes/schema.yaml": SCHEMA,
         "maxitor_notes/foreign-keys.yaml": KEYS,
         "maxitor_notes/navigation.yaml": NAVIGATION,
+        "maxitor_notes/web/package.json": PACKAGE,
+        "maxitor_notes/web/package-lock.json": LOCK,
+        "maxitor_notes/web/app/page.tsx": "export default function Page() { return null; }\n",
     } | (files or {})
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w") as archive:

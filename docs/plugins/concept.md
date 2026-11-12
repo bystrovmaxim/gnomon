@@ -4,7 +4,7 @@ What a Maxitor plugin is, what it is made of, how it is installed, where its dat
 
 The document is a concept. The commands `maxitor plugin ...` and the packages `maxitor-plugin-sdk` and `@maxitor/panel` are described as they will work; they do not exist yet. Versioned storage, on which a plugin's data stands, is described in [versioned-storage](versioned-storage.md) and not repeated here.
 
-In short: a plugin is a Python package (pip or a ready wheel) that carries a passport, its own AOA backend and its own built Next.js frontend. The core's installer installs it: reads the passport, checks the dependencies and that there is no cycle, and deploys each version once — a schema and a database user of its own, the tables the plugin declares in `schema.yaml` built by the core, the keys to the core from a declaration in a file — then the plugin joins the site. A plugin carries no SQL and no migrations. A person sees one site with one sign-in: the core's gateway accepts the session and passes each plugin a short signed token meant for it alone. The frame of the screen — the tree on the left, the row at the top and the right panel — belongs to the core: a plugin adds its nodes to the tree by a YAML declaration and gets the right panel when its node is open. Everything a person sees is written in the address, so Back, a link and a room work the same for every plugin.
+In short: a plugin is a Python package (pip or a ready wheel) that carries a passport, its own AOA backend and the sources of its own Next.js frontend, which the core builds with its own `@maxitor/panel`. The core's installer installs it: reads the passport, checks the dependencies and that there is no cycle, and deploys each version once — a schema and a database user of its own, the tables the plugin declares in `schema.yaml` built by the core, the keys to the core from a declaration in a file — then the plugin joins the site. A plugin carries no SQL and no migrations. A person sees one site with one sign-in: the core's gateway accepts the session and passes each plugin a short signed token meant for it alone. The frame of the screen — the tree on the left, the row at the top and the right panel — belongs to the core: a plugin adds its nodes to the tree by a YAML declaration and gets the right panel when its node is open. Everything a person sees is written in the address, so Back, a link and a room work the same for every plugin.
 
 ## Vocabulary
 
@@ -50,7 +50,7 @@ Separate containers are not a convenience but a condition of isolation. If all p
 The passport is YAML, because a person reads it in review and the installer reads it before installing. The file `maxitor-plugin.yaml` lies at the root of the Python package and travels in the wheel. The installer finds it by the entry point `maxitor.plugins` in the wheel's `entry_points.txt` — without unpacking or installing the package.
 
 ```yaml
-passport: 2                          # the format of the passport
+passport: 3                          # the format of the passport
 id: io.github.acme.notes             # the global id, never changes
 name: notes                          # the name in an installation: each version's schema and user, the path
 title: Notes
@@ -77,7 +77,7 @@ backend:
   app: acme_notes.app:create_app     # the AOA application factory
 
 frontend:
-  build: acme_notes/_web             # the built Next.js (standalone) inside the package
+  source: acme_notes/web             # the frontend's sources with package.json and package-lock.json; the core builds them
   navigation: acme_notes/navigation.yaml   # the plugin's nodes in the tree (section 7)
 
 database:
@@ -93,14 +93,15 @@ database:
 | `version` | strictly `x.y.z` (SemVer); equal to the version in the package's `pyproject.toml` |
 | `requires.maxitor` | the range of core versions — an edge to the node `maxitor` of the dependency graph (section 3.1) |
 | `dependencies` | the plugins this one cannot work without: `id`, a `version` range and a `source` — a pip package or a wheel at an address with a mandatory `sha256` |
-| `frontend.navigation` | the file with the plugin's tree nodes, pages and behaviour in a room |
+| `frontend.source` | the folder of the frontend's sources in the wheel: `package.json`, `package-lock.json` and the pages, without `node_modules`, `.next` or a built site (section 4.1) |
+| `frontend.navigation` | the file with the plugin's tree nodes and their pages: the tree only (navigation format 3) |
 | `history.compare` | optional: the comparisons its pages can draw beside one moment, out of `diff` and `side_by_side`; without it every page offers one moment only (section 7.9) |
 
 Why both `id` and `name`. `id` is unique in the world and stands in other plugins' dependencies. `name` is short and fits a schema name; two authors may both call a plugin `notes`, and then only one of them gets into one installation — the installer refuses the second and names the conflict.
 
 Version ranges are written as pip writes them (`>=2.1,<3`, `~=2.1`), and what "breaking" means is defined the same for the core and for plugins (section 3.4).
 
-The passport is checked by a JSON schema (`plugin-passport-2.schema.json`; format 1, which carried `backend.migrate`, is not read any more): an unknown field is an error, YAML is read by a safe loader without tags, the size is limited.
+The passport is checked by a JSON schema (`plugin-passport-3.schema.json`; format 1, which carried `backend.migrate`, and format 2, which carried a built site in `frontend.build`, are refused by name): an unknown field is an error, YAML is read by a safe loader without tags, the size is limited.
 
 ## 3. The core, dependencies and compatibility
 
@@ -134,7 +135,7 @@ Every edge of the graph is **an identifier and a version range**, as a pip requi
 | plugin → core | `requires.maxitor` | the core's version |
 | plugin → plugin | `dependencies[].version` | the version of the installed or incoming plugin |
 | plugin → Python SDK | `maxitor-plugin-sdk>=4.2,<5` in `pyproject.toml` | the SDK version in the plugin's environment |
-| plugin → frontend SDK | `@maxitor/panel` in `package.json` | the version the page reports in `panel.ready` |
+| plugin → frontend SDK | `@maxitor/panel` in `package.json` | none: the core builds every frontend with its own copy, so the page reports the core's library in `panel.ready` whatever `package.json` names |
 | plugin → Node | `requires.node` | the Node version on the server |
 
 A range is read by the rules of PEP 440 by one library — `packaging.specifiers`, the one pip uses. Nothing parses ranges by hand.
@@ -207,15 +208,32 @@ acme_notes/
     app.py               # the AOA application factory
     schema.yaml          # the plugin's tables, built by the core
     foreign-keys.yaml    # cross-plugin foreign keys
-    navigation.yaml      # tree nodes, pages, behaviour in a room
+    navigation.yaml      # tree nodes and their pages
     actions/ ...
     resources/ ...
-    _web/                # .next/standalone + .next/static + public, built beforehand
+    web/                 # the frontend's sources: package.json, package-lock.json, app/ — no node_modules, no .next
 acme_maxitor_notes-1.2.0.dist-info/
     entry_points.txt     # [maxitor.plugins] notes = acme_notes
 ```
 
-The author builds the frontend before the release; Next.js is not built on the server. The build holds no binary Node modules, otherwise the wheel would stop being `py3-none-any`; a plugin that needs them releases a wheel per platform.
+The wheel carries the frontend's sources, never a built site: the core builds them (section 4.1), so every page on the site is drawn by one `@maxitor/panel`, the core's.
+
+### 4.1. The core builds every frontend
+
+The installer builds a version's frontend before it deploys the version, outside any lock, in the builder image of the running core, `maxitor-plugin-builder:<core version>`. That image is built on the host from the `maxitor` package the first time it is needed: Node 22 pinned by digest and the core's own `@maxitor/panel` and `@maxitor/tokens` under `/maxitor/lib`. The steps, the first failure ending the build:
+
+1. the lock exists and asks for exactly what `package.json` asks for;
+2. every `@maxitor/*` entry of both is pointed at the core's copy; a name the core does not carry is refused;
+3. every other package of the lock is on the core's npm list (`maxitor/core/plugins/builder/npm-packages.txt`, made from the template's lock by `scripts/make_npm_list.py`) and resolved from `https://registry.npmjs.org/`; another name or host is refused by name;
+4. a container fetches the packages with `npm ci --ignore-scripts`: npm downloads only the lock's checked URLs, and no code of the plugin runs;
+5. a container with no network, as user 65534, runs `npm ci --offline` and `next build` with only the core's variables;
+6. the standalone server becomes the image `maxitor-plugin/<schema>-frontend:<sha12>-<core version>`.
+
+A build is recorded in `plugins.plugin_build`, one per version and core version: `building`, then `built` with its image or `failed` with the first error of the failing step — TypeScript's `app/page.tsx(12,7): error TS2322: …`, npm's `npm error …`. A version without a built build is not deployed: the install fails with `the frontend could not be built for the core <version>: <error>`, and `FrontendBuildFailedEvent` names the plugin, its version and the error.
+
+**Upgrading the core.** `plugins.frontend_generation` keeps the core version whose builds the site serves. After an upgrade the installer builds every enabled version for the new core, one at a time, while the old builds keep serving; once every one is built, the serving version moves to the new core in one transaction (`FrontendGenerationMovedEvent`) and the runner restarts each frontend on its new image. A failed build holds the move and is tried again an hour later; a version disabled everywhere stops holding it.
+
+**The author builds the same way.** `maxitor plugin build <path> --core <version>` runs the installer's own step in the same image and prints the image or the same first error. `--core` must be the installed `maxitor`. The template's CI builds it with the checkout's core and with the newest release of the lowest minor its `requires.maxitor` allows.
 
 Each plugin is installed into **its own virtual environment** — `<maxitor data>/plugins/<name>/<version>/venv`. Two versions of one library in two plugins do not get in each other's way. There is one Node on the server — the one the core declared; a plugin's `requires.node` must match it.
 
@@ -315,7 +333,7 @@ The site is one origin. The core's gateway takes every request and hands it on b
 
 The core's processes listen on `127.0.0.1`; each plugin version's backend and frontend run in Docker containers of their own, whose ports are published on `127.0.0.1` of the host only. From outside only the gateway is reachable.
 
-**Running.** The core's process `maxitor-plugin-runner` keeps every deployed version that is enabled in at least one organization running. For each it builds two images once — the backend on `python:<x.y>-slim` with the wheel and its requirements, the frontend on `node:22-slim` with the wheel's built pages — and runs a container of each: as user 65534, with no capabilities, no new privileges, a read-only file system, limits of memory, CPU and processes, and a network of its own version. A container reaches the database at `MAXITOR_PLUGIN_DB_ADDRESS` and the gateway at `MAXITOR_PLUGIN_GATEWAY_URL`, as the containers see them; it gets nothing of the core's settings. A runner has a name, `MAXITOR_RUNNER_NAME` (`maxitor` by default): its containers carry the label `maxitor.plugin.runner=<name>`, and it starts, watches and removes only those, so two stands on one host never stop each other's plugins. The runner records each container's address in `plugins.plugin_process` for the gateway, starts again a container that exited after a pause that doubles up to five minutes, removes the containers of a version no organization runs, and on its own start removes every container of its name a stopped runner left.
+**Running.** The core's process `maxitor-plugin-runner` keeps every deployed version that is enabled in at least one organization running. For each it builds the backend's image once, on `python:<x.y>-slim` with the wheel and its requirements, takes the frontend's image the installer built for the serving core version (section 4.1), and runs a container of each: as user 65534, with no capabilities, no new privileges, a read-only file system, limits of memory, CPU and processes, and a network of its own version. A container reaches the database at `MAXITOR_PLUGIN_DB_ADDRESS` and the gateway at `MAXITOR_PLUGIN_GATEWAY_URL`, as the containers see them; it gets nothing of the core's settings. A runner has a name, `MAXITOR_RUNNER_NAME` (`maxitor` by default): its containers carry the label `maxitor.plugin.runner=<name>`, and it starts, watches and removes only those, so two stands on one host never stop each other's plugins. The runner records each container's address in `plugins.plugin_process` for the gateway, starts again a container that exited after a pause that doubles up to five minutes, removes the containers of a version no organization runs, and on its own start removes every container of its name a stopped runner left.
 
 Each plugin has its own Next.js application with its own `basePath`, its own Next.js version and its own build. The browser's address bar always holds a core address `/w/<organization>/...`; a plugin's page lives in the right panel (section 7). Today the core's frontend is built with Vite; moving it to Next.js is separate work that comes before the first plugin.
 
@@ -440,7 +458,7 @@ The Maxitor screen is always one: on the left the navigation tree, at the top th
 The core's file `navigation.yaml` describes the structure of the core's tree. Every node with an `id` is an attachment node: plugins' nodes may stand under it. The core keeps no data of its own beyond organizations, people and plugins, so its tree is short: the organization's settings at the foot of the tree. Everything else in the tree comes from plugins, each in a section of its own or under a node of a plugin it depends on.
 
 ```yaml
-navigation: 2
+navigation: 3
 nodes:
   - id: settings
     title: Settings
@@ -463,7 +481,6 @@ nodes:
 | `page` | the template of the page's path inside the owner; `{name}` is a parameter of the scope; a node without `page` only groups |
 | `each` | makes the node a list: `source` is a reading action of the owner, `key` the name of the instance's parameter |
 | `roles` | the owner's roles needed to see the node |
-| `room` | the page's behaviour in a room (section 8) |
 | `children` | children |
 
 **The scope of parameters.** Each instance of a list node adds its key to the scope (`item_id`). Every descendant sees the parameters of all list nodes above it and puts them into `page` and into the parameters of its own lists. That is how contextual items come about: "Draft" under every item of the template knows its `item_id`.
@@ -476,7 +493,7 @@ A plugin describes its nodes in its own `navigation.yaml` and attaches each of i
 
 ```yaml
 # acme_notes/navigation.yaml
-navigation: 2
+navigation: 3
 nodes:
   - id: notes
     attach: root                       # a section of its own in the root of the tree
@@ -498,9 +515,6 @@ nodes:
             order: 100
             page: /items/{item_id}
             roles: [member]
-            room:
-              shared: [view]
-              surface: document
           - id: item-draft
             title: Draft
             icon: note
@@ -533,14 +547,13 @@ Disabling and removing only take nodes away, and an enabled plugin that needs an
 
 The builder refuses when:
 
-1. a file is navigation format 1, which declared controls ("navigation format 1 is not read; write format 2, without controls"), or fails the JSON schema (`navigation-2.schema.json`): an unknown field — `controls` among them — a wrong `id`, an unknown icon;
+1. a file is navigation format 1 or 2 ("navigation format 2 is not read; write format 3: the page gives its history and controls, and a room shares nothing"), a node declares `history`, `room` or `controls` (named: "'item-notes' declares history; …"), or the file fails the JSON schema (`navigation-3.schema.json`): an unknown field, a wrong `id`, an unknown icon;
 2. `attach` points at a node that does not exist, or at a plugin that is not a direct dependency;
 3. an `id` repeats within one owner;
 4. a `{name}` in `page` or in a list's parameters is not defined in the scope at the node's place;
 5. two list nodes with the same `key` stand one under the other;
 6. two nodes of one owner have the same `page` template — an address must point at one node;
-7. a name in `room.shared` is reserved (`at`, `mode`, `from` or starts with `_`);
-8. a list's `source` names no action of the owner: no file `actions/<name>_action.py` or `history/<name>_action.py` in its package; this is checked from the wheel, before any organization can install it.
+7. a list's `source` names no action of the owner: no file `actions/<name>_action.py` or `history/<name>_action.py` in its package; this is checked from the wheel, before any organization can install it.
 
 ### 7.4. List nodes at run time
 
@@ -597,7 +610,9 @@ The core and the plugin's page exchange `postMessage` messages. Each side accept
 
 | Message | Direction | Meaning |
 |---|---|---|
-| `panel.ready {build, surface}` | plugin → core | the page is ready; `build` is the plugin's version, `surface` the kind of surface (section 8) |
+| `panel.ready {build, shell, shellVersion}` | plugin → core | the page is ready; `build` is the plugin's version, `shell` whether it renders the shell of `@maxitor/panel`, and its version |
+| `panel.history {history}` | plugin → core | how the page answers the time scale (7.9), when it opens and whenever it gives a new one; the core keeps the last |
+| `panel.hidden {anchors}` | plugin → core | what the page holds but its filters leave out now |
 | `panel.navigate {path, query, mode}` | plugin → core | a person changed the page's state; `mode` is `push` or `replace` |
 | `panel.title {text}` | plugin → core | the page's title for the path in the core's row and the browser tab |
 | `panel.open {owner, path, query}` | plugin → core | go to a page of the core or of a direct dependency |
@@ -664,7 +679,7 @@ Every page of every plugin shows its controls in the same places and with the sa
 
 | Part | Place | What the page gives | What the shell decides |
 |---|---|---|---|
-| filters | top left | sections, rows (a colour disk of the palette, a label, absent from the data), the paint switch when two sections paint | 148 px, an accordion with one section open, folding behind a button on a phone |
+| filters | top left | sections of three kinds — a choice of values (a colour disk of the palette, a label, absent from the data), a text, a range of numbers or dates — and which choices paint | 148 px, an accordion with one section open; a long choice's search and "N more"; the paint switch when two sections paint; one button and a sheet from below on a phone |
 | layer pills | top centre | options with an icon and a count | one chosen, the parameter `layer`; on a phone the icon and the count |
 | bottom bar | bottom left | sections after the zoom, each behind a hairline: a choice of one, buttons, a switch; each item an icon of the shell's set | zoom out, the percentage, zoom in and fit first on a canvas; sections that do not fit fold into "⋯" on a phone |
 | page actions | top right, bottom right on a phone | buttons such as "New note" | shown only now: in the past and in a comparison everything is read only |
@@ -699,33 +714,54 @@ The rules of controls:
 - **Colours come from the palette** (`colour: green`), icons from the shell's set: a plugin's buttons look like every other plugin's.
 - **The content field is the plugin's.** On a document page the shell pads it clear of the controls; on a canvas the fitted scene stays clear of them. Inside it a plugin lays out what it likes.
 
+**Three kinds of filter.** A section is a choice of values, a text or a range, and that is all; a filter that is on or off is a choice of one value.
+
+| Kind | What the page gives | How it shows | Address |
+|---|---|---|---|
+| choice | `{title, param, rows, paints?, search?}`, rows in the order of how many records each holds | a colour disk — a person's disk with initials — and a label per row, no counts; more than eight rows: a search at the top, the first eight and "N more" | the rows switched on, absent when all are: `?status=active,trial` |
+| text | `{kind: "text", title, param, placeholder}` | a row with a magnifier and a field, in the page's words ("Account or email") | what is typed: `?q=anna` |
+| range | `{kind: "range", title, param, unit, min?, max?, presets?}` | two rows, From and To; a number typed in the row; a date chosen in the date range picker, the date first and how a moving bound is set under it | the bounds as written, either side open: `?balance=100..250`, `?created=now-90d..now` |
+
+A range of dates is named by its column ("Created"), never "Time", and never takes the time scale's look. A bound that moves with today — `now`, `now-90d`, `now/M`, `now-1y/y` — is counted from the real today whatever moment the page is read at. The page filters its own data by its address; it tells the core what its filters hide with `usePanelHidden(anchors)` (`panel.hidden`), so a pointer at a hidden row shows as hidden. Moving the paint switch repaints the content and opens the section it paints by.
+
+**The date pickers.** `openDateRangePicker({anchor, unit, min, max, value, presets})` answers `{from, to}` as the address writes them, or `null` when closed without a choice; `openDatePicker` with the same arguments answers one date. Both follow Apple's layout in Maxitor's colours and sizes: the core's ready stretches (today, the last 7, 30 and 90 days, this month, quarter and year, last year) with the page's own under a hairline, fields that take typing (`5 Mar 2026`, `2026-03-05`, `today`, `30 days ago`, `30d`) with an arrow that makes a date move with today or fixes it, two months (one for a date and on a phone) with wheels behind a month's title, and the foot with the choice in words. Nothing changes before Apply; Cancel, Escape and a press outside leave everything as it was. On a phone both are sheets from below with the ready stretches as chips.
+
+**A list lies whole on the canvas.** `DataTable` is a card at its full length in canvas units, moved and zoomed by the camera like everything else: no scroll of its own, no pages. Only the rows inside the view are drawn, and the canvas knows every row's place by its anchor (`useCanvas().locate`). Its head — the list's name, how many rows pass of how many, the column names — sticks to the top of the view while the rows go up under it. A column has a title and a kind of cell: text, mono, number, date, person, status. Several lists, a scheme and a picture lie on one canvas, each list with its own head.
+
 **The shell's boundary.** `maxitor-plugin-check` refuses a frontend whose page does not render `<PanelPage>`, which places an element `fixed`, or which raises a layer to the shell's (`--mx-layer-shell`, 30) or above, naming the file and the line; positioning, another component kit and the plugin's own colours inside the content field pass. `panel.ready` carries `shell` and the shell's version; a page without the shell opens under a red strip "This page has no Maxitor frame" on the local stand and in development, and is written to the console elsewhere.
 
 **Styles come from one place.** The package `@maxitor/tokens` holds colours, the palette (`grey`, `blue`, `green`, `amber`, `red`, `violet`, `teal`, `pink`), radii, shadows, blur, type sizes and spacing as CSS custom properties `--mx-*`; the core's frame and the shell and components of `@maxitor/panel`, with which a plugin draws its controls and its content (cards, tables, nodes on the canvas), draw with them. The core's check `check-tokens.mjs` holds the frame and `@maxitor/panel` to them.
 
 ### 7.9. History: what a page gives the time scale
 
-Every page reads any past moment: that is versioned storage, and needs no declaration. The core's time scale (bystrovmaxim/gnomon#98) draws the history of the open page from data the plugin gives; the plugin declares it, and keeps the actions that answer it in its folder `history/`, one per file (`history/<name>_action.py`).
+Every page reads any past moment: that is versioned storage, and needs no declaration. The core's time scale (bystrovmaxim/gnomon#98) draws the history of the open page from data the plugin gives. **The page gives its history, in its code**, to `PanelPage` — when it opens and whenever it gives a new one — and the plugin keeps the actions that answer it in its folder `history/`, one per file (`history/<name>_action.py`). Nothing of a page's history is declared in `navigation.yaml`; the passport says which comparisons the plugin's pages may draw.
 
 ```yaml
 # maxitor-plugin.yaml
 history:
   compare: [diff, side_by_side]     # the comparisons the pages can draw; none: one moment only
-
-# navigation.yaml, a node
-history:
-  compare: []                       # narrows the passport's list; never widens it
-  read: list_item_notes             # the page's reading action: over a stretch it gives the page's own bars
-  milestones: list_note_history     # an action of history/: the milestones in a stretch
-  card: note_milestone_card         # an action of history/: one milestone's card
 ```
+
+```tsx
+<PanelPage
+  title="Notes"
+  history={{
+    read: "list_item_notes",        // the page's reading action: over a stretch it gives the page's own bars
+    milestones: "list_note_history", // an action of history/: the milestones in a stretch
+    card: "note_milestone_card",    // an action of history/: one milestone's card
+    // compare: [] narrows the passport's list; never widens it. legend: the legend's words.
+  }}
+>
+```
+
+A page that gives no history is offered one moment only, with no bars and no milestones. The core checks every name a page gives against the version's actions and its passport's comparisons, kept when the version was checked; a name that does not hold is refused by name — an error in development, a line in the console elsewhere — and the rest of the history kept.
 
 - **Bars** count the page's changes in each stretch — added, changed, removed. A page that names no `bars` of its own gets them from its reading action run over the stretch: the same query and filters with the SDK's stretch condition, grouped by `maxitor_plugin_sdk.history.bars_of`. So the bars count exactly what the page shows, the author filter included.
 - **Milestones** are the events that matter on their own — a pull request, a release, a published revision — and the draft as a `proposal` whose `link` is its page. A milestone carries its `kind` (its look, from the core's fixed set), `minor` (a small point), and an optional `release` (a flag over it); the plugin gives each its meaning.
 - **A card** is data: author, what the milestone changed, short counts, and its `comment`, shown under the scale when the milestone is chosen. The core draws it; no control of the plugin runs in the core's frame.
 - **The context** of every question is the address — the organization, the node, the page's parameters, the stretch and the bar's width — never what is on the screen, so an answer below the watermark never changes and can be kept.
 
-The shapes are `maxitor-plugin-sdk`'s `history-1.schema.json`; `maxitor-plugin-check` refuses a page whose `compare` is wider than the passport's and a history name with no action in `history/`.
+The shapes are `maxitor-plugin-sdk`'s `history-1.schema.json` and `PageHistory` of `@maxitor/panel`.
 
 ## 8. The room
 
@@ -750,11 +786,10 @@ Works on every page that keeps the rules of section 7:
 
 | Room feature | Why it works by itself |
 |---|---|
-| **controls** | the layer, the choices and the filters are address parameters (7.8); those in `room.shared` are common to all |
+| **controls** | the layer, the choices and the filters are address parameters (7.8); a follower gets them with the leader's address |
 | **who is where** | the core knows each participant's panel address; the page key is the organization, the owner and the path |
 | **the common moment** | the moment is the address parameter `at`; changing the room's moment sends `panel.location` to all |
 | **following** | the follower gets the leader's panel address; the core replaces the window's address (piling up no history entries) and sends `panel.location` or opens a new `iframe` |
-| **shared page parameters** | a node's `room.shared` parameters (for example `view`) are common to all participants on that page: one changes it — the core sends the new address to the others; the last value wins |
 | **the version check** | `panel.ready {build}` gives the core each participant's plugin version |
 
 What a page must do:
@@ -765,29 +800,9 @@ What a page must do:
 
 ### 8.3. Level 2: pointers, viewport, selection
 
-Seeing another person's pointer makes sense only if both sides understand alike where it is: screens differ, zoom and scroll differ. So a pointer travels not in pixels but in **surface coordinates**, common to all participants. A plugin declares the page's surface in the node's `room.surface`:
+Seeing another person's pointer makes sense only if both sides understand alike where it is: screens differ, zoom and scroll differ. Every page's content lies on the canvas (7.7), so a pointer travels in **canvas units**, `{x, y}`, the same for every participant, and a follower's viewport is `{cx, cy, w, h}` in the same units. A room shares no parameter of a page's address: what a participant filters or chooses stays theirs, and a follower gets the leader's whole address. A plugin declares nothing for it: `<MaxitorCanvas>` knows its camera, converts the coordinates and draws the room's layer itself; an own engine gives a camera adapter. Elements carry stable keys in `data-room-anchor` — a record's `id`, not a row number — so a pointer can be brought to an element: a list's every row is known to the canvas by its anchor, drawn or not (`useCanvas().locate`).
 
-| `surface` | Coordinate | Viewport for a follower | What the plugin does |
-|---|---|---|---|
-| `none` (default) | — | — | nothing; the page has level 1 only |
-| `document` | an anchor and a fraction inside it: `{anchor: "note:7f3c", fx: 0.42, fy: 0.10}` | the top visible anchor and an offset | marks elements with stable keys `data-room-anchor`; `@maxitor/panel` does the rest |
-| `canvas` | a point in canvas units: `{x, y}` | `{cx, cy, w, h}` in the same units | nothing: the core's canvas knows its camera (7.7); an own engine gives a camera adapter |
-
-An anchor's key is what is the same for every participant: a record's `id`, not a row number and not a position on the screen. Two records with one key on a page is an error `@maxitor/panel` writes to the developer's console.
-
-```tsx
-// surface: document — mark the elements
-<li data-room-anchor={`note:${note.id}`}>{note.body}</li>
-
-// surface: document — the layer that draws others' pointers, clicks and selections
-<RoomLayer />
-
-// surface: canvas — nothing: <MaxitorCanvas> converts the coordinates and draws the room's layer itself
-```
-
-`<RoomLayer>` (on a canvas — the canvas itself) draws others' pointers **inside the plugin's page**: so they scroll and clip with the content and need no recalculation between windows on every frame. They look the same across Maxitor, because the component is shared.
-
-**A selection** is a shared pointer at an element: `room.focus {anchor}` for `document`, `{x, y, w, h}` for `canvas`. Participants see a frame in the colour of whoever selected.
+**A selection** is a shared pointer at an element: `room.focus {x, y, w, h}` in canvas units. Participants see a frame in the colour of whoever selected.
 
 Level 2 messages between a page and the core:
 
@@ -799,7 +814,7 @@ Level 2 messages between a page and the core:
 | `room.viewport {view}` | plugin → core → plugin | on a change, at most 10 a second |
 | `room.focus {target}` | plugin → core → plugin | on a selection; the last value wins |
 
-Here `at` is a surface coordinate, `view` the viewport in its units. The core adds the participant to a relayed message itself: a page cannot pose as another person. The core relays level 2 messages only to participants on the same page (the same page key and the same shared parameters), drops a message over 4 KB and thins out ones that come too often — just as Maxitor's rooms work today.
+Here `at` is a point in canvas units, `view` the viewport in the same units. The core adds the participant to a relayed message itself: a page cannot pose as another person. The core relays level 2 messages only to participants on the same page (the same page key and the same shared parameters), drops a message over 4 KB and thins out ones that come too often — just as Maxitor's rooms work today.
 
 ### 8.4. What the core checks
 
@@ -976,7 +991,7 @@ class AddNoteAction(BaseAction[AddNoteParams, ChangeResult]):
 
 `user.organization` is the organization of the address (`/p/notes/api/<organization>/notes`): the plugin's auth coordinator takes it from the path the gateway has already checked and puts it into the context beside the token's person, so a write and a read are bound to it alike. `item_access_decide` checks it again, and that the item is one of the organization's now, and answers `Allowed()` or `FORBIDDEN_OBJECT` (6.6): one answer for an item that does not exist and one of another organization. The role is already checked by `@check_roles`, so the step decides only about the organization and the item. The summary looks the organization's `id` up again, because the decision passes no state on. `versioning.change` takes the organization's lock, issues the time, hands out the resource inside the transaction and, after the commit, returns `changed_at` — all by section 3 of versioned storage.
 
-**5. Tree nodes.** In `navigation.yaml` — the section "Notes" in the root of the tree, under it the list node `item` whose instances come from the action `list_items`, and under every item its pages: "Notes" (`page: /items/{item_id}`) with `room: {shared: [view], surface: document}`, "Published notes" and "Draft", as in section 7.2. The page's controls are its own (section 7.8): it reads its authors from the action `list_note_authors` and gives them to the shell, with the choice of a list or a table. `maxitor plugin check` checks every `{item_id}` against the list node above it.
+**5. Tree nodes.** In `navigation.yaml` — the section "Notes" in the root of the tree, under it the list node `item` whose instances come from the action `list_items`, and under every item its pages: "Notes" (`page: /items/{item_id}`), "Published notes" and "Draft", as in section 7.2 — the tree only. The page's controls and its history are its own (sections 7.8, 7.9): it reads its authors from the action `list_note_authors` and gives them to the shell, with the choice of a list or a table. `maxitor plugin check` checks every `{item_id}` against the list node above it.
 
 **History.** An item's notes are published together under a number, `v1`, `v2`, with the draft between two revisions: the simplest model of a release. A model where every record goes through a lifecycle of its own — in work, shared, published, archived — is the plugin common data environment (bystrovmaxim/gnomon#106).
 
@@ -1087,7 +1102,7 @@ maxitor plugin check dist/acme_maxitor_notes-1.0.0-py3-none-any.whl
 26. The moment is the address parameter `at`; it never passes through `Date`.
 27. The organization is the first segment of every address; the gateway checks the person's membership in it, an organization-scoped action checks it again in its `@access_decide`, and every query is bound to it.
 28. Access is split three ways: the role in `@check_roles`, the organization and the object in one `@access_decide`, the work in aspects.
-29. A room works on every page; pointers travel in the coordinates of the surface declared in `room.surface`; a plugin has no room connection of its own.
+29. A room works on every page; pointers travel in canvas units; a room shares no parameter of a page's address; a plugin has no room connection of its own.
 30. A plugin has no canvas of its own: moving, zooming, the field and the camera come from the core's `<MaxitorCanvas>`, one for every plugin.
 31. A page's controls — filters, layer pills, the bottom bar's sections, its actions — are given by the page to the shell of `@maxitor/panel`, which draws them in the same places for every plugin; each is an address parameter; the core's names are refused; `maxitor-plugin-check` keeps the shell's boundary.
 32. Colours and sizes come from `@maxitor/tokens` and the core's palette; no code has numbers of its own.
@@ -1115,7 +1130,7 @@ Code breaks — a test catches it, each of these:
 17. ten switches of the mode give exactly ten history entries, and Back returns them one by one;
 18. `/p/<name>/<organization>/...` opened outside the panel is redirected to `/w/<organization>/<name>/...`;
 19. a follower in a room gets the leader's address and does not end following by itself; a page that answers `panel.location` with `panel.navigate` is caught by a test of `@maxitor/panel`;
-20. a change of a `room.shared` parameter reaches every participant on the page, and of a parameter not on the list — none;
+20. a change of a page's parameter by one participant reaches no other, except a follower, who gets the leader's whole address;
 21. the core relays a pointer from a plugin's page with the participant it assigned itself, and only to participants on the same page;
 22. a `postMessage` from another origin or of an unknown shape is dropped;
 23. a write of the panel router that changes `at`, `mode`, `from` or a `_…` name is refused, and so is a page that steps out of the shell (`maxitor-plugin-check`);

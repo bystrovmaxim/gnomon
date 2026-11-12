@@ -7,7 +7,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "maxitor-plugin-template"
-version = "0.9.1"
+version = "0.11.0"
 description = "The Maxitor plugin template: a small complete plugin, notes on its own items."
 readme = "README.md"
 license = "Apache-2.0"
@@ -37,6 +37,11 @@ aoa-fastapi-adapter = { path = "../../external/aoa/packages/aoa-fastapi-adapter"
 maxitor-plugin-sdk = { workspace = true }
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/maxitor_notes"]
-# The frontend's build (npm run build in web/) is kept out of git, so it is named here to travel in the wheel.
-artifacts = ["src/maxitor_notes/_web/**"]
+# The frontend travels as its sources, in maxitor_notes/web: Maxitor builds them with its own @maxitor/panel,
+# strictly by the lock file. Installed packages, a past build and npm's own settings stay behind.
+only-include = ["src/maxitor_notes", "web"]
+exclude = ["web/node_modules", "web/.next", "web/next-env.d.ts", "web/tsconfig.tsbuildinfo", "web/.npmrc"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src" = ""
+"web" = "maxitor_notes/web"

@@ -1,6 +1,6 @@
 # maxitor-plugin.yaml — the passport of the plugin: who it is and what it needs.
 # Maxitor's installer reads it from the wheel before installing anything.
-passport: 2
+passport: 3
 
 # The global identifier: reverse domain notation, never changes.
 id: io.github.bystrovmaxim.notes
@@ -10,12 +10,13 @@ title: Notes
 description: >
   Notes on the plugin's own items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.9.1
+version: 0.11.0
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 
 requires:
-  maxitor: ">=4.4,<5"
+  # 4.7 is the first core that reads navigation format 3, where a page gives its history (4.5 builds frontends).
+  maxitor: ">=4.7,<5"
   node: ">=22"
 
 # Plugins this one cannot work without. The template needs only Maxitor itself.
@@ -43,7 +44,9 @@ backend:
   app: maxitor_notes.app:create_app
 
 frontend:
-  build: maxitor_notes/_web
+  # The frontend's sources in the wheel: package.json, package-lock.json and the pages. Maxitor builds them with its
+  # own @maxitor/panel; the wheel carries no built site.
+  source: maxitor_notes/web
   navigation: maxitor_notes/navigation.yaml
 
 # The plugin carries no SQL and no migrations: it declares its tables, and Maxitor builds them.
