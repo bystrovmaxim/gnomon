@@ -606,6 +606,9 @@ await scenario("on a phone the shell folds: the filters into a button, the pills
   await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
   await phone.addCookies(await context.cookies());
   const p = await phone.newPage();
+  // The draft is empty after the publication above: a new note gives the phone a card of the draft to open.
+  const written = await p.request.post(`${BASE}/p/notes/api/${CODE}/notes`, { headers: { Origin: BASE }, data: { item_id: ITEM, body: "Check the limits on a phone" } });
+  expect(written.status() === 200, `a note for the phone answers ${written.status()}`);
   await p.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
   await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   const frame = p.frameLocator("iframe.mx-panel-frame");
