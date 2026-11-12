@@ -3,9 +3,10 @@
 // bottom: the milestones' lane — each point where it happened, from its kind —, the bars of the page's changes —
 // added green, changed amber, removed red —, the time axis with its dates, and the moment's chip. "Now" is a green
 // dashed line with nothing written on it; the future right of it is hatched. A click chooses a moment — on a point,
-// that milestone —, a drag of the handle moves it, a drag between A and B moves them both; dragging across a stretch
-// zooms into it, the wheel zooms round the pointer, Shift-wheel or a sideways swipe moves; on a phone a drag moves and
-// two fingers pinch.
+// that milestone —, a drag of the handle moves it; in a comparison a press on the top edge takes A there and one on
+// the axis B, Shift with a drag between A and B moves them both and Shift outside them centres them on the pointer;
+// dragging across a stretch zooms into it, the wheel zooms round the pointer, Shift-wheel or a sideways swipe moves;
+// on a phone a drag moves and two fingers pinch.
 "use client";
 
 import type { Bar, CardBlock, Milestone } from "@maxitor/panel/history";
@@ -49,7 +50,7 @@ export type Handle = "one" | "a" | "b";
 type Drag =
   | { kind: "handle"; handle: Handle; time: number }
   | { kind: "brush"; x0: number; x1: number }
-  | { kind: "range"; x0: number; a: number; b: number; shift: number; moved: boolean }
+  | { kind: "range"; x0: number; a: number; b: number; base: number; shift: number; moved: boolean }
   | { kind: "pan"; x0: number; view: View; moved: boolean }
   | { kind: "pinch"; distance: number; view: View; centre: number };
 
@@ -102,7 +103,7 @@ export function Track({
   const hatch = useId().replace(/:/g, "");
   const box = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, number>());
-  const [hover, setHover] = useState<{ x: number; y: number } | null>(null);
+  const [hover, setHover] = useState<{ x: number; y: number; shift: boolean } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const X = (time: number) => xOf(time, view, width);
   const T = (x: number) => timeAt(x, view, width);
@@ -163,7 +164,11 @@ export function Track({
     if (near.length === 0) return null;
     return near.reduce((best, next) => (Math.abs(X(next[1]) - x) < Math.abs(X(best[1]) - x) ? next : best))[0];
   };
-  /** Whether an x lies between A and B, where a drag moves them both. */
+  /** In a comparison the strip of A's chip and knob belongs to A, and the axis with the dates and B's chip to B. */
+  const stripAt = (y: number): Handle | null => (against === null ? null : y < top + KNOB + 3 ? "a" : y > base - KNOB - 3 ? "b" : null);
+  /** A shift of A and B kept inside the history and never past now. */
+  const shiftWithin = (shift: number, a: number, b: number): number => Math.min(Math.max(shift, domain.from - a), now - b);
+  /** Whether an x lies between A and B, where a drag with Shift moves them both. */
   const inRange = (x: number): boolean => against !== null && x > Math.min(X(against), X(shown)) && x < Math.max(X(against), X(shown));
   /** The handle a click at a time moves: the one moment, or the nearer of A and B. */
   const nearer = (time: number): Handle => (against === null ? "one" : Math.abs(time - against) < Math.abs(time - shown) ? "a" : "b");
@@ -177,9 +182,16 @@ export function Track({
       setDrag({ kind: "pinch", distance: Math.max(1, Math.abs(a - b)), view, centre: T((a + b) / 2) });
       return;
     }
-    const grabbed = nearHandle(x, localY(event.currentTarget, event.clientY));
-    if (grabbed) setDrag({ kind: "handle", handle: grabbed, time: T(x) });
-    else if (!phone && against !== null && inRange(x)) setDrag({ kind: "range", x0: x, a: Math.min(against, shown), b: Math.max(against, shown), shift: 0, moved: false });
+    const y = localY(event.currentTarget, event.clientY);
+    const grabbed = nearHandle(x, y) ?? stripAt(y);
+    if (grabbed) setDrag({ kind: "handle", handle: grabbed, time: Math.min(Math.max(T(x), domain.from), now) });
+    else if (!phone && against !== null && event.shiftKey) {
+      // Shift between A and B takes them both; Shift outside them centres them on the pointer, and a drag goes on.
+      const a = Math.min(against, shown);
+      const b = Math.max(against, shown);
+      const base = inRange(x) ? 0 : shiftWithin(T(x) - (a + b) / 2, a, b);
+      setDrag({ kind: "range", x0: x, a, b, base, shift: base, moved: base !== 0 });
+    }
     else if (phone) setDrag({ kind: "pan", x0: x, view, moved: false });
     else setDrag({ kind: "brush", x0: x, x1: x });
   };
@@ -187,7 +199,7 @@ export function Track({
     const x = localX(event.currentTarget, event.clientX);
     if (pointers.current.has(event.pointerId)) pointers.current.set(event.pointerId, x);
     if (!drag) {
-      setHover({ x, y: localY(event.currentTarget, event.clientY) });
+      setHover({ x, y: localY(event.currentTarget, event.clientY), shift: event.shiftKey });
       return;
     }
     if (drag.kind === "pinch") {
@@ -197,7 +209,7 @@ export function Track({
     } else if (drag.kind === "handle") setDrag({ ...drag, time: Math.min(Math.max(T(x), domain.from), now) });
     else if (drag.kind === "brush") setDrag({ ...drag, x1: x });
     else if (drag.kind === "range") {
-      const shift = Math.min(Math.max(T(x) - T(drag.x0), domain.from - drag.a), now - drag.b);
+      const shift = shiftWithin(drag.base + T(x) - T(drag.x0), drag.a, drag.b);
       setDrag({ ...drag, shift, moved: drag.moved || Math.abs(x - drag.x0) > CLICK });
     } else {
       const dx = x - drag.x0;
@@ -213,7 +225,7 @@ export function Track({
     if (!was || was.kind === "pinch") return;
     const x = localX(event.currentTarget, event.clientX);
     if (was.kind === "handle") return onChoose(was.time, was.handle);
-    if (was.kind === "range" && was.moved) return onRange(was.a + was.shift, was.b + was.shift);
+    if (was.kind === "range") return was.moved ? onRange(was.a + was.shift, was.b + was.shift) : undefined;
     if (was.kind === "brush" && Math.abs(was.x1 - was.x0) > CLICK) return onView({ from: T(Math.min(was.x0, was.x1)), to: T(Math.max(was.x0, was.x1)) }, true);
     if (was.kind === "pan" && was.moved) return;
     const y = localY(event.currentTarget, event.clientY);
@@ -241,7 +253,7 @@ export function Track({
   return (
     <div
       ref={box}
-      className={`mx-track${drag && drag.kind !== "brush" && !(drag.kind === "range" && !drag.moved) ? " grabbing" : ""}${!drag && hover && !phone && inRange(hover.x) && nearHandle(hover.x, hover.y) === null ? " over-range" : ""}`}
+      className={`mx-track${drag && drag.kind !== "brush" && !(drag.kind === "range" && !drag.moved) ? " grabbing" : ""}${!drag && hover && (nearHandle(hover.x, hover.y) ?? stripAt(hover.y)) ? " over-handle" : !drag && hover?.shift && !phone && against !== null ? " over-range" : ""}`}
       style={{ height }}
       onPointerDown={down}
       onPointerMove={move}

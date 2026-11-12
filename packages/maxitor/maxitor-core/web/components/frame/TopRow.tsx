@@ -107,8 +107,6 @@ export function TopRow({
           <div className="mx-menu left">
             <div className="mx-menu-group">Your organizations</div>
             {orgItems}
-            <hr />
-            <a className="mx-menu-item" href="/new"><Icon.plus />Register an organization</a>
           </div>
         ) : null}
       </div>

@@ -149,7 +149,7 @@ export function ScaleCard({
       <div className="mx-card-hint">
         {phone
           ? "Drag to move · tap to choose"
-          : `Drag across the scale to zoom into a stretch${mode !== "one" ? " · drag between A and B to move both" : ""} · wheel to zoom · Shift-wheel or swipe sideways to move · click to choose`}
+          : `Drag across the scale to zoom into a stretch${mode !== "one" ? " · drag A along the top edge, B along the axis · Shift-drag between them moves both, Shift-click centres them" : ""} · wheel to zoom · Shift-wheel or swipe sideways to move · click to choose`}
       </div>
       {under}
     </div>

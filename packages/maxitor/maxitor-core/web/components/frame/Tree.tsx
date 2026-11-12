@@ -83,8 +83,10 @@ export function Tree({
     });
   }, [nodes, selected, level]);
 
-  // A moment changed: every list is read again at it.
-  useEffect(() => setParts({}), [at]);
+  // A moment changed, or the panel entered or left a section — Back included —: every list is read again, so what
+  // changed meanwhile, or failed to be read before, shows without reloading the page.
+  const levelKey = level === null ? "" : `${level.node.name}|${JSON.stringify(level.scope)}`;
+  useEffect(() => setParts({}), [at, levelKey]);
 
   const load = useCallback(
     async (node: TreeNode, scope: Scope, after: string | null) => {

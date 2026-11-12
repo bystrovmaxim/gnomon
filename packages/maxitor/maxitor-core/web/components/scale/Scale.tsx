@@ -111,12 +111,20 @@ export function Scale({
   const [hideSmall, setHideSmall] = useState(false);
   useEffect(() => setHideSmall(window.localStorage.getItem(SMALL_KEY) === "1"), []);
 
-  // The milestones of the whole history, read again when "now" moves; and where the history starts.
+  // The milestones of the whole history, read again when "now" moves; and where the history starts. What was read is
+  // kept while the same page reads them again — a new moment, a filter —, so the history does not shrink meanwhile and
+  // take the stretch in view with it; another page starts empty.
   const [milestones, setMilestones] = useState<Milestone[] | null>(null);
   const [firstBar, setFirstBar] = useState<string | null>(null);
   useEffect(() => {
     setMilestones(null);
-    if (!source?.milestones || !watermark) return;
+    setFirstBar(null);
+  }, [page]);
+  useEffect(() => {
+    if (!source?.milestones || !watermark) {
+      setMilestones(null);
+      return;
+    }
     let live = true;
     source
       .milestones(EPOCH, watermark)
@@ -134,8 +142,10 @@ export function Scale({
     };
   }, [onMilestones, page, setup, source, watermark]);
   useEffect(() => {
-    setFirstBar(null);
-    if (!source?.bars || !watermark) return;
+    if (!source?.bars || !watermark) {
+      setFirstBar(null);
+      return;
+    }
     let live = true;
     const now = msOf(watermark);
     // A coarse bar of thirty days finds the month the history starts in; hour bars inside it find the hour.

@@ -161,7 +161,7 @@ The canvas lies on the graph viewer's surface with its dots; the tree's pictogra
 
 ### User Story 6 - The template's Draft and Published as their accepted mockup draws them (Priority: P2)
 
-Published's head is the mockup's — the ref as a chip, the title, one line of who published it and when, the release, how many notes by how many authors, read only — and ends with `Your draft: N`. Every published note's card says, always and the same way, who wrote it and when it last changed, and under its text `Last change by <person>`. Before the first publication the card says nothing is published yet. After publishing, the panel opens Published with the new publication. The bottom bar holds the zoom alone. Published filters by Authors, Written and Last change.
+Published's head is the mockup's — the ref as a chip, the title, one line of who published it and when, the release, how many notes by how many authors, read only — and ends with `Your draft: N`. Every published note's card says, always and the same way, who wrote it — their disk and name — and when it last changed, and under its text `Last change by <person>`. Before the first publication the card says nothing is published yet. After publishing, the panel opens Published with the new publication. The bottom bar holds the zoom alone. Published filters by Authors, Written and Last change.
 
 **Why this priority**: The template's pages are the first pages on the scale; they must be what the maintainer accepted.
 
@@ -260,7 +260,7 @@ On a phone the card is a sheet, Side by side shows one panel at a time switched 
 
 #### Comparisons
 
-- **FR-018**: Diff and Side by side MUST add `mode` and `from` to the address beside `at`; the plugin concept MUST reserve `mode` and `from` as it reserves `at`; no mode MUST write any data; an address with a mode the page does not offer MUST open its `at` as one moment. A and B MUST be two handles — A's knob on the top edge of the scale's body, B's on the axis, each chip as far from its knob —, so where they meet the upper half moves A and the lower B; a drag between them MUST move both, the stretch between them kept and B never past now.
+- **FR-018**: Diff and Side by side MUST add `mode` and `from` to the address beside `at`; the plugin concept MUST reserve `mode` and `from` as it reserves `at`; no mode MUST write any data; an address with a mode the page does not offer MUST open its `at` as one moment. A and B MUST be two handles — A's knob on the top edge of the scale's body, B's on the axis, each chip as far from its knob —, so where they meet the upper half moves A and the lower B; a press on the top edge MUST take A there and one on the axis B; a drag between them MUST zoom into the stretch as anywhere else, Shift with a drag between them MUST move both, and Shift outside them MUST centre them on the pointer, the stretch between them kept and B never past now.
 - **FR-019**: The core MUST lay out the panels and give each page its context — One: `at`; Diff: `at` = B, `against` = A; Side by side: panel A `at` = A, `against` = B, `side` = `a`, panel B `at` = B, `against` = A, `side` = `b` —, sent with `panel.location`; the page MUST draw one canvas from its context and never know how many panels there are.
 - **FR-020**: Side by side MUST be laid out as the graph viewer's `SideBySide`: two panels, each with its head — its letter, A brown and B blue, its moment — and its own camera, and Track at the end of B's head, on by default; on a phone one panel at a time with an A / B switch, opening on B.
 - **FR-021**: The address parameters MUST be one for both panels: a filter, a view or a paint switched in one is switched in the other.
@@ -300,7 +300,8 @@ On a phone the card is a sheet, Side by side shows one panel at a time switched 
 #### The template's pages
 
 - **FR-042**: Published's head MUST be the accepted mockup's — the chip `vN`, the title in bold, one line `<person> published it <when> · release <name> · <n> notes by <m> authors · read only` — and MUST end with `Your draft: N` when changes wait in my draft, opening Draft; nothing of it MUST stand loose on the canvas.
-- **FR-042a**: Every published note's card MUST always show its writer and the time of its last change in its head and `Last change by <person>` under its text, the same for every note whoever changed it.
+- **FR-042a**: Every note's card, on Published and on Draft, MUST show its writer's disk — their initials in their own colour, as the Authors filter draws them — with the name and under it the time, each cut short with an ellipsis in a narrow card and said whole on hover; every published note's card MUST always show its writer and the time of its last change in its head and `Last change by <person>` under its text, the same for every note whoever changed it.
+- **FR-042b**: The canvas's field of dots MUST stand still whatever the camera does, as the ERD's; a faded element under the pointer or lit from the other panel MUST be drawn whole, as on the ERD.
 - **FR-043**: Published before the first publication MUST say nothing is published yet and hold `Your draft: N`; "Nothing to show — the Authors filter hides every published note" MUST be said only when the Authors filter hides every note of a publication.
 - **FR-044**: A publication that succeeds MUST close its dialog and open the item's Published showing it; the draft starts empty.
 - **FR-045**: On Draft and on Published the bottom bar MUST hold the zoom alone.
