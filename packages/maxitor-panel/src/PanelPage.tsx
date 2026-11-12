@@ -10,6 +10,7 @@ import { PHONE_MEDIA } from "@maxitor/tokens";
 
 import { usePanelQuery, usePanelRouter } from "./hooks";
 import { usePanel } from "./PanelProvider";
+import { NO_HISTORY } from "./protocol";
 import { Actions } from "./shell/Actions";
 import { actionsShown, isMissing, LAYER, milestoneActions, withParam } from "./shell/address";
 import { BottomBar } from "./shell/BottomBar";
@@ -57,10 +58,11 @@ export function PanelPage({
   // The provider sends panel.ready after its children mounted: it says then that this page renders the shell.
   markShell();
   useEffect(() => send({ type: "panel.title", text: title }), [send, title]);
-  // The page gives its history when it opens and whenever it gives a new one; the core keeps only the last.
+  // The page gives its history when it opens and whenever it gives a new one; the core keeps only the last. A page
+  // without one says so — no comparison —, or the core would keep a comparison the address carried from another page.
   const historyKey = JSON.stringify(history ?? null);
   useEffect(() => {
-    if (history) send({ type: "panel.history", history });
+    send({ type: "panel.history", history: history ?? NO_HISTORY });
   }, [historyKey, send]);
 
   const query = usePanelQuery();
