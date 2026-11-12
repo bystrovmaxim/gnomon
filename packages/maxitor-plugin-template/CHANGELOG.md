@@ -5,6 +5,20 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] — 2026-11-12
+
+### Added
+
+- **Published and Draft on the time scale.** Their history is format 2: bars from their reading actions over a stretch, at `history/list_published_notes` and `history/list_note_draft`; their publications as points of two kinds, `published` purple and `rollback` red, one size and no flags; a card of blocks; Draft offers Diff and Side by side too. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))
+- **Roll back.** `RollbackPublicationAction` publishes the notes of a past revision again as the next one, naming it in `revision.back_revision`; a note it held is opened again, one it did not is closed, the revisions between and every draft are untouched. Published offers it exactly on a past publication, asks for a title and a comment and says what it changes against now, then returns the screen to now. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))
+- **A note says who and when.** Every card on Published and Draft shows its writer's disk with the name and under it the time, each cut short in a narrow card and said whole on hover; a published one always shows its writer and the time of its last change in its head, and `Last change by <person>` under its text. In a comparison a step's change card stands beside its note, and Draft brings the step into view as Published does. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))
+- **Comparing.** In Diff and Side by side each note wears what happened to it between A and B — its halo, the rest faded while the changes paint —, the filter's Changes comes first, the notes B lost stand faintly in Diff, the stepper walks the changes grouped by author with each one's card, and the pill counts them. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))
+
+### Changed
+
+- **Draft and Published as their mockup draws them.** Published's head is the revision's ref, its title, who published it and when, its release, how many notes by how many authors, and `Your draft: N`; publishing opens Published; the filters Written and Last change are read on the server, beside the table's columns of the same names. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))
+- `requires.maxitor` is `>=4.11,<5`, and `maxitor-plugin-sdk` `>=1.9`.
+
 ## [0.14.0] — 2026-11-12
 
 ### Changed

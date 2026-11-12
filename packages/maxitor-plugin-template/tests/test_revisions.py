@@ -182,3 +182,64 @@ async def test_the_published_notes_at_a_past_moment_are_the_revision_in_force_th
     revision, notes = await storage.published_notes(ORG, ITEM, "2026-11-09T17:30:00.000000Z")
     assert revision.ref == "v5"
     assert [note.body for note in notes] == ["Old text"]
+
+
+OTHER = "55555555-5555-5555-5555-555555555555"
+V3_AT = "2026-11-04T12:00:00.000000Z"
+
+
+def _held(note_id, body):
+    """A note as revision 3 held it."""
+    return {"id": note_id, "item_id": ITEM, "writer_id": ANN, "writer_name": "Anna", "body": body, "updated_at": V3_AT, "since": V3_AT, "changed_by": "Anna"}
+
+
+def rollback_script(**over):
+    """The publishing script, and revision 3's moment for the rollback to read its notes at."""
+    base = script(**over)
+
+    def answer(query, params):
+        if "AS at FROM revision WHERE" in query:
+            return {"at": V3_AT}
+        return base(query, params)
+
+    return answer
+
+
+async def test_a_rollback_publishes_the_notes_of_a_past_revision_as_the_next_one_and_names_it() -> None:
+    storage, connection = await _open(
+        rollback_script(
+            published=[_published(body="Retry five times"), _published(id=OTHER, body="Payouts twice a day")],
+            notes=[_held(NOTE, "Retry three times")],
+        )
+    )
+    number, moment = await storage.rollback_publication(ORG, ITEM, 3, "Back to v3", "The retry change broke the import.", ANN, "RollbackPublicationAction")
+    assert (number, moment) == (7, NOW)
+    queries = connection.queries()
+    update = next(statement for statement in connection.statements if statement[0].startswith("UPDATE note SET body"))
+    assert update[1][2] == "Retry three times"
+    assert any(query.startswith("DELETE FROM note WHERE") for query in queries)
+    revision = next(statement for statement in connection.statements if statement[0].startswith("INSERT INTO revision "))
+    assert (revision[1][3], revision[1][4], revision[1][9]) == (7, "Back to v3", 3)
+    # Nothing of anyone's draft is touched, and the revisions between stay as they are.
+    assert not any("note_change" in query for query in queries if query.startswith(("DELETE", "UPDATE", "INSERT")))
+    assert not any(query.startswith("UPDATE revision") or query.startswith("DELETE FROM revision") for query in queries)
+    assert queries[-1] == "COMMIT"
+
+
+async def test_a_rollback_opens_again_a_note_the_item_no_longer_publishes() -> None:
+    storage, connection = await _open(
+        rollback_script(published=[], deleted=[{"id": NOTE, "by_name": "Olga", "at": OLGA_AT}], notes=[_held(NOTE, "Tokens rotate every 90 days")])
+    )
+    await storage.rollback_publication(ORG, ITEM, 3, "Back to v3", "Tokens are back.", ANN, "RollbackPublicationAction")
+    insert = next(statement for statement in connection.statements if statement[0].startswith("INSERT INTO note "))
+    assert insert[1][4] == "Tokens rotate every 90 days"
+
+
+@pytest.mark.parametrize("to_revision, last", [(6, (6, BASE)), (9, (6, BASE)), (1, None)])
+async def test_only_a_revision_older_than_the_one_in_force_is_brought_back(to_revision, last) -> None:
+    storage, connection = await _open(rollback_script(last=last))
+    with pytest.raises(NotesRefusalError) as refusal:
+        await storage.rollback_publication(ORG, ITEM, to_revision, "Back", "Why", ANN, "RollbackPublicationAction")
+    assert (refusal.value.status, refusal.value.body["error"]) == (422, "not_a_past_revision")
+    assert not any(query.startswith(("INSERT", "UPDATE", "DELETE")) for query in connection.queries())
+    assert connection.queries()[-1] == "ROLLBACK"

@@ -7,10 +7,15 @@ import pytest
 import yaml
 from jsonschema import Draft202012Validator
 from maxitor_notes.actions.list_item_notes_action import ListItemNotesAction, ListItemNotesParams
+from maxitor_notes.entities.milestone_card_entity import MilestoneCardCoreEntity
 from maxitor_notes.entities.note_author_entity import NoteAuthorCoreEntity
 from maxitor_notes.entities.note_entity import NoteCoreEntity
 from maxitor_notes.history.list_note_history_action import ListNoteHistoryAction, ListNoteHistoryParams
-from maxitor_notes.history.note_milestone_card_action import NoteMilestoneCardAction, NoteMilestoneCardParams
+from maxitor_notes.history.note_milestone_card_action import (
+    NoteMilestoneCardAction,
+    NoteMilestoneCardParams,
+    card_blocks,
+)
 from maxitor_notes.notes_refusal_error import NotesRefusalError
 from maxitor_notes.storage.notes_storage import NotesStorage
 from maxitor_plugin_sdk import history as sdk_history
@@ -24,7 +29,7 @@ ORG = "11111111-1111-1111-1111-111111111111"
 ANN = "33333333-3333-3333-3333-333333333333"
 NOW = "2026-11-10T11:24:00.000000Z"
 V1, V2, V3 = "2026-10-09T12:00:00.000000Z", "2026-10-20T16:00:00.000000Z", "2026-11-08T15:00:00.000000Z"
-SCHEMA = json.loads((Path(sdk_history.__file__).parent / "schemas" / "history-1.schema.json").read_text())
+SCHEMA = json.loads((Path(sdk_history.__file__).parent / "schemas" / f"history-{sdk_history.HISTORY_FORMAT}.schema.json").read_text())
 PACKAGE = Path(__file__).resolve().parents[1] / "src" / "maxitor_notes"
 
 
@@ -112,32 +117,49 @@ def test_a_stretch_comes_whole_never_with_a_moment_and_ends_after_it_starts(extr
         ListItemNotesParams(item_id=ITEM, **extra)
 
 
-async def test_the_milestones_are_the_revisions_in_order_with_the_draft_last() -> None:
+async def test_the_milestones_are_the_publications_in_order_of_the_kind_published() -> None:
     storage, _connection = await _open()
     milestones = await storage.milestones(ORG, ITEM, "2026-10-01T00:00:00.000000Z", "2026-12-01T00:00:00.000000Z")
-    assert [(m.id, m.kind, m.minor, m.release) for m in milestones] == [
-        ("v1", "revision", False, None),
-        ("v2", "revision", False, "handbook 2026.10"),
-        ("v3", "revision", True, None),
-        ("draft", "proposal", False, None),
-    ]
-    assert milestones[-1].link == f"/items/{ITEM}/draft"
-    _valid("milestones", {"milestones": [m.model_dump() for m in milestones]})
+    assert [(m.id, m.kind, m.comment) for m in milestones] == [("v1", "published", "Agreed"), ("v2", "published", "Threshold 0.80"), ("v3", "published", "Only wording")]
+    _valid("milestones", {"milestones": [m.model_dump(exclude_none=True) for m in milestones]})
 
 
 async def test_a_stretch_takes_only_the_revisions_published_in_it() -> None:
     storage, _connection = await _open()
     milestones = await storage.milestones(ORG, ITEM, "2026-10-21T00:00:00.000000Z", "2026-12-01T00:00:00.000000Z")
-    assert [m.id for m in milestones] == ["v3", "draft"]
+    assert [m.id for m in milestones] == ["v3"]
 
 
-async def test_a_card_counts_what_the_revision_changed_and_carries_its_comment() -> None:
+async def test_a_card_is_the_blocks_of_a_publication_what_it_changed_its_notes_and_its_release() -> None:
     storage, _connection = await _open()
     card = await storage.milestone_card(ORG, ITEM, "v2", None)
-    assert (card.summary, card.chips, card.comment, card.author_name, card.release) == ({"added": 1, "changed": 1, "removed": 0}, ["3 notes"], "Threshold 0.80", "Olga", "handbook 2026.10")
-    _valid("card", card.model_dump())
-    draft = await storage.milestone_card(ORG, ITEM, "draft", None)
-    assert draft.summary == {"added": 0, "changed": 0, "removed": 1}
+    assert (card.summary, card.notes, card.comment, card.author_name, card.release) == ({"added": 1, "changed": 1, "removed": 0}, 3, "Threshold 0.80", "Olga", "handbook 2026.10")
+    blocks = card_blocks(card)
+    assert blocks == [
+        {"line": [{"badge": {"icon": "tag", "label": "Published", "tone": "purple"}}, {"ref": "v2"}, {"ago": V2}]},
+        {"title": "Fraud review"},
+        {"person": {"id": ANN, "name": "Olga"}},
+        {"chips": [{"chip": "3 notes"}, {"text": "+1 note · 1 changed"}, {"release": "handbook 2026.10"}]},
+    ]
+    _valid("card", {"blocks": blocks})
+
+
+def test_a_rollback_card_carries_the_red_badge_and_names_the_revision_it_brought_back() -> None:
+    card = MilestoneCardCoreEntity(id="v4", at=V3, kind="rollback", ref="v4", title="Back to v2", summary={"added": 0, "changed": 0, "removed": 1}, notes=2, comment="Back", back=2)
+    blocks = card_blocks(card)
+    assert blocks[0]["line"][0] == {"badge": {"icon": "undo", "label": "Rolled back", "tone": "red"}}
+    assert blocks[2] == {"text": "to v2 · everything published after it stays in the history"}
+    assert blocks[-1] == {"chips": [{"chip": "2 notes"}, {"text": "−1 note"}]}
+    _valid("card", {"blocks": blocks})
+
+
+async def test_a_revision_that_brought_another_back_is_a_milestone_of_the_kind_rollback(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setitem(REVISIONS[2], "back_revision", 1)
+    storage, _connection = await _open()
+    milestones = await storage.milestones(ORG, ITEM, "2026-10-01T00:00:00.000000Z", "2026-12-01T00:00:00.000000Z")
+    assert [(m.id, m.kind) for m in milestones] == [("v1", "published"), ("v2", "published"), ("v3", "rollback")]
+    card = await storage.milestone_card(ORG, ITEM, "v3", None)
+    assert (card.kind, card.back) == ("rollback", 1)
 
 
 async def test_an_unknown_milestone_is_not_found() -> None:
@@ -162,8 +184,15 @@ def test_the_pages_give_their_history_and_the_passport_its_comparisons() -> None
     passport = yaml.safe_load((PACKAGE / "maxitor-plugin.yaml").read_text())
     web = PACKAGE.parents[1] / "web" / "app" / "[org]" / "items" / "[item_id]"
     assert passport["history"] == {"compare": ["diff", "side_by_side"]}
-    assert 'history={{ milestones: "list_note_history", card: "note_milestone_card" }}' in (web / "published" / "PublishedView.tsx").read_text()
-    assert "history={{ compare: [] }}" in (web / "DraftView.tsx").read_text()
+    assert "history={PUBLISHED_HISTORY}" in (web / "published" / "PublishedView.tsx").read_text()
+    history = (PACKAGE.parents[1] / "web" / "app" / "[org]" / "notes" / "history.ts").read_text()
+    assert 'milestones: "list_note_history", card: "note_milestone_card", kinds: NOTE_KINDS' in history
+    assert 'read: "list_published_notes"' in history and 'read: "list_note_draft"' in history
+    assert 'title: "Roll back to {ref}", action: "rollback_publication", ask: true' in history
+    assert "published:" in history and "rollback:" in history and "small:" not in history and "flag:" not in history
+    assert "history={DRAFT_HISTORY}" in (web / "DraftView.tsx").read_text()
+    # Neither page narrows the passport's comparisons: Side by side stands on Draft too.
+    assert "compare:" not in (PACKAGE.parents[1] / "web" / "app" / "[org]" / "notes" / "history.ts").read_text()
     assert "history" not in (PACKAGE / "navigation.yaml").read_text().replace("# The page's controls and its history", "")
     assert {path.name for path in (PACKAGE / "history").glob("*_action.py")} == {"list_note_history_action.py", "note_milestone_card_action.py"}
 

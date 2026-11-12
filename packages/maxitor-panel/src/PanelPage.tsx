@@ -10,14 +10,15 @@ import { PHONE_MEDIA } from "@maxitor/tokens";
 
 import { usePanelQuery, usePanelRouter } from "./hooks";
 import { usePanel } from "./PanelProvider";
+import { NO_HISTORY } from "./protocol";
 import { Actions } from "./shell/Actions";
-import { actionsShown, isMissing, LAYER, withParam } from "./shell/address";
+import { actionsShown, isMissing, LAYER, milestoneActions, withParam } from "./shell/address";
 import { BottomBar } from "./shell/BottomBar";
 import { Filters } from "./shell/Filters";
 import { Layers } from "./shell/Layers";
 import { ShellContext, type Reserve, type Shell, type Zoom } from "./shell/ShellContext";
 import type { BarSection, FilterSection, Layers as LayersInput, PageAction } from "./shell/types";
-import type { PageHistory } from "./protocol";
+import type { MilestoneAction, PageHistory } from "./protocol";
 import "./shell/shell.css";
 
 /** The edge an element takes from the panel's side, or 0 when it is not drawn. */
@@ -36,6 +37,8 @@ export function PanelPage({
   bar = [],
   actions = [],
   history,
+  stepper,
+  onMilestoneAction,
   children,
 }: {
   title: string;
@@ -45,16 +48,21 @@ export function PanelPage({
   actions?: PageAction[];
   /** How the page answers the core's time scale; without it the page is offered one moment only (spec 082). */
   history?: PageHistory;
+  /** In a comparison, the page's ChangeStepper: it stands first in the row of actions (spec 079, FR-027). */
+  stepper?: ReactNode;
+  /** An action of the history's `actions` chosen on the milestone the moment stands on exactly. */
+  onMilestoneAction?: (action: MilestoneAction, milestone: string) => void;
   children: ReactNode;
 }) {
-  const { send, markShell } = usePanel();
+  const { send, markShell, context } = usePanel();
   // The provider sends panel.ready after its children mounted: it says then that this page renders the shell.
   markShell();
   useEffect(() => send({ type: "panel.title", text: title }), [send, title]);
-  // The page gives its history when it opens and whenever it gives a new one; the core keeps only the last.
+  // The page gives its history when it opens and whenever it gives a new one; the core keeps only the last. A page
+  // without one says so — no comparison —, or the core would keep a comparison the address carried from another page.
   const historyKey = JSON.stringify(history ?? null);
   useEffect(() => {
-    if (history) send({ type: "panel.history", history });
+    send({ type: "panel.history", history: history ?? NO_HISTORY });
   }, [historyKey, send]);
 
   const query = usePanelQuery();
@@ -103,7 +111,14 @@ export function PanelPage({
     [],
   );
 
-  const showActions = actions.length > 0 && actionsShown(own, at);
+  // At now the page's actions; exactly on a milestone, outside a comparison, the actions it offers there — "Roll back to
+  // v3" —; in a comparison the stepper alone.
+  const onMilestone: PageAction[] = onMilestoneAction
+    ? milestoneActions(history?.actions ?? [], context).map(({ title, action, milestone }) => ({ title, onClick: () => onMilestoneAction(action, milestone) }))
+    : [];
+  const shownActions = [...(actionsShown(own, at) ? actions : []), ...onMilestone];
+  const comparing = context.against !== null;
+  const showActions = shownActions.length > 0 || (comparing && Boolean(stepper));
   const content = [
     "mx-shell-content",
     zoom ? "canvas" : "document",
@@ -119,7 +134,7 @@ export function PanelPage({
         {filters.length ? <Filters sections={filters} query={own} write={write} /> : null}
         {layers ? <Layers layers={layers} query={own} write={write} /> : null}
         <BottomBar zoom={zoom} sections={bar} query={own} write={write} />
-        {showActions ? <Actions actions={actions} /> : null}
+        {showActions ? <Actions actions={comparing ? [] : shownActions} stepper={comparing ? stepper : undefined} /> : null}
       </div>
     </ShellContext.Provider>
   );

@@ -4,12 +4,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import type { HistoryAllowed } from "@maxitor/panel/protocol";
 
-import { PageFrame } from "@/components/frame/PageFrame";
+import { ComparedFrames } from "@/components/frame/SidePanels";
+import { useScale } from "@/components/scale/bridge";
 import { windowAddress, type PanelAddress } from "@/lib/address";
+import { laterThan, MOMENT_TEXT } from "@/lib/moment";
 import type { TreeNode } from "@/lib/tree";
 
 /** "No such page": an address of a node that is not in the person's tree. */
@@ -25,31 +27,11 @@ export function NoSuchPage({ code }: { code: string }) {
   );
 }
 
-/** A moment as the address writes it: UTC, to the microsecond at most. */
-const MOMENT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?Z$/;
-
 /** Whether the address's moment can be read: a moment, and not later than the organization's watermark. */
-function useMomentProblem(code: string, at: string | null): "not_a_moment" | "after_now" | null {
-  const [after, setAfter] = useState(false);
-  useEffect(() => {
-    setAfter(false);
-    if (!at || !MOMENT.test(at)) return;
-    let live = true;
-    void fetch(`/api/v1/organizations/${encodeURIComponent(code)}/watermark`, { cache: "no-store" })
-      .then((answer) => (answer.ok ? (answer.json() as Promise<{ at: string | null }>) : null))
-      .then((found) => {
-        // Both are UTC strings of one shape, so they compare as text; a shorter fraction is padded first.
-        const pad = (moment: string) => moment.replace(/(\.\d+)?Z$/, (_m, fraction?: string) => `${(fraction ?? ".").padEnd(7, "0")}Z`);
-        if (live && found?.at && pad(at) > pad(found.at)) setAfter(true);
-      })
-      .catch(() => undefined);
-    return () => {
-      live = false;
-    };
-  }, [at, code]);
+function momentProblem(at: string | null, watermark: string | null): "not_a_moment" | "after_now" | null {
   if (!at) return null;
-  if (!MOMENT.test(at)) return "not_a_moment";
-  return after ? "after_now" : null;
+  if (!MOMENT_TEXT.test(at)) return "not_a_moment";
+  return watermark && laterThan(at, watermark) ? "after_now" : null;
 }
 
 /** The address names a moment that cannot be read: say so and offer now. */
@@ -85,7 +67,7 @@ export function Panel({
   children: ReactNode;
 }) {
   const owner = address?.owner ?? null;
-  const problem = useMomentProblem(code, address?.at ?? null);
+  const problem = momentProblem(address?.at ?? null, useScale().watermark);
   if (address && problem) {
     return (
       <main className="mx-panel">
@@ -112,7 +94,7 @@ export function Panel({
   return (
     <main className="mx-panel">
       {/* Another owner is another frame: the key gives it a new frame and a new address. */}
-      <PageFrame
+      <ComparedFrames
         key={owner}
         code={code}
         address={address}

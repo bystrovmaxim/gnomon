@@ -7,7 +7,8 @@ PluginProcessesController — a deployed version's images and its containers on 
     <runtime>/<schema>/plugin.env         the version's database address and service key (written by the installer)
     image  maxitor-plugin/<schema>-backend:<sha>    python:<x.y>-slim, the wheel and its requirements installed
     image  maxitor-plugin/<schema>-frontend:<sha12>-<core version>   the installer's build of the frontend
-    network maxitor-<schema>                         the version's own; the database joins it when it is a container
+    network maxitor-<schema>                         the version's own, labelled with it and the runner; the database
+                                                     joins it when it is a container; removed with the version
     container maxitor-<schema>-<kind>   user 65534, no capabilities, no new privileges, read-only, its limits,
                                         its port published on 127.0.0.1 of the host only
 
@@ -235,7 +236,7 @@ class PluginProcessesController(BaseController):
         """Run one container and wait until it answers HTTP; raise ``RuntimeError`` otherwise."""
         name = f"{self._prefix}-{schema}-{kind}"
         await docker("rm", "--force", name)
-        network = await self._network(schema)
+        network = await self._network(schema, version_id)
         inner = INNER_PORTS[kind]
         command = [
             "run", "--detach", "--name", name,
@@ -289,20 +290,30 @@ class PluginProcessesController(BaseController):
             await docker("rm", "--force", container)
 
     async def stop(self, version_id: str) -> None:
-        """Remove every container of a version."""
+        """Remove every container of a version, then its network."""
         await self._remove(f"label={VERSION_LABEL}={version_id}")
+        await self._remove_networks(f"label={VERSION_LABEL}={version_id}")
 
     async def running_versions(self) -> set[str]:
-        """The versions with a plugin container on this host."""
+        """
+        The versions with a plugin container or a network of this runner on this host: a version whose containers are
+        gone but whose network is left is still here, so the round that stops what is not wanted removes that too.
+        """
         code, output = await docker(
             "ps", "--all", "--filter", f"label={VERSION_LABEL}", "--filter", f"label={RUNNER_LABEL}={self._runner}",
             "--format", f'{{{{.Label "{VERSION_LABEL}"}}}}',
         )
-        return set(output.split()) if code == 0 else set()
+        versions = set(output.split()) if code == 0 else set()
+        code, output = await docker(
+            "network", "ls", "--filter", f"label={VERSION_LABEL}", "--filter", f"label={RUNNER_LABEL}={self._runner}",
+            "--format", f'{{{{.Label "{VERSION_LABEL}"}}}}',
+        )
+        return versions | (set(output.split()) if code == 0 else set())
 
     async def stop_all(self) -> None:
-        """Remove every plugin container of this runner: it starts from nothing, or it is stopping."""
+        """Remove every plugin container and network of this runner: it starts from nothing, or it is stopping."""
         await self._remove(f"label={VERSION_LABEL}")
+        await self._remove_networks(f"label={VERSION_LABEL}")
 
     # ── inside ────────────────────────────────────────────────────────────────
 
@@ -317,6 +328,15 @@ class PluginProcessesController(BaseController):
         code, output = await docker("ps", "--all", "--quiet", "--filter", label, "--filter", f"label={RUNNER_LABEL}={self._runner}")
         if code == 0 and output:
             await docker("rm", "--force", *output.split())
+
+    async def _remove_networks(self, label: str) -> None:
+        # Docker gives a host about thirty networks: one left behind by every version stopped would use them up, and no
+        # version could start. The database's container is let go first, or the network counts as in use.
+        code, output = await docker("network", "ls", "--filter", label, "--filter", f"label={RUNNER_LABEL}={self._runner}", "--format", "{{.Name}}")
+        for name in output.split() if code == 0 else []:
+            if self._db_container:
+                await docker("network", "disconnect", "--force", name, self._db_container)
+            await docker("network", "rm", name)
 
     def _wheel(self, sha256: str) -> bytes:
         data = self._wheels.read(sha256)
@@ -356,11 +376,15 @@ class PluginProcessesController(BaseController):
         if code != 0:
             raise EnvironmentInstallError(build_failure(output, code))
 
-    async def _network(self, schema: str) -> str:
+    async def _network(self, schema: str, version_id: str) -> str:
         """The version's own network; the database's container joins it under the name ``maxitor-db``."""
         name = f"{self._prefix}-{schema}"
         if (await docker("network", "inspect", name))[0] != 0:
-            await docker("network", "create", name)
+            code, output = await docker(
+                "network", "create", "--label", f"{VERSION_LABEL}={version_id}", "--label", f"{RUNNER_LABEL}={self._runner}", name,
+            )
+            if code != 0:
+                raise RuntimeError(f"not_started: the network {name} could not be made: {output.splitlines()[-1] if output else code}")
         if self._db_container:
             await docker("network", "connect", "--alias", "maxitor-db", name, self._db_container)
         return name

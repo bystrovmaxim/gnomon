@@ -5,7 +5,7 @@ import type { Refusal } from "./notes";
 export type Answer<Data> = { ok: true; data: Data } | { ok: false; status: number; refusal: Refusal | null };
 
 /** One call of an action under /p/notes/api/<organization>. */
-export async function call<Data>(org: string, method: "POST" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<Answer<Data>> {
+export async function call<Data>(org: string, method: "GET" | "POST" | "PATCH" | "DELETE", path: string, body?: unknown): Promise<Answer<Data>> {
   try {
     const answer = await fetch(`/p/notes/api/${encodeURIComponent(org)}${path}`, {
       method,

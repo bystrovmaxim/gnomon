@@ -5,12 +5,12 @@
 // Outside a canvas the list lays one of its own.
 "use client";
 
-import { PALETTE, paletteColour, type PaletteColour } from "@maxitor/tokens";
 import { useEffect, useMemo, type ReactNode } from "react";
 
 import { MaxitorCanvas, useCanvasOrNull } from "../canvas/MaxitorCanvas";
 import { dayLabel } from "../pickers/dates";
-import { headOffset, initials, LIST_HEAD, LIST_ROW, LIST_WIDTH, listHeight, rowBounds, rowsInView, viewOf } from "./list";
+import { PersonDisk, personColour } from "./PersonDisk";
+import { headOffset, LIST_HEAD, LIST_ROW, LIST_WIDTH, listHeight, rowBounds, rowsInView, viewOf } from "./list";
 
 /** How a cell is drawn: plain text, monospace, a number, a date, a person with a disk, a status with a dot. */
 export type CellKind = "text" | "mono" | "number" | "date" | "person" | "status";
@@ -25,17 +25,13 @@ export type Column<Row> = {
   width?: number;
 };
 
-function colourOf(name: string | undefined): string {
-  return paletteColour((PALETTE as readonly string[]).includes(name ?? "") ? (name as PaletteColour) : "grey");
-}
-
 function Cell<Row>({ column, row }: { column: Column<Row>; row: Row }) {
   const value = column.value(row);
   const kind = column.kind ?? "text";
   if (kind === "person" && typeof value === "string") {
     return (
       <span className="mx-list-person">
-        <span className="mx-disk" style={{ background: colourOf(column.colour?.(row)) }}>{initials(value)}</span>
+        <PersonDisk name={value} colour={column.colour?.(row)} />
         <span>{value}</span>
       </span>
     );
@@ -43,7 +39,7 @@ function Cell<Row>({ column, row }: { column: Column<Row>; row: Row }) {
   if (kind === "status") {
     return (
       <span className="mx-list-status">
-        <span className="mx-list-dot" style={{ background: colourOf(column.colour?.(row)) }} />
+        <span className="mx-list-dot" style={{ background: personColour(column.colour?.(row)) }} />
         {value}
       </span>
     );
@@ -59,6 +55,7 @@ function Card<Row>({
   columns,
   rowKey,
   anchor,
+  change,
   at,
   empty,
 }: {
@@ -68,6 +65,7 @@ function Card<Row>({
   columns: Column<Row>[];
   rowKey: (row: Row) => string;
   anchor?: (row: Row) => string;
+  change?: (row: Row) => string | undefined;
   at: { x: number; y: number };
   empty: string;
 }) {
@@ -112,6 +110,7 @@ function Card<Row>({
             key={rowKey(row)}
             className="mx-list-row"
             data-room-anchor={anchor?.(row)}
+            data-change={change?.(row)}
             style={{ top: LIST_HEAD + (start + offset) * LIST_ROW, height: LIST_ROW, gridTemplateColumns: template }}
           >
             {columns.map((column) => (
@@ -135,6 +134,7 @@ export function DataTable<Row>({
   columns,
   rowKey,
   anchor,
+  change,
   name = "Rows",
   total,
   at = { x: 0, y: 0 },
@@ -145,13 +145,15 @@ export function DataTable<Row>({
   rowKey: (row: Row) => string;
   /** A row's anchor on every screen: what another person's pointer lands on (#76). */
   anchor?: (row: Row) => string;
+  /** In a comparison, what happened to a row between A and B: its halo, and its fading while the changes paint. */
+  change?: (row: Row) => "added" | "changed" | "removed" | "unchanged" | undefined;
   name?: string;
   total?: number;
   at?: { x: number; y: number };
   empty?: string;
 }) {
   const canvas = useCanvasOrNull();
-  const card = <Card name={name} rows={rows} total={total ?? rows.length} columns={columns} rowKey={rowKey} anchor={anchor} at={at} empty={empty} />;
+  const card = <Card name={name} rows={rows} total={total ?? rows.length} columns={columns} rowKey={rowKey} anchor={anchor} change={change} at={at} empty={empty} />;
   if (canvas) return card;
   // Alone on a page: the list lays its own canvas, opened on its head and first rows.
   const shown = { x: at.x, y: at.y, width: LIST_WIDTH, height: Math.min(listHeight(rows.length), LIST_HEAD + 16 * LIST_ROW) };

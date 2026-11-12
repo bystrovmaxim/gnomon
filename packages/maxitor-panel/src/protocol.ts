@@ -4,6 +4,10 @@
 
 export type Query = Record<string, string>;
 
+/** The arrows a page passes to the core with panel.keys, Shift held. */
+export const STEP_KEYS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"] as const;
+export type StepKeyName = (typeof STEP_KEYS)[number];
+
 /** From the page to the core. */
 export type PageMessage =
   /** `shell`: the page renders the shell of @maxitor/panel, `shellVersion` its version (spec 078, FR-020). */
@@ -14,18 +18,52 @@ export type PageMessage =
   | { type: "panel.title"; text: string }
   | { type: "panel.open"; owner: string; path: string; query: Query }
   /** The anchors of what the page holds but its filters leave out now (spec 081, FR-013). */
-  | { type: "panel.hidden"; anchors: string[] };
+  | { type: "panel.hidden"; anchors: string[] }
+  /** Shift and an arrow pressed in the page: the core steps the moment (← →) or a comparison's changes (↑ ↓) (spec 079, FR-005). */
+  | { type: "panel.keys"; key: StepKeyName }
+  /** The anchor chain under the pointer, the deepest first; null when the pointer left (spec 079, FR-021). */
+  | { type: "panel.pointer"; chain: string[] | null }
+  /** An element chosen — a click, a selection, a step. */
+  | { type: "panel.choose"; chain: string[] }
+  /** What the page did with panel.mark or panel.bring: the anchor it showed, whether it was the deepest, whether its
+      filters hid it, whether it moved the camera. */
+  | { type: "panel.shown"; chain: string[]; anchor: string | null; held: boolean; hidden: boolean; brought: boolean }
+  /** What a comparison counts, for the pill. */
+  | { type: "panel.counts"; added: number; removed: number; changed: number }
+  /** Back to now, one moment: after a page's own writing in the past — a rollback — the screen shows its result. */
+  | { type: "panel.now" };
+
+/** Which panel of Side by side a page is drawn in. */
+export type Side = "a" | "b";
+
+/** The page's moment and what it is compared with (spec 079, FR-019): One `at`; Diff `at` = B, `against` = A; Side by
+    side `at` its own moment, `against` the other's, `side` which panel it is. `milestone`: the id `at` stands on exactly. */
+export type MomentContext = { at: string | null; against: string | null; side: Side | null; milestone: string | null };
 
 /** From the core to the page. */
 export type CoreMessage =
-  | { type: "panel.location"; path: string; query: Query; at: string | null }
-  | { type: "panel.watermark"; at: string };
+  | { type: "panel.location"; path: string; query: Query; at: string | null; against: string | null; side: Side | null; milestone: string | null }
+  | { type: "panel.watermark"; at: string }
+  /** Light the deepest anchor of the chain the page holds, if it is in view; null clears. */
+  | { type: "panel.mark"; chain: string[] | null }
+  /** Bring the deepest anchor of the chain the page holds into view, keeping the zoom, and light it. */
+  | { type: "panel.bring"; chain: string[] }
+  /** Shift + ↑ ↓ pressed in the core's frame: step the comparison's changes. */
+  | { type: "panel.step"; delta: -1 | 1 };
 
 const text = (value: unknown): value is string => typeof value === "string";
 const path = (value: unknown): value is string => text(value) && value.startsWith("/") && !value.startsWith("//");
 /** The most anchors one message may carry: a list of 10,000 rows and its other marks. */
 export const MAX_HIDDEN = 20_000;
 const anchors = (value: unknown): value is string[] => Array.isArray(value) && value.length <= MAX_HIDDEN && value.every(text);
+/** The most anchors a chain holds, and the longest anchor. */
+export const MAX_CHAIN = 8;
+export const MAX_ANCHOR = 200;
+const chain = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.length > 0 && value.length <= MAX_CHAIN && value.every((anchor) => text(anchor) && anchor.length > 0 && anchor.length <= MAX_ANCHOR);
+const count = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
+const moment = (value: unknown): value is string | null => value === null || text(value);
+const side = (value: unknown): value is Side | null => value === null || value === "a" || value === "b";
 const query = (value: unknown): value is Query =>
   typeof value === "object" && value !== null && !Array.isArray(value) && Object.values(value).every(text);
 
@@ -51,6 +89,20 @@ export function pageMessage(data: unknown): PageMessage | null {
       return text(m.owner) && path(m.path) && query(m.query) ? { type: m.type, owner: m.owner, path: m.path, query: m.query } : null;
     case "panel.hidden":
       return anchors(m.anchors) ? { type: m.type, anchors: m.anchors } : null;
+    case "panel.keys":
+      return (STEP_KEYS as readonly unknown[]).includes(m.key) ? { type: m.type, key: m.key as StepKeyName } : null;
+    case "panel.pointer":
+      return m.chain === null || chain(m.chain) ? { type: m.type, chain: m.chain } : null;
+    case "panel.choose":
+      return chain(m.chain) ? { type: m.type, chain: m.chain } : null;
+    case "panel.shown":
+      return chain(m.chain) && (m.anchor === null || (text(m.anchor) && m.chain.includes(m.anchor))) && typeof m.held === "boolean" && typeof m.hidden === "boolean" && typeof m.brought === "boolean"
+        ? { type: m.type, chain: m.chain, anchor: m.anchor, held: m.held, hidden: m.hidden, brought: m.brought }
+        : null;
+    case "panel.now":
+      return { type: m.type };
+    case "panel.counts":
+      return count(m.added) && count(m.removed) && count(m.changed) ? { type: m.type, added: m.added, removed: m.removed, changed: m.changed } : null;
     default:
       return null;
   }
@@ -61,10 +113,23 @@ export function coreMessage(data: unknown): CoreMessage | null {
   if (typeof data !== "object" || data === null) return null;
   const m = data as Record<string, unknown>;
   switch (m.type) {
-    case "panel.location":
-      return path(m.path) && query(m.query) && (m.at === null || text(m.at)) ? { type: m.type, path: m.path, query: m.query, at: m.at } : null;
+    case "panel.location": {
+      // A core before the scale's context sends none of its fields: they are null, one moment.
+      const against = m.against ?? null;
+      const where = m.side ?? null;
+      const milestone = m.milestone ?? null;
+      return path(m.path) && query(m.query) && moment(m.at) && moment(against) && side(where) && moment(milestone)
+        ? { type: m.type, path: m.path, query: m.query, at: m.at, against, side: where, milestone }
+        : null;
+    }
     case "panel.watermark":
       return text(m.at) ? { type: m.type, at: m.at } : null;
+    case "panel.mark":
+      return m.chain === null || chain(m.chain) ? { type: m.type, chain: m.chain } : null;
+    case "panel.bring":
+      return chain(m.chain) ? { type: m.type, chain: m.chain } : null;
+    case "panel.step":
+      return m.delta === -1 || m.delta === 1 ? { type: m.type, delta: m.delta } : null;
     default:
       return null;
   }
@@ -75,17 +140,33 @@ export function trusted(event: MessageEvent, expected: Window | null | undefined
   return expected !== null && expected !== undefined && event.origin === window.location.origin && event.source === expected;
 }
 
-// ── a page's history (spec 082, FR-001 – FR-005): how a page answers the core's time scale, given by the page in its
-// code, never declared in navigation.yaml; the shape a message may carry, and the core's check of every name.
+// ── a page's history (spec 082, FR-001 – FR-005; spec 079, history format 2): how a page sets up the core's time
+// scale, given by the page in its code, never declared in navigation.yaml; the shape a message may carry, and the
+// core's check of every name and every promise.
 
 /** The comparisons a page may offer beside one moment. */
 export const COMPARISONS = ["diff", "side_by_side"] as const;
 export type Comparison = (typeof COMPARISONS)[number];
 
+/** The core's palette of points, the looks of a point and the lines leading to it. */
+export const TONES = ["neutral", "purple", "blue", "green", "amber", "red"] as const;
+export const LOOKS = ["filled", "hollow", "dashed"] as const;
+export const LEADS = ["solid", "dashed"] as const;
+export type Tone = (typeof TONES)[number];
+export type Look = (typeof LOOKS)[number];
+export type Lead = (typeof LEADS)[number];
+
+/** One kind of the page's points: how its point is drawn and what the legend says of it. */
+export type Kind = { tone: Tone; look: Look; lead: Lead; term: string; def: string };
+
+/** An action a page offers on a milestone of its kinds, called exactly on it: Roll back to {ref}. */
+export type MilestoneAction = { on: "milestone"; kinds: string[]; title: string; action: string; ask: boolean };
+
 /**
- * A page's history: its reading action (the bars over a stretch are counted from it), its own bars, its milestones
- * and a milestone's card — actions of the plugin — its comparisons, narrowing the passport's, and the legend's words.
- * A page that gives none is offered one moment only, with no bars and no milestones.
+ * A page's history, format 2: its reading action (the bars over a stretch are counted from it), its own bars, its
+ * milestones and a milestone's card — actions of the plugin —; its vocabulary of points, `kinds`, in the legend's
+ * order; `small` and `flag`, the sentences that promise small points and flags; its comparisons, narrowing the
+ * passport's; and the actions it offers on a milestone. A page that gives none is offered one moment only.
  */
 export type PageHistory = {
   read?: string;
@@ -93,41 +174,71 @@ export type PageHistory = {
   milestones?: string;
   card?: string;
   compare?: Comparison[];
-  legend?: Record<string, string>;
+  kinds?: Record<string, Kind>;
+  small?: string;
+  flag?: string;
+  actions?: MilestoneAction[];
 };
 
 /** What a plugin version allows: its actions' names and its passport's `history.compare`. */
 export type HistoryAllowed = { actions: readonly string[]; compare: readonly string[] };
 
 const NAME = /^[a-z][a-z0-9_]{0,62}$/;
+const KIND = /^[a-z][a-z0-9_]{0,31}$/;
 const ROLES = ["read", "bars", "milestones", "card"] as const;
+/** The most kinds a page may declare, and the longest words it may give. */
+export const MAX_KINDS = 12;
+const TERM = 40;
+const DEF = 200;
+const PROMISE = 160;
 
-/** The history, when a message carries one of a known shape; null otherwise. */
+const record = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(text);
+
+/** The history, when a message carries one of a known shape; null otherwise. Words are checked by checkHistory. */
 export function historyOf(value: unknown): PageHistory | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
-  const given = value as Record<string, unknown>;
+  if (!record(value)) return null;
   const history: PageHistory = {};
   for (const role of ROLES) {
-    const name = given[role];
+    const name = value[role];
     if (name === undefined) continue;
     if (typeof name !== "string" || !NAME.test(name)) return null;
     history[role] = name;
   }
-  if (given.compare !== undefined) {
-    if (!Array.isArray(given.compare) || !given.compare.every((each) => (COMPARISONS as readonly unknown[]).includes(each))) return null;
-    history.compare = [...new Set(given.compare as Comparison[])];
+  if (value.compare !== undefined) {
+    if (!Array.isArray(value.compare) || !value.compare.every((each) => (COMPARISONS as readonly unknown[]).includes(each))) return null;
+    history.compare = [...new Set(value.compare as Comparison[])];
   }
-  if (given.legend !== undefined) {
-    const legend = given.legend;
-    if (typeof legend !== "object" || legend === null || Array.isArray(legend) || !Object.values(legend).every((word) => typeof word === "string")) return null;
-    history.legend = Object.fromEntries(Object.entries(legend as Record<string, string>).map(([key, word]) => [key, word.slice(0, 80)]));
+  if (value.kinds !== undefined) {
+    if (!record(value.kinds)) return null;
+    const kinds: Record<string, Kind> = {};
+    for (const [key, kind] of Object.entries(value.kinds)) {
+      if (!record(kind) || !["tone", "look", "lead", "term", "def"].every((field) => text(kind[field]))) return null;
+      kinds[key] = { tone: kind.tone, look: kind.look, lead: kind.lead, term: kind.term, def: kind.def } as Kind;
+    }
+    history.kinds = kinds;
+  }
+  for (const promise of ["small", "flag"] as const) {
+    if (value[promise] === undefined) continue;
+    if (!text(value[promise])) return null;
+    history[promise] = value[promise] as string;
+  }
+  if (value.actions !== undefined) {
+    if (!Array.isArray(value.actions)) return null;
+    const actions: MilestoneAction[] = [];
+    for (const action of value.actions) {
+      if (!record(action) || !text(action.on) || !strings(action.kinds) || !text(action.title) || !text(action.action) || typeof action.ask !== "boolean") return null;
+      actions.push({ on: action.on as "milestone", kinds: action.kinds, title: action.title, action: action.action, ask: action.ask });
+    }
+    history.actions = actions;
   }
   return history;
 }
 
 /**
- * The core's check of a page's history: every action it names must be one of the version's, and its comparisons
- * must narrow the passport's. A name that does not hold is refused by name and left out; the rest is kept.
+ * The core's check of a page's history: every action it names must be one of the version's, its comparisons must
+ * narrow the passport's, its kinds must hold the core's words, its promises must be short, and an action on a
+ * milestone must name declared kinds. What does not hold is refused by name and left out; the rest is kept.
  */
 export function checkHistory(history: PageHistory, allowed: HistoryAllowed): { kept: PageHistory; refused: string[] } {
   const actions = new Set(allowed.actions);
@@ -146,6 +257,35 @@ export function checkHistory(history: PageHistory, allowed: HistoryAllowed): { k
     kept.compare = history.compare.filter((each) => allowed.compare.includes(each));
   } else {
     kept.compare = allowed.compare.filter((each): each is Comparison => (COMPARISONS as readonly string[]).includes(each));
+  }
+  if (history.kinds) {
+    const kinds: Record<string, Kind> = {};
+    for (const [key, kind] of Object.entries(history.kinds)) {
+      if (!KIND.test(key)) refused.push(`the kind ${JSON.stringify(key)} is no name of a kind`);
+      else if (Object.keys(kinds).length >= MAX_KINDS) refused.push(`the kind ${JSON.stringify(key)} is past the ${MAX_KINDS} a page may declare`);
+      else if (!(TONES as readonly string[]).includes(kind.tone)) refused.push(`the kind ${JSON.stringify(key)} has the tone ${JSON.stringify(kind.tone)}, which is not of the core's palette`);
+      else if (!(LOOKS as readonly string[]).includes(kind.look)) refused.push(`the kind ${JSON.stringify(key)} has the look ${JSON.stringify(kind.look)}, which the core does not draw`);
+      else if (!(LEADS as readonly string[]).includes(kind.lead)) refused.push(`the kind ${JSON.stringify(key)} has the lead ${JSON.stringify(kind.lead)}, which the core does not draw`);
+      else kinds[key] = { ...kind, term: kind.term.slice(0, TERM), def: kind.def.slice(0, DEF) };
+    }
+    kept.kinds = kinds;
+  }
+  for (const promise of ["small", "flag"] as const) {
+    const sentence = history[promise];
+    if (sentence !== undefined && sentence.length > PROMISE) {
+      refused.push(`${promise} is longer than ${PROMISE} characters`);
+      delete kept[promise];
+    }
+  }
+  if (history.actions) {
+    const declared = new Set(Object.keys(kept.kinds ?? {}));
+    kept.actions = history.actions.filter((each) => {
+      if (each.on !== "milestone") refused.push(`an action is offered on ${JSON.stringify(each.on)}; only on a milestone`);
+      else if (!actions.has(each.action)) refused.push(`an action names ${JSON.stringify(each.action)}, which is no action of the plugin`);
+      else if (!each.kinds.length || each.kinds.some((kind) => !declared.has(kind))) refused.push(`the action ${JSON.stringify(each.action)} names a kind the page did not declare`);
+      else return true;
+      return false;
+    });
   }
   return { kept, refused };
 }

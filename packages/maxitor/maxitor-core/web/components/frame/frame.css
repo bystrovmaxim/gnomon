@@ -20,6 +20,7 @@
 .mx-path-step:last-child { color: var(--mx-ink); font-weight: var(--mx-weight-medium); }
 .mx-path-sep { color: var(--mx-faint); flex-shrink: 0; }
 .mx-slot { display: inline-flex; align-items: center; min-width: 0; }
+.mx-slot-moment { margin-left: var(--mx-space-3); }
 .mx-avatar { width: var(--mx-control); height: var(--mx-control); border-radius: var(--mx-radius-round); background: var(--mx-faint); color: var(--mx-on-ink); display: inline-flex; align-items: center; justify-content: center; font-size: var(--mx-text-sm); font-weight: var(--mx-weight-heavy); cursor: pointer; border: 0; }
 .mx-avatar.on { box-shadow: 0 0 0 var(--mx-ring) var(--mx-surface), 0 0 0 calc(2 * var(--mx-ring)) var(--mx-ink); }
 .mx-burger { display: none; width: var(--mx-tree-slot); height: var(--mx-tree-slot); border: 0; background: none; border-radius: var(--mx-radius-sm); align-items: center; justify-content: center; cursor: pointer; }
@@ -44,11 +45,13 @@
 /* the tree */
 .mx-tree { width: var(--mx-tree-width); flex-shrink: 0; background: var(--mx-sidebar); border-right: var(--mx-line-width) solid var(--mx-line); display: flex; flex-direction: column; }
 .mx-tree.collapsed { width: auto; }
-.mx-tree-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-2); padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-1); }
+/* The head's buttons stand on the level's left edge: a button's icon starts where the level's icon and the first column do. */
+.mx-tree-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-2); padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-1) 0; }
+/* The tree's pictograms, as the graph viewer's sidebar draws them: 16 px, slightly dimmed. */
+.mx-pict { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
+.mx-node-icon .mx-pict, .mx-level-icon .mx-pict { opacity: var(--mx-icon-dim); }
 .mx-tree-button { width: var(--mx-tree-slot); height: var(--mx-tree-slot); border: 0; padding: 0; border-radius: var(--mx-radius-sm); background: transparent; color: var(--mx-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .mx-tree-button:hover { background: var(--mx-hover); color: var(--mx-ink); }
-.mx-tree-button.off { opacity: 0.4; cursor: default; }
-.mx-tree-button.off:hover { background: transparent; color: var(--mx-muted); }
 /* The head of an entered level (spec 085, FR-006): the node itself, its icon and title across the whole width. */
 .mx-level-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-3); padding: var(--mx-space-3) var(--mx-space-4); border-bottom: var(--mx-line-width) solid var(--mx-line-2); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); min-width: 0; }
 .mx-level-icon { display: inline-flex; align-items: center; color: var(--mx-muted); flex-shrink: 0; }
@@ -85,9 +88,39 @@
 .mx-panel-note .mx-big { font-size: var(--mx-text-huge); font-weight: var(--mx-weight-heavy); color: var(--mx-line-3); }
 .mx-panel-note a, .mx-panel-note button { display: inline-block; margin-top: var(--mx-space-5); padding: var(--mx-space-3) var(--mx-space-5); border-radius: var(--mx-radius-md); background: var(--mx-ink); color: var(--mx-on-ink); font-size: var(--mx-text-md); text-decoration: none; border: 0; cursor: pointer; }
 
+/* Side by side (spec 079, FR-019): two panels, A on the left and B on the right, each with its head. */
+.mx-halves { display: flex; width: 100%; height: 100%; }
+.mx-half { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; position: relative; }
+.mx-half + .mx-half { border-left: var(--mx-line-width) solid var(--mx-line-3); }
+.mx-half-head { flex-shrink: 0; height: var(--mx-side-head); display: flex; align-items: center; gap: var(--mx-space-4); padding: 0 var(--mx-space-5); font-size: var(--mx-text-scale); color: var(--mx-ink-3); background: var(--mx-surface); border-bottom: var(--mx-line-width) solid var(--mx-line); }
+.mx-half-head b { flex: 1; min-width: 0; color: var(--mx-ink); font-weight: var(--mx-weight-bold); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mx-half-side { font-weight: var(--mx-weight-heavy); }
+.mx-half-side.a { color: var(--mx-side-a); }
+.mx-half-side.b { color: var(--mx-side-b); }
+.mx-track-switch { flex-shrink: 0; height: var(--mx-icon-lg); padding: 0 var(--mx-space-4); font: inherit; font-size: var(--mx-text-sm); font-weight: var(--mx-weight-bold); border: 0; border-radius: var(--mx-radius-sm); color: var(--mx-muted); background: transparent; cursor: pointer; }
+.mx-track-switch.on { color: var(--mx-side-b); background: var(--mx-track-on); }
+.mx-flip { display: none; gap: var(--mx-space-1); padding: var(--mx-space-1); border: var(--mx-line-width) solid var(--mx-line-3); border-radius: var(--mx-radius-md); flex-shrink: 0; }
+.mx-flip button { width: var(--mx-row); height: var(--mx-icon-lg); border: 0; border-radius: var(--mx-radius-sm); font: inherit; font-size: var(--mx-text-scale); font-weight: var(--mx-weight-heavy); color: var(--mx-ink-3); background: transparent; cursor: pointer; }
+.mx-flip button.a.on { background: var(--mx-side-a); color: var(--mx-on-ink); }
+.mx-flip button.b.on { background: var(--mx-side-b); color: var(--mx-on-ink); }
+.mx-half-body { flex: 1; min-height: 0; position: relative; }
+.mx-half-note { position: absolute; top: var(--mx-space-5); left: 50%; transform: translateX(-50%); z-index: 20; padding: var(--mx-space-2) var(--mx-space-5); border-radius: var(--mx-radius-md); font-size: var(--mx-text-pill); font-weight: var(--mx-weight-bold); color: var(--mx-on-ink); background: var(--mx-note); white-space: nowrap; pointer-events: none; }
+.mx-half-note code { font-family: var(--mx-mono); font-size: var(--mx-text-scale); background: var(--mx-note-code); padding: 0 var(--mx-space-2); border-radius: var(--mx-radius-xs); }
+
 @media (max-width: 520px) {
   .mx-burger { display: inline-flex; }
   .mx-logo-name, .mx-path-step:not(:last-child), .mx-path-sep { display: none; }
+  /* The pill fills the row, as the mockup of spec 074 draws a phone: the organization and the crumbs give way to it. */
+  .mx-org, .mx-path { display: none; }
+  .mx-slot-moment { flex: 1; margin: 0 var(--mx-space-1); }
+  /* One panel of Side by side at a time, with its A / B switch; the other stays drawn under it, so its page keeps its
+     place and stays ready to bring what was chosen. */
+  .mx-halves { position: relative; }
+  .mx-half { position: absolute; inset: 0; }
+  .mx-half:not(.phone-shown) { visibility: hidden; }
+  .mx-half + .mx-half { border-left: 0; }
+  .mx-flip { display: inline-flex; }
+  .mx-half-side { display: none; }
   .mx-body > .mx-tree { display: none; }
   .mx-tree.drawer { display: flex; position: fixed; z-index: 60; top: var(--mx-top-row); left: 0; bottom: 0; width: var(--mx-drawer-width); box-shadow: var(--mx-shadow-pop); }
   .mx-node { min-height: var(--mx-tree-row-phone); font-size: var(--mx-text-lg); }

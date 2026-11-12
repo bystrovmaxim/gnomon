@@ -1,8 +1,8 @@
 # 9. Now and the past
 
-**Builds on**: [8. The page](08-the-page.md). **Next**: chapter 10, written with bystrovmaxim/gnomon#100.
+**Builds on**: [8. The page](08-the-page.md). **Next**: [10. History on the scale](10-history-on-the-scale.md).
 
-Every page reads at a moment. The address carries it as `at`; a page without `at` reads **now** — the watermark, the latest moment whose answer cannot change. The past, its time scale and comparing come with bystrovmaxim/gnomon#100; this chapter is the now.
+Every page reads at a moment. The address carries it as `at`; a page without `at` reads **now** — the watermark, the latest moment whose answer cannot change. A person chooses another moment on the core's time scale, the next chapter; the page only reads at it, and in the past it writes nothing: Draft and Published show no New note, no Edit, no Delete and no Publish there.
 
 ## Now moves
 

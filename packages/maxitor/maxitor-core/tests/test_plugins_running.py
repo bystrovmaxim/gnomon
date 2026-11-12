@@ -96,6 +96,7 @@ async def test_a_runner_sees_and_removes_only_its_own_containers(monkeypatch: py
     assert processes._environment("notes_0_8_0", "frontend")["MAXITOR_PLUGIN_API"] == "http://maxitor-second-notes_0_8_0-backend:8000"
 
 
+
 # ── the runner's actions over a controller that only pretends ─────────────────
 
 

@@ -15,7 +15,7 @@ class BarCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN
     ROLE: One bar the page's reading action answers over a stretch.
-    CONTRACT: The shape of history-1.schema.json's bar; counted by maxitor_plugin_sdk.history.bars_of.
+    CONTRACT: The shape of history-2.schema.json's bar; counted by maxitor_plugin_sdk.history.bars_of.
     AI-CORE-END
     """
 

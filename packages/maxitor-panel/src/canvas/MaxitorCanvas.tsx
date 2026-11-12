@@ -1,6 +1,6 @@
 // @maxitor/panel — one canvas for every plugin (the plugin concept, 7.7): moving and zooming by drag, the wheel, a
-// two-finger swipe, a pinch, Ctrl/⌘ with the wheel and keys, within limits; fit; the field of dots moving with the
-// picture; the camera. Its zoom stands first in the shell's bottom bar (spec 078, FR-006), and a fit keeps the scene
+// two-finger swipe, a pinch, Ctrl/⌘ with the wheel and keys, within limits; fit; the field of dots standing still
+// under the picture, as the ERD's; the camera. Its zoom stands first in the shell's bottom bar (spec 078, FR-006), and a fit keeps the scene
 // clear of the shell's controls. A page puts only its content in canvas coordinates; it cannot change the
 // gestures. The viewport is never written into the address: everyone has their own screen.
 "use client";
@@ -8,7 +8,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import "./canvas.css";
+import { usePanelOrNull } from "../PanelProvider";
 import { useShell } from "../shell/ShellContext";
+import { useAnchors } from "./useAnchors";
 import { centreOn, fitInside, key, pinch, toCanvas, toScreen, wheel, zoomAround, ZOOM_STEP, type Bounds, type Camera, type Point } from "./camera";
 
 /** Finds where an anchor lies on the canvas, or null when it is not one of its own. */
@@ -26,6 +28,8 @@ type CanvasApi = {
   fit: (bounds?: Bounds) => void;
   /** Bring a canvas point to the middle. */
   show: (point: Point) => void;
+  /** Bring an anchor into the middle, keeping the zoom, with the glide of 450 ms; false when the canvas does not hold it. */
+  bring: (anchor: string) => boolean;
   toCanvas: (screen: Point) => Point;
   toScreen: (point: Point) => Point;
 };
@@ -140,9 +144,35 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
       },
       toCanvas: (screen) => toCanvas(camera, screen),
       toScreen: (point) => toScreen(camera, point),
+      bring: (anchor) => bringRef.current(anchor),
     }),
     [camera, fitTo, size, viewport],
   );
+  const bringRef = useRef<(anchor: string) => boolean>(() => false);
+
+  // A glide of the camera to a target, 450 ms eased, as the graph viewer brings an element into view.
+  const glideFrame = useRef(0);
+  const glideTo = useCallback((target: Camera) => {
+    cancelAnimationFrame(glideFrame.current);
+    const start = performance.now();
+    let from: Camera | null = null;
+    const step = (time: number) => {
+      const t = Math.min(1, (time - start) / 450);
+      const eased = 1 - (1 - t) ** 3;
+      setCamera((was) => {
+        from ??= was;
+        return { x: from.x + (target.x - from.x) * eased, y: from.y + (target.y - from.y) * eased, zoom: from.zoom + (target.zoom - from.zoom) * eased };
+      });
+      if (t < 1) glideFrame.current = requestAnimationFrame(step);
+    };
+    glideFrame.current = requestAnimationFrame(step);
+  }, []);
+  useEffect(() => () => cancelAnimationFrame(glideFrame.current), []);
+
+  const panel = usePanelOrNull();
+  const pointer = useAnchors({ field, panel, api, size, glideTo, touch: () => void (touched.current = true) });
+  bringRef.current = pointer.bring;
+  const pressedAt = useRef<Point | null>(null);
 
   const middle = useCallback(() => {
     const { width, height } = size();
@@ -175,10 +205,6 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
         aria-label={label}
         tabIndex={0}
         data-zoom={camera.zoom.toFixed(3)}
-        style={{
-          backgroundPosition: `${camera.x}px ${camera.y}px`,
-          backgroundSize: `calc(var(--mx-dot-step) * ${camera.zoom}) calc(var(--mx-dot-step) * ${camera.zoom})`,
-        }}
         onKeyDown={(event) => {
           const { width, height } = size();
           const next = key(camera, event.key, middle(), bounds, width, height);
@@ -189,6 +215,7 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
           }
         }}
         onPointerDown={(event) => {
+          pressedAt.current = local(event);
           if ((event.target as HTMLElement).closest("button, a, input, textarea, select")) return;
           touched.current = true;
           field.current?.setPointerCapture(event.pointerId);
@@ -196,6 +223,7 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
           begin();
         }}
         onPointerMove={(event) => {
+          if (!pointers.current.size) pointer.over(event.target as Element);
           if (!pointers.current.has(event.pointerId) || !gesture.current) return;
           pointers.current.set(event.pointerId, local(event));
           const now = [...pointers.current.values()];
@@ -206,7 +234,13 @@ export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: 
         onPointerUp={(event) => {
           pointers.current.delete(event.pointerId);
           begin();
+          // A press that did not move the camera chooses what it was on.
+          const was = pressedAt.current;
+          const now = local(event);
+          if (was && Math.hypot(now.x - was.x, now.y - was.y) < 4) pointer.chose(event.target as Element);
+          pressedAt.current = null;
         }}
+        onPointerLeave={() => pointer.over(null)}
         onPointerCancel={(event) => {
           pointers.current.delete(event.pointerId);
           begin();

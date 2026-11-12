@@ -91,7 +91,7 @@ The page then reads the view like any parameter of its address:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/published/PublishedView.tsx -->
 ```tsx
-  const { view = "cards", at, author } = query;
+  const { view = "cards", at, author, change, paint } = query;
 ```
 
 A section of the filters is one of three kinds. The writers above are a **choice**: a disk and a label per row, the address listing those switched on; a choice of more than eight rows gets a search and "N more" by itself. A **text** is `{ kind: "text", title: "Search", param: "q", placeholder: "Note or writer" }`. A **range** is `{ kind: "range", title: "Written", param: "written", unit: "date" }` — two rows, From and To, a date chosen in the date range picker and written as `?written=now-30d..now` — or `unit: "number"`, typed in the rows. The page filters its own notes by these parameters; `inRange` and `numberIn` of `@maxitor/panel` read a range the way the shell writes it. A page that needs one date from a person — "Review on…" — calls `openDatePicker({ anchor: button })` and gets the date back as the address would write it.

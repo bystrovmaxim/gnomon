@@ -29,6 +29,7 @@ tables:
       comment: {type: text, nullable: false, description: 'The revision''s own words: shown under the time scale when the revision is chosen.'}
       release: {type: text, nullable: true, description: 'A release label the revision was published as; empty when it carries none.'}
       publisher_id: {type: uuid, nullable: false, description: The account of the member who published the revision.}
+      back_revision: {type: integer, nullable: true, description: 'The number of the revision a rollback brings back; empty for a revision published from a draft.'}
     unique:
       - [item_id, number]
     indexes:

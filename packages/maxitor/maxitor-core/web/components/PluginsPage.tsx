@@ -5,6 +5,7 @@
 // work on the page — an install or a private version's check — the page reads its state again every few seconds.
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
@@ -112,6 +113,15 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
   const [tab, setTab] = useState<"installed" | "market">("installed");
   const [query, setQuery] = useState("");
   const [listing, setListing] = useState<Listing>(first);
+  // A plugin enabled, disabled or removed changes the organization's tree: the frame is drawn again from the core.
+  const router = useRouter();
+  const states = listing.installed.map((row) => `${row.passport_id}:${row.state}`).join(",");
+  const drawn = useRef(states);
+  useEffect(() => {
+    if (drawn.current === states) return;
+    drawn.current = states;
+    router.refresh();
+  }, [router, states]);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [panel, setPanel] = useState<Details | null>(null);
   const [toast, setToast] = useState<string | null>(null);

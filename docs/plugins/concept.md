@@ -624,8 +624,17 @@ The core and the plugin's page exchange `postMessage` messages. Each side accept
 | `panel.navigate {path, query, mode}` | plugin → core | a person changed the page's state; `mode` is `push` or `replace` |
 | `panel.title {text}` | plugin → core | the page's title for the path in the core's row and the browser tab |
 | `panel.open {owner, path, query}` | plugin → core | go to a page of the core or of a direct dependency |
-| `panel.location {path, query, at}` | core → plugin | the address changed not by this page's action: Back, a tree node of the same plugin, a change of moment, following in a room |
+| `panel.keys {key}` | plugin → core | Shift and an arrow pressed in the page: the core steps the moment (← →) or a comparison's changes (↑ ↓) |
+| `panel.pointer {chain}` | plugin → core | the anchors under the pointer, the deepest first, or none; at most once a frame |
+| `panel.choose {chain}` | plugin → core | an element chosen: a click, a selection, a step |
+| `panel.shown {chain, anchor, held, hidden, brought}` | plugin → core | what the page did with `panel.mark` or `panel.bring`: the anchor it showed, whether it was the deepest, whether its filters hide it, whether it moved the camera |
+| `panel.counts {added, removed, changed}` | plugin → core | what a comparison counts, for the pill |
+| `panel.now {}` | plugin → core | back to now, one moment: after the page's own writing in the past, a rollback |
+| `panel.location {path, query, at, against, side, milestone}` | core → plugin | the address or the page's context changed not by this page's action: Back, a tree node of the same plugin, a change of moment or of mode, following in a room (7.9) |
 | `panel.watermark {at}` | core → plugin | the watermark moved; a page without `at` rereads its data |
+| `panel.mark {chain}` | core → plugin | light the deepest anchor of the chain the page holds, if it is in view; none clears |
+| `panel.bring {chain}` | core → plugin | bring the deepest anchor the page holds into view, keeping the zoom, and light it |
+| `panel.step {delta}` | core → plugin | Shift + ↑ ↓ pressed in the core's frame: step the comparison's changes |
 
 **"Now" moves for a plugin's changes too.** Every change a plugin writes takes its time from the core's `change_time(organization)`, which keeps that time in the core's table `organization_clock` within the same transaction; `watermark(organization)` reads it beside the core's own tables. The frame asks for the watermark every 5 seconds while a page without `at` is open and sends `panel.watermark` when it moved, so a note a colleague wrote reaches the page once it is committed.
 
@@ -660,7 +669,7 @@ The core's canvas gives everything that belongs to the canvas itself:
 
 - **moving and zooming** — dragging, the wheel, pinching, keys, zoom limits, inertia; a plugin writes no gestures of its own and cannot change them;
 - **fit** and the zoom, which stands first in the shell's bottom bar (7.8); the keys `+` and `-` zoom, `0` fits, the arrows move; the zoom stays between 10% and 400%;
-- **the field of dots**, moving with the canvas;
+- **the field of dots**, standing still as the ERD's while the picture moves over it;
 - **the camera**: converting screen coordinates into canvas coordinates and back;
 - **the room**: others' pointers, clicks, selections and the viewport for a follower (section 8) — with no code in the plugin.
 
@@ -742,7 +751,7 @@ A range of dates is named by its column ("Created"), never "Time", and never tak
 
 ### 7.9. History: what a page gives the time scale
 
-Every page reads any past moment: that is versioned storage, and needs no declaration. The core's time scale (bystrovmaxim/gnomon#98) draws the history of the open page from data the plugin gives. **The page gives its history, in its code**, to `PanelPage` — when it opens and whenever it gives a new one — and the plugin keeps the actions that answer it in its folder `history/`, one per file (`history/<name>_action.py`). Nothing of a page's history is declared in `navigation.yaml`; the passport says which comparisons the plugin's pages may draw.
+Every page reads any past moment: that is versioned storage, and needs no declaration. The core has one time control for every page — the pill on the right of the top row and the card hanging from it with the time scale — and draws the history of the open page from what the plugin gives. **The page sets the scale up, in its code**, through `PanelPage`: when it opens and whenever it gives a new one. Nothing of a page's history is declared in `navigation.yaml`; the passport says which comparisons the plugin's pages may draw.
 
 ```yaml
 # maxitor-plugin.yaml
@@ -752,24 +761,35 @@ history:
 
 ```tsx
 <PanelPage
-  title="Notes"
+  title="Published"
   history={{
-    read: "list_item_notes",        // the page's reading action: over a stretch it gives the page's own bars
-    milestones: "list_note_history", // an action of history/: the milestones in a stretch
-    card: "note_milestone_card",    // an action of history/: one milestone's card
-    // compare: [] narrows the passport's list; never widens it. legend: the legend's words.
+    read: "list_published_notes",    // the page's reading action: over a stretch it gives the page's own bars
+    milestones: "list_note_history", // the milestones in a stretch
+    card: "note_milestone_card",     // one milestone's card
+    kinds: {                         // the page's vocabulary of points, in the legend's order
+      published: { tone: "purple", look: "filled", lead: "solid", term: "Published", def: "The notes as they were published…" },
+      rollback: { tone: "red", look: "filled", lead: "solid", term: "Rolled back", def: "A publication that brought back…" },
+    },
+    // small: "…" promises small points, flag: "…" flags; compare: [...] narrows the passport's list, never widens it.
+    actions: [{ on: "milestone", kinds: ["published", "rollback"], title: "Roll back to {ref}", action: "rollback_publication", ask: true }],
   }}
 >
 ```
 
-A page that gives no history is offered one moment only, with no bars and no milestones. The core checks every name a page gives against the version's actions and its passport's comparisons, kept when the version was checked; a name that does not hold is refused by name — an error in development, a line in the console elsewhere — and the rest of the history kept.
+A page that gives no history is offered one moment only, with no bars and no milestones. The core checks every name against the version's actions — `actions/` and `history/` alike — and its passport's comparisons, and every kind against its own words: a tone of its palette (`neutral`, `purple`, `blue`, `green`, `amber`, `red`), a look (`filled`, `hollow`, `dashed`), a lead (`solid`, `dashed`), at most 12 kinds. What does not hold is refused by name — an error in development, a line in the console elsewhere — and the rest kept.
 
-- **Bars** count the page's changes in each stretch — added, changed, removed. A page that names no `bars` of its own gets them from its reading action run over the stretch: the same query and filters with the SDK's stretch condition, grouped by `maxitor_plugin_sdk.history.bars_of`. So the bars count exactly what the page shows, the author filter included.
-- **Milestones** are the events that matter on their own — a pull request, a release, a published revision — and the draft as a `proposal` whose `link` is its page. A milestone carries its `kind` (its look, from the core's fixed set), `minor` (a small point), and an optional `release` (a flag over it); the plugin gives each its meaning.
-- **A card** is data: author, what the milestone changed, short counts, and its `comment`, shown under the scale when the milestone is chosen. The core draws it; no control of the plugin runs in the core's frame.
-- **The context** of every question is the address — the organization, the node, the page's parameters, the stretch and the bar's width — never what is on the screen, so an answer below the watermark never changes and can be kept.
+- **Bars** count the page's changes in each stretch — added green, changed amber, removed red — and get finer as one zooms in, from a week to a second. A page that names no `bars` of its own gets them from its reading action run over the stretch: the same query and filters with the SDK's stretch condition, grouped by `maxitor_plugin_sdk.history.bars_of`. So the bars count exactly what the page shows.
+- **Milestones** are the events that matter on their own — a pull request, a release, a publication —, each a point where it happened, of one of the page's `kinds`. A milestone may be `small` only when the page promised `small`, and carry a `flag` only when it promised `flag`; the core drops and names one that breaks a promise. A milestone that is no state at any moment — an open pull request — gives `opens`, a page path choosing it opens without changing the moment.
+- **A card** is the plugin's list of blocks — `line` (a badge, a reference, how long ago), `title`, `text`, `fields`, `person`, `chips`, `warn` —, drawn by the core from data alone; no control of the plugin runs in the core's frame. The `comment` of the milestone in force stands under the scale.
+- **The legend** behind the card's "i" is built from the same setup: the page's kinds with their words, Bars only with bars, Size, Flag and Three points only with what the page promised, the core's marks and keys always.
+- **An action on a milestone** stands in the page's corner exactly when the moment is that milestone and never in a comparison; the page carries it out — the template's Roll back publishes a past revision again as a new one.
+- **Where the core asks.** `GET /p/<plugin>/api/<organization>/history/<action>` through the gateway, with the open node's path parameters, the page's own address parameters, the stretch and the bar's width — never what is on the screen —, so an answer below the watermark never changes and is kept.
 
-The shapes are `maxitor-plugin-sdk`'s `history-1.schema.json` and `PageHistory` of `@maxitor/panel`.
+**Comparing.** The card's switch offers what the page offers: **One**, **Diff**, **Side by side**. A comparison adds `mode` and `from` to the address beside `at`; like `at` they are the core's, and a page may not write them. The core lays out the panels and gives each page its **context** with `panel.location` — One: `at`; Diff: `at` is B and `against` is A; Side by side: panel A `at` A, `against` B, `side` `a`, panel B the other way round —, and `milestone`, the id of the milestone `at` stands on exactly. A page reads it with `useMoment()` and draws one canvas from it, never knowing how many panels there are. It marks each element with `data-change` and `@maxitor/panel` gives it the graph's ERD look: the change's colour, a soft halo under it, and everything unchanged faded while the changes paint — drawn whole again under the pointer or when the other panel lights it. `ChangeStepper`, `DiffCard`, `StatusIcon` and `VersionsBetween` of `@maxitor/panel` step through the changes and show each one, the card standing beside its element; `useCounts` sends the pill its counts.
+
+**Anchors.** In Side by side, Track follows one element through both panels: the canvas reports the chain of `data-room-anchor` values under the pointer, the core lights the deepest one the other panel holds, brings a chosen one into its view, and writes the note when it cannot — "Not in A", "`email` is not in A · showing Account", "Hidden by the filters", "Brought to the centre".
+
+The shapes are `maxitor-plugin-sdk`'s `history-2.schema.json` and `PageHistory` of `@maxitor/panel`; [the history of a page](history.md) is their reference, and [compatibility](compatibility.md) says which version of the core brings each part.
 
 ## 8. The room
 

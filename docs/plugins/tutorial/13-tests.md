@@ -49,6 +49,7 @@ assert.equal(inRange("2026-09-01", readRange("now-90d..now"), "2026-11-10"), tru
 10. **Its pages give their history, and its tree holds nothing else.** `test_history_data.py` reads the history each page gives in its code and the passport's comparisons; `test_navigation.py` adds `history` or `room` to a page's node and sees it refused by name.
 
 11. **Its pages work now, by the rules of the draft.** `web/tests/draft.test.ts` proves that the State filter keeps what it chooses and fades a state with nothing behind it, that the change made last stands first, that only a change meeting someone else's publication is a conflict and its choice says what it does, and that Published marks the state each note waits in; `web/tests/notes.test.ts` proves the refusals' words. The core's browser check walks 1.6 on the stand: the draft is private until published, the states and reverts, publishing as one revision with its release, Published's marks and Edit in the draft, the State and Authors filters, on a desktop and at 375 px.
+12. **Its history keeps its promises, and a rollback loses nothing.** `test_history_data.py` validates the milestones and cards against `history-2.schema.json` — the kinds `published` and `rollback`, one size, no flag — and reads the setups each page gives; `test_revisions.py` rolls back to a past revision as a new one naming it, opens again a note the item no longer publishes, touches no draft and no revision between, and refuses a revision that is not older than the one in force; `web/tests/compare.test.ts` compares the notes at two moments for Diff and for each side of Side by side. The core's browser check walks the scale on Published: two purple publications, Roll back exactly on v1, and a red v3 after them.
 
 ```bash
 node --experimental-strip-types --test packages/maxitor-plugin-template/web/tests/*.test.ts
@@ -61,5 +62,5 @@ uv run --extra dev pytest packages/maxitor-plugin-template/tests -q
 ```
 
 ```text
-256 passed
+267 passed
 ```

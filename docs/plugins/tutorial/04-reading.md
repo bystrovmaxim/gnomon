@@ -58,7 +58,7 @@ class ListItemNotesAction(BaseAction[ListItemNotesParams, ListItemNotesResult]):
         rows = await self._fetch(
             f"SELECT n.id::text AS id, n.item_id::text AS item_id, n.writer_id::text AS writer_id,"
             f" {member_name('n.organization_id', 'n.writer_id', when)} AS writer_name, n.body AS body,"
-            f" {moment_text('n.updated_at')} AS updated_at, {moment_text('n.valid_from_at')} AS since,"
+            f" {moment_text('n.updated_at')} AS updated_at, {moment_text('n.created_at')} AS written, {moment_text('n.valid_from_at')} AS since,"
             f" {member_name('n.organization_id', 'n.author_id', 'n.valid_from_at')} AS changed_by"
             f" FROM note_versions n"
             f" WHERE n.organization_id = $1::text::uuid AND n.item_id = $2::text::uuid AND {in_force('n', when)}"

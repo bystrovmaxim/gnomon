@@ -15,7 +15,8 @@ section 5)::
 Only times inside the stretch ``(start, end]`` count; a bar is ``width`` seconds long and starts at
 ``start + k · width``, a change at ``end`` itself falling into the last bar; only bars with a change are answered.
 
-The shapes that pass between the scale and a plugin are ``schemas/history-1.schema.json``.
+The shapes that pass between the scale and a plugin are ``schemas/history-2.schema.json``: format 2, where a
+milestone names one of the kinds its page declared, and a card is a list of blocks the core draws from data.
 """
 
 from __future__ import annotations
@@ -27,6 +28,9 @@ from datetime import UTC, datetime, timedelta
 
 #: The folder of a plugin's package holding its history actions, one per file: ``history/<name>_action.py``.
 HISTORY_FOLDER = "history"
+
+#: The format of the history: the number of ``schemas/history-<format>.schema.json``.
+HISTORY_FORMAT = 2
 
 #: The comparisons a page may offer beside one moment.
 COMPARISONS = ("diff", "side_by_side")

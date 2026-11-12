@@ -4,7 +4,7 @@
 import { useEffect } from "react";
 
 import { usePanel } from "./PanelProvider";
-import type { Query } from "./protocol";
+import type { MomentContext, Query } from "./protocol";
 import { checkWrite } from "./shell/address";
 
 type Change = { path?: string; query: Query };
@@ -56,4 +56,37 @@ export function usePanelHidden(anchors: readonly string[]): void {
   const { send } = usePanel();
   const key = anchors.join("\n");
   useEffect(() => send({ type: "panel.hidden", anchors: [...anchors] }), [key, send]);
+}
+
+/**
+ * The page's moment and what it is compared with (spec 079, FR-019): One `at` alone; Diff `at` is B and `against`
+ * A; Side by side `at` is this panel's moment, `against` the other's, `side` which panel it is. A page draws one canvas
+ * from this and never knows how many panels there are.
+ */
+export function useMoment(): MomentContext {
+  return usePanel().context;
+}
+
+/** Tell the core what the comparison on screen counts: the pill shows it (spec 079, FR-026). */
+export function useCounts(counts: { added: number; removed: number; changed: number } | null): void {
+  const { send } = usePanel();
+  // The counts are sent once per value: a new object with the same counts is not sent again.
+  const key = counts ? `${counts.added}/${counts.removed}/${counts.changed}` : "";
+  useEffect(() => {
+    if (!key) return;
+    const [added, removed, changed] = key.split("/").map(Number);
+    send({ type: "panel.counts", added, removed, changed });
+  }, [key, send]);
+}
+
+/** Shift + ↑ ↓ step a comparison's changes wherever the focus is: the core passes them on as panel.step. */
+export function useChangeStep(listener: (delta: -1 | 1) => void): void {
+  const { onCore } = usePanel();
+  useEffect(() => onCore((message) => message.type === "panel.step" && listener(message.delta)), [listener, onCore]);
+}
+
+/** Ask the core for now, one moment: the moment and the comparison are the core's, so a page asks and never writes them. */
+export function useBackToNow(): () => void {
+  const { send } = usePanel();
+  return () => send({ type: "panel.now" });
 }

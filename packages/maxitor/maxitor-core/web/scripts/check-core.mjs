@@ -53,6 +53,11 @@ function expect(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+/** The crumbs after the organization, as one line: each crumb stands after its separator (spec 079, FR-040). */
+async function crumbsOf(at) {
+  return (await at.locator(".mx-path").innerText()).replace(/\s+/g, " ").replace(/^›\s*/, "").trim();
+}
+
 /** The code of the newest letter to an address, waiting for it to arrive. */
 async function codeFor(email, after) {
   for (let i = 0; i < 50; i += 1) {
@@ -247,14 +252,16 @@ await scenario("the Draft page opens in the right panel from the tree, with its 
   await page.waitForURL(`**/w/${CODE}/notes/items/${ITEM}`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   const frame = page.frameLocator("iframe.mx-panel-frame");
-  // The crumbs name the entered levels and the open page only: the item was passed by expanding (spec 085).
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Draft", "the crumbs name a node passed by expanding");
+  // The crumbs name the sections entered only: the item was passed by expanding, and a page inside a section adds
+  // nothing (spec 079, FR-040).
+  expect((await crumbsOf(page)) === "Notes", "the crumbs name more than the sections entered");
   // The note written through the gateway waits in the draft, marked new and seen by its writer alone.
   await frame.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
   await frame.locator(".nt-kind", { hasText: "New" }).first().waitFor();
   await frame.locator(".nt-foot", { hasText: "Written by you; not published yet" }).first().waitFor();
-  // The core draws nothing over the panel: the filters and the actions are the page's, in its shell.
-  expect((await page.locator(".mx-pill, .mx-filters, .mx-views, .mx-legend, .mx-bar").count()) === 0, "the core draws controls over the panel");
+  // The core draws nothing over the panel: the filters and the actions are the page's, in its shell; the time
+  // scale's pill stands in the top row, not over the panel.
+  expect((await page.locator(".mx-panel .mx-pill, .mx-panel .mx-filters, .mx-panel .mx-views, .mx-panel .mx-legend, .mx-panel .mx-bar").count()) === 0, "the core draws controls over the panel");
   await frame.locator(".mx-filters .mx-filter-row").first().waitFor();
   // The filters are the mockup's 148 px and stand clear of the page's content.
   const filters = await frame.locator(".mx-filters").boundingBox();
@@ -271,8 +278,12 @@ await scenario("the Draft page opens in the right panel from the tree, with its 
   await frame.locator(".mx-empty-state", { hasText: "The State filter hides every change" }).waitFor();
   await page.goBack();
   await frame.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
-  // The draft is offered one moment only: no scale, no comparison.
-  expect((await page.locator(".mx-pill").count()) === 0, "the core drew a scale on the draft");
+  // The draft is on the scale as Published is (spec 079, FR-047, FR-048): its own changes and the publications, and
+  // both comparisons.
+  await page.locator(".mx-pill-main").click();
+  await page.locator(".mx-modes [role=radio]", { hasText: "Diff" }).waitFor();
+  expect((await page.locator(".mx-modes [role=radio]", { hasText: "Side by side" }).count()) === 1, "the draft offers no Side by side");
+  await page.keyboard.press("Escape");
 });
 
 await scenario("the draft is mine alone: a new note, a change and a revert, and Published does not show it until publication", async () => {
@@ -320,6 +331,11 @@ await scenario("the whole draft is published as one revision; Published marks my
   await frame.getByLabel("Comment").fill("The notes the team agreed on");
   await frame.getByLabel("Release, if any").fill("2026.11");
   await frame.locator(".mx-dialog").getByRole("button", { name: "Publish" }).click();
+  // A publication opens Published, which shows it (spec 079, 1.4); the draft is empty after it.
+  await page.waitForURL(/\/published/, { waitUntil: "commit" });
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  frame = page.frameLocator("iframe.mx-panel-frame");
   await frame.locator(".mx-empty-state", { hasText: "Your draft is empty" }).waitFor();
   // Publishing again with nothing in the draft is said in words.
   await frame.getByRole("button", { name: "Publish" }).click();
@@ -332,13 +348,16 @@ await scenario("the whole draft is published as one revision; Published marks my
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   const published = page.frameLocator("iframe.mx-panel-frame");
-  await published.locator(".nt-revision", { hasText: "v1 · First release · 2026.11" }).waitFor();
+  // The revision's head: its ref, its title, and who published it with the release (spec 079, 1.4).
+  await published.locator(".nt-revision", { hasText: /v1\s*First release.*2026\.11/ }).waitFor();
   await published.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
-  await published.getByRole("radio", { name: "Table" }).click();
-  await page.waitForURL(/view=table/);
-  await published.locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
-  await published.getByRole("radio", { name: "Cards" }).click();
-  await page.waitForURL((url) => !url.search.includes("view="));
+  // Published's bottom bar holds the zoom alone, as its mockup draws it (spec 079, 1.4); the table is the address's.
+  expect((await published.getByRole("radio", { name: "Table" }).count()) === 0, "Published's bar offers more than the zoom");
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published?view=table`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  await page.frameLocator("iframe.mx-panel-frame").locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   // Edit acts in my draft: nothing is published until the editor is saved, and a cancel writes nothing.
   const note = published.locator(".nt-card", { hasText: "Retry three times" });
   await note.getByRole("button", { name: "Edit" }).click();
@@ -363,6 +382,49 @@ await scenario("the whole draft is published as one revision; Published marks my
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   await page.frameLocator("iframe.mx-panel-frame").locator(".nt-card", { hasText: "Retry three times" }).waitFor();
+});
+
+await scenario("Published on the scale: its publications as purple points, Roll back exactly on a past one, and the rollback a red point after them", async () => {
+  // A second publication, so there is a past one to go back to.
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  const draft = page.frameLocator("iframe.mx-panel-frame");
+  await draft.getByRole("button", { name: "New note" }).click();
+  await draft.getByLabel("The note's text").fill("Payouts run twice a day");
+  await draft.locator(".mx-dialog").getByRole("button", { name: "Write" }).click();
+  await draft.locator(".nt-card", { hasText: "Payouts run twice a day" }).waitFor();
+  await draft.getByRole("button", { name: "Publish" }).click();
+  await draft.getByLabel("Title").fill("Payouts");
+  await draft.getByLabel("Comment").fill("Payouts move to twice a day");
+  await draft.locator(".mx-dialog").getByRole("button", { name: "Publish" }).click();
+  await page.waitForURL(/\/published/, { waitUntil: "commit" });
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  await page.locator(".mx-pill-main").click();
+  await page.locator(".mx-card .mx-point-ref", { hasText: "v2" }).waitFor();
+  const fills = await page.locator(".mx-card .mx-point-filled").evaluateAll((points) => points.map((point) => point.style.fill));
+  expect(fills.length === 2 && fills.every((fill) => fill.includes("--mx-tone-purple")), `the publications are not two purple points: ${fills}`);
+  // Exactly on v1: the page offers Roll back to v1. The pill's arrow steps through the publications — first to v2,
+  // the one in force, which offers nothing, then to v1.
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "The previous change" }).click();
+  await page.waitForURL(/at=/, { waitUntil: "commit" });
+  const at = page.url();
+  await page.getByRole("button", { name: "The previous change" }).click();
+  await page.waitForURL((url) => url.href !== at && url.search.includes("at="), { waitUntil: "commit" });
+  const past = page.frameLocator("iframe.mx-panel-frame");
+  await past.getByRole("button", { name: "Roll back to v1" }).click();
+  await past.getByLabel("Comment").fill("Payouts go back to once a day");
+  await past.locator(".mx-dialog").getByRole("button", { name: "Roll back to v1" }).click();
+  // Back to now: v3 is a red point after v1 and v2, which stay on the scale.
+  await page.waitForURL((url) => !url.search.includes("at="));
+  await page.locator(".mx-pill-main").click();
+  await page.locator(".mx-card .mx-point-ref", { hasText: "v3" }).waitFor();
+  const after = await page.locator(".mx-card .mx-point-filled").evaluateAll((points) => points.map((point) => point.style.fill));
+  expect(after.length === 3 && after[2].includes("--mx-tone-red"), `the rollback is not a red point after two: ${after}`);
+  await page.keyboard.press("Escape");
+  const now = page.frameLocator("iframe.mx-panel-frame");
+  await now.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
+  expect((await now.locator(".nt-card", { hasText: "Payouts run twice a day" }).count()) === 0, "the rollback kept a note v1 did not hold");
 });
 
 await scenario("a plugin's page opened by itself goes to its panel address", async () => {
@@ -447,9 +509,108 @@ await scenario("a page gives its history; the core keeps what holds and refuses 
   await page.waitForFunction(() => document.querySelector("iframe.mx-panel-frame")?.dataset.history?.includes("list_test_history"));
   const history = JSON.parse(await page.locator("iframe.mx-panel-frame").getAttribute("data-history"));
   page.off("console", listen);
-  expect(JSON.stringify(history) === JSON.stringify({ milestones: "list_test_history", compare: ["diff"] }), `the core kept ${JSON.stringify(history)}`);
+  // The test page's passport offers both comparisons; a wider one is refused as the panel's unit tests check.
+  expect(JSON.stringify(history) === JSON.stringify({ milestones: "list_test_history", compare: ["diff", "side_by_side"] }), `the core kept ${JSON.stringify(history)}`);
   expect(errors.some((text) => text.includes('card names "no_such_card"')), "the unknown name was not refused by name");
-  expect(errors.some((text) => text.includes('compare offers "side_by_side"')), "the wider comparison was not refused");
+});
+
+/** A moment some days back, to the minute, as the address writes it. */
+const daysAgo = (days) => new Date(Math.floor((Date.now() - days * 86_400_000) / 60_000) * 60_000).toISOString().replace(/\.\d{3}Z$/, ".000000Z");
+
+/** Open a fixture of the scale on the test page and its card. */
+async function openScale(fixture, query = "") {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/history/${fixture}${query}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").first().waitFor();
+  await page.locator(".mx-pill-main").click();
+  await page.locator(".mx-card .mx-track").waitFor();
+}
+
+await scenario("the scale: the card hangs 11 px under the pill, right edges aligned; a click writes a moment kept to the minute; a later one is refused", async () => {
+  await openScale("milestones");
+  const pill = await page.locator(".mx-pill").boundingBox();
+  const card = await page.locator(".mx-card").boundingBox();
+  expect(Math.abs(card.y - (pill.y + pill.height) - 11) <= 1, `the card stands ${card.y - pill.y - pill.height} px under the pill`);
+  expect(Math.abs(card.x + card.width - (pill.x + pill.width)) <= 1, "the card's right edge is not under the pill's");
+  const track = await page.locator(".mx-card .mx-track").boundingBox();
+  await page.mouse.click(track.x + track.width * 0.4, track.y + track.height - 60);
+  await page.waitForURL(/at=\d{4}-\d{2}-\d{2}T\d{2}%3A\d{2}%3A00\.000000Z/);
+  expect(await page.locator(".mx-pill-past").isVisible(), "the pill does not show the past");
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/history/milestones?at=2099-01-01T00:00:00.000000Z`);
+  await page.getByText("This moment has not come yet").waitFor();
+});
+
+await scenario("the scale is set up by the page: its kinds on the lane, small points and flags only when promised, the legend from the setup, an undeclared kind named", async () => {
+  const errors = [];
+  const listen = (message) => message.type() === "error" && errors.push(message.text());
+  page.on("console", listen);
+  await openScale("graph");
+  expect((await page.locator(".mx-card .mx-flag").count()) >= 1, "the graph's release has no flag");
+  expect((await page.locator(".mx-card .mx-point-ref.small").count()) >= 1, "the graph's small point is not small");
+  await page.getByRole("button", { name: "Reading the scale" }).click();
+  // The legend's titles are capitals by their style: the words are compared as text, whatever their case.
+  const legend = (await page.locator(".mx-legend").innerText()).toLowerCase();
+  for (const word of ["Points", "Merged", "Review required", "Size", "Flag", "Three points", "Now", "The chosen moment"]) expect(legend.includes(word.toLowerCase()), `the graph's legend lacks ${word}`);
+  await openScale("milestones");
+  await page.getByRole("button", { name: "Reading the scale" }).click();
+  const notes = (await page.locator(".mx-legend").innerText()).toLowerCase();
+  expect(notes.includes("rolled back") && !notes.includes("size") && !notes.includes("flag") && !notes.includes("bars"), "the notes' legend speaks of what it did not promise");
+  expect((await page.locator(".mx-card-small").count()) === 0, "the switch of small points stands without small");
+  await openScale("undeclared");
+  page.off("console", listen);
+  expect(errors.some((text) => text.includes('"shiny"')), "the undeclared kind was not named");
+  expect(errors.some((text) => text.includes("did not declare small")), "the small point without small was not named");
+});
+
+await scenario("bars: the page's changes stacked by kind under the lane", async () => {
+  await openScale("bars");
+  await page.locator(".mx-card .mx-bar-added").first().waitFor();
+  expect((await page.locator(".mx-card .mx-lane").count()) === 0, "a page with bars alone has a lane");
+});
+
+await scenario("Diff: the counts on the pill, the stepper stepped by Shift + ↓ from the frame, and the change's card", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/history/both?mode=diff&from=${daysAgo(11)}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  await page.locator(".mx-pill-counts").waitFor();
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".mx-stepper").waitFor();
+  await page.locator(".mx-top").click({ position: { x: 300, y: 20 } });
+  await page.keyboard.press("Shift+ArrowDown");
+  await frame.locator(".mx-stepper-middle b").filter({ hasText: /^1 of \d+$/ }).waitFor();
+  await frame.locator(".mx-diff-card").waitFor();
+});
+
+await scenario("Side by side: two panels with their heads; Track lights in A what the pointer is on in B, or says why it cannot", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/history/both?mode=side_by_side&from=${daysAgo(11)}`);
+  await page.locator(".mx-half-head").nth(1).waitFor();
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").nth(1).waitFor();
+  const [a, b] = [page.frames().find((f) => f.url().includes("_side=a")), page.frames().find((f) => f.url().includes("_side=b"))];
+  expect(a && b, "the two panels are not drawn");
+  const point = (anchor) => b.evaluate((name) => {
+    const element = document.querySelector(`[data-room-anchor="${name}"]`);
+    const box = element.getBoundingClientRect();
+    element.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: box.x + 3, clientY: box.y + 3 }));
+  }, anchor);
+  await point("table:Refund");
+  await page.locator(".mx-half-note").filter({ hasText: "Not in A" }).waitFor();
+  await point("field:Account.email");
+  await page.locator(".mx-half-note").filter({ hasText: "is not in A · showing Account" }).waitFor();
+  expect((await a.locator('[data-room-anchor="table:Account"][data-marked]').count()) === 1, "A does not light the table it holds");
+});
+
+await scenario("on a phone the pill fills the top row, its card is a sheet from below, and Side by side is one panel with an A / B switch", async () => {
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+  await phone.addCookies(await context.cookies());
+  const p = await phone.newPage();
+  await p.goto(`${BASE}/w/${CODE}/core/panel-test/history/both?mode=side_by_side&from=${daysAgo(11)}`);
+  // The panel not shown stays drawn under the other, hidden: the switch is the shown panel's.
+  await p.locator(".mx-half.phone-shown .mx-flip").waitFor();
+  expect((await p.locator(".mx-pill").boundingBox()).width >= 220, "the pill does not fill the top row");
+  await p.locator(".mx-pill-main").click();
+  const sheet = await p.locator(".mx-card").boundingBox();
+  expect(sheet.width >= 370 && sheet.y + sheet.height >= 800, "the card is not a sheet from below");
+  expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the page scrolls sideways on a phone");
+  await phone.close();
 });
 
 await scenario("a page without the shell is marked by a red strip on the stand", async () => {
@@ -467,7 +628,7 @@ await scenario("a node that is entered holds its children only; its head, its cr
   await page.locator(".mx-node", { hasText: "Notes" }).first().click();
   await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
   await page.locator(".mx-node", { hasText: "Payments" }).waitFor();
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes", "the crumbs do not name the entered level");
+  expect((await crumbsOf(page)) === "Notes", "the crumbs do not name the entered level");
   // An item expands where it stands, inside the level; Back returns to the root and opens nothing.
   await page.locator(".mx-node", { hasText: "Payments" }).click();
   await page.locator(`a.mx-node[href$="/items/${ITEM}"]`).waitFor();
@@ -483,15 +644,11 @@ await scenario("a node that is entered holds its children only; its head, its cr
   // A reload on a page inside Notes enters Notes again from the address, and the page's own line is expanded.
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
   await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Draft", "the crumbs do not name the entered level and the page");
+  expect((await crumbsOf(page)) === "Notes", "the crumbs do not name the entered level, or name the page inside it");
+  // Back steps out of the deepest section through the address: the organization's root (spec 079, FR-041).
   await page.getByRole("button", { name: "Back" }).click();
   await page.locator(".mx-level-head").waitFor({ state: "detached" });
-  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).waitFor();
-  expect(page.url().includes(`/notes/items/${ITEM}`), "Back changed the address");
-  // Entering Settings with a note's page open keeps the crumbs on the page's own line: Settings is not over it.
-  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).click();
-  await page.locator(".mx-level-head", { hasText: "Settings" }).waitFor();
-  expect((await page.locator(".mx-path").innerText()).replace(/\s+/g, " ") === "Notes › Draft", "the crumbs name Settings over a page of Notes");
+  await page.waitForURL(new RegExp(`/w/${CODE}$`), { waitUntil: "commit" });
 });
 
 await scenario("the tree's head: collapse folds the tree, the arrow is Back and steps out of the entered level", async () => {
@@ -501,14 +658,13 @@ await scenario("the tree's head: collapse folds the tree, the arrow is Back and 
   expect((await page.locator(".mx-body > .mx-tree.collapsed .mx-node").count()) === 0, "the collapsed tree still shows its nodes");
   await page.getByRole("button", { name: "Expand sidebar" }).click();
   await page.locator(".mx-body > .mx-tree .mx-node").first().waitFor();
-  // Back returns to the level before the last entering and opens nothing: the address and the panel's page stay.
+  // Back steps out of the entered level through the address: the tree, the crumbs, the address and the panel agree.
   await page.getByRole("button", { name: "Back" }).click();
   await page.locator(".mx-level-head").waitFor({ state: "detached" });
   expect((await page.locator(".mx-node", { hasText: "Notes" }).count()) === 1, "the root of the tree is not back");
-  expect((await page.locator("iframe.mx-panel-frame:not(.waiting)").count()) === 1, "Back closed the page");
-  expect(page.url().includes(`/notes/items/${ITEM}`), "Back changed the address");
-  // At the root the arrow is off.
-  expect((await page.locator(".mx-tree-head .mx-tree-button.off[aria-label='Back']").count()) === 1, "Back is on at the root");
+  await page.waitForURL(new RegExp(`/w/${CODE}$`), { waitUntil: "commit" });
+  // At the root there is no level above: Back is not drawn.
+  expect((await page.locator(".mx-tree-head [aria-label='Back']").count()) === 0, "Back stands at the root");
 });
 
 await scenario("a second organization installs the deployed version without building it", async () => {

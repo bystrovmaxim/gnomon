@@ -1259,6 +1259,15 @@
       "type": "field"
     },
     {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams|field|maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:from_at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams",
+      "target_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:from_at",
+      "type": "field"
+    },
+    {
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams|field|maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:item_id",
       "is_dag": false,
       "properties": {},
@@ -1266,6 +1275,33 @@
       "source_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams",
       "target_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:item_id",
       "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams|field|maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:to_at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams",
+      "target_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:to_at",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams|field|maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:width",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams",
+      "target_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:width",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:bars|entity_schema|maxitor_notes.entities.bar_entity.BarCoreEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:bars",
+      "target_id": "maxitor_notes.entities.bar_entity.BarCoreEntity",
+      "type": "entity_schema"
     },
     {
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:changes|entity_schema|maxitor_notes.entities.note_change_entity.NoteChangeCoreEntity",
@@ -1284,6 +1320,15 @@
       "source_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:revision",
       "target_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
       "type": "entity_schema"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult|field|maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:bars",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult",
+      "target_id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:bars",
+      "type": "field"
     },
     {
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult|field|maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:changes",
@@ -1423,6 +1468,24 @@
       "type": "field"
     },
     {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:changed",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
+      "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:changed",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:from_at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
+      "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:from_at",
+      "type": "field"
+    },
+    {
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:item_id",
       "is_dag": false,
       "properties": {},
@@ -1430,6 +1493,42 @@
       "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
       "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:item_id",
       "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:to_at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
+      "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:to_at",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:width",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
+      "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:width",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:written",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams",
+      "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:written",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:bars|entity_schema|maxitor_notes.entities.bar_entity.BarCoreEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:bars",
+      "target_id": "maxitor_notes.entities.bar_entity.BarCoreEntity",
+      "type": "entity_schema"
     },
     {
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:notes|entity_schema|maxitor_notes.entities.note_entity.NoteCoreEntity",
@@ -1448,6 +1547,15 @@
       "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:revision",
       "target_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
       "type": "entity_schema"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:bars",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult",
+      "target_id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:bars",
+      "type": "field"
     },
     {
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult|field|maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:notes",
@@ -1942,6 +2050,179 @@
       "type": "field"
     },
     {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide|@required_context|maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide|@required_context|maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary|@required_context|maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary:reqctx:user.organization",
+      "is_dag": false,
+      "properties": {
+        "key": "user.organization"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary:reqctx:user.organization",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary|@required_context|maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary:reqctx:user.user_id",
+      "is_dag": false,
+      "properties": {
+        "key": "user.user_id"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary:reqctx:user.user_id",
+      "type": "@required_context"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction|@access_decide|maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide",
+      "type": "@access_decide"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction|@check_roles|maxitor_plugin_sdk.roles.MemberRole",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction",
+      "target_id": "maxitor_plugin_sdk.roles.MemberRole",
+      "type": "@check_roles"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction|@connection|maxitor_notes.storage.notes_storage.NotesStorage",
+      "is_dag": true,
+      "properties": {
+        "description": "The plugin's own schema notes",
+        "key": "notes"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction",
+      "target_id": "maxitor_notes.storage.notes_storage.NotesStorage",
+      "type": "@connection"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction|@summary_aspect|maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary",
+      "type": "@summary_aspect"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction|domain|maxitor_notes.notes_domain.NotesDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction",
+      "target_id": "maxitor_notes.notes_domain.NotesDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction|generic:params|maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams",
+      "type": "generic:params"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction|generic:result|maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult",
+      "type": "generic:result"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams|field|maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:comment",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:comment",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams|field|maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:item_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:item_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams|field|maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:title",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:title",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams|field|maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:to_revision",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:to_revision",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult|field|maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:back",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:back",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult|field|maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:changed_at",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:changed_at",
+      "type": "field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult|field|maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:number",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult",
+      "target_id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:number",
+      "type": "field"
+    },
+    {
       "id": "maxitor_notes.entities.bar_entity.BarCoreEntity|domain|maxitor_notes.notes_domain.NotesDomain",
       "is_dag": true,
       "properties": {},
@@ -2093,7 +2374,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "author_id",
-        "ordinal": 8
+        "ordinal": 6
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2105,7 +2386,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "author_name",
-        "ordinal": 9
+        "ordinal": 7
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2113,15 +2394,15 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:chips",
+      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:back",
       "is_dag": false,
       "properties": {
-        "field_name": "chips",
+        "field_name": "back",
         "ordinal": 11
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:chips",
+      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:back",
       "type": "entity_field"
     },
     {
@@ -2129,7 +2410,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "comment",
-        "ordinal": 12
+        "ordinal": 10
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2161,27 +2442,15 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:link",
+      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:notes",
       "is_dag": false,
       "properties": {
-        "field_name": "link",
-        "ordinal": 7
+        "field_name": "notes",
+        "ordinal": 9
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:link",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity|entity_field|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:minor",
-      "is_dag": false,
-      "properties": {
-        "field_name": "minor",
-        "ordinal": 5
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:minor",
+      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:notes",
       "type": "entity_field"
     },
     {
@@ -2201,7 +2470,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "release",
-        "ordinal": 6
+        "ordinal": 5
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2213,7 +2482,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "summary",
-        "ordinal": 10
+        "ordinal": 8
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
@@ -2254,6 +2523,18 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:comment",
+      "is_dag": false,
+      "properties": {
+        "field_name": "comment",
+        "ordinal": 5
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
+      "target_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:comment",
+      "type": "entity_field"
+    },
+    {
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:id",
       "is_dag": false,
       "properties": {
@@ -2270,7 +2551,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "kind",
-        "ordinal": 2
+        "ordinal": 4
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
@@ -2278,35 +2559,11 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:link",
-      "is_dag": false,
-      "properties": {
-        "field_name": "link",
-        "ordinal": 7
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:link",
-      "type": "entity_field"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:minor",
-      "is_dag": false,
-      "properties": {
-        "field_name": "minor",
-        "ordinal": 5
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:minor",
-      "type": "entity_field"
-    },
-    {
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:ref",
       "is_dag": false,
       "properties": {
         "field_name": "ref",
-        "ordinal": 3
+        "ordinal": 2
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
@@ -2314,23 +2571,11 @@
       "type": "entity_field"
     },
     {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:release",
-      "is_dag": false,
-      "properties": {
-        "field_name": "release",
-        "ordinal": 6
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
-      "target_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:release",
-      "type": "entity_field"
-    },
-    {
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity|entity_field|maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:title",
       "is_dag": false,
       "properties": {
         "field_name": "title",
-        "ordinal": 4
+        "ordinal": 3
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
@@ -2666,7 +2911,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "changed_by",
-        "ordinal": 6
+        "ordinal": 7
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.note_entity.NoteCoreEntity",
@@ -2702,7 +2947,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "since",
-        "ordinal": 7
+        "ordinal": 8
       },
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.note_entity.NoteCoreEntity",
@@ -2746,6 +2991,18 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor_notes.entities.note_entity.NoteCoreEntity|entity_field|maxitor_notes.entities.note_entity.NoteCoreEntity:written",
+      "is_dag": false,
+      "properties": {
+        "field_name": "written",
+        "ordinal": 6
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.note_entity.NoteCoreEntity",
+      "target_id": "maxitor_notes.entities.note_entity.NoteCoreEntity:written",
+      "type": "entity_field"
+    },
+    {
       "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity|domain|maxitor_notes.notes_domain.NotesDomain",
       "is_dag": true,
       "properties": {},
@@ -2767,6 +3024,18 @@
       "type": "entity_field"
     },
     {
+      "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity|entity_field|maxitor_notes.entities.revision_entity.RevisionCoreEntity:back_revision",
+      "is_dag": false,
+      "properties": {
+        "field_name": "back_revision",
+        "ordinal": 10
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
+      "target_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:back_revision",
+      "type": "entity_field"
+    },
+    {
       "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity|entity_field|maxitor_notes.entities.revision_entity.RevisionCoreEntity:comment",
       "is_dag": false,
       "properties": {
@@ -2776,6 +3045,18 @@
       "relationship": "Composition",
       "source_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
       "target_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:comment",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity|entity_field|maxitor_notes.entities.revision_entity.RevisionCoreEntity:first_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "first_at",
+        "ordinal": 9
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
+      "target_id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:first_at",
       "type": "entity_field"
     },
     {
@@ -3200,21 +3481,12 @@
       "type": "field"
     },
     {
-      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card|entity_schema|maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "is_dag": true,
-      "properties": {},
-      "relationship": "Aggregation",
-      "source_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card",
-      "target_id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity",
-      "type": "entity_schema"
-    },
-    {
-      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult|field|maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card",
+      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult|field|maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:blocks",
       "is_dag": false,
       "properties": {},
       "relationship": "Composition",
       "source_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult",
-      "target_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card",
+      "target_id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:blocks",
       "type": "field"
     },
     {
@@ -3961,7 +4233,7 @@
       "id": "maxitor_notes.actions.list_item_notes_action.ListItemNotesParams:width",
       "label": "width",
       "properties": {
-        "description": "A bar's width in seconds",
+        "description": "A bar's width in seconds, from one second to thirty days",
         "entity_schema": false,
         "json_schema_value": false,
         "required": false
@@ -4327,6 +4599,17 @@
       "type": "Field"
     },
     {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:from_at",
+      "label": "from_at",
+      "properties": {
+        "description": "The stretch's start, for the scale's bars",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:item_id",
       "label": "item_id",
       "properties": {
@@ -4338,19 +4621,52 @@
       "type": "Field"
     },
     {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:to_at",
+      "label": "to_at",
+      "properties": {
+        "description": "The stretch's end; cut to the watermark",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftParams:width",
+      "label": "width",
+      "properties": {
+        "description": "A bar's width in seconds, from one second to thirty days",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult",
       "label": "ListNoteDraftResult",
       "properties": {},
       "type": "Result"
     },
     {
+      "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:bars",
+      "label": "bars",
+      "properties": {
+        "description": "Over a stretch: the bars of the draft's changes, in time order",
+        "entity_schema": true,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.list_note_draft_action.ListNoteDraftResult:changes",
       "label": "changes",
       "properties": {
-        "description": "Every note added, changed or removed since it, in time order",
+        "description": "Every note added, changed or removed since it, in time order; none over a stretch",
         "entity_schema": true,
         "json_schema_value": false,
-        "required": true
+        "required": false
       },
       "type": "Field"
     },
@@ -4361,7 +4677,7 @@
         "description": "The revision the draft counts from; none before the first",
         "entity_schema": true,
         "json_schema_value": false,
-        "required": true
+        "required": false
       },
       "type": "Field"
     },
@@ -4439,6 +4755,28 @@
       "type": "Field"
     },
     {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:changed",
+      "label": "changed",
+      "properties": {
+        "description": "The filter Last change: a range of days the note last changed in, as the shell writes it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:from_at",
+      "label": "from_at",
+      "properties": {
+        "description": "The stretch's start, for the scale's bars",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:item_id",
       "label": "item_id",
       "properties": {
@@ -4450,19 +4788,63 @@
       "type": "Field"
     },
     {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:to_at",
+      "label": "to_at",
+      "properties": {
+        "description": "The stretch's end; cut to the watermark",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:width",
+      "label": "width",
+      "properties": {
+        "description": "A bar's width in seconds, from one second to thirty days",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesParams:written",
+      "label": "written",
+      "properties": {
+        "description": "The filter Written: a range of days the note was first written in, as the shell writes it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult",
       "label": "ListPublishedNotesResult",
       "properties": {},
       "type": "Result"
     },
     {
+      "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:bars",
+      "label": "bars",
+      "properties": {
+        "description": "Over a stretch: the bars of the published notes' changes, in time order",
+        "entity_schema": true,
+        "json_schema_value": false,
+        "required": false
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.actions.list_published_notes_action.ListPublishedNotesResult:notes",
       "label": "notes",
       "properties": {
-        "description": "Its notes as they read when it was published",
+        "description": "Its notes as they read when it was published; none over a stretch",
         "entity_schema": true,
         "json_schema_value": false,
-        "required": true
+        "required": false
       },
       "type": "Field"
     },
@@ -4473,7 +4855,7 @@
         "description": "The revision in force at the moment; none before the first",
         "entity_schema": true,
         "json_schema_value": false,
-        "required": true
+        "required": false
       },
       "type": "Field"
     },
@@ -4853,6 +5235,151 @@
       "type": "Field"
     },
     {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction",
+      "label": "RollbackPublicationAction",
+      "properties": {
+        "description": "Publish the notes of a past revision again as the item's next revision"
+      },
+      "type": "Action"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide",
+      "label": "item_access_decide",
+      "properties": {
+        "description": "Refuse a person who is not a member of the organization of the address, and an item that is not one of it"
+      },
+      "type": "AccessDecide"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:item_access_decide:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary",
+      "label": "rollback_summary",
+      "properties": {
+        "description": "Publish the past revision's notes as the next revision and return its number"
+      },
+      "type": "SummaryAspect"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary:reqctx:user.organization",
+      "label": "user.organization",
+      "properties": {
+        "key": "user.organization"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationAction:rollback_summary:reqctx:user.user_id",
+      "label": "user.user_id",
+      "properties": {
+        "key": "user.user_id"
+      },
+      "type": "RequiredContext"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams",
+      "label": "RollbackPublicationParams",
+      "properties": {},
+      "type": "Params"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:comment",
+      "label": "comment",
+      "properties": {
+        "description": "Why, shown under the time scale when the rollback is in force",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:item_id",
+      "label": "item_id",
+      "properties": {
+        "description": "The item whose notes are rolled back",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:title",
+      "label": "title",
+      "properties": {
+        "description": "The new revision's first line: Back to v<number>",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationParams:to_revision",
+      "label": "to_revision",
+      "properties": {
+        "description": "The number of the past revision whose notes are published again",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult",
+      "label": "RollbackPublicationResult",
+      "properties": {},
+      "type": "Result"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:back",
+      "label": "back",
+      "properties": {
+        "description": "The revision it brought back",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:changed_at",
+      "label": "changed_at",
+      "properties": {
+        "description": "The change time, ISO 8601 with microseconds: the revision's moment",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor_notes.actions.rollback_publication_action.RollbackPublicationResult:number",
+      "label": "number",
+      "properties": {
+        "description": "The new revision's number",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
       "id": "maxitor_notes.entities.bar_entity.BarCoreEntity",
       "label": "BarCoreEntity",
       "properties": {
@@ -4983,7 +5510,7 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:at",
       "label": "at",
       "properties": {
-        "description": "When it was published, or the watermark for the draft",
+        "description": "When it was published",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false
@@ -4994,7 +5521,7 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:author_id",
       "label": "author_id",
       "properties": {
-        "description": "Who published it; none for the draft",
+        "description": "Who published it",
         "field_annotation": "Union[str, NoneType]",
         "field_type": "str | None",
         "primary_key_hint": false
@@ -5013,12 +5540,12 @@
       "type": "EntityField"
     },
     {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:chips",
-      "label": "chips",
+      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:back",
+      "label": "back",
       "properties": {
-        "description": "Short counts: the number of its notes",
-        "field_annotation": "list[str]",
-        "field_type": "str[]",
+        "description": "For a rollback, the revision it brought back",
+        "field_annotation": "Union[int, NoneType]",
+        "field_type": "int | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5027,7 +5554,7 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:comment",
       "label": "comment",
       "properties": {
-        "description": "Its own words, shown under the scale when it is chosen",
+        "description": "Its own words, shown under the scale when it is in force",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false
@@ -5038,7 +5565,7 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:id",
       "label": "id",
       "properties": {
-        "description": "v<number> for a revision, draft for the draft",
+        "description": "v<number>",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": true
@@ -5049,31 +5576,20 @@
       "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:kind",
       "label": "kind",
       "properties": {
-        "description": "The look of its point",
-        "field_annotation": "Literal[revision, proposal]",
-        "field_type": "\"revision\" | \"proposal\"",
+        "description": "Its kind: a publication, or a rollback to an earlier one",
+        "field_annotation": "Literal[published, rollback]",
+        "field_type": "\"published\" | \"rollback\"",
         "primary_key_hint": false
       },
       "type": "EntityField"
     },
     {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:link",
-      "label": "link",
+      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:notes",
+      "label": "notes",
       "properties": {
-        "description": "Where choosing it leads",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_card_entity.MilestoneCardCoreEntity:minor",
-      "label": "minor",
-      "properties": {
-        "description": "A revision that added and removed no note",
-        "field_annotation": "bool",
-        "field_type": "bool",
+        "description": "How many notes it holds",
+        "field_annotation": "int",
+        "field_type": "int",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5126,7 +5642,7 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity",
       "label": "MilestoneCoreEntity",
       "properties": {
-        "description": "A published revision, or the draft, as a point of the time scale",
+        "description": "A publication of an item's notes, as a point of the time scale",
         "entity_kind": "core",
         "entity_kind_label": "Core"
       },
@@ -5136,9 +5652,20 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:at",
       "label": "at",
       "properties": {
-        "description": "When it was published, or the watermark for the draft",
+        "description": "When it was published",
         "field_annotation": "str",
         "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:comment",
+      "label": "comment",
+      "properties": {
+        "description": "Its own words, shown under the scale while it is in force",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5147,7 +5674,7 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:id",
       "label": "id",
       "properties": {
-        "description": "v<number> for a revision, draft for the draft",
+        "description": "v<number>",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": true
@@ -5158,31 +5685,9 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:kind",
       "label": "kind",
       "properties": {
-        "description": "The look of its point: a revision or the draft",
-        "field_annotation": "Literal[revision, proposal]",
-        "field_type": "\"revision\" | \"proposal\"",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:link",
-      "label": "link",
-      "properties": {
-        "description": "Where choosing it leads: the draft's page for the proposal",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:minor",
-      "label": "minor",
-      "properties": {
-        "description": "A revision that added and removed no note: a small point",
-        "field_annotation": "bool",
-        "field_type": "bool",
+        "description": "Its kind: a publication, or a rollback to an earlier one",
+        "field_annotation": "Literal[published, rollback]",
+        "field_type": "\"published\" | \"rollback\"",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5191,20 +5696,9 @@
       "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:ref",
       "label": "ref",
       "properties": {
-        "description": "Its short reference",
+        "description": "Its short reference, v<number>",
         "field_annotation": "str",
         "field_type": "str",
-        "primary_key_hint": false
-      },
-      "type": "EntityField"
-    },
-    {
-      "id": "maxitor_notes.entities.milestone_entity.MilestoneCoreEntity:release",
-      "label": "release",
-      "properties": {
-        "description": "The release label it carries; a flag over its point",
-        "field_annotation": "Union[str, NoneType]",
-        "field_type": "str | None",
         "primary_key_hint": false
       },
       "type": "EntityField"
@@ -5600,6 +6094,17 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor_notes.entities.note_entity.NoteCoreEntity:written",
+      "label": "written",
+      "properties": {
+        "description": "When the note was first written, ISO 8601 with microseconds: the filter Written reads it",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
       "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity",
       "label": "RevisionCoreEntity",
       "properties": {
@@ -5621,10 +6126,32 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:back_revision",
+      "label": "back_revision",
+      "properties": {
+        "description": "The revision a rollback brought back; none for one published from a draft",
+        "field_annotation": "Union[int, NoneType]",
+        "field_type": "int | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
       "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:comment",
       "label": "comment",
       "properties": {
         "description": "The revision's own words",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor_notes.entities.revision_entity.RevisionCoreEntity:first_at",
+      "label": "first_at",
+      "properties": {
+        "description": "When the item's first revision was published: the page's ready stretch starts there",
         "field_annotation": "str",
         "field_type": "str",
         "primary_key_hint": false
@@ -5879,7 +6406,7 @@
       "id": "maxitor_notes.history.list_note_history_action.ListNoteHistoryResult:milestones",
       "label": "milestones",
       "properties": {
-        "description": "The revisions in time order, the draft last",
+        "description": "The publications in time order",
         "entity_schema": true,
         "json_schema_value": false,
         "required": true
@@ -5963,7 +6490,7 @@
       "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardParams:id",
       "label": "id",
       "properties": {
-        "description": "v<number> for a revision, draft for the draft",
+        "description": "v<number>",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -5988,11 +6515,11 @@
       "type": "Result"
     },
     {
-      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:card",
-      "label": "card",
+      "id": "maxitor_notes.history.note_milestone_card_action.NoteMilestoneCardResult:blocks",
+      "label": "blocks",
       "properties": {
-        "description": "Author, what it changed, the number of notes, its comment",
-        "entity_schema": true,
+        "description": "The card's blocks of history-2.schema.json, in their order",
+        "entity_schema": false,
         "json_schema_value": false,
         "required": true
       },

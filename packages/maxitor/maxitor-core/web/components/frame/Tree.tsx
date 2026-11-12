@@ -6,10 +6,10 @@
 // source that fails breaks its own branch only.
 "use client";
 
+import { TreeMark } from "@/components/frame/treeMarks";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Icon } from "@/components/marks";
 import { windowAddress } from "@/lib/address";
 import { childrenOf, lineOf, pathOf, type Instance, type TreeNode } from "@/lib/tree";
 
@@ -29,9 +29,9 @@ function placeOf(node: TreeNode, scope: Scope): string {
 }
 
 function NodeIcon({ name }: { name: string }) {
-  if (name === "settings") return <Icon.gear />;
-  if (name === "plugins" || name === "puzzle") return <Icon.puzzle />;
-  return <Icon.page />;
+  if (name === "settings") return <TreeMark.settings />;
+  if (name === "plugins" || name === "puzzle") return <TreeMark.plugins />;
+  return <TreeMark.page />;
 }
 
 export function Tree({
@@ -39,6 +39,7 @@ export function Tree({
   nodes,
   owners,
   at,
+  carry,
   level,
   selected,
   onEnter,
@@ -51,6 +52,8 @@ export function Tree({
   owners: string[];
   /** The panel's moment; null reads now. */
   at: string | null;
+  /** The comparison every page keeps: `mode` and `from` of the address, carried into every link of the tree. */
+  carry: Record<string, string>;
   /** The level at the head of the panel; null shows the root of the tree. */
   level: Level | null;
   /** The open node and the scope its address fills. */
@@ -83,8 +86,10 @@ export function Tree({
     });
   }, [nodes, selected, level]);
 
-  // A moment changed: every list is read again at it.
-  useEffect(() => setParts({}), [at]);
+  // A moment changed, or the panel entered or left a section — Back included —: every list is read again, so what
+  // changed meanwhile, or failed to be read before, shows without reloading the page.
+  const levelKey = level === null ? "" : `${level.node.name}|${JSON.stringify(level.scope)}`;
+  useEffect(() => setParts({}), [at, levelKey]);
 
   const load = useCallback(
     async (node: TreeNode, scope: Scope, after: string | null) => {
@@ -149,7 +154,7 @@ export function Tree({
       <span className="mx-node-fold" />
     ) : hasChildren ? (
       <span className={`mx-node-fold${shut ? " shut" : ""}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggle(place); }}>
-        <Icon.chevron />
+        <TreeMark.fold />
       </span>
     ) : (
       <span className="mx-node-fold" />
@@ -173,7 +178,7 @@ export function Tree({
     };
     if (path !== null) {
       return (
-        <Link className={className} style={indent} href={windowAddress(code, node.owner, path, {}, at)} aria-current={isSelected(node, scope) ? "page" : undefined} onClick={chosen}>
+        <Link className={className} style={indent} href={windowAddress(code, node.owner, path, carry, at)} aria-current={isSelected(node, scope) ? "page" : undefined} onClick={chosen}>
           {inner}
         </Link>
       );

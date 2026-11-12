@@ -29,6 +29,18 @@ export function readAddress(pathname: string, search: string | URLSearchParams):
   return { code, owner: owner ?? null, path: `/${rest.map(encodeURIComponent).join("/")}`, query, at };
 }
 
+/** The comparison's parameters beside `at` (spec 079, FR-018): the core's, like the moment. */
+export const COMPARISON = ["mode", "from"] as const;
+
+/**
+ * What the screen keeps from one page to another, whatever the page and whatever its owner: the comparison of the
+ * address, its mode and A. With `at` it is the moment and the mode of the whole screen; a page that does not offer
+ * the mode opens `at` as one moment, and the next page that offers it compares again.
+ */
+export function carried(query: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(COMPARISON.filter((name) => query[name]).map((name) => [name, query[name]]));
+}
+
 /** The query string of parameters and a moment; parameters keep their order, the moment comes last. */
 export function queryString(query: Record<string, string>, at: string | null): string {
   const params = new URLSearchParams(query);

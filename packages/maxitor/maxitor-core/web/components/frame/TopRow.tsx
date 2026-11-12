@@ -1,11 +1,11 @@
 // packages/maxitor/maxitor-core/web/components/frame/TopRow.tsx
 // The frame's top row (spec 077, FR-004, and spec 085, FR-011): the organization with its switch, the crumbs of the
-// entered levels and the open page, the places of the time scale (#98) and of who is on the page (#76), and the
+// entered levels and the open page, the time scale (spec 079), the place of who is on the page (#76), and the
 // person's icon with its menu. A crumb of an entered level steps the panel out to that level.
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { signOut } from "@/app/actions";
 import { SignInMethods } from "@/components/SignInMethods";
@@ -23,6 +23,7 @@ export function TopRow({
   methods,
   switchTo,
   onMenu,
+  moment,
 }: {
   account: Me;
   current: { code: string; name: string };
@@ -35,6 +36,8 @@ export function TopRow({
   /** The address of the same page in another organization. */
   switchTo: (code: string) => string;
   onMenu: () => void;
+  /** The time scale of the open page: its pill, and the card hanging from it. */
+  moment: ReactNode;
 }) {
   const [pop, setPop] = useState<Pop>(methods ? "methods" : null);
   const orgs = account.organizations;
@@ -65,7 +68,7 @@ export function TopRow({
         <nav className="mx-path" aria-label="Path">
           {path.map((step, index) => (
             <span key={`${index}-${step.title}`} style={{ display: "contents" }}>
-              {index > 0 ? <span className="mx-path-sep">›</span> : null}
+              <span className="mx-path-sep">›</span>
               {step.level === null ? (
                 <span className="mx-path-step">{step.title}</span>
               ) : (
@@ -76,13 +79,13 @@ export function TopRow({
             </span>
           ))}
         </nav>
-        {/* The time scale of #98 stands here. */}
-        <span className="mx-slot" data-slot="moment" />
+        <span className="mx-slot mx-slot-moment" data-slot="moment">{moment}</span>
         {/* Who is on the page, #76, stands here. */}
         <span className="mx-slot" data-slot="presence" />
         <button
           type="button"
           className={`mx-avatar${pop === "me" ? " on" : ""}`}
+          style={{ background: colorOf(account.account_id) }}
           title={`${account.name}\n${account.email}`}
           aria-label={`${account.name}, ${account.email}`}
           onClick={() => setPop(pop === "me" ? null : "me")}
@@ -104,8 +107,6 @@ export function TopRow({
           <div className="mx-menu left">
             <div className="mx-menu-group">Your organizations</div>
             {orgItems}
-            <hr />
-            <a className="mx-menu-item" href="/new"><Icon.plus />Register an organization</a>
           </div>
         ) : null}
       </div>

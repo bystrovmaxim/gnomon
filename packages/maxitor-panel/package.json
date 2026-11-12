@@ -1,6 +1,6 @@
 {
   "name": "@maxitor/panel",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "What a Maxitor plugin's page draws with in the core's right panel: the page document, the panel router, the address parameters, the canvas and the common content",
   "license": "Apache-2.0",
   "type": "module",
@@ -10,7 +10,9 @@
     ".": "./src/index.ts",
     "./protocol": "./src/protocol.ts",
     "./panel.css": "./src/panel.css",
-    "./address": "./src/shell/address.ts"
+    "./address": "./src/shell/address.ts",
+    "./keys": "./src/keys.ts",
+    "./history": "./src/history.ts"
   },
   "files": [
     "src",

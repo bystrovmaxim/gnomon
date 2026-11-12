@@ -52,7 +52,7 @@ class ListItemNotesParams(BaseParams):
     author: str | None = Field(default=None, max_length=64, description="The author filter: one writer's id; none means every writer")
     from_at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The stretch's start, for the scale's bars")
     to_at: str | None = Field(default=None, pattern=MOMENT_PATTERN, description="The stretch's end; cut to the watermark")
-    width: int | None = Field(default=None, ge=60, le=2592000, description="A bar's width in seconds")
+    width: int | None = Field(default=None, ge=1, le=2592000, description="A bar's width in seconds, from one second to thirty days")
 
     @model_validator(mode="after")
     def _one_question(self) -> ListItemNotesParams:

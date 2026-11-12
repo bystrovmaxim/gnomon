@@ -9,11 +9,11 @@ MAXITOR_CORE_DSN=postgresql://maxitor_core:…@db/maxitor maxitor-plugin-runner 
 
 ## What it does
 
-On start it removes every plugin container a stopped runner left; then every round (10 s) it runs the actions of the core's domain `plugins` in itself — there is no HTTP route:
+On start it removes every plugin container and network a stopped runner left; then every round (10 s) it runs the actions of the core's domain `plugins` in itself — there is no HTTP route:
 
 1. **The versions to run**: every deployed version enabled in at least one organization.
 2. **Each version kept running.** The backend's image is built once from the version's wheel, on `python:<x.y>-slim` with the wheel and its requirements; the frontend's image is the one the installer built for the serving core version (`plugins.plugin_build` of `plugins.frontend_generation`'s serving version) — without such a build no frontend runs, and a frontend container running another image is restarted on the new one once the site moves to a new core. An image that cannot be built is a critical message, `The images of <plugin> <version> could not be built: <reason>`, the reason being the first error of the step that failed — pip's, when a requirement is missing — and the next round tries again. Each runs as a container `maxitor-<schema>-<kind>`: user 65534, no capabilities, no new privileges, a read-only file system, limits of memory, CPU and processes, a network `maxitor-<schema>` of its own, its port published on `127.0.0.1` of the host only. Its address goes into `plugins.plugin_process` once it answers HTTP. A container that exits is started again after a pause that doubles from 5 seconds up to 5 minutes; its failures are forgotten after a minute of running.
-3. **The rest stopped**: the containers of a version no organization runs any more are removed with their rows.
+3. **The rest stopped**: the containers of a version no organization runs any more are removed with their rows, and then its network — the database's container let go of it first, or Docker counts it in use. A version left with a network alone is stopped the same way, so no version leaves a network behind: Docker gives a host about thirty, and when they run out no version can start. A network Docker cannot make stops the start in Docker's own words.
 
 One runner works at a time: it holds the advisory lock `plugin-runner`, and a second one waits. Every line is a typed event of the domain `plugins`.
 
@@ -34,6 +34,6 @@ Its version's environment file — the database address as its own role, `MAXITO
 | `MAXITOR_PLUGIN_FIND_LINKS` | A folder of wheels a version's requirements are taken from when PyPI does not have them yet. |
 | `MAXITOR_PLUGIN_MEMORY`, `MAXITOR_PLUGIN_CPUS` | A container's limits: `512m` and `1`. |
 | `MAXITOR_RUNNER_PERIOD_SECONDS` | How often it takes its round: 10 s. |
-| `MAXITOR_RUNNER_NAME` | The runner's name, `maxitor` by default. Its containers carry the label `maxitor.plugin.runner=<name>`, and a runner of another name puts its name in front of its containers' and networks' names: it starts, watches and removes only its own, so two stands share a host. |
+| `MAXITOR_RUNNER_NAME` | The runner's name, `maxitor` by default. Its containers and networks carry the label `maxitor.plugin.runner=<name>`, and a runner of another name puts its name in front of its containers' and networks' names: it starts, watches and removes only its own, so two stands share a host. |
 
 The runner needs Docker on its host and reads the environment files of the versions, so it runs as the operating-system user the installer writes them as. Running it all locally: [Run Maxitor core locally](../../../../docs/how-to/run-the-core-locally.md).
