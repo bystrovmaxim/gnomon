@@ -98,6 +98,6 @@ class ListNoteDraftAction(BaseAction[ListNoteDraftParams, ListNoteDraftResult]):
             # The core's time scale asks for bars: the person's draft over the stretch, by what its versions say.
             end, versions = await storage.draft_versions_between(organization_id, params.item_id, person_id, params.from_at, params.to_at)
             bars = bars_of(versions, params.from_at, end, params.width) if params.from_at < end else []
-            return ListNoteDraftResult(bars=[BarCoreEntity(start=bar.start, added=bar.added, changed=bar.changed, removed=bar.removed) for bar in bars])
+            return ListNoteDraftResult(bars=[BarCoreEntity(start=found.start, added=found.added, changed=found.changed, removed=found.removed) for found in bars])
         revision, found = await storage.draft(organization_id, params.item_id, person_id, params.at)
         return ListNoteDraftResult(revision=revision, changes=found)

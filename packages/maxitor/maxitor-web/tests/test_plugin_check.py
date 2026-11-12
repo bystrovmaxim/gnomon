@@ -36,18 +36,18 @@ def edit(plugin: Path, name: str, key: str, value: object) -> None:
 
 
 def test_the_template_fits_maxitor_4(plugin: Path) -> None:
-    assert check(plugin, "4.10.0") == []
+    assert check(plugin, "4.11.0") == []
 
 
 def test_a_core_outside_the_range_is_refused(plugin: Path) -> None:
     assert check(plugin, "3.29.0") == [
-        f"core_range: io.github.bystrovmaxim.notes {VERSION} needs maxitor >=4.10,<5; this core is maxitor 3.29.0"
+        f"core_range: io.github.bystrovmaxim.notes {VERSION} needs maxitor >=4.11,<5; this core is maxitor 3.29.0"
     ]
 
 
 def test_a_format_the_core_does_not_read_is_refused(plugin: Path) -> None:
     edit(plugin, "navigation.yaml", "navigation", 5)
-    problems = check(plugin, "4.10.0")
+    problems = check(plugin, "4.11.0")
     assert problems == [
         "navigation.yaml: navigation format 5 is not read; write format 4, the tree with the way each node opens"
     ]
@@ -55,8 +55,8 @@ def test_a_format_the_core_does_not_read_is_refused(plugin: Path) -> None:
 
 def test_a_foreign_sdk_major_is_refused(plugin: Path) -> None:
     edit(plugin, "maxitor-plugin.yaml", "sdk", 2)
-    assert check(plugin, "4.10.0") == [
-        f"sdk_major: io.github.bystrovmaxim.notes {VERSION} is built with SDK 2; maxitor 4.10.0 is built with SDK 1"
+    assert check(plugin, "4.11.0") == [
+        f"sdk_major: io.github.bystrovmaxim.notes {VERSION} is built with SDK 2; maxitor 4.11.0 is built with SDK 1"
     ]
 
 
@@ -66,16 +66,16 @@ def test_a_domain_without_events_is_refused(plugin: Path) -> None:
     without = re.sub(r"\n    events = \(.*?\n    \)\n", "\n", text, flags=re.S)
     assert without != text, "the template's domain lists its events"
     domain.write_text(without, encoding="utf-8")
-    assert check(plugin, "4.10.0") == ["maxitor_notes/notes_domain.py: the domain NotesDomain declares no events"]
+    assert check(plugin, "4.11.0") == ["maxitor_notes/notes_domain.py: the domain NotesDomain declares no events"]
 
 
 def test_the_command_exits_with_the_check(
     plugin: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["maxitor", "plugin", "check", str(plugin), "--core", "4.10.0"])
+    monkeypatch.setattr(sys, "argv", ["maxitor", "plugin", "check", str(plugin), "--core", "4.11.0"])
     with pytest.raises(SystemExit) as fits:
         launch.main()
-    assert fits.value.code == 0 and "the plugin fits maxitor 4.10.0" in capsys.readouterr().out
+    assert fits.value.code == 0 and "the plugin fits maxitor 4.11.0" in capsys.readouterr().out
     monkeypatch.setattr(sys, "argv", ["maxitor", "plugin", "check", str(plugin), "--core", "5.0.0"])
     with pytest.raises(SystemExit) as refused:
         launch.main()

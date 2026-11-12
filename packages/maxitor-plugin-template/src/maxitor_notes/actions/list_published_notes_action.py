@@ -101,7 +101,7 @@ class ListPublishedNotesAction(BaseAction[ListPublishedNotesParams, ListPublishe
             # The core's time scale asks for bars: the published notes' versions over the stretch, by what they say.
             end, versions = await storage.note_versions_between(organization_id, params.item_id, params.from_at, params.to_at, None)
             bars = bars_of(versions, params.from_at, end, params.width) if params.from_at < end else []
-            return ListPublishedNotesResult(bars=[BarCoreEntity(start=bar.start, added=bar.added, changed=bar.changed, removed=bar.removed) for bar in bars])
+            return ListPublishedNotesResult(bars=[BarCoreEntity(start=found.start, added=found.added, changed=found.changed, removed=found.removed) for found in bars])
         revision, found = await storage.published_notes(organization_id, params.item_id, params.at)
         # The filters of dates choose among the notes the page shows, as the shell's ranges read them (spec 079, FR-046).
         today = datetime.now(UTC).date()
