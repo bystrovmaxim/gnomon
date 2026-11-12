@@ -68,7 +68,7 @@
   .crumb .lv { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
   .crumb .sep { color: var(--faint); font-weight: 400; margin: 0 2px; }
   .hdr .spacer { flex: 1; }
-  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #cbd5e1; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #334155; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
   .avatar.sm { width: 24px; height: 24px; font-size: 10px; }
   .ico { width: 16px; height: 16px; flex-shrink: 0; }
   .ico.sm { width: 14px; height: 14px; }
@@ -291,7 +291,10 @@
   .note.dk-c { border-left: 3px solid #d97706; }
   .note.dk-r { border-left: 3px solid #dc2626; background: #fffafa; }
   .note.dk-r .nb { color: #94a3b8; text-decoration: line-through; }
+  /* The graph's Diff marks (maxitor-web lib/erdPostPass.ts), on a note as on a table: a soft halo in the change's colour
+     under a note that changed, and a note that did not change faded to 0.32 while the changes paint. */
   .note.dk-u { opacity: .75; }
+  .paint-changes .note.dk-u { opacity: .32; }
   .note.hl { box-shadow: 0 0 0 3px rgba(37,99,235,.28); border-color: #2563eb; }
   .ckb { font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
   .ckb.a { background: #dcfce7; color: #166534; } .ckb.c { background: #fef3c7; color: #92400e; } .ckb.r { background: #fee2e2; color: #991b1b; }
@@ -388,6 +391,7 @@
   .device.phone .eft .btn2 { flex: 1; height: 40px; font-size: 14px; }
   .device.phone .cbox .ft .btn2 { flex: 1; height: 40px; font-size: 13.5px; }
   .device.phone .revhd { flex-wrap: wrap; }
+  .device.phone .revhd .tt { flex: 1 1 calc(100% - 64px); }  /* the title beside its ref; the summary and the button go below */
   .device.phone .revhd .btn2 { width: 100%; height: 40px; font-size: 14px; }
   .device.phone .card { top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 86%; border-radius: 12px 12px 0 0; border: 0; padding: 8px 16px 18px; }
   .device.phone .card .grab { display: block; width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 10px; }
@@ -494,6 +498,13 @@
   .newb .btn2 { height: 30px; box-shadow: 0 1px 3px rgba(15,23,42,.12); }
   .device.phone .newb { top: auto; bottom: 12px; right: 12px; }
   .device.phone .newb .btn2 { height: 44px; padding: 0 16px; font-size: 14px; border-radius: 22px; }
+  /* The panel's top right corner holds one row, laid out by the shell: the core's stepper first, then the page's actions;
+     neither covers the other. On a phone the row stands at the bottom, above the row of the zoom. */
+  .prow { position: absolute; top: 12px; right: 12px; z-index: 7; display: flex; align-items: center; gap: 8px; }
+  .prow .cstep-o, .prow .newb { position: static; }
+  .half .prow .cstep-o .cdrop { top: 36px; bottom: auto; }
+  .device.phone .prow { top: auto; bottom: 62px; }
+  .device.phone .prow .cstep-o .cdrop, .device.phone .half .prow .cstep-o .cdrop { top: auto; bottom: 40px; }
   .cstep-o { position: absolute; top: 12px; right: 12px; z-index: 7; }
   .cstep-o .pill { background: rgba(255,255,255,.95); border: 1px solid rgba(15,23,42,.1); box-shadow: 0 1px 3px rgba(15,23,42,.08); }
   .cstep-o .cdrop { left: auto; right: 0; }
@@ -505,6 +516,13 @@
   .grid.g1 { grid-template-columns: 300px; }
   .grid .note, .grid .composer, .grid .ph0 { margin: 0; cursor: default; }
   .grid .note { box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+  /* The halo of a changed note stands after the cards' own shadow, so it is the one drawn. */
+  .grid .note.dk-a { box-shadow: 0 0 44px 34px rgba(22,163,74,.16), 0 1px 3px rgba(15,23,42,.06); }
+  .grid .note.dk-c { box-shadow: 0 0 44px 34px rgba(217,119,6,.16), 0 1px 3px rgba(15,23,42,.06); }
+  .grid .note.dk-r { box-shadow: 0 0 44px 34px rgba(220,38,38,.16), 0 1px 3px rgba(15,23,42,.06); }
+  .grid .note.hl { box-shadow: 0 0 0 3px rgba(37,99,235,.28); }
+  /* The note followed in both halves, lit as maxitor-web lights an element of the other half (lib/halfPicking.ts). */
+  .grid .note.across, .grid .note.picked { box-shadow: 0 0 0 2px rgba(37,99,235,.55), 0 0 14px rgba(37,99,235,.35) !important; border-color: #2563eb; }
   .grid .nh b { white-space: nowrap; }
   .edl { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11.5px; color: var(--muted); }
   .edl .ico { width: 12px; height: 12px; }
@@ -544,6 +562,7 @@
   .mtip .r2 { display: flex; align-items: center; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
   .mtip .chip { background: #f1f5f9; border-radius: 9px; padding: 2px 8px; font-size: 12px; font-weight: 600; color: #334155; }
   .mtip .sm { font-size: 12px; color: #64748b; }
+  .mtip .avatar.sm { font-size: 10px; color: #fff; }  /* a person's disk keeps its white initials */
   /* The legend behind the card's "i": maxitor-web's TrackLegend — the page's points, the core's marks, the keys. */
   .lgpop { position: absolute; z-index: 70; width: 640px; max-height: calc(100% - 20px); overflow-y: auto; background: #fff; color: #1e293b; border: 1px solid rgba(15,23,42,.1); border-radius: 10px; box-shadow: 0 12px 40px rgba(15,23,42,.16), 0 1px 2px rgba(15,23,42,.06); padding: 14px 16px 16px; line-height: 1.45; display: grid; grid-template-columns: 1fr 200px; gap: 24px; }
   .device.phone .lgpop { left: 8px !important; right: 8px !important; width: auto; grid-template-columns: 1fr; }
@@ -558,6 +577,109 @@
   .lgpop .sc kbd { display: inline-block; margin-right: 3px; padding: 0 5px; color: #0f172a; background: #f1f5f9; border: 1px solid rgba(15,23,42,.1); border-radius: 4px; font-family: inherit; font-size: 11px; line-height: 18px; }
   .lgpop .sc .def { margin-top: 2px; }
   .ib2.on2 { background: rgba(15,23,42,.08); color: #0f172a; }
+  /* the shell's rows of a range and @maxitor/panel's date range picker, as spec 079 draws them */
+  .fp .clrl { border: 0; background: none; padding: 0; font-size: 10.5px; color: #1d4ed8; cursor: pointer; align-self: flex-start; }
+  .dk.sm { width: 14px !important; height: 14px !important; display: block; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); box-sizing: border-box; }
+  .fp .dk { flex-shrink: 0; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); box-sizing: border-box; width: 20px; height: 20px; }
+  .fp .frow { cursor: text; }
+  .fp .frow[onclick] { cursor: pointer; }
+  .fp .bd.mg { width: 20px; height: 20px; background: #fff; color: #64748b; border: 1px solid rgba(0,0,0,.12); }
+  .fp .frow.on .bd.mg { color: #0f172a; }
+  .fp .fin { flex: 1; min-width: 0; height: 20px; border: 0; border-bottom: 1px solid transparent; padding: 0; font-size: 11px; color: rgba(0,0,0,.87); background: transparent; outline: none; }
+  .fp .fin::placeholder { color: rgba(0,0,0,.38); }
+  .fp .fin:focus { border-bottom-color: #94a3b8; }
+  .fp .frow.open .bd.mg { color: #0f172a; border-color: #475569; }
+  .fp .lb .pre { color: rgba(0,0,0,.5); }
+  .fp .frow .clrl { margin-left: auto; }
+  .fp .mgrid { margin: -2px 0 4px 28px; }
+  .fp .mgrid .any { width: 100%; text-align: left; padding: 0 6px; margin-top: 2px; }
+  .fp .mgrid .yr { font-size: 10px; color: rgba(0,0,0,.5); margin: 4px 0 2px; }
+  .fp .mgrid .mm { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; }
+  .fp .mgrid button { height: 20px; border: 0; border-radius: 4px; background: transparent; font-size: 10.5px; color: rgba(0,0,0,.87); cursor: pointer; padding: 0; }
+  .fp .mgrid button:hover { background: rgba(15,23,42,.06); }
+  .fp .mgrid button.in { background: #f1f5f9; }
+  .fp .mgrid button.on { background: #475569; color: #fff; }
+  .fp .mgrid button:disabled { color: rgba(0,0,0,.25); cursor: default; background: transparent; }
+  .fp .rlab { display: flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(0,0,0,.87); }
+  .fp .rlab span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fp .clrl { flex-shrink: 0; width: 16px; height: 16px; border: 0; border-radius: 4px; background: none; color: #64748b; font-size: 13px; line-height: 1; cursor: pointer; padding: 0; }
+  .fp .clrl:hover { background: rgba(15,23,42,.08); color: #0f172a; }
+  .calpop { --ac: #475569; --ink: #0f172a; --ac-soft: #eef2f7; --lbl: #0f172a; --lbl2: #64748b; --lbl3: #94a3b8; --fill: #f1f5f9; --sep: rgba(15,23,42,.08);
+    position: absolute; z-index: 60; display: flex; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 12px; box-shadow: 0 16px 48px rgba(15,23,42,.2), 0 1px 2px rgba(15,23,42,.06);
+    font-family: var(--font); font-size: 12px; color: var(--lbl); cursor: default; overflow: hidden; }
+  .calpop button, .calpop input { font: inherit; color: inherit; }
+  .calpop .cbody { display: flex; align-items: stretch; }
+  .calpop .cq { width: 150px; flex-shrink: 0; background: #f8fafc; border-right: 1px solid var(--sep); padding: 10px 6px; display: flex; flex-direction: column; gap: 1px; }
+  .calpop .cq button { text-align: left; border: 0; background: transparent; border-radius: 6px; height: 26px; padding: 0 8px; font-size: 12px; color: #334155; cursor: pointer; }
+  .calpop .cq button:hover { background: rgba(15,23,42,.06); }
+  .calpop .cq button.on { background: var(--ac); color: #fff; }
+  .calpop .cq .qsep { height: 1px; background: var(--sep); margin: 6px 8px; }
+  .calpop .cpr { width: 470px; padding: 12px 14px 0; display: flex; flex-direction: column; gap: 10px; }
+  .calpop.one .cpr { width: 270px; }
+  .calpop .cfs { display: flex; align-items: flex-start; gap: 8px; }
+  .calpop .car { padding-top: 24px; color: var(--lbl3); }
+  .calpop .cf { flex: 1; min-width: 0; }
+  .calpop .cf label { display: block; font-size: 10.5px; color: var(--lbl2); margin: 0 0 3px 2px; }
+  .calpop .cfb { display: flex; align-items: center; height: 32px; border: 1px solid rgba(15,23,42,.16); border-radius: 8px; background: #fff; padding: 0 4px 0 10px; }
+  .calpop .cf.on .cfb { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(15,23,42,.08); }
+  .calpop .cfb input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .calpop .cfb input::placeholder { font-weight: 400; color: var(--lbl3); }
+  .calpop .cfb .rl { width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--lbl3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .calpop .cfb .rl:hover:not(:disabled) { background: rgba(15,23,42,.06); color: #334155; }
+  .calpop .cfb .rl.on { color: #2563eb; }
+  .calpop .cfb .rl:disabled { opacity: .35; cursor: default; }
+  .calpop .cf i { display: block; font-style: normal; font-size: 10.5px; color: #2563eb; margin: 3px 0 0 2px; min-height: 13px; }
+  .calpop .cms { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .calpop .cms.j, .calpop .cms.one { display: block; }
+  .calpop .cmh { display: flex; align-items: center; height: 26px; margin-bottom: 2px; }
+  .calpop .cmt { display: inline-flex; align-items: center; gap: 5px; border: 0; background: transparent; border-radius: 6px; padding: 0 4px; height: 24px; font-size: 12.5px; font-weight: 600; color: var(--lbl); cursor: pointer; }
+  .calpop .cmt:hover { background: rgba(15,23,42,.06); }
+  .calpop .cmt .chv { width: 6px; height: 10px; color: var(--lbl2); transition: transform .2s; }
+  .calpop .cmt.open .chv { transform: rotate(90deg); color: var(--lbl); }
+  .calpop .cnav { margin-left: auto; display: inline-flex; gap: 2px; }
+  .calpop .cnav button { width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: #334155; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .calpop .cnav button svg { width: 7px; height: 11px; }
+  .calpop .cnav button:hover:not(:disabled) { background: rgba(15,23,42,.06); }
+  .calpop .cnav button:disabled { color: #cbd5e1; cursor: default; }
+  .calpop .cwd, .calpop .cgrid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .calpop .cwd span { text-align: center; font-size: 10px; color: var(--lbl3); padding: 3px 0; }
+  .calpop .cgrid .d { position: relative; height: 30px; border: 0; padding: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .calpop .cgrid .d span { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--lbl); position: relative; z-index: 1; }
+  .calpop .cgrid .d.x { cursor: default; }
+  .calpop .cgrid .d.in { background: var(--ac-soft); }
+  .calpop .cgrid .d.rs { background: linear-gradient(90deg, transparent 50%, var(--ac-soft) 50%); }
+  .calpop .cgrid .d.re { background: linear-gradient(90deg, var(--ac-soft) 50%, transparent 50%); }
+  .calpop .cgrid .d:hover:not(.dis):not(.sel) span, .calpop .cgrid .d.hv:not(.sel) span { background: rgba(15,23,42,.08); }
+  .calpop .cgrid .d.today span { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+  .calpop .cgrid .d.sel span { background: var(--ac); color: #fff; font-weight: 600; }
+  .calpop .cgrid .d.dis { cursor: default; }
+  .calpop .cgrid .d.dis span { color: #d6dde6; }
+  .calpop .whs { position: relative; display: flex; justify-content: center; height: 196px; margin-top: 8px; }
+  .calpop .whband { position: absolute; left: 0; right: 0; top: 84px; height: 28px; border-radius: 7px; background: var(--fill); pointer-events: none; }
+  .calpop .wh { position: relative; height: 196px; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
+  .calpop .wh::-webkit-scrollbar { display: none; }
+  .calpop .wh[data-wh="m"] { width: 60%; text-align: right; padding-right: 14px; }
+  .calpop .wh[data-wh="y"] { width: 40%; text-align: left; padding-left: 14px; }
+  .calpop .whp { height: 84px; }
+  .calpop .whi { height: 28px; line-height: 28px; scroll-snap-align: center; font-size: 13px; color: var(--lbl2); cursor: pointer; font-variant-numeric: tabular-nums; }
+  .calpop .whi.on { color: var(--lbl); font-weight: 600; }
+  .calpop .whi.off { color: #cbd5e1; }
+  .calpop .cft { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px; margin: auto -14px 0; padding: 10px 14px; border-top: 1px solid var(--sep); }
+  .calpop .cft .sum { justify-self: start; max-width: 100%; height: 28px; line-height: 28px; font-size: 12px; color: var(--lbl2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .calpop .cft button { justify-self: end; height: 28px; line-height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; font-size: 12px; color: #475569; cursor: pointer; }
+  .calpop .cft button:hover { background: rgba(15,23,42,.06); }
+  .calpop .cft button.done { background: var(--ink); color: #fff; }
+  .device.phone .calpop { left: 0 !important; right: 0 !important; top: auto !important; bottom: 0; max-height: 94%; overflow-y: auto; border-radius: 16px 16px 0 0; border: 0; box-shadow: 0 -10px 30px rgba(15,23,42,.22); }
+  .device.phone .calpop .cbody { flex-direction: column; width: 100%; min-width: 0; }
+  .device.phone .calpop .cq, .device.phone .calpop .cpr { min-width: 0; max-width: 100%; }
+  .device.phone .calpop .cq { width: auto; flex-direction: row; overflow-x: auto; gap: 6px; padding: 12px 14px 10px; border-right: 0; border-bottom: 1px solid var(--sep); background: #fff; scrollbar-width: none; }
+  .device.phone .calpop .cq::-webkit-scrollbar { display: none; }
+  .device.phone .calpop .cq button { flex-shrink: 0; height: 30px; padding: 0 12px; border: 1px solid rgba(15,23,42,.12); border-radius: 15px; white-space: nowrap; }
+  .device.phone .calpop .cq .qsep { width: 1px; height: 22px; margin: 4px 2px; flex-shrink: 0; }
+  .device.phone .calpop .cpr, .device.phone .calpop.one .cpr { width: auto; }
+  .device.phone .calpop .cms { grid-template-columns: 1fr; }
+  .device.phone .calpop .cgrid .d { height: 40px; }
+  .device.phone .calpop .cgrid .d span { width: 36px; height: 36px; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -573,9 +695,9 @@
 const ORG = { name: "Severny Veter", code: "severny-veter" };
 const ITEM = { title: "payments-service", id: "payments-service" };
 const PEOPLE = {
-  anna: { name: "Anna Kovaleva", ini: "AK", bg: "#cbd5e1" },
-  ilya: { name: "Ilya Petrov", ini: "IP", bg: "#bae6fd" },
-  olga: { name: "Olga Sidorova", ini: "OS", bg: "#fde68a" },
+  anna: { name: "Anna Kovaleva", ini: "AK", bg: "#334155" },
+  ilya: { name: "Ilya Petrov", ini: "IP", bg: "#0284c7" },
+  olga: { name: "Olga Sidorova", ini: "OS", bg: "#ca8a04" },
 };
 const ME = "anna";
 /* The watermark: the latest moment whose answer can no longer change. "Now" reads here. */
@@ -682,7 +804,7 @@ const I = {
 
 /* ======================= state ======================= */
 const DEF = {
-  page: "notes", mode: "one", at: null, from: null, extra: [], revs: [], edit: null, editText: "", base: null, conflict: null, dlg: null, toast: null,
+  page: "published", mode: "one", at: null, from: null, extra: [], revs: [], edit: null, editText: "", base: null, conflict: null, dlg: null, toast: null,
   compose: "", dcard: false, sbc: false, paint: null, fsec: null, track: true, hideSmall: false, view: "cards", hideAu: "", hideK: "", side: "b", fresh: null, picker: false, sheet: null, drawer: false, phone: false, focus: false, stepper: false, stepIdx: null, unch: false, betw: false,
 };
 const S = JSON.parse(JSON.stringify(DEF));
@@ -698,6 +820,9 @@ const ms = t => Date.parse(t + ":00Z");
 const iso = x => new Date(x).toISOString().slice(0, 16);
 const events = () => EV.concat(S.extra).sort((a, b) => a.t < b.t ? -1 : 1);
 const revisions = () => REV.concat(S.revs);
+/* The notes a publication holds: the notes at its moment, or, for a rollback, the notes of the publication it brings back
+   — copied into a new publication, so nothing of the history is lost. */
+function pubNotes(v) { if (!v) return []; if (v.back) return pubNotes(revisions().find(x => x.n === v.back)); return notesAt(v.t); }
 const WM = () => events().concat(revisions()).reduce((m, e) => e.t > m ? e.t : m, WM0);
 const moment = () => S.at || WM();
 const cmp = () => S.mode !== "one" && S.page !== "draft";
@@ -721,7 +846,7 @@ function lastChange(id, m = WM()) { let r = null; for (const e of events()) { if
 function revInForce(m) { let r = null; for (const v of revisions()) if (v.t <= m) r = v; return r; }
 function revAfter(v) { return revisions().find(x => x.n === v.n + 1) || null; }
 /* What a page shows at a moment: the notes then, or the notes of the revision in force then. */
-function setOf(m) { if (S.page === "notes") return notesAt(m || WM()); const v = revInForce(m || WM()); return v ? notesAt(v.t) : []; }
+function setOf(m) { if (S.page === "notes") return notesAt(m || WM()); const v = revInForce(m || WM()); return v ? pubNotes(v) : []; }
 function changes(from, to) {
   const a = new Map(from.map(n => [n.id, n])), b = new Map(to.map(n => [n.id, n])), out = [];
   for (const n of to) { if (!a.has(n.id)) out.push({ k: "a", n }); else if (a.get(n.id).body !== n.body) out.push({ k: "c", n, old: a.get(n.id) }); }
@@ -853,21 +978,21 @@ function pill() {
 }
 
 /* ======================= frame parts ======================= */
-const PAGE_NAME = { notes: "Notes", published: "Published notes", draft: "Draft" };
+const PAGE_NAME = { notes: "Notes", published: "Published", draft: "Draft" };
 function urlbar() {
-  const base = `/w/${ORG.code}/notes/items/${ITEM.id}` + (S.page === "published" ? "/published" : S.page === "draft" ? "/draft" : "");
+  const base = S._plugin === "graph" ? `/w/${ORG.code}/graph/services/checkout-web` : `/w/${ORG.code}/notes/items/${ITEM.id}` + (S.page === "published" ? "/published" : S.page === "draft" ? "/draft" : "");
   const q = [];
   if (S.view === "table" && !cmp()) q.push(`view=<i>table</i>`);
   if (cmp()) q.push(`mode=<i>${S.mode === "split" ? "side_by_side" : "diff"}</i>`, `from=<i>${addr(S.from)}</i>`);
   if (S.at) q.push(`at=<i>${addr(S.at)}</i>`);
-  return `<div class="urlbar"><span>🔒</span><span class="u">maxitor.aoa.run<b>${base}</b>${q.length ? "?" + q.join("&amp;") : ""}</span></div>`;
+  return `<div class="urlbar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span class="u">maxitor.aoa.run<b>${base}</b>${q.length ? "?" + q.join("&amp;") : ""}</span></div>`;
 }
 function av(who, cls = "avatar sm") { const p = PEOPLE[who]; return `<span class="${cls}" style="background:${p.bg}" title="${esc(p.name)}">${p.ini}</span>`; }
 function header() {
   return `<div class="hdr">
     <button class="burger" aria-label="The organization's tree" onclick="go({drawer:true,picker:false})">${I.menu}</button>
     <span class="logo"><span class="mk">M</span><span class="nm">Maxitor</span></span>
-    <span class="crumb"><span class="lv">org</span>${esc(ORG.name)}<span class="sep">/</span>${esc(ITEM.title)}<span class="sep">/</span>${PAGE_NAME[S.page]}</span>
+    <span class="crumb"><span class="lv">org</span>${esc(ORG.name)}<span class="sep">›</span>${S._plugin === "graph" ? "Graph" : "Notes"}</span>
     <span class="spacer"></span>
     <span class="room" title="Here now">${av("ilya", "avatar")}${av("olga", "avatar")}</span>
     ${isFuture() ? "" : pill()}
@@ -875,22 +1000,51 @@ function header() {
   </div>`;
 }
 function draftCount() { const d = historyDraft(); return d ? d.a + d.c + d.r : 0; }
-/* The plugin's three pages are three nodes of the tree under the item: a view is named by its row, not by a title. */
+/* The template's two pages are two nodes of the tree under the item, Draft and Published, with no counters, as the
+   accepted tree of #122 (archive/makets/085-entered-tree-node) draws nodes; Notes is the section entered, named at the
+   head of the panel. */
 function sidebar(cls = "") {
   const it = (lb, page, ic, n) => `<div class="ti l2${S.page === page ? " on" : ""}" onclick="go({page:'${page}',drawer:false,edit:null,conflict:null,dlg:null,toast:null,picker:false,stepIdx:null,stepper:false${page === "draft" ? ",mode:'one',from:null" : ""}})"><span class="slot">${ic}</span><span class="lb">${lb}</span>${n ? `<span class="tabs"><span class="cnt">${n}</span></span>` : ""}</div>`;
   const head = `<div class="sbh"><button class="sbb" title="${S.sbc ? "Expand sidebar" : "Collapse sidebar"}" aria-label="${S.sbc ? "Expand sidebar" : "Collapse sidebar"}" onclick="go({sbc:!S.sbc})">${I.panel}</button><button class="sbb${NAV.length ? "" : " off"}" title="Back" aria-label="Back" onclick="back()">${I.back}</button></div>`;
   if (S.sbc && !cls) return `<div class="sb collapsed">${head}</div>`;
+  if (S._plugin === "graph") return `<div class="sb ${cls}">${head}<div class="tree">
+    <div class="tg"><span class="slot">${I.box}</span><span class="lb">Graph</span></div>
+    <div class="ti l2 on"><span class="slot">${I.box}</span><span class="lb">checkout-web</span></div>
+    <div class="ti l2"><span class="slot">${I.box}</span><span class="lb">payments-service</span></div>
+    <div class="ti l2"><span class="slot">${I.box}</span><span class="lb">ledger</span></div>
+  </div></div>`;
   return `<div class="sb ${cls}">${head}<div class="tree">
-    <div class="tg"><span class="slot">${I.chevron}</span><span class="lb">Catalog</span></div>
+    <div class="tg"><span class="slot">${I.note}</span><span class="lb">Notes</span></div>
     <div class="ti"><span class="slot">${I.box}</span><span class="lb">checkout-web</span></div>
     <div class="ti"><span class="slot">${I.box}</span><span class="lb"><b>payments-service</b></span></div>
-    ${it("Notes", "notes", I.note)}${it("Published notes", "published", I.note)}${it("Draft", "draft", I.note)}
+    ${it("Draft", "draft", I.note)}${it("Published", "published", I.note)}
     <div class="ti"><span class="slot">${I.box}</span><span class="lb">ledger</span></div>
-    <div class="tg"><span class="slot">${I.chevron}</span><span class="lb">Notes</span></div>
-    <div class="ti"><span class="slot">${I.note}</span><span class="lb">All notes</span></div>
   </div></div>`;
 }
-/* @maxitor/panel's ChangeStepper, which the page places over its canvas, top right. */
+/* The shell's row in the panel's top right corner: the core's stepper, only with a chosen range, then the page's
+   actions, whenever the moment B is now — in a comparison too. In the past only the stepper is left. */
+function actionsRow(rows) {
+  const step = rows ? changeStepper(rows) : "";
+  const own = S.page === "notes" && !isPast() && !isFuture() ? `<div class="newb"><button class="btn2 pri" onclick="go({dlg:{kind:'new'},focus:true})">${I.plus}New note</button></div>` : rollbackButton();
+  return step || own ? `<div class="prow">${step}${own}</div>` : "";
+}
+/* The one action of the past: on Published, with the moment exactly on a past publication — chosen on its point or by
+   ‹ › — the page offers to roll back to it. Between two publications, at now, or on the publication in force, it does not. */
+function exactPublication() {
+  if (S.page !== "published" || cmp() || !S.at) return null;
+  const v = revisions().find(x => x.t === S.at), cur = revInForce(WM());
+  return v && cur && v.n !== cur.n ? v : null;
+}
+function rollbackButton() {
+  const v = exactPublication(); if (!v) return "";
+  return `<div class="newb"><button class="btn2" onclick="go({dlg:{kind:'rollback',n:${v.n}}})">${msIc("undo")}Roll back to v${v.n}</button></div>`;
+}
+function doRollback(k) {
+  const el = document.getElementById("rbtitle"), cm = document.getElementById("rbcomment"), n = revisions().length + 1;
+  const title = (el && el.value.trim()) || `Back to v${k}`;
+  go({ revs: S.revs.concat([{ n, t: nextT(), who: ME, title, comment: cm ? cm.value.trim() : "", back: k }]), dlg: null, at: null, page: "published", toast: { text: `Published as v${n}: the notes of v${k} are back` } });
+}
+/* @maxitor/panel's ChangeStepper, which the shell places in the panel's top right corner. */
 function changeStepper(rows) {
   const ch = rows.filter(r => r.k !== "u");
   if (!ch.length) return `<div class="cstep-o"><span class="pill"><span class="pb2"><b>no changes</b></span></span></div>`;
@@ -921,17 +1075,25 @@ function strip() {
 /* ======================= the filter, the tabs, the legend ======================= */
 const AUTH_C = { anna: "#334155", ilya: "#0284c7", olga: "#ca8a04" };
 const KCOL = { a: "#16a34a", c: "#d97706", r: "#dc2626", u: "#94a3b8" };
+/* maxitor-web's statusDiskUri (lib/erdFilterPresence.ts): a disk of r 11 in a 24-unit box, its sign — or a person's
+   initials — in white; the filter shows it at 20 px in a 1 px ring (lib/ui legendDiskImgSx), DiffCard's StatusIcon at 14. */
+function statusDiskUri(fill, sign, size = 14) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${fill}"/>` + (sign ? `<text x="12" y="${size > 12 ? 16.5 : 15.5}" text-anchor="middle" font-family="sans-serif" font-size="${size}" font-weight="700" fill="#fff">${sign}</text>` : "") + `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
 function hid(list, k) { return (list ? list.split(",") : []).includes(k); }
 function tgl(field, k) { const s = new Set(S[field] ? S[field].split(",") : []); s.has(k) ? s.delete(k) : s.add(k); go({ [field]: [...s].join(","), stepIdx: null }); }
 /* maxitor-web's ErdFilterPanel: sections as a strict accordion (one open), rows without counts, and — when more than one
    section can paint the cards — the gear shift at its foot, one point per section. */
 function paintSource() { return cmp() ? (S.paint || "changes") : "authors"; }
 function fpanel(counts, compact, kinds = ["a", "c", "r", "u"]) {
-  const secs = [{ id: "authors", title: "Authors", rows: Object.keys(PEOPLE).map(k => ({ on: !hid(S.hideAu, k), go: `tgl('hideAu','${k}')`, bd: `<span class="bd" style="background:${AUTH_C[k]}">${PEOPLE[k].ini}</span>`, lb: PEOPLE[k].name })) }];
-  if (cmp()) secs.push({ id: "changes", title: "Changes", rows: [["a", "+", "Added"], ["c", "~", "Changed"], ["r", "−", "Removed"], ["u", "=", "Unchanged"]].filter(([k]) => kinds.includes(k)).map(([k, sg, l]) => ({ on: !hid(S.hideK, k), go: `tgl('hideK','${k}')`, bd: `<span class="bd" style="background:${KCOL[k]};font-size:11px">${sg}</span>`, lb: l })) });
+  const secs = [{ id: "authors", title: "Authors", rows: Object.keys(PEOPLE).map(k => ({ on: !hid(S.hideAu, k), go: `tgl('hideAu','${k}')`, bd: `<img class="bd" src="${statusDiskUri(AUTH_C[k], PEOPLE[k].ini, 9)}" alt="">`, lb: PEOPLE[k].name })) }];
+  if (cmp()) secs.push({ id: "changes", title: "Changes", rows: [["a", "+", "Added"], ["c", "~", "Changed"], ["r", "−", "Removed"], ["u", "=", "Unchanged"]].filter(([k]) => kinds.includes(k)).map(([k, sg, l]) => ({ on: !hid(S.hideK, k), go: `tgl('hideK','${k}')`, bd: `<img class="bd" src="${statusDiskUri(KCOL[k], sg)}" alt="">`, lb: l })) });
+  const paints = secs.slice();
+  if (S.page === "published") secs.splice(1, 0, { id: "written", title: "Written", html: rangeRows("wr") }, { id: "changed", title: "Last change", html: rangeRows("lc") });
   const open = S.fsec || (cmp() ? paintSource() : "authors");
-  const body = secs.map(sec => `<div><div class="sh${open === sec.id ? "" : " closed"}" onclick="go({fsec:'${open === sec.id ? "none" : sec.id}'})">${I.chev}<span>${sec.title}</span></div>${open === sec.id ? `<div class="rows">${sec.rows.map(r => `<div class="row${r.on ? "" : " off"}" onclick="${r.go}">${r.bd}<span class="lb">${esc(r.lb)}</span></div>`).join("")}</div>` : ""}</div>`).join("");
-  const gear = secs.length > 1 ? `<div class="gear"><span class="gs" style="width:${18 * (secs.length - 1) + 16}px"><i></i>${secs.map((sec, i) => `<button class="${paintSource() === sec.id ? "on" : ""}" style="left:${i * 18}px" title="Paint by ${sec.title}" onclick="go({paint:'${sec.id}',fsec:'${sec.id}'})"><span></span></button>`).join("")}</span></div>` : "";
+  const body = secs.map(sec => `<div><div class="sh${open === sec.id ? "" : " closed"}" onclick="go({fsec:'${open === sec.id ? "none" : sec.id}',cal:null})">${I.chev}<span>${sec.title}</span></div>${open === sec.id ? `<div class="rows">${sec.html || sec.rows.map(r => `<div class="row${r.on ? "" : " off"}" onclick="${r.go}">${r.bd}<span class="lb">${esc(r.lb)}</span></div>`).join("")}</div>` : ""}</div>`).join("");
+  const gear = paints.length > 1 ? `<div class="gear"><span class="gs" style="width:${18 * (paints.length - 1) + 16}px"><i></i>${paints.map((sec, i) => `<button class="${paintSource() === sec.id ? "on" : ""}" style="left:${i * 18}px" title="Paint by ${sec.title}" onclick="go({paint:'${sec.id}',fsec:'${sec.id}'})"><span></span></button>`).join("")}</span></div>` : "";
   return `<div class="fp"><div class="secs">${body}</div>${gear}</div>`;
 }
 function vtabs(n, inHalf) {
@@ -1025,7 +1187,7 @@ function diffTable(rows, ch) {
 function tableCard(list, title, cap) {
   return `<div class="wcard wide"><h4>${title}</h4><p class="cap">${cap}</p><table class="tbl"><tr><th>Writer</th><th>Note</th><th>Written</th><th>Last change</th></tr>${list.map(n => `<tr><td class="who">${av(n.writer)} ${esc(PEOPLE[n.writer].name)}</td><td>${esc(n.body)}</td><td class="tm">${fmt(n.created)}</td><td class="tm">${n.editor ? `${PEOPLE[n.editor].name.split(" ")[0]}, ${fmt(n.since)}` : "—"}</td></tr>`).join("")}</table></div>`;
 }
-function shown(list) { return list.filter(n => !hid(S.hideAu, n.writer)); }
+function shown(list) { return list.filter(n => !hid(S.hideAu, n.writer) && (S.page !== "published" || (inRange(n.created, S.wr) && inRange(n.since, S.lc)))); }
 function notesWorld() {
   const list = shown(notesAt(moment()));
   if (S.view === "table") return `<div class="grid" style="grid-template-columns:940px">${tableCard(list, `${list.length} notes`, isPast() ? `As they were at ${fmtY(S.at)}` : "Now")}</div>`;
@@ -1040,7 +1202,7 @@ function notesWorld() {
 }
 function revHead(v) {
   const nx = revAfter(v), prev = revisions().find(x => x.n === v.n - 1);
-  const sm = count(changes(prev ? notesAt(prev.t) : [], notesAt(v.t)));
+  const sm = count(changes(prev ? pubNotes(prev) : [], pubNotes(v)));
   const span = nx && nx.t <= WM() ? `in force from ${fmt(v.t)} to ${fmt(nx.t)}` : `in force since ${fmt(v.t)}`;
   const d = !isPast() ? historyDraft() : null;
   return `<div class="revhd wide"><span class="ref">v${v.n}</span><div class="tt"><b>${esc(v.title)}</b><div>${esc(PEOPLE[v.who].name)} published it ${fmtY(v.t)} · ${span}</div></div>${sumHtml(sm)}${d ? `<button class="btn2" onclick="go({page:'draft'})">Draft: ${d.a + d.c + d.r} waiting</button>` : ""}</div>`;
@@ -1048,12 +1210,12 @@ function revHead(v) {
 function publishedWorld() {
   const v = revInForce(moment());
   if (!v) return `<div class="grid"><div class="empty-st wide"><b>Nothing published at this moment</b>The first revision was published ${fmtY(revisions()[0].t)}.</div></div>`;
-  const list = shown(notesAt(v.t));
+  const list = shown(pubNotes(v));
   if (S.view === "table") return `<div class="grid" style="grid-template-columns:940px">${tableCard(list, `v${v.n} · ${esc(v.title)}`, `${esc(PEOPLE[v.who].name)} published it ${fmtY(v.t)}`)}</div>`;
   return `<div class="grid">${revHead(v)}${list.map(n => `<div class="note"><div class="nh">${av(n.writer)}<b>${esc(PEOPLE[n.writer].name)}</b><span class="tm">${fmt(n.created)}</span></div><div class="nb">${esc(n.body)}</div></div>`).join("")}</div>`;
 }
 function draftWorld() {
-  const m = moment(), v = revInForce(m), ch = changes(v ? notesAt(v.t) : [], notesAt(m)), c = count(ch);
+  const m = moment(), v = revInForce(m), ch = changes(v ? pubNotes(v) : [], notesAt(m)), c = count(ch);
   if (!ch.length) return `<div class="grid"><div class="empty-st wide"><b>Nothing to publish</b>The notes are as v${v ? v.n : 0} holds them. A note written, edited or deleted appears here until it is published.</div></div>`;
   let h = `<div class="revhd wide"><span class="ref" style="background:#fef3c7;color:#92400e">v${(v ? v.n : 0) + 1}?</span><div class="tt"><b>Changes since v${v ? v.n : 0}</b><div>${v ? `v${v.n} was published ${fmtY(v.t)}` : "Nothing is published yet"}</div></div>${sumHtml(c)}
     ${isPast() ? "" : `<button class="btn2 pri" onclick="askPublish()">Publish as v${(v ? v.n : 0) + 1}</button>`}</div>`;
@@ -1071,16 +1233,17 @@ function futurePage() {
 }
 function filterCounts(rows) {
   const au = {}, k = {};
-  const base = S.page === "notes" ? notesAt(moment()) : S.page === "published" ? (revInForce(moment()) ? notesAt(revInForce(moment()).t) : []) : notesAt(moment());
+  const base = S.page === "notes" ? notesAt(moment()) : S.page === "published" ? (revInForce(moment()) ? pubNotes(revInForce(moment())) : []) : notesAt(moment());
   (rows ? rows.map(r => r.b || r.a) : base).forEach(n => au[n.writer] = (au[n.writer] || 0) + 1);
   if (rows) { const all = S.hideK; S.hideK = ""; cmpRows().forEach(r => k[r.k] = (k[r.k] || 0) + 1); S.hideK = all; }
   return { au, k };
 }
 /* The canvas, or two of them side by side sharing one camera. */
 function canvasArea() {
+  if (S._plugin) return `<div class="cvs"><div class="cv" data-left="${S.phone ? 20 : 172}"><div class="world"></div>${zoombar()}</div></div>`;  // the graph's own page, drawn by its plugin
   if (isFuture()) return futurePage();
   const rows = cmp() ? cmpRows() : null, counts = filterCounts(rows);
-  const nview = S.page === "notes" ? shown(notesAt(moment())).length : S.page === "published" && revInForce(moment()) ? shown(notesAt(revInForce(moment()).t)).length : 0;
+  const nview = S.page === "notes" ? shown(notesAt(moment())).length : S.page === "published" && revInForce(moment()) ? shown(pubNotes(revInForce(moment()))).length : 0;
   const ch = rows ? rows.filter(r => r.k !== "u") : [];
   if (cmp() && S.mode === "split") {
     /* As maxitor-web's SideBySide: two halves, each with its own head (its letter and its version) and its own camera;
@@ -1094,7 +1257,7 @@ function canvasArea() {
         ? `<div class="grid" style="grid-template-columns:620px">${tableCard(mine.map(r => side === "a" ? r.a : r.b), `${mine.length} notes`, esc(lab))}</div>`
         : `<div class="grid g1">${rows.map(r => sideCard(r, side, ch.indexOf(r))).join("")}</div>`;
       const own = { au: {}, k: counts.k }; mine.forEach(r => { const n = side === "a" ? r.a : r.b; own.au[n.writer] = (own.au[n.writer] || 0) + 1; });
-      const extra = (S.phone ? "" : fpanel(own, false, side === "a" ? ["r", "c", "u"] : ["a", "c", "u"])) + vtabs(mine.length, true) + zoombar() + (side === "b" ? changeStepper(rows) : "");
+      const extra = (S.phone ? "" : fpanel(own, false, side === "a" ? ["r", "c", "u"] : ["a", "c", "u"])) + vtabs(mine.length, true) + zoombar() + (side === "b" ? actionsRow(rows) : "");
       return `<div class="half"><div class="hh"><span class="sd ${side}">${side.toUpperCase()}</span><b>${esc(lab)}</b>${head}</div>
         <div class="cv" data-side="${side}" data-left="${S.phone ? 20 : 172}"><div class="world">${world}</div>${extra}</div></div>`;
     };
@@ -1102,7 +1265,7 @@ function canvasArea() {
   }
   const world = rows && S.view === "table" ? diffTable(rows, ch) : rows ? `<div class="grid">${rows.map(r => diffCard(r, ch.indexOf(r))).join("")}${rows.length ? "" : `<div class="empty-st wide"><b>Nothing to show</b>No note changed between A and B, or the filter hides them.</div>`}</div>`
     : S.page === "notes" ? notesWorld() : S.page === "published" ? publishedWorld() : draftWorld();
-  return `<div class="cvs"><div class="cv" data-left="${S.phone ? 20 : 172}"><div class="world">${world}</div>${vtabs(nview)}${S.page === "draft" ? "" : fpanel(counts)}${zoombar()}${legend()}${rows ? changeStepper(rows) : ""}${S.page === "notes" && !rows && !isPast() ? `<div class="newb"><button class="btn2 pri" onclick="go({dlg:{kind:'new'},focus:true})">${I.plus}New note</button></div>` : ""}</div></div>`;
+  return `<div class="cvs"><div class="cv" data-left="${S.phone ? 20 : 172}"><div class="world">${world}</div>${vtabs(nview)}${S.page === "draft" ? "" : fpanel(counts)}${zoombar()}${legend()}${actionsRow(rows)}</div></div>`;
 }
 
 /* ======================= the camera: wheel zooms, dragging moves, ⊡ shows everything ======================= */
@@ -1112,7 +1275,7 @@ function camKey() { return [S.page, S.mode, S.view, S.phone].join("|"); }
    by its path, before struck and after; an added or removed element in one line. The words are the page's answer. */
 function diffCardHtml(r) {
   const n = r.b || r.a, st = { a: "added", c: "changed", r: "removed" }[r.k];
-  const disk = `<span class="bd" style="background:${KCOL[r.k]};width:14px;height:14px;font-size:9px">${{ a: "+", c: "~", r: "−" }[r.k]}</span>`;
+  const disk = `<img src="${statusDiskUri(KCOL[r.k], { a: "+", c: "~", r: "−" }[r.k])}" width="14" height="14" alt="" style="flex-shrink:0">`;
   const B = S.at ? fmt(S.at) : "now";
   let body = r.k === "a" ? `<div>Added in B, ${B}</div>` : r.k === "r" ? `<div>Removed in B, ${B}</div>` : "";
   if (r.k === "c") body += `<div class="drow"><span>body</span><span><s>${esc(r.a.body)}</s> → ${esc(r.b.body)}</span></div>`;
@@ -1142,11 +1305,29 @@ function bindCanvas() {
       if (!out && !force) return;
       glide(); cam.x = left + (cv.clientWidth - left) / 2 - (el.offsetLeft + el.offsetWidth / 2) * cam.k; cam.y = cv.clientHeight / 3 - el.offsetTop * cam.k; apply();
     };
+    const inView = el => { const cx = cam.x + el.offsetLeft * cam.k, cy = cam.y + el.offsetTop * cam.k; return cx >= 0 && cx + el.offsetWidth * cam.k <= cv.clientWidth && cy >= 0 && cy + el.offsetHeight * cam.k <= cv.clientHeight; };
     apply();
-    return { cv, world, cam, apply, zoomAt, fitCam, glide, bring };
+    return { cv, world, cam, apply, zoomAt, fitCam, glide, bring, inView };
   });
+  /* The note chosen in one half is followed by the other (issue #98, 1.1 item 11): it is lit in both, and brought into the
+     other half's view keeping its zoom; what the other half cannot show, it says. On a phone the other half is brought
+     when A / B opens it. */
+  const letter = side => side === "a" ? "A" : "B";
+  const markPick = () => {
+    document.querySelectorAll(".picked").forEach(x => x.classList.remove("picked"));
+    if (S.pick) for (const o of halves) { const el = o.world.querySelector(`[data-nid="${S.pick.nid}"]`); if (el) el.classList.add("picked"); }
+  };
+  const bringPick = () => {
+    if (!S.pick) return;
+    for (const o of halves) {
+      const side = o.cv.dataset.side; if (!side || side === S.pick.side) continue;
+      const el = o.world.querySelector(`[data-nid="${S.pick.nid}"]`);
+      if (el) { if (!o.inView(el)) { o.bring(el, true); note(o.cv, "Brought to the centre"); } }
+      else note(o.cv, setOf(side === "a" ? S.from : S.at).some(n => n.id === S.pick.nid) ? "Hidden by the filters" : `Not in ${letter(side)}`);
+    }
+  };
   const scaleOf = c => c.getBoundingClientRect().width / c.clientWidth;
-  const overlay = el => el.closest(".fp, .vtabs, .zoombar, .lgd, .cstep-o, textarea, input, button, .note.editing, .cbox, .composer");
+  const overlay = el => el.closest(".fp, .vtabs, .zoombar, .lgd, .cstep-o, .prow, textarea, input, button, .note.editing, .cbox, .composer");
   let drag = null, moved = false;
   for (const h of halves) {
     const { cv, cam } = h;
@@ -1169,14 +1350,29 @@ function bindCanvas() {
       const cw = cv.clientWidth / 2, ch = cv.clientHeight / 2;
       if (b.dataset.z === "in") h.zoomAt(cw, ch, 1.2); else if (b.dataset.z === "out") h.zoomAt(cw, ch, 1 / 1.2); else { Object.assign(cam, h.fitCam()); h.glide(); h.apply(); }
     });
-    // what the pointer rests on is marked in the other half, and with Track on, brought into its view
+    // Hovering lights, choosing brings: the pointer on a note lights the same note in the other half only when it is in
+    // that half's view — nothing moves under the pointer; a click chooses the note and Track brings it into the other view.
     if (halves.length > 1) cv.addEventListener("mouseover", e => {
       const card = e.target.closest("[data-nid]"); if (!card || drag) return;
       const other = halves.find(o => o !== h), twin = other.world.querySelector(`[data-nid="${card.dataset.nid}"]`);
       document.querySelectorAll(".across").forEach(x => x.classList.remove("across"));
       card.classList.add("across");
-      if (twin) { twin.classList.add("across"); if (S.track) other.bring(twin, false); }
-      else note(other.cv, `Not in ${other.cv.dataset.side === "a" ? "A" : "B"}`);
+      if (twin && other.inView(twin)) twin.classList.add("across");
+    });
+    if (cmp() && S.mode === "split") cv.addEventListener("click", e => {
+      const card = e.target.closest("[data-nid]"); if (!card || overlay(e.target)) return;
+      S.pick = { nid: card.dataset.nid, side: cv.dataset.side };
+      markPick(); if (S.track) bringPick();
+    });
+  }
+  markPick();
+  if (S.pick && cmp() && S.mode === "split" && S.track && (S._pickFar || halves.length === 1)) {
+    const far = S._pickFar, pick = S.pick; delete S._pickFar;
+    // a later screen may have replaced the choice before this frame: then there is nothing to bring
+    requestAnimationFrame(() => {
+      if (S.pick !== pick) return;
+      if (far) for (const o of halves) if (o.cv.dataset.side !== pick.side) { o.cam.y -= 1400; o.apply(); }
+      setTimeout(() => { if (S.pick === pick) bringPick(); }, far ? 350 : 0);
     });
   }
   window.onmousemove = e => { if (!drag) return; const dx = (e.clientX - drag.x) / drag.s, dy = (e.clientY - drag.y) / drag.s; if (Math.abs(dx) + Math.abs(dy) > 4) { moved = true; drag.h.cv.classList.add("drag"); } if (moved) { drag.h.cam.x = drag.cx + dx; drag.h.cam.y = drag.cy + dy; drag.h.apply(); } };
@@ -1211,15 +1407,15 @@ function card() {
   const notes = S.page === "notes";
   const head = S._plugin ? FIX[S._plugin].head : notes
     ? [`${ITEM.title} · Notes`, `${events().length} changes since ${fmtY(events()[0].t)} · live`, "Bars count the changes of the notes in each stretch of time: green added, amber changed, red deleted. Points on the lane above are published revisions; a small point only edited notes; a flag carries the release a revision was published as. Hatched: later than now."]
-    : [`${ITEM.title} · Published notes`, `${revisions().length} revisions${historyDraft() ? " · a draft waiting" : ""}`, "A point is a published revision, where it was published; a small point only edited notes, adding or removing none; a flag above it carries the release it was published as. Amber, dashed: the draft."];
+    : [`${ITEM.title} · Published`, `${revisions().length} publications`, "Bars count the changes of the notes in each stretch of time: green added, amber changed, red deleted. Points on the lane above are the publications, where each was published: purple published, red a rollback. Hatched: later than now."];
   const body = histBlock();
   return `<div class="scrim clear" onclick="go({picker:false})"></div><div class="card" role="dialog" aria-label="Pick a moment"><div class="grab"></div>
     <div class="chd"><div class="tt"><b>${esc(head[0])}</b><span>${esc(head[1])}</span></div><div class="rt">${variant() !== "bars" && milestones().some(m => m.minor) ? `<button class="ib2 sm${S.hideSmall ? "" : " on"}" title="${S.hideSmall ? "Show the small points" : "Hide the small points"}" onclick="go({hideSmall:!S.hideSmall})">${I.three}</button>` : ""}<button class="ib2 lgb${S.legend ? " on2" : ""}" aria-label="Reading the scale" onclick="go({legend:!S.legend})">${I.info}</button>${modeSwitch()}</div></div>
     ${body}</div>${S.legend ? legendHtml() : ""}`;
 }
 /* What the page's history declares: "both" (read + milestones), "ms" (milestones alone), "bars" (read alone). */
-function variant() { return S._variant || (S.page === "notes" ? "both" : "ms"); }
-function historyDraft() { const v = revInForce(WM()); const d = count(changes(v ? notesAt(v.t) : [], notesAt(WM()))); return d.a + d.c + d.r ? d : null; }
+function variant() { return S._variant || "both"; }
+function historyDraft() { const v = revInForce(WM()); const d = count(changes(v ? pubNotes(v) : [], notesAt(WM()))); return d.a + d.c + d.r ? d : null; }
 
 /* --- the continuous history: notes --- */
 function histBlock() {
@@ -1272,18 +1468,14 @@ function milestones() {
   if (S._plugin) return FIX[S._plugin].pts.map(m => Object.assign({}, m, { minor: !!m.point.minor, release: m.point.release || null }));
   const out = []; let prev = [];
   for (const v of revisions()) {
-    const cur = notesAt(v.t), c = count(changes(prev, cur)), minor = !c.a && !c.r;
-    out.push({ id: "v" + v.n, at: v.t, minor, release: v.release || null, ref: "v" + v.n, comment: v.comment, title: v.title, who: v.who,
-      point: { tone: v.direct ? "neutral" : "purple", look: "filled", minor, release: v.release || null },
-      card: [{ line: [{ badge: v.direct ? { icon: "commit", label: "Published directly", tone: "neutral" } : { icon: "tag", label: "Revision", tone: "purple" } }, { ref: "v" + v.n }, { ago: v.t }] },
-        { title: v.title }, { text: v.release ? `release: ${v.release}` : "published to: Published notes" }, { person: v.who },
+    const cur = pubNotes(v), c = count(changes(prev, cur));
+    out.push({ id: "v" + v.n, at: v.t, minor: false, release: null, ref: "v" + v.n, comment: v.comment, title: v.title, who: v.who,
+      point: { tone: v.back ? "red" : "purple", look: "filled" },
+      card: [{ line: [{ badge: v.back ? { icon: "undo", label: "Rolled back", tone: "red" } : { icon: "tag", label: "Published", tone: "purple" } }, { ref: "v" + v.n }, { ago: v.t }] },
+        { title: v.title }, ...(v.back ? [{ text: `to v${v.back} · everything published after it stays in the history` }] : []), { person: v.who },
         { chips: [{ chip: `${cur.length} notes` }, { text: summaryText(c) }] }] });
     prev = cur;
   }
-  const d = count(changes(prev, notesAt(WM())));
-  if (d.a + d.c + d.r) out.push({ id: "draft", at: WM(), atEdge: true, ref: "draft", link: "draft", foot: "Click to open the draft",
-    point: { tone: "amber", look: "dashed", lead: "dashed" },
-    card: [{ line: [{ badge: { icon: "pencil", label: "Draft", tone: "amber" } }, { ref: "draft" }, { now: true }] }, { title: "Draft — waiting to be published" }, { text: "opens the draft's page" }, { chips: [{ text: summaryText(d) }] }] });
   return out;
 }
 /* A milestone's point is drawn by the core alike for every plugin, so the lane reads the same on every page: the plugin
@@ -1300,6 +1492,7 @@ const MS_ICON = {
   tag: '<path d="M4 12V4h8l8 8-8 8z"/><circle cx="8.5" cy="8.5" r="1.3"/>', pencil: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/>',
   dot: '<circle cx="12" cy="12" r="4"/>', gate: '<path d="M5 20V8l7-4 7 4v12M9 20v-6h6v6"/>', cross: '<path d="M6 6l12 12M18 6L6 18"/>',
   flag: '<path d="M6 21V4M6 4h11l-2.5 3.5L17 11H6"/>',
+  undo: '<path d="M9 7L4 12l5 5"/><path d="M4 12h10a6 6 0 010 12h-2"/>',
 };
 const msIc = k => `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${MS_ICON[k]}</svg>`;
 function msPoint(m, x, y, r) {
@@ -1310,7 +1503,7 @@ function msPoint(m, x, y, r) {
   return `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="#fff" stroke-width="1.5"/>`;
 }
 /* A person is data: a name and the picture their own service gives (a GitHub avatar), or initials — not an icon of Maxitor. */
-const PIC = { bystrovmaxim: { name: "bystrovmaxim", ini: "BM", bg: "#e0e7ff" }, dependabot: { name: "dependabot[bot]", ini: "DB", bg: "#dcfce7" } };
+const PIC = { bystrovmaxim: { name: "bystrovmaxim", ini: "BM", bg: "#7c3aed" }, dependabot: { name: "dependabot[bot]", ini: "DB", bg: "#16a34a" } };
 function summaryText(c) { const p = []; if (c.a) p.push(`+${c.a} ${c.a > 1 ? "notes" : "note"}`); if (c.c) p.push(`${c.c} changed`); if (c.r) p.push(`−${c.r} ${c.r > 1 ? "notes" : "note"}`); return p.join(" · ") || "no changes"; }
 /* The card is the plugin's own: a list of blocks of @maxitor/panel in the order it wants; the core draws each block from data. */
 function msBlock(b) {
@@ -1348,30 +1541,17 @@ const FIX = {
         card: [{ line: [{ badge: { icon: "dot", label: "Live", tone: "neutral", outline: true } }, { now: true }] }, { title: "What production runs" }, { fields: [["image", "checkout-web:4.3.0"], ["since", "10 Nov, 08:12"]] }] },
     ],
   },
-  projects: {
-    head: ["Refunds v2 · Gates", "4 gates since 1 Oct 2026", "A point is a gate where it was decided: green passed, red failed; a hollow red point could not be read. A flag is a stage the project entered."],
-    pts: [
-      { id: "g1", at: "2026-10-05T09:00", ref: "G1", point: { tone: "green", look: "filled" }, comment: "The product council accepted the idea: refunds without a call to support.", by: "anna",
-        card: [{ line: [{ badge: { icon: "gate", label: "Gate passed", tone: "green" } }, { ago: "2026-10-05T09:00" }] }, { title: "G1 · Idea accepted" }, { fields: [["owner", "Product council"], ["criteria", "4 of 4"]] }] },
-      { id: "g2a", at: "2026-10-19T09:00", ref: "G2", point: { tone: "red", look: "filled" }, comment: "Not passed: no threat model, no load test of the refund queue.", by: "olga",
-        card: [{ line: [{ badge: { icon: "cross", label: "Gate failed", tone: "red" } }, { ago: "2026-10-19T09:00" }] }, { title: "G2 · Design review" }, { fields: [["missing", "threat model, load test"]] }, { person: "olga" }] },
-      { id: "g2b", at: "2026-10-28T09:00", ref: "G2", point: { tone: "green", look: "filled", release: "beta" }, comment: "Passed on the second try; the project enters beta.", by: "olga",
-        card: [{ line: [{ badge: { icon: "gate", label: "Gate passed", tone: "green" } }, { ago: "2026-10-28T09:00" }] }, { title: "G2 · Design review, second try" }, { fields: [["criteria", "6 of 6"]] }, { chips: [{ release: "beta" }] }] },
-      { id: "g3", at: "2026-11-06T14:00", ref: "G3", point: { tone: "red", look: "hollow" },
-        card: [{ line: [{ badge: { icon: "gate", label: "Gate", tone: "neutral" } }, { ago: "2026-11-06T14:00" }] }, { title: "G3 · Launch readiness" }, { warn: "Could not be read: the checklist file is missing in the repository." }] },
-    ],
-  },
 };
 /* The legend's words that are the plugin's: one row per kind of point its page draws, in the order they stand, and what
    a small point and a flag mean on this page. The marks, the bars and the keys are the core's. */
 const LEGEND = {
   notes: {
     points: [
-      { tone: "purple", look: "filled", term: "Revision", def: "A published revision: the notes as they were published, in force until the next one." },
-      { tone: "amber", look: "dashed", lead: "dashed", term: "Draft", def: "What changed since the last revision and is not published yet — always last. Choosing it opens the draft." },
+      { tone: "purple", look: "filled", term: "Published", def: "The notes as they were published, in force until the next publication." },
+      { tone: "red", look: "filled", term: "Rolled back", def: "A publication that brought back the notes of an earlier one; everything published between them stays in the history." },
     ],
-    small: "A larger point added or removed notes; a smaller one only edited them.",
-    flag: "The revision was published as a release; the release's name is on its card.",
+    small: null,
+    flag: null,
   },
   graph: {
     points: [
@@ -1384,15 +1564,6 @@ const LEGEND = {
     ],
     small: "A larger point changed the graph; a smaller one changed only the version.",
     flag: "That version was released: its tag is published as a GitHub Release.",
-  },
-  projects: {
-    points: [
-      { tone: "green", look: "filled", term: "Gate passed", def: "The gate was held and its criteria were met." },
-      { tone: "red", look: "filled", term: "Gate failed", def: "The gate was held and not passed: what was missing is on its card." },
-      { tone: "red", look: "hollow", term: "Not read", def: "The plugin could not read the gate; its card says why." },
-    ],
-    small: null,
-    flag: "The project entered a stage there: beta, general availability.",
   },
 };
 function lgSample(inner) { return `<svg viewBox="0 0 40 20" width="40" height="20">${inner}</svg>`; }
@@ -1506,10 +1677,11 @@ function drawHist() {
   if (showMs) { let px = null; for (const m of msl) { const x = m.atEdge ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); if (px !== null && x > -2 && px < W + 2) s += `<line x1="${Math.max(px, 0)}" y1="${laneY}" x2="${Math.min(x, W)}" y2="${laneY}" stroke="${TONE[m.point.tone].c}" stroke-opacity=".35" stroke-width="2" ${m.point.lead === "dashed" ? 'stroke-dasharray="2 4"' : ""} stroke-linecap="round"/>`; px = x; } }
   for (const m of msl) {
     const x = m.atEdge ? Math.min(X(ms(m.at)), W) - 1 : X(ms(m.at)); if (x < -2 || x > W + 2) continue;
-    const c = TONE[m.point.tone].c, on = hm === m, r = on ? 6 : m.minor ? 3 : 4.6;
+    const c = TONE[m.point.tone].c, on = hm === m, r = m.minor ? 3 : 4.6;
     // the release's flag: a stem and a pennant over the point, as the graph's track draws a tag
     if (m.release) s += `<path d="M${x} ${laneY - r - 1}V${laneY - 22}" stroke="#64748b" stroke-width="1.4"/><path d="M${x} ${laneY - 22}h10l-2.8 3.2 2.8 3.2h-10z" fill="#64748b"/>`;
     s += msPoint(m, x, laneY, r);
+    if (on) s += `<circle cx="${x}" cy="${laneY}" r="${r + 3}" fill="none" stroke="#64748b" stroke-width="1.4"/>`;
     s += `<text x="${Math.min(Math.max(x, 10), W - 12)}" y="${laneY + 17}" font-size="${m.minor ? 10 : 10.5}" font-weight="${on ? 700 : 500}" fill="${on ? c : m.minor ? "#94a3b8" : "#64748b"}" text-anchor="middle">${m.ref}</text>`;
   }
 
@@ -1606,12 +1778,19 @@ function dialog() {
     h = `<h3>New note</h3><div class="sub">A note about <b>${esc(ITEM.title)}</b>. Everyone in ${esc(ORG.name)} who has this page open at “now” sees it at once.</div>
       <textarea class="inp" id="compose" rows="5" style="resize:vertical" placeholder="Write a note about ${esc(ITEM.title)}…" oninput="S.compose=this.value">${esc(S.compose)}</textarea>
       <div class="ft"><button class="btn2" onclick="go({dlg:null,compose:''})">Cancel</button><button class="btn2 pri" onclick="addNote()">Add note</button></div>`;
+  } else if (d.kind === "rollback") {
+    const v = revisions().find(x => x.n === d.n), cur = revInForce(WM()), c = count(changes(pubNotes(cur), pubNotes(v))), n = revisions().length + 1;
+    h = `<h3>Roll back to v${d.n}?</h3><div class="sub">Published becomes v${n}, holding the notes of v${d.n} · ${esc(v.title)}. Nothing is lost: v${d.n + 1}…v${cur.n} stay in the history and on the scale, and v${n} stands on it as a red point.</div>
+      <div class="lab">Title</div><input class="inp" id="rbtitle" value="Back to v${d.n}">
+      <div class="lab" style="margin-top:12px">Comment <span style="font-weight:400;color:var(--muted)">· shown under the scale when the rollback is chosen</span></div><textarea class="inp" id="rbcomment" rows="3" style="resize:vertical">The retry change of v4 broke the settlement import; the notes go back to v3 until it is fixed.</textarea>
+      <div class="dsec">What the rollback changes against v${cur.n}</div><div>${sumHtml(c)}</div>
+      <div class="ft"><button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 dpri" onclick="doRollback(${d.n})">Roll back to v${d.n}</button></div>`;
   } else if (d.kind === "publish") {
-    const v = revInForce(WM()), c = count(changes(v ? notesAt(v.t) : [], notesAt(WM())));
+    const v = revInForce(WM()), c = count(changes(v ? pubNotes(v) : [], notesAt(WM())));
     h = `<h3>Publish v${(v ? v.n : 0) + 1}</h3><div class="sub">The published page will show the notes as they are now, until the next revision. The draft starts empty again.</div>
       <div class="lab">Title</div><input class="inp" id="revtitle" placeholder="Partial refunds" value="${esc(d.title)}">
       <div class="lab" style="margin-top:12px">Comment <span style="font-weight:400;color:var(--muted)">· shown under the scale when the revision is chosen</span></div><textarea class="inp" id="revcomment" rows="3" style="resize:vertical">Partial refunds keep the original fee: the note says so before the finance review.</textarea>
-      <div class="lab" style="margin-top:12px">Release <span style="font-weight:400;color:var(--muted)">· optional; a flag over the revision on the scale</span></div><input class="inp" id="revrelease" placeholder="handbook 2026.12">
+      <div class="lab" style="margin-top:12px">Release <span style="font-weight:400;color:var(--muted)">· optional</span></div><input class="inp" id="revrelease" placeholder="handbook 2026.12">
       <div class="dsec">What the revision changes</div><div>${sumHtml(c)}</div>
       <div class="ft"><button class="btn2" onclick="go({dlg:null})">Cancel</button><button class="btn2 pri" onclick="doPublish()">Publish v${(v ? v.n : 0) + 1}</button></div>`;
   }
@@ -1631,12 +1810,14 @@ function render() {
   const app = document.getElementById("app");
   app.className = "device" + (S.phone ? " phone" : "");
   app.classList.toggle("paint-authors", cmp() && paintSource() === "authors");
+  app.classList.toggle("paint-changes", cmp() && paintSource() === "changes");
   app.innerHTML = `${urlbar()}${header()}<div class="body">${sidebar()}<div class="content">${strip()}${canvasArea()}</div>${card()}${dialog()}${sheet()}${toast()}
     ${S.drawer ? `<div class="scrim" onclick="go({drawer:false})"></div>${sidebar("drawer")}` : ""}</div>`;
   if (S.focus) { const c = document.getElementById("compose"); if (c) { c.focus(); c.setSelectionRange(c.value.length, c.value.length); } }
   anchorCard();
   bindCanvas();
   if (S.picker) mountHist();
+  renderCal();
   renderNav(); renderNotes(); fit();
 }
 
@@ -1651,96 +1832,274 @@ function anchorCard() {
   if (lg && ib) { const ir = ib.getBoundingClientRect(); lg.style.top = ((ir.bottom - br.top) / k + 6) + "px"; lg.style.right = Math.max(10, (br.right - ir.right) / k) + "px"; }
 }
 
+
+/* ======================= the notes' dates: the shell's range of dates, as spec 079 draws it (2.7) ======================= */
+/* Two filters of Published: when a note was written and when it last changed. Each is a range of the shell — two rows,
+   From and To, opening @maxitor/panel's date range picker — and an address parameter, one for both panels. */
+const monLab2 = v => v ? `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+v.slice(5) - 1]} ${v.slice(0, 4)}` : "";
+const monLong = v => v ? `${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][+v.slice(5) - 1]} ${v.slice(0, 4)}` : "";
+const MN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const monLab = v => v ? `${MN[+v.slice(5) - 1]} ${v.slice(2, 4)}` : "";
+const CAL = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>';
+const RANGES = { wr: ["written", "Written"], lc: ["changed", "Last change"] };
+function rangeOf(field) { return S[field] || { from: "", to: "" }; }
+function rangeRow(field, which, pre, v) {
+  const open = S.cal && S.cal.field === field && S.cal.active === which;
+  return `<div class="row frow${v ? " on" : ""}${open ? " open" : ""}" data-rr="${field}-${which}" onclick="event.stopPropagation();openCal('${field}','${which}')"><span class="bd mg">${CAL}</span><span class="lb" title="${v ? `${pre} ${dLong(bd(v, which === "to"))}${v.startsWith("now") ? ` — ${boundLabel(v, which)}` : ""}` : which === "from" ? "From the start: no lower bound" : "To the end: no upper bound"}"><span class="pre">${pre}</span> ${boundDate(v, which)}</span></div>`;
+}
+function rangeRows(field) { const r = rangeOf(field); return rangeRow(field, "from", "From", r.from) + rangeRow(field, "to", "To", r.to); }
+/* A note passes a range when its date lies inside it; an open bound lets everything through on its side. */
+function inRange(t, r) { if (!r) return true; const d = t.slice(0, 10); if (r.from && d < bd(r.from, false)) return false; if (r.to && d > bd(r.to, true)) return false; return true; }
+function openCal(field, which) {
+  if (S.cal && S.cal.field === field && S.cal.active === which) { S.cal = null; render(); return; }
+  const r = rangeOf(field), first = bd(r[which], which === "to") || NOW;
+  S.cal = { field, side: field, active: which, draft: { from: r.from, to: r.to }, view: calView(isoOf(Date.UTC(+first.slice(0, 4), +first.slice(5, 7) - (which === "to" ? 2 : 1), 1)).slice(0, 7)), hover: null };
+  S.fsec = RANGES[field][0]; render();
+}
+function calApply() { const d = S.cal.draft; S[S.cal.field] = d.from || d.to ? { from: d.from, to: d.to } : null; S.cal = null; render(); }
+function calCancel() { S.cal = null; render(); }
+const NOW = "2026-11-10";  // the mockup's today, the day of the watermark
+const CALOPT = { min: "2026-01", max: "2026-11" };
+/* The first and the last day inside the bounds. */
+const CAL_LO = CALOPT.min + "-01";
+const CAL_HI = (() => { const [y, m] = CALOPT.max.split("-").map(Number); return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); })();
+/* The left month of the two shown, kept so that both months lie inside the bounds. */
+function calView(month) {
+  const [y, m] = CALOPT.max.split("-").map(Number), last = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 7);
+  return month > last ? (last < CALOPT.min ? CALOPT.min : last) : month < CALOPT.min ? CALOPT.min : month;
+}
+const MFULL = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const UNITS = { d: ["day", "days"], w: ["week", "weeks"], M: ["month", "months"], y: ["year", "years"] };
+const dLab = v => { const [y, m, d] = v.split("-"); return `${+d} ${MN[+m - 1]} ${y}`; };
+const dLong = v => { const [y, m, d] = v.split("-"); return `${+d} ${MFULL[+m - 1]} ${y}`; };
+const isoOf = t => new Date(t).toISOString().slice(0, 10);
+const ms0 = v => Date.parse(v + "T00:00:00Z");
+function shiftIso(iso, n, u) { const t = new Date(ms0(iso)); if (u === "d") t.setUTCDate(t.getUTCDate() - n); if (u === "w") t.setUTCDate(t.getUTCDate() - 7 * n); if (u === "M") t.setUTCMonth(t.getUTCMonth() - n); if (u === "y") t.setUTCFullYear(t.getUTCFullYear() - n); return isoOf(t); }
+function periodOf(iso, u, end) {
+  const [y, m] = iso.split("-").map(Number);
+  if (u === "M") return end ? isoOf(Date.UTC(y, m, 0)) : isoOf(Date.UTC(y, m - 1, 1));
+  if (u === "Q") { const q = Math.floor((m - 1) / 3) * 3; return end ? isoOf(Date.UTC(y, q + 3, 0)) : isoOf(Date.UTC(y, q, 1)); }
+  if (u === "y") return end ? `${y}-12-31` : `${y}-01-01`;
+  return iso;
+}
+/* A bound as written in the address: "2025-03-05", "now", "now-90d", "now/M", "now-1y/y". */
+function bd(v, isTo) {
+  if (!v) return "";
+  if (!v.startsWith("now")) return v;
+  const m = v.match(/^now(?:-(\d+)([dwMy]))?(?:\/([dMQy]))?$/); if (!m) return "";
+  let iso = m[1] ? shiftIso(NOW, +m[1], m[2]) : NOW;
+  if (m[3]) iso = periodOf(iso, m[3], isTo);
+  return iso;
+}
+/* The date a bound reads today, the same for an absolute and a relative bound; how it is set goes under it. */
+function boundDate(v, which) { return v ? dLab(bd(v, which === "to")) : which === "from" ? "the start" : "the end"; }
+function boundHow(v, which) { return v && v.startsWith("now") ? boundLabel(v, which) : ""; }
+function boundLabel(v, which) {
+  if (!v) return which === "from" ? "the start" : "the end";
+  if (v === "now") return "now";
+  const m = v.match(/^now(?:-(\d+)([dwMy]))?(?:\/([dMQy]))?$/);
+  if (m) {
+    if (m[3] === "d" && !m[1]) return which === "from" ? "today" : "end of today";
+    if (m[3]) return `${m[1] ? (m[1] === "1" ? "last " : `${m[1]} ${UNITS[m[2]][1]} ago, `) : "this "}${{ M: "month", Q: "quarter", y: "year" }[m[3]]}${which === "from" ? ", start" : ", end"}`;
+    return `${m[1]} ${UNITS[m[2]][+m[1] === 1 ? 0 : 1]} ago`;
+  }
+  return dLab(v);
+}
+/* Ready stretches: the core's common ones, then the page's own. */
+const QUICK = [
+  ["Today", "now/d", "now"], ["Last 7 days", "now-7d", "now"], ["Last 30 days", "now-30d", "now"], ["Last 90 days", "now-90d", "now"],
+  ["This month", "now/M", "now"], ["This quarter", "now/Q", "now"], ["This year", "now/y", "now"], ["Last year", "now-1y/y", "now-1y/y"],
+];
+const PAGE_QUICK = [["Since the first publication", "2026-10-09", "now"]];
+function modeOf(v) { return !v ? "open" : v.startsWith("now") ? "rel" : "abs"; }
+function monthGridHtml(view, lo, hi, a, b, st = S.cal, pick = "calPick", hover = "calHover", jump = "calJump", nav = "") {
+  const [y, m] = view.split("-").map(Number), first = Date.UTC(y, m - 1, 1), off = (new Date(first).getUTCDay() + 6) % 7, c = st;
+  let cells = "";
+  for (let i = 0; i < 42; i++) {
+    const iso = isoOf(first + (i - off) * 864e5), inMonth = +iso.slice(5, 7) === m;
+    if (!inMonth) { cells += `<span class="d x"></span>`; continue; }
+    const dis = iso < lo || iso > hi, both = a && b && a !== b;
+    const cls = ["d", dis ? "dis" : "", iso === NOW ? "today" : "", iso === a || iso === b ? "sel" : "", both && iso > a && iso < b ? "in" : "", both && iso === a ? "rs" : "", both && iso === b ? "re" : "", iso === c.hover && !dis ? "hv" : ""].filter(Boolean).join(" ");
+    cells += `<button class="${cls}" ${dis ? "disabled" : `onclick="${pick}('${iso}')" onmouseenter="${hover}('${iso}')"`}><span>${+iso.slice(8)}</span></button>`;
+  }
+  return `<div class="cm"><div class="cmh"><button class="cmt" onclick="${jump}('${view}')">${MFULL[m - 1]} ${y}<svg class="chv" width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l5 5-5 5"/></svg></button>${nav}</div><div class="cwd">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map(d => `<span>${d}</span>`).join("")}</div><div class="cgrid">${cells}</div></div>`;
+}
+function calHtml() {
+  const c = S.cal, d = c.draft, act = c.active;
+  const a = bd(d.from, false), b = bd(d.to, true);
+  const lo = CAL_LO, hi = CAL_HI;
+  const [vy, vm] = c.view.split("-").map(Number), next = isoOf(Date.UTC(vy, vm, 1)).slice(0, 7);
+  const canPrev = c.view > CALOPT.min, canNext = next < CALOPT.max;
+  const quick = list => `${list.map(([l, f1, t1]) => `<button class="${d.from === f1 && d.to === t1 ? "on" : ""}" onclick="calQuick('${f1}','${t1}')">${l}</button>`).join("")}`;
+  const field = w => {
+    const val = d[w], rel = !!val && val.startsWith("now");
+    return `<div class="cf${act === w ? " on" : ""}"><label>${w === "from" ? "From" : "To"}</label><div class="cfb"><input data-cf="${w}" value="${val ? dLab(bd(val, w === "to")) : ""}" placeholder="${w === "from" ? "the start" : "the end"}" onfocus="calFocus('${w}')" onkeydown="if(event.key==='Enter'){calType('${w}',this.value);this.blur()}" onblur="calType('${w}',this.value)"><button class="rl${rel ? " on" : ""}" title="${rel ? "Moves with today — click to fix the date" : "A fixed date — click to make it move with today"}" ${val ? `onclick="calToggleRel('${w}')"` : "disabled"}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div><i>${rel ? boundLabel(val, w) : ""}</i></div>`;
+  };
+  const editor = `<div class="cfs">${field("from")}<span class="car">→</span>${field("to")}</div>
+    <div class="cms${c.jump ? " j" : ""}" onmouseleave="calHover(null)">${c.jump ? jumpHtml(c, CALOPT, "calJump") : (S.phone ? monthGridHtml(c.view, lo, hi, a, b, S.cal, "calPick", "calHover", "calJump", navHtml(canPrev, c.view < CALOPT.max, "calMove")) : monthGridHtml(c.view, lo, hi, a, b) + monthGridHtml(next, lo, hi, a, b, S.cal, "calPick", "calHover", "calJump", navHtml(canPrev, canNext, "calMove")))}</div>`;
+  const days = a && b ? Math.round((ms0(b) - ms0(a)) / 864e5) + 1 : null;
+  return `<div class="calpop" role="dialog" aria-label="Choose dates"><div class="cbody"><div class="cq">${quick(QUICK)}<div class="qsep"></div>${quick(PAGE_QUICK)}</div>
+    <div class="cpr">${editor}
+    <div class="cft"><span class="sum">${boundDate(d.from, "from")} → ${boundDate(d.to, "to")}${days ? ` · ${days} ${days === 1 ? "day" : "days"}` : ""}</span><button onclick="calCancel()">Cancel</button><button class="done" onclick="calApply()">Apply</button></div></div></div></div>`;
+}
+function renderCal() {
+  document.querySelectorAll(".calpop").forEach(e => e.remove());
+  if (!S.cal) return;
+  const app = document.getElementById("app"), row = document.querySelector(`.fp [data-rr="${S.cal.field}-from"]`);
+  if (!row) return;
+  const k = app.getBoundingClientRect().width / app.offsetWidth, ar = app.getBoundingClientRect(), rr = row.closest(".fp").getBoundingClientRect();
+  app.insertAdjacentHTML("beforeend", calHtml());
+  const pop = app.querySelector(".calpop");
+  pop.style.left = Math.min((rr.right - ar.left) / k + 10, app.offsetWidth - pop.offsetWidth - 10) + "px";
+  pop.style.top = Math.max(50, Math.min((rr.top - ar.top) / k, app.offsetHeight - pop.offsetHeight - 10)) + "px";
+  bindWheels();
+}
+function calMove(dlt) { const [y, m] = S.cal.view.split("-").map(Number); S.cal.view = calView(isoOf(Date.UTC(y, m - 1 + dlt, 1)).slice(0, 7)); renderCal(); }
+function calHover(iso) { if (S.cal.jump || S.cal.hover === iso) return; S.cal.hover = iso; renderCal(); }
+/* Typed: 2026-03-05, 5 Mar 2026, today, 30 days ago, 30d, 6 months ago, 1y. Empty is no bound. */
+function parseBound(t) {
+  t = t.trim().toLowerCase();
+  if (!t) return "";
+  if (t === "today" || t === "now") return "now";
+  let m = t.match(/^(\d+)\s*(d|days?|w|weeks?|m|months?|y|years?)(\s+ago)?$/);
+  if (m) { const u = { d: "d", w: "w", m: "M", y: "y" }[m[2][0]]; return +m[1] ? `now-${+m[1]}${u}` : "now"; }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+  m = t.match(/^(\d{1,2})\s+([a-z]{3})[a-z]*\s+(\d{4})$/);
+  if (m) { const mi = MN.findIndex(x => x.toLowerCase() === m[2]); if (mi >= 0) return `${m[3]}-${String(mi + 1).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`; }
+  return null;
+}
+function calType(w, t) {
+  const cur = S.cal.draft[w], shown = cur ? dLab(bd(cur, w === "to")) : "";
+  if (t.trim() === shown) return;
+  let v = parseBound(t); if (v === null) { renderCal(); return; }
+  if (v && !v.startsWith("now")) v = v < CAL_LO ? CAL_LO : v > CAL_HI ? CAL_HI : v;
+  S.cal.draft[w] = v;
+  /* A start typed after the end, or an end typed before the start, takes the other's place. */
+  const a = bd(S.cal.draft.from, false), b = bd(S.cal.draft.to, true);
+  if (a && b && a > b) S.cal.draft = { from: S.cal.draft.to, to: S.cal.draft.from };
+  if (v) { const iso = bd(v, w === "to"); S.cal.view = calView(isoOf(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - (w === "to" ? 2 : 1), 1)).slice(0, 7)); }
+  renderCal();
+}
+function calToggleRel(w) {
+  const v = S.cal.draft[w]; if (!v) return;
+  if (v.startsWith("now")) S.cal.draft[w] = bd(v, w === "to");
+  else { const n = Math.round((ms0(NOW) - ms0(v)) / 864e5); S.cal.draft[w] = n > 0 ? `now-${n}d` : "now"; }
+  renderCal();
+}
+/* Choosing a field makes it the bound the calendar sets; the field keeps its focus. */
+function calFocus(w) { if (S.cal.active === w) return; S.cal.active = w; renderCal(); const i = document.querySelector(`.calpop [data-cf="${w}"]`); if (i) { i.focus(); i.select(); } }
+/* A day chosen for From moves on to To, and drops an end that lay before it.
+   A day chosen for To that lies before the start becomes the start instead; any other stays the end, for Apply.
+   So any day inside the bounds can always be chosen, and a chosen stretch can always be changed. */
+function calPick(iso) {
+  const d = S.cal.draft, a = bd(d.from, false), b = bd(d.to, true);
+  if (S.cal.active === "from") { d.from = iso; if (b && b < iso) d.to = ""; S.cal.active = "to"; }
+  else if (a && iso < a) d.from = iso;
+  else d.to = iso;
+  S.cal.hover = null; renderCal();
+}
+function calQuick(f1, t1) { S.cal.draft = { from: f1, to: t1 }; const v = bd(t1, true); S.cal.view = calView(isoOf(Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 2, 1)).slice(0, 7)); renderCal(); }
+const WH_PAD = 3, RH_W = 28;
+function wheelYears(opt) { const y0 = +opt.min.slice(0, 4) - WH_PAD, y1 = +opt.max.slice(0, 4) + WH_PAD, out = []; for (let y = y0; y <= y1; y++) out.push(y); return out; }
+function jumpHtml(st, opt, prefix) {
+  const [jy, jm] = st.jumpFrom.split("-").map(Number), years = wheelYears(opt), ylo = +opt.min.slice(0, 4), yhi = +opt.max.slice(0, 4);
+  const months = [0, 1, 2].flatMap(k => MFULL.map((n, i) => [n, k * 12 + i]));
+  const mcol = `<div class="wh" data-wh="m" data-pre="${prefix}"><div class="whp"></div>${months.map(([n, i]) => `<div class="whi${i % 12 === jm - 1 ? " on" : ""}" data-i="${i}">${n}</div>`).join("")}<div class="whp"></div></div>`;
+  const ycol = `<div class="wh" data-wh="y" data-pre="${prefix}"><div class="whp"></div>${years.map((y, i) => `<div class="whi${y === jy ? " on" : ""}${y < ylo || y > yhi ? " off" : ""}" data-i="${i}">${y}</div>`).join("")}<div class="whp"></div></div>`;
+  return `<div class="cm jumping"><div class="cmh"><button class="cmt open" onclick="${prefix}Close()">${MFULL[jm - 1]} ${jy}<svg class="chv" width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l5 5-5 5"/></svg></button></div>
+    <div class="whs"><div class="whband"></div>${mcol}${ycol}</div></div>`;
+}
+function bindWheels() {
+  for (const wh of document.querySelectorAll(".calpop .wh")) {
+    const pre = wh.dataset.pre, st = pre === "calJump" ? S.cal : S.one, opt = pre === "calJump" ? CALOPT : ONEOPT;
+    const [jy, jm] = st.jumpFrom.split("-").map(Number), y0 = wheelYears(opt)[0];
+    wh.scrollTop = (wh.dataset.wh === "m" ? 12 + jm - 1 : jy - y0) * RH_W;
+    let t = 0;
+    wh.addEventListener("scroll", () => { clearTimeout(t); t = setTimeout(() => wheelStop(pre), 110); });
+    wh.addEventListener("click", e => { const it = e.target.closest(".whi"); if (it) wh.scrollTo({ top: +it.dataset.i * RH_W, behavior: "smooth" }); });
+  }
+}
+function wheelStop(pre) {
+  const st = pre === "calJump" ? S.cal : S.one, opt = pre === "calJump" ? CALOPT : ONEOPT, y0 = wheelYears(opt)[0];
+  const mw = document.querySelector(`.calpop .wh[data-wh="m"][data-pre="${pre}"]`), yw = document.querySelector(`.calpop .wh[data-wh="y"][data-pre="${pre}"]`);
+  if (!mw || !yw) return;
+  const mi = Math.round(mw.scrollTop / RH_W) % 12, yi = Math.round(yw.scrollTop / RH_W);
+  // the months' wheel is kept on its middle turn, so it never runs out either way
+  if (Math.round(mw.scrollTop / RH_W) !== 12 + mi) mw.scrollTop = (12 + mi) * RH_W;
+  let v = `${y0 + yi}-${String(mi + 1).padStart(2, "0")}`;
+  const lo = opt.min.slice(0, 7), hi = opt.max.slice(0, 7);
+  if (v < lo || v > hi) { v = v < lo ? lo : hi; const [cy, cm] = v.split("-").map(Number); mw.scrollTo({ top: (12 + cm - 1) * RH_W, behavior: "smooth" }); yw.scrollTo({ top: (cy - y0) * RH_W, behavior: "smooth" }); }
+  st.jumpFrom = v;
+  mw.querySelectorAll(".whi").forEach(e => e.classList.toggle("on", +e.dataset.i % 12 === +v.slice(5) - 1));
+  yw.querySelectorAll(".whi").forEach(e => e.classList.toggle("on", +e.textContent === +v.slice(0, 4)));
+  const t = document.querySelector(`.calpop .cmt.open`); if (t) t.firstChild.textContent = `${MFULL[+v.slice(5) - 1]} ${v.slice(0, 4)}`;
+}
+function calJump(view) { S.cal.jump = true; S.cal.jumpFrom = view; S.cal.jumpOff = view === S.cal.view ? 0 : 1; renderCal(); }
+function calJumpClose() { const [y, m] = S.cal.jumpFrom.split("-").map(Number); S.cal.view = calView(isoOf(Date.UTC(y, m - 1 - (S.cal.jumpOff || 0), 1)).slice(0, 7)); S.cal.jump = false; renderCal(); }
+function navHtml(canPrev, canNext, fn) {
+  const arrow = d => `<svg width="9" height="14" viewBox="0 0 9 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  return `<span class="cnav"><button ${canPrev ? `onclick="${fn}(-1)"` : "disabled"} aria-label="Previous month">${arrow("M7 2L2 7l5 5")}</button><button ${canNext ? `onclick="${fn}(1)"` : "disabled"} aria-label="Next month">${arrow("M2 2l5 5-5 5")}</button></span>`;
+}
+
 /* ======================= the screens ======================= */
 const AFTER_V5 = { revs: [{ n: 6, t: "2026-11-10T11:25", who: "anna", title: "Partial refunds" }] };
 const SCREENS = [
-  ["Now", [
-    ["1.1", "The notes now", {}],
-    ["1.2", "Writing a note", { dlg: { kind: "new" }, compose: T.n7, focus: true }],
-    ["1.3", "Someone else's note arrives", { extra: [{ t: "2026-11-10T11:25", who: "olga", op: "add", id: "o1", body: T.n6 }], fresh: "o1" }],
-    ["1.4", "An item with no notes", { _empty: true }],
-  ]],
-  ["Editing and deleting", [
-    ["2.1", "Editing a note", { edit: "n2", editText: T.n2mine, base: "2026-11-08T13:02" }],
-    ["2.2", "Someone changed it meanwhile", { extra: [{ t: "2026-11-10T11:25", who: "olga", op: "edit", id: "n2", body: T.n2c }], edit: "n2", editText: T.n2mine, base: "2026-11-08T13:02", conflict: { id: "n2", mine: T.n2mine, kind: "changed", by: { t: "2026-11-10T11:25", who: "olga", op: "edit" } } }],
-    ["2.3", "Deleting a note", { dlg: { kind: "delete", id: "n4" } }],
-    ["2.4", "Deleted while being edited", { extra: [{ t: "2026-11-10T11:25", who: "ilya", op: "delete", id: "n4" }], edit: "n4", editText: T.n4mine, base: "2026-11-06T10:15", conflict: { id: "n4", mine: T.n4mine, kind: "deleted", by: { t: "2026-11-10T11:25", who: "ilya", op: "delete" } } }],
-  ]],
-  ["The scale of the notes", [
+  ["Notes · Published — its scale", [
     ["3.1", "All the history", { picker: true }],
     ["3.2", "Zoomed into one morning", { picker: true, _view: ["2026-10-14T09:00", "2026-10-14T14:00"] }],
     ["3.3", "A moment chosen", { picker: true, at: PAST, _view: ["2026-11-01T00:00", "2026-11-10T18:00"] }],
     ["3.6", "Bars alone", { picker: true, _variant: "bars" }],
-    ["3.5", "A revision over the bars", { picker: true, _ms: "v3", _view: ["2026-10-25T00:00", "2026-11-10T18:00"] }],
+    ["3.5", "A publication over the bars", { picker: true, _ms: "v3", _view: ["2026-10-25T00:00", "2026-11-10T18:00"] }],
+    ["3.9", "Reading the scale: the notes", { picker: true, legend: true }],
     ["3.4", "Two moments, A and B", { picker: true, mode: "diff", from: PAST, _view: ["2026-11-01T00:00", "2026-11-10T18:00"] }],
   ]],
-  ["The notes in the past", [
+  ["Notes · Published — the past and comparing", [
     ["4.1", "At a past moment", { at: PAST }],
     ["4.2", "Diff: A against B", { mode: "diff", from: PAST }],
     ["4.3", "Stepping through the changes", { mode: "diff", from: PAST, stepIdx: 2, dcard: true }],
     ["4.4", "Side by side", { mode: "split", from: PAST }],
-    ["4.5", "Before the first note", { at: BEFORE }],
+    ["4.5", "Before the first publication", { at: BEFORE }],
     ["4.6", "A moment not come yet", { at: FUTURE }],
+    ["4.7", "Side by side: a note chosen in B, brought into A", { mode: "split", from: PAST, pick: { nid: "g1", side: "b" }, _pickFar: true }],
   ]],
-  ["Published revisions", [
+  ["Notes · Published — publications, rollback, filters", [
     ["5.1", "The published notes", { page: "published" }],
-    ["5.2", "The revisions on the scale", { page: "published", picker: true, _ms: "v4" }],
-    ["5.3", "Between two revisions", { page: "published", at: PAST2, picker: true }],
-    ["5.4", "Two revisions compared", { page: "published", mode: "diff", from: "2026-11-04T12:00", at: "2026-11-07T09:30", picker: true }],
-    ["5.5", "Two revisions side by side", { page: "published", mode: "split", from: "2026-10-09T12:00", at: "2026-11-07T09:30" }],
-    ["5.6", "The draft", { page: "draft" }],
-    ["5.7", "Publishing", { page: "draft", dlg: { kind: "publish", title: "Partial refunds" } }],
-    ["5.8", "Published", Object.assign({ page: "published", toast: { text: "Published as v6" } }, AFTER_V5)],
+    ["5.2", "The publications on the scale", { page: "published", picker: true, _ms: "v4" }],
+    ["5.3", "Between two publications", { page: "published", at: PAST2, picker: true }],
+    ["5.4", "Two publications compared", { page: "published", mode: "diff", from: "2026-11-04T12:00", at: "2026-11-07T09:30", picker: true }],
+    ["5.5", "Two publications side by side", { page: "published", mode: "split", from: "2026-10-09T12:00", at: "2026-11-07T09:30" }],
+    ["5.6", "Exactly on v3: roll back to it", { page: "published", at: "2026-11-04T12:00" }],
+    ["5.7", "Rolling back to v3", { page: "published", at: "2026-11-04T12:00", dlg: { kind: "rollback", n: 3 } }],
+    ["5.8", "Rolled back as v6: a red point", { page: "published", picker: true, revs: [{ n: 6, t: "2026-11-10T11:30", who: "anna", title: "Back to v3", comment: "The retry change of v4 broke the settlement import; the notes go back to v3 until it is fixed.", back: 3 }], _ms: "v6", _view: ["2026-10-25T00:00", "2026-11-10T18:00"] }],
+    ["5.9", "Filtered by when a note was written", { page: "published", fsec: "written", wr: { from: "2026-09-01", to: "2026-09-30" } }],
+    ["5.10", "Last change: the date range picker", { page: "published", fsec: "changed", lc: { from: "now-30d", to: "now" }, cal: { field: "lc", side: "lc", active: "from", draft: { from: "now-30d", to: "now" }, view: "2026-10", hover: null } }],
   ]],
-  ["Milestones of other plugins (#98)", [
+  ["Graph · checkout-web — its scale", [
     ["3.7", "The graph's pull requests", { picker: true, _plugin: "graph", _variant: "ms", _ms: "pr62", _view: ["2026-09-28T00:00", "2026-11-11T12:00"] }],
-    ["3.8", "A project's gates", { picker: true, _plugin: "projects", _variant: "ms", _ms: "g3", _view: ["2026-09-28T00:00", "2026-11-11T12:00"] }],
-    ["3.9", "Reading the scale: the notes", { picker: true, legend: true }],
     ["3.10", "Reading the scale: the graph", { picker: true, legend: true, _plugin: "graph", _variant: "ms", _view: ["2026-09-28T00:00", "2026-11-11T12:00"] }],
   ]],
   ["Phone only", [
-    ["6.1", "A note's actions", { phone: true, sheet: "n2" }],
     ["6.2", "The tree in a drawer", { phone: true, drawer: true }],
   ]],
 ];
 const PATHS = [
-  ["Edit with a conflict", "Two people change one note", [["Edit", "2.1"], ["Conflict", "2.2"]]],
-  ["Back in time", "Choose a moment on the scale, then compare it with now", [["Scale", "3.1"], ["Revision", "3.5"], ["Moment", "3.3"], ["A and B", "3.4"], ["Diff", "4.2"], ["Side by side", "4.4"]]],
-  ["Publish", "The draft becomes v6", [["Published", "5.1"], ["Draft", "5.6"], ["Publish", "5.7"], ["v6", "5.8"]]],
+  ["Back in time", "Choose a moment on the scale, then compare it with now", [["Scale", "3.1"], ["Publication", "3.5"], ["Moment", "3.3"], ["A and B", "3.4"], ["Diff", "4.2"], ["Side by side", "4.4"]]],
 ];
 const NOTES = {
-  "1.1": ["The notes now", [
-    "The page lies on the canvas, as every view of Maxitor does: notes are cards; as on every canvas of maxitor-web, the wheel or a two-finger swipe moves the picture, a pinch or Ctrl/⌘ with the wheel zooms it, dragging moves it, ⊡ shows everything. The filter at the top left (authors), the zoom at the bottom left with the ways to show the notes — cards or a table — as the ERD's layout buttons; the pills at the top centre are only for switching the data itself, and the notes have one set. No title: the page is named by its row in the tree.",
-    "The plugin's three pages are three nodes under the item: Notes, Published notes, Draft with its count.",
-    "A page with no <code>at</code> reads at the watermark: the pill says “Now” with a green dot. Writing, editing and deleting are offered only here; “New note” stands at the top right of the canvas, apart from the cards.",
-    "The pill is the core's (#98), the graph viewer's <code>VersionButton</code> with its arrows, on the right of the top row beside who is here now; its card opens under it from the right edge.",
-  ]],
-  "1.2": ["Writing a note", ["Writing is not mixed with the notes: “New note” at the top right of the canvas, only at “now”, opens a dialog — a sheet on a phone. “Add note” writes it under the organization's lock with the core's <code>change_time</code>; it appears first among the cards for everyone. In the mockup an empty field is filled with an example on the first click."]],
-  "1.3": ["Someone else's note arrives", [
-    "The core sends <code>panel.watermark</code>; a page at “now” reads again, so Olga's note appears without a reload, marked <b>new</b>. A page in the past or in a comparison does not read again: its answer cannot change.",
-    "<span class=\"lnk\" onclick=\"arrive()\">This link</span> plays the event on any “now” screen.",
-  ]],
-  "1.4": ["An item with no notes", ["The canvas says there are no notes yet; “New note” stands at the top right, as on every screen at “now”."]],
-  "2.1": ["Editing a note", ["The edit carries <code>base_moment</code>: the start of the version the person saw. Save writes a new version and closes the old one; the old text stays readable at every earlier moment."]],
-  "2.2": ["Someone changed it meanwhile", [
-    "Olga saved first, so the note's open version began after <code>base_moment</code>: <code>EditNoteAction</code> answers with a conflict and the page reads again.",
-    "Their text is shown; the person's own text is kept, with the difference marked.",
-  ]],
-  "2.3": ["Deleting a note", ["<code>DeleteNoteAction</code> closes the last version with <code>closed_by</code> and <code>closed_operation</code>: gone from now on, still there at every earlier moment."]],
-  "2.4": ["Deleted while being edited", ["A deleted note cannot be edited. The person's text is not lost: it can be added as a new note."]],
   "3.1": ["The scale of the notes: all the history", [
-    "The notes change continuously, so the scale has no points: it is a histogram, as in Kibana. Each bar counts the changes in its stretch of time — added, changed, deleted — and the bars get finer as you zoom in: a day, an hour, five minutes, a minute.",
+    "The notes change continuously, so the scale is a histogram, as in Kibana, with the published publications as points on the lane above it. Each bar counts the changes in its stretch of time — added, changed, deleted — and the bars get finer as you zoom in: a day, an hour, five minutes, a minute.",
     "Wheel or pinch zooms smoothly around the pointer; a sideways swipe or Shift-wheel moves the time; the presets 1 h … All jump with the same smooth motion. One scale only, as in Elastic: drag across the bars to zoom into that stretch; All shows the whole history again.",
     "A click anywhere chooses that moment, to the minute: the address keeps it as chosen. Hatched is later than the watermark and cannot be chosen.",
     "The card is the graph viewer's <code>VersionPicker</code>: the same head, the “i”, the switch One / Diff / Side by side, the message of the chosen moment under the track.",
   ]],
   "3.2": ["Zoomed into one morning", ["14 Oct: sixteen edits of the fraud threshold in two and a half hours. At this zoom a bar is ten minutes; hovering a bar lists its changes."]],
-  "3.3": ["A moment chosen", ["The chosen moment is a dark line with its chip under the axis, as the graph's knob is; it can be dragged. Under the scale: the comment of the milestone in force at that moment — the revision v3 here — as the plugin returns it for the chosen milestone."]],
+  "3.3": ["A moment chosen", ["The chosen moment is a dark line with its chip under the axis, as the graph's knob is; it can be dragged. Under the scale: the comment of the milestone in force at that moment — the publication v3 here — as the plugin returns it for the chosen milestone."]],
   "3.6": ["Bars alone", ["A page that declares only <code>read</code>: its history is the histogram and nothing else, as a list of files or a page with no milestones of its own. Without milestones there are no comments, so nothing stands under the scale."]],
-  "3.5": ["A revision over the bars", [
-    "The notes page declares both: <code>read</code> gives the bars, <code>milestones</code> the published revisions. A milestone is drawn the same in every variant: a point on its own lane above the bars and the dates, where it happened, over bars or alone.",
-    "The point is drawn by the core alike for every plugin: the plugin chooses its tone from the core's palette (here purple a revision, amber the draft; in the graph, how a pull request was merged), its look (the draft dashed), whether it is small (here a revision that only edited notes, adding or removing none; the switch of three dots in the card's head hides the small points) and a release flag (the release a revision was published as). The draft stands at the right edge.",
-    "Hovering a point asks <code>note_milestone_card</code> for that milestone. Its card is the plugin's own: a list of blocks of <code>@maxitor/panel</code> in the order the plugin wants — here a line with the badge, the ref and the time, the title, where it was published, the author, the chips. The core draws each block from data. A click reads the notes at the revision's moment; a click on the draft opens the draft's page.",
+  "3.5": ["A publication over the bars", [
+    "Published declares both: <code>read</code> gives the bars, <code>milestones</code> the publications. A milestone is drawn the same in every variant: a point on its own lane above the bars and the dates, where it happened, over bars or alone.",
+    "Every mark on the scale means something for the plugin and the page that draws it, and the plugin gives only those. Published's history is its publications, so it gives two kinds of point: purple a publication, red a rollback (5.8). A publication is a publication: all its points are one size and carry no flag, and the card's head has no switch of small points. The draft is a page of its own and stands on none of Published's history.",
+    "The core draws every plugin's points alike from what the plugin gives — a tone of the core's palette, a look, a size, a flag; the graph gives more, because its history has more: pull requests merged, pushed directly and still open, the ones that did not change the graph, the releases (3.7).",
+    "Hovering a point asks <code>note_milestone_card</code> for that milestone. Its card is the plugin's own: a list of blocks of <code>@maxitor/panel</code> in the order the plugin wants — here a line with the badge <b>Published</b>, the ref and the time, the title, the author, the chips. The core draws each block from data. A click reads the notes at the publication's moment.",
   ]],
   "3.4": ["Two moments, A and B", [
     "Diff and Side by side hold two handles: A's hollow chip above, B's dark chip below, the stretch between them shaded. Each is dragged; a click moves the nearer one.",
@@ -1748,57 +2107,83 @@ const NOTES = {
   ]],
   "4.1": ["At a past moment", [
     "The address holds <code>at</code>; the pill shows the moment with a blue dot and a “Now” button beside it; The arrows step through the changes of the notes.",
-    "The past is only looked at: no “New note”, no edit, no delete, nothing to restore. Its answer never changes, whatever is written later.",
+    "The past is only looked at: no edit, no delete, nothing to restore. Its answer never changes, whatever is written later.",
   ]],
   "4.2": ["Diff: A against B", [
     "One panel; the page gets <code>at</code> = B and <code>against</code> = A, and draws on its own canvas every note with what happened to it between them — added, changed with its words marked, deleted, unchanged pale. The filter gains a section of changes; its gear shift paints the cards by change or by author.",
     "The pill names both moments and the counts <code>+ − ~</code>; the page sends them to the core, which cannot know what a change of a note is.",
+    "The core's <code>ChangeStepper</code> stands in the panel's top right corner, because a range is chosen. Published has no actions of its own, so it stands alone; on Draft, whose actions are New note and Publish, it stands first in one row with them whenever B is now, as the accepted mockup of #121 draws it (<code>archive/makets/084-notes-draft-published</code>, 4.9–4.12). On a phone the row stands at the bottom, above the zoom.",
   ]],
   "4.3": ["Stepping through the changes", [
-    "<code>ChangeStepper</code> from <code>@maxitor/panel</code>, at the top right of the canvas: the arrows, or Shift + ↑ ↓, go change by change; the camera glides to the note, and the step opens its card beside it — as the ERD does.",
+    "<code>ChangeStepper</code> from <code>@maxitor/panel</code>, in the panel's top right corner: the arrows, or Shift + ↑ ↓, go change by change; the camera glides to the note, and the step opens its card beside it — as the ERD does.",
     "The card is <code>@maxitor/panel</code>'s <code>DiffCard</code>: the note and its status disk, then what changed — a property by its path, before struck and after; an added or removed note in one line. The canvas places it beside the anchored note and closes it on Escape or a click outside; a click on the stepper moves it to the next change.",
     "The frame, the place and the behaviour are the core's library, running in the page; the words are the plugin's: its page answers the differences of an anchor between <code>against</code> and <code>at</code>, because only the plugin knows what a change of its object is.",
   ]],
   "4.4": ["Side by side", [
     "The two panels are the core's: it lays them out as maxitor-web's SideBySide does — each with its head, its letter (A brown, B blue) and its version, and its own camera — and opens the same page of the plugin in each. The page never knows there are two: it draws one canvas from its context.",
     "Panel A gets <code>at</code> = A, <code>against</code> = B, <code>side</code> = a: the notes at A, marked with what became of them by B. Panel B gets <code>at</code> = B, <code>against</code> = A, <code>side</code> = b: the notes at B, marked with what they are against A. Each side's filter lists only the changes it can show.",
-    "The address parameters are one for both panels: an author or the table switched in one is switched in the other. Track, on by default, works through anchors: the page marks each note with its <code>data-room-anchor</code>; the core passes the anchor under the pointer to the other panel, which marks the note and brings it into view, keeping its zoom.",
+    "The address parameters are one for both panels: an author or the table switched in one is switched in the other. Track, on by default, works through anchors: the page marks each note with its <code>data-room-anchor</code>; the pointer on a note lights its copy in the other panel when it is in view, and a click brings it into view, keeping the zoom (4.7).",
     "On a phone one panel at a time, switched by A / B in its head, opening on B.",
+    "The stepper stands on panel B, in its top right corner. A step brings the note into view in both panels and opens its card in B.",
   ]],
-  "4.5": ["Before the first note", ["An early moment is a valid moment: the page says there were no notes and when the first was written."]],
+  "4.5": ["Before the first publication", ["An early moment is a valid moment: Published says nothing was published then and when the first publication was."]],
+  "4.7": ["Side by side: a note chosen in B, brought into A", [
+    "Hovering lights, choosing brings. The pointer on a note lights the same note in the other half only when it is in that half's view: nothing moves under the pointer.",
+    "A click chooses the note. It is lit in both halves, and with Track on the other half's camera glides to its own copy, keeping its zoom, and says “Brought to the centre” — the core passes the note's anchor, never a place: each half lays its notes out by itself. Here A's view had been moved far away from the note chosen in B.",
+    "A note A does not hold — written after A — gets “Not in A”; a note A holds but its filters leave out gets “Hidden by the filters”. Click any note in either half to try it; drag a half away first.",
+    "On a phone one half at a time: a note tapped in B is brought into view when A / B opens A.",
+  ]],
   "4.6": ["A moment not come yet", ["An <code>at</code> later than the watermark is refused, because its answer could still change."]],
-  "5.1": ["The published notes", ["The notes as the revision in force holds them: its number, title, author and moment. When the notes changed since, the page leads to the draft."]],
-  "5.2": ["The revisions on the scale", [
-    "The published page declares only <code>milestones</code>: no bars, and each revision stands where it was published, on the same time scale with the same zoom — a revision of last week and one of an hour ago are not drawn at an equal step.",
+  "5.1": ["The published notes", ["The notes as the publication in force holds them: its number, title, author and moment. When the notes changed since, the page leads to the draft."]],
+  "5.2": ["The publications on the scale", [
+    "The published page declares only <code>milestones</code>: no bars, and each publication stands where it was published, on the same time scale with the same zoom — a publication of last week and one of an hour ago are not drawn at an equal step.",
     "The draft is an amber dashed point at the right edge; hovering a point shows its card, drawn by the core from <code>note_milestone_card</code>'s data.",
   ]],
-  "5.3": ["Between two revisions", ["At 6 Nov, 18:00 the notes had already changed, but v4 was not published yet: the page shows v3, as at any moment from 4 Nov, 12:00 to 7 Nov, 09:30. The address keeps the moment as chosen."]],
-  "5.4": ["Two revisions compared", ["Diff between v3 and v4, the same parts as the notes' Diff: the card holds A and B on the track and both revisions' messages; the page lists the changes."]],
-  "5.5": ["Two revisions side by side", ["v1 against v4: what the first review said and what is in force today, a note per row."]],
-  "5.6": ["The draft", ["What changed since the last revision, note by note. The draft is itself a comparison, so Diff and Side by side are not offered on it."]],
-  "5.7": ["Publishing", ["<code>PublishNotesAction</code>: the next number, a title, a comment, an optional release, the author and the moment. The comment is what the scale shows under itself when the revision is chosen; the release puts a flag over the revision's point."]],
-  "5.8": ["Published", ["v6 is in force; the draft is empty."]],
+  "5.3": ["Between two publications", ["At 6 Nov, 18:00 the notes had already changed, but v4 was not published yet: the page shows v3, as at any moment from 4 Nov, 12:00 to 7 Nov, 09:30. The address keeps the moment as chosen."]],
+  "5.4": ["Two publications compared", ["Diff between v3 and v4, the same parts as the notes' Diff: the card holds A and B on the track and both publications' messages; the page lists the changes."]],
+  "5.5": ["Two publications side by side", ["v1 against v4: what the first review said and what is in force today, a note per row."]],
+  "5.6": ["Exactly on v3: roll back to it", [
+    "The moment stands exactly on a past publication — v3, chosen on its point or reached by ‹ › —, so Published offers its one action of the past: <b>Roll back to v3</b>, in the panel's top right corner where the page's actions stand.",
+    "Between two publications (5.3), at now, or on the publication in force, there is nothing to roll back to and no button. Every other action of a page shows only at now; this one shows only on a past milestone.",
+  ]],
+  "5.7": ["Rolling back to v3", [
+    "Rolling back copies the notes of v3 into a new publication, v6: nothing is erased. v4 and v5 stay in the history and on the scale, and Diff and Side by side compare v6 with any of them.",
+    "The title and the comment are a publication's: the comment stands under the scale when the rollback is chosen. The summary says what v6 changes against the publication in force.",
+    "Someone whose draft was made over v5 meets the usual case of a draft over an older base (the accepted mockup of #121, 1.7): nothing new is needed.",
+  ]],
+  "5.9": ["Filtered by when a note was written", [
+    "Published's filters are the shell's, in its panel at the top left: <b>Authors</b>, then two ranges of dates — <b>Written</b>, when a note was first written, and <b>Last change</b>, when it last changed —, the columns of the same names in the table.",
+    "A range is two rows, From and To, a calendar in the disk's place and the bound in the label's; an open bound reads “From the start” or “To the end”. Here only the notes written in September are left. Every filter is an address parameter (<code>written=2026-09-01..2026-09-30</code>), one for both panels of a comparison.",
+    "The filters choose among the notes the page shows; the time scale chooses the moment they are read at. A range of dates here never moves the scale.",
+  ]],
+  "5.10": ["Last change: the date range picker", [
+    "<b>Where to click:</b> open “Last change” in the filters on the left, then click “From” or “To”.",
+    "The row opens <code>@maxitor/panel</code>'s date range picker, the one of spec 079 (2.7): the core's ready stretches, then the page's own — here “Since the first publication” —; two fields that take typing; two months; nothing changes before Apply. “Last 30 days” moves with today: the address keeps <code>changed=now-30d..now</code>.",
+  ]],
+  "5.8": ["Rolled back as v6: a red point", [
+    "v6 is a milestone like any publication, drawn red: the plugin gives its tone from the core's palette. Its card's badge says <b>Rolled back</b> and to which publication; the legend behind the “i” gains the row the page now gives.",
+    "Published now shows the notes of v3 as v6. ‹ › step through v6 as through any publication.",
+  ]],
   "3.7": ["The graph's pull requests", [
-    "The same card of the core, with the milestones of another plugin's page: the graph's pull requests. Everything around them — the head, the switch of small points, the modes, the presets, the axis, the moment, the comment under the scale — is the core's and does not change.",
-    "On the lane every plugin's points look alike: the plugin chooses a tone of the core's palette (purple merged, grey pushed directly, green and red still open), a look (filled; hollow for an open proposal; a ring for what runs live), whether a point is small (<b>#44</b> did not change the graph) and a release flag.",
-    "The card under the pointer is the plugin's own: a list of blocks of <code>@maxitor/panel</code> in its order — a line with a badge, a ref and the time; a title; a person, whose picture is data (a GitHub avatar), not an icon of Maxitor; chips. Hover the points: the template's revisions (3.5) and the gates (3.8) build theirs from the same blocks differently.",
+    "The same card of the core on another plugin's page: checkout-web's graph, with the graph's pull requests as its milestones. Everything around them — the head, the modes, the presets, the axis, the moment, the comment under the scale — is the core's and does not change; what the points are is the graph's.",
+    "Each kind of point means something in the graph's history, as maxitor-web's <code>TrackLegend</code> names them today: purple merged, grey pushed directly, amber, green or red a pull request still open — waiting for review, approved, changes requested —, a ring for what runs live; a small point a pull request that did not change the graph (<b>#44</b>); a flag a release. So the graph's head has the switch of small points, and its legend the rows Size and Flag.",
+    "The card under the pointer is the plugin's own: a list of blocks of <code>@maxitor/panel</code> in its order — a line with a badge, a ref and the time; a title; a person, whose picture is data (a GitHub avatar), not an icon of Maxitor; chips. Hover the points: the template's publications (3.5) build theirs from the same blocks differently.",
     "An open pull request is a proposal: choosing it opens it and does not change the moment.",
   ]],
   "3.9": ["Reading the scale: the notes", [
+    "Published's setup, all the scale and its “i” are built from: <code>read: \"list_published_notes\"</code> (the bars), <code>milestones: \"list_publications\"</code>, <code>card: \"publication_card\"</code>, <code>kinds: { published: purple, rollback: red }</code>, no <code>small</code>, no <code>flag</code>, <code>compare: [diff, side_by_side]</code>, <code>actions: [Roll back on a milestone]</code>.",
     "The “i” in the card's head opens what the scale's marks mean, as the graph viewer's TrackLegend does today: what is on the scale on the left, the keys on the right.",
-    "<b>Points</b> are the page's own: one row per kind of point it draws — a sample with the stretch of line that leads to it, a name, one sentence. The plugin gives them with its history, beside the milestones; the core draws them. <b>Bars</b>, <b>Marks</b> and the keys are the core's, the same on every page; only what a small point and a flag mean on this page is the plugin's sentence.",
+    "<b>Points</b> are the page's own: one row per kind of point it draws — a sample with the stretch of line that leads to it, a name, one sentence. The plugin gives them with its history, beside the milestones; the core draws them. <b>Bars</b>, <b>Marks</b> and the keys are the core's, the same on every page.",
+    "The legend follows what the open page gives with its history: Points are its own rows; Bars stand when it has bars; a mark it does not give has no row. A small point and a flag are the plugin's to give, each with its sentence — the notes give neither, so their legend has no Size, no Flag and no three points, and the card's head has no switch of small points; the graph gives both (3.10).",
     "A page with bars alone has no points and no marks of milestones; a page with milestones alone has no bars.",
   ]],
-  "3.10": ["Reading the scale: the graph", ["The graph's page: six kinds of points — the rows of today's TrackLegend, now given by the plugin — and its own words for the size and the flag. Everything else in the legend is the same as on the notes."]],
-  "3.8": ["A project's gates", [
-    "A gate's card is mostly labelled lines: its owner, its criteria, what is missing. <b>G3</b> could not be read: a hollow red point and a warning block. The flag over the second G2 is the stage the project entered.",
-  ]],
-  "6.1": ["A note's actions on a phone", ["The “⋯” button opens a sheet with Edit and Delete."]],
+  "3.10": ["Reading the scale: the graph", [
+    "The graph's setup: no <code>read</code> — milestones alone —, <code>kinds: { direct, merged, review_required, approved, changes_requested, live }</code>, <code>small: \"A larger point changed the graph; a smaller one changed only the version.\"</code>, <code>flag: \"That version was released…\"</code>, <code>compare: [diff, side_by_side]</code>, no actions.","The graph's page: six kinds of points — the rows of today's TrackLegend, now given by the plugin — and its own words for the size and the flag, so its legend has the rows Size, Flag and the three points that the notes' has not. Everything else in the legend is the same as on the notes."]],
   "6.2": ["The tree in a drawer", ["The button left of the logo opens the organization's tree; the pill takes the rest of the top row."]],
 };
 function base(o) { const s = JSON.parse(JSON.stringify(DEF)); Object.assign(s, JSON.parse(JSON.stringify(o))); return s; }
 function full(n) { for (const [, items] of SCREENS) for (const [k, , st] of items) if (k === n) return base(st); return null; }
-const KEYS = ["_plugin", "legend", "page", "view", "mode", "at", "from", "compose", "extra", "revs", "edit", "conflict", "dlg", "picker", "sheet", "drawer", "_empty", "stepper", "stepIdx", "_view", "_ms", "_variant"];
+const KEYS = ["wr", "lc", "cal", "pick", "_plugin", "legend", "page", "view", "mode", "at", "from", "compose", "extra", "revs", "edit", "conflict", "dlg", "picker", "sheet", "drawer", "_empty", "stepper", "stepIdx", "_view", "_ms", "_variant"];
 function norm(o) { return JSON.stringify(KEYS.map(k => k === "dlg" && o.dlg ? { kind: o.dlg.kind, id: o.dlg.id } : o[k] === undefined ? null : o[k])); }
 function curNum() { const me = norm(S); for (const [, items] of SCREENS) for (const [n] of items) if (norm(full(n)) === me) return n; return null; }
 const EV_ALL = EV.slice(), REV_ALL = REV.slice();
@@ -1815,7 +2200,7 @@ function openNum(n) {
 }
 function renderNav() {
   const cur = curNum();
-  let h = `<h1>Plugin template: notes now and in the past</h1><div class="sub">The screens of issue #97: the notes now; editing and deleting; any moment of the past, Diff and Side by side; published revisions and the draft. Every screen is live and has a phone version.</div>`;
+  let h = `<h1>Maxitor: one time scale, set up by each page</h1><div class="sub">The scale is the core's, one tool for every page; a page sets it up by the history it declares — its kinds of point, whether it has small points or flags, its modes and its actions on a milestone (issue #98, 1.1, item 5) —, and the “i” is built from the same setup. The groups are the pages: the template's Published, set up with its bars, publications and rollbacks, and checkout-web's graph, set up with its pull requests. Draft and publishing are the accepted mockup of #121, archive/makets/084-notes-draft-published. Every screen is live and has a phone version.</div>`;
   h += `<div class="seg"><button class="${S.phone ? "" : "on"}" onclick="go({phone:false,drawer:false,sheet:null})">Desktop</button><button class="${S.phone ? "on" : ""}" onclick="go({phone:true})">Phone</button></div>`;
   for (const [g, items] of SCREENS) {
     h += `<div class="group">${g}</div>`;
@@ -1845,7 +2230,9 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); step(e.key === "ArrowLeft" ? -1 : 1); }
   else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && cmp()) { e.preventDefault(); stepCh(e.key === "ArrowUp" ? -1 : 1); }
 });
-document.addEventListener("keydown", e => { if (e.key === "Escape") go({ legend: false, dcard: false, dlg: null, drawer: false, picker: false, sheet: null, stepper: false }); });
+/* A press outside the date range picker closes it as Cancel does; the row that opened it closes it too, by its own click. */
+document.addEventListener("mousedown", e => { if (S.cal && !e.target.closest(".calpop, .fp [data-rr]")) calCancel(); }, true);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && S.cal) return calCancel(); if (e.key === "Escape") go({ legend: false, dcard: false, dlg: null, drawer: false, picker: false, sheet: null, stepper: false }); });
 fitAll(false);
 /* An address like #3.4 opens that screen; #3.4-phone opens its phone version; #bare hides the navigator and the notes. */
 (function fromHash() {

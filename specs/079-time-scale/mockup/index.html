@@ -68,7 +68,7 @@
   .crumb .lv { font-size: 10px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
   .crumb .sep { color: var(--faint); font-weight: 400; margin: 0 2px; }
   .hdr .spacer { flex: 1; }
-  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #cbd5e1; color: #1e293b; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: #334155; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
   .avatar.sm { width: 24px; height: 24px; font-size: 10px; }
   .ico { width: 16px; height: 16px; flex-shrink: 0; }
   .ico.sm { width: 14px; height: 14px; }
@@ -437,14 +437,15 @@
   .flip button.a.on { background: #b45309; color: #fff; } .flip button.b.on { background: #1d4ed8; color: #fff; }
   .half .cv { flex: 1; }
   .device:not(.phone) .half .vtabs { left: calc(172px + (100% - 172px) / 2); }
-  .half .cstep-o { top: auto; bottom: 10px; right: 12px; }
-  .half .cstep-o .cdrop { top: auto; bottom: 40px; }
+  .half .cstep-o { top: 12px; right: 12px; }
+  .half .cstep-o .cdrop { top: 36px; bottom: auto; }
   .dcard { position: absolute; z-index: 9; width: 300px; box-sizing: border-box; padding: 10px 12px; font-size: 12px; line-height: 1.45; background: #fff; border: 1px solid rgba(15,23,42,.1); border-radius: 8px; box-shadow: 0 8px 30px rgba(15,23,42,.14), 0 1px 2px rgba(15,23,42,.06); color: #0f172a; }
   .dcard .dh { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; margin-bottom: 4px; }
   .dcard .bd { border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; flex-shrink: 0; }
   .dcard .drow { display: grid; grid-template-columns: minmax(70px, auto) 1fr; gap: 6px; padding: 4px 0; border-top: 1px solid rgba(15,23,42,.06); }
   .dcard .drow > span:first-child { color: #64748b; }
   .dcard .drow > span:last-child { overflow-wrap: anywhere; }
+  .dcard .dgrp { margin-top: 6px; font-weight: 600; color: #475569; }
   .cvnote { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 8; background: rgba(15,23,42,.88); color: #fff; font-size: 12px; border-radius: 8px; padding: 6px 10px; opacity: 0; transition: opacity 160ms ease; pointer-events: none; white-space: nowrap; }
   .cvnote.on { opacity: 1; }
   .note.across { box-shadow: 0 0 0 2px rgba(37,99,235,.45); }
@@ -530,6 +531,7 @@
   .device.phone .strip { font-size: 13px; }
   .device.phone .cstep-o { top: auto; bottom: 10px; right: 12px; }
   .device.phone .cstep-o .cdrop { top: auto; bottom: 40px; width: 330px; }
+  .device.phone .half .cstep-o { bottom: 62px; }  /* above the bottom row of the zoom, never over it */
 
   /* a milestone's card: the graph viewer's VersionTip, drawn by the core from the plugin's data */
   .htip.mt { width: 320px; padding: 12px 14px; }
@@ -551,32 +553,38 @@
   .nav .tgl small { color: var(--muted); }
 
   /* The canvas of @maxitor/panel: tables with fields and the links between them. */
-  .ent { position: absolute; width: 210px; background: #fff; border: 1px solid rgba(15,23,42,.16); border-radius: 8px; font-size: 12px; box-shadow: 0 1px 2px rgba(15,23,42,.06); }
-  .ent .eh { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 10px; font-weight: 600; color: #0f172a; border-bottom: 1px solid rgba(15,23,42,.08); border-radius: 8px 8px 0 0; position: relative; }
-  .ent .eh .sch { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: 8px 0 0 0; }
-  .ent .eh .fold { margin-left: auto; color: var(--muted); font-weight: 400; font-size: 11px; }
-  .ent .ef { height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 10px; color: #334155; }
-  .ent .ef + .ef { border-top: 1px solid rgba(15,23,42,.05); }
-  .ent .ef .fn { flex: 1; font-family: var(--mono); font-size: 11.5px; }
-  .ent .ef .ft { color: var(--muted); font-family: var(--mono); font-size: 11px; }
-  .ent .ef .ft s { color: #dc2626; margin-right: 4px; }
-  .ent.folded .eh { border-bottom: 0; border-radius: 8px; }
-  .sdk { width: 16px; height: 16px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; flex-shrink: 0; line-height: 1; }
-  .sdk.a { background: #16a34a; } .sdk.c { background: #d97706; } .sdk.r { background: #dc2626; } .sdk.u { display: none; }
-  .ef .sdk { width: 13px; height: 13px; font-size: 9.5px; }
+  /* maxitor-web's ERD table (lib/buildDotSource.ts): a rounded card in its frame colour, a header filled with what
+     paints it and the name in white with its sign; rows with the key word, the name and the type in Helvetica. */
+  .ent { position: absolute; width: 210px; box-sizing: border-box; background: #fff; border: 1.4px solid #cbd5e1; border-radius: 9px; overflow: hidden; font-family: Helvetica, Arial, sans-serif; font-size: 11px; }
+  .ent .eh { height: 30px; display: flex; align-items: center; gap: 5px; padding: 0 8px; font-size: 12.5px; font-weight: 700; position: relative; }
+  .ent .eh .kd { width: 13px; height: 13px; flex-shrink: 0; }
+  .ent .eh b { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ent .eh .fold { width: 13px; height: 13px; flex-shrink: 0; opacity: .9; }
+  .ent .ef { height: 24px; display: grid; grid-template-columns: 28px 1fr auto; align-items: center; padding: 0 8px 0 4px; color: #0f172a; }
+  .ent .ef .ky { font-size: 8.5px; font-weight: 700; }
+  .ent .ef .fn { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ent .ef .ft { color: #64748b; font-size: 10px; text-align: right; white-space: nowrap; padding-left: 6px; }
+  .ent .ef .ft s { text-decoration: line-through; }
+  .ent .hid { height: 24px; display: flex; align-items: center; padding: 0 8px; color: #94a3b8; font-size: 9px; }
+  /* maxitor-web's Diff marks (lib/erdPostPass.ts): a soft halo in the change's colour under a table that changed — 40 px round
+     it, fill-opacity 0.16, blurred by 22 —, and a table that did not change faded to 0.32 while the changes paint. */
+  .halo { position: absolute; border-radius: 46px; filter: blur(22px); pointer-events: none; }
+  .ent.faded { opacity: .32; }
   .links { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
   .links path.ln { fill: none; stroke: #94a3b8; stroke-width: 1.6; }
-  .links path.ln.a { stroke: #16a34a; stroke-dasharray: 5 3; }
+  .links path.ln.a { stroke: #16a34a; }
+  .links path.ln.u { stroke: #94a3b855; stroke-width: 1.2; }
+  .links path.ln.u + circle { fill: #94a3b855; }
   .links path.hit { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; cursor: pointer; }
   .links circle { fill: #94a3b8; }
 
   /* The mark: what lies under the pointer, or what is selected, lit in both panels. A glow follows the element's own
      shape — a box, a row, a curved line alike — as maxitor-web's halfPicking does today. */
   .glow { filter: drop-shadow(0 0 5px rgba(37,99,235,.95)); }
-  .ent.glow { border-color: #2563eb; }
+  .ent.glow { border-color: #2563eb !important; }
   .ef.glow { filter: none; background: rgba(37,99,235,.12); box-shadow: inset 0 0 0 1.5px #2563eb; }
   .links path.ln.glow { stroke: #2563eb; stroke-width: 2.2; }
-  .ent.parent { border-color: #2563eb; border-style: dashed; filter: drop-shadow(0 0 4px rgba(37,99,235,.55)); }
+  .ent.parent { border-color: #2563eb !important; border-style: dashed; filter: drop-shadow(0 0 4px rgba(37,99,235,.55)); }
 
   /* maxitor-web's HalfNote: a dark chip at the top centre of the panel. */
   .hnote { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 20; padding: 4px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 600; color: #fff; background: rgba(15,23,42,.86); white-space: nowrap; pointer-events: none; }
@@ -821,9 +829,9 @@ const I = {
 /* ======================= sample data: the core's test page answering from fixtures ======================= */
 const ORG = { name: "Severny Veter", code: "severny-veter" };
 const PEOPLE = {
-  anna: { name: "Anna Kovaleva", ini: "AK", bg: "#cbd5e1" },
-  ilya: { name: "Ilya Petrov", ini: "IP", bg: "#bae6fd" },
-  olga: { name: "Olga Sidorova", ini: "OS", bg: "#fde68a" },
+  anna: { name: "Anna Kovaleva", ini: "AK", bg: "#334155" },
+  ilya: { name: "Ilya Petrov", ini: "IP", bg: "#0284c7" },
+  olga: { name: "Olga Sidorova", ini: "OS", bg: "#ca8a04" },
 };
 const ME = "anna";
 const A_LAB = "3 Nov, 12:00", B_LAB = "10 Nov, 11:24 · now";
@@ -835,7 +843,7 @@ const W = {
   a: {
     tables: {
       Account: { x: 0, y: 0, s: "billing", k: "c", f: [["id", "uuid"], ["phone", "text"]] },
-      Payment: { x: 250, y: 40, s: "billing", k: "c", f: [["id", "uuid"], ["amount", "int"], ["account_id", "uuid"]] },
+      Payment: { x: 250, y: 40, s: "billing", k: "c", f: [["id", "uuid"], ["amount", "int", "c"], ["account_id", "uuid"]] },
       Ledger: { x: 0, y: 260, s: "audit", k: "c", f: [["id", "uuid"], ["entry", "text"]] },
       Audit: { x: 1240, y: 820, s: "audit", k: "u", f: [["id", "uuid"], ["at", "timestamp"]] },
     },
@@ -853,6 +861,16 @@ const W = {
   },
 };
 const EW = 210, EH = 30, FH = 24;
+/* What the test page answers for the changes between A and B, grouped by the object they belong to, as the graph
+   viewer groups by entity. A step anchors the change itself: a field's change sends the field's anchor inside its
+   table's, so the other panel can fall back to the table. The card's words are the page's: a property by its path,
+   before and after; an added or removed object in one line; for a table, the parts that changed inside it, by group. */
+const CHG = [
+  { t: "Account", k: "c", chain: ["field:Account.email", "table:Account"], sum: "+1 field", groups: [["Fields", [["a", "email", "", "", ""]]]] },
+  { t: "Ledger", k: "c", chain: ["table:Ledger"], sum: "schema", props: [["schema", "audit", "billing"]] },
+  { t: "Payment", k: "c", chain: ["field:Payment.amount", "table:Payment"], sum: "~1 field · +1 link", groups: [["Fields", [["c", "amount", "type", "int", "decimal"]]], ["Links", [["a", "Refund.payment_id → id", "", "", ""]]]] },
+  { t: "Refund", k: "a", chain: ["table:Refund"], sum: "added" },
+];
 
 /* The list: 10,000 accounts at B; 33 of them (acc-06000 … acc-06032) were added after A, so at A a row stands 33 places higher. */
 const N_B = 10000, ADDED0 = 6000, ADDED1 = 6032, N_A = N_B - (ADDED1 - ADDED0 + 1), RH = 30;
@@ -878,7 +896,7 @@ function indexOf(side, id) {
 const NROWS = { a: N_A, b: N_B };
 
 /* ======================= state ======================= */
-const DEF = { mq: "", mexp: false, fs: null, one: null, review: null, cal: null, tf: null, fsec: null, paintL: null, paintC: null, fsecC: null, hideKc: [], view: "canvas", hover: null, sel: null, fold: [], hideS: [], cam: { a: null, b: null }, side: "b", note: {}, glide: false };
+const DEF = { mq: "", mexp: false, fs: null, one: null, review: null, cal: null, tf: null, fsec: null, paintL: null, paintC: null, fsecC: null, hideKc: [], view: "canvas", hover: null, sel: null, fold: [], hideS: [], cam: { a: null, b: null }, side: "b", note: {}, glide: false, mode: "split", stepIdx: null, stepper: false, dcard: false };
 const S = Object.assign(JSON.parse(JSON.stringify(DEF)), { phone: false, anchors: false });
 function go(patch) { Object.assign(S, patch); render(); }
 function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
@@ -922,14 +940,14 @@ function resolve(side, chain) {
 const PAGES = { canvas: "Canvas", table: "Table" };
 function urlbar() {
   const path = S.view === "canvas" ? "canvas" : S.view === "table" ? "table" : "milestones";
-  const q = S.view === "canvas" || S.view === "table" ? "?mode=<i>side_by_side</i>&amp;from=<i>2026-11-03T12:00</i>" : "";
-  return `<div class="urlbar"><span>🔒</span><span class="u">maxitor.aoa.run<b>/w/${ORG.code}/core/panel-test/${path}</b>${q}</span></div>`;
+  const q = S.view === "canvas" || S.view === "table" ? `?mode=<i>${S.mode === "diff" ? "diff" : "side_by_side"}</i>&amp;from=<i>2026-11-03T12:00</i>` : "";
+  return `<div class="urlbar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span class="u">maxitor.aoa.run<b>/w/${ORG.code}/core/panel-test/${path}</b>${q}</span></div>`;
 }
-function av(who, cls = "avatar sm") { const p = PEOPLE[who] || PIC[who]; return `<span class="${cls}" style="background:${p.bg}" title="${esc(p.name)}">${p.ini}</span>`; }
+function av(who, cls = "avatar sm") { const p = PEOPLE[who]; return `<span class="${cls}" style="background:${p.bg}" title="${esc(p.name)}">${p.ini}</span>`; }
 function pill() {
   const cmp = S.view === "canvas" || S.view === "table";
   const label = cmp
-    ? `<span class="ab">A</span><b>3 Nov</b>→<span class="ab">B</span><b>now</b>${S.phone ? "" : `<span class="md">· side by side</span>`}<span class="cnts">${S.view === "canvas" ? `<span style="color:#16a34a">+3</span><span style="color:#dc2626">−0</span><span style="color:#d97706">~4</span>` : `<span style="color:#16a34a">+33</span><span style="color:#dc2626">−0</span><span style="color:#d97706">~1</span>`}</span>`
+    ? `<span class="ab">A</span><b>3 Nov</b>→<span class="ab">B</span><b>now</b>${S.phone ? "" : `<span class="md">· ${S.mode === "diff" ? "diff" : "side by side"}</span>`}<span class="cnts">${S.view === "canvas" ? `<span style="color:#16a34a">+1</span><span style="color:#dc2626">−0</span><span style="color:#d97706">~3</span>` : `<span style="color:#16a34a">+33</span><span style="color:#dc2626">−0</span><span style="color:#d97706">~1</span>`}</span>`
     : `<span class="live"></span><b>Now</b>`;
   return `<span class="pill"><button class="stp">${I.left}</button><span class="dv"></span><button class="pb2" >${I.clock}${label}${I.chev}</button><span class="dv"></span><button class="stp off">${I.right}</button></span>`;
 }
@@ -956,11 +974,33 @@ function openView(v) { const ph = S.phone, an = S.anchors; Object.assign(S, JSON
 
 /* ======================= the canvas: tables with fields, and the links ======================= */
 function fieldY(t, i) { return t.y + EH + i * FH + FH / 2; }
+/* The table as maxitor-web's ERD draws it in a comparison (lib/buildDotSource.ts, tablePaint): painted by its schema,
+   the header takes the schema's colour and the frame says what happened to the table; painted by the changes, header and
+   frame take the change's colour, and a table nothing happened to gets a quiet grey header. The name carries the
+   table's sign. A changed row is tinted with its change's colour and its name carries its sign; an unchanged row's name
+   is faded; a type that changed reads struck, then the new one. Key words are grey in a comparison. */
+const DIFF_COL = { a: "#16a34a", c: "#d97706", r: "#dc2626" }, DIFF_SIGN = { a: "+", c: "~", r: "−" };
+const KIND_CORE = '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18"/>';
+function tablePaint(t) {
+  const byChange = (S.paintC || "changes") === "changes", st = t.k;
+  if (byChange) return st === "u" ? { head: "#e2e8f0", frame: "#cbd5e1", ink: "#334155" } : { head: DIFF_COL[st], frame: DIFF_COL[st], ink: "#fff" };
+  return { head: SCHEMA[t.s].c, frame: st === "u" ? "#cbd5e1" : DIFF_COL[st], ink: "#fff" };
+}
 function entHtml(side, name, t) {
-  const folded = S.fold.includes(`${side}:${name}`);
-  const rows = folded ? "" : t.f.map(([n, ty, k, was]) => `<div class="ef" data-anchor="${fA(name, n)}"><span class="alab">${fA(name, n)}</span>${k ? `<span class="sdk ${k}">${{ a: "+", c: "~", r: "−" }[k]}</span>` : ""}<span class="fn">${n}</span><span class="ft">${was && side === "b" ? `<s>${was}</s>` : ""}${ty}</span></div>`).join("");
-  return `<div class="ent${folded ? " folded" : ""}" data-anchor="${tA(name)}" style="left:${t.x}px;top:${t.y}px"><span class="alab">${tA(name)}</span>
-    <div class="eh"><span class="sch" style="background:${(S.paintC || "schema") === "changes" ? KC[t.k] : SCHEMA[t.s].c}"></span><span class="sdk ${t.k}">${{ a: "+", c: "~", r: "−", u: "" }[t.k]}</span>${name}${folded ? `<span class="fold">${t.f.length} fields ▸</span>` : ""}</div>${rows}</div>`;
+  const folded = S.fold.includes(`${side}:${name}`), p = tablePaint(t);
+  const glyph = `<svg class="kd" viewBox="0 0 24 24" fill="none" stroke="${p.ink}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${KIND_CORE}</svg>`;
+  const foldIcon = `<svg class="fold" viewBox="0 0 24 24" fill="none" stroke="${p.ink}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="${folded ? "M9 6l6 6-6 6" : "M6 9l6 6 6-6"}"/></svg>`;
+  const rows = folded ? `<div class="hid">${t.f.length} fields hidden</div>` : t.f.map(([n, ty, k, was], i) => {
+    const bg = k ? DIFF_COL[k] + "24" : i % 2 ? "#94a3b80f" : "#fff";
+    const key = n === "id" ? "PK" : n.endsWith("_id") ? "FK" : "";
+    const nm = k === "r" ? `<s style="color:${DIFF_COL.r}">${DIFF_SIGN.r} ${n}</s>` : k ? `<span style="color:${DIFF_COL[k]}">${DIFF_SIGN[k]} ${n}</span>` : `<span style="color:#94a3b8">${n}</span>`;
+    const tp = was && side === "b" ? `<s>${esc(was)}</s> → ${esc(ty)}` : esc(ty);
+    return `<div class="ef" data-anchor="${fA(name, n)}" style="background:${bg}"><span class="alab">${fA(name, n)}</span><span class="ky" style="color:#94a3b8">${key}</span><span class="fn">${nm}</span><span class="ft">${tp}</span></div>`;
+  }).join("");
+  const title = t.k !== "u" ? `${DIFF_SIGN[t.k]} ${name}` : name;
+  const faded = t.k === "u" && (S.paintC || "changes") === "changes";
+  return `<div class="ent${folded ? " folded" : ""}${faded ? " faded" : ""}" data-anchor="${tA(name)}" style="left:${t.x}px;top:${t.y}px;border-color:${p.frame}"><span class="alab">${tA(name)}</span>
+    <div class="eh" style="background:${p.head};color:${p.ink}">${glyph}<b>${title}</b>${foldIcon}</div>${rows}</div>`;
 }
 function linkPath(side, l) {
   const w = W[side], s = w.tables[l[0]], d = w.tables[l[2]];
@@ -978,12 +1018,16 @@ function worldHtml(side) {
   const visSet = new Set(vis.map(([n]) => n));
   const links = w.links.filter(l => visSet.has(l[0]) && visSet.has(l[2])).map(l => {
     const p = linkPath(side, l);
-    return `<g data-anchor="${lA(l)}"><path class="ln${l[4] ? " a" : ""}" d="${p.d}"/><circle cx="${p.dx}" cy="${p.dy}" r="3"/><path class="hit" d="${p.d}" data-anchor="${lA(l)}"/></g>`;
+    return `<g data-anchor="${lA(l)}"><path class="ln ${l[4] || "u"}" d="${p.d}"/><circle cx="${p.dx}" cy="${p.dy}" r="3"/><path class="hit" d="${p.d}" data-anchor="${lA(l)}"/></g>`;
   }).join("");
-  return `<svg class="links" width="1500" height="1000">${links}</svg>${vis.map(([n, t]) => entHtml(side, n, t)).join("")}`;
+  const halos = vis.filter(([, t]) => t.k !== "u").map(([n, t]) => {
+    const h = EH + (S.fold.includes(`${side}:${n}`) ? 24 : FH * t.f.length);
+    return `<div class="halo" style="left:${t.x - 40}px;top:${t.y - 40}px;width:${EW + 80}px;height:${h + 80}px;background:${DIFF_COL[t.k]}29"></div>`;
+  }).join("");
+  return `${halos}<svg class="links" width="1500" height="1000">${links}</svg>${vis.map(([n, t]) => entHtml(side, n, t)).join("")}`;
 }
 function fpanel(side) {
-  const paint = S.paintC || "schema", open = S.fsecC || paint;
+  const paint = S.paintC || "changes", open = S.fsecC || paint;
   const schema = Object.entries(SCHEMA).map(([k, sc]) => `<div class="row${S.hideS.includes(k) ? " off" : ""}" onclick="tglS('${k}')">${disk(sc.c, "none")}<span class="lb">${sc.name}</span></div>`).join("");
   const kinds = [...new Set(Object.values(W[side].tables).map(t => t.k))];
   const changes = [["a", "Added"], ["c", "Changed"], ["u", "Unchanged"]].filter(([k]) => kinds.includes(k)).map(([k, l]) => `<div class="row${(S.hideKc || []).includes(k) ? " off" : ""}" onclick="tglKc('${k}')">${disk(KC[k], k)}<span class="lb">${l}</span></div>`).join("");
@@ -1005,19 +1049,20 @@ function camOf(side) {
 
 function half(side) {
   const lab = side === "a" ? A_LAB : B_LAB, n = Object.keys(W[side].tables).length;
-  const head = S.phone ? `<span class="flip">${["a", "b"].map(x => `<button class="${x}${S.side === x ? " on" : ""}" onclick="go({side:'${x}'})">${x.toUpperCase()}</button>`).join("")}</span>`
+  const head = S.phone ? `<span class="flip">${["a", "b"].map(x => `<button class="${x}${S.side === x ? " on" : ""}" onclick="flipTo('${x}')">${x.toUpperCase()}</button>`).join("")}</span>`
     : side === "b" ? `<button class="trk on" role="switch" aria-checked="true">Track</button>` : "";
   const body = S.view === "canvas"
-    ? `<div class="cv" data-side="${side}"><div class="world" data-side="${side}">${worldHtml(side)}</div>${S.phone ? "" : fpanel(side)}${zoombar()}<div class="hnote" data-note="${side}" style="display:none"></div></div>`
+    ? `<div class="cv" data-side="${side}"><div class="world" data-side="${side}">${worldHtml(side)}</div>${S.phone ? "" : fpanel(side)}${zoombar()}${side === "b" ? changeStepper() : ""}<div class="hnote" data-note="${side}" style="display:none"></div></div>`
     : `<div class="cv" data-side="${side}"><div class="world" data-side="${side}"><div class="vt"><div class="vhw"><div class="vcap"><b>Accounts</b><span data-count="${side}">${listCount(side)}</span><button class="rvw" data-rvw="${side}" onclick="event.stopPropagation();openOne('${side}')">${CAL}<span>${S.review ? `Review on ${dLab(bd(S.review, false))}` : "Review on…"}</span></button></div><div class="vh"><span>#</span><span></span><span>Account</span><span>Email</span><span>Manager</span><span class="r">Balance</span><span>Created</span></div></div><div class="vs" data-side="${side}" style="height:${Math.max(1, listOf(side).length) * RH}px"></div></div></div>${S.phone ? phoneFilterButton(side) : listPanel(side)}${zoombar()}
         <div class="hnote" data-note="${side}" style="display:none"></div></div>`;
+  if (S.mode === "diff") return `<div class="half">${body}</div>`;  // Diff: one panel, no head of its own
   return `<div class="half"><div class="hh"><span class="sd ${side}">${side.toUpperCase()}</span><b>${lab}</b>${head}</div>${body}</div>`;
 }
 
 /* ======================= milestones on the scale ======================= */
 /* ======================= render ======================= */
 function content() {
-  if (S.view === "canvas" || S.view === "table") return `<div class="cvs">${S.phone ? half(S.side) : half("a") + half("b")}</div>`;
+  if (S.view === "canvas" || S.view === "table") return `<div class="cvs">${S.mode === "diff" ? half("b") : S.phone ? half(S.side) : half("a") + half("b")}</div>`;
   return "";
 }
 function render() {
@@ -1080,6 +1125,7 @@ function applyMarks() {
     }
     if (noteEl) { noteEl.style.display = note ? "" : "none"; noteEl.innerHTML = note || ""; }
   }
+  placeDiffCard();
 }
 
 /* The camera of each panel: dragging moves, the wheel zooms around the pointer. */
@@ -1088,10 +1134,10 @@ function bindCanvas() {
     const side = cv.dataset.side;
     cv.addEventListener("mouseover", e => { const a = e.target.closest("[data-anchor]"); const ch = a ? chainOf(a) : null; const was = S.hover; if (ch ? (was && was.side === side && was.chain[0] === ch[0]) : !was) return; S.hover = ch ? { side, chain: ch } : null; S.note = {}; applyMarks(); });
     cv.addEventListener("mouseleave", () => { if (S.hover) { S.hover = null; applyMarks(); } });
-    cv.addEventListener("click", e => { if (e.target.closest(".fp,.calpop")) return; const a = e.target.closest("[data-anchor]"); if (!a) { if (S.sel) go({ sel: null, note: {} }); return; } select(side, chainOf(a)); });
+    cv.addEventListener("click", e => { if (e.target.closest(".fp,.calpop,.cstep-o,.dcard")) return; const a = e.target.closest("[data-anchor]"); if (!a) { if (S.sel || S.dcard) go({ sel: null, note: {}, dcard: false, stepper: false }); return; } select(side, chainOf(a)); });
     cv.addEventListener("dblclick", e => { const a = e.target.closest(".ent"); if (!a) return; const n = parse(a.dataset.anchor).rest, k = `${side}:${n}`; const f = new Set(S.fold); f.has(k) ? f.delete(k) : f.add(k); go({ fold: [...f] }); });
     let drag = null;
-    cv.addEventListener("mousedown", e => { if (e.target.closest(".fp,.zoombar,.calpop,.rvw")) return; cancelAnimationFrame(GLIDES[side]); const c = camOf(side); drag = { x: e.clientX, y: e.clientY, c: { ...c } }; });
+    cv.addEventListener("mousedown", e => { if (e.target.closest(".fp,.zoombar,.calpop,.rvw,.cstep-o,.dcard")) return; cancelAnimationFrame(GLIDES[side]); const c = camOf(side); drag = { x: e.clientX, y: e.clientY, c: { ...c } }; });
     window.addEventListener("mousemove", e => { if (!drag) return; const k = cv.getBoundingClientRect().width / cv.offsetWidth; S.cam[side] = { ...drag.c, x: drag.c.x + (e.clientX - drag.x) / k, y: drag.c.y + (e.clientY - drag.y) / k }; S.glide = false; applyCams(); });
     window.addEventListener("mouseup", () => { drag = null; });
     cv.addEventListener("wheel", e => {
@@ -1131,6 +1177,65 @@ function select(side, chain) {
   if (to) glideTo(other, to); else { applyCams(); }
   applyMarks();
   if (to) setTimeout(() => { if (S.note[other] === "Brought to the centre") { S.note = {}; applyMarks(); } }, 2500);
+}
+
+/* ======================= the stepper: @maxitor/panel's ChangeStepper and DiffCard ======================= */
+/* It stands only when a range is chosen, on the panel that holds B, top right; its list is grouped by table. */
+function changeStepper() {
+  if (S.view !== "canvas") return "";
+  const lbl = S.stepIdx === null ? `${CHG.length} changes` : `${S.stepIdx + 1} of ${CHG.length} changes`;
+  const drop = S.stepper ? `<div class="cdrop"><div class="gh">Between A and B, by table</div>${CHG.map((c, i) =>
+    `<div class="cr${S.stepIdx === i ? " on" : ""}" onclick="stepTo(${i})"><span class="sg ${c.k}">${{ a: "+", c: "~", r: "−" }[c.k]}</span><span class="cx">${c.t}</span><span class="ck">${c.sum}</span></div>`).join("")}</div>` : "";
+  return `<div class="cstep-o"><span class="cwrap"><span class="pill${S.stepper ? " open" : ""}">
+    <button class="stp" onclick="stepCh(-1)">${I.left}</button><span class="dv"></span>
+    <button class="pb2" onclick="go({stepper:!S.stepper})"><b>${lbl}</b>${I.chev}</button><span class="dv"></span>
+    <button class="stp" onclick="stepCh(1)">${I.right}</button></span>${drop}</span></div>`;
+}
+function stepCh(d) { const n = CHG.length; stepTo(S.stepIdx === null ? (d > 0 ? 0 : n - 1) : (S.stepIdx + d + n) % n); }
+/* A step brings the change into view in B, keeping the zoom, and opens its card beside it; in Side by side it sends
+   the change's anchor with its chain of parents to A, which shows the deepest anchor it holds. */
+function stepTo(i) {
+  S.stepIdx = i; S.stepper = false; S.dcard = true; S.sel = null; S.note = {};
+  if (S.phone && S.mode !== "diff") S.side = "b";
+  render();
+  const c = CHG[i], t = W.b.tables[c.t], cv = document.querySelector('.cv[data-side="b"]'), cam = camOf("b");
+  if (t && cv) {
+    const vw = cv.offsetWidth, vh = cv.offsetHeight, bx = cam.x + t.x * cam.k, by = cam.y + t.y * cam.k;
+    const room = S.phone ? 0 : 312;  // the card stands right of the table
+    if (!(bx >= 0 && by >= 0 && bx + (EW * cam.k + room) <= vw && by + (EH + FH * t.f.length) * cam.k <= vh))
+      glideTo("b", { k: cam.k, x: (vw - room) / 2 - (t.x + EW / 2) * cam.k, y: vh / 2 - (t.y + EH) * cam.k });
+  }
+  select("b", c.chain);
+}
+function diffCardHtml(c) {
+  const icon = `<img src="${statusDiskUri(DIFF_COL[c.k], SIGNS[c.k])}" width="14" height="14" alt="" style="flex-shrink:0">`;
+  const row = (path, was, now) => `<div class="drow"><span>${path}</span><span><s>${esc(was)}</s> → ${esc(now)}</span></div>`;
+  let body = c.k === "a" ? `<div>Added in 10 Nov, 11:24</div>` : c.k === "r" ? `<div>Removed in 10 Nov, 11:24</div>` : "";
+  for (const [path, was, now] of c.props || []) body += row(path, was, now);
+  for (const [g, parts] of c.groups || []) {
+    body += `<div class="dgrp">${g}</div>`;
+    for (const [k, name, path, was, now] of parts) body += `<div><span style="color:${DIFF_COL[k]}">${DIFF_SIGN[k]}</span> ${esc(name)}${path ? row(path, was, now) : ""}</div>`;
+  }
+  return `<div class="dh"><span>${c.t}</span>${icon}</div>${body}`;
+}
+/* The card stands beside the table it describes, in B's panel, and follows B's camera. */
+function placeDiffCard() {
+  document.querySelectorAll(".dcard").forEach(x => x.remove());
+  if (!S.dcard || S.stepIdx === null || S.view !== "canvas") return;
+  const cv = document.querySelector('.cv[data-side="b"]'), c = CHG[S.stepIdx], t = W.b.tables[c.t];
+  if (!cv || !t) return;
+  const cam = camOf("b"), box = document.createElement("div");
+  box.className = "dcard"; box.innerHTML = diffCardHtml(c);
+  const x = cam.x + (t.x + EW) * cam.k + 12, y = cam.y + t.y * cam.k;
+  if (S.phone) { box.style.left = "12px"; box.style.right = "12px"; box.style.width = "auto"; box.style.bottom = "110px"; }
+  else { box.style.left = Math.max(8, Math.min(x, cv.clientWidth - 312)) + "px"; box.style.top = Math.max(8, Math.min(y, cv.clientHeight - 160)) + "px"; }
+  cv.appendChild(box);
+}
+/* On a phone one panel at a time: switching to the other brings the chosen element into its view, as Track does. */
+function flipTo(x) {
+  if (S.side === x) return;
+  S.side = x; render();
+  if (S.sel && S.sel.side !== x) select(S.sel.side, S.sel.chain);
 }
 
 /* ======================= the list: only the rows in view are drawn ======================= */
@@ -1194,16 +1299,23 @@ function blockedCount(side) {
 }
 function posOf(side, id) { const i = indexOf(side, id); if (i < 0) return -1; const L = listOf(side); let lo = 0, hi = L.length - 1; while (lo <= hi) { const m = (lo + hi) >> 1; if (L[m] === i) return m; if (L[m] < i) lo = m + 1; else hi = m - 1; } return -1; }
 function listCount(side) { const n = listOf(side).length; return n === NROWS[side] ? `${n.toLocaleString("en")} rows` : `${n.toLocaleString("en")} of ${NROWS[side].toLocaleString("en")} rows`; }
-const GLYPH = {
-  a: '<path d="M12 7.5v9M7.5 12h9"/>', c: '<path d="M7 13.2c1.6-2.6 3.4-2.6 5 0s3.4 2.6 5 0"/>', r: '<path d="M7.5 12h9"/>', u: '<path d="M7.5 10h9M7.5 14h9"/>',
-  bl: '<circle cx="12" cy="12" r="4.6"/><path d="M8.8 15.2l6.4-6.4"/>',
-};
-const disk = (fill, g) => `<svg class="dk" width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${fill}"/><g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${GLYPH[g]}</g></svg>`;
+/* maxitor-web's disks (lib/erdFilterPresence.ts): a disk of r 11 in a 24-unit box with its sign in white — + − ~ in the
+   change's colour, = on grey for unchanged — and a plain disk for a colour of the data. Shown at 20 px in a 1 px ring
+   (lib/ui legendDiskImgSx). A blocked account's mark is a pictogram in the Lucide style of the graph's icons. */
+const SIGNS = { a: "+", c: "~", r: "−", u: "=" };
+function statusDiskUri(fill, sign, size = 14) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${fill}"/>` + (sign ? `<text x="12" y="${size > 12 ? 16.5 : 15.5}" text-anchor="middle" font-family="sans-serif" font-size="${size}" font-weight="700" fill="#fff">${sign}</text>` : "") + `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+const BLOCKED = '<circle cx="12" cy="12" r="4.6"/><path d="M8.8 15.2l6.4-6.4"/>';
+function disk(fill, g) {
+  if (g === "bl") return `<img class="dk" src="data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${fill}"/><g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${BLOCKED}</g></svg>`)}" width="20" height="20" alt="">`;
+  return `<img class="dk" src="${statusDiskUri(fill, SIGNS[g] || "")}" width="20" height="20" alt="">`;
+}
 function gear(secs, paint, fn) {
   if (secs.length < 2) return "";
   return `<div class="gear"><span class="gs" style="width:${18 * (secs.length - 1) + 16}px"><i></i>${secs.map(([id, title], i) => `<button class="${paint === id ? "on" : ""}" style="left:${i * 18}px" title="Paint by ${title}" onclick="${fn}('${id}')"><span></span></button>`).join("")}</span></div>`;
 }
-GLYPH.none = "";
 const KC = { a: "#16a34a", c: "#d97706", r: "#dc2626", u: "#94a3b8" };
 const monLab2 = v => v ? `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][+v.slice(5) - 1]} ${v.slice(0, 4)}` : "";
 const monLong = v => v ? `${["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][+v.slice(5) - 1]} ${v.slice(0, 4)}` : "";
@@ -1233,7 +1345,7 @@ function rangeRow(side, which, pre, v) {
 function openSec(id) { S.fsec = S.fsec === id || (!S.fsec && id === "status") ? "none" : id; redrawPanels(); }
 /* A person's disk: the initials on a colour of the palette, as ErdFilterPanel draws a person. */
 const PCOL = ["#0284c7", "#7c3aed", "#ca8a04", "#0f766e", "#db2777", "#475569", "#16a34a", "#ea580c"];
-function pdisk(name, size = 20) { const ini = name.split(" ").map(w => w[0]).join("").slice(0, 2), c = PCOL[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % PCOL.length]; return `<svg class="dk pd" width="${size}" height="${size}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${c}"/><text x="12" y="15.6" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif">${ini}</text></svg>`; }
+function pdisk(name, size = 20) { const ini = name.split(" ").map(w => w[0]).join("").slice(0, 2), c = PCOL[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % PCOL.length]; return `<img class="dk pd" src="${statusDiskUri(c, ini, 9)}" width="${size}" height="${size}" alt="">`; }
 /* The managers by how many accounts each holds, most first: the order a long choice shows its first values in. */
 let MGR_ORDER = null;
 function managerOrder() { if (!MGR_ORDER) { const c = {}; for (let i = 0; i < N_B; i++) { const m = rowOf("b", i).mgr; c[m] = (c[m] || 0) + 1; } MGR_ORDER = MANAGERS.slice().sort((a, b) => (c[b] || 0) - (c[a] || 0)); } return MGR_ORDER; }
@@ -1549,7 +1661,8 @@ const SCREENS = [
     ["1.5", "Hidden by the filters", { view: "canvas", hideS: ["audit"], hover: { side: "b", chain: ["table:Ledger"] } }],
     ["1.6", "Brought to the centre", { view: "canvas", sel: { side: "b", chain: ["table:Audit"] }, _bring: true }],
     ["1.7", "A link: the glow follows the line", { view: "canvas", hover: { side: "b", chain: ["link:Payment.account_id->Account.id"] } }],
-    ["1.8", "Painted by the changes", { view: "canvas", paintC: "changes" }],
+    ["1.8", "Painted by the schema", { view: "canvas", paintC: "schema" }],
+    ["1.9", "Phone: Track across the A / B switch", { view: "canvas", phone: true, sel: { side: "b", chain: ["table:Audit"] }, _bring: true }],
   ]],
   ["Track through anchors · a list of 10,000 rows", [
     ["2.1", "A row in view in both", { view: "table", hover: { side: "b", chain: ["row:acc-00007"] } }],
@@ -1568,6 +1681,13 @@ const SCREENS = [
     ["2.14", "Phone: the filters", { view: "table", phone: true, fs: "b", fsec: "manager", tf: { k: ["u"] } }],
     ["2.15", "Phone: the date range picker", { view: "table", phone: true, fs: "b", fsec: "created", cal: { side: "b", active: "from", view: "2026-03", hover: null, draft: { from: "2026-03-05", to: "now" } }, tf: { from: "2026-03-05", to: "now" } }],
     ["2.16", "Phone: the date picker", { view: "table", phone: true, review: "2026-11-24", one: { side: "b", draft: "2026-11-24", view: "2026-11", hover: null } }],
+    ["2.17", "Phone: a row chosen in B, brought on switching to A", { view: "table", phone: true, sel: { side: "b", chain: ["row:acc-06213"] }, _bring: true }],
+  ]],
+  ["The step's card through anchors · a canvas", [
+    ["3.1", "Diff: a step on a table, its card by groups", { view: "canvas", mode: "diff", _step: 2 }],
+    ["3.2", "Diff: the stepper's list, by table", { view: "canvas", mode: "diff", stepper: true }],
+    ["3.3", "Side by side: the step brought into A", { view: "canvas", _step: 2 }],
+    ["3.4", "Side by side: a step onto a field A does not have", { view: "canvas", _step: 0 }],
   ]],
 ];
 const NOTES = {
@@ -1623,9 +1743,9 @@ const NOTES = {
 
 
   "2.8": ["Filters: one value", ["A section may hold a single value: “Blocked accounts”, a row like any other, switched off here. Every 37th account is blocked; both panels leave them out and each list's head counts the rows that are left. There is no switch of another look: every row of the filters turns on and off the same way."]],
-  "1.8": ["Painted by the changes", [
-    "The scheme's filters have two sections that can paint: Schema and Changes. The page says which of its sections can paint; with more than one, the shell puts the paint switch at the foot of the filters, as <code>ErdFilterPanel</code> does today.",
-    "Moving the switch repaints the tables' stripe — by their schema, or by what happened to them between A and B — and opens the section it paints by. It is an address parameter like the filters, one for both panels.",
+  "1.8": ["Painted by the schema", [
+    "A comparison starts painted by its changes, as the graph's Diff does: a table that changed wears its change's colour on its header and frame and a soft halo of it under the card, and a table nothing happened to is faded, its lines too.",
+    "The scheme's filters have two sections that can paint, Schema and Changes; with more than one, the shell puts the paint switch at the foot of the filters, as <code>ErdFilterPanel</code> does today. Painted by the schema, every header takes its schema's colour and nothing is faded; the frame, the signs, the rows and the halo still say what changed. The switch is an address parameter like the filters, one for both panels.",
   ]],
   "2.10": ["Date picker", [
     "<b>Where to click:</b> the blue “Review on…” button at the top right of the list.",
@@ -1648,6 +1768,31 @@ const NOTES = {
   "2.15": ["Phone: the date range picker", ["On a phone the date range picker is a sheet from below: the ready stretches as a row of chips that scrolls sideways, the two fields, one month with its arrows, and the foot with Cancel and Apply."]],
   "2.16": ["Phone: the date picker", ["The date picker the same way: the ready dates as chips, the field, one month, the date with its weekday, Cancel and Apply."]],
   "2.9": ["Painted by the domain", ["The list's sections Status and Domain can both paint: the switch at the foot of the filters chooses what colours the disk of every row. Here the rows are painted by their email's domain."]],
+  "1.9": ["Phone: Track across the A / B switch", [
+    "On a phone the core shows one panel at a time, switched by A / B in its head, and opens on B. Track stays on: what is chosen in one panel goes with the switch.",
+    "Here <b>Audit</b> was tapped in B, then A was opened: A's camera glides to its own <code>table:Audit</code>, keeping its zoom, lights it and says so, as on a desktop (1.6). The notes are the same: “Not in A”, “Hidden by the filters”, a field the table does not have.",
+    "A tap selects; there is no pointer to follow on a phone, so nothing is lit before a tap.",
+  ]],
+  "2.17": ["Phone: a row chosen in B, brought on switching to A", [
+    "The list the same way: <b>acc-06213</b> was tapped in B, then A was opened. A has the row 33 places higher and far below its view: its camera glides to the row, keeping its zoom, and lights it.",
+  ]],
+  "3.1": ["Diff: a step on a table, its card by groups", [
+    "Diff is one panel: the page gets <code>at</code> = B and <code>against</code> = A and draws B with what happened between them. The core's <code>ChangeStepper</code> stands in the panel's top right corner only because a range is chosen; the test page has no actions of its own, so it stands alone.",
+    "A step — the arrows, the list or Shift + ↑ ↓ — brings the change into view keeping the zoom and opens <code>@maxitor/panel</code>'s <code>DiffCard</code> beside it. <b>Payment</b> is a complex element: the card gives its title and status disk, then the parts that changed inside it, by group — under Fields <code>amount</code>, its type by its path, before struck and after; under Links the link Refund added.",
+    "The step anchors the change itself, <code>field:Payment.amount</code> inside <code>table:Payment</code>: the field is lit inside its table. The words are the page's answer for that anchor between <code>against</code> and <code>at</code>; the frame, its place beside the table and its closing — Escape, a click outside — are the core's.",
+  ]],
+  "3.2": ["Diff: the stepper's list, by table", [
+    "The list holds the changes between A and B grouped by the object they belong to, as the graph viewer groups by entity: one row per table, with what changed in it. A row is a step.",
+    "A property of the table itself — <b>Ledger</b>'s schema — is one line of its card; an added table — <b>Refund</b> — is one line with what it holds.",
+  ]],
+  "3.3": ["Side by side: the step brought into A", [
+    "In Side by side the stepper stands on panel B. A step lights the change in B and opens its card there, and sends the change's anchor with its chain of parents — <code>field:Payment.amount</code> ← <code>table:Payment</code> — through the core to A.",
+    "A lays the scheme out by itself, so <b>Payment</b> stands elsewhere; A holds the field and lights it. Had it been out of A's view, A's camera would bring it, keeping its zoom (1.6).",
+  ]],
+  "3.4": ["Side by side: a step onto a field A does not have", [
+    "The first change is <b>email</b>, added to <b>Account</b> after A. The step sends <code>field:Account.email</code> ← <code>table:Account</code>; A does not hold the field, takes the deepest anchor of the chain it holds, outlines <b>Account</b> dashed and says what it could not show — the same notes as for the pointer (1.2–1.5).",
+    "Step on with the arrows or Shift + ↓: <b>Refund</b>, added after A, gets “Not in A”.",
+  ]],
   "2.4": ["A row added after A", ["<b>acc-06010</b> was added after A: A's camera stays, A says “Not in A”."]],
 };
 function base(o) { return Object.assign(JSON.parse(JSON.stringify(DEF)), JSON.parse(JSON.stringify(o))); }
@@ -1660,15 +1805,16 @@ function openNum(n) {
     if (S.phone && (S.view === "canvas" || S.view === "table") && S.hover) S.side = S.hover.side === "b" ? "a" : "b";
     if (S.phone && S.sel) S.side = S.sel.side === "b" ? "a" : "b";
     CUR = n;
-    const bring = S._bring, rows = S._row; delete S._bring; delete S._row;
+    const bring = S._bring, rows = S._row, step = S._step; delete S._bring; delete S._row; delete S._step;
     render();
-    if (rows) { for (const [sd, i] of Object.entries(rows)) { S.cam[sd] = null; const c = camOf(sd), cv = document.querySelector(`.cv[data-side="${sd}"]`); S.cam[sd] = { ...c, y: cv.offsetHeight / 2 - (HEADH + i * RH + RH / 2) * c.k }; } applyCams(); applyMarks(); }
+    if (rows) { for (const [sd, i] of Object.entries(rows)) { S.cam[sd] = null; const cv = document.querySelector(`.cv[data-side="${sd}"]`); if (!cv) continue; const c = camOf(sd); S.cam[sd] = { ...c, y: cv.offsetHeight / 2 - (HEADH + i * RH + RH / 2) * c.k }; } applyCams(); applyMarks(); }
     if (bring) { const t = S.sel; S.sel = null; select(t.side, t.chain); }
+    if (step !== undefined) stepTo(step);
     return;
   }
 }
 function renderNav() {
-  let h = `<h1>Maxitor core: the panels follow one element</h1><div class="sub">The parts of issue #98 the notes cannot show: anchors nested in anchors and a list of 10,000 rows, on the core's test page of #74, from fixtures. The scale, its legend and the milestones of other plugins are in the notes' mockup, specs/074-notes-history/mockup, 3.5–3.10.</div>`;
+  let h = `<h1>Maxitor core: the panels follow one element</h1><div class="sub">The parts of issue #98 the notes cannot show: anchors nested in anchors, a list of 10,000 rows and the step's card of a complex element, on the core's test page of #74, from fixtures. The scale, its legend and the milestones of other plugins are in the notes' mockup, specs/074-notes-history/mockup, 3.5–3.10.</div>`;
   h += `<div class="seg"><button class="${S.phone ? "" : "on"}" onclick="go({phone:false})">Desktop</button><button class="${S.phone ? "on" : ""}" onclick="go({phone:true})">Phone</button></div>`;
   h += `<label class="tgl"><input type="checkbox" ${S.anchors ? "checked" : ""} onchange="go({anchors:this.checked})">Show the anchors <small>— not on the real screen</small></label>`;
   for (const [g, items] of SCREENS) {
@@ -1689,7 +1835,11 @@ function fit() {
   sc.style.transform = `scale(${k})`; box.style.height = h * k + "px";
 }
 window.addEventListener("resize", fit);
-document.addEventListener("keydown", e => { if (e.key === "Escape" && S.cal) calCancel(); if (e.key === "Escape" && S.one) oneCancel(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && S.cal) calCancel(); if (e.key === "Escape" && S.one) oneCancel();
+  if (e.key === "Escape" && (S.dcard || S.stepper)) go({ dcard: false, stepper: false });
+  if (e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown") && S.view === "canvas" && !e.target.closest("input, textarea")) { e.preventDefault(); stepCh(e.key === "ArrowDown" ? 1 : -1); }
+});
 /* A press outside a picker closes it as Cancel does; the control that opened it closes it too, by its own click. */
 document.addEventListener("mousedown", e => {
   if (S.cal && !e.target.closest(".calpop, .fp [data-rr]")) calCancel();
