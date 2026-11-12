@@ -20,3 +20,5 @@ The card's switch offers what the page can draw:
 - **Side by side** shows A on the left and B on the right, each with its head. With **Track** on, what you point at in one panel lights up in the other, and what you choose there is brought into view. When the other panel cannot show it, it says why: "Not in A", or "Hidden by the filters". On a phone one panel shows at a time, with an A / B switch.
 
 A's handle stands on the scale's top edge, B's on its axis, so the two never hide each other. Press anywhere on the top edge to take A there, on the axis to take B there, and drag on. A drag between them zooms, as anywhere else; with Shift, a drag between them moves both, and a Shift-click outside them centres them on the pointer, the stretch between them kept. To return to one moment, choose **One**.
+
+The moment and the comparison stay with you as you move through the tree, Back and the crumbs, from one plugin's page to another's: a page that cannot compare shows the moment alone, and the next one that can compares again.

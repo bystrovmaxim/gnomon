@@ -39,6 +39,7 @@ export function Tree({
   nodes,
   owners,
   at,
+  carry,
   level,
   selected,
   onEnter,
@@ -51,6 +52,8 @@ export function Tree({
   owners: string[];
   /** The panel's moment; null reads now. */
   at: string | null;
+  /** The comparison every page keeps: `mode` and `from` of the address, carried into every link of the tree. */
+  carry: Record<string, string>;
   /** The level at the head of the panel; null shows the root of the tree. */
   level: Level | null;
   /** The open node and the scope its address fills. */
@@ -175,7 +178,7 @@ export function Tree({
     };
     if (path !== null) {
       return (
-        <Link className={className} style={indent} href={windowAddress(code, node.owner, path, {}, at)} aria-current={isSelected(node, scope) ? "page" : undefined} onClick={chosen}>
+        <Link className={className} style={indent} href={windowAddress(code, node.owner, path, carry, at)} aria-current={isSelected(node, scope) ? "page" : undefined} onClick={chosen}>
           {inner}
         </Link>
       );

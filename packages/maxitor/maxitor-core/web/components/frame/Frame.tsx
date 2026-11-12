@@ -17,7 +17,7 @@ import { ScaleContext, useWatermark, type Mode, type ScaleBridge } from "@/compo
 import { fixtureSource } from "@/components/scale/fixtures";
 import { Scale } from "@/components/scale/Scale";
 import { gatewaySource } from "@/components/scale/source";
-import { queryString, readAddress, windowAddress } from "@/lib/address";
+import { carried, queryString, readAddress, windowAddress } from "@/lib/address";
 import { canStep, momentOf, MOMENT_TEXT, msOf, stepMoment } from "@/lib/moment";
 import { changeStepOfKey, stepOfKey } from "@maxitor/panel/keys";
 import type { Milestone } from "@maxitor/panel/history";
@@ -66,6 +66,9 @@ export function Frame({
   const methods = search.get("methods");
 
   const address = useMemo(() => readAddress(pathname, search), [pathname, search]);
+  // The moment and the comparison stay with the screen from page to page and from one owner's page to another's.
+  const carryKey = JSON.stringify(carried(address?.query ?? {}));
+  const carry = useMemo(() => JSON.parse(carryKey) as Record<string, string>, [carryKey]);
   const opened = useMemo(() => (address?.owner ? nodeOf(nodes, address.owner, address.path) : null), [address, nodes]);
   // A page's title belongs to the page it came from.
   useEffect(() => setTitle(null), [opened?.node.name]);
@@ -113,11 +116,11 @@ export function Frame({
   const home = `/w/${encodeURIComponent(current.code)}`;
   const levelAddress = useCallback(
     (level: Level | null): string | null => {
-      if (!level) return home;
+      if (!level) return `${home}${queryString(carry, address?.at ?? null)}`;
       const path = pathOf(level.node, level.scope);
-      return path === null ? null : windowAddress(current.code, level.node.owner, path, {}, address?.at ?? null);
+      return path === null ? null : windowAddress(current.code, level.node.owner, path, carry, address?.at ?? null);
     },
-    [address?.at, current.code, home],
+    [address?.at, carry, current.code, home],
   );
 
   // Back steps out of the deepest section entered, through the address, so the tree, the crumbs, the address and the
@@ -254,10 +257,10 @@ export function Frame({
   const milestone = useCallback(
     (chosen: Milestone) => {
       const opens = chosen.opens ?? chosen.link;
-      if (opens && address?.owner) router.push(windowAddress(current.code, address.owner, opens, {}, at), { scroll: false });
+      if (opens && address?.owner) router.push(windowAddress(current.code, address.owner, opens, carry, at), { scroll: false });
       else choose(chosen.at);
     },
-    [address?.owner, at, choose, current.code, router],
+    [address?.owner, at, carry, choose, current.code, router],
   );
   const scaleTitle = title || opened?.node.title || opened?.node.name || current.name;
   const moment = (
@@ -289,6 +292,7 @@ export function Frame({
       nodes={nodes}
       owners={owners}
       at={address?.at ?? null}
+      carry={carry}
       level={level}
       selected={opened}
       onEnter={enter}
