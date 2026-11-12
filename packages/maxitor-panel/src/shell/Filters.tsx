@@ -17,6 +17,9 @@ import type { ChoiceFilter, FilterSection, RangeFilter, TextFilter } from "./typ
 
 type Write = (name: string, value: string | null) => void;
 
+/** The status signs a disk may carry; a sign is drawn larger than a person's initials, as the graph viewer's disks are. */
+const SIGNS = new Set(["+", "−", "~", "="]);
+
 /** How long typing in a text waits before it is written, so one search is one history entry. */
 const TYPING_MS = 400;
 
@@ -136,7 +139,7 @@ function Choice({ section, listed, write }: { section: ChoiceFilter; listed: str
           className={`mx-filter-row${on.has(row.key) ? "" : " off"}${row.absent ? " absent" : ""}`}
           onClick={() => write(section.param, toggleFilter(listed, keys, row.key))}
         >
-          <span className="mx-disk" style={{ background: colourOf(row.colour) }}>{row.mark ?? ""}</span>
+          <span className={`mx-disk${SIGNS.has(row.mark ?? "") ? " sign" : ""}`} style={{ background: colourOf(row.colour) }}>{row.mark ?? ""}</span>
           <span className="mx-filter-label" title={row.label}>{row.label}</span>
         </button>
       ))}

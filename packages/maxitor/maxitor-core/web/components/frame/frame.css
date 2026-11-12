@@ -44,11 +44,13 @@
 /* the tree */
 .mx-tree { width: var(--mx-tree-width); flex-shrink: 0; background: var(--mx-sidebar); border-right: var(--mx-line-width) solid var(--mx-line); display: flex; flex-direction: column; }
 .mx-tree.collapsed { width: auto; }
-.mx-tree-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-2); padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-1); }
+/* The head's buttons stand on the level's left edge: a button's icon starts where the level's icon and the first column do. */
+.mx-tree-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-2); padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-1) 0; }
+/* The tree's pictograms, as the graph viewer's sidebar draws them: 16 px, slightly dimmed. */
+.mx-pict { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
+.mx-node-icon .mx-pict, .mx-level-icon .mx-pict { opacity: var(--mx-icon-dim); }
 .mx-tree-button { width: var(--mx-tree-slot); height: var(--mx-tree-slot); border: 0; padding: 0; border-radius: var(--mx-radius-sm); background: transparent; color: var(--mx-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .mx-tree-button:hover { background: var(--mx-hover); color: var(--mx-ink); }
-.mx-tree-button.off { opacity: 0.4; cursor: default; }
-.mx-tree-button.off:hover { background: transparent; color: var(--mx-muted); }
 /* The head of an entered level (spec 085, FR-006): the node itself, its icon and title across the whole width. */
 .mx-level-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-3); padding: var(--mx-space-3) var(--mx-space-4); border-bottom: var(--mx-line-width) solid var(--mx-line-2); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); min-width: 0; }
 .mx-level-icon { display: inline-flex; align-items: center; color: var(--mx-muted); flex-shrink: 0; }

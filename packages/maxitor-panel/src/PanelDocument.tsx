@@ -4,6 +4,7 @@ import { Suspense, type ReactNode } from "react";
 
 import "@maxitor/tokens/tokens.css";
 import "./panel.css";
+import "./compare/marks.css";
 import { PanelProvider } from "./PanelProvider";
 
 export function PanelDocument({

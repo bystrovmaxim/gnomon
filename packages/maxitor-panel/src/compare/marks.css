@@ -1,0 +1,12 @@
+/* @maxitor/panel — a comparison's marks on every card, element and row, as the graph's ERD draws them
+   (maxitor-web lib/buildDotSource.ts tablePaint, lib/erdPostPass.ts): an element that changed wears its change's colour on
+   its frame and a soft halo of it under it; while the changes paint, an element nothing happened to is faded. A page
+   marks an element with data-change, and the document with data-paint="changes" while the changes paint. */
+[data-change="added"] { --mx-change: var(--mx-change-added); }
+[data-change="changed"] { --mx-change: var(--mx-change-changed); }
+[data-change="removed"] { --mx-change: var(--mx-change-removed); }
+[data-change="added"], [data-change="changed"], [data-change="removed"] {
+  border-color: var(--mx-change);
+  box-shadow: 0 0 var(--mx-halo-blur) var(--mx-halo-spread) color-mix(in srgb, var(--mx-change) var(--mx-halo-strength), transparent);
+}
+[data-paint="changes"] [data-change="unchanged"] { opacity: var(--mx-faded); }

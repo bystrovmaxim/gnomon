@@ -65,7 +65,7 @@ export function TopRow({
         <nav className="mx-path" aria-label="Path">
           {path.map((step, index) => (
             <span key={`${index}-${step.title}`} style={{ display: "contents" }}>
-              {index > 0 ? <span className="mx-path-sep">›</span> : null}
+              <span className="mx-path-sep">›</span>
               {step.level === null ? (
                 <span className="mx-path-step">{step.title}</span>
               ) : (
@@ -83,6 +83,7 @@ export function TopRow({
         <button
           type="button"
           className={`mx-avatar${pop === "me" ? " on" : ""}`}
+          style={{ background: colorOf(account.account_id) }}
           title={`${account.name}\n${account.email}`}
           aria-label={`${account.name}, ${account.email}`}
           onClick={() => setPop(pop === "me" ? null : "me")}

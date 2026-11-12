@@ -5,7 +5,7 @@
 // the tree's root — and the address decides the levels it arrives at: every entered node on the line of the open page.
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import "./frame.css";
@@ -17,7 +17,8 @@ import { readAddress, windowAddress } from "@/lib/address";
 import type { HistoryAllowed } from "@maxitor/panel/protocol";
 
 import type { Me } from "@/lib/core";
-import { enteredLine, nodeOf, type TreeNode } from "@/lib/tree";
+import { crumbsOf, levelAbove } from "@/lib/levels";
+import { enteredLine, nodeOf, pathOf, type TreeNode } from "@/lib/tree";
 
 export function Frame({
   account,
@@ -42,10 +43,11 @@ export function Frame({
 }) {
   const pathname = usePathname();
   const search = useSearchParams();
+  const router = useRouter();
   const [drawer, setDrawer] = useState(false);
   // Collapsed lives only in this visit: a new visit opens the tree expanded.
   const [collapsed, setCollapsed] = useState(false);
-  const [title, setTitle] = useState<string | null>(null);
+  const [, setTitle] = useState<string | null>(null);
   const [titles, setTitles] = useState<Record<string, string>>({});
   const keepTitles = useCallback((found: Record<string, string>) => setTitles((was) => ({ ...was, ...found })), []);
   // The levels of the left panel, the root first and the deepest last (spec 085). Back pops one, a crumb pops to its
@@ -92,7 +94,6 @@ export function Frame({
     [],
   );
 
-  const back = levels.length ? () => setLevels((was) => was.slice(0, -1)) : null;
 
   // The entered levels on the line of the open page, the deepest last: what the crumbs name. They follow the page,
   // not where the panel stands, so entering Settings while a note's page is open never names Settings over it.
@@ -100,24 +101,42 @@ export function Frame({
     () => (opened ? enteredLine(nodes, opened.node).map((node) => ({ node, scope: opened.scope, title: levelTitle(node, opened.scope, titles) })) : []),
     [nodes, opened, titles],
   );
-  // A crumb steps the panel out to its level of the page's line; with no page open the crumbs are the panel's levels.
-  const stepTo = useCallback(
-    (index: number) => setLevels((was) => (opened ? pageLevels : was).slice(0, index + 1)),
-    [opened, pageLevels],
+  // The address of a level (spec 079, FR-041): the page of its entered node, or the organization's home for the root.
+  // A level whose node has no page has no address of its own: stepping to it changes the panel alone.
+  const home = `/w/${encodeURIComponent(current.code)}`;
+  const levelAddress = useCallback(
+    (level: Level | null): string | null => {
+      if (!level) return home;
+      const path = pathOf(level.node, level.scope);
+      return path === null ? null : windowAddress(current.code, level.node.owner, path, {}, address?.at ?? null);
+    },
+    [address?.at, current.code, home],
   );
 
-  // The crumbs of the top row (spec 085, FR-011): the entered levels above the open page, the deepest last, then the
-  // page — never a node that was only passed through by expanding. The organization stands at the head of the row.
-  const path = useMemo(() => {
-    const line = opened ? pageLevels : levels;
-    const steps: { title: string; level: number | null }[] = line.map((level, index) => ({ title: level.title, level: index }));
-    // The page of the node at the head of the line is that node's crumb already: it is not named twice.
-    const head = line.length ? line[line.length - 1] : null;
-    if (opened && opened.node.name !== head?.node.name) {
-      steps.push({ title: title || levelTitle(opened.node, opened.scope, titles), level: null });
-    }
-    return steps;
-  }, [levels, opened, pageLevels, title, titles]);
+  // Back steps out of the deepest section entered, through the address, so the tree, the crumbs, the address and the
+  // page show the same place; at the root there is no level above, and Back is not drawn.
+  const back = levels.length
+    ? () => {
+        const target = levelAddress(levelAbove(levels));
+        setLevels((was) => was.slice(0, -1));
+        if (target) router.push(target);
+      }
+    : null;
+
+  // A crumb steps out to its section the same way: the panel to that level, the address to its page.
+  const stepTo = useCallback(
+    (index: number) => {
+      const line = opened ? pageLevels : levels;
+      setLevels(line.slice(0, index + 1));
+      const target = levelAddress(line[index] ?? null);
+      if (target) router.push(target);
+    },
+    [levelAddress, levels, opened, pageLevels, router],
+  );
+
+  // The crumbs of the top row (spec 079, FR-040): the sections entered, the deepest last, after the organization at the
+  // head of the row. A page opened inside a section adds nothing; only a node that opens a section of its own does.
+  const path = useMemo(() => crumbsOf(opened ? pageLevels : levels), [levels, opened, pageLevels]);
 
   // Another organization opens the same page, or its root when the page is not there: the tree decides there.
   const switchTo = (code: string) => (address?.owner ? windowAddress(code, address.owner, address.path, address.query, address.at) : `/w/${code}`);

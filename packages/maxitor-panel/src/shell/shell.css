@@ -27,13 +27,17 @@
 .mx-filter-title[aria-expanded="false"] .mx-icon { transform: rotate(-90deg); }
 .mx-filter-rows { display: flex; flex-direction: column; gap: var(--mx-space-3); padding-bottom: var(--mx-space-4); }
 .mx-filter-row { display: flex; align-items: center; gap: var(--mx-space-4); width: 100%; min-width: 0; border: 0; background: none; padding: 0; font-size: var(--mx-text-sm); color: var(--mx-ink); cursor: pointer; text-align: left; transition: opacity 120ms ease; }
-.mx-filter-row.off, .mx-filter-row.absent { opacity: 0.42; }
+/* A row switched off fades whole; a row with nothing of its kind on the page keeps its disk and fades its label only. */
+.mx-filter-row.off { opacity: 0.42; }
+.mx-filter-row.absent .mx-filter-label { opacity: var(--mx-absent); }
 .mx-filter-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-filter-note { font-size: var(--mx-text-sm); color: var(--mx-faint); padding-bottom: var(--mx-space-4); }
 .mx-disk { box-sizing: border-box; width: var(--mx-badge); height: var(--mx-badge); border-radius: var(--mx-radius-round); flex-shrink: 0; border: var(--mx-line-width) solid var(--mx-line); display: inline-flex; align-items: center; justify-content: center; color: var(--mx-on-ink); font-size: var(--mx-text-badge); font-weight: var(--mx-weight-heavy); }
 .mx-filter-row.field { cursor: text; }
 button.mx-filter-row.field { cursor: pointer; }
 .mx-disk.mark { background: var(--mx-surface); color: var(--mx-muted); }
+/* A status disk's sign — + − ~ = — drawn as maxitor-web's statusDiskUri draws it: white, bold, 14 of 24 units. */
+.mx-disk.sign { font-size: var(--mx-text-sign); font-family: sans-serif; line-height: 1; }
 .mx-filter-row.field.on .mx-disk.mark, .mx-filter-row.field.open .mx-disk.mark { color: var(--mx-ink); border-color: var(--mx-muted); }
 .mx-filter-input { flex: 1; min-width: 0; height: var(--mx-badge); border: 0; border-bottom: var(--mx-line-width) solid transparent; padding: 0; font: inherit; font-size: var(--mx-text-sm); color: var(--mx-ink); background: transparent; outline: none; }
 .mx-filter-input::placeholder { color: var(--mx-faint); }

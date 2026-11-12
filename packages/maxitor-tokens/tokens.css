@@ -15,8 +15,8 @@
   --mx-page: #e9edf1;
   --mx-sidebar: #ebf2f5;
   --mx-workspace: #f4f5f7;
-  --mx-canvas: #f6f8fa;
-  --mx-dot: rgba(15, 23, 42, 0.13);
+  --mx-canvas: #f4f5f7;
+  --mx-dot: rgba(160, 168, 180, 0.42);
   --mx-line: rgba(15, 23, 42, 0.1);
   --mx-line-2: rgba(15, 23, 42, 0.06);
   --mx-line-3: rgba(15, 23, 42, 0.14);
@@ -93,7 +93,7 @@
   /* The shell's layer over a page's own content: a plugin's page stays below it (spec 078, FR-019). */
   --mx-layer-shell: 30;
   --mx-layer-shell-pop: 35;
-  --mx-dot-step: 18px;
+  --mx-dot-step: 20px;
   --mx-dot-size: 1px;
   --mx-icon-lg: 20px;
   --mx-ring: 2px;
@@ -124,4 +124,22 @@
   --mx-cal-wheel-row: 28px;
   --mx-cal-wheel-pad: 84px;
   --mx-sheet-radius: 16px;
+
+  /* A comparison's marks, as the graph's ERD draws them (maxitor-web lib/erdPostPass.ts): the change's colour, a soft
+     halo of it under what changed — 40 px round it, fill-opacity 0.16, blurred by 22 — and what did not change faded. */
+  --mx-change-added: var(--mx-palette-green);
+  --mx-change-changed: var(--mx-palette-amber);
+  --mx-change-removed: var(--mx-palette-red);
+  --mx-change-unchanged: var(--mx-palette-grey);
+  --mx-halo-blur: 44px;
+  --mx-halo-spread: 34px;
+  --mx-halo-strength: 16%;
+  --mx-faded: 0.32;
+  /* A filter's row with nothing of its kind on the page fades its label only (maxitor-web ErdFilterPanel RowLabel). */
+  --mx-absent: 0.4;
+  /* The sign in a status disk (maxitor-web lib/erdFilterPresence.ts: 14 of 24 units on a disk of 20). */
+  --mx-text-sign: 12px;
+  /* A tree's pictogram, as the graph viewer's SidebarRowIcon dims it. */
+  --mx-icon-dim: 0.88;
 }
+

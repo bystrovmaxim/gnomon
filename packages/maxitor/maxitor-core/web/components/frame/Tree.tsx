@@ -6,10 +6,10 @@
 // source that fails breaks its own branch only.
 "use client";
 
+import { TreeMark } from "@/components/frame/treeMarks";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Icon } from "@/components/marks";
 import { windowAddress } from "@/lib/address";
 import { childrenOf, lineOf, pathOf, type Instance, type TreeNode } from "@/lib/tree";
 
@@ -29,9 +29,9 @@ function placeOf(node: TreeNode, scope: Scope): string {
 }
 
 function NodeIcon({ name }: { name: string }) {
-  if (name === "settings") return <Icon.gear />;
-  if (name === "plugins" || name === "puzzle") return <Icon.puzzle />;
-  return <Icon.page />;
+  if (name === "settings") return <TreeMark.settings />;
+  if (name === "plugins" || name === "puzzle") return <TreeMark.plugins />;
+  return <TreeMark.page />;
 }
 
 export function Tree({
@@ -149,7 +149,7 @@ export function Tree({
       <span className="mx-node-fold" />
     ) : hasChildren ? (
       <span className={`mx-node-fold${shut ? " shut" : ""}`} onClick={(event) => { event.preventDefault(); event.stopPropagation(); toggle(place); }}>
-        <Icon.chevron />
+        <TreeMark.fold />
       </span>
     ) : (
       <span className="mx-node-fold" />

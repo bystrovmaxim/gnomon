@@ -57,3 +57,18 @@ test("a tree with no entered node gives no level at all: the panel shows its roo
   ];
   assert.deepEqual(enteredInLine(plain, plain[1]), []);
 });
+
+// ── Back and the crumbs through the address (spec 079, FR-040 – FR-041)
+
+import { crumbsOf, levelAbove } from "../lib/levels.ts";
+
+test("Back from the first section leads to the root, from a deeper one to the section above", () => {
+  assert.equal(levelAbove([{ title: "Notes" }]), null);
+  assert.deepEqual(levelAbove([{ title: "Notes" }, { title: "Inner" }]), { title: "Notes" });
+  assert.equal(levelAbove([]), null);
+});
+
+test("the crumbs name the sections entered and nothing of the page inside them", () => {
+  assert.deepEqual(crumbsOf([{ title: "Notes" }]), [{ title: "Notes", level: 0 }]);
+  assert.deepEqual(crumbsOf([]), []);
+});
