@@ -40,6 +40,8 @@ class CoreSettings:
     session_secret: str = field(repr=False)
     public_url: str = "http://localhost:3000"
     policy_version: int = 1
+    #: How many days an invitation waits to be accepted before it expires.
+    invitation_days: int = 14
     dsn: str | None = field(default=None, repr=False)
     mail_from: str = "Maxitor <no-reply@maxitor.aoa.run>"
     mail_outbox: Path | None = None
@@ -70,6 +72,7 @@ class CoreSettings:
             session_secret=env["MAXITOR_SESSION_SECRET"],
             public_url=env.get("MAXITOR_PUBLIC_URL", "http://localhost:3000").rstrip("/"),
             policy_version=int(env.get("MAXITOR_POLICY_VERSION", "1")),
+            invitation_days=int(env.get("MAXITOR_INVITATION_DAYS", "14")),
             dsn=env.get("MAXITOR_CORE_DSN"),
             mail_from=env.get("MAXITOR_MAIL_FROM", "Maxitor <no-reply@maxitor.aoa.run>"),
             mail_outbox=Path(env["MAXITOR_MAIL_OUTBOX"]) if env.get("MAXITOR_MAIL_OUTBOX") else None,

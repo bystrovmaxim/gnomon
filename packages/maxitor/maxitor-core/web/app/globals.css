@@ -431,3 +431,35 @@
     .kv dt { margin-top: 8px; font-size: 11.5px; }
     .toast { left: 12px; right: 12px; transform: none; bottom: 16px; }
   }
+
+  /* ---------- invitations, the organization's users and who may invite (specs/072-maxitor-core/mockup, 8–11) ---------- */
+  .arow { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 12.5px; color: var(--ink2); background: #fff; }
+  .arow > .ico { color: var(--muted); flex-shrink: 0; }
+  .arow .an { flex: 1; min-width: 0; }
+  .arow .as { font-size: 11px; color: var(--muted); margin-top: 1px; line-height: 1.4; }
+  .arow .ad { font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+  .hintb { font-size: 12px; line-height: 1.45; border-left: 3px solid #93c5fd; background: #eff6ff; color: #1e3a8a; padding: 8px 10px; border-radius: 0 6px 6px 0; margin: 10px 0; }
+  .hintb.warn2 { border-color: #fdba74; background: #fff7ed; color: #7c2d12; }
+  .hintb.bad2 { border-color: #fca5a5; background: #fef2f2; color: #7f1d1d; }
+  .fine2 { font-size: 11.5px; color: var(--muted); line-height: 1.45; margin: 6px 0 4px; }
+  /* A switch: a checkbox drawn as the mockup's toggle. */
+  .switch { appearance: none; width: 30px; height: 18px; border-radius: 9px; background: #cbd5e1; position: relative; display: inline-block; cursor: pointer; flex-shrink: 0; margin: 0; vertical-align: middle; transition: background .15s; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.25); transition: left .15s; }
+  .switch:checked { background: #0f172a; } .switch:checked::after { left: 14px; }
+  .switch:disabled { opacity: .4; cursor: not-allowed; }
+  .stt.st-active { background: #dcfce7; color: #166534; } .stt.st-blocked { background: #fee2e2; color: #991b1b; } .stt.st-removed { background: #f1f5f9; color: #64748b; }
+  .stt.st-sent { background: #fef3c7; color: #92400e; } .stt.st-accepted { background: #dcfce7; color: #166534; } .stt.st-declined { background: #fee2e2; color: #991b1b; }
+  .stt.st-withdrawn { background: #f1f5f9; color: #475569; } .stt.st-expired { background: #f1f5f9; color: #94a3b8; }
+  .badge.usr { background: #f1f5f9; color: #475569; font-weight: 500; }
+  /* Invitations on the screen of choosing an organization. */
+  .pick .dsec { margin: 18px 0 8px; }
+  .pick .alert { margin-bottom: 16px; }
+  .orow.inv { cursor: default; }
+  .orow.inv:hover { border-color: var(--line); box-shadow: none; }
+  .orow.inv .on div { line-height: 1.45; }
+  .orow .ia { display: flex; gap: 6px; flex-shrink: 0; }
+  @media (max-width: 520px) {
+    .orow.inv { flex-wrap: wrap; }
+    .orow.inv .ia { width: 100%; }
+    .orow.inv .ia .btn2 { flex: 1; justify-content: center; height: 40px; }
+  }

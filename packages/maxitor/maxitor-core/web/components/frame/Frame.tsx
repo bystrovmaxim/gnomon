@@ -37,7 +37,8 @@ export function Frame({
   children,
 }: {
   account: Me;
-  current: { code: string; name: string };
+  /** The organization and what the person may do in it: administer it, invite into it. */
+  current: { code: string; name: string; isAdmin: boolean; mayInvite: boolean };
   nodes: TreeNode[];
   /** The organization's enabled plugins in dependency order. */
   owners: string[];

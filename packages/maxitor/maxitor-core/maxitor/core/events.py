@@ -169,3 +169,109 @@ class ForeignOrganizationRefusedEvent(BaseEvent):
 
     code: str = Field(description="The address code asked for")
     account_id: str = Field(description="The account that asked")
+
+
+class InvitationSentEvent(BaseEvent):
+    """A user invited an email into the organization and the letter went to the mail (info)."""
+
+    organization_id: str = Field(description="The organization")
+    invitation_id: str = Field(description="The invitation")
+    user_id: str = Field(description="The inviter's user")
+    email_masked: str = Field(description="The invited address, masked")
+    is_admin: bool = Field(description="Whether accepting makes an administrator")
+
+
+class InvitationLetterSentAgainEvent(BaseEvent):
+    """The letter of an invitation still sent went to the mail again (info)."""
+
+    organization_id: str = Field(description="The organization")
+    invitation_id: str = Field(description="The invitation")
+    user_id: str = Field(description="The user who sent it again")
+    email_masked: str = Field(description="The invited address, masked")
+
+
+class InvitationAcceptedEvent(BaseEvent):
+    """An account accepted an invitation and became a user of the organization (info)."""
+
+    organization_id: str = Field(description="The organization")
+    invitation_id: str = Field(description="The invitation")
+    account_id: str = Field(description="The account that accepted")
+    user_id: str = Field(description="The user it made")
+    is_admin: bool = Field(description="Whether the user is an administrator")
+
+
+class InvitationDeclinedEvent(BaseEvent):
+    """An account declined an invitation (info)."""
+
+    organization_id: str = Field(description="The organization")
+    invitation_id: str = Field(description="The invitation")
+    account_id: str = Field(description="The account that declined")
+
+
+class InvitationWithdrawnEvent(BaseEvent):
+    """An administrator withdrew an invitation, or the setting Who may invite did (info)."""
+
+    organization_id: str = Field(description="The organization")
+    invitation_id: str = Field(description="The invitation")
+    user_id: str = Field(description="The administrator who withdrew it or switched the setting")
+    by_setting: bool = Field(description="Whether the setting withdrew it")
+
+
+class InvitationExpiredEvent(BaseEvent):
+    """An invitation passed its time and was written expired (info)."""
+
+    organization_id: str = Field(description="The organization")
+    invitation_id: str = Field(description="The invitation")
+
+
+class InvitationRefusedEvent(BaseEvent):
+    """An invitation was refused: by the setting, the mark, a user already there or an invitation still sent (warning)."""
+
+    organization_id: str = Field(description="The organization")
+    user_id: str = Field(description="The user who tried")
+    email_masked: str = Field(description="The invited address, masked")
+    reason: str = Field(description="administrators_only, administrator_mark, already_user or already_invited")
+
+
+class InvitationLimitReachedEvent(BaseEvent):
+    """An address, an inviter or an organization reached a limit of invitations or their letters (warning)."""
+
+    organization_id: str = Field(description="The organization")
+    user_id: str = Field(description="The user who tried")
+    email_masked: str = Field(description="The invited address, masked")
+    limit: str = Field(description="Which limit: address per minute, address per hour, inviter per hour, organization per day")
+
+
+class UserStateChangedEvent(BaseEvent):
+    """An administrator blocked, unblocked or removed a user (info)."""
+
+    organization_id: str = Field(description="The organization")
+    user_id: str = Field(description="The user changed")
+    status: str = Field(description="The new state: active, blocked or removed")
+    by_user_id: str = Field(description="The administrator who changed it")
+
+
+class AdministratorChangedEvent(BaseEvent):
+    """An administrator appointed or dismissed an administrator (info)."""
+
+    organization_id: str = Field(description="The organization")
+    user_id: str = Field(description="The user whose mark changed")
+    is_admin: bool = Field(description="The new mark")
+    by_user_id: str = Field(description="The administrator who changed it")
+
+
+class LastAdministratorKeptEvent(BaseEvent):
+    """A change that would leave the organization without an active administrator was refused (warning)."""
+
+    organization_id: str = Field(description="The organization")
+    user_id: str = Field(description="The last active administrator the change aimed at")
+    by_user_id: str = Field(description="The user who asked")
+
+
+class WhoMayInviteChangedEvent(BaseEvent):
+    """An administrator changed who may invite (info)."""
+
+    organization_id: str = Field(description="The organization")
+    who_may_invite: str = Field(description="The new value: any_user or administrators")
+    by_user_id: str = Field(description="The administrator who changed it")
+    withdrawn: int = Field(description="How many invitations the switch withdrew")

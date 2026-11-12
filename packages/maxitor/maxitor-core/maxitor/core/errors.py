@@ -42,6 +42,12 @@ class SignInRefusedError(CoreRefusalError):
     status = 401
 
 
+class NotAllowedError(CoreRefusalError):
+    """A signed-in person asks for what the organization's rules do not allow them: the setting, the mark, the policy."""
+
+    status = 403
+
+
 class LimitReachedError(CoreRefusalError):
     """Too many codes or wrong passwords; ``until`` says when the next one is possible."""
 

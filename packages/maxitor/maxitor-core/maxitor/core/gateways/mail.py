@@ -18,7 +18,7 @@ from email.message import EmailMessage
 from pathlib import Path
 
 import httpx
-from maxitor.core.gateways.letters import Letter, email_confirmation, password_changed, password_reset
+from maxitor.core.gateways.letters import Letter, email_confirmation, invitation, password_changed, password_reset
 
 from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.resources import BaseGateway
@@ -68,6 +68,12 @@ class MailGateway(BaseGateway, ABC):
     async def send_password_changed(self, to: str, at: datetime, country: str | None) -> None:
         """The letter that says the password was changed."""
         await self._send(password_changed(to, at, country))
+
+    async def send_invitation(
+        self, to: str, organization: str, inviter_name: str, inviter_email: str, is_admin: bool, expires_at: datetime
+    ) -> None:
+        """The letter of an invitation: who invites and to what, how to accept, until when it waits; no link."""
+        await self._send(invitation(to, organization, inviter_name, inviter_email, is_admin, expires_at))
 
     @abstractmethod
     async def _send(self, letter: Letter) -> None:

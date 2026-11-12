@@ -311,6 +311,7 @@ class MeResult(BaseResult):
     organizations: list[OrganizationEntryResult] = Field(
         description="The organizations the account has an active user in"
     )
+    invitations_waiting: int = Field(description="How many invitations wait for the account's confirmed emails")
 
 
 @meta(description="Answer the signed-in account and its organizations", domain=PlatformDomain)
@@ -339,10 +340,13 @@ class CurrentUserAction(BaseAction[EmptyParams, MeResult]):
             OrganizationEntryResult(code=o["code"], name=o["name"], is_admin=o["is_admin"])
             for o in await store.organizations_of(account_id)
         ]
+        from maxitor.core.actions.invitation_choice import waiting_for  # pylint: disable=import-outside-toplevel
+
         return MeResult(
             account_id=account_id,
             name=account["name"],
             email=account["email"],
             policy_current=account["policy_version"] >= keys.policy_version,
             organizations=organizations,
+            invitations_waiting=len(await waiting_for(store, account_id, now())),
         )

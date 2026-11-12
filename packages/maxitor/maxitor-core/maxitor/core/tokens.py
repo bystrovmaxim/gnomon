@@ -40,10 +40,12 @@ class SessionTokensController(BaseController):
     AI-CORE-END
     """
 
-    def __init__(self, secret: str, policy_version: int = 1) -> None:
+    def __init__(self, secret: str, policy_version: int = 1, invitation_days: int = 14) -> None:
         self._secret = secret
         #: The version of the privacy policy a new account accepts and an existing one must have accepted.
         self.policy_version = policy_version
+        #: How many days an invitation waits before it expires (MAXITOR_INVITATION_DAYS).
+        self.invitation_days = invitation_days
 
     def hash_code(self, email: str, purpose: str, code: str) -> str:
         """The keyed hash of a one-time code; the code itself is never stored."""

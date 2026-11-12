@@ -8,12 +8,13 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 import { signOut } from "@/app/actions";
+import { InviteDialog } from "@/components/InviteDialog";
 import { SignInMethods } from "@/components/SignInMethods";
 import { Icon } from "@/components/marks";
 import { colorOf, initials } from "@/lib/colors";
 import type { Me } from "@/lib/core";
 
-type Pop = "me" | "orgs" | "methods" | null;
+type Pop = "me" | "orgs" | "methods" | "invite" | null;
 
 export function TopRow({
   account,
@@ -26,7 +27,7 @@ export function TopRow({
   moment,
 }: {
   account: Me;
-  current: { code: string; name: string };
+  current: { code: string; name: string; isAdmin: boolean; mayInvite: boolean };
   /** The entered levels of the panel, the deepest last, and the open page: the crumbs of the top row. */
   path: { title: string; level: number | null }[];
   /** A crumb of an entered level was clicked: the panel steps out to it. */
@@ -98,6 +99,9 @@ export function TopRow({
             <div className="mx-menu-group">Organizations</div>
             {orgItems}
             <a className="mx-menu-item" href="/new"><Icon.plus />Register an organization</a>
+            {current.mayInvite ? (
+              <button type="button" className="mx-menu-item" onClick={() => setPop("invite")}><Icon.mail />Invite to {current.name}</button>
+            ) : null}
             <hr />
             <button type="button" className="mx-menu-item" onClick={() => setPop("methods")}><Icon.key />Sign-in methods</button>
             <button type="button" className="mx-menu-item" onClick={() => void signOut()}><Icon.out />Sign out</button>
@@ -112,6 +116,7 @@ export function TopRow({
       </div>
       {pop === "me" || pop === "orgs" ? <div className="mx-veil" onClick={() => setPop(null)} /> : null}
       {pop === "methods" ? <SignInMethods account={account} back={`/w/${current.code}`} notice={methods} onClose={() => setPop(null)} /> : null}
+      {pop === "invite" ? <InviteDialog code={current.code} organization={current.name} admin={current.isAdmin} onClose={() => setPop(null)} /> : null}
     </>
   );
 }

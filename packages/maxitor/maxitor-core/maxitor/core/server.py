@@ -24,6 +24,17 @@ from maxitor.core.actions.account import (
     SignOutAction,
 )
 from maxitor.core.actions.email_sign_in import ConfirmEmailAction, SignInWithPasswordAction, StartSignUpAction
+from maxitor.core.actions.invitation_choice import (
+    AcceptInvitationAction,
+    DeclineInvitationAction,
+    ListAccountInvitationsAction,
+)
+from maxitor.core.actions.invitations import (
+    ListMyInvitationsAction,
+    ResendInvitationAction,
+    SendInvitationAction,
+    WithdrawInvitationAction,
+)
 from maxitor.core.actions.organizations import (
     CheckAddressCodeAction,
     OpenOrganizationAction,
@@ -94,6 +105,13 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/organizations", RegisterOrganizationAction),
     ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
     ("get", "/api/v1/organizations/{code}/watermark", ReadWatermarkAction),
+    ("post", "/api/v1/organizations/invitations", SendInvitationAction),
+    ("get", "/api/v1/organizations/{code}/invitations/mine", ListMyInvitationsAction),
+    ("post", "/api/v1/organizations/invitations/resend", ResendInvitationAction),
+    ("post", "/api/v1/organizations/invitations/withdraw", WithdrawInvitationAction),
+    ("get", "/api/v1/invitations", ListAccountInvitationsAction),
+    ("post", "/api/v1/invitations/accept", AcceptInvitationAction),
+    ("post", "/api/v1/invitations/decline", DeclineInvitationAction),
     ("get", "/api/v1/core/passport", CorePassportAction),
     ("get", "/api/v1/organizations/{code}/plugins", ListPluginsAction),
     ("get", "/api/v1/organizations/{code}/plugins/{passport_id}", PluginDetailsAction),
@@ -168,7 +186,9 @@ def create_app(
         WHEELS_CONNECTION_KEY: WheelStorage(settings.wheel_store, settings.wheel_max_bytes),
         GEOIP_CONNECTION_KEY: GeoIpGateway(settings.geoip_database),
         MAIL_CONNECTION_KEY: mail_gateway(settings),
-        TOKENS_CONNECTION_KEY: SessionTokensController(settings.session_secret, settings.policy_version),
+        TOKENS_CONNECTION_KEY: SessionTokensController(
+            settings.session_secret, settings.policy_version, settings.invitation_days
+        ),
     }
     if PLUGIN_TOKENS_CONNECTION_KEY not in given:
         if settings.gateway_key_file is None:
