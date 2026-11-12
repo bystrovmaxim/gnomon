@@ -54,10 +54,17 @@ Each card carries `data-change` and `data-room-anchor="note:<id>"`. `@maxitor/pa
 
 The shell puts the stepper first in the panel's corner; the page's actions are gone in a comparison, since nothing is written there.
 
+The card stands beside the note the stepper is on, as the graph viewer's does: `beside` names the note's anchor, and the card follows it while the canvas brings the note into the middle. Draft does the same with its changes.
+
+<!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/published/PublishedView.tsx -->
+```tsx
+          beside={step.key}
+```
+
 ## Following one note through both panels
 
 In Side by side, B's head has **Track**. What the pointer is on in one panel is lit in the other; what is chosen in one is brought into the other's view. The core finds it by its anchor: a note is `note:<id>` in both. A panel that cannot show it says why — "Not in A", or "Hidden by the filters". The page writes nothing for this: the canvas of `@maxitor/panel` answers by the anchors it draws.
 
 ## Check it
 
-On Published choose Diff with A before the last publication: the notes it changed glow amber, the new ones green, the removed ones stand faint and red, the rest is faded, and the pill counts them. Press Shift + ↓: the stepper stands on the first change and its card opens. Choose Side by side: point at a note in B that A did not have — A says "Not in A".
+On Published choose Diff with A before the last publication: the notes it changed glow amber, the new ones green, the removed ones stand faint and red, the rest is faded — point at a faded note and it is drawn whole —, and the pill counts them. Press Shift + ↓: the stepper stands on the first change and its card opens beside it. Choose Side by side: point at a note in B that A did not have — A says "Not in A".

@@ -16,7 +16,7 @@ Move on the scale as on a map: drag across a stretch to zoom into it, use the wh
 
 The card's switch offers what the page can draw:
 
-- **Diff** shows the later moment, B, with what changed since the earlier one, A: each changed element wears its colour and a soft halo, the rest is faded. The pill counts the changes, "+2 −1 ~1". A stepper in the page's corner walks them — Shift + ↑ ↓ from anywhere — and opens each one's card.
+- **Diff** shows the later moment, B, with what changed since the earlier one, A: each changed element wears its colour and a soft halo, the rest is faded — point at a faded element and it is drawn whole again. The pill counts the changes, "+2 −1 ~1". A stepper in the page's corner walks them — Shift + ↑ ↓ from anywhere — and opens each one's card beside the element, as the graph viewer does.
 - **Side by side** shows A on the left and B on the right, each with its head. With **Track** on, what you point at in one panel lights up in the other, and what you choose there is brought into view. When the other panel cannot show it, it says why: "Not in A", or "Hidden by the filters". On a phone one panel shows at a time, with an A / B switch.
 
-Move A or B by dragging its handle on the scale, or click near it. To return to one moment, choose **One**.
+A's handle stands on the scale's top edge, B's on its axis, so the two never hide each other. Press anywhere on the top edge to take A there, on the axis to take B there, and drag on. A drag between them zooms, as anywhere else; with Shift, a drag between them moves both, and a Shift-click outside them centres them on the pointer, the stretch between them kept. To return to one moment, choose **One**.
