@@ -1,6 +1,6 @@
 # 7. A place in the tree
 
-**Builds on**: [6. The backend](06-the-backend.md). **Next**: chapter 8, written with bystrovmaxim/gnomon#102.
+**Builds on**: [6. The backend](06-the-backend.md). **Next**: [8. The page](08-the-page.md).
 
 Your plugin's pages open in Maxitor's frame: the tree on the left, the top row and the right panel. You do not draw any of it. You declare your nodes in `navigation.yaml`, Maxitor joins them into the organization's tree, and your page opens in the right panel when a person chooses one.
 
@@ -87,9 +87,8 @@ The page then reads the view like any parameter of its address:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/NotesView.tsx -->
 ```tsx
-  // The view is the page's own choice in the shell's bottom bar: the shell writes ?view= into the address, and the
-  // page reads it and rebuilds when the address changes.
-  const { view = "cards" } = usePanelQuery();
+  // The view is the page's own choice in the shell's bottom bar: the shell writes ?view= into the address.
+  const { view = "cards", at } = usePanelQuery();
 ```
 
 A section of the filters is one of three kinds. The writers above are a **choice**: a disk and a label per row, the address listing those switched on; a choice of more than eight rows gets a search and "N more" by itself. A **text** is `{ kind: "text", title: "Search", param: "q", placeholder: "Note or writer" }`. A **range** is `{ kind: "range", title: "Written", param: "written", unit: "date" }` — two rows, From and To, a date chosen in the date range picker and written as `?written=now-30d..now` — or `unit: "number"`, typed in the rows. The page filters its own notes by these parameters; `inRange` and `numberIn` of `@maxitor/panel` read a range the way the shell writes it. A page that needs one date from a person — "Review on…" — calls `openDatePicker({ anchor: button })` and gets the date back as the address would write it.

@@ -48,6 +48,12 @@ assert.equal(inRange("2026-09-01", readRange("now-90d..now"), "2026-11-10"), tru
 
 10. **Its pages give their history, and its tree holds nothing else.** `test_history_data.py` reads the history each page gives in its code and the passport's comparisons; `test_navigation.py` adds `history` or `room` to a page's node and sees it refused by name.
 
+11. **Its pages work now.** `web/tests/notes.test.ts` proves that reading again marks a colleague's note new and the first reading marks none, that the note written last stands first, and that every refusal — `changed_since`, `deleted`, `nothing_to_publish` and the rest — is said in words; the core's browser check writes, edits through a conflict, deletes and publishes on the stand, on a desktop and on a phone.
+
+```bash
+node --experimental-strip-types --test packages/maxitor-plugin-template/web/tests/notes.test.ts
+```
+
 ## Run them
 
 ```bash

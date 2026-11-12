@@ -29,3 +29,11 @@ html, body.mx-panel-document { margin: 0; background: transparent; font-family: 
 .mx-list-person, .mx-list-status { display: inline-flex; align-items: center; gap: var(--mx-space-3); min-width: 0; }
 .mx-list-dot { width: var(--mx-space-4); height: var(--mx-space-4); border-radius: var(--mx-radius-round); flex-shrink: 0; }
 .mx-list-empty { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: center; color: var(--mx-muted); }
+
+/* a page's dialog (spec 083): centred over the content, a sheet from below on a phone */
+.mx-dialog-scrim { position: fixed; inset: 0; z-index: var(--mx-layer-shell-pop); background: var(--mx-scrim); }
+.mx-dialog { position: fixed; z-index: var(--mx-layer-shell-pop); left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: var(--mx-empty-width); max-width: calc(100% - var(--mx-space-7) * 2); max-height: calc(100% - var(--mx-space-7) * 2); overflow-y: auto; display: flex; flex-direction: column; gap: var(--mx-space-5); padding: var(--mx-space-6); background: var(--mx-surface); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-lg); box-shadow: var(--mx-shadow-pop); font-size: var(--mx-text-md); color: var(--mx-ink); }
+.mx-dialog-title { font-size: var(--mx-text-lg); }
+@media (max-width: 520px) {
+  .mx-dialog { left: 0; right: 0; top: auto; bottom: 0; transform: none; width: auto; max-width: none; max-height: 90%; border: 0; border-radius: var(--mx-sheet-radius) var(--mx-sheet-radius) 0 0; }
+}

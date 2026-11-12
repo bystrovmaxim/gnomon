@@ -9,6 +9,7 @@ export { momentFrom } from "./moment";
 export { MaxitorCanvas, useCanvas, type Locator } from "./canvas/MaxitorCanvas";
 export type { Bounds, Camera, Insets, Point } from "./canvas/camera";
 export { Card } from "./content/Card";
+export { Dialog } from "./content/Dialog";
 export { EmptyState } from "./content/EmptyState";
 export { DataTable, type CellKind, type Column } from "./content/DataTable";
 export { LIST_HEAD, LIST_ROW, LIST_WIDTH, listHeight } from "./content/list";

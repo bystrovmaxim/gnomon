@@ -5,6 +5,12 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] — 2026-11-12
+
+### Added
+
+- **Its pages now.** An item's notes lie on the canvas as cards or a table, the note written last first; "New note" writes in a dialog; a card edits its note and says a conflict in words, keeping the text; deleting asks once; a page at now reads again when "now" moves and marks a colleague's note new. Published notes shows the revision in force with its number, title, comment and release; Draft a card per change since it, and publishing from a dialog. On a phone a note's actions are a sheet behind ⋯ and the dialogs sheets. `web/tests/notes.test.ts` holds the rules the pages decide. Its pages 0.6.0. ([#102](https://github.com/bystrovmaxim/gnomon/issues/102))
+
 ## [0.11.0] — 2026-11-12
 
 ### Changed

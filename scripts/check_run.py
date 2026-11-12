@@ -214,6 +214,13 @@ STEPS: tuple[Step, ...] = (
         "client",
         after=(AUTO_FIX,),
     ),
+    # The plugin template's pages: the rules they decide without a browser (spec 083).
+    Step(
+        "Plugin template: its pages' rules",
+        "node --experimental-strip-types --test packages/maxitor-plugin-template/web/tests/*.test.ts",
+        "client",
+        after=(AUTO_FIX,),
+    ),
     # @maxitor/panel: the canvas's camera and the panel protocol's shape checks (spec 077, FR-024 – FR-032).
     Step(
         "@maxitor/panel: the camera and the protocol",

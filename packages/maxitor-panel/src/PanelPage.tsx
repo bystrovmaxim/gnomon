@@ -87,14 +87,16 @@ export function PanelPage({
         const filters = root?.querySelector('[data-shell="filters"]') ?? null;
         // On a phone the filters fold into one button at the top: they take the top, not the left.
         const phone = window.matchMedia(PHONE_MEDIA).matches;
+        // On a phone the page's actions stand at the bottom, beside the bar: they take the bottom, not the top.
+        const actions = root?.querySelector('[data-shell="actions"]') ?? null;
         return {
           left: phone ? 0 : edge(filters, "right"),
           top: Math.max(
             phone ? edge(filters, "bottom") : 0,
             edge(root?.querySelector('[data-shell="layers"]') ?? null, "bottom"),
-            edge(root?.querySelector('[data-shell="actions"]') ?? null, "bottom"),
+            phone ? 0 : edge(actions, "bottom"),
           ),
-          bottom: edge(root?.querySelector('[data-shell="bar"]') ?? null, "top"),
+          bottom: Math.max(edge(root?.querySelector('[data-shell="bar"]') ?? null, "top"), phone ? edge(actions, "top") : 0),
         };
       },
     }),

@@ -41,7 +41,9 @@ async function scenario(name, run) {
     console.log(`OK   ${name}`);
   } catch (error) {
     failures += 1;
-    console.log(`FAIL ${name}\n     ${String(error?.message ?? error).split("\n")[0]}`);
+    // The first lines of Playwright's call log name the locator that did not hold.
+    const lines = String(error?.message ?? error).split("\n").filter((line) => line.trim()).slice(0, 5);
+    console.log(`FAIL ${name}\n     ${lines.join("\n     ")}`);
   }
 }
 
@@ -265,6 +267,74 @@ await scenario("the notes page opens in the right panel from the tree, with its 
   await page.reload();
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   await page.frameLocator("iframe.mx-panel-frame").locator(".mx-list-row", { hasText: "Retry three times" }).waitFor();
+});
+
+await scenario("the template's notes now: written in a dialog, edited with a conflict in the card, deleted after one question, a colleague's note marked new", async () => {
+  const api = `${BASE}/p/notes/api/${CODE}`;
+  const send = { headers: { Origin: BASE } };
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".mx-canvas .mx-card", { hasText: "Retry three times" }).waitFor();
+  // Writing: the page's action opens a dialog; the note written stands first.
+  await frame.getByRole("button", { name: "New note" }).click();
+  await frame.getByLabel("The note's text").fill("Alert on the third failure");
+  await frame.getByRole("button", { name: "Write" }).click();
+  await frame.locator(".nt-card").first().filter({ hasText: "Alert on the third failure" }).waitFor();
+  // A colleague's change after the card was opened is a conflict said in the card, the person's text kept.
+  const card = frame.locator(".nt-card", { hasText: "Alert on the third failure" });
+  await card.getByRole("button", { name: "Edit" }).click();
+  // In editing the text is in the field, so the card is found by its editing, not by its text.
+  const editing = frame.locator(".nt-card:has(.nt-edit)");
+  await editing.getByLabel("The note's text").fill("Alert on the second failure");
+  const listed = await (await page.request.get(`${api}/items/${ITEM}/notes`)).json();
+  const note = listed.notes.find((n) => n.body === "Alert on the third failure");
+  const theirs = await page.request.patch(`${api}/notes`, { ...send, data: { note_id: note.id, body: "Alert on the fourth failure", base_moment: note.since } });
+  expect(theirs.status() === 200, `the colleague's edit answers ${theirs.status()}`);
+  await editing.getByRole("button", { name: "Save" }).click();
+  await frame.locator(".nt-said", { hasText: "after you opened it. Your text is kept" }).waitFor();
+  expect((await frame.getByLabel("The note's text").inputValue()) === "Alert on the second failure", "the person's text was lost in the conflict");
+  // Saving again replaces their version.
+  await frame.getByRole("button", { name: "Save" }).click();
+  await frame.locator(".nt-card", { hasText: "Alert on the second failure" }).waitFor();
+  // Deleting asks once.
+  const kept = frame.locator(".nt-card", { hasText: "Alert on the second failure" });
+  await kept.getByRole("button", { name: "Delete" }).first().click();
+  await kept.locator(".nt-ask").waitFor();
+  await kept.locator(".nt-ask").getByRole("button", { name: "Delete" }).click();
+  await frame.locator(".nt-card", { hasText: "Alert on the second failure" }).waitFor({ state: "detached" });
+  // Now moves: a colleague's note appears without a reload, marked new.
+  const written = await page.request.post(`${api}/notes`, { ...send, data: { item_id: ITEM, body: "Written by a colleague" } });
+  expect(written.status() === 200, `the colleague's note answers ${written.status()}`);
+  await frame.locator(".nt-card.fresh", { hasText: "Written by a colleague" }).waitFor({ timeout: 20_000 });
+});
+
+await scenario("the draft is published from a dialog and Published notes shows the revision", async () => {
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  let frame = page.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".nt-revision", { hasText: "Nothing is published yet" }).waitFor();
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/draft`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  frame = page.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".nt-card", { hasText: "Retry three times" }).waitFor();
+  await frame.getByRole("button", { name: "Publish" }).click();
+  await frame.getByLabel("Title").fill("First release");
+  await frame.getByLabel("Comment").fill("The notes the team agreed on");
+  await frame.getByLabel("Release, if any").fill("2026.11");
+  await frame.locator(".mx-dialog").getByRole("button", { name: "Publish" }).click();
+  await frame.locator(".nt-card", { hasText: "Nothing changed since the last revision" }).waitFor();
+  // Publishing again with nothing new is said in words.
+  await frame.getByRole("button", { name: "Publish" }).click();
+  await frame.getByLabel("Title").fill("Again");
+  await frame.getByLabel("Comment").fill("Nothing new");
+  await frame.locator(".mx-dialog").getByRole("button", { name: "Publish" }).click();
+  await frame.locator(".nt-said", { hasText: "there is nothing to publish" }).waitFor();
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  frame = page.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".nt-revision", { hasText: "v1 · First release · 2026.11" }).waitFor();
+  await frame.locator(".mx-canvas .nt-card", { hasText: "Retry three times" }).waitFor();
 });
 
 await scenario("a plugin's page opened by itself goes to its panel address", async () => {
@@ -622,6 +692,26 @@ await scenario("on a phone the filters are a sheet from below and the pickers sh
   await frame.getByTestId("review").click();
   const picker = await frame.locator(".mx-cal.sheet").boundingBox();
   expect(picker.width <= 375 && (await frame.locator(".mx-cal-month").count()) === 1, "the picker is not a sheet with one month");
+  expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the page scrolls sideways on a phone");
+  await phone.close();
+});
+
+await scenario("on a phone the template's notes fill the screen, a note's actions are a sheet behind ⋯ and the dialogs are sheets", async () => {
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+  await phone.addCookies(await context.cookies());
+  const p = await phone.newPage();
+  await p.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
+  await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  const frame = p.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".nt-card").first().waitFor();
+  await frame.getByRole("button", { name: "Note actions" }).first().click();
+  const sheet = await frame.locator(".mx-dialog").boundingBox();
+  expect(sheet.width >= 370 && sheet.y + sheet.height >= 700, "a note's actions are not a sheet from below");
+  await frame.locator(".mx-dialog-scrim").click({ position: { x: 10, y: 10 } });
+  await frame.getByRole("button", { name: "New note" }).click();
+  const dialog = await frame.locator(".mx-dialog").boundingBox();
+  expect(dialog.width >= 370, "the New note dialog is not a sheet on a phone");
   expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the page scrolls sideways on a phone");
   await phone.close();
 });
