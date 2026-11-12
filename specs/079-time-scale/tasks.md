@@ -103,8 +103,8 @@ Paths: `CORE` = `packages/maxitor/maxitor-core/web`, `PANEL` = `packages/maxitor
 
 ## Phase 7: The check of 1.2 on the test page (US1–US4, US8)
 
-- [ ] T044 [US8] Extend `CORE/scripts/check-core.mjs` with a walk of `specs/079-time-scale/mockup` screens on the test page, desktop and 375 px, a screenshot per screen
-- [ ] T045 Run the walk on the local stand; fix what differs
+- [x] T044 [US8] Extend `CORE/scripts/check-core.mjs` with a walk of `specs/079-time-scale/mockup` screens on the test page, desktop and 375 px, a screenshot per screen
+- [x] T045 Run the walk on the local stand; fix what differs
 
 **Checkpoint**: commit.
 

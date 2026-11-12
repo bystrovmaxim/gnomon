@@ -452,6 +452,105 @@ await scenario("a page gives its history; the core keeps what holds and refuses 
   expect(errors.some((text) => text.includes('card names "no_such_card"')), "the unknown name was not refused by name");
 });
 
+/** A moment some days back, to the minute, as the address writes it. */
+const daysAgo = (days) => new Date(Math.floor((Date.now() - days * 86_400_000) / 60_000) * 60_000).toISOString().replace(/\.\d{3}Z$/, ".000000Z");
+
+/** Open a fixture of the scale on the test page and its card. */
+async function openScale(fixture, query = "") {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/history/${fixture}${query}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").first().waitFor();
+  await page.locator(".mx-pill-main").click();
+  await page.locator(".mx-card .mx-track").waitFor();
+}
+
+await scenario("the scale: the card hangs 11 px under the pill, right edges aligned; a click writes a moment kept to the minute; a later one is refused", async () => {
+  await openScale("milestones");
+  const pill = await page.locator(".mx-pill").boundingBox();
+  const card = await page.locator(".mx-card").boundingBox();
+  expect(Math.abs(card.y - (pill.y + pill.height) - 11) <= 1, `the card stands ${card.y - pill.y - pill.height} px under the pill`);
+  expect(Math.abs(card.x + card.width - (pill.x + pill.width)) <= 1, "the card's right edge is not under the pill's");
+  const track = await page.locator(".mx-card .mx-track").boundingBox();
+  await page.mouse.click(track.x + track.width * 0.4, track.y + track.height - 60);
+  await page.waitForURL(/at=\d{4}-\d{2}-\d{2}T\d{2}%3A\d{2}%3A00\.000000Z/);
+  expect(await page.locator(".mx-pill-past").isVisible(), "the pill does not show the past");
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/history/milestones?at=2099-01-01T00:00:00.000000Z`);
+  await page.getByText("This moment has not come yet").waitFor();
+});
+
+await scenario("the scale is set up by the page: its kinds on the lane, small points and flags only when promised, the legend from the setup, an undeclared kind named", async () => {
+  const errors = [];
+  const listen = (message) => message.type() === "error" && errors.push(message.text());
+  page.on("console", listen);
+  await openScale("graph");
+  expect((await page.locator(".mx-card .mx-flag").count()) >= 1, "the graph's release has no flag");
+  expect((await page.locator(".mx-card .mx-point-ref.small").count()) >= 1, "the graph's small point is not small");
+  await page.getByRole("button", { name: "Reading the scale" }).click();
+  // The legend's titles are capitals by their style: the words are compared as text, whatever their case.
+  const legend = (await page.locator(".mx-legend").innerText()).toLowerCase();
+  for (const word of ["Points", "Merged", "Review required", "Size", "Flag", "Three points", "Now", "The chosen moment"]) expect(legend.includes(word.toLowerCase()), `the graph's legend lacks ${word}`);
+  await openScale("milestones");
+  await page.getByRole("button", { name: "Reading the scale" }).click();
+  const notes = (await page.locator(".mx-legend").innerText()).toLowerCase();
+  expect(notes.includes("rolled back") && !notes.includes("size") && !notes.includes("flag") && !notes.includes("bars"), "the notes' legend speaks of what it did not promise");
+  expect((await page.locator(".mx-card-small").count()) === 0, "the switch of small points stands without small");
+  await openScale("undeclared");
+  page.off("console", listen);
+  expect(errors.some((text) => text.includes('"shiny"')), "the undeclared kind was not named");
+  expect(errors.some((text) => text.includes("did not declare small")), "the small point without small was not named");
+});
+
+await scenario("bars: the page's changes stacked by kind under the lane", async () => {
+  await openScale("bars");
+  await page.locator(".mx-card .mx-bar-added").first().waitFor();
+  expect((await page.locator(".mx-card .mx-lane").count()) === 0, "a page with bars alone has a lane");
+});
+
+await scenario("Diff: the counts on the pill, the stepper stepped by Shift + ↓ from the frame, and the change's card", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/history/both?mode=diff&from=${daysAgo(11)}`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+  await page.locator(".mx-pill-counts").waitFor();
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  await frame.locator(".mx-stepper").waitFor();
+  await page.locator(".mx-top").click({ position: { x: 300, y: 20 } });
+  await page.keyboard.press("Shift+ArrowDown");
+  await frame.locator(".mx-stepper-middle b").filter({ hasText: /^1 of \d+$/ }).waitFor();
+  await frame.locator(".mx-diff-card").waitFor();
+});
+
+await scenario("Side by side: two panels with their heads; Track lights in A what the pointer is on in B, or says why it cannot", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/panel-test/history/both?mode=side_by_side&from=${daysAgo(11)}`);
+  await page.locator(".mx-half-head").nth(1).waitFor();
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").nth(1).waitFor();
+  const [a, b] = [page.frames().find((f) => f.url().includes("_side=a")), page.frames().find((f) => f.url().includes("_side=b"))];
+  expect(a && b, "the two panels are not drawn");
+  const point = (anchor) => b.evaluate((name) => {
+    const element = document.querySelector(`[data-room-anchor="${name}"]`);
+    const box = element.getBoundingClientRect();
+    element.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: box.x + 3, clientY: box.y + 3 }));
+  }, anchor);
+  await point("table:Refund");
+  await page.locator(".mx-half-note").filter({ hasText: "Not in A" }).waitFor();
+  await point("field:Account.email");
+  await page.locator(".mx-half-note").filter({ hasText: "is not in A · showing Account" }).waitFor();
+  expect((await a.locator('[data-room-anchor="table:Account"][data-marked]').count()) === 1, "A does not light the table it holds");
+});
+
+await scenario("on a phone the pill fills the top row, its card is a sheet from below, and Side by side is one panel with an A / B switch", async () => {
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+  await phone.addCookies(await context.cookies());
+  const p = await phone.newPage();
+  await p.goto(`${BASE}/w/${CODE}/core/panel-test/history/both?mode=side_by_side&from=${daysAgo(11)}`);
+  // The panel not shown stays drawn under the other, hidden: the switch is the shown panel's.
+  await p.locator(".mx-half.phone-shown .mx-flip").waitFor();
+  expect((await p.locator(".mx-pill").boundingBox()).width >= 220, "the pill does not fill the top row");
+  await p.locator(".mx-pill-main").click();
+  const sheet = await p.locator(".mx-card").boundingBox();
+  expect(sheet.width >= 370 && sheet.y + sheet.height >= 800, "the card is not a sheet from below");
+  expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the page scrolls sideways on a phone");
+  await phone.close();
+});
+
 await scenario("a page without the shell is marked by a red strip on the stand", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/panel-test/unframed`);
   await page.locator(".mx-unframed", { hasText: "This page has no Maxitor frame" }).waitFor();
