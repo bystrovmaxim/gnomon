@@ -82,8 +82,8 @@ class ScriptedNotesStorage(NotesStorage):
         self.calls.append(("edit_note", organization_id, item_id, note_id, body, base_body, base_revision, editor_id, operation))
         return MOMENT
 
-    async def delete_note(self, organization_id, item_id, note_id, base_body, base_revision, editor_id, operation):
-        self.calls.append(("delete_note", organization_id, item_id, note_id, base_body, base_revision, editor_id, operation))
+    async def delete_note(self, organization_id, item_id, note_id, base_revision, editor_id, operation):
+        self.calls.append(("delete_note", organization_id, item_id, note_id, base_revision, editor_id, operation))
         return MOMENT
 
     async def revert_note_change(self, organization_id, note_id, person_id, operation):
@@ -139,7 +139,7 @@ ACTION_CALLS = [
     (ListItemNotesAction(), ListItemNotesParams(item_id=ITEM)),
     (ListNoteAuthorsAction(), ListNoteAuthorsParams(item_id=ITEM)),
     (EditNoteAction(), EditNoteParams(item_id=ITEM, note_id="n1", body="Check", base_body="Old", base_revision=3)),
-    (DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_body="Old", base_revision=3)),
+    (DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_revision=3)),
     (RevertNoteChangeAction(), RevertNoteChangeParams(note_id="n1")),
     (PublishNotesAction(), PublishNotesParams(item_id=ITEM, title="First review", comment="Agreed")),
     (ListPublishedNotesAction(), ListPublishedNotesParams(item_id=ITEM)),
@@ -237,8 +237,8 @@ async def test_an_address_or_a_token_without_an_organization_or_a_person_is_refu
 async def test_an_editor_edits_and_deletes_in_her_draft_over_the_version_she_saw() -> None:
     _result, storage = await _run(EditNoteAction(), EditNoteParams(item_id=ITEM, note_id="n1", body="Check", base_body="Old", base_revision=3))
     assert storage.calls[-1] == ("edit_note", ACME, ITEM, "n1", "Check", "Old", 3, ANN, "EditNoteAction")
-    _result, storage = await _run(DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_body="Old", base_revision=3))
-    assert storage.calls[-1] == ("delete_note", ACME, ITEM, "n1", "Old", 3, ANN, "DeleteNoteAction")
+    _result, storage = await _run(DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_revision=3))
+    assert storage.calls[-1] == ("delete_note", ACME, ITEM, "n1", 3, ANN, "DeleteNoteAction")
 
 
 async def test_a_member_gives_one_change_of_her_draft_up() -> None:
@@ -250,7 +250,7 @@ async def test_a_member_gives_one_change_of_her_draft_up() -> None:
     ("action", "params"),
     [
         (EditNoteAction(), EditNoteParams(item_id=ITEM, note_id="n1", body="Check", base_body="Old", base_revision=3)),
-        (DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_body="Old", base_revision=3)),
+        (DeleteNoteAction(), DeleteNoteParams(item_id=ITEM, note_id="n1", base_revision=3)),
         (RevertNoteChangeAction(), RevertNoteChangeParams(note_id="n1")),
     ],
 )

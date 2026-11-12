@@ -1,5 +1,5 @@
 // web/app/[org]/notes/parts.tsx — what the template's pages share: the reading again when "now" moved. The cards
-// themselves belong to Draft and Published notes, which show different things about a note.
+// themselves belong to Draft and Published, which show different things about a note.
 "use client";
 
 import { useWatermark } from "@maxitor/panel";

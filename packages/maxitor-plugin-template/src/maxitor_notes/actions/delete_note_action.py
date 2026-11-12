@@ -4,7 +4,7 @@ DeleteNoteAction — a member deletes a note in their own draft, over the publis
 
 ::
 
-    DELETE /p/notes/api/{organization}/notes/{note_id}?item_id=…&base_body=…&base_revision=… ──► DeleteNoteAction
+    DELETE /p/notes/api/{organization}/notes/{note_id}?item_id=…&base_revision=… ──► DeleteNoteAction
         ├─ organization_access_decide: the person is a member of {organization}
         └─ delete_summary: the organization's id again; the draft's change written and its version, or nothing when the
            note is already gone
@@ -39,7 +39,6 @@ class DeleteNoteParams(BaseParams):
 
     item_id: str = Field(min_length=1, max_length=64, description="The item the note is about")
     note_id: str = Field(min_length=1, max_length=64, description="The note")
-    base_body: str | None = Field(default=None, max_length=10000, description="The published text the editor saw")
     base_revision: int | None = Field(default=None, ge=1, description="The revision in force the editor saw; empty before the first")
 
 
@@ -80,7 +79,6 @@ class DeleteNoteAction(BaseAction[DeleteNoteParams, DeleteNoteResult]):
             organization_id=organization_id,
             item_id=params.item_id,
             note_id=params.note_id,
-            base_body=params.base_body,
             base_revision=params.base_revision,
             editor_id=str(ctx.get(Ctx.User.user_id)),
             operation=type(self).__name__,

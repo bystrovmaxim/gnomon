@@ -3,7 +3,7 @@
 // change that meets someone else's publication is marked and resolved in the publishing dialog.
 "use client";
 
-import { Dialog, MaxitorCanvas, PanelPage, usePanelQuery, usePanelRouter } from "@maxitor/panel";
+import { Dialog, MaxitorCanvas, PanelPage, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -12,16 +12,16 @@ import {
   baseLine,
   choiceLabel,
   conflictLine,
+  conflictsOf,
   counts,
   draftOrder,
   raceLine,
   stateRows,
   visibleChanges,
-  waitingLine,
   STATE_LABEL,
   type Change,
 } from "../../notes/draft";
-import { Marking } from "../../notes/marking";
+import { Alert, Marking, StateDisk } from "../../notes/marking";
 import { CARD_GAP, cardsBounds, refusalText, when } from "../../notes/notes";
 import { useFresh } from "../../notes/parts";
 import { HEAD, RevisionCard, type PublishedNote, type Revision } from "../../notes/revision";
@@ -31,10 +31,7 @@ type Editing = { noteId: string; body: string; baseBody: string | null; baseRevi
 /** The draft's head: whose draft it is, what revision it was made over, and how many changes of each state wait. */
 function DraftHead({ revision, changes }: { revision: Revision | null; changes: Change[] }) {
   const found = counts(changes);
-  const countsLine = (["new", "changed", "deleted"] as const)
-    .filter((state) => found[state])
-    .map((state) => `${found[state]} ${STATE_LABEL[state].toLowerCase()}`)
-    .join(" · ");
+  const shown = (["new", "deleted", "changed"] as const).filter((state) => found[state]);
   const base = changes.map((change) => change.base_revision).filter((number): number is number => number !== null);
   return (
     <article className="mx-card nt-revision" data-room-anchor={`revision:${revision?.number ?? 0}`}>
@@ -42,7 +39,16 @@ function DraftHead({ revision, changes }: { revision: Revision | null; changes: 
         <span className="nt-ref dr">Draft</span>
         <b>Your draft</b>
         <span>seen by you alone · made over v{base.length ? Math.min(...base) : revision?.number ?? "—"} · published whole, as one revision</span>
-        {countsLine ? <span className="nt-counts">{countsLine}</span> : null}
+        {shown.length ? (
+          <span className="nt-counts">
+            {shown.map((state) => (
+              <span key={state} className="nt-count">
+                <StateDisk state={state} />
+                {found[state]} {STATE_LABEL[state].toLowerCase()}
+              </span>
+            ))}
+          </span>
+        ) : null}
       </div>
     </article>
   );
@@ -70,6 +76,7 @@ export function DraftView({
   const editId = typeof query.edit === "string" ? query.edit : null;
   const router = useRouter();
   const panelRouter = usePanelRouter();
+  const panelPath = usePanelPath();
   useFresh(changes.map((change) => `${change.note_id}:${change.changed_at}`), now);
   const [writing, setWriting] = useState(false);
   const [text, setText] = useState("");
@@ -111,6 +118,16 @@ export function DraftView({
     const note = published.find((one) => one.id === editId);
     if (note) setEditing({ noteId: note.id, body: note.body, baseBody: note.body, baseRevision: publishedRevision?.number ?? null, stored: false });
   }, [editId]);
+
+  // The conflicts the draft already knows stand in the dialog from its first look; the server finds them again when
+  // the draft is published, so one that came meanwhile is asked too.
+  const openPublishing = () => {
+    const known = conflictsOf(changes);
+    setConflicts(known.length ? known : null);
+    setChoices({});
+    setSaid("");
+    setPublishing(true);
+  };
 
   const close = () => {
     setPublishing(false);
@@ -181,6 +198,7 @@ export function DraftView({
   };
 
   const decided = conflicts?.every((conflict) => choices[conflict.note_id]) ?? false;
+  const plain = draftOrder(changes).filter((change) => !conflicts?.some((conflict) => conflict.note_id === change.note_id));
 
   return (
     <PanelPage
@@ -190,12 +208,22 @@ export function DraftView({
       filters={[{ title: "State", param: "state", rows: stateRows(changes) }]}
       actions={[
         { title: "New note", icon: "plus", onClick: () => { setWriting(true); setSaid(""); } },
-        { title: "Publish", icon: "check", onClick: () => { setPublishing(true); setSaid(""); } },
+        { title: "Publish", onClick: () => openPublishing() },
       ]}
     >
       <MaxitorCanvas bounds={bounds} label="Draft">
         <DraftHead revision={revision} changes={changes} />
-        {race ? <div className="nt-race" style={{ top: HEAD }}>{race}</div> : null}
+        {race ? (
+          <div className="nt-race" style={{ top: HEAD }}>
+            <Alert />
+            <span>
+              {race}{" "}
+              <button type="button" className="nt-link" onClick={() => panelRouter.push({ path: `${panelPath}/published`, query: {} })}>
+                See Published
+              </button>
+            </span>
+          </div>
+        ) : null}
         <div className="mx-cards nt-grid" style={{ top: gridTop, width: below.width }}>
           {visible.length === 0 && !editingShown ? (
             <div className="mx-empty-state" style={{ margin: 0, maxWidth: "none" }}>
@@ -249,6 +277,7 @@ export function DraftView({
                 <div className="nt-foot">{baseLine(change)}</div>
                 {change.conflict ? (
                   <div className="nt-meet">
+                    <Alert />
                     {change.published_by_name} {change.published_body === null ? "deleted it" : "changed it"} on {when(change.published_at)}: you choose when you publish.
                   </div>
                 ) : null}
@@ -371,9 +400,18 @@ export function DraftView({
                 </div>
               ))}
             </>
-          ) : (
-            <div className="nt-sec">{waitingLine(changes)} go in as they are</div>
-          )}
+          ) : null}
+          <div className="nt-sec">
+            {conflicts ? `${plain.length} more go in as they are` : `What goes in · ${changes.length} ${changes.length === 1 ? "change" : "changes"}`}
+          </div>
+          <div className="nt-list">
+            {(conflicts ? plain : draftOrder(changes)).map((change) => (
+              <div key={change.note_id}>
+                <span className={`nt-kind ${change.state}`}>{STATE_LABEL[change.state]}</span>
+                <span>{change.state === "deleted" ? change.base_body : change.body}</span>
+              </div>
+            ))}
+          </div>
           {said ? <div className="nt-said" role="status">{said}</div> : null}
           <div className="nt-row">
             <button type="button" onClick={close}>Cancel</button>

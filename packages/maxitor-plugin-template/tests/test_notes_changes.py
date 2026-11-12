@@ -127,7 +127,7 @@ async def test_a_note_that_never_was_is_refused() -> None:
 
 async def test_deleting_a_new_note_removes_it_from_the_draft() -> None:
     storage, connection = await _open(script(draft=_row(state="new", base_body=None, base_revision=None)))
-    await storage.delete_note(ORG, ITEM, NOTE, None, None, ANN, "DeleteNoteAction")
+    await storage.delete_note(ORG, ITEM, NOTE, None, ANN, "DeleteNoteAction")
     queries = connection.queries()
     assert "DELETE FROM note_change WHERE" in "".join(queries)
     assert not any(query.startswith("INSERT INTO note_change ") for query in queries)
@@ -135,7 +135,7 @@ async def test_deleting_a_new_note_removes_it_from_the_draft() -> None:
 
 async def test_deleting_a_published_note_puts_a_deletion_with_its_base_in_the_draft() -> None:
     storage, connection = await _open(script(published={"writer_id": OLGA, "body": BASE}))
-    await storage.delete_note(ORG, ITEM, NOTE, BASE, 6, ANN, "DeleteNoteAction")
+    await storage.delete_note(ORG, ITEM, NOTE, 6, ANN, "DeleteNoteAction")
     insert = next(statement for statement in connection.statements if statement[0].startswith("INSERT INTO note_change "))
     assert "'deleted'" in insert[0]
     assert insert[1][6] == BASE

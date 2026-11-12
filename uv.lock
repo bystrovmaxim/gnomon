@@ -1468,7 +1468,7 @@ dev = [
 
 [[package]]
 name = "maxitor-plugin-sdk"
-version = "1.7.0"
+version = "1.7.1"
 source = { editable = "packages/maxitor-plugin-sdk" }
 dependencies = [
     { name = "aoa-action-machine" },

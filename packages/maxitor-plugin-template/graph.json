@@ -412,15 +412,6 @@
       "type": "generic:result"
     },
     {
-      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams|field|maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_body",
-      "is_dag": false,
-      "properties": {},
-      "relationship": "Composition",
-      "source_id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams",
-      "target_id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_body",
-      "type": "field"
-    },
-    {
       "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams|field|maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_revision",
       "is_dag": false,
       "properties": {},
@@ -3664,17 +3655,6 @@
       "label": "DeleteNoteParams",
       "properties": {},
       "type": "Params"
-    },
-    {
-      "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_body",
-      "label": "base_body",
-      "properties": {
-        "description": "The published text the editor saw",
-        "entity_schema": false,
-        "json_schema_value": false,
-        "required": false
-      },
-      "type": "Field"
     },
     {
       "id": "maxitor_notes.actions.delete_note_action.DeleteNoteParams:base_revision",

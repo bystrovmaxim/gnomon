@@ -303,7 +303,6 @@ class NotesStorage(PostgresStorage):
         organization_id: str,
         item_id: str,
         note_id: str,
-        base_body: str | None,
         base_revision: int | None,
         editor_id: str,
         operation: str,
@@ -965,13 +964,12 @@ class NotesStorageWrapper(SqlStorageWrapper):
         organization_id: str,
         item_id: str,
         note_id: str,
-        base_body: str | None,
         base_revision: int | None,
         editor_id: str,
         operation: str,
     ) -> str:
         """Pass on the wrapped storage's deletion."""
-        return await self._storage().delete_note(organization_id, item_id, note_id, base_body, base_revision, editor_id, operation)
+        return await self._storage().delete_note(organization_id, item_id, note_id, base_revision, editor_id, operation)
 
     async def revert_note_change(self, organization_id: str, note_id: str, person_id: str, operation: str) -> str:
         """Pass on the wrapped storage's revert."""

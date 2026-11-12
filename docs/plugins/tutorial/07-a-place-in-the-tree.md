@@ -6,7 +6,7 @@ Your plugin's pages open in Maxitor's frame: the tree on the left, the top row a
 
 ## Your nodes
 
-The template hangs a section of its own in the root of the tree. Under it is one node per item of the organization, and under every item are its two pages: Draft and Published notes.
+The template hangs a section of its own in the root of the tree. Under it is one node per item of the organization, and under every item are its two pages: Draft and Published.
 
 <!-- quote: packages/maxitor-plugin-template/src/maxitor_notes/navigation.yaml -->
 ```yaml
@@ -71,14 +71,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-The page's controls are its own, and it does not draw them. It gives them to the shell — `PanelPage` of `@maxitor/panel` — as data when it opens: Draft gives the State filter and its two actions, Published notes gives the item's writers for the filter at the top left and the choice of cards or a table for the bottom bar. The shell draws them in the same places as on every page of Maxitor and writes each into the address:
+The page's controls are its own, and it does not draw them. It gives them to the shell — `PanelPage` of `@maxitor/panel` — as data when it opens: Draft gives the State filter and its two actions, Published gives the item's writers for the filter at the top left and the choice of cards or a table for the bottom bar. The shell draws them in the same places as on every page of Maxitor and writes each into the address:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/DraftView.tsx -->
 ```tsx
       filters={[{ title: "State", param: "state", rows: stateRows(changes) }]}
       actions={[
         { title: "New note", icon: "plus", onClick: () => { setWriting(true); setSaid(""); } },
-        { title: "Publish", icon: "check", onClick: () => { setPublishing(true); setSaid(""); } },
+        { title: "Publish", onClick: () => openPublishing() },
       ]}
 ```
 

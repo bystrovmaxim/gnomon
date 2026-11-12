@@ -1046,7 +1046,7 @@ export function NotesView({ org, itemId, notes, filters, bar }) {
 }
 ```
 
-The shell draws the State filter on Draft and the Authors filter on Published, and writes `?state=`, `?author=` and `?view=` into the address; the page rebuilds from it. Every note lies on the canvas with its anchor `note:<id>`, so a pointer lands on it on every screen. "New note" opens the shell's `Dialog` — a sheet on a phone — and a card edits its change in place; Revert asks once. Publishing is a dialog with a title, a comment, an optional release and, when someone published over the draft's base, the conflict list: two marked sides for each note and the choice to overwrite or give up. Published notes is read only and marks what waits in the person's draft.
+The shell draws the State filter on Draft and the Authors filter on Published, and writes `?state=`, `?author=` and `?view=` into the address; the page rebuilds from it. Every note lies on the canvas with its anchor `note:<id>`, so a pointer lands on it on every screen. "New note" opens the shell's `Dialog` — a sheet on a phone — and a card edits its change in place; Revert asks once. Publishing is a dialog with a title, a comment, an optional release and, when someone published over the draft's base, the conflict list: two marked sides for each note and the choice to overwrite or give up. Published is read only and marks what waits in the person's draft.
 
 **7. Running it locally.**
 

@@ -1,4 +1,4 @@
-// web/app/[org]/notes/revision.tsx — what Published notes and Draft share: a revision's and a change's shape, the
+// web/app/[org]/notes/revision.tsx — what Published and Draft share: a revision's and a change's shape, the
 // revision's card heading the canvas, and the choice of cards or a table.
 "use client";
 

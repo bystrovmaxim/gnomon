@@ -52,7 +52,7 @@ The action passes the writer from the token, never from the request, and the org
 
 ## Editing without losing someone else's change
 
-An edit and a deletion write the person's own draft, never the published notes: `edit_note` and `delete_note` take the published text the person saw as `base_body` and the revision in force as `base_revision`, and keep them with the change. Whether that base still holds is decided when the draft is published, not when it is written: a change over a note that is unchanged goes in as it is, one that meets someone else's publication is a conflict the person overwrites or gives up there. A change that leaves the note as published leaves the draft.
+An edit and a deletion write the person's own draft, never the published notes: `edit_note` takes the published text the person saw as `base_body` and the revision in force as `base_revision`; `delete_note` takes the revision alone and keeps the published text it reads itself, so a note's text never travels in an address. Both keep their base with the change. Whether that base still holds is decided when the draft is published, not when it is written: a change over a note that is unchanged goes in as it is, one that meets someone else's publication is a conflict the person overwrites or gives up there. A change that leaves the note as published leaves the draft.
 
 ## Check it
 

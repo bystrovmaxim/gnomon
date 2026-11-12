@@ -1,4 +1,4 @@
-// web/app/[org]/items/[item_id]/published/PublishedView.tsx — Published notes on the canvas: everyone's notes of the
+// web/app/[org]/items/[item_id]/published/PublishedView.tsx — Published on the canvas: everyone's notes of the
 // revision in force, read only, with the Authors filter; Edit and Delete act in the person's own draft, and a note
 // waiting there is marked. In the past the page is read only and has no tools.
 "use client";
@@ -9,6 +9,7 @@ import { useState } from "react";
 
 import { call } from "../../../notes/api";
 import { marksInDraft, waitingLine, STATE_LABEL, type Change } from "../../../notes/draft";
+import { DraftIcon } from "../../../notes/marking";
 import { CARD_GAP, cardsBounds, refusalText } from "../../../notes/notes";
 import { useFresh } from "../../../notes/parts";
 import { HEAD, RevisionCard, VIEWS, type PublishedNote, type Revision } from "../../../notes/revision";
@@ -51,7 +52,7 @@ export function PublishedView({
   const openDraft = () => panelRouter.push({ path: draftPath, query: {} });
   const remove = async (note: PublishedNote) => {
     setBusy(true);
-    const search = new URLSearchParams({ item_id: itemId, base_body: note.body, base_revision: String(revision?.number ?? "") });
+    const search = new URLSearchParams({ item_id: itemId, base_revision: String(revision?.number ?? "") });
     const answer = await call(org, "DELETE", `/notes/${encodeURIComponent(note.id)}?${search.toString()}`);
     setBusy(false);
     if (!answer.ok) setSaid(refusalText(answer.refusal, answer.status));
@@ -60,7 +61,7 @@ export function PublishedView({
 
   return (
     <PanelPage
-      title="Published notes"
+      title="Published"
       bar={VIEWS}
       history={{ milestones: "list_note_history", card: "note_milestone_card" }}
       filters={
@@ -75,7 +76,7 @@ export function PublishedView({
           : []
       }
     >
-      <MaxitorCanvas bounds={bounds} label="Published notes">
+      <MaxitorCanvas bounds={bounds} label="Published">
         <RevisionCard revision={revision} empty="Nothing is published yet: publish the draft to make the first revision." />
         {changes.length ? (
           <button type="button" className="nt-waiting" style={{ top: HEAD - 34 }} onClick={openDraft}>
@@ -121,6 +122,7 @@ export function PublishedView({
                     <div className="nt-body">{note.body}</div>
                     {mark ? (
                       <button type="button" className={`nt-mark ${mark}`} onClick={openDraft}>
+                        <DraftIcon />
                         In your draft: {STATE_LABEL[mark].toLowerCase()}
                       </button>
                     ) : null}
