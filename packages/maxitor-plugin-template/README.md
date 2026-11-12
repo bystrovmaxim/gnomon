@@ -2,7 +2,7 @@
 
 A small but complete Maxitor plugin, `notes`: notes on its own items, kept like folders. It needs nothing but the core. It holds every part a real plugin has, so a new plugin starts as a copy of this package with the names changed.
 
-A Maxitor plugin is an independent application that installs into Maxitor: a pip package or a ready wheel carrying a passport, an AOA backend, a built Next.js frontend and the declaration of its tables. It carries no SQL and no migrations. Maxitor's installer reads the passport, checks the dependencies, and deploys each version once: its schema `notes_<version>` and database user `plg_notes_<version>`, the tables of `schema.yaml` with their version tables, its key to the core. The plugin's user sees only its own schema; what it needs of the core — the organization's lock and change time, the watermark, membership, a member's name — it gets from the core's functions.
+A Maxitor plugin is an independent application that installs into Maxitor: a pip package or a ready wheel carrying a passport, an AOA backend, the sources of a Next.js frontend, which Maxitor builds with its own `@maxitor/panel`, and the declaration of its tables. It carries no SQL and no migrations. Maxitor's installer reads the passport, checks the dependencies, and deploys each version once: its schema `notes_<version>` and database user `plg_notes_<version>`, the tables of `schema.yaml` with their version tables, its key to the core. The plugin's user sees only its own schema; what it needs of the core — the organization's lock and change time, the watermark, membership, a member's name — it gets from the core's functions.
 
 Maxitor installs this plugin: an organization's administrator finds it in Settings → Plugins, and the local stand fills its marketplace with this package's wheel ([Run Maxitor core locally](../../docs/how-to/run-the-core-locally.md)). Maxitor's runner starts its backend in a container of its own, and its API answers through Maxitor's gateway at `/p/notes/api/<organization>/…` with the person's sign-in. The frame's place for its pages and `@maxitor/panel` are still to be built (bystrovmaxim/gnomon#74), so its frontend does not run yet. Its files are checked by `maxitor-plugin-sdk`, the same code Maxitor checks a plugin with: `maxitor-plugin-check .` from this folder, and `maxitor plugin check . --core <version>` for whether it fits a core.
 
@@ -30,14 +30,13 @@ Maxitor installs this plugin: an organization's administrator finds it in Settin
 | `src/maxitor_notes/events.py` | The typed events the actions write: an item added, an item renamed. |
 | `src/maxitor_notes/notes_refusal_error.py` | The refusals and their HTTP answers: a moment not come, a note or an item changed since, a note deleted, a title taken, nothing to publish. |
 | `graph.json` | The plugin's graph, built by `graph-builder write` from its code. |
-| `web/` | The frontend: a Next.js application under `/p/notes` whose pages keep every view setting in their address. |
-| `web/scripts/copy-build.mjs` | Puts the standalone build into `src/maxitor_notes/_web`, where the wheel carries it. |
+| `web/` | The frontend: a Next.js application under `/p/notes` whose pages keep every view setting in their address. The wheel carries it as `maxitor_notes/web`, sources only: `package.json`, `package-lock.json` and the pages, without `node_modules` and `.next`. |
 
 ## Building a release
 
 ```bash
-npm --prefix web run build
+uv run --all-extras maxitor plugin build . --core 4.5.0
 uv build
 ```
 
-The first command builds the frontend into `src/maxitor_notes/_web`; the second builds the wheel with it inside.
+The first command builds the frontend the way Maxitor's installer will — in the core's builder image, with the core's `@maxitor/panel`, through its npm list, without a network — and prints the image or the first error; the second builds the wheel, which carries `web/` as sources. Maxitor builds them again when it installs the version, and again for every core it is upgraded to.

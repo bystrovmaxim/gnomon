@@ -33,6 +33,12 @@ def test_a_page_that_places_an_element_fixed_is_refused(plugin) -> None:
     assert any("an element placed fixed lies over Maxitor's frame" in problem for problem in check_plugin(plugin))
 ```
 
+8. **Its frontend builds the way Maxitor builds it.** `maxitor plugin build` runs the installer's own step: the core's `@maxitor/panel` in place of the plugin's, only packages on the core's npm list, no network while the plugin's code runs. The plugin's CI runs it with the core at the lower and at the upper bound of `requires.maxitor`; the template's CI does both — the check run with the checkout's core, the job `template-lower-bound` with the newest release of the lowest minor the range allows:
+
+```bash
+uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.5.0
+```
+
 ## Run them
 
 ```bash

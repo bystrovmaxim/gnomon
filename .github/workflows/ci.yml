@@ -12,6 +12,8 @@ on:
 #                benchmarks, graph files check);
 #   checks-314 — the same gate on Python 3.14, the newest version the project supports;
 #   packaging  — the wheel/sdist build of Maxitor;
+#   template-lower-bound — the plugin template's frontend built by the released core at the lower bound of its
+#                requires.maxitor (the check run builds it with this checkout's core, the upper bound);
 #   versions   — version-gate, on pull requests into main only.
 # AOA comes from the submodule external/aoa, so every checkout takes the submodules.
 # The three-engine layout check is not here: these machines have no graphics card, so Firefox has no WebGL and the
@@ -188,3 +190,32 @@ jobs:
       - name: Show the check log on failure
         if: failure()
         run: cat archive/logs/check-all.txt || true
+
+  template-lower-bound:
+    name: Template at the lower bound
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          # The released cores are found by their tags.
+          fetch-depth: 0
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      # The newest release of the lowest minor the template's requires.maxitor allows builds the template the way its
+      # installer would. While that minor has no release, this checkout is both bounds and the check run covers it.
+      - name: The released core builds the template
+        run: |
+          low="$(uv run --no-project --with pyyaml --with packaging python scripts/template_bounds.py)"
+          if [ -z "$low" ]; then
+            echo "The lowest minor of requires.maxitor has no release yet: this checkout is both bounds."
+            exit 0
+          fi
+          uvx --from "maxitor[plugins]==$low" --with ./packages/maxitor-plugin-sdk \
+            maxitor plugin build packages/maxitor-plugin-template --core "$low"

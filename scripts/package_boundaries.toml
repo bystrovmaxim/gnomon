@@ -13,7 +13,9 @@ may_import = []
 current_roots = ["packages/maxitor/maxitor-web/maxitor/web"]
 future_roots = ["packages/maxitor/maxitor-web/maxitor/web"]
 import_prefixes = ["maxitor.web"]
-may_import = ["action_machine", "graph_builder", "graph_compare", "graph_map"]
+# plugins: ``maxitor plugin build`` runs the core's own step of building a plugin's frontend, so an author gets the
+# build the installer makes; nothing else of the web part touches the domain plugins.
+may_import = ["action_machine", "graph_builder", "graph_compare", "graph_map", "plugins"]
 
 # Maxitor's core: accounts, organizations and the session. It imports neither the graph viewer nor a tool; it reaches
 # the domain plugins only to serve its routes and the organization's tree.

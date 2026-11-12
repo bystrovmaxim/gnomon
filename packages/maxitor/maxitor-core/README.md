@@ -40,7 +40,7 @@ Everything the frame draws takes its colours and sizes from [`@maxitor/tokens`](
 
 ## The core's passport
 
-`maxitor/core/maxitor-core.yaml` names the formats of a plugin's files the core reads (passport 2, `schema.yaml` 1, navigation 1, foreign keys 1) and the major version of `maxitor-plugin-sdk` it is built with. `GET /api/v1/core/passport` answers it with the version of the `maxitor` package. `maxitor plugin check <path> --core <version>` (`pip install "maxitor[plugins]"`) checks a plugin against it.
+`maxitor/core/maxitor-core.yaml` names the formats of a plugin's files the core reads (passport 3, `schema.yaml` 1, navigation 2, foreign keys 1) and the major version of `maxitor-plugin-sdk` it is built with. `GET /api/v1/core/passport` answers it with the version of the `maxitor` package. `maxitor plugin check <path> --core <version>` (`pip install "maxitor[plugins]"`) checks a plugin against it.
 
 ## Running it
 

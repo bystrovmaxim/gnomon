@@ -1,5 +1,9 @@
 # Changelog — maxitor-plugin-sdk
 
+## 1.6.0 — 2026-11-12
+
+Passport format 3: `plugin-passport-3.schema.json` is format 2 with `frontend.source` — the folder of the frontend's sources the core builds — in place of `frontend.build`. `checks` refuses format 2 with `PASSPORT_FORMAT_2` and `frontend.build` with `FRONTEND_BUILD`, and a plugin's `web/` without `package.json` or `package-lock.json`. ([#110](https://github.com/bystrovmaxim/gnomon/issues/110))
+
 ## 1.5.0 — 2026-11-11
 
 Navigation format 2: `navigation-2.schema.json` is format 1 without `controls`, and `room.shared` may not name `at`, `mode` or `from`; `checks` refuses format 1 with `NAVIGATION_FORMAT_1` and no longer checks controls or their sources — `named_actions` and `source_problems` read list nodes only. `frontend.frontend_problems`, run by `checks`, keeps the shell's boundary in a plugin's `web/`: every `page.tsx` renders `<PanelPage>`, nothing is placed `fixed`, no layer reaches the shell's (30); each refusal names the file and the line. ([#109](https://github.com/bystrovmaxim/gnomon/issues/109))

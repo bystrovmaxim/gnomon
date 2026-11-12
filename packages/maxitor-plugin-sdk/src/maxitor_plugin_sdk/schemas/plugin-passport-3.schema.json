@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/plugin-passport-2.schema.json",
+  "$id": "https://github.com/bystrovmaxim/gnomon/packages/maxitor-plugin-sdk/src/maxitor_plugin_sdk/schemas/plugin-passport-3.schema.json",
   "title": "Maxitor plugin passport, format 2",
-  "description": "maxitor-plugin.yaml: who a plugin is and what it needs. Every object is closed: an unknown field is an error. Format 2: a plugin carries no SQL and no migrations; its tables are declared in the schema.yaml that database.schema names, and Maxitor builds them.",
+  "description": "maxitor-plugin.yaml: who a plugin is and what it needs. Every object is closed: an unknown field is an error. A plugin carries no SQL and no migrations: its tables are declared in the schema.yaml that database.schema names, and Maxitor builds them. Its frontend travels as sources, in the folder frontend.source names, and Maxitor builds them with its own @maxitor/panel.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -18,7 +18,7 @@
   ],
   "properties": {
     "passport": {
-      "const": 2,
+      "const": 3,
       "description": "The format of this file."
     },
     "id": {
@@ -126,12 +126,13 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "build",
+        "source",
         "navigation"
       ],
       "properties": {
-        "build": {
-          "$ref": "#/$defs/path"
+        "source": {
+          "$ref": "#/$defs/path",
+          "description": "The folder of the frontend's sources in the wheel: package.json, package-lock.json and the pages, without node_modules or a built site."
         },
         "navigation": {
           "$ref": "#/$defs/path"

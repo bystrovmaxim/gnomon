@@ -205,10 +205,12 @@ STEPS: tuple[Step, ...] = (
         "client",
         after=(AUTO_FIX,),
     ),
-    # The plugin template's frontend builds with @maxitor/panel and @maxitor/tokens into the folder its wheel carries.
+    # The plugin template's frontend builds the way the installer builds it: in this core's builder image, with its
+    # own @maxitor/panel, through its npm list, without a network — the upper bound of the template's requires.maxitor.
     Step(
-        "Plugin template: the frontend builds",
-        "(cd packages/maxitor-plugin-template/web && npm ci --no-audit --no-fund && npm run build)",
+        "Plugin template: the core builds its frontend",
+        'uv run maxitor plugin build packages/maxitor-plugin-template --core "$(uv run python -c'
+        " 'import importlib.metadata as m; print(m.version(\"maxitor\"))')\"",
         "client",
         after=(AUTO_FIX,),
     ),

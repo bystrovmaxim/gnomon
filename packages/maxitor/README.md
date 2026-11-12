@@ -19,9 +19,10 @@ Maxitor is one package with parts you choose at install time:
 | **`repo-graph-port`** | A service that reads each graph's history from its repository — every merged pull request that changed the graph file is a version, with its description and tags — and serves any version's graph; the only part that talks to GitHub | `pip install "maxitor[repo-graph-port]"` |
 | **the core** | Maxitor's own core: sign-in by email and password or a provider the person's country allows, organizations and their frame, on its own PostgreSQL database ([its README](https://github.com/bystrovmaxim/gnomon/blob/main/packages/maxitor/maxitor-core/README.md)) | `pip install "maxitor[core]"` |
 | **`maxitor plugin check`** | Checks a plugin against a version of the core, with [`maxitor-plugin-sdk`](https://github.com/bystrovmaxim/gnomon/blob/main/packages/maxitor-plugin-sdk/README.md) | `pip install "maxitor[plugins]"` |
+| **`maxitor plugin build`** | Builds a plugin's frontend the way the core's installer builds it — the core's `@maxitor/panel`, its npm list, no network — and prints the image or the first error; needs Docker | `pip install "maxitor[plugins]"` |
 | **skills** | `aoa-graph-builder-setup`, the skill a coding agent follows to connect a project | comes with every install |
 
-`pip install "maxitor[all]"` installs everything but the plugin check, which joins it once `maxitor-plugin-sdk` is published. The base install brings only `jsonschema` and `jsonschema-rs` — nothing of AOA, no server — so it is all a CI job needs. A command whose part is not installed says which extra to add.
+`pip install "maxitor[all]"` installs everything but the plugin commands, which join it once `maxitor-plugin-sdk` is published. The base install brings only `jsonschema` and `jsonschema-rs` — nothing of AOA, no server — so it is all a CI job needs. A command whose part is not installed says which extra to add.
 
 ## Get started
 
