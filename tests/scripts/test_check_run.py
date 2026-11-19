@@ -445,3 +445,20 @@ def test_before_pr_refuses_an_unpushed_commit_before_the_run(tmp_path: Path) -> 
     run = subprocess.run(["bash", "scripts/check_before_pr.sh"], cwd=work, check=False, capture_output=True, text=True)
     assert (run.returncode, _calls(calls)) == (1, [])
     assert "not pushed" in run.stdout
+
+
+def test_component_tests_wait_for_the_core_node_dependencies() -> None:
+    """A clean checkout cannot load TSX test helpers until npm ci has finished."""
+    runner = _runner()
+    steps = runner._select(runner.STEPS, "ci", False, None, None)
+    core = "Maxitor core: the Next.js application builds"
+    names = {
+        "Plugin template: its pages' rules",
+        "Maxitor core: the levels of the tree",
+        "@maxitor/panel: the camera and the protocol",
+    }
+    ended = {step.name for step in steps} - names - {core}
+    for step in steps:
+        if step.name in names:
+            assert not runner._ready(step, ended, [], steps), step.name
+            assert runner._ready(step, ended | {core}, [], steps), step.name

@@ -64,8 +64,10 @@ T021 remains open for the closing CI run and committing the graph files. The mai
 
 ## Phase 9: Convergence
 
-These acceptance gates belong to issue #13's closing implementation, documentation and verification phases (6–8); they do not introduce another feature.
+These acceptance gates and CI follow-up fixes belong to issue #13's phase 9; they do not introduce another feature.
 
 - [x] T025 [US7] Replace literal button and disk-frame styling with platform tokens without changing computed dimensions; keep standalone mockups synchronized and pass the frame token guard (constitution: shared platform styling).
 - [x] T026 [US7] Reconcile FR-023 and the phone story with the accepted full-width canvas directory, pinned identity and inline controls documented in admin-canvas.md (FR-023, accepted follow-ups).
 - [ ] T027 Complete the closing CI run and pushed-commit browser receipt before reporting the PR ready (T021, constitution: local browser verification).
+
+- [x] T028 Fix the CI dependency ordering, canonical-icon assertions and versioned tutorial fixtures; update the full browser journey for embedded administration panels and completed invitation history. The current full journey remains a verification gate on the stand.

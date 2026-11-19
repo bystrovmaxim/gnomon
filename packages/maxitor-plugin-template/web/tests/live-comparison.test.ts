@@ -4,7 +4,7 @@ import { createRequire } from "node:module";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 
-const require = createRequire(import.meta.url);
+const require = createRequire(new URL("../../../maxitor/maxitor-core/web/package.json", import.meta.url));
 const ts = require("typescript");
 const compile = (file: string) => ts.transpileModule(readFileSync(new URL(file, import.meta.url), "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },

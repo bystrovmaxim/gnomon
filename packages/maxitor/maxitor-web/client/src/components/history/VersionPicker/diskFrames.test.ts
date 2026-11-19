@@ -8,7 +8,12 @@ afterEach(() => { document.body.replaceChildren(); document.head.querySelectorAl
 it("status and initials disks retain a distinct outer contour and white separation", () => {
   const style = document.createElement("style");
   style.dataset.diskTest = "true";
-  style.textContent = readFileSync(resolve(process.cwd(), "../../../maxitor-panel/src/shell/shell.css"), "utf8");
+  // JSDOM does not resolve custom properties in computed styles; substitute the real theme values.
+  const theme = readFileSync(resolve(process.cwd(), "../../../maxitor-tokens/tokens.css"), "utf8");
+  const tokens = new Map([...theme.matchAll(/(--mx-[\w-]+):\s*([^;]+);/g)].map(match => [match[1], match[2]]));
+  let css = readFileSync(resolve(process.cwd(), "../../../maxitor-panel/src/shell/shell.css"), "utf8");
+  for (let pass = 0; pass < 4; pass++) css = css.replace(/var\((--mx-[\w-]+)\)/g, (value, name) => tokens.get(name) ?? value);
+  style.textContent = css;
   document.head.append(style);
   for (const sign of ["+", "−", "=", "~", "CP"]) {
     const disk = document.createElement("span");

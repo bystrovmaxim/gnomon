@@ -58,7 +58,7 @@ export function OrganizationPage({ code, initial }: { code: string; initial: Set
             {withdrawn.length
               ? `${withdrawn.length} ${withdrawn.length === 1 ? "invitation" : "invitations"} sent by ordinary users ${withdrawn.length === 1 ? "was" : "were"} withdrawn: ${withdrawn.map((i) => `${i.email} (by ${i.invited_by.name})`).join(", ")}. `
               : "No invitation of an ordinary user was waiting, so nothing was withdrawn. "}
-            <Button variant="link" className="lnk" type="button" onClick={() => openPanel("core", "/settings/users", { tab: "invitations" })}>See the invitations</Button>.
+            <Button variant="link" className="lnk" type="button" onClick={() => openPanel("core", "/settings/users", { tab: "history" })}>See invitation history</Button>.
           </Alert>
         ) : null}
         <section className="admin-surface" aria-label="Invitation policy">

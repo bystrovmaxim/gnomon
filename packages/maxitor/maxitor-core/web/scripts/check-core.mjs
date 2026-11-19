@@ -57,6 +57,7 @@ async function scenario(name, run) {
     // The first lines of Playwright's call log name the locator that did not hold.
     const lines = String(error?.message ?? error).split("\n").filter((line) => line.trim()).slice(0, 5);
     console.log(`FAIL ${name}\n     ${lines.join("\n     ")}`);
+    if (process.env.MAXITOR_CHECK_FAIL_FAST === "1") { await browser.close(); throw error; }
   }
 }
 
@@ -130,6 +131,7 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1360, height: 840 } });
 await context.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
 const page = await context.newPage();
+const admin = page.frameLocator("iframe.mx-panel-frame");
 
 async function signIn(email, password) {
   await page.getByLabel("Email").fill(email);
@@ -203,9 +205,10 @@ const SECOND = `check-b-${RUN}`;
 
 /** Wait until the Installed tab shows a plugin in a state, the page reading the installer's work by itself. */
 async function waitForState(title, state) {
-  for (let i = 0; i < 90; i += 1) {
-    const row = page.locator(".prow", { hasText: title });
+  for (let i = 0; i < 300; i += 1) {
+    const row = admin.locator(".prow", { hasText: title });
     if ((await row.count()) && (await row.locator(`.stt.${state}`).count())) return;
+    if (await row.locator(".stt.failed").count()) throw new Error(await row.innerText());
     await new Promise((r) => setTimeout(r, 1000));
   }
   throw new Error(`${title} never became ${state}`);
@@ -221,23 +224,23 @@ await scenario("Settings at the foot of the tree is entered and holds Organizati
   await page.locator(".mx-tree-scroll .mx-node", { hasText: "Plugins" }).click();
   await page.waitForURL(`**/w/${CODE}/core/settings/plugins`);
   expect((await page.locator(".mx-path").innerText()).includes("Settings"), "the top row's path does not say Settings");
-  await page.getByRole("tab", { name: /Marketplace/ }).click();
-  await page.locator(".mcard", { hasText: "Notes" }).waitFor();
-  await page.getByLabel("Search plugins").fill("nothing-like-it");
-  await page.getByText("No plugin matches “nothing-like-it”").waitFor();
-  await page.getByRole("button", { name: "Clear the search" }).first().click();
-  await page.locator(".mcard", { hasText: "Notes" }).waitFor();
+  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).waitFor();
+  await admin.getByLabel("Search plugins").fill("nothing-like-it");
+  await admin.getByText("No plugin matches “nothing-like-it”").waitFor();
+  await admin.getByRole("button", { name: "Clear the search" }).first().click();
+  await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).waitFor();
 });
 
 await scenario("installing the template builds its version and its nodes join the tree", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await page.getByRole("tab", { name: /Marketplace/ }).click();
-  await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
-  await page.getByText(`Install Notes ${TEMPLATE_VERSION}`).waitFor();
+  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).getByRole("button", { name: "Install" }).click();
+  await admin.getByText(`Install Notes ${TEMPLATE_VERSION}`).waitFor();
   // The stand's first run deploys the version; a later run finds it deployed by an earlier one.
-  await page.locator(".dlg", { hasText: /is deployed for the first time|is already deployed in Maxitor/ }).waitFor();
-  await page.getByRole("button", { name: "Install Notes" }).click();
-  await page.getByRole("tab", { name: /Installed/ }).waitFor();
+  await admin.locator(".dlg", { hasText: /is deployed for the first time|is already deployed in Maxitor/ }).waitFor();
+  await admin.getByRole("button", { name: "Install Notes" }).click();
+  await admin.getByRole("tab", { name: /Installed/ }).waitFor();
   await waitForState("Notes", "enabled");
   await page.goto(`${BASE}/w/${CODE}`);
   await page.locator(".mx-node", { hasText: "Notes" }).first().waitFor();
@@ -937,25 +940,25 @@ await scenario("a second organization installs the deployed version without buil
   await page.getByRole("button", { name: "Register and enter" }).click();
   await page.waitForURL(`**/w/${SECOND}`);
   await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
-  await page.getByRole("tab", { name: /Marketplace/ }).click();
-  await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
-  await page.getByText("is already deployed in Maxitor").waitFor();
-  await page.getByRole("button", { name: "Install Notes" }).click();
+  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).getByRole("button", { name: "Install" }).click();
+  await admin.getByText("is already deployed in Maxitor").waitFor();
+  await admin.getByRole("button", { name: "Install Notes" }).click();
   await waitForState("Notes", "enabled");
 });
 
 await scenario("disabling keeps the plugin, enabling brings its sections back", async () => {
-  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
-  await page.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Disable" }).click();
-  await page.getByRole("button", { name: "Disable", exact: true }).last().click();
+  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins?tab=installed`);
+  await admin.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Disable" }).click();
+  await admin.getByRole("button", { name: "Disable", exact: true }).last().click();
   await waitForState("Notes", "disabled");
   await page.goto(`${BASE}/w/${SECOND}`);
   expect((await page.locator(".mx-node", { hasText: "Notes" }).count()) === 0, "a disabled plugin stays in the tree");
-  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
-  await page.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Enable" }).click();
+  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins?tab=installed`);
+  await admin.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Enable" }).click();
   await waitForState("Notes", "enabled");
-  await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await page.locator(".prow", { hasText: "Notes" }).locator(".stt.enabled").waitFor(); // the first organization untouched
+  await page.goto(`${BASE}/w/${CODE}/core/settings/plugins?tab=installed`);
+  await admin.locator(".prow", { hasText: "Notes" }).locator(".stt.enabled").waitFor(); // the first organization untouched
 });
 
 const INVITED = `invited-${RUN}@example.com`;
@@ -974,26 +977,26 @@ await scenario("an administrator invites from Settings → Users; the letter nam
   await page.waitForURL(`**/w/${CODE}/core/settings/users`);
   // Spec 079, FR-040: the crumbs name entered sections; the Users page adds no level inside Settings.
   expect((await crumbsOf(page)) === "Settings", `the crumbs say ${await crumbsOf(page)}`);
-  await page.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
+  await admin.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
   const sent = Date.now() - 1000;
-  await page.getByRole("button", { name: "Invite", exact: true }).click();
-  expect(!(await page.getByLabel("Organization administrator").isChecked()), "the administrator mark is on when the form opens");
-  await page.getByLabel("Email", { exact: true }).fill(INVITED);
-  await page.getByRole("button", { name: "Send the invitation" }).click();
-  await page.locator(".drawer", { hasText: "will be an ordinary user" }).waitFor();
-  await page.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
+  await admin.getByRole("button", { name: "Invite", exact: true }).click();
+  expect(!(await admin.getByLabel("Organization administrator").isChecked()), "the administrator mark is on when the form opens");
+  await admin.getByLabel("Email", { exact: true }).fill(INVITED);
+  await admin.getByRole("button", { name: "Send the invitation" }).click();
+  await admin.locator(".drawer", { hasText: "Will join as an ordinary user" }).waitFor();
+  await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
   invitationSentAt = Date.now();
   const text = await letterText(INVITED, sent, "invites you");
   expect(text.includes(`Check Person`) && text.includes(ORG), "the letter does not name the inviter and the organization");
   expect(!/https?:\/\//.test(text), "the letter holds a link");
   expect(text.includes("waits until"), "the letter does not say until when the invitation waits");
   // The same email again is refused while the invitation is sent.
-  await page.locator(".drawer").getByRole("button", { name: "Close", exact: true }).click();
-  await page.getByRole("button", { name: "Invite", exact: true }).click();
-  await page.getByLabel("Email", { exact: true }).fill(INVITED);
-  await page.getByRole("button", { name: "Send the invitation" }).click();
-  await page.getByText("An invitation to this email is already sent").waitFor();
-  await page.getByRole("button", { name: "Cancel" }).click();
+  await admin.locator(".drawer").getByRole("button", { name: "Close", exact: true }).click();
+  await admin.getByRole("button", { name: "Invite", exact: true }).click();
+  await admin.getByLabel("Email", { exact: true }).fill(INVITED);
+  await admin.getByRole("button", { name: "Send the invitation" }).click();
+  await admin.getByText("An invitation to this email is already sent").waitFor();
+  await admin.getByRole("button", { name: "Cancel" }).click();
 });
 
 await scenario("the invited person signs up with the invited email, sees the invitation and accepts", async () => {
@@ -1028,24 +1031,28 @@ await scenario("the new user invites from the menu under the icon; the administr
   await g.locator(".arow", { hasText: BY_USER }).getByText("Sent").waitFor();
   await g.getByRole("button", { name: "Done" }).click();
   await page.goto(`${BASE}/w/${CODE}/core/settings/users`);
-  const user = page.locator(".utbl tr", { hasText: "Invited Person" });
+  const user = admin.locator(".utbl tr", { hasText: "Invited Person" });
   await user.getByText("Active").waitFor();
   await user.getByText("invited by Check Person").waitFor();
-  await page.getByRole("tab", { name: /Invitations/ }).click();
-  await page.locator(".utbl tr", { hasText: BY_USER }).getByText("Invited Person").waitFor();
-  await page.locator(".utbl tr", { hasText: INVITED }).getByText("Accepted", { exact: true }).waitFor();
+  await admin.getByRole("tab", { name: /Invitations/ }).click();
+  await admin.locator(".utbl tr", { hasText: BY_USER }).getByText("Invited Person").waitFor();
+  await admin.getByRole("tab", { name: /History/ }).click();
+  await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Accepted", { exact: true }).waitFor();
 });
 
 await scenario("administrators only withdraws the user's invitation and takes Invite from their menu", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/settings/organization`);
-  await page.locator(".choice.on", { hasText: "Any user of the organization" }).waitFor();
-  await page.locator(".choice", { hasText: "Administrators only" }).click();
-  await page.locator(".dlg", { hasText: "Administrators only?" }).locator(".arow", { hasText: BY_USER }).waitFor();
-  await page.getByRole("button", { name: "Switch and withdraw 1" }).click();
-  await page.getByText("Administrators only since").waitFor();
-  await page.locator(".choice.on", { hasText: "Administrators only" }).waitFor();
-  await page.goto(`${BASE}/w/${CODE}/core/settings/users?tab=invitations`);
-  await page.locator(".utbl tr", { hasText: BY_USER }).getByText("Withdrawn", { exact: true }).waitFor();
+  await admin.getByRole("button", { name: "Edit", exact: true }).click();
+  await admin.locator(".choice.on", { hasText: "Any user of the organization" }).waitFor();
+  await admin.locator(".choice", { hasText: "Administrators only" }).click();
+  await admin.getByRole("button", { name: "Save", exact: true }).click();
+  await admin.locator(".dlg", { hasText: "Administrators only?" }).locator(".arow", { hasText: BY_USER }).waitFor();
+  await admin.getByRole("button", { name: "Switch and withdraw 1" }).click();
+  await admin.getByText("Administrators only since").waitFor();
+  await admin.locator(".admin-facts", { hasText: "Administrators only" }).waitFor();
+  await admin.getByRole("button", { name: "See invitation history" }).click();
+  await page.waitForURL(/tab=history/);
+  await admin.locator(".utbl tr", { hasText: BY_USER }).getByText("Withdrawn", { exact: true }).waitFor();
   await g.goto(`${BASE}/w/${CODE}`);
   await g.locator(".mx-avatar").click();
   await g.getByRole("button", { name: "Sign out" }).waitFor();
@@ -1055,16 +1062,17 @@ await scenario("administrators only withdraws the user's invitation and takes In
 
 await scenario("a blocked user is a stranger from the next request; the last administrator cannot be blocked", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/settings/users`);
-  await page.locator(".utbl tr", { hasText: "Invited Person" }).click();
-  const card = page.locator(".drawer", { hasText: "Invited Person" });
+  await admin.locator(".utbl tr", { hasText: "Invited Person" }).getByRole("button", { name: "Open user Invited Person", exact: true }).click();
+  const card = admin.locator(".drawer", { hasText: "Invited Person" });
   await card.getByRole("button", { name: "Block" }).click();
-  await card.locator(".life .on", { hasText: "Blocked" }).waitFor();
+  await card.locator(".admin-user-status .stt", { hasText: "Blocked" }).waitFor();
   await g.goto(`${BASE}/w/${CODE}`);
   await g.getByText("No such organization").waitFor();
   await card.getByRole("button", { name: "Unblock" }).click();
-  await card.locator(".life .on", { hasText: "Active" }).waitFor();
-  await page.locator(`.utbl tr[data-user="${EMAIL}"]`).click();
-  const own = page.locator(".drawer", { hasText: "Check Person" });
+  await card.locator(".admin-user-status .stt", { hasText: "Active" }).waitFor();
+  await card.getByRole("button", { name: "Close", exact: true }).click();
+  await admin.locator(`.utbl tr[data-user="${EMAIL}"]`).getByRole("button").first().click();
+  const own = admin.locator(".drawer", { hasText: "Check Person" });
   await own.getByText("The last active administrator").waitFor();
   expect(await own.getByRole("button", { name: "Block" }).isDisabled(), "the last administrator can be blocked");
   expect(await own.getByLabel("Administrator").isDisabled(), "the last administrator can lose the mark");
@@ -1072,23 +1080,23 @@ await scenario("a blocked user is a stranger from the next request; the last adm
 
 await scenario("signing in again opens where the person stopped", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/settings/users`);
-  await page.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
+  await admin.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
   await page.locator(".mx-avatar").click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.waitForURL(`${BASE}/`);
   await signIn(EMAIL, PASSWORD);
   await page.waitForURL(`**/w/${CODE}/core/settings/users`);
-  await page.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
+  await admin.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
 });
 
 await scenario("the private plugin dialog refuses a PyPI address before sending it", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await page.getByRole("button", { name: "Add a private plugin" }).click();
-  await page.getByLabel("Package URL").fill("pkg:pypi/sv-reports@0.3.0");
-  await page.getByText("A package on PyPI is the public marketplace's.").waitFor();
-  expect(await page.getByRole("button", { name: "Add and check" }).isDisabled(), "a PyPI address can be sent");
-  await page.getByRole("button", { name: "Upload a wheel" }).click();
-  await page.getByText("Choose a .whl file").waitFor();
+  await admin.getByRole("button", { name: "Add a private plugin" }).click();
+  await admin.getByLabel("Package URL").fill("pkg:pypi/sv-reports@0.3.0");
+  await admin.getByText("A package on PyPI is the public marketplace's.").waitFor();
+  expect(await admin.getByRole("button", { name: "Add and check" }).isDisabled(), "a PyPI address can be sent");
+  await admin.getByRole("button", { name: "Upload a wheel" }).click();
+  await admin.getByText("Choose a .whl file").waitFor();
 });
 
 await scenario("the settings of an organization one is not in answer alike, at the old address too", async () => {
@@ -1174,16 +1182,17 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
   await phone.addCookies(await context.cookies());
   const p = await phone.newPage();
-  await p.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await p.locator(".prow", { hasText: "Notes" }).waitFor();
+  const panel = p.frameLocator("iframe.mx-panel-frame");
+  await p.goto(`${BASE}/w/${CODE}/core/settings/plugins?tab=installed`);
+  await panel.locator(".prow", { hasText: "Notes" }).waitFor();
   const wide = () => p.evaluate(() => document.documentElement.scrollWidth);
   expect((await wide()) <= 375, `the installed tab is ${await wide()} px wide`);
-  await p.getByRole("tab", { name: /Marketplace/ }).click();
+  await panel.getByRole("tab", { name: /Marketplace/ }).click();
   expect((await wide()) <= 375, `the marketplace is ${await wide()} px wide`);
-  await p.getByRole("button", { name: "Add a private plugin" }).click();
-  const sheet = await p.locator(".dlg.sheet").boundingBox();
+  await panel.getByRole("button", { name: "Add a private plugin" }).click();
+  const sheet = await panel.locator(".mx-dialog").boundingBox();
   expect(sheet && Math.round(sheet.y + sheet.height) >= 811 && sheet.width >= 370, "the dialog is not a sheet from the bottom");
-  await p.getByRole("button", { name: "Cancel" }).click();
+  await panel.getByRole("button", { name: "Cancel" }).click();
   // The address is inside Settings, so the drawer arrives at the level of Settings already: head and Plugins only.
   await p.getByRole("button", { name: "The organization's tree" }).click();
   const drawer = async () => JSON.stringify(await p.locator(".mx-tree.drawer").innerText().catch(() => "no drawer"));
@@ -1192,6 +1201,7 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   await p.locator(".mx-tree.drawer").getByRole("button", { name: "Back" }).click();
   await p.locator(".mx-tree.drawer .mx-level-head").waitFor({ state: "detached" });
   await p.locator(".mx-tree.drawer .mx-node", { hasText: "Settings" }).click();
+  if (!await p.locator(".mx-tree.drawer").isVisible()) await p.getByRole("button", { name: "The organization's tree" }).click();
   await p.locator(".mx-tree.drawer .mx-level-head", { hasText: "Settings" }).waitFor();
   await phone.close();
 });
@@ -1317,20 +1327,21 @@ await scenario("on a phone the filters are a sheet from below and the pickers sh
   await phone.close();
 });
 
-await scenario("on a phone the invited person's screen wraps its buttons, the invitation form is a sheet and the users are rows", async () => {
+await scenario("on a phone the invited person's screen wraps its buttons, the invitation form is a sheet and the directory keeps its columns", async () => {
   // The second organization invites the invited person: their phone shows the invitation with full-width buttons.
   // The address-wide limit also applies across organizations: wait out the first invitation's minute.
   const wait = invitationSentAt + 61_000 - Date.now();
   if (wait > 0) await new Promise((done) => setTimeout(done, wait));
   await page.goto(`${BASE}/w/${SECOND}/core/settings/users`);
-  await page.getByRole("button", { name: "Invite", exact: true }).click();
-  await page.getByLabel("Email", { exact: true }).fill(INVITED);
-  await page.getByRole("button", { name: "Send the invitation" }).click();
-  await page.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
+  await admin.getByRole("button", { name: "Invite", exact: true }).click();
+  await admin.getByLabel("Email", { exact: true }).fill(INVITED);
+  await admin.getByRole("button", { name: "Send the invitation" }).click();
+  await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
   const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
   await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
   await phone.addCookies(await guest.cookies());
   const p = await phone.newPage();
+  const panel = p.frameLocator("iframe.mx-panel-frame");
   await p.goto(`${BASE}/w`);
   await p.getByText("Choose an organization").waitFor();
   const accept = await p.locator(".orow.inv").getByRole("button", { name: "Accept" }).boundingBox();
@@ -1338,10 +1349,10 @@ await scenario("on a phone the invited person's screen wraps its buttons, the in
   expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the organizations' screen scrolls sideways on a phone");
   await phone.addCookies(await context.cookies());
   await p.goto(`${BASE}/w/${CODE}/core/settings/users`);
-  await p.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
+  await panel.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
   expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the users' page scrolls sideways on a phone");
-  await p.getByRole("button", { name: "Invite", exact: true }).click();
-  const sheet = await p.locator(".dlg").boundingBox();
+  await panel.getByRole("button", { name: "Invite", exact: true }).click();
+  const sheet = await panel.locator(".mx-dialog").boundingBox();
   expect(sheet.width >= 370 && sheet.y + sheet.height >= 700, "the invitation form is not a sheet from below");
   await phone.close();
   await guest.close();

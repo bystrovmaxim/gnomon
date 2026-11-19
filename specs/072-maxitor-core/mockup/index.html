@@ -2350,7 +2350,7 @@ function pageOrganization() {
   const org = ORGS[0];
   const byUsers = INVITES.filter(i => i.st === "sent" && !isAdmin(i.by));
   const any = S.whoInv === "any";
-  const note = S.switched ? `<div class="alert ok">${I.check}<div><b>Administrators only since ${SWITCHED_AT}.</b> ${byUsers.length} ${byUsers.length === 1 ? "invitation" : "invitations"} sent by ordinary users ${byUsers.length === 1 ? "was" : "were"} withdrawn: ${byUsers.map(i => `${esc(i.email)} (by ${esc(au(i.by).name)})`).join(", ")}. <a class="lnk" onclick="go({fpage:'users',utab:'invites'})">See the invitations</a>.</div></div>` : "";
+  const note = S.switched ? `<div class="alert ok">${I.check}<div><b>Administrators only since ${SWITCHED_AT}.</b> ${byUsers.length} ${byUsers.length === 1 ? "invitation" : "invitations"} sent by ordinary users ${byUsers.length === 1 ? "was" : "were"} withdrawn: ${byUsers.map(i => `${esc(i.email)} (by ${esc(au(i.by).name)})`).join(", ")}. <a class="lnk" onclick="go({fpage:'users',utab:'history'})">See invitation history</a>.</div></div>` : "";
   return `<div class="page organization-page"><div class="inner">
 
     <section class="admin-surface" aria-label="Organization details"><header class="admin-surface-head"><h3>Organization details</h3></header><dl class="admin-facts"><div><dt>Name</dt><dd>${esc(org.name)}</dd></div><div><dt>Address</dt><dd>/w/${org.code}</dd></div></dl></section>

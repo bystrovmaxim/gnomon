@@ -108,3 +108,14 @@ Preparation passed 213 core/panel/template frontend tests and 41 targeted backen
 The platform token guard caught 22 literal-style violations in the new common controls. They were replaced by tokens with the same values; the guard then passed, together with 11 button/icon checks and the administration mockup guard. The prototypes embed the canonical token values, so opening a standalone file uses the same dimensions as the live application. This preserves the observed failure before the fix as the token regression evidence.
 
 The phone requirement now records the accepted full-width canvas tables, pinned identity and inline controls; it no longer describes the superseded stacked-row layout. Local stand configuration remains outside the pull request.
+
+
+## Pull request convergence — 2026-11-19
+
+PR #129's first CI run exposed a dependency race: the template, core and panel component tests could start before the core installed TypeScript. Those steps now depend on the core frontend build, and the template's tests resolve the shared compiler there. The scheduler regression failed alone before the fix (36 other tests passed); all 37 scheduler tests then passed. The template component checks also passed.
+
+Four graph-viewer assertions still expected retired text glyphs or asked JSDOM to resolve CSS variables. They now check the canonical SVG paths and resolve the canonical tokens for the computed-frame assertions; all 23 affected tests passed. The compatibility tests and tutorial now use the actual template and core versions; all 41 targeted Python checks passed.
+
+The complete core journey now locates administration controls inside their panel frame, distinguishes Notes from demo descriptions, checks completed invitations under History and measures the shared mobile dialog. It also verifies that the notice after withdrawing invitations opens History: that notice previously led to the pending list. The same link is corrected in the mockup. The administration and mockup checks passed (9 tests).
+
+The fresh Notes 0.15.1 frontend build on the isolated stand is still fetching its dependencies. The complete updated core journey remains pending that installation; the earlier 49-scenario result remains historical evidence only. The next push must pass both CI and the clean pushed-head browser receipt before the PR is reported ready.
