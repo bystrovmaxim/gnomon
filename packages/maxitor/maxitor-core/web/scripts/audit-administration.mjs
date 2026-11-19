@@ -19,8 +19,8 @@ export async function auditAdministration(scope) {
 /** Run on the live People page after navigation/search has settled. */
 export async function auditInvitationTabs(scope) {
   return scope.locator('.page').evaluate(root => {
-    const selected = root.querySelector('[role="tab"][aria-selected="true"]');
-    const count = selected?.querySelector('.cnt')?.textContent;
+    const selected = root.ownerDocument.querySelector('[data-shell="layers"] [role="radio"][aria-checked="true"]');
+    const count = selected?.querySelector('.mx-count')?.textContent;
     const rows = root.querySelectorAll('.utbl tbody tr');
     const label = selected?.textContent ?? '';
     const problems = [];

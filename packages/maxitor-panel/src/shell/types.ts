@@ -60,9 +60,16 @@ export type RangeFilter = {
 export type FilterSection = ChoiceFilter | TextFilter | RangeFilter;
 
 /** One layer pill: what the screen starts from, with its count. */
-export type LayerOption = { value: string; label: string; icon: string; count?: number };
+export type LayerOption = { value: string; label: string; icon?: string; count?: number };
 
-export type Layers = { default: string; options: LayerOption[] };
+export type Layers = {
+  default: string;
+  options: LayerOption[];
+  /** The shell owns this address parameter; omitted for the standard drawing layer. */
+  param?: string;
+  /** Accessible name of this mutually exclusive page choice. */
+  label?: string;
+};
 
 /** A choice of one in the bottom bar: a view, a layout. The shell writes its parameter. */
 export type ChoiceSection = {

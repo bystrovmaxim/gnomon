@@ -697,7 +697,7 @@ Every page of every plugin shows its controls in the same places and with the sa
 | Part | Place | What the page gives | What the shell decides |
 |---|---|---|---|
 | filters | top left | sections of three kinds — a choice of values (a colour disk of the palette, a label, absent from the data), a text, a range of numbers or dates — and which choices paint | 148 px, an accordion with one section open; a long choice's search and "N more"; the paint switch when two sections paint; one button and a sheet from below on a phone |
-| layer pills | top centre | options with an icon and a count | one chosen, the parameter `layer`; on a phone the icon and the count |
+| layer pills | fixed top centre, outside the canvas | options with optional icons and counts; optional `param` and accessible `label` | one chosen; `layer` unless `param` names a page choice such as `tab`; icon-bearing choices compact on phones, text-only choices keep their labels |
 | bottom bar | bottom left | sections after the zoom, each behind a hairline: a choice of one, buttons, a switch; each item an icon of the shell's set | zoom out, the percentage, zoom in and fit first on a canvas; sections that do not fit fold into "⋯" on a phone |
 | page actions | top right, bottom right on a phone | buttons such as "New note" | shown only now: in the past and in a comparison everything is read only |
 | change stepper | the page actions' place | nothing: the time scale puts it there in a comparison (7.9) | the actions and the stepper never stand together |

@@ -1,0 +1,10 @@
+/* Production rendering for the core shell layer and page-choice controls. */
+.mx-pills { display: inline-flex; align-items: center; gap: var(--mx-space-1); padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); box-shadow: var(--mx-shadow-float); width: fit-content; }
+.mx-pills > button { flex: 0 0 auto; height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-family: inherit; font-size: var(--mx-pills-text-size, var(--mx-text-md)); font-weight: 400; line-height: 1.5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); white-space: nowrap; }
+.mx-pills > button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-pills > button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-pills > button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-pills .mx-count { font-size: var(--mx-pills-count-size, var(--mx-text-xs)); font-weight: var(--mx-weight-bold); opacity: 0.8; }
+.mx-pills .mx-count:empty { display: none; }
+@media (max-width: 600px) { .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); }

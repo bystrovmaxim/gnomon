@@ -230,7 +230,7 @@ await scenario("Settings at the foot of the tree is entered and holds Organizati
   await page.locator(".mx-tree-scroll .mx-node", { hasText: "Plugins" }).click();
   await page.waitForURL(`**/w/${CODE}/core/settings/plugins`);
   expect((await page.locator(".mx-path").innerText()).includes("Settings"), "the top row's path does not say Settings");
-  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.getByRole("radio", { name: /Marketplace/ }).click();
   await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).waitFor();
   await admin.getByLabel("Search plugins").fill("nothing-like-it");
   await admin.getByText("No plugin matches “nothing-like-it”").waitFor();
@@ -240,13 +240,13 @@ await scenario("Settings at the foot of the tree is entered and holds Organizati
 
 await scenario("installing the template builds its version and its nodes join the tree", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.getByRole("radio", { name: /Marketplace/ }).click();
   await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).getByRole("button", { name: "Install" }).click();
   await admin.getByText(`Install Notes ${TEMPLATE_VERSION}`).waitFor();
   // The stand's first run deploys the version; a later run finds it deployed by an earlier one.
   await admin.locator(".dlg", { hasText: /is deployed for the first time|is already deployed in Maxitor/ }).waitFor();
   await admin.getByRole("button", { name: "Install Notes" }).click();
-  await admin.getByRole("tab", { name: /Installed/ }).waitFor();
+  await admin.getByRole("radio", { name: /Installed/ }).waitFor();
   await waitForState("Notes", "enabled");
   await page.goto(`${BASE}/w/${CODE}`);
   await page.locator(".mx-node", { hasText: "Notes" }).first().waitFor();
@@ -968,7 +968,7 @@ await scenario("a second organization installs the deployed version without buil
   await page.getByRole("button", { name: "Register and enter" }).click();
   await page.waitForURL(`**/w/${SECOND}`);
   await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
-  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.getByRole("radio", { name: /Marketplace/ }).click();
   await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).getByRole("button", { name: "Install" }).click();
   await admin.getByText("is already deployed in Maxitor").waitFor();
   await admin.getByRole("button", { name: "Install Notes" }).click();
@@ -1020,7 +1020,7 @@ await scenario("an administrator invites from Settings → Users; the letter nam
   expect(text.includes("waits until"), "the letter does not say until when the invitation waits");
   // The same email again is refused while the invitation is sent.
   await admin.locator(".drawer").getByRole("button", { name: "Close", exact: true }).click();
-  await admin.getByRole("tab", { name: /Invitations/ }).click();
+  await admin.getByRole("radio", { name: /Invitations/ }).click();
   await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
   await admin.getByRole("button", { name: "Invite", exact: true }).click();
   await admin.getByLabel("Email", { exact: true }).fill(INVITED);
@@ -1064,9 +1064,9 @@ await scenario("the new user invites from the menu under the icon; the administr
   const user = admin.locator(".utbl tr", { hasText: "Invited Person" });
   await user.getByText("Active").waitFor();
   await user.getByText("invited by Check Person").waitFor();
-  await admin.getByRole("tab", { name: /Invitations/ }).click();
+  await admin.getByRole("radio", { name: /Invitations/ }).click();
   await admin.locator(".utbl tr", { hasText: BY_USER }).getByText("Invited Person").waitFor();
-  await admin.getByRole("tab", { name: /History/ }).click();
+  await admin.getByRole("radio", { name: /History/ }).click();
   await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Accepted", { exact: true }).waitFor();
 });
 
@@ -1217,7 +1217,7 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   await panel.locator(".prow", { hasText: "Notes" }).waitFor();
   const wide = () => p.evaluate(() => document.documentElement.scrollWidth);
   expect((await wide()) <= 375, `the installed tab is ${await wide()} px wide`);
-  await panel.getByRole("tab", { name: /Marketplace/ }).click();
+  await panel.getByRole("radio", { name: /Marketplace/ }).click();
   expect((await wide()) <= 375, `the marketplace is ${await wide()} px wide`);
   await panel.getByRole("button", { name: "Add a private plugin" }).click();
   const sheet = await panel.locator(".mx-dialog").boundingBox();
@@ -1255,7 +1255,7 @@ await scenario("on a phone the shell folds: the filters into a button, the pills
   expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the frame is wider than the phone");
   await p.goto(`${BASE}/w/${CODE}/core/panel-test/drawing`);
   await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
-  expect(!(await frame.locator(".mx-layer-pill-label").first().isVisible()), "the pills keep their labels on a phone");
+  expect(!(await frame.locator(".mx-layer-pill .mx-pills-label").first().isVisible()), "the pills keep their labels on a phone");
   const actions = await frame.locator(".mx-actions").boundingBox();
   expect(actions.y > 812 / 2, "the actions are not at the bottom on a phone");
   await phone.close();
@@ -1367,7 +1367,7 @@ await scenario("on a phone the invited person's screen wraps its buttons, the in
   await admin.getByLabel("Email", { exact: true }).fill(INVITED);
   await admin.getByRole("button", { name: "Send the invitation" }).click();
   await admin.locator(".drawer").getByRole("button", { name: "Close", exact: true }).click();
-  await admin.getByRole("tab", { name: /Invitations/ }).click();
+  await admin.getByRole("radio", { name: /Invitations/ }).click();
   await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
   const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
   await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));

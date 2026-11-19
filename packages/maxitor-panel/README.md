@@ -114,3 +114,25 @@ Use `Button` from `@maxitor/panel` for card actions and form controls. The shell
 The default type is `button`; specify `type="submit"` for form submission. Variants are `secondary` (default), `primary`, `danger`, `link` and `icon`. Give icon-only controls an accessible label. Native button attributes and handlers pass through. Labels use 14px text; phone touch targets are at least 44px, except inline links. Standalone mockups receive the same stylesheet through `scripts/sync-admin-canvas.mjs`.
 
 The page layer selector uses `.mx-layer-pill`; `.mx-pill` belongs to the core time scale. Keep these CSS namespaces separate when embedding the panel and core in one document.
+
+### Page choices through the core layer API
+
+Declare page choices with `PanelPage.layers`. The shell renders them at the top centre, outside the transformed canvas, and owns selection and URL writes. Do not render a separate pill group in page content.
+
+```tsx
+<PanelPage title="Plugins" layers={{
+  param: "tab", label: "Plugin views", default: "market",
+  options: [
+    { value: "installed", label: "Installed", count: 1 },
+    { value: "market", label: "Marketplace", count: 6 },
+  ],
+}}>
+  <MaxitorCanvas bounds={bounds}>{content}</MaxitorCanvas>
+</PanelPage>
+```
+
+Choosing Installed writes `?tab=installed`; choosing Marketplace omits the default parameter. The page reads the selection with `usePanelQuery()`. Without `param`, the existing `layer` parameter is used. Without `label`, the accessible group name is Layer. Reserved core parameters remain protected by the panel router.
+
+One native radio button is selected and in the tab order. Left/Right wrap, Home/End select the first/last option, and focus follows selection. Zero counts remain visible; omitted counts stay empty. Options may omit icons: text-only choices retain their labels and 44px touch targets on phones. Existing drawing layers keep their icons and compact phone appearance.
+
+Panning and zooming change content only; the controls keep their screen coordinates and text size. Administration retains 14px labels and 11px counts and starts content below the shell controls. The standalone mockup synchronizer copies the same production pill appearance and shell placement rules.

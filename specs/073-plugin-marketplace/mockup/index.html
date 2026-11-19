@@ -359,6 +359,7 @@
   --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --mx-text-xs: 10.5px;
+  --mx-text-count: 11px;
   --mx-text-sm: 11.5px;
   --mx-text-md: 13px;
   --mx-text-lg: 14px;
@@ -721,9 +722,13 @@
   .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
 }
 
-/* As in Plugins, tabs and search move and zoom with the canvas content. */
+/* Directory search moves and zooms with the canvas content. */
 .directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
 .directory-toolbar .tabs button { flex: 0 0 auto; }
+
+/* Core shell pills keep the established administration type sizes. */
+.device .mx-layer-pill.with-labels { --mx-pills-text-size: var(--mx-text-lg); --mx-pills-count-size: var(--mx-text-count); }
+@media (max-width: 520px) { .device .mx-shell:has(.mx-layer-pill) .mx-filters { top: 72px; } }
 
 .device .mx-actions { position: absolute; top: 64px; right: 16px; z-index: 10; display: flex; gap: 8px; }
 .device.phone .mx-actions { position: absolute; top: auto; bottom: 56px; }
@@ -745,6 +750,22 @@
 
 .mx-button.mx-action { box-shadow: var(--mx-shadow-float); }
 
+/* Production rendering for the core shell layer and page-choice controls. */
+.mx-pills { display: inline-flex; align-items: center; gap: var(--mx-space-1); padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); box-shadow: var(--mx-shadow-float); width: fit-content; }
+.mx-pills > button { flex: 0 0 auto; height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-family: inherit; font-size: var(--mx-pills-text-size, var(--mx-text-md)); font-weight: 400; line-height: 1.5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); white-space: nowrap; }
+.mx-pills > button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-pills > button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-pills > button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-pills .mx-count { font-size: var(--mx-pills-count-size, var(--mx-text-xs)); font-weight: var(--mx-weight-bold); opacity: 0.8; }
+.mx-pills .mx-count:empty { display: none; }
+@media (max-width: 600px) { .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); }
+
+.mx-layer-pill { top: var(--mx-space-5); left: 50%; transform: translateX(-50%); border-radius: var(--mx-radius-round); }
+.device .mx-layer-pill { position: absolute; z-index: 30; }
+.device.phone .mx-layer-pill.with-labels > button { min-height: var(--mx-action-height-phone); }
+.device .mx-panel:has(> .mx-layer-pill) > .mx-panel-own { box-sizing: border-box; padding: 72px 24px 24px; }
+.device .admin-mockup-canvas { position: absolute; inset: 0; overflow: auto; padding: 72px 24px 24px; }
 /* END shared administration canvas */
 /* Shared disk frame: white separation, then the production outer contour. */
 .avatar, .av, .mx-avatar, .mx-tip-avatar { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }
@@ -957,6 +978,12 @@ function typeSearch(v) {
   const el = document.getElementById("q");
   if (el) { el.focus(); el.setSelectionRange(v.length, v.length); }
 }
+function pluginLayers() {
+  return adminLayers("Plugin views", "tab", S.tab, [
+    {value:"installed",label:"Installed",count:ORDER.filter(live).filter(matches).length},
+    {value:"market",label:"Marketplace",count:inMarket().filter(matches).length + (privateShown() && matches("reports") ? 1 : 0)},
+  ]);
+}
 function viewPlugins() {
   if (S.user !== "admin") return `<div class="nf"><div class="box"><div class="big">404</div><h2>No such page</h2>
     <p>${ORG.name} has no page at <b>/w/${ORG.code}/settings/plugins</b> for you.</p>
@@ -988,8 +1015,6 @@ function viewPlugins() {
     ? `<label class="search">${I.search}<input id="q" type="search" placeholder="Search plugins by name, id or description" value="${esc(S.q)}" oninput="typeSearch(this.value)">${S.q ? `<button class="clr" aria-label="Clear the search" onclick="event.preventDefault();go({q:''})">${I.x}</button>` : ""}</label>` : "";
   return `<div class="page marketplace-page"><div class="inner">
     <div class="mx-actions" data-shell="actions"><button class="mx-button mx-action" data-variant="primary" onclick="go({dlg:'private',priv:'empty'})">${I.plus}Add a private plugin</button></div>
-    <div class="tabs"><button class="${S.tab === "installed" ? "on" : ""}" onclick="go({tab:'installed',toast:null})">Installed<span class="cnt">${inst.length}</span></button>
-      <button class="${S.tab === "market" ? "on" : ""}" onclick="go({tab:'market',toast:null})">Marketplace<span class="cnt">${mcount}</span></button></div>
     ${search}${body}
   </div></div>`;
 }
@@ -1157,7 +1182,7 @@ function adminMoment(clock = "") {
 function adminHistoryView(section, live) {
   const mode = S.adminTime || "now";
   if (mode === "now") return live;
-  if (section === "users") return `<div class="admin-history-notice"><span>${mode === "diff" ? "Comparing A and B" : "Viewing history"} · read only</span><button class="mx-button" onclick="go({adminTime:'now'})">Return to Now</button></div>${live}`;
+  if (section === "users" || section === "invitations") return `<div class="admin-history-notice"><span>${mode === "diff" ? "Comparing A and B" : "Viewing history"} · read only</span><button class="mx-button" onclick="go({adminTime:'now'})">Return to Now</button></div>${live}`;
   const entries = {
     organization: [["Organization", "Who may invite", "Any active user", "Administrators only"]],
     users: [["Anna Kovaleva", "Role", "Administrator", "Administrator"], ["Oleg Sokolov", "State", "Active", "Blocked"]],
@@ -1166,12 +1191,28 @@ function adminHistoryView(section, live) {
   }[section];
   return `<div class="page"><div class="inner"><div class="admin-history-notice"><span>${mode === "diff" ? "Comparing A and B" : "Viewing history"} · read only</span><button class="mx-button" onclick="go({adminTime:'now'})">Return to Now</button></div><div class="admin-cards">${entries.map(([name,field,a,b]) => `<article class="admin-object" data-room-anchor="${section}:${name}" data-change="${mode === "diff" && a !== b ? "changed" : "unchanged"}"><h3>${name}</h3><dl><div><dt>${field}</dt><dd>${mode === "diff" && a !== b ? `<del>${a}</del> → ${b}` : a}</dd></div></dl><p class="admin-meta">Anna Kovaleva · ${mode === "diff" ? "11" : "10"} Nov 2026, 12:00</p></article>`).join("")}</div></div></div>`;
 }
+
+// The prototype shell receives the same choice data as PanelPage.layers.
+function adminLayers(label, param, selected, options) {
+  return `<div class="mx-pills mx-layer-pill with-labels" data-shell="layers" role="radiogroup" aria-label="${esc(label)}" onkeydown="adminLayerKey(event)">${options.map(option => `<button type="button" role="radio" aria-label="${esc(option.label)}" aria-checked="${selected === option.value}" tabindex="${selected === option.value ? 0 : -1}" class="${selected === option.value ? "on" : ""}" onclick="go({${param}:'${option.value}',usr:null,ivd:null,toast:null})"><span class="mx-pills-label">${esc(option.label)}</span><span class="mx-count">${option.count ?? ""}</span></button>`).join("")}</div>`;
+}
+function adminLayerKey(event) {
+  const button = event.target.closest('button[role="radio"]');
+  if (!button) return;
+  const buttons = [...button.parentElement.querySelectorAll('button')];
+  const i = buttons.indexOf(button), n = buttons.length;
+  const next = event.key === 'ArrowRight' ? (i + 1) % n : event.key === 'ArrowLeft' ? (i + n - 1) % n : event.key === 'Home' ? 0 : event.key === 'End' ? n - 1 : null;
+  if (next === null) return;
+  event.preventDefault();
+  buttons[next].click();
+  document.querySelector('[data-shell="layers"] [aria-checked="true"]')?.focus();
+}
 // END shared administration history
 function render() {
   const app = document.getElementById("app");
   let html = "";
   const inSettings = S.screen === "plugins" && S.user === "admin";
-  if (S.screen === "plugins") html = urlbar(`/w/${ORG.code}/settings/plugins`) + header() + `<div class="body">${inSettings ? settingsNav() + adminHistoryView("plugins", viewPlugins()) : sidebar() + `<div class="content">${viewPlugins()}</div>`}</div>`;
+  if (S.screen === "plugins") html = urlbar(`/w/${ORG.code}/settings/plugins`) + header() + `<div class="body">${inSettings ? settingsNav() + `<div class="content admin-mockup-panel">${!S.adminTime || S.adminTime === "now" ? pluginLayers() : ""}<div class="admin-mockup-canvas">${adminHistoryView("plugins", viewPlugins())}</div></div>` : sidebar() + `<div class="content">${viewPlugins()}</div>`}</div>`;
   else html = urlbar(`/w/${ORG.code}`) + header() + `<div class="body">${sidebar()}${viewOrgPage()}</div>`;
   if (S.dlg === "install") html += dlgInstall();
   else if (S.dlg === "disable") html += dlgDisable();

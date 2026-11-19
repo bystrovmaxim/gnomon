@@ -12,6 +12,7 @@ import { useState, useEffect, useContext } from "react";
 import { blockUser, listUsers, resendInvitation, setAdministrator, setJobTitle, unblockUser, withdrawInvitation, type User } from "@/app/users";
 import { AdministrationActions, AdministrationComparison } from "./administration/AdministrationPanel";
 import { invitationLists, snapshotUser, snapshotInvitation } from "./administration/compare";
+import { useAdministrationLayers } from "./administration/AdministrationLayers";
 import { DirectoryToolbar } from "./administration/DirectoryToolbar";
 import { UserTable } from "./administration/UserTable";
 import { Icon } from "@/components/marks";
@@ -51,6 +52,7 @@ export function UsersPage({ code, organization, me, initial, tab: firstTab, open
   const [userId, setUserId] = useState<string | null>(open);
   const [invitationId, setInvitationId] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
+  useEffect(() => { if (tab === "users") setInvitationId(null); else setUserId(null); }, [tab]);
   const setActions = useContext(AdministrationActions);
   useEffect(() => {
     if (readOnly) return;
@@ -71,6 +73,12 @@ export function UsersPage({ code, organization, me, initial, tab: firstTab, open
   const matches = (text: string) => !q || text.toLowerCase().includes(q);
   const visibleUsers = users.filter(u => matches(`${u.name} ${u.email}`));
   const lists = invitationLists(invitations, query);
+  useAdministrationLayers({ param: "tab", label: "People views", default: "users", options: [
+    { value: "users", label: "Users", count: !readOnly || tab === "users" ? visibleUsers.length : undefined },
+    { value: "invitations", label: "Invitations", count: !readOnly ? lists.pending.length : undefined },
+    { value: "history", label: "History", count: !readOnly ? lists.history.length : undefined },
+  ] });
+
   const visibleInvitations = tab === "history" ? lists.history : lists.pending;
 
   async function reload() {
@@ -166,17 +174,13 @@ export function UsersPage({ code, organization, me, initial, tab: firstTab, open
   return (
     <div className="page people-page">
       <div className="inner">
-        <DirectoryToolbar><div className="tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={tab === "users"} className={tab === "users" ? "on" : ""} onClick={() => { setTab("users"); setInvitationId(null); }}>Users{!readOnly || tab === "users" ? <span className="cnt">{visibleUsers.length}</span> : null}</button>
-          <button type="button" role="tab" aria-selected={tab === "invitations"} className={tab === "invitations" ? "on" : ""} onClick={() => { setTab("invitations"); setUserId(null); }}>Invitations{!readOnly ? <span className="cnt">{lists.pending.length}</span> : null}</button>
-          <button type="button" role="tab" aria-selected={tab === "history"} className={tab === "history" ? "on" : ""} onClick={() => { setTab("history"); setUserId(null); }}>History{!readOnly ? <span className="cnt">{lists.history.length}</span> : null}</button>
-        </div>
+        <DirectoryToolbar>
         <label className="search">
           <Icon.search />
           <input type="search" placeholder={tab === "users" ? "Find by name or email" : "Find by email"} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={tab === "users" ? "Find by name or email" : "Find by email"} />
           {query ? <Button type="button" variant="icon" className="clr" aria-label="Clear the search" onClick={() => setQuery("")}><Icon.x /></Button> : null}
         </label></DirectoryToolbar>
-        <section className="admin-surface admin-people" aria-label="People directory">
+        <section className="admin-surface admin-people" id="people-list" aria-label="People directory">
         {visibleUsers.length === 0 && tab === "users" ? <p role="status">No users match this view.</p> : null}
         {tab === "users" ? (
           <UserTable>{columns}<thead><tr><th>User</th><th>Job title</th><th>State</th><th>Role</th><th>Appeared</th><th>Last sign-in</th></tr></thead><tbody>{visibleUsers.map(userRow)}</tbody></UserTable>

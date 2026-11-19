@@ -6,7 +6,7 @@
 |---|---|---|
 | `title` | string | to the top row and the tab |
 | `filters` | `FilterSection[]` | top left; absent or empty — not drawn |
-| `layers` | `{ default, options: LayerOption[] }` | top centre, parameter `layer` |
+| `layers` | `{ default, options: LayerOption[], param?, label? }` | fixed top centre; parameter `param` or `layer` |
 | `bar` | `BarSection[]` | bottom bar, after the zoom |
 | `actions` | `PageAction[]` | top right; shown only with no `at` and no `mode` |
 
@@ -21,7 +21,7 @@
 
 ## LayerOption
 
-`{ value, label, icon, count? }` — `count` undefined shows as empty, never zero.
+`{ value, label, icon?, count? }` — `count` undefined shows as empty, never zero. Text-only choices retain labels on phones. Optional `param` and `label` extend the existing shell API for page views; see [spec 087](../087-admin-pill-tabs/spec.md).
 
 ## BarSection
 

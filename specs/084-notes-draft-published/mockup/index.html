@@ -117,6 +117,7 @@
   --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --mx-text-xs: 10.5px;
+  --mx-text-count: 11px;
   --mx-text-sm: 11.5px;
   --mx-text-md: 13px;
   --mx-text-lg: 14px;
@@ -479,9 +480,13 @@
   .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
 }
 
-/* As in Plugins, tabs and search move and zoom with the canvas content. */
+/* Directory search moves and zooms with the canvas content. */
 .directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
 .directory-toolbar .tabs button { flex: 0 0 auto; }
+
+/* Core shell pills keep the established administration type sizes. */
+.device .mx-layer-pill.with-labels { --mx-pills-text-size: var(--mx-text-lg); --mx-pills-count-size: var(--mx-text-count); }
+@media (max-width: 520px) { .device .mx-shell:has(.mx-layer-pill) .mx-filters { top: 72px; } }
 
 .device .mx-actions { position: absolute; top: 64px; right: 16px; z-index: 10; display: flex; gap: 8px; }
 .device.phone .mx-actions { position: absolute; top: auto; bottom: 56px; }
@@ -503,6 +508,22 @@
 
 .mx-button.mx-action { box-shadow: var(--mx-shadow-float); }
 
+/* Production rendering for the core shell layer and page-choice controls. */
+.mx-pills { display: inline-flex; align-items: center; gap: var(--mx-space-1); padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); box-shadow: var(--mx-shadow-float); width: fit-content; }
+.mx-pills > button { flex: 0 0 auto; height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-family: inherit; font-size: var(--mx-pills-text-size, var(--mx-text-md)); font-weight: 400; line-height: 1.5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); white-space: nowrap; }
+.mx-pills > button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-pills > button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-pills > button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-pills .mx-count { font-size: var(--mx-pills-count-size, var(--mx-text-xs)); font-weight: var(--mx-weight-bold); opacity: 0.8; }
+.mx-pills .mx-count:empty { display: none; }
+@media (max-width: 600px) { .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); }
+
+.mx-layer-pill { top: var(--mx-space-5); left: 50%; transform: translateX(-50%); border-radius: var(--mx-radius-round); }
+.device .mx-layer-pill { position: absolute; z-index: 30; }
+.device.phone .mx-layer-pill.with-labels > button { min-height: var(--mx-action-height-phone); }
+.device .mx-panel:has(> .mx-layer-pill) > .mx-panel-own { box-sizing: border-box; padding: 72px 24px 24px; }
+.device .admin-mockup-canvas { position: absolute; inset: 0; overflow: auto; padding: 72px 24px 24px; }
 /* END shared administration canvas */
 /* Shared disk frame: white separation, then the production outer contour. */
 .avatar, .av, .mx-avatar, .mx-tip-avatar { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }
@@ -5346,6 +5367,7 @@ function mount() {
   --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --mx-text-xs: 10.5px;
+  --mx-text-count: 11px;
   --mx-text-sm: 11.5px;
   --mx-text-md: 13px;
   --mx-text-lg: 14px;
@@ -5708,9 +5730,13 @@ function mount() {
   .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
 }
 
-/* As in Plugins, tabs and search move and zoom with the canvas content. */
+/* Directory search moves and zooms with the canvas content. */
 .directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
 .directory-toolbar .tabs button { flex: 0 0 auto; }
+
+/* Core shell pills keep the established administration type sizes. */
+.device .mx-layer-pill.with-labels { --mx-pills-text-size: var(--mx-text-lg); --mx-pills-count-size: var(--mx-text-count); }
+@media (max-width: 520px) { .device .mx-shell:has(.mx-layer-pill) .mx-filters { top: 72px; } }
 
 .device .mx-actions { position: absolute; top: 64px; right: 16px; z-index: 10; display: flex; gap: 8px; }
 .device.phone .mx-actions { position: absolute; top: auto; bottom: 56px; }
@@ -5732,6 +5758,22 @@ function mount() {
 
 .mx-button.mx-action { box-shadow: var(--mx-shadow-float); }
 
+/* Production rendering for the core shell layer and page-choice controls. */
+.mx-pills { display: inline-flex; align-items: center; gap: var(--mx-space-1); padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); box-shadow: var(--mx-shadow-float); width: fit-content; }
+.mx-pills > button { flex: 0 0 auto; height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-family: inherit; font-size: var(--mx-pills-text-size, var(--mx-text-md)); font-weight: 400; line-height: 1.5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); white-space: nowrap; }
+.mx-pills > button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-pills > button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-pills > button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-pills .mx-count { font-size: var(--mx-pills-count-size, var(--mx-text-xs)); font-weight: var(--mx-weight-bold); opacity: 0.8; }
+.mx-pills .mx-count:empty { display: none; }
+@media (max-width: 600px) { .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); }
+
+.mx-layer-pill { top: var(--mx-space-5); left: 50%; transform: translateX(-50%); border-radius: var(--mx-radius-round); }
+.device .mx-layer-pill { position: absolute; z-index: 30; }
+.device.phone .mx-layer-pill.with-labels > button { min-height: var(--mx-action-height-phone); }
+.device .mx-panel:has(> .mx-layer-pill) > .mx-panel-own { box-sizing: border-box; padding: 72px 24px 24px; }
+.device .admin-mockup-canvas { position: absolute; inset: 0; overflow: auto; padding: 72px 24px 24px; }
 /* END shared administration canvas */
 /* Shared disk frame: white separation, then the production outer contour. */
 .avatar, .av, .mx-avatar, .mx-tip-avatar { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }
@@ -5798,6 +5840,7 @@ img.dk, img.nt-disk, img.pd, img[src*="data-sign"] { border: 1px solid rgba(0,0,
   --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --mx-text-xs: 10.5px;
+  --mx-text-count: 11px;
   --mx-text-sm: 11.5px;
   --mx-text-md: 13px;
   --mx-text-lg: 14px;
@@ -6160,9 +6203,13 @@ img.dk, img.nt-disk, img.pd, img[src*="data-sign"] { border: 1px solid rgba(0,0,
   .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
 }
 
-/* As in Plugins, tabs and search move and zoom with the canvas content. */
+/* Directory search moves and zooms with the canvas content. */
 .directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
 .directory-toolbar .tabs button { flex: 0 0 auto; }
+
+/* Core shell pills keep the established administration type sizes. */
+.device .mx-layer-pill.with-labels { --mx-pills-text-size: var(--mx-text-lg); --mx-pills-count-size: var(--mx-text-count); }
+@media (max-width: 520px) { .device .mx-shell:has(.mx-layer-pill) .mx-filters { top: 72px; } }
 
 .device .mx-actions { position: absolute; top: 64px; right: 16px; z-index: 10; display: flex; gap: 8px; }
 .device.phone .mx-actions { position: absolute; top: auto; bottom: 56px; }
@@ -6184,6 +6231,22 @@ img.dk, img.nt-disk, img.pd, img[src*="data-sign"] { border: 1px solid rgba(0,0,
 
 .mx-button.mx-action { box-shadow: var(--mx-shadow-float); }
 
+/* Production rendering for the core shell layer and page-choice controls. */
+.mx-pills { display: inline-flex; align-items: center; gap: var(--mx-space-1); padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); box-shadow: var(--mx-shadow-float); width: fit-content; }
+.mx-pills > button { flex: 0 0 auto; height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-family: inherit; font-size: var(--mx-pills-text-size, var(--mx-text-md)); font-weight: 400; line-height: 1.5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); white-space: nowrap; }
+.mx-pills > button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-pills > button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-pills > button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-pills .mx-count { font-size: var(--mx-pills-count-size, var(--mx-text-xs)); font-weight: var(--mx-weight-bold); opacity: 0.8; }
+.mx-pills .mx-count:empty { display: none; }
+@media (max-width: 600px) { .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-pills[role="tablist"] > button { min-height: var(--mx-action-height-phone); }
+
+.mx-layer-pill { top: var(--mx-space-5); left: 50%; transform: translateX(-50%); border-radius: var(--mx-radius-round); }
+.device .mx-layer-pill { position: absolute; z-index: 30; }
+.device.phone .mx-layer-pill.with-labels > button { min-height: var(--mx-action-height-phone); }
+.device .mx-panel:has(> .mx-layer-pill) > .mx-panel-own { box-sizing: border-box; padding: 72px 24px 24px; }
+.device .admin-mockup-canvas { position: absolute; inset: 0; overflow: auto; padding: 72px 24px 24px; }
 /* END shared administration canvas */
 /* Shared disk frame: white separation, then the production outer contour. */
 .avatar, .av, .mx-avatar, .mx-tip-avatar { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }

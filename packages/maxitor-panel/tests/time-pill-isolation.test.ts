@@ -6,7 +6,7 @@ test("page layers never style the core time pill", () => {
  const shell = read("../src/shell/shell.css");
  const layers = read("../src/shell/Layers.tsx");
  assert.doesNotMatch(shell, /\.mx-pill\b/);
- assert.match(layers, /className="mx-layer-pill"/);
+ assert.match(layers, /className=\{`mx-layer-pill /);
  assert.match(shell, /\.mx-layer-pill \{ top:.*left: 50%; transform: translateX\(-50%\)/);
  const scale = read("../../maxitor/maxitor-core/web/components/scale/scale.css");
  assert.match(scale, /\.mx-scale \{ position: relative;/);
