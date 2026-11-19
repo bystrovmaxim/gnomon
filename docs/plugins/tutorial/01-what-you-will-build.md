@@ -34,7 +34,9 @@ A plugin is used by people, so give the organization a second one: Settings → 
 The installer's log shows the frontend's build before the deployment:
 
 ```text
-The frontend of io.github.bystrovmaxim.notes 0.12.0 built for the core 4.7.0 as maxitor-plugin/notes_0_12_0-frontend:<sha12>-4.7.0
+The frontend of io.github.bystrovmaxim.notes 0.15.1 built for the core 4.12.1 as maxitor-plugin/notes_0_15_1-frontend:<sha12>-4.12.1
 ```
+
+The versions in that example are the template and core used here; your log names the versions you built. The optional page-pill API in chapter 8 needs core 4.12.1 or later.
 
 The next chapters build exactly that.

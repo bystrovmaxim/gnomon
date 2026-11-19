@@ -1,5 +1,9 @@
 # Changelog
 
+## [2026-11-19] — Page pills and canvas content in the plugin tutorial
+
+Chapter 8 now shows how a plugin declares Cards/Table pills through `PanelPage.layers` and reads the choice from the address. It explains which controls stay in the page shell during pan and zoom, which elements move with the canvas, and why a shared button beside a card stays beside that card. The example covers defaults, counts, keyboard selection, phones and the core version that supplies the API. The surrounding chapters explain how those choices preserve past moments and A/B comparisons, and how to test their placement with real gestures. The tutorial's API quotation is checked against the source; its complete example was typechecked, including a deliberately invalid parameter. ([#132](https://github.com/bystrovmaxim/gnomon/issues/132))
+
 ## [2026-11-12] — One time scale for every page
 
 Every page in Maxitor could already be read at a past moment, but only by writing the moment into the address. Now there is a control for it: the **pill** on the right of the top row. It says which moment the screen shows — "Now", or a date and time — and its arrows step to the previous or the next change. Clicking it opens a card with the page's history: bars of what changed in each stretch of time, green for added, amber for changed, red for removed, and above them points for what mattered, such as each publication of the notes. A click anywhere on the scale shows the whole screen at that moment, kept to the minute, or to the second when zoomed in; a click on a point shows the moment it stands for; "Now" brings the screen back. The green dashed line is now, and what lies right of it is hatched: the future cannot be chosen. The scale zooms like a map — drag across a stretch, the wheel, a pinch — from months down to seconds.

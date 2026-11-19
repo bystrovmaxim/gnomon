@@ -4,6 +4,8 @@
 
 The core has one time control for every page: the pill on the right of the top row, and the card hanging from it with the time scale. The scale draws the history of the open page — bars of its changes, points of its milestones — from what the page tells it. In this chapter Published tells it.
 
+This is the core's Now/history control. It is separate from the page-view pills declared through `PanelPage.layers` in [chapter 8](08-the-page.md#create-page-pills-through-the-core-api); those choose a view without replacing the time control or changing the selected moments. Keep `history` and `layers` on the same `PanelPage` when a page offers both.
+
 ## The page sets the scale up
 
 A page gives its history to `PanelPage` in its code. The template keeps it in one file:
@@ -109,4 +111,4 @@ Its milestone is of the kind `rollback`, a red point; its card says which revisi
 
 ## Check it
 
-Publish twice, open Published and the pill: two purple points, the bars of what each publication changed, and the comment of the one in force under the scale. Click v1: the page shows v1's notes, read only, and "Roll back to v1" stands in its corner. Roll back: the screen returns to now, and a red v3 stands after v1 and v2. Click between two points: the page shows that moment, and no Roll back is offered.
+Publish twice, open Published and the time pill: two purple points and the bars of what each publication changed appear on the scale. Hover a point to see its card; the legend and interaction help are behind the information control. Click v1: the page shows v1's notes, read only, and "Roll back to v1" stands in its corner. Roll back: the screen returns to now, and a red v3 stands after v1 and v2. Click between two points: the page shows that moment, and no Roll back is offered.

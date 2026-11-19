@@ -21,6 +21,8 @@ The core lays the panels out and tells each page its context with `panel.locatio
   const { side } = useMoment();
 ```
 
+Use the same list or card rendering as in the one-moment view, with change marking added. Declare page choices with `PanelPage.layers` as in [chapter 8](08-the-page.md#create-page-pills-through-the-core-api). Each visible panel renders its pills outside its own canvas transform. Changing `view` leaves the core's `at`, `from` and `mode` intact; do not write those parameters from the page. On a phone, the core's A/B switch selects the visible panel, while the page pills still select Cards/Table within the view.
+
 Published's server part reads the notes at both moments; the page compares them by note:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/notes/compare.ts -->
@@ -40,7 +42,7 @@ Each card carries `data-change` and `data-room-anchor="note:<id>"`. `@maxitor/pa
 
 ## The stepper, the card and the counts
 
-`ChangeStepper` walks the changes — Shift + ↑ ↓ from anywhere, the core passing them on as `panel.step` —, `DiffCard` shows what changed in the one it stands on, and `useCounts` sends the pill its "+2 −1 ~1":
+`ChangeStepper` walks the changes — Shift + ↑ ↓ from anywhere, the core passing them on as `panel.step` —, `DiffCard` shows what changed in the one it stands on, and `useCounts` sends the core time pill its "+2 −1 ~1". These comparison counts are separate from the optional counts in `layers.options`:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/published/PublishedView.tsx -->
 ```tsx
@@ -68,3 +70,5 @@ In Side by side, B's head has **Track**. What the pointer is on in one panel is 
 ## Check it
 
 On Published choose Diff with A before the last publication: the notes it changed glow amber, the new ones green, the removed ones stand faint and red, the rest is faded — point at a faded note and it is drawn whole —, and the pill counts them. Press Shift + ↓: the stepper stands on the first change and its card opens beside it. Choose Side by side: point at a note in B that A did not have — A says "Not in A".
+
+If your page adopts the chapter 8 pills, switch Cards/Table in Diff and Side by side and verify that the comparison moments are preserved. Pan and zoom each visible canvas on desktop and phone: content moves, and that panel's pills remain fixed. On the phone, check both A and B through the core switch.

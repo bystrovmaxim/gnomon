@@ -17,7 +17,9 @@ When anyone in the organization writes, "now" moves, and Maxitor tells the open 
   );
 ```
 
-`router.refresh()` reads the server part again with the same address; the client keeps the ids it held, and `newSince` gives the ones that are new. A page with `at` never reads again: its answer cannot change.
+`router.refresh()` reads the server part again with the same address; the client keeps the ids it held, and `newSince` gives the ones that are new. A page with an explicit `at` does not refresh in response to a later watermark: its answer at that moment cannot change. Choosing another view or filter can still read that same moment with different page parameters.
+
+The shell's view pills and filters remain usable in the past. Choosing Table in the example from [chapter 8](08-the-page.md#create-page-pills-through-the-core-api) changes `view`, while the core retains `at`. Do not clear the moment or call `useBackToNow()` merely to switch a view. Ordinary writing actions disappear in history; choosing a presentation is not a write.
 
 ## Check it
 

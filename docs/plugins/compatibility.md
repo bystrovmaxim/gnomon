@@ -1,9 +1,10 @@
 # Which version brings what
 
-A plugin says the cores it runs with in `requires.maxitor` of its passport and is built with the core's `@maxitor/panel`; [the plugin concept](concept.md), section 3.3, explains the check. This page names the versions that bring the time scale and each of its parts, so an author knows the lower bound to write.
+A plugin says the cores it runs with in `requires.maxitor` of its passport and is built with the core's `@maxitor/panel`; [the plugin concept](concept.md), section 3.3, explains the check. This page names the versions that bring the shell and history APIs, so an author knows the lower bound to write.
 
 | Part | Brought by | What a plugin writes |
 |---|---|---|
+| Page-view pills with a custom query parameter, accessible label and optional icons | Maxitor 4.12.1, `@maxitor/panel` 0.8.0 | `PanelPage.layers` with `param`, `label`, `default` and `options`; `requires.maxitor: ">=4.12.1,<5"`; the shell keeps the pills outside the canvas transform ([tutorial example](tutorial/08-the-page.md#create-page-pills-through-the-core-api)) |
 | The time scale: the pill, its card, a moment kept to the minute or the second, "now" and the hatched future | Maxitor 4.11.0 | nothing: every page has it |
 | History format 2: `kinds`, `small`, `flag`, `actions` | Maxitor 4.11.0, `maxitor-plugin-sdk` 1.9.0 (`history-2.schema.json`) | `history` in `PanelPage`; `requires.maxitor: ">=4.11,<5"` |
 | Bars from the reading action over a stretch | Maxitor 4.11.0 | the reading action mounted at `history/<action>` |

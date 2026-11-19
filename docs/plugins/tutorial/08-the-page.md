@@ -2,7 +2,100 @@
 
 **Builds on**: [7. A place in the tree](07-a-place-in-the-tree.md). **Next**: [9. Now and the past](09-now-and-the-past.md).
 
-Your page is a Next.js application under `/p/<name>`, shown in Maxitor's right panel. It draws with `@maxitor/panel`: the shell `PanelPage` draws its controls, and everything the page shows lies on the canvas — cards, a table, a revision — and moves and zooms with it. Nothing of a page is pinned to the screen.
+Your page is a Next.js application under `/p/<name>`, shown in Maxitor's right panel. `PanelPage` draws the controls declared through its API outside the canvas transform. The page puts its content — cards, a table, a revision — inside `MaxitorCanvas`. Moving or zooming that content leaves the shell controls in place.
+
+## What stays in place
+
+"Fixed" means fixed within the page's panel. In Side by side, each panel has its own shell and canvas; the core still owns the surrounding tree, header and Now control.
+
+| Element | How the page supplies it | What happens when the canvas moves or zooms |
+|---|---|---|
+| Page pills | `PanelPage.layers` | Stay at the panel's top centre, with the same text size |
+| Filters | `PanelPage.filters` | Stay in the shell; on a phone they open from its filter button |
+| Zoom controls and view options in the bottom bar | `MaxitorCanvas` and `PanelPage.bar` | Stay in the shell's bottom bar |
+| Page-wide actions | `PanelPage.actions` | Stay at the top right, or bottom right on a phone; ordinary writing actions are shown only at Now |
+| Cards, tables, their headings, and a search field rendered in the content | Children of `MaxitorCanvas` | Move and zoom with the canvas |
+| An action beside a record | `Button` inside that record | Moves with its record; the shared appearance does not change its placement |
+| An editing dialog | `Dialog` from `@maxitor/panel` | Its portal stays outside the transformed scene; on a phone it is a sheet |
+
+A search declared as a text filter belongs to the shell. A search input rendered above a table belongs to the canvas. Choose the appropriate API for its meaning; do not fix a content element by adding `position: fixed` or by raising its z-index. The plugin checker rejects that attempt to draw over the shell.
+
+## Create page pills through the core API
+
+The template currently offers Cards/Table in the bottom bar. If your page needs that choice as top-centre pills, replace the corresponding bottom-bar choice with `PanelPage.layers`; do not render both selectors for the same parameter. This API is available with **Maxitor 4.12.1 / `@maxitor/panel` 0.8.0**. A plugin using it sets `requires.maxitor: ">=4.12.1,<5"`; see [compatibility](../compatibility.md).
+
+These are the API's own fields:
+
+<!-- quote: packages/maxitor-panel/src/shell/types.ts -->
+```ts
+export type Layers = {
+  default: string;
+  options: LayerOption[];
+  /** The shell owns this address parameter; omitted for the standard drawing layer. */
+  param?: string;
+  /** Accessible name of this mutually exclusive page choice. */
+  label?: string;
+};
+```
+
+The following client component is an optional adaptation, not a quotation of the template. It receives the two renderings of the same notes, their count, the existing page history and the bounds of the selected rendering. Place it under the `PanelDocument` from chapter 7. Keep data reads at the moment described in chapter 9.
+
+<!-- example: core-pill-page -->
+```tsx
+"use client";
+
+import type { ReactNode } from "react";
+import {
+  MaxitorCanvas,
+  PanelPage,
+  usePanelQuery,
+  type Bounds,
+  type PageHistory,
+} from "@maxitor/panel";
+
+export function NotesViews({ cards, table, count, bounds, history }: {
+  cards: ReactNode;
+  table: ReactNode;
+  count?: number;
+  bounds: Bounds;
+  history: PageHistory;
+}) {
+  const { view = "cards" } = usePanelQuery();
+  return (
+    <PanelPage
+      title="Notes"
+      history={history}
+      layers={{
+        param: "view",
+        label: "Note views",
+        default: "cards",
+        options: [
+          { value: "cards", label: "Cards", count },
+          { value: "table", label: "Table", count },
+        ],
+      }}
+    >
+      <MaxitorCanvas bounds={bounds} initialCamera={{ x: 24, y: 72, zoom: 1 }}>
+        {view === "table" ? table : cards}
+      </MaxitorCanvas>
+    </PanelPage>
+  );
+}
+```
+
+For content beginning at canvas coordinates `(0, 0)`, this initial camera leaves space under the pills and starts at 100%. Supplying `initialCamera` disables automatic fitting when content changes; the person can still move, zoom and Fit. Pass bounds that describe the actual content. If you add filters or other shell controls, allow space for them too. Without `initialCamera`, the canvas fits its bounds with the shell's reserved space taken into account.
+
+The shell creates the pill group, handles clicks and keys, and writes `view` into the page address. Choosing **Table** produces `?view=table`; choosing **Cards** removes that default parameter. Other address parameters remain. The component reads the same address with `usePanelQuery()`; it needs no separate selected-tab state or click handler. Reload, Back and a shared link restore the choice. An unavailable choice falls back to the declared default. Without `param`, the shell writes `layer`; without `label`, its accessible name is Layer. The core's `at`, `from`, `mode` and `_…` parameters are not available for a page to write.
+
+`options` supplies `value`, `label`, optional `icon` and optional `count`. Use the panel's icon names when an icon is needed. A count of zero is displayed; an omitted count stays empty. Here both views show the same notes, so their counts are the same. Do not import the internal `Pills` renderer or put a lookalike selector inside `MaxitorCanvas`: ownership, placement and URL navigation come from `PanelPage.layers`.
+
+On a phone, text-only choices such as Cards/Table keep their labels and have touch targets at least 44px high. Icon-bearing drawing layers use the core's compact icon-and-count layout. Left/Right select the neighbouring pill, Home/End select the first/last, and keyboard focus follows the selection. Panning and zooming change the content's scale, never the pills' coordinates or text size.
+
+The choice still works in the past and in A/B: it changes the view, not the selected moments. Keep `history` on `PanelPage`, read each panel's moment with the APIs in chapters 9 and 11, and let the core retain the time parameters.
+
+## Buttons keep their meaning
+
+Register an action for the whole page through `PanelPage.actions`, as the template does below. Use `Button` from `@maxitor/panel` beside a card or inside a form. `variant="primary"` gives a main action the common dark appearance; `type="submit"` submits a form, while the default type is `button`. Sharing the button component does not move a card's action into the shell. Put editing forms in the core's `Dialog` so canvas zoom does not resize their fields and text. See the [button API](../../../packages/maxitor-panel/README.md#shared-action-buttons).
 
 ## Two pages, one published state, a draft each
 
@@ -75,3 +168,10 @@ Published then shows the new revision and marks every note waiting in the person
 3. Publish a change with a title and a comment: Published shows `v1`; the draft is empty.
 4. Open Published and press Edit on a note: Draft opens with the editor; Cancel writes nothing, Save puts the change in the draft.
 5. Press Delete on a published note: Published marks it "In your draft: deleted", and the draft card's Revert puts it back as it was.
+
+For the optional pill component above:
+
+1. Choose Table and inspect the address: it has `view=table`. Choose Cards: `view` is absent. Reload and use Back; the selected pill and content follow the address.
+2. Move the canvas horizontally and vertically, then zoom in and out. The content must move and scale, while the pills keep their screen coordinates and text size. Repeat with touch at 375px width.
+3. Open a past moment, Diff and Side by side. Change the view and check that the selected moments stay the same. Move and zoom each visible canvas; its pills remain in its shell.
+4. Exercise Left/Right/Home/End. Check a zero count and an omitted count. Open a core dialog after zooming and verify that its type and controls have not scaled with the scene. [Chapter 13](13-tests.md) describes the regression checks.

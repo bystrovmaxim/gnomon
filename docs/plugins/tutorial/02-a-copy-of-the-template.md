@@ -59,6 +59,8 @@ database:
 - `backend.app` is the factory Maxitor's runner starts; `frontend.source` is where the frontend's sources travel inside the wheel: the installer builds them with the core's own `@maxitor/panel` before it deploys the version;
 - there is no `roles` section: a plugin works with the core's roles (chapter 6).
 
+The lower bound must include every core API your pages use. The template itself supports Maxitor 4.12.0; adopting the optional page-pill example in [chapter 8](08-the-page.md#create-page-pills-through-the-core-api) requires `requires.maxitor: ">=4.12.1,<5"`, which supplies panel 0.8.0. Change that bound in your copy and build against the chosen core; changing only the frontend's panel dependency does not upgrade the installer's core. [Compatibility](../compatibility.md) lists the relevant versions.
+
 ## Check it
 
 ```bash
