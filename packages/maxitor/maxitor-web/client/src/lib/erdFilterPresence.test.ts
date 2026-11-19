@@ -95,13 +95,15 @@ describe("the disk of a status", () => {
   const svg = (uri: string) => decodeURIComponent(uri);
 
   it("gives unchanged its sign, whatever paints", () => {
-    expect(svg(changeDiskUri("unchanged"))).toContain(">=<");
+    expect(svg(changeDiskUri("unchanged"))).toContain('data-sign="="');
+    expect(svg(changeDiskUri("unchanged"))).toContain("<path ");
+    expect(svg(changeDiskUri("unchanged"))).not.toContain("<text");
     expect(changeDiskUri("unchanged", false)).toBe(changeDiskUri("unchanged"));
   });
 
   it("greys a change only when something else paints, and keeps its sign", () => {
     expect(svg(changeDiskUri("added"))).toContain("#16a34a");
     expect(svg(changeDiskUri("added", false))).not.toContain("#16a34a");
-    expect(svg(changeDiskUri("added", false))).toContain(">+<");
+    expect(svg(changeDiskUri("added", false))).toContain('data-sign="+"');
   });
 });

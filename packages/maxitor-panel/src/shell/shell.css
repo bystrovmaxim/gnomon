@@ -7,15 +7,15 @@
 .mx-shell-content.document.with-bar { padding-bottom: calc(var(--mx-control) + var(--mx-space-5) * 2); }
 .mx-icon { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
 
-.mx-filters, .mx-pill, .mx-bar, .mx-actions { position: fixed; z-index: var(--mx-layer-shell); }
-.mx-pill, .mx-bar { display: inline-flex; align-items: center; gap: var(--mx-space-1); }
-.mx-pill { padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); box-shadow: var(--mx-shadow-float); }
+.mx-filters, .mx-layer-pill, .mx-bar, .mx-actions { position: fixed; z-index: var(--mx-layer-shell); }
+.mx-layer-pill, .mx-bar { display: inline-flex; align-items: center; gap: var(--mx-space-1); }
+.mx-layer-pill { padding: var(--mx-space-1); background: var(--mx-surface-glass); backdrop-filter: var(--mx-blur); border: var(--mx-line-width) solid var(--mx-line); box-shadow: var(--mx-shadow-float); }
 
 /* the layer pills: top centre */
-.mx-pill { top: var(--mx-space-5); left: 50%; transform: translateX(-50%); border-radius: var(--mx-radius-round); }
-.mx-pill button { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); }
-.mx-pill button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
-.mx-pill button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
+.mx-layer-pill { top: var(--mx-space-5); left: 50%; transform: translateX(-50%); border-radius: var(--mx-radius-round); }
+.mx-layer-pill button { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-round); background: transparent; color: var(--mx-muted); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); }
+.mx-layer-pill button.on { background: var(--mx-ink); color: var(--mx-on-ink); }
+.mx-layer-pill button:not(.on):hover { background: var(--mx-hover); color: var(--mx-ink); }
 .mx-count { font-size: var(--mx-text-xs); font-weight: var(--mx-weight-bold); opacity: 0.8; }
 .mx-count:empty { display: none; }
 
@@ -36,8 +36,6 @@
 .mx-filter-row.field { cursor: text; }
 button.mx-filter-row.field { cursor: pointer; }
 .mx-disk.mark { background: var(--mx-surface); color: var(--mx-muted); }
-/* A status disk's sign — + − ~ = — drawn as maxitor-web's statusDiskUri draws it: white, bold, 14 of 24 units. */
-.mx-disk.sign { font-size: var(--mx-text-sign); font-family: sans-serif; line-height: 1; }
 .mx-filter-row.field.on .mx-disk.mark, .mx-filter-row.field.open .mx-disk.mark { color: var(--mx-ink); border-color: var(--mx-muted); }
 .mx-filter-input { flex: 1; min-width: 0; height: var(--mx-badge); border: 0; border-bottom: var(--mx-line-width) solid transparent; padding: 0; font: inherit; font-size: var(--mx-text-sm); color: var(--mx-ink); background: transparent; outline: none; }
 .mx-filter-input::placeholder { color: var(--mx-faint); }
@@ -71,7 +69,7 @@ button.mx-filter-row.field { cursor: pointer; }
 .mx-action { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-md); background: var(--mx-ink); color: var(--mx-on-ink); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); box-shadow: var(--mx-shadow-float); }
 
 @media (max-width: 520px) {
-  .mx-pill-label { display: none; }
+  .mx-layer-pill-label { display: none; }
   .mx-filters { width: auto; max-height: none; overflow: visible; padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; }
   .mx-filters:not(.folded) .mx-filters-body { box-sizing: border-box; }
   .mx-filters-button { display: inline-flex; align-items: center; gap: var(--mx-space-3); height: var(--mx-control); padding: 0 var(--mx-space-5); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-round); background: var(--mx-surface); font-size: var(--mx-text-md); cursor: pointer; }
@@ -95,3 +93,7 @@ button.mx-filter-row.field { cursor: pointer; }
 /* the empty state: a dashed card in the content field, as the mockup's "No notes yet" */
 .mx-empty-state { box-sizing: border-box; max-width: var(--mx-empty-width); margin: var(--mx-space-7) auto; background: var(--mx-surface); border: var(--mx-dashed-width) dashed var(--mx-line-3); border-radius: var(--mx-radius-lg); padding: var(--mx-empty-pad-y) var(--mx-empty-pad-x); text-align: center; color: var(--mx-muted); font-size: var(--mx-text-md); line-height: 1.55; }
 .mx-empty-state b { display: block; color: var(--mx-ink-2); font-size: var(--mx-text-lg); margin-bottom: var(--mx-space-2); }
+
+/* The graph viewer's SVG owns the disk and sign; CSS supplies only its frame and size. */
+.mx-status-disk { display: inline-flex; flex-shrink: 0; box-sizing: content-box; border: var(--mx-line-width) solid var(--mx-disk-line); border-radius: 50%; background: var(--mx-surface); }
+.mx-status-disk > svg { display: block; width: 100%; height: 100%; }

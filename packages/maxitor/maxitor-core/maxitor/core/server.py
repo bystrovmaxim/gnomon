@@ -20,10 +20,24 @@ from maxitor.core.actions.account import (
     AcceptPolicyAction,
     CreateAccountAction,
     CurrentUserAction,
+    KeepLastPlaceAction,
     RenewSessionAction,
     SignOutAction,
 )
+from maxitor.core.actions.administration import ReadAdministrationAction, ReadAdministrationHistoryAction
 from maxitor.core.actions.email_sign_in import ConfirmEmailAction, SignInWithPasswordAction, StartSignUpAction
+from maxitor.core.actions.invitation_choice import (
+    AcceptInvitationAction,
+    DeclineInvitationAction,
+    ListAccountInvitationsAction,
+)
+from maxitor.core.actions.invitations import (
+    ListMyInvitationsAction,
+    ResendInvitationAction,
+    SendInvitationAction,
+    WithdrawInvitationAction,
+)
+from maxitor.core.actions.organization_settings import ReadOrganizationSettingsAction, SetWhoMayInviteAction
 from maxitor.core.actions.organizations import (
     CheckAddressCodeAction,
     OpenOrganizationAction,
@@ -35,6 +49,13 @@ from maxitor.core.actions.password_reset import RequestPasswordResetAction, Rese
 from maxitor.core.actions.provider_sign_in import FinishSignInAction, StartSignInAction
 from maxitor.core.actions.region import SignInOptionsAction
 from maxitor.core.actions.sign_ins import LinkEmailAction, LinkSignInAction, ListSignInsAction, UnlinkSignInAction
+from maxitor.core.actions.users import (
+    BlockUserAction,
+    ListUsersAction,
+    SetAdministratorAction,
+    SetJobTitleAction,
+    UnblockUserAction,
+)
 from maxitor.core.auth_coordinator import CoreAuthCoordinator
 from maxitor.core.errors import CoreRefusalError
 from maxitor.core.gateways.geoip import GEOIP_CONNECTION_KEY, GeoIpGateway
@@ -86,6 +107,7 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/session/accept-policy", AcceptPolicyAction),
     ("post", "/api/v1/sign-out", SignOutAction),
     ("get", "/api/v1/me", CurrentUserAction),
+    ("post", "/api/v1/me/place", KeepLastPlaceAction),
     ("get", "/api/v1/sign-ins", ListSignInsAction),
     ("post", "/api/v1/sign-ins/link", LinkSignInAction),
     ("post", "/api/v1/sign-ins/email", LinkEmailAction),
@@ -94,6 +116,22 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/organizations", RegisterOrganizationAction),
     ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
     ("get", "/api/v1/organizations/{code}/watermark", ReadWatermarkAction),
+    ("get", "/api/v1/organizations/{code}/administration", ReadAdministrationAction),
+    ("get", "/api/v1/organizations/{code}/administration/history", ReadAdministrationHistoryAction),
+    ("get", "/api/v1/organizations/{code}/settings", ReadOrganizationSettingsAction),
+    ("get", "/api/v1/organizations/{code}/users", ListUsersAction),
+    ("post", "/api/v1/organizations/users/block", BlockUserAction),
+    ("post", "/api/v1/organizations/users/unblock", UnblockUserAction),
+    ("post", "/api/v1/organizations/users/administrator", SetAdministratorAction),
+    ("post", "/api/v1/organizations/users/job-title", SetJobTitleAction),
+    ("post", "/api/v1/organizations/settings/who-may-invite", SetWhoMayInviteAction),
+    ("post", "/api/v1/organizations/invitations", SendInvitationAction),
+    ("get", "/api/v1/organizations/{code}/invitations/mine", ListMyInvitationsAction),
+    ("post", "/api/v1/organizations/invitations/resend", ResendInvitationAction),
+    ("post", "/api/v1/organizations/invitations/withdraw", WithdrawInvitationAction),
+    ("get", "/api/v1/invitations", ListAccountInvitationsAction),
+    ("post", "/api/v1/invitations/accept", AcceptInvitationAction),
+    ("post", "/api/v1/invitations/decline", DeclineInvitationAction),
     ("get", "/api/v1/core/passport", CorePassportAction),
     ("get", "/api/v1/organizations/{code}/plugins", ListPluginsAction),
     ("get", "/api/v1/organizations/{code}/plugins/{passport_id}", PluginDetailsAction),
@@ -168,7 +206,9 @@ def create_app(
         WHEELS_CONNECTION_KEY: WheelStorage(settings.wheel_store, settings.wheel_max_bytes),
         GEOIP_CONNECTION_KEY: GeoIpGateway(settings.geoip_database),
         MAIL_CONNECTION_KEY: mail_gateway(settings),
-        TOKENS_CONNECTION_KEY: SessionTokensController(settings.session_secret, settings.policy_version),
+        TOKENS_CONNECTION_KEY: SessionTokensController(
+            settings.session_secret, settings.policy_version, settings.invitation_days
+        ),
     }
     if PLUGIN_TOKENS_CONNECTION_KEY not in given:
         if settings.gateway_key_file is None:

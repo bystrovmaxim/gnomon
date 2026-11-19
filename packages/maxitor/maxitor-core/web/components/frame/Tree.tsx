@@ -31,6 +31,8 @@ function placeOf(node: TreeNode, scope: Scope): string {
 function NodeIcon({ name }: { name: string }) {
   if (name === "settings") return <TreeMark.settings />;
   if (name === "plugins" || name === "puzzle") return <TreeMark.plugins />;
+  if (name === "organization") return <TreeMark.organization />;
+  if (name === "users") return <TreeMark.users />;
   return <TreeMark.page />;
 }
 
@@ -267,11 +269,11 @@ export function Tree({
           <span className="mx-level-title">{level.title}</span>
         </div>
       ) : null}
-      <div className="mx-tree-scroll" role="tree" aria-label={level ? level.title : "The organization's tree"}>
+      <div className={`mx-tree-scroll${level ? "" : " mx-tree-root"}`} role="tree" aria-label={level ? level.title : "The organization's tree"}>
         {body.length === 0 ? <div className="mx-tree-empty">Nothing here yet.<br />{level ? "This node holds nothing yet." : "Plugins add their sections to this tree."}</div> : null}
         {body.map((node) => (node.each ? list(node, scope, 0) : ordinary(node, scope, 0)))}
       </div>
-      {foot.length ? <div className="mx-tree-foot" role="tree" aria-label="Settings">{foot.map((node) => ordinary(node, scope, 0))}</div> : null}
+      {foot.length ? <div className="mx-tree-foot mx-tree-root" role="tree" aria-label="Settings">{foot.map((node) => ordinary(node, scope, 0))}</div> : null}
     </>
   );
 }

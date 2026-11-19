@@ -23,5 +23,8 @@ export { BADGE_ICONS, type Bar, type BadgeIcon, type CardBlock, type Chip, type 
 export { ChangeStepper } from "./compare/ChangeStepper";
 export { DiffCard, shownValue, type ChangedPart, type Difference, type DiffTarget } from "./compare/DiffCard";
 export { StatusIcon } from "./compare/StatusIcon";
+export { StatusDisk } from "./compare/StatusDisk";
 export { VersionsBetween, type Between } from "./compare/VersionsBetween";
-export { CHANGE_SIGN, changeLines, countsOf, nextChange, stepperText, type Change, type ChangeEntry, type ChangeLine } from "./compare/changes";
+export { CHANGE_SIGN, changeFilterRows, changeLines, countsOf, nextChange, stepperText, type Change, type ChangeEntry, type ChangeLine } from "./compare/changes";
+
+export { Button, type ButtonProps } from "./content/Button";

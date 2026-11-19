@@ -114,6 +114,12 @@ def test_one_live_row_per_organization_and_plugin() -> None:
     assert "CREATE UNIQUE INDEX organization_plugin_one_live ON organization_plugin (organization_id, plugin_id) WHERE state <> 'removed';" in sql
 
 
+def test_a_user_is_active_or_blocked_and_stays_one_per_organization_and_account() -> None:
+    sql = "".join(f.read_text(encoding="utf-8") for f in sorted((MIGRATIONS / "organization").glob("*.sql")))
+    assert "CONSTRAINT user_status CHECK (status IN ('active', 'blocked', 'removed'))" in sql
+    assert "DROP CONSTRAINT user_once_per_account" not in sql
+
+
 def test_identifier_quotes() -> None:
     assert identifier("organization") == '"organization"'
     assert identifier('we"ird') == '"we""ird"'
@@ -130,9 +136,12 @@ async def test_the_migrator_runs_platform_then_organization_under_their_schemas(
     ran = await apply_migrations(storage, CoreSchemas())
     assert ran == [
         "platform/0001_platform.sql",
+        "platform/0002_account_place.sql",
         "organization/0001_organization.sql",
         "organization/0002_plugin_functions.sql",
         "organization/0003_organization_clock.sql",
+        "organization/0004_invitations.sql",
+        "organization/0005_job_title.sql",
         "plugins/0001_plugins.sql",
         "plugins/0002_plugin_processes.sql",
         "plugins/0003_plugin_nodes.sql",
@@ -143,11 +152,10 @@ async def test_the_migrator_runs_platform_then_organization_under_their_schemas(
         "plugins/0008_a_node_opens.sql",
     ]
     paths = [q for q in connection.queries() if q.startswith("SET LOCAL search_path")]
-    assert paths[0] == 'SET LOCAL search_path TO "platform", "extensions"'
-    assert paths[1] == 'SET LOCAL search_path TO "platform", "extensions"'
-    assert paths[2] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
-    assert paths[3] == paths[4] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
-    assert paths[5] == paths[6] == paths[7] == paths[8] == paths[9] == paths[10] == paths[11] == 'SET LOCAL search_path TO "plugins", "organization", "platform", "extensions"'
+    assert paths[0] == paths[1] == paths[2] == 'SET LOCAL search_path TO "platform", "extensions"'
+    assert paths[3] == paths[4] == paths[5] == paths[6] == paths[7] == 'SET LOCAL search_path TO "organization", "platform", "extensions"'
+    assert all(p == 'SET LOCAL search_path TO "plugins", "organization", "platform", "extensions"' for p in paths[8:16])
+    assert len(paths) == 16
     recorded = [params for query, params in connection.statements if query.startswith("INSERT INTO migration")]
     assert [name for name, _digest in recorded] == ran
 

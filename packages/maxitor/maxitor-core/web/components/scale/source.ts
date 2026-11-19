@@ -56,3 +56,11 @@ export function gatewaySource(owner: string, code: string, history: PageHistory,
       : null,
   };
 }
+
+/** Administration uses the same bar contract over its own versioned storage. */
+export function administrationSource(code: string, path: string, query: Record<string, string>): HistorySource {
+  const section = path.endsWith("/users") ? ((query.tab === "invitations" || query.tab === "history") ? "invitations" : "users") : path.split("/").at(-1)!;
+  return { key: BarCache.keyOf("core", code, "administration_history", { section }),
+    bars: async (from, to, width) => barsOf(await ask(`/api/v1/organizations/${encodeURIComponent(code)}/administration/history?${new URLSearchParams({ section, from_at: from, to_at: to, width: String(width) })}`)),
+    milestones: null, card: null };
+}

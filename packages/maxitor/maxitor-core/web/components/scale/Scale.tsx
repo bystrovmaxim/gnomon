@@ -6,6 +6,7 @@
 // the page's memory below the watermark. A click outside the card, a click into the page, or Escape closes it.
 "use client";
 
+import { insideScale } from "./selection";
 import type { Bar, CardBlock, Milestone } from "@maxitor/panel/history";
 import { acceptMilestones, inForce } from "@maxitor/panel/history";
 import type { PageHistory } from "@maxitor/panel/protocol";
@@ -13,8 +14,8 @@ import { PHONE_MEDIA } from "@maxitor/tokens";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import "./scale.css";
-import { BarCache, chunksOf } from "@/components/scale/cache";
-import { barStep, clampView, domainOf, glide, presetView, type View } from "@/components/scale/geometry";
+import { BarCache, chunksOf, historyEnd } from "@/components/scale/cache";
+import { barStep, clampView, domainOf, glide, presetView, refreshedView, type View } from "@/components/scale/geometry";
 import { legendOf } from "@/components/scale/legendRows";
 import { Pill } from "@/components/scale/Pill";
 import { ScaleCard } from "@/components/scale/ScaleCard";
@@ -157,7 +158,7 @@ export function Scale({
       const coarse = (await ask(momentOf(now - 3 * 365 * 24 * 3600_000), watermark, COARSE))?.[0];
       if (!coarse || !live) return;
       const start = msOf(coarse.start);
-      const fine = (await ask(coarse.start, momentOf(Math.min(start + COARSE * 1000, now)), FINE))?.[0];
+      const fine = (await ask(coarse.start, historyEnd(start + COARSE * 1000, watermark), FINE))?.[0];
       if (live) setFirstBar(fine?.start ?? coarse.start);
     })().catch(() => undefined);
     return () => {
@@ -178,7 +179,7 @@ export function Scale({
   useEffect(() => {
     if (!open) return;
     const outside = (event: PointerEvent) => {
-      if (holder.current && event.target instanceof Node && !holder.current.contains(event.target)) setOpen(false);
+      if (holder.current && !insideScale(event, holder.current)) setOpen(false);
     };
     const blur = () => {
       if (document.activeElement instanceof HTMLIFrameElement) setOpen(false);
@@ -202,12 +203,15 @@ export function Scale({
     return () => observer.disconnect();
   }, [open]);
 
-  // Opening the card for the first time shows the whole history; later it shows what it showed, kept inside the history.
+  const viewedHistory = useRef<{ domain: View; now: number } | null>(null);
+  // New publications stay visible in All and at Now, including after reopening the card.
   useEffect(() => {
-    if (!open || !domain) return;
-    setView((was) => (was ? clampView(was, domain) : domain));
-    setTarget((was) => (was ? clampView(was, domain) : domain));
-  }, [domain, open]);
+    if (!open || !domain || now === null) return;
+    const previous = viewedHistory.current;
+    setView((was) => refreshedView(was, previous, domain, now, at === null));
+    setTarget((was) => refreshedView(was, previous, domain, now, at === null));
+    viewedHistory.current = { domain, now };
+  }, [at, domain, now, open]);
 
   // The glide towards the target, one step a frame.
   useEffect(() => {
@@ -223,22 +227,22 @@ export function Scale({
   const [, setRead] = useState(0);
   const shownView = view ?? domain;
   const step = shownView ? barStep(target ? target.to - target.from : shownView.to - shownView.from, width) : 60_000;
-  const chunks = useMemo(() => (shownView && now !== null ? chunksOf(shownView.from, shownView.to, now, step) : []), [now, shownView, step]);
+  const chunks = useMemo(() => (shownView && watermark ? chunksOf(shownView.from, shownView.to, watermark, step) : []), [watermark, shownView, step]);
   useEffect(() => {
-    if (!open || !source?.bars || now === null) return;
+    if (!open || !source?.bars || now === null || !watermark) return;
     const ask = source.bars;
     for (const chunk of chunks) {
-      const slot = `${source.key}|${step}|${chunk.index}|${now}`;
+      const slot = `${source.key}|${step}|${chunk.index}|${watermark}`;
       if (!cache.current.missing(source.key, step, chunk) || asking.current.has(slot)) continue;
       asking.current.add(slot);
-      void ask(momentOf(chunk.from), momentOf(Math.min(chunk.to, now)), step / 1000)
+      void ask(momentOf(chunk.from), historyEnd(chunk.to, watermark), step / 1000)
         .then((bars) => {
           if (bars) cache.current.put(source.key, step, chunk, bars, now);
           setRead((n) => n + 1);
         })
         .catch(() => undefined);
     }
-  }, [chunks, now, open, source, step]);
+  }, [chunks, now, open, source, step, watermark]);
   const bars: Bar[] | null = source?.bars ? cache.current.bars(source.key, step, chunks) : null;
 
   // The arrows step through the milestones, or through the bars' ends when the page has bars.
@@ -281,16 +285,17 @@ export function Scale({
     setTarget(presetView(span, at ? msOf(at) : null, now, domain));
   };
 
-  // A handle moved: the one moment, or A or B, never past now; A and B swap when A passes B.
+  // A handle moved: the one moment, or A or B, never past now; A and B exchange places when the selected boundary crosses the other.
   const comparing = mode !== "one" && from !== null;
   const choose = (time: number, handle: Handle) => {
     if (!watermark || now === null) return;
     const unit = unitOf(step);
     if (!comparing || handle === "one") return onChoose(chosenMoment(time, watermark, unit));
-    let a = handle === "a" ? time : msOf(from as string);
-    let b = handle === "b" ? time : at ? msOf(at) : now;
-    if (a > b) [a, b] = [b, a];
-    onRange({ from: momentOf(Math.min(a, now), unit), at: chosenMoment(b, watermark, unit) });
+    // Normalize only the moved endpoint: the other may be an exact publication date or live Now.
+    let a = handle === "a" ? chosenMoment(time, watermark, unit) : from;
+    let b = handle === "b" ? chosenMoment(time, watermark, unit) : at;
+    if (msOf(a ?? watermark) > msOf(b ?? watermark)) [a, b] = [b, a];
+    onRange({ from: a ?? watermark, at: b });
   };
   // A and B dragged together: the stretch between them moves whole, B never past now.
   const shift = (a: number, b: number) => {
@@ -334,7 +339,6 @@ export function Scale({
   const shownMoment = at ?? watermark;
   const current = milestones && shownMoment ? inForce(milestones, shownMoment) : null;
   const atA = milestones && comparing ? inForce(milestones, from as string) : null;
-  const between = milestones && comparing && shownMoment ? milestones.filter((milestone) => !milestone.opens && milestone.at > (from as string) && milestone.at <= shownMoment && milestone !== current) : [];
   const message = (milestone: Milestone | null, tag: "A" | "B" | null) => (
     <div className="mx-message" key={tag ?? "one"}>
       <b>
@@ -411,16 +415,6 @@ export function Scale({
             milestones && milestones.length ? (
               <>
                 <div className={`mx-messages${comparing ? " two" : ""}`}>{comparing ? [message(atA, "A"), message(current, "B")] : message(current, null)}</div>
-                {between.length ? (
-                  <div className="mx-between">
-                    <b>Between A and B</b>
-                    {between.map((milestone) => (
-                      <div key={milestone.id}>
-                        {milestone.ref} · {milestone.title}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
               </>
             ) : null
           }
@@ -433,6 +427,7 @@ export function Scale({
                 width={width}
                 now={now}
                 shown={at ? msOf(at) : now}
+                live={at === null}
                 against={comparing ? msOf(from as string) : null}
                 phone={phone}
                 bars={bars}

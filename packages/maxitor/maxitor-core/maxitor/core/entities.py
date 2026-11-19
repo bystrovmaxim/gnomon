@@ -177,14 +177,23 @@ class SignInAttemptCoreEntity(BaseCoreEntity):
 # ════════════════════════════════════════════════════════════════════════════
 
 
+@entity(description="Who may invite into an organization", domain=OrganizationDomain)
+class WhoMayInviteEnumEntity(BaseEnumEntity):
+    """The dictionary of the setting: any user of the organization, or its administrators only."""
+
+    ANY_USER = value(code="any_user", display_name="Any user of the organization")
+    ADMINISTRATORS = value(code="administrators", display_name="Administrators only")
+
+
 @entity(description="A tenant of Maxitor: its people and its work at /w/<code>", domain=OrganizationDomain)
 class OrganizationCoreEntity(BaseCoreEntity):
     """
     AI-CORE-BEGIN
     ROLE: The tenant every other piece of data belongs to.
-    CONTRACT: Created together with its first user, its administrator, in one change. Its users and boundaries
-        belong to it (composition).
+    CONTRACT: Created together with its first user, its administrator, in one change, letting any user invite.
+        Its users, invitations and boundaries belong to it (composition).
     INVARIANTS: Its code is unique across Maxitor and never changes. Organizations never see each other's data.
+        It always keeps at least one active administrator.
     AI-CORE-END
     """
 
@@ -193,11 +202,19 @@ class OrganizationCoreEntity(BaseCoreEntity):
     code: str = Field(
         description="The address code: lower-case ASCII letters, digits and hyphens, 2–63, not reserved, unique",
     )
+    who_may_invite: Annotated[AssociationOne[WhoMayInviteEnumEntity], NoInverse()] = Field(
+        description="Who may invite: any user of the organization, or administrators only; any user at registration",
+    )
 
     users: Annotated[
         CompositeMany[UserCoreEntity],
         Inverse(UserCoreEntity, "organization"),
     ] = Field(description="The organization's users")
+
+    invitations: Annotated[
+        CompositeMany[InvitationCoreEntity],
+        Inverse(InvitationCoreEntity, "organization"),
+    ] = Field(description="The organization's invitations, whatever became of them")
 
     boundaries: Annotated[
         CompositeMany[BoundaryCoreEntity],
@@ -209,7 +226,7 @@ class OrganizationCoreEntity(BaseCoreEntity):
 
 
 class UserStateEntity(BaseStateEntity):
-    """A user's state in the organization: active, blocked or removed."""
+    """A user's state in the organization: active or blocked; removed is the lifecycle's terminal state only."""
 
     sort_order: int = Field(default=0, description="Display order of the states")
 
@@ -220,14 +237,15 @@ class UserStateEntity(BaseStateEntity):
 
 class UserLifecycle(Lifecycle[UserStateEntity]):
     """
-    A user appears active — as the first administrator here, by invitation later (bystrovmaxim/gnomon#13).
-    An active user can be blocked and unblocked; removal from any state is final.
+    A user appears active — as the first administrator who registered the organization, or by accepting an
+    invitation — and is blocked and unblocked from then on; a user is never removed. Removed is the terminal state
+    that AOA requires to be reachable in the declared graph; no application action takes that edge.
     """
 
     _template = (
         Lifecycle()
         .state(UserStateEntity.ACTIVE)
-        .to(UserStateEntity.BLOCKED, UserStateEntity.REMOVED)
+        .to(UserStateEntity.BLOCKED)
         .initial()
         .state(UserStateEntity.BLOCKED)
         .to(UserStateEntity.ACTIVE, UserStateEntity.REMOVED)
@@ -243,16 +261,19 @@ class UserCoreEntity(BaseCoreEntity):
     AI-CORE-BEGIN
     ROLE: Who an account is inside one organization; actions work for the user of the organization of the address.
     CONTRACT: Belongs to exactly one organization and one account. An organization's administrator manages only
-        their organization's users; blocking a user changes nothing in another organization.
-    INVARIANTS: An organization and an account give at most one user. An organization keeps at least one active
-        administrator.
+        their organization's users; blocking a user changes nothing in another organization. A blocked user cannot
+        enter the organization from their next request on.
+    INVARIANTS: An organization and an account give at most one user, and it is never removed: plugins refer to a
+        user by the account (``core.user (organization_id, account_id)``). An organization keeps at least one
+        active administrator: the last one cannot be blocked or lose the mark.
     AI-CORE-END
     """
 
     id: str = Field(description="User id")
     name: str = Field(description="The user's name in this organization")
+    job_title: str | None = Field(default=None, max_length=160, description="Job title in this organization, independent of permissions")
     is_admin: bool = Field(default=False, description="Administrates the organization")
-    status: UserLifecycle = Field(description="The user's state: active, blocked or removed")
+    status: UserLifecycle = Field(description="The user's state: active or blocked")
 
     organization: Annotated[
         AssociationOne[OrganizationCoreEntity],
@@ -264,6 +285,11 @@ class UserCoreEntity(BaseCoreEntity):
         Inverse(AccountCoreEntity, "users"),
     ] = Field(description="The account behind the user")
 
+    invitations_sent: Annotated[
+        AssociationMany[InvitationCoreEntity],
+        Inverse(InvitationCoreEntity, "invited_by"),
+    ] = Field(description="The invitations this user sent")
+
     boundaries: Annotated[
         AssociationMany[BoundaryCoreEntity],
         Inverse(BoundaryCoreEntity, "users"),
@@ -271,6 +297,93 @@ class UserCoreEntity(BaseCoreEntity):
 
     created_at: datetime = Field(description="When the user was created")
     updated_at: datetime | None = Field(default=None, description="When the user last changed; empty if never")
+
+
+class InvitationStateEntity(BaseStateEntity):
+    """An invitation's state: sent, then accepted, declined, withdrawn or expired."""
+
+    sort_order: int = Field(default=0, description="Display order of the states")
+
+    SENT = value(code="sent", display_name="Sent", sort_order=1)
+    ACCEPTED = value(code="accepted", display_name="Accepted", sort_order=2)
+    DECLINED = value(code="declined", display_name="Declined", sort_order=3)
+    WITHDRAWN = value(code="withdrawn", display_name="Withdrawn", sort_order=4)
+    EXPIRED = value(code="expired", display_name="Expired", sort_order=5)
+
+
+class InvitationLifecycle(Lifecycle[InvitationStateEntity]):
+    """
+    An invitation is created sent and leaves that state once: accepted or declined by the invited account,
+    withdrawn by an administrator or by the setting "Who may invite", or expired by its time.
+    """
+
+    _template = (
+        Lifecycle()
+        .state(InvitationStateEntity.SENT)
+        .to(
+            InvitationStateEntity.ACCEPTED,
+            InvitationStateEntity.DECLINED,
+            InvitationStateEntity.WITHDRAWN,
+            InvitationStateEntity.EXPIRED,
+        )
+        .initial()
+        .state(InvitationStateEntity.ACCEPTED)
+        .final()
+        .state(InvitationStateEntity.DECLINED)
+        .final()
+        .state(InvitationStateEntity.WITHDRAWN)
+        .final()
+        .state(InvitationStateEntity.EXPIRED)
+        .final()
+    )
+
+
+@entity(description="An organization's offer to one email to become its user", domain=OrganizationDomain)
+class InvitationCoreEntity(BaseCoreEntity):
+    """
+    AI-CORE-BEGIN
+    ROLE: The only way into an organization after its registration: no user exists until it is accepted.
+    CONTRACT: Sent by an active user the setting allows — with the administrator mark only by an administrator —
+        to an email that is not an active or blocked user's and has no invitation still sent; its letter holds no
+        link. Accepted or declined by an account whose confirmed email it names; withdrawn by an administrator or
+        by the setting; expired after MAXITOR_INVITATION_DAYS days.
+    INVARIANTS: At most one invitation still sent per organization and email. Its email is in lower case. It
+        leaves the state sent exactly once.
+    AI-CORE-END
+    """
+
+    id: str = Field(description="Invitation id, unique across Maxitor")
+    email: str = Field(description="The email it was sent to, in lower case")
+    job_title: str | None = Field(default=None, max_length=160, description="Offered job title, copied to the user on acceptance")
+    is_admin: bool = Field(default=False, description="Whether accepting makes an administrator")
+    status: InvitationLifecycle = Field(description="Its state: sent, accepted, declined, withdrawn or expired")
+    sent_at: datetime = Field(description="When its first letter was sent")
+    letter_sent_at: datetime = Field(description="When its last letter was sent")
+    expires_at: datetime = Field(description="When it expires: sent_at plus MAXITOR_INVITATION_DAYS days")
+    decided_at: datetime | None = Field(default=None, description="When it left the state sent; empty while sent")
+    by_setting: bool = Field(default=False, description="Whether the setting Who may invite withdrew it")
+
+    organization: Annotated[
+        AssociationOne[OrganizationCoreEntity],
+        Inverse(OrganizationCoreEntity, "invitations"),
+    ] = Field(description="The organization that invites")
+
+    invited_by: Annotated[
+        AssociationOne[UserCoreEntity],
+        Inverse(UserCoreEntity, "invitations_sent"),
+    ] = Field(description="The user who sent it")
+
+    decided_by: Annotated[AssociationOne[UserCoreEntity] | None, NoInverse()] = Field(
+        default=None,
+        description="The administrator who withdrew it, or who switched the setting; empty when the account or the time decided",
+    )
+
+    accepted_user: Annotated[AssociationOne[UserCoreEntity] | None, NoInverse()] = Field(
+        default=None, description="The user accepting it made; empty unless accepted"
+    )
+
+    created_at: datetime = Field(description="When it was created")
+    updated_at: datetime | None = Field(default=None, description="When it last changed; empty if never")
 
 
 @entity(
@@ -309,4 +422,5 @@ SignInCoreEntity.model_rebuild()
 SignInCodeCoreEntity.model_rebuild()
 OrganizationCoreEntity.model_rebuild()
 UserCoreEntity.model_rebuild()
+InvitationCoreEntity.model_rebuild()
 BoundaryCoreEntity.model_rebuild()

@@ -95,7 +95,7 @@ function Key({ keys, def }: { keys: string[]; def: string }) {
   );
 }
 
-export function Legend({ sections, comparing }: { sections: LegendSection[]; comparing: boolean }) {
+export function Legend({ sections, comparing, phone = false }: { sections: LegendSection[]; comparing: boolean; phone?: boolean }) {
   return (
     <div className="mx-legend" role="tooltip">
       <div>
@@ -123,7 +123,12 @@ export function Legend({ sections, comparing }: { sections: LegendSection[]; com
         </div>
         <div className="mx-legend-group">
           <div className="mx-legend-title">On the scale</div>
-          <Key keys={["drag"]} def="Across a stretch: zoom into it" />
+          <Key keys={["drag"]} def={phone ? "Move sideways; pinch to zoom" : "Across a stretch: zoom into it"} />
+          <Key keys={[phone ? "tap" : "click"]} def={comparing ? "The plot chooses the nearest bound. Top edge: A; bottom edge: B. Crossing exchanges them." : "Choose a moment"} />
+          {comparing ? <>
+            <Key keys={["Move interval"]} def="Hover the grey area to reveal the control; drag it to move both bounds" />
+            {!phone ? <Key keys={["⇧", "drag / click"]} def="Drag to move both bounds; click outside to centre them" /> : null}
+          </> : null}
           <Key keys={["wheel"]} def="Zoom around the pointer" />
           <Key keys={["⇧", "wheel"]} def="Move sideways" />
         </div>

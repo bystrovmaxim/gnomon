@@ -150,7 +150,7 @@ An author writes `opens` on every node with children, or the plugin is refused w
 #### The panel of one level
 
 - **FR-005**: An entered level MUST hold only the entered node's children, each drawn with its own mark.
-- **FR-006**: The entered node MUST stand at the head of the panel with its icon and title across the whole width; the root of the tree MUST have no head.
+- **FR-006**: The entered node MUST stand at the head of the panel with its icon and title across the whole width; the root of the tree MUST have no head. Entering the first root section and returning with Back MUST preserve the icon and title positions within 0.1 CSS px on desktop and phone; the controls row MUST retain its height when Back appears.
 - **FR-007**: A click on a node that has a page MUST open that page in the right panel as it does today, whether the node expands or is entered.
 
 #### Back and the crumbs

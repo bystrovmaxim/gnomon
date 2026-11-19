@@ -1,0 +1,3 @@
+/* Shared disk frame: white separation, then the production outer contour. */
+.avatar, .av, .mx-avatar, .mx-tip-avatar { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }
+img.dk, img.nt-disk, img.pd, img[src*="data-sign"] { border: 1px solid rgba(0,0,0,.12); border-radius: 50%; background: #fff; box-sizing: content-box; }

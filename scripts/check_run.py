@@ -112,6 +112,7 @@ JOBS_VARIABLE = "GNOMON_CHECK_JOBS"
 STOP_GRACE_SECONDS = 5.0
 POLL_SECONDS = 0.05
 CLIENT_BUILD = "Maxitor client: npm ci and Vite build"
+CORE_WEB_BUILD = "Maxitor core: the Next.js application builds"
 GRAPH_WRITE = "Graph files (graph-builder write)"
 PACKAGES = ("packages/maxitor", "packages/maxitor-plugin-sdk")
 LOCAL = "local"
@@ -200,7 +201,7 @@ STEPS: tuple[Step, ...] = (
     # The core's Next.js application: its pages and server code compile and typecheck. Its browser check needs
     # the local stand (scripts/core-stand.sh) and runs by hand: web/scripts/check-core.mjs.
     Step(
-        "Maxitor core: the Next.js application builds",
+        CORE_WEB_BUILD,
         "(cd packages/maxitor/maxitor-core/web && npm ci --no-audit --no-fund && npm run build)",
         "client",
         after=(AUTO_FIX,),
@@ -219,21 +220,21 @@ STEPS: tuple[Step, ...] = (
         "Plugin template: its pages' rules",
         "node --experimental-strip-types --test packages/maxitor-plugin-template/web/tests/*.test.ts",
         "client",
-        after=(AUTO_FIX,),
+        after=(AUTO_FIX, CORE_WEB_BUILD),
     ),
     # The core's frame: the line of a node and the entered levels an address gives the panel (spec 085, FR-013).
     Step(
         "Maxitor core: the levels of the tree",
         "node --experimental-strip-types --test packages/maxitor/maxitor-core/web/tests/*.test.ts",
         "client",
-        after=(AUTO_FIX,),
+        after=(AUTO_FIX, CORE_WEB_BUILD),
     ),
     # @maxitor/panel: the canvas's camera and the panel protocol's shape checks (spec 077, FR-024 – FR-032).
     Step(
         "@maxitor/panel: the camera and the protocol",
         "node --experimental-strip-types --test packages/maxitor-panel/tests/*.test.ts",
         "client",
-        after=(AUTO_FIX,),
+        after=(AUTO_FIX, CORE_WEB_BUILD),
     ),
     # The frame, its controls and @maxitor/panel take every colour and size from @maxitor/tokens (spec 077, SC-007).
     Step(

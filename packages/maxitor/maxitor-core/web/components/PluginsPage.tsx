@@ -4,9 +4,13 @@
 // retried or dropped, and a private plugin by a release's address or by uploading its wheel. While the installer has
 // work on the page — an install or a private version's check — the page reads its state again every few seconds.
 "use client";
+import { Button } from "@maxitor/panel";
+import { AdminDialog } from "./administration/AdminDialog";
 
+import { usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { AdministrationActions } from "./administration/AdministrationPanel";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   addPrivatePlugin,
@@ -20,6 +24,7 @@ import {
   type Listing,
 } from "@/app/plugins";
 import { Icon } from "@/components/marks";
+import { pluginTab } from "./administration/compare";
 import { colorOf } from "@/lib/colors";
 import type { Refusal } from "@/lib/core";
 
@@ -110,8 +115,12 @@ function base64Of(data: ArrayBuffer): string {
 }
 
 export function PluginsPage({ code, orgName, initial: first }: { code: string; orgName: string; initial: Listing }) {
-  const [tab, setTab] = useState<"installed" | "market">("installed");
-  const [query, setQuery] = useState("");
+  const panelQuery = usePanelQuery();
+  const panelRouter = usePanelRouter();
+  const tab = pluginTab(panelQuery.tab);
+  const setTab = (value: "installed" | "market") => panelRouter.push({ query: { ...panelQuery, tab: value } });
+  const query = panelQuery.search ?? "";
+  const setQuery = (value: string) => panelRouter.replace({ query: { ...panelQuery, search: value } });
   const [listing, setListing] = useState<Listing>(first);
   // A plugin enabled, disabled or removed changes the organization's tree: the frame is drawn again from the core.
   const router = useRouter();
@@ -123,6 +132,11 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
     router.refresh();
   }, [router, states]);
   const [dialog, setDialog] = useState<Dialog>(null);
+  const setActions = useContext(AdministrationActions);
+  useEffect(() => {
+    setActions([{ title: "Add a private plugin", icon: "plus", onClick: () => setDialog({ kind: "private", mode: "release" }) }]);
+    return () => setActions([]);
+  }, [setActions]);
   const [panel, setPanel] = useState<Details | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
@@ -179,14 +193,14 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
   const rowActions = (row: Installed) => {
     switch (row.state) {
       case "enabled":
-        return <button type="button" className="btn2" onClick={() => setDialog({ kind: "disable", row })}>Disable</button>;
+        return <Button type="button" variant="primary" onClick={() => setDialog({ kind: "disable", row })}>Disable</Button>;
       case "disabled":
-        return <button type="button" className="btn2" onClick={() => void change(row, "enable", `${row.title} is enabled again.`)}>Enable</button>;
+        return <Button type="button" variant="primary" onClick={() => void change(row, "enable", `${row.title} is enabled again.`)}>Enable</Button>;
       case "failed":
         return (
           <>
-            <button type="button" className="btn2 pri" onClick={() => void change(row, "retry", `${row.title} is being installed again.`)}>Retry</button>
-            <button type="button" className="btn2 danger" onClick={() => void change(row, "drop", `The failed install of ${row.title} is dropped.`)}>Drop</button>
+            <Button type="button" variant="primary" onClick={() => void change(row, "retry", `${row.title} is being installed again.`)}>Retry</Button>
+            <Button type="button" variant="danger" onClick={() => void change(row, "drop", `The failed install of ${row.title} is dropped.`)}>Drop</Button>
           </>
         );
       default:
@@ -195,11 +209,11 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
   };
 
   const installedRow = (row: Installed) => (
-    <div key={`${row.passport_id}-${row.installed_at}`} className={`prow${row.state === "removed" ? " gone" : ""}`}>
+    <div key={`${row.passport_id}-${row.installed_at}`} data-room-anchor={`plugins:${row.passport_id}`} className={`prow${row.state === "removed" ? " gone" : ""}`}>
       <Tile id={row.passport_id} title={row.title} />
       <div className="pmain">
         <div className="ptitle">
-          <button type="button" className="plink" onClick={() => void openDetails(row.passport_id)}>{marked(row.title, query)}</button>
+          <Button type="button" variant="link" className="plink" onClick={() => void openDetails(row.passport_id)}>{marked(row.title, query)}</Button>
           <span className="ver">{row.version}</span>
           <StateBadge state={row.state} />
           {row.private ? <span className="stt private">private</span> : null}
@@ -247,8 +261,8 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
             ))}
           </div>
           <div className="ft">
-            <button type="button" className="lnk2" onClick={() => void openDetails(c.passport_id)}>Details</button>
-            <button type="button" className="btn2 pri" disabled={!c.fits_core} onClick={() => setDialog({ kind: "install", passportId: c.passport_id })}>Install</button>
+            <Button type="button" variant="link" className="lnk2" onClick={() => void openDetails(c.passport_id)}>Details</Button>
+            <Button type="button" variant="primary" disabled={!c.fits_core} onClick={() => setDialog({ kind: "install", passportId: c.passport_id })}>Install</Button>
           </div>
         </>
       ) : c.state === "draft" ? (
@@ -259,9 +273,9 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
           <div className="ft">
             <span />
             {c.reason?.startsWith("closed_repository") ? (
-              <button type="button" className="btn2 pri" onClick={() => setDialog({ kind: "private", mode: "upload" })}>Upload the wheel</button>
+              <Button type="button" variant="primary" onClick={() => setDialog({ kind: "private", mode: "upload" })}>Upload the wheel</Button>
             ) : (
-              <button type="button" className="btn2" onClick={() => setDialog({ kind: "private", mode: "release" })}>Add again</button>
+              <Button type="button" variant="primary" onClick={() => setDialog({ kind: "private", mode: "release" })}>Add again</Button>
             )}
           </div>
         </>
@@ -273,7 +287,7 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
     <div className="empty-st">
       <b>No plugin matches “{query.trim()}”</b>The search looks through the name, the id and the description.
       <br />
-      <button type="button" className="btn2" onClick={() => setQuery("")}>Clear the search</button>
+      <Button type="button" variant="secondary" onClick={() => setQuery("")}>Clear the search</Button>
     </div>
   );
 
@@ -285,14 +299,14 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
         <div className="empty-st">
           <b>No plugin is installed yet</b>{orgName} is empty. Plugins from the marketplace add their sections to the tree.
           <br />
-          <button type="button" className="btn2 pri" onClick={() => setTab("market")}>Open the marketplace</button>
+          <Button type="button" variant="primary" onClick={() => setTab("market")}>Open the marketplace</Button>
         </div>
       );
     } else {
       body = (
         <>
-          {listing.installed.map(installedRow)}
-          {listing.removed.length ? <><div className="sec">Removed <span>— kept in the history</span></div>{listing.removed.map(installedRow)}</> : null}
+          <div className="grid">{listing.installed.map(installedRow)}</div>
+          {listing.removed.length ? <><div className="sec">Removed <span>— kept in the history</span></div><div className="grid">{listing.removed.map(installedRow)}</div></> : null}
         </>
       );
     }
@@ -309,12 +323,8 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
   }
 
   return (
-    <div className="page">
+    <div className="page marketplace-page">
       <div className="inner">
-        <div className="ph">
-          <div className="tx"><h2>Plugins</h2><div className="sub">What {orgName} has installed and what the marketplace offers.</div></div>
-          <button type="button" className="btn2" onClick={() => setDialog({ kind: "private", mode: "release" })}><Icon.plus />Add a private plugin</button>
-        </div>
         <div className="tabs" role="tablist">
           <button type="button" role="tab" aria-selected={tab === "installed"} className={tab === "installed" ? "on" : ""} onClick={() => setTab("installed")}>
             Installed<span className="cnt">{listing.counts.installed}</span>
@@ -326,7 +336,7 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
         <label className="search">
           <Icon.search />
           <input type="search" placeholder="Search plugins by name, id or description" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search plugins" />
-          {query ? <button type="button" className="clr" aria-label="Clear the search" onClick={() => setQuery("")}><Icon.x /></button> : null}
+          {query ? <Button type="button" variant="icon" className="clr" aria-label="Clear the search" onClick={() => setQuery("")}><Icon.x /></Button> : null}
         </label>
         {failure ? <div className="alert bad"><Icon.alert /><div>{failure}</div></div> : null}
         {body}
@@ -348,8 +358,8 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
           <div className="sub">For everyone in <b>{orgName}</b>.</div>
           <ul className="bul"><li>Its sections leave the tree.</li><li>Its data stays as it is. Enabling it brings everything back.</li></ul>
           <div className="ft">
-            <button type="button" className="btn2" onClick={() => setDialog(null)}>Cancel</button>
-            <button type="button" className="btn2 pri" onClick={() => void change(dialog.row, "disable", `${dialog.row.title} is disabled. Its data stays.`)}>Disable</button>
+            <Button type="button" variant="secondary" onClick={() => setDialog(null)}>Cancel</Button>
+            <Button type="button" variant="primary" onClick={() => void change(dialog.row, "disable", `${dialog.row.title} is disabled. Its data stays.`)}>Disable</Button>
           </div>
         </Sheet>
       ) : null}
@@ -363,11 +373,11 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
               <div key={d.passport_id} className="dep">
                 <Tile id={d.passport_id} title={d.title} />
                 <div className="dn"><b>{d.title}</b><div>enabled · needs {dialog.row.title}</div></div>
-                {dependent ? <button type="button" className="btn2" onClick={() => setDialog({ kind: "disable", row: dependent })}>Disable {d.title}</button> : null}
+                {dependent ? <Button type="button" variant="primary" onClick={() => setDialog({ kind: "disable", row: dependent })}>Disable {d.title}</Button> : null}
               </div>
             );
           })}
-          <div className="ft"><button type="button" className="btn2 pri" onClick={() => setDialog(null)}>Close</button></div>
+          <div className="ft"><Button type="button" variant="primary" onClick={() => setDialog(null)}>Close</Button></div>
         </Sheet>
       ) : null}
       {dialog?.kind === "private" ? (
@@ -385,31 +395,27 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
           }}
         />
       ) : null}
-      {toast ? <div className="toast" role="status"><Icon.check /><span>{toast}</span><button type="button" onClick={() => setToast(null)}>Close</button></div> : null}
+      {toast ? <div className="toast" role="status"><Icon.check /><span>{toast}</span><Button variant="link" onClick={() => setToast(null)}>Close</Button></div> : null}
     </div>
   );
 }
 
 function Sheet({ children, onClose }: { children: ReactNode; onClose: () => void }) {
   return (
-    <>
-      <div className="scrim" onClick={onClose} />
-      <div className="dlg sheet" role="dialog" aria-modal="true"><div className="grab" />{children}</div>
-    </>
+    <AdminDialog title="Plugin settings" onClose={onClose}><div className="dlg sheet">{children}</div></AdminDialog>
   );
 }
 
 function DetailsPanel({ details: d, orgName, onClose, onInstall }: { details: Details; orgName: string; onClose: () => void; onInstall: () => void }) {
   return (
-    <>
-      <div className="scrim" onClick={onClose} />
-      <div className="panel" role="dialog" aria-modal="true" aria-label={d.title}>
+    <AdminDialog title={d.title} onClose={onClose}>
+      <div className="panel">
         <div className="pb">
-          <button type="button" className="pback" onClick={onClose}><Icon.left />Plugins</button>
+          <Button type="button" variant="link" className="pback" onClick={onClose}><Icon.left />Plugins</Button>
           <div className="phd">
             <Tile id={d.passport_id} title={d.title} large />
             <div><h3>{d.title}</h3><div className="ver">{d.version} {d.state ? <StateBadge state={d.state} /> : null} {d.private ? <span className="stt private">private</span> : null}</div></div>
-            <button type="button" className="close" aria-label="Close" onClick={onClose}><Icon.x /></button>
+            <Button type="button" variant="icon" className="close" aria-label="Close" onClick={onClose}><Icon.x /></Button>
           </div>
           {d.description ? <div className="desc">{d.description}</div> : null}
           {d.withdrawn ? <div className="pnote warn"><Icon.info /><div>Withdrawn from the marketplace: installed copies keep working, new installs are closed.</div></div> : null}
@@ -436,11 +442,11 @@ function DetailsPanel({ details: d, orgName, onClose, onInstall }: { details: De
           {d.sections.length ? <><div className="dsec">In the tree</div><div className="tbl">{d.sections.map((s) => <span key={s.title} className="word">{s.title}</span>)}</div></> : null}
         </div>
         <div className="pf">
-          <button type="button" className="btn2" onClick={onClose}>Close</button>
-          {d.state === null && d.fits_core ? <button type="button" className="btn2 pri" onClick={onInstall}>Install</button> : null}
+          <Button type="button" variant="secondary" onClick={onClose}>Close</Button>
+          {d.state === null && d.fits_core ? <Button type="button" variant="primary" onClick={onInstall}>Install</Button> : null}
         </div>
       </div>
-    </>
+    </AdminDialog>
   );
 }
 
@@ -493,11 +499,11 @@ function InstallDialog({
         </>
       ) : null}
       <div className="ft">
-        <button type="button" className="btn2" onClick={onClose}>Cancel</button>
+        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
         {missing.length ? (
-          <button type="button" className="btn2 pri" onClick={() => onFirst(missing[0].passport_id)}>Install {missing[0].passport_id} first</button>
+          <Button type="button" variant="primary" onClick={() => onFirst(missing[0].passport_id)}>Install {missing[0].passport_id} first</Button>
         ) : (
-          <button type="button" className="btn2 pri" disabled={!details.fits_core} onClick={() => onInstall(details)}>Install {details.title}</button>
+          <Button type="button" variant="primary" disabled={!details.fits_core} onClick={() => onInstall(details)}>Install {details.title}</Button>
         )}
       </div>
     </Sheet>
@@ -599,8 +605,8 @@ function PrivateDialog({
         </>
       )}
       <div className="ft">
-        <button type="button" className="btn2" onClick={onClose}>Cancel</button>
-        <button type="button" className="btn2 pri" disabled={!ready || busy} onClick={() => void submit()}>{busy ? "Adding…" : "Add and check"}</button>
+        <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button type="button" variant="primary" disabled={!ready || busy} onClick={() => void submit()}>{busy ? "Adding…" : "Add and check"}</Button>
       </div>
     </Sheet>
   );

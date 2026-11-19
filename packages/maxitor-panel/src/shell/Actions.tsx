@@ -6,6 +6,7 @@
 
 import type { ReactNode } from "react";
 
+import { Button } from "../content/Button";
 import { Icon } from "./icons";
 import type { PageAction } from "./types";
 
@@ -14,10 +15,10 @@ export function Actions({ actions, stepper }: { actions: PageAction[]; stepper?:
     <div className="mx-actions" data-shell="actions">
       {stepper}
       {actions.map((action) => (
-        <button key={action.title} type="button" className="mx-action" onClick={action.onClick}>
+        <Button variant="primary" key={action.title} type="button" className="mx-action" onClick={action.onClick}>
           {action.icon ? <Icon name={action.icon} /> : null}
           {action.title}
-        </button>
+        </Button>
       ))}
     </div>
   );

@@ -108,6 +108,45 @@ def password_reset(to: str, code: str, at: datetime, country: str | None) -> Let
     return Letter(to, f"{_spaced(code)} — reset your Maxitor password", text, html)
 
 
+def invitation(
+    to: str, organization: str, inviter_name: str, inviter_email: str, is_admin: bool, expires_at: datetime
+) -> Letter:
+    """
+    The letter of an invitation (mockup 8.9): who invites and to what, how to accept — sign in with this email —,
+    until when it waits; no link and no code, as in no letter of Maxitor.
+    """
+    role = "as an administrator" if is_admin else "as a user"
+    until = expires_at.strftime("%d %B %Y").lstrip("0")
+    text = (
+        f"{inviter_name} ({inviter_email}) invites you to work in {organization} on Maxitor, {role}.\n\n"
+        f"Sign in to Maxitor with this email — {to} — and accept the invitation on the screen of your organizations. "
+        "No account yet? Create one with this same email: an invitation is for the address it was sent to.\n\n"
+        f"The invitation waits until {until}.\n\n"
+        "Did not expect it? Do nothing: without your sign-in nothing happens, and the invitation expires by itself. "
+        "This letter holds no link, as no letter of Maxitor does — type maxitor.aoa.run yourself.\n\nMaxitor · maxitor.aoa.run\n"
+    )
+    html = _PAGE.format(
+        tag="Invitation",
+        title=f"You are invited to {escape(organization)}",
+        lead=(
+            f"Hello! <b>{escape(inviter_name)}</b> ({escape(inviter_email)}) invites you to work in "
+            f"<b>{escape(organization)}</b> on Maxitor, {role}."
+        ),
+        middle=(
+            f'<p style="margin:0 0 14px;color:#334155">Sign in to Maxitor with this email — <b>{escape(to)}</b> — and accept '
+            "the invitation on the screen of your organizations. No account yet? Create one with this same email: an "
+            "invitation is for the address it was sent to.</p>"
+            f'<p style="text-align:center;font-size:13px;color:#64748b;margin:22px 0 24px">The invitation waits until <b style="color:#0f172a">{escape(until)}</b></p>'
+        ),
+        note=(
+            "<b style='color:#0f172a'>Did not expect it?</b> Do nothing: without your sign-in nothing happens, and the "
+            "invitation expires by itself. This letter holds no link, as no letter of Maxitor does — type "
+            "<b style='color:#0f172a'>maxitor.aoa.run</b> yourself."
+        ),
+    )
+    return Letter(to, f"{inviter_name} invites you to {organization} on Maxitor", text, html)
+
+
 def password_changed(to: str, at: datetime, country: str | None) -> Letter:
     """The letter that says a password was changed."""
     text = (

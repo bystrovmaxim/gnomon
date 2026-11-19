@@ -27,7 +27,11 @@ Create an account, register an organization, install Notes in Settings → Plugi
 {"notes":[],"bars":[]}
 ```
 
-That answer came from the template's backend in its own container, through the gateway, with your sign-in. The installer's log shows the frontend's build before the deployment:
+That answer came from the template's backend in its own container, through the gateway, with your sign-in.
+
+A plugin is used by people, so give the organization a second one: Settings → Users → Invite, another email of yours. The letter lands in `.core-stand/outbox/` and holds no link; in a private window create an account with that email, and the screen of your organizations shows the invitation — Accept, and the second person is in. Settings → Users lists both of you; the second person's menu has "Invite to …" too, until Settings → Organization says administrators only. Chapters 9 and 11 look at what two people do to one draft and to published notes.
+
+The installer's log shows the frontend's build before the deployment:
 
 ```text
 The frontend of io.github.bystrovmaxim.notes 0.12.0 built for the core 4.7.0 as maxitor-plugin/notes_0_12_0-frontend:<sha12>-4.7.0

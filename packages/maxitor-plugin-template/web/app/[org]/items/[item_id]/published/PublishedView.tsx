@@ -5,7 +5,7 @@
 // Changes, the stepper walks the changes with each one's card, and the counts go to the pill.
 "use client";
 
-import { ChangeStepper, countsOf, DataTable, Dialog, DiffCard, MaxitorCanvas, PanelPage, useBackToNow, useCounts, useMoment, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
+import { changeFilterRows, ChangeStepper, countsOf, DataTable, Dialog, DiffCard, MaxitorCanvas, PanelPage, useBackToNow, useCounts, useMoment, usePanelPath, usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -51,7 +51,8 @@ export function PublishedView({
   const panelRouter = usePanelRouter();
   const path = usePanelPath();
   const draftPath = path.replace(/\/published$/, "");
-  useFresh(notes.map((note) => note.id), now);
+  // Comparison is read-only, but a live B must still reread its content when the watermark advances.
+  useFresh(notes.map((note) => note.id), !at);
   const [said, setSaid] = useState("");
   const [busy, setBusy] = useState(false);
   const [menu, setMenu] = useState<PublishedNote | null>(null);
@@ -126,12 +127,7 @@ export function PublishedView({
                 title: "Changes",
                 param: "change",
                 paints: true,
-                rows: (["added", "changed", "removed", "unchanged"] as const).map((key) => ({
-                  key,
-                  label: key[0].toUpperCase() + key.slice(1),
-                  colour: ({ added: "green", changed: "amber", removed: "red", unchanged: "grey" } as const)[key],
-                  absent: ![...compared.status.values()].includes(key),
-                })),
+                rows: changeFilterRows(compared.status.values()),
               },
             ]
           : []),

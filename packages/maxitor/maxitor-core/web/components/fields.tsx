@@ -6,7 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/marks";
 
-export function Field({ label, aside, value, onChange, type = "text", autoComplete, bad, autoFocus, prefix, status }: {
+export function Field({ label, aside, value, onChange, type = "text", autoComplete, bad, autoFocus, prefix, status, maxLength }: {
   label: ReactNode;
   aside?: ReactNode;
   value: string;
@@ -17,6 +17,7 @@ export function Field({ label, aside, value, onChange, type = "text", autoComple
   autoFocus?: boolean;
   prefix?: string;
   status?: ReactNode;
+  maxLength?: number;
 }) {
   return (
     <label style={{ display: "block" }}>
@@ -26,7 +27,7 @@ export function Field({ label, aside, value, onChange, type = "text", autoComple
       </div>
       <div className={`inp${bad ? " bad" : ""}`}>
         {prefix ? <span className="pre">{prefix}</span> : null}
-        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} autoComplete={autoComplete} autoFocus={autoFocus} spellCheck={false} aria-label={typeof label === "string" ? label : undefined} />
+        <input maxLength={maxLength} type={type} value={value} onChange={(e) => onChange(e.target.value)} autoComplete={autoComplete} autoFocus={autoFocus} spellCheck={false} aria-label={typeof label === "string" ? label : undefined} />
         {status}
       </div>
     </label>

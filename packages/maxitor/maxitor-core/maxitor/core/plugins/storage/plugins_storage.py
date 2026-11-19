@@ -103,6 +103,39 @@ class PluginsStorage(CoreStorage):
 
     versioned: ClassVar[Mapping[str, tuple[str, tuple[str, ...]]]] = PLUGIN_VERSIONED
 
+    async def administration_snapshot(self, organization_id: str, section: str, at: datetime) -> list[dict[str, Any]]:
+        """Read only persisted fields valid at the selected instant; never join current display values."""
+        valid = "v.organization_id = $1::text::uuid AND v.valid_from_at <= $2 AND (v.valid_to_at IS NULL OR $2 < v.valid_to_at)"
+        author = "(SELECT a.name FROM account_versions a WHERE a.id = v.author_id AND a.valid_from_at <= v.valid_from_at AND (a.valid_to_at IS NULL OR v.valid_from_at < a.valid_to_at))"
+        if section == "organization":
+            sql = f"SELECT v.code AS id, v.name AS title, v.code, v.who_may_invite, v.valid_from_at AS changed_at, {author} AS author FROM organization_versions v WHERE {valid}"
+        elif section == "users":
+            sql = f"SELECT v.id::text AS id, v.name AS title, a.email, v.status, v.is_admin, v.job_title, v.account_id::text AS account_id, v.created_at, i.invited_by::text AS invited_by, ib.name AS invited_by_name, v.valid_from_at AS changed_at, {author} AS author FROM user_versions v LEFT JOIN invitation_versions i ON i.organization_id = v.organization_id AND i.accepted_user_id = v.id AND i.valid_from_at <= $2 AND (i.valid_to_at IS NULL OR $2 < i.valid_to_at) LEFT JOIN user_versions ib ON ib.organization_id = i.organization_id AND ib.id = i.invited_by AND ib.valid_from_at <= $2 AND (ib.valid_to_at IS NULL OR $2 < ib.valid_to_at) LEFT JOIN account_versions a ON a.id = v.account_id AND a.valid_from_at <= $2 AND (a.valid_to_at IS NULL OR $2 < a.valid_to_at) WHERE {valid}"
+        elif section == "invitations":
+            sql = f"SELECT v.id::text AS id, v.email AS title, v.status, v.is_admin, v.job_title, v.sent_at, v.letter_sent_at, v.expires_at, v.decided_at, v.by_setting, v.invited_by::text AS invited_by, ib.name AS invited_by_name, v.decided_by::text AS decided_by, db.name AS decided_by_name, v.accepted_user_id::text AS accepted_user_id, au.name AS accepted_user_id_name, v.valid_from_at AS changed_at, {author} AS author FROM invitation_versions v LEFT JOIN user_versions ib ON ib.organization_id = v.organization_id AND ib.id = v.invited_by AND ib.valid_from_at <= $2 AND (ib.valid_to_at IS NULL OR $2 < ib.valid_to_at) LEFT JOIN user_versions db ON db.organization_id = v.organization_id AND db.id = v.decided_by AND db.valid_from_at <= $2 AND (db.valid_to_at IS NULL OR $2 < db.valid_to_at) LEFT JOIN user_versions au ON au.organization_id = v.organization_id AND au.id = v.accepted_user_id AND au.valid_from_at <= $2 AND (au.valid_to_at IS NULL OR $2 < au.valid_to_at) WHERE {valid}"
+        elif section == "plugins":
+            sql = f"SELECT p.passport_id AS id, p.title, p.passport_id, pv.version, v.state AS status, v.reason, v.valid_from_at AS changed_at, {author} AS author FROM organization_plugin_versions v JOIN plugin_versions p ON p.id = v.plugin_id AND p.valid_from_at <= $2 AND (p.valid_to_at IS NULL OR $2 < p.valid_to_at) JOIN plugin_version_versions pv ON pv.id = v.plugin_version_id AND pv.valid_from_at <= $2 AND (pv.valid_to_at IS NULL OR $2 < pv.valid_to_at) WHERE {valid}"
+        else:
+            raise ValueError("Unknown administration section")
+        return [dict(row) for row in await self._fetch(sql + " ORDER BY title, id", (organization_id, at))]
+
+    async def administration_bars(
+        self, organization_id: str, section: str, start: datetime, end: datetime, width: int
+    ) -> list[dict[str, Any]]:
+        """Aggregate actual version openings into UTC epoch-aligned bars, scoped to one organization."""
+        table, key = {
+            "organization": ("organization_versions", "organization_id"),
+            "users": ("user_versions", "id"),
+            "invitations": ("invitation_versions", "id"),
+            "plugins": ("organization_plugin_versions", "id"),
+        }[section]
+        rows = await self._fetch(
+            f"WITH versions AS (SELECT valid_from_at AS t, row_number() OVER (PARTITION BY {key} ORDER BY valid_from_at) AS n FROM {table} WHERE organization_id = $1::text::uuid) "
+            "SELECT to_timestamp(floor(extract(epoch FROM t) / $4) * $4) AS start, count(*) FILTER (WHERE n = 1) AS added, count(*) FILTER (WHERE n > 1) AS changed, 0 AS removed FROM versions WHERE t >= $2 AND t < $3 GROUP BY start ORDER BY start",
+            (organization_id, start, end, width),
+        )
+        return [dict(row) for row in rows]
+
     # ── locks ─────────────────────────────────────────────────────────────────
 
     async def plugin_lock(self, plugin_id: str) -> datetime:
@@ -150,7 +183,7 @@ class PluginsStorage(CoreStorage):
             " u.name AS installed_by_name, p.id::text AS plugin_id, p.passport_id, p.name, p.title, p.description,"
             " p.state AS plugin_state, p.owner_organization_id IS NOT NULL AS private,"
             " v.id::text AS version_id, v.version, v.purl, v.sha256"
-            ' FROM organization_plugin op JOIN plugin p ON p.id = op.plugin_id'
+            " FROM organization_plugin op JOIN plugin p ON p.id = op.plugin_id"
             " JOIN plugin_version v ON v.id = op.plugin_version_id"
             ' JOIN "user" u ON u.organization_id = op.organization_id AND u.id = op.installed_by'
             f" WHERE op.organization_id = $1::text::uuid AND {_MATCH}"
@@ -279,7 +312,10 @@ class PluginsStorage(CoreStorage):
             (organization_id,),
         )
         return {
-            str(row["name"]): {"actions": list(row["history_actions"] or []), "compare": list(row["history_compare"] or [])}
+            str(row["name"]): {
+                "actions": list(row["history_actions"] or []),
+                "compare": list(row["history_compare"] or []),
+            }
             for row in rows
         }
 

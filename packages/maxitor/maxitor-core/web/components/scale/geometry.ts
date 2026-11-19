@@ -79,6 +79,18 @@ export function moveView(view: View, shift: number, domain: View): View {
   return clampView({ from: view.from + shift, to: view.to + shift }, domain);
 }
 
+/** Keep All fitted and a live viewport following Now; preserve a viewport left in the past. */
+export function refreshedView(view: View | null, previous: { domain: View; now: number } | null, domain: View, now: number, live: boolean): View {
+  if (!view) return domain;
+  if (!previous) return clampView(view, domain);
+  const all = Math.abs(view.from - previous.domain.from) < 1 && Math.abs(view.to - previous.domain.to) < 1;
+  if (all) return domain;
+  if (live && view.from <= previous.now && view.to >= previous.now && now > previous.now) {
+    return moveView(view, now - previous.now, domain);
+  }
+  return clampView(view, domain);
+}
+
 /** The x of a time in a stretch drawn `width` pixels wide. */
 export function xOf(time: number, view: View, width: number): number {
   return ((time - view.from) / (view.to - view.from)) * width;
@@ -87,6 +99,15 @@ export function xOf(time: number, view: View, width: number): number {
 /** The time at an x of a stretch drawn `width` pixels wide. */
 export function timeAt(x: number, view: View, width: number): number {
   return view.from + (x / width) * (view.to - view.from);
+}
+
+/** A bar remains visible at Now but never paints into the hatched future. */
+export function barBounds(start: number, step: number, now: number, view: View, width: number, gap: number): { x: number; width: number } | null {
+  const begins = xOf(start, view, width);
+  const right = Math.min(width, xOf(now, view, width), xOf(start + step, view, width) - gap / 2);
+  if (right <= 0 || begins >= width || start > now || xOf(start + step, view, width) <= 0) return null;
+  const left = Math.max(0, Math.min(begins + gap / 2, right - 1.2));
+  return { x: left, width: right - left };
 }
 
 /** A tick of the axis: whether it starts a day — drawn stronger and dated —, and whether its time is said to the second. */

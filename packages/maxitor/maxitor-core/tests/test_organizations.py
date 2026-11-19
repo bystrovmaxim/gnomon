@@ -58,11 +58,13 @@ def test_register_creates_the_organization_and_its_administrator(world: World) -
     assert register(world, "Severny Veter", "severny-veter")[0] == 200
     me = world.client.get("/api/v1/me").json()
     assert me["organizations"] == [{"code": "severny-veter", "name": "Severny Veter", "is_admin": True}]
+    assert world.storage.tables["organization"][0]["who_may_invite"] == "any_user"
     opened = world.client.get("/api/v1/organizations/severny-veter").json()
     assert {k: v for k, v in opened.items() if k != "tree"} == {
-        "code": "severny-veter", "name": "Severny Veter", "user": {"name": "Anna", "is_admin": True}, "owners": [], "dependencies": {}, "histories": {}
+        "code": "severny-veter", "name": "Severny Veter", "who_may_invite": "any_user",
+        "user": {"name": "Anna", "is_admin": True, "may_invite": True}, "owners": [], "dependencies": {}, "histories": {},
     }
-    assert [node["name"] for node in opened["tree"]] == ["core:settings", "core:settings.plugins"]
+    assert [node["name"] for node in opened["tree"]] == ["core:settings", "core:settings.organization", "core:settings.users", "core:settings.plugins"]
     assert len(world.storage.versions["organization_versions"]) == len(world.storage.versions["user_versions"]) == 1
     assert world.logger.events().count("OrganizationRegisteredEvent") == 1
 

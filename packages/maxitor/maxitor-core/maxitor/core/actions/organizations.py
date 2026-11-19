@@ -174,6 +174,7 @@ class RegisterOrganizationAction(BaseAction[RegisterParams, RegisteredResult]):
                     "id": organization_id,
                     "name": name,
                     "code": code,
+                    "who_may_invite": "any_user",
                     "created_by": account_id,
                     "created_at": changed_at,
                     "updated_at": None,
@@ -229,6 +230,7 @@ class OrganizationUserSchema(BaseSchema):
 
     name: str = Field(description="The user's name")
     is_admin: bool = Field(description="Whether the user administers the organization")
+    may_invite: bool = Field(description="Whether the user may invite: an administrator always, others by the setting")
 
 
 class TreeNodeSchema(BaseSchema):
@@ -251,6 +253,7 @@ class OpenedResult(BaseResult):
 
     code: str = Field(description="The address code")
     name: str = Field(description="The organization's name")
+    who_may_invite: str = Field(description="Who may invite: any_user or administrators")
     user: OrganizationUserSchema = Field(description="The account's user in it")
     tree: list[TreeNodeSchema] = Field(default_factory=list, description="The nodes of its tree the user may see")
     owners: list[str] = Field(default_factory=list, description="Its enabled plugins in dependency order")
@@ -309,7 +312,12 @@ class OpenOrganizationAction(BaseAction[OpenParams, OpenedResult]):
         return OpenedResult(
             code=found["code"],
             name=found["name"],
-            user=OrganizationUserSchema(name=found["user_name"], is_admin=found["is_admin"]),
+            who_may_invite=found["who_may_invite"],
+            user=OrganizationUserSchema(
+                name=found["user_name"],
+                is_admin=found["is_admin"],
+                may_invite=bool(found["is_admin"]) or found["who_may_invite"] == "any_user",
+            ),
             tree=[
                 TreeNodeSchema(
                     name=node.full_name,

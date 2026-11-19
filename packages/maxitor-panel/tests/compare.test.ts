@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { changeLines, countsOf, nextChange, stepperText } from "../src/compare/changes.ts";
+import { changeFilterRows, changeLines, countsOf, nextChange, stepperText } from "../src/compare/changes.ts";
 import { milestoneActions } from "../src/shell/address.ts";
 
 const entries = [
@@ -41,4 +41,13 @@ test("an action on a milestone stands exactly on it, outside a comparison, title
   assert.deepEqual(milestoneActions(actions, { ...on, milestone: null }), []);
   assert.deepEqual(milestoneActions(actions, { ...on, against: "2026-11-01T00:00:00.000000Z" }), []);
   assert.deepEqual(milestoneActions(actions, { ...on, at: null }), []);
+});
+
+test("Changes keeps all four signs when some or every status is absent", () => {
+  for (const present of [[], ["changed"]] as const) {
+    const rows = changeFilterRows(present);
+    assert.deepEqual(rows.map(({ mark }) => mark), ["+", "~", "−", "="]);
+    assert.deepEqual(rows.map(({ colour }) => colour), ["green", "amber", "red", "grey"]);
+    assert.equal(rows.filter(({ absent }) => !absent).length, present.length);
+  }
 });

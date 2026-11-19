@@ -8,6 +8,11 @@ Maxitor installs this plugin: an organization's administrator finds it in Settin
 
 ## Documentation
 
+This template requires Maxitor 4.12 or later. Draft state counts use `StatusDisk`, and Published comparisons use `changeFilterRows`, both supplied by the core's `@maxitor/panel`. All four comparison statuses keep their production SVG signs, including statuses absent from the selected interval.
+
+Published rereads its content on a watermark update whenever its selected moment is Now, including Diff and the B panel of Side by side. Comparison remains read only: refresh eligibility depends on the selected moment, independently of edit eligibility. Explicit historical dates, including A, keep their snapshots. `web/tests/live-comparison.test.ts` exercises the actual refresh hook in all these modes.
+
+
 - [Write a Maxitor plugin: a tutorial](../../docs/plugins/tutorial/index.md) — this template, chapter by chapter: copying it, its tables, reading, writing, the backend behind the gateway, its tests.
 - [The plugin concept](../../docs/plugins/concept.md): the passport, the core as a node of the dependency graph and the one compatibility check, delivery, database roles and schemas, cross-plugin foreign keys, one sign-in, the frame with its tree, panel, canvas and controls, rooms, the lifecycle and the rules.
 - [Versioned storage](../../docs/plugins/versioned-storage.md) — how tables, versions and time are kept so that any past moment reads by the same actions as the present.

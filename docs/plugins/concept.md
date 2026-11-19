@@ -29,7 +29,7 @@ In short: a plugin is a Python package (pip or a ready wheel) that carries a pas
 | **shell** | `PanelPage` of `@maxitor/panel`, the root of every page: it draws the page's controls from what the page gives it, in the same places for every plugin |
 | **controls** | the filters, the layer pills, the bottom bar and the page's actions; a page gives them to the shell when it opens, and each is an address parameter |
 | **reserved names** | the address parameters that belong to the core — `at`, `mode`, `from` and every name starting with `_`; a page may not change them |
-| **organization** | the area inside which data lives and changes are ordered; a person may belong to several; it is the first segment of every panel address and is checked by membership on every request |
+| **organization** | the area inside which data lives and changes are ordered; a person may belong to several; it is the first segment of every panel address and is checked by membership on every request. A person becomes its user by registering it or by accepting its invitation; a user is active or blocked, and only an active user is a member; the declared terminal removed state has no application action |
 | **panel address** | the page's address in the browser's address bar: `/w/<organization>/<owner>/<path>?<parameters>`; the only source of the panel's state |
 | **room** | looking together: several people see each other, one moment, and can follow each other |
 
@@ -374,7 +374,7 @@ What this gives:
 - **a plugin cannot use someone else's token** — a token for `notes` does not pass `aud` in `tags`;
 - **a plugin does not see the session** — the cookie never reaches it, and a person's sign-in cannot be stolen from a request;
 - **the organization is the address's, checked** — `org` is the organization of the address the gateway has checked membership in;
-- **the roles are the core's** — a plugin has no roles of its own: the token carries the person's role in the core in that organization, read from the core's tables when it is issued — `member` for every active user, `administrator` added for its administrators, `service` for a plugin's own call with no person. A plugin guards its actions with `MemberRole`, `AdministratorRole` and `ServiceRole` of `maxitor-plugin-sdk`; its passport declares no roles;
+- **the roles are the core's** — a plugin has no roles of its own: the token carries the person's role in the core in that organization, read from the core's tables when it is issued — `member` for every active user, `administrator` added for its administrators, `service` for a plugin's own call with no person. An administrator is appointed and dismissed in the core's Settings → Users, and the token issued next carries the mark as it is then. A plugin guards its actions with `MemberRole`, `AdministratorRole` and `ServiceRole` of `maxitor-plugin-sdk`; its passport declares no roles;
 - **sign-out** — the core deletes the session; issued tokens expire within a minute.
 
 The gateway lets changing requests through only with its own site's `Origin` header — protection against request forgery together with `SameSite=Lax`.
@@ -396,7 +396,7 @@ A person may belong to several organizations, and a link to a colleague must ope
 
 An address comes from the client, so it is checked, never trusted:
 
-1. **The gateway checks membership.** The session gives the person's `id`; the core's membership table says which organizations that person belongs to. A request whose organization the person does not belong to is refused with `404` by the gateway and reaches neither the core's actions nor a plugin — it does not even reveal whether the organization exists.
+1. **The gateway checks membership.** The session gives the person's `id`; the core's membership table says which organizations that person belongs to — the organizations they registered or were invited into and accepted, where their user is active now. A request whose organization the person does not belong to is refused with `404` by the gateway and reaches neither the core's actions nor a plugin — it does not even reveal whether the organization exists. The state is read on every request: a user blocked by an administrator is a stranger from their next request on, with no session to revoke.
 2. **The token names it.** The token the gateway issues for the plugin carries `org` — the organization it has checked — and the person's roles in that organization only.
 3. **The plugin checks again.** An action that reads or writes an organization's data takes the organization as a parameter of its path and checks membership in its `@access_decide` (6.6): it reads the core's membership table by the person's `id` from the token. The gateway is the guard, the action's decision a second lock — a call from another plugin, a bug in the gateway or a test without it never yields another organization's data.
 4. **Every query is bound to it.** `organization_id` stands in every condition of every query, as versioned storage requires; its value is the checked organization, never a field of the request body.
@@ -636,7 +636,7 @@ The core and the plugin's page exchange `postMessage` messages. Each side accept
 | `panel.bring {chain}` | core → plugin | bring the deepest anchor the page holds into view, keeping the zoom, and light it |
 | `panel.step {delta}` | core → plugin | Shift + ↑ ↓ pressed in the core's frame: step the comparison's changes |
 
-**"Now" moves for a plugin's changes too.** Every change a plugin writes takes its time from the core's `change_time(organization)`, which keeps that time in the core's table `organization_clock` within the same transaction; `watermark(organization)` reads it beside the core's own tables. The frame asks for the watermark every 5 seconds while a page without `at` is open and sends `panel.watermark` when it moved, so a note a colleague wrote reaches the page once it is committed.
+**"Now" moves for a plugin's changes too.** Every change a plugin writes takes its time from the core's `change_time(organization)`, which keeps that time in the core's table `organization_clock` within the same transaction; `watermark(organization)` reads it beside the core's own tables. The frame asks for the watermark every 2 seconds while a page without `at` is open and sends `panel.watermark` when it moved, so a note a colleague wrote reaches the page once it is committed.
 
 Rules:
 
@@ -688,7 +688,7 @@ The viewport — position and zoom — **is not written into the address**: ever
 
 **The way out.** A plugin with its own rendering engine (WebGL, its own graph library) draws inside `<MaxitorCanvas engine={adapter}>`: the adapter gets the camera from the canvas and draws by it. The gestures, the field, the zoom and the room stay shared.
 
-A document page — lists, cards, forms — takes no canvas: it lies on the still field the core draws.
+Lists, cards and forms also use `MaxitorCanvas`, including core administration. A page may supply `initialCamera={{x, y, zoom: 1}}` to start at readable 100% without automatic refitting when data changes. Explicit user zoom and Fit remain available. Editing forms use the shared `Dialog` portal outside the transformed scene.
 
 ### 7.8. Controls: the shell of every page
 
@@ -729,7 +729,7 @@ The rules of controls:
 - **A value that is gone gives way.** A layer or a choice the page no longer offers falls back to its default, written once in place, so Back does not return to it.
 - **The core's names are the core's.** `at`, `mode`, `from` and every `_…` are written by the core; a page carries them as the address holds them and may not change them. The panel router refuses such a write — an error in development and in tests, a line in the console in production — and the core refuses it too, and a parameter named like one of the node's path parameters.
 - **Colours come from the palette** (`colour: green`), icons from the shell's set: a plugin's buttons look like every other plugin's.
-- **The content field is the plugin's.** On a document page the shell pads it clear of the controls; on a canvas the fitted scene stays clear of them. Inside it a plugin lays out what it likes.
+- **The content field is the plugin's.** Every page keeps its canvas content clear of the shell controls. Inside it a plugin lays out what it likes.
 
 **Three kinds of filter.** A section is a choice of values, a text or a range, and that is all; a filter that is on or off is a choice of one value.
 

@@ -45,8 +45,6 @@ export type VersionPickerProps = {
   children?: ReactNode;
   /** In Diff: A's message, on the left of B's — over it on a phone (spec 038, FR-030). */
   older?: ReactNode;
-  /** In Diff, under the two messages: the versions between A and B (FR-031). */
-  between?: ReactNode;
   /** On a phone the picker is a sheet from the bottom, its track as wide as the screen (FR-031). */
   phone?: boolean;
   /** One version or two (spec 038): in Diff the track holds ``range``. */
@@ -241,7 +239,7 @@ function ModeSwitch({ value, onChange, diffOffered, phone = false }: { value: Pi
  * button at the left of the top row; the service's name and how many versions it has on the left of the
  * head, the mode switch on the right — One, Diff (spec 038) and Side by side (spec 044) — with
  * an "i" before the mode switch that explains the track's marks; then the track, then the chosen version's message — in Diff A's
- * on the left and B's on the right, stacked on a phone, the versions between them below. The
+ * on the left and B's on the right, stacked on a phone. The
  * link to share is the address bar itself, which keeps a private history's key after ``#key=``. It
  * starts closed, a click outside or Escape closes it, and choosing a version leaves it open. On a phone
  * it is a sheet from the bottom with the same head, track and message, every point a 44 px touch target.
@@ -267,7 +265,6 @@ export function VersionPicker({
   range = null,
   onRange,
   older,
-  between,
 }: VersionPickerProps) {
   useEffect(() => {
     if (!anchor || phone) return;
@@ -338,7 +335,6 @@ export function VersionPicker({
               {children}
             </Box>
           </Box>
-          {between}
         </>
       ) : (
         children

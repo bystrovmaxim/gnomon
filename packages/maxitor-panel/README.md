@@ -56,11 +56,17 @@ export function Notes() {
 | `useMoment()` | the page's context: `at`, `against`, `side`, `milestone`; a page draws one canvas from it, never knowing how many panels there are |
 | `useCounts(counts)`, `useChangeStep(listener)`, `useBackToNow()` | the comparison's counts for the pill (`panel.counts`), Shift + ↑ ↓ as `panel.step`, and now asked for (`panel.now`) |
 | `PersonDisk {name, colour}` | a person: a disk of their palette colour with their initials, as a table's person cell and an Authors filter draw them |
+| `StatusDisk {fill, sign, className?, label?}` | the graph viewer's production SVG for status filters and state counts; `fill` may be a CSS palette variable; an optional `label` names a standalone icon |
+| `changeFilterRows(present)` | the four rows of Changes with labels, colours, signs and absence flags; absence never removes a sign |
 | `ChangeStepper {entries, position, onGo}`, `DiffCard {target, at, beside, onClose}`, `StatusIcon {status}`, `VersionsBetween {items}` | what a page compares with, ported from the graph viewer: the stepper with its list grouped, the card of one change — standing beside the element `beside` names, as the graph viewer's does —, the disk of a change, what lies between A and B |
 | `data-change`, `data-paint`, `data-room-anchor` | a comparison's halo under an element that changed and the fading of the rest while the changes paint; an element's anchor, which the canvas reports under the pointer and lights or brings into view when the core asks |
 | `pageMessage`, `coreMessage`, `trusted` | the protocol's shape checks, for whoever speaks it by hand |
 
 A page builds its view from its address only: on the server from `searchParams`, after a change from the new address. It never answers a change of address it did not ask for.
+
+Use `StatusIcon` for a comparison status, `StatusDisk` for a custom palette colour and `changeFilterRows(compared.status.values())` for the Changes filter. They use the same SVG as the graph viewer. A sign in a CSS circle, a plain coloured status disk or a private SVG copy is not an alternative. The panel test run checks the repository for retired renderers and stale standalone mockups; the core browser walk checks actual Draft and Published filter rows.
+
+Standalone mockup tree icons also come from the core's `treeMarks.tsx`: run `node scripts/sync-mockup-icons.mjs --write` from the repository root after changing them. Without `--write`, the command and the panel tests reject older redraws. The core browser walk inspects visible SVG geometry, image loading and Changes signs after each scenario, including nested plugin frames. The complete named-screen audit and scale regressions are recorded in [the verification report](../../specs/079-time-scale/verification.md).
 
 ## The shell
 
@@ -91,3 +97,20 @@ A server page gives filters, layers and choices as plain data; a button, a switc
 ## Installing it
 
 Inside this repository the core's application and the plugin template take the package by path, installed as a copy (`install-links=true` in their `.npmrc`): a linked package would look for React beside itself. After changing the package, remove `node_modules/@maxitor` and run `npm install` again in the application that uses it: npm keeps a copy until then.
+
+### Stable form typography on the canvas
+
+`MaxitorCanvas` accepts an optional `initialCamera: {x, y, zoom}`. Supplying it disables automatic fitting on content changes; the user can still pan, zoom and Fit. Administration starts at zoom 1 with space for the shell controls. Put editing forms in `Dialog`, whose portal stays outside the transformed scene. `heading={false}` suppresses the shell heading when existing content already supplies its own heading; keep the dialog title for its accessible name.
+
+### Shared action buttons
+
+Use `Button` from `@maxitor/panel` for card actions and form controls. The shell's `Actions` uses the same primitive. Keep contextual actions beside their record and register page-wide actions with `PanelPage`; sharing a component does not move an action.
+
+```tsx
+<Button variant="primary" disabled={busy} onClick={save}>Save</Button>
+<Button onClick={cancel}>Cancel</Button>
+```
+
+The default type is `button`; specify `type="submit"` for form submission. Variants are `secondary` (default), `primary`, `danger`, `link` and `icon`. Give icon-only controls an accessible label. Native button attributes and handlers pass through. Labels use 14px text; phone touch targets are at least 44px, except inline links. Standalone mockups receive the same stylesheet through `scripts/sync-admin-canvas.mjs`.
+
+The page layer selector uses `.mx-layer-pill`; `.mx-pill` belongs to the core time scale. Keep these CSS namespaces separate when embedding the panel and core in one document.

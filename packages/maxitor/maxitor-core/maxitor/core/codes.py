@@ -24,6 +24,12 @@ KEPT_FOR_COUNTING = timedelta(hours=1)
 PASSWORD_WINDOW = timedelta(minutes=15)
 PASSWORDS_PER_ADDRESS = 10
 PASSWORDS_PER_IP = 30
+#: Invitations (issue #13): letters to one address as the codes' limits, invitations per inviter and per organization.
+INVITATION_LETTERS_PER_ADDRESS_MINUTE = 1
+INVITATION_LETTERS_PER_ADDRESS_HOUR = 10
+INVITATIONS_PER_INVITER_HOUR = 30
+INVITATIONS_PER_ORGANIZATION_DAY = 100
+INVITATION_DAY = timedelta(days=1)
 
 
 def new_code() -> str:

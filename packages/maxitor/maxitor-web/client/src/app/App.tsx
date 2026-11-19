@@ -16,7 +16,6 @@ import { VersionButton } from "@/components/history/VersionButton";
 import { VersionMessage } from "@/components/history/VersionMessage";
 import { VersionPicker } from "@/components/history/VersionPicker";
 import { ChangeStepper } from "@/components/diagrams/MapViewer/ChangeStepper";
-import { VersionsBetween } from "@/components/history/VersionsBetween";
 import { keyFor } from "@/lib/historyKey";
 import { liveLine } from "@/lib/liveLine";
 import { shortNameOf, shownNameOf } from "@/lib/versionNames";
@@ -644,11 +643,7 @@ export function App() {
               />
             ) : undefined
           }
-          between={
-            shown.a && shown.b ? (
-              <VersionsBetween versions={shown.versions} versionFile={Boolean(shown.versionFile)} live={shown.live} liveIs={shown.liveSameAs} proposals={shown.proposals} range={{ a: shown.a, b: shown.b }} repository={shown.host === "github" ? shown.repository : null} />
-            ) : undefined
-          }
+
         >
           <VersionMessage
             version={shownVersion ?? (shown.b === "live" ? versionOf(shown, shown.liveSameAs) : null)}

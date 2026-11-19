@@ -3,11 +3,8 @@
 "use client";
 
 import { CHANGE_SIGN, type Change } from "./changes";
+import { StatusDisk } from "./StatusDisk";
 
 export function StatusIcon({ status }: { status: Change | "unchanged" }) {
-  return (
-    <span className="mx-status" data-status={status} role="img" aria-label={status} title={status}>
-      {CHANGE_SIGN[status]}
-    </span>
-  );
+  return <StatusDisk className="mx-status" fill={`var(--mx-change-${status})`} sign={CHANGE_SIGN[status]} label={status} />;
 }

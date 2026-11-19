@@ -4,6 +4,7 @@
 "use client";
 
 import { diffWords } from "diff";
+import { StatusDisk } from "@maxitor/panel";
 
 import { STATE_MARK, type ChangeState } from "./draft";
 
@@ -31,14 +32,7 @@ export function Marking({ before, after }: { before: string; after: string }) {
 /** A state's disk, as the filter draws a kind of change: its colour with its sign in white. */
 export function StateDisk({ state }: { state: ChangeState }) {
   const { colour, mark } = STATE_MARK[state];
-  return (
-    <svg className="nt-disk" viewBox="0 0 24 24" aria-hidden>
-      <circle cx="12" cy="12" r="11" fill={`var(--mx-palette-${colour})`} />
-      <text x="12" y="16.5" textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff">
-        {mark}
-      </text>
-    </svg>
-  );
+  return <StatusDisk className="nt-disk" fill={`var(--mx-palette-${colour})`} sign={mark} />;
 }
 
 /** The warning's icon: a ring with an exclamation. */

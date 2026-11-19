@@ -28,12 +28,13 @@ from aoa.action_machine.intents.meta import meta
 from aoa.action_machine.logging.base_logger import BaseLogger
 from aoa.action_machine.logging.log_coordinator import LogCoordinator
 from aoa.action_machine.runtime.action_product_machine import ActionProductMachine
+from tests.fake_people import MemoryPeople
 
 SECRET = "a-test-secret-that-is-long-enough-for-hs256"
 
 
 @meta(description="The core's storage in memory, for tests")
-class MemoryCoreStorage(CoreStorage):
+class MemoryCoreStorage(MemoryPeople, CoreStorage):
     """Every table a list of rows; versions kept as the real storage keeps them."""
 
     def __init__(self) -> None:
@@ -42,11 +43,14 @@ class MemoryCoreStorage(CoreStorage):
             t: []
             for t in [
                 "account",
+                "account_place",
                 "sign_in",
                 "sign_in_code",
                 "sign_in_attempt",
                 "organization",
                 '"user"',
+                "invitation",
+                "invitation_letter",
                 "boundary",
                 "boundary_user",
             ]
@@ -72,8 +76,9 @@ class MemoryCoreStorage(CoreStorage):
     async def insert(self, table: str, row: Any, changed_at: datetime, author: str | None, operation: str) -> None:
         if table == "organization" and any(o["code"] == row["code"] for o in self.tables["organization"]):
             raise UniqueRowError("organization_code_unique")
+        self._check_people_unique(table, row)
         self.tables[table].append(dict(row))
-        self._version(table, dict(row), changed_at, operation)
+        self._version(table, dict(row), changed_at, author, operation)
 
     async def update(
         self, table: str, key: Any, changes: Any, changed_at: datetime, author: str | None, operation: str
@@ -81,15 +86,15 @@ class MemoryCoreStorage(CoreStorage):
         for row in self.tables[table]:
             if all(row[k] == v for k, v in key.items()):
                 row.update(changes)
-                self._version(table, row, changed_at, operation)
+                self._version(table, row, changed_at, author, operation)
 
     async def delete(self, table: str, key: Any, changed_at: datetime, author: str | None, operation: str) -> None:
         self.tables[table] = [r for r in self.tables[table] if not all(r[k] == v for k, v in key.items())]
 
-    def _version(self, table: str, row: dict[str, Any], changed_at: datetime, operation: str) -> None:
+    def _version(self, table: str, row: dict[str, Any], changed_at: datetime, author: str | None, operation: str) -> None:
         versions, _keys = VERSIONED[table]
         kept = {k: v for k, v in row.items() if not (table == "sign_in" and k in {"password_hash", "last_used_at"})}
-        self.versions[versions].append({**kept, "valid_from_at": changed_at, "operation": operation})
+        self.versions[versions].append({**kept, "valid_from_at": changed_at, "author_id": author, "operation": operation})
 
     async def sign_in_of(self, provider: str, subject: str) -> dict[str, Any] | None:
         for r in self.tables["sign_in"]:
@@ -207,6 +212,7 @@ class MemoryCoreStorage(CoreStorage):
                             "id": o["id"],
                             "code": o["code"],
                             "name": o["name"],
+                            "who_may_invite": o["who_may_invite"],
                             "user_id": u["id"],
                             "user_name": u["name"],
                             "is_admin": u["is_admin"],

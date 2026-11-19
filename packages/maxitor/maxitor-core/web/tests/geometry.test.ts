@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { barStep, clampView, DAY, PRESETS, domainOf, hatchFrom, HOUR, MIN_SPAN, MINUTE, moveView, presetView, SECOND, ticksOf, tickStep, timeAt, xOf, zoomView } from "../components/scale/geometry.ts";
+import { barBounds, barStep, clampView, DAY, PRESETS, domainOf, hatchFrom, HOUR, MIN_SPAN, MINUTE, moveView, presetView, SECOND, ticksOf, tickStep, timeAt, xOf, zoomView } from "../components/scale/geometry.ts";
 
 const NOW = Date.parse("2026-11-12T12:00:00Z");
 
@@ -73,4 +73,17 @@ test("the hatch starts at now, never left of the view, and is absent when now is
 
 test("the presets run from a minute to the whole history", () => {
   assert.deepEqual(PRESETS.map((preset) => preset.label), ["1 min", "10 min", "1 h", "1 d", "7 d", "30 d", "All"]);
+});
+
+test("the latest bar ends at Now, including a change exactly at a bucket boundary", () => {
+  const view = { from: NOW - HOUR, to: NOW + HOUR };
+  for (const now of [NOW, NOW + 1, NOW + 30 * SECOND]) {
+    const bounds = barBounds(NOW, MINUTE, now, view, 720, 1.5)!;
+    assert.ok(bounds.width > 0);
+    assert.ok(bounds.x + bounds.width <= xOf(now, view, 720));
+  }
+  assert.equal(barBounds(NOW + MINUTE, MINUTE, NOW, view, 720, 1.5), null);
+  assert.equal(barBounds(view.from - 2 * MINUTE, MINUTE, NOW, view, 720, 1.5), null);
+  const past = barBounds(NOW - 10 * MINUTE, MINUTE, NOW, view, 720, 1.5)!;
+  assert.ok(past.x + past.width < xOf(NOW, view, 720));
 });

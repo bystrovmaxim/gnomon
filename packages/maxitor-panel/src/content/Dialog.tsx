@@ -7,7 +7,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-export function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Dialog({ title, onClose, children, heading = true }: { title: string; onClose: () => void; children: ReactNode; heading?: boolean }) {
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -25,11 +25,12 @@ export function Dialog({ title, onClose, children }: { title: string; onClose: (
       <div
         className="mx-dialog"
         role="dialog"
+        aria-modal="true"
         aria-label={title}
         onWheel={(event) => event.stopPropagation()}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <b className="mx-dialog-title">{title}</b>
+        {heading ? <b className="mx-dialog-title">{title}</b> : null}
         {children}
       </div>
     </>,

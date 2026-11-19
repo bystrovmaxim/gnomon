@@ -8,19 +8,29 @@
 // tree's head — the arrow as Back (spec 085) — and a node that is entered with its head, its crumbs and a reload
 // inside it (specs/077-core-frame/quickstart.md, specs/078-page-shell/quickstart.md, specs/085-entered-tree-node
 // /spec.md), a second
-// organization on the deployed version, disabling and enabling, a private plugin's dialog — signing out and in, a
-// wrong password, resetting the password, someone else's organization, an organization's address without a session,
-// and the same pages and the frame on a phone.
+// organization on the deployed version, disabling and enabling, a private plugin's dialog — an administrator's
+// invitation and its letter with no link, the invited person signing up with the invited email and accepting, the new
+// user inviting from the menu, who may invite switched and an invitation withdrawn by it, a user blocked and refused
+// on the next request, the last administrator kept, the last place after signing in again (spec 086) — signing out
+// and in, a wrong password, resetting the password, someone else's organization, an organization's address without a
+// session, and the same pages and the frame on a phone.
 //
 //   node packages/maxitor/maxitor-core/web/scripts/check-core.mjs
 //
 // MAXITOR_STAND_URL (default http://localhost:3000) and MAXITOR_STAND_OUTBOX (default .core-stand/outbox) point
 // it elsewhere. Each scenario prints OK or FAIL; the exit code is the number of failures.
+import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { chromium } from "playwright";
+import { expectStatusDisks } from "./check-status-disks.mjs";
+import { assertIcons } from "./audit-icons.mjs";
+import { checkScaleSelection, checkIntervalMove } from "./check-scale-selection.mjs";
+import { checkScaleGestureSequence } from "./check-scale-gestures.mjs";
+import { checkScaleLivePublication } from "./check-scale-live.mjs";
+import { checkRootTreeAlignment, checkEnteredTreePosition } from "./check-root-tree.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../..");
 const BASE = process.env.MAXITOR_STAND_URL ?? "http://localhost:3000";
@@ -40,12 +50,20 @@ let failures = 0;
 async function scenario(name, run) {
   try {
     await run();
+    await assertIcons(page);
     console.log(`OK   ${name}`);
   } catch (error) {
     failures += 1;
     // The first lines of Playwright's call log name the locator that did not hold.
     const lines = String(error?.message ?? error).split("\n").filter((line) => line.trim()).slice(0, 5);
     console.log(`FAIL ${name}\n     ${lines.join("\n     ")}`);
+    if (process.env.MAXITOR_CHECK_FAIL_FAST === "1") {
+      console.log("Failure page", page.url(), "Scale", await page.locator(".mx-card").innerText({ timeout: 1000 }).catch(() => "closed"));
+      console.log("Frame history", await page.locator("iframe.mx-panel-frame").first().getAttribute("data-history"));
+      await page.screenshot({ path: join(ROOT, ".core-stand/core-failure.png"), fullPage: true });
+      await browser.close();
+      throw error;
+    }
   }
 }
 
@@ -77,6 +95,30 @@ async function codeFor(email, after) {
   throw new Error(`no letter to ${email} in ${OUTBOX}`);
 }
 
+/** The newest letter to an address whose subject has a word, as plain text: the .eml's text part decoded. */
+async function letterText(email, after, word) {
+  for (let i = 0; i < 50; i += 1) {
+    const letters = readdirSync(OUTBOX)
+      .map((name) => join(OUTBOX, name))
+      .filter((path) => statSync(path).mtimeMs >= after)
+      .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
+    for (const path of letters) {
+      const raw = readFileSync(path, "utf8");
+      if (!raw.includes(`To: ${email}`) || !raw.toLowerCase().includes(word)) continue;
+      // Use the MIME parser for the multipart outbox letter, including its folded lines and transfer encoding.
+      return execFileSync("python3", ["-c", [
+        "import sys",
+        "from email import policy",
+        "from email.parser import Parser",
+        "letter = Parser(policy=policy.default).parsestr(sys.stdin.read())",
+        "sys.stdout.write(letter.get_body(preferencelist=('plain',)).get_content())",
+      ].join("\n")], { input: raw, encoding: "utf8" });
+    }
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  throw new Error(`no "${word}" letter to ${email}`);
+}
+
 async function letterTo(email, after, word) {
   for (let i = 0; i < 50; i += 1) {
     const found = readdirSync(OUTBOX).some((name) => {
@@ -95,6 +137,7 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ viewport: { width: 1360, height: 840 } });
 await context.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
 const page = await context.newPage();
+const admin = page.frameLocator("iframe.mx-panel-frame");
 
 async function signIn(email, password) {
   await page.getByLabel("Email").fill(email);
@@ -168,40 +211,42 @@ const SECOND = `check-b-${RUN}`;
 
 /** Wait until the Installed tab shows a plugin in a state, the page reading the installer's work by itself. */
 async function waitForState(title, state) {
-  for (let i = 0; i < 90; i += 1) {
-    const row = page.locator(".prow", { hasText: title });
+  for (let i = 0; i < 300; i += 1) {
+    const row = admin.locator(".prow", { hasText: title });
     if ((await row.count()) && (await row.locator(`.stt.${state}`).count())) return;
+    if (await row.locator(".stt.failed").count()) throw new Error(await row.innerText());
     await new Promise((r) => setTimeout(r, 1000));
   }
   throw new Error(`${title} never became ${state}`);
 }
 
-await scenario("Settings at the foot of the tree is entered and holds Plugins; the marketplace offers the template", async () => {
+await scenario("Settings at the foot of the tree is entered and holds Organization, Users and Plugins; the marketplace offers the template", async () => {
   await page.goto(`${BASE}/w/${CODE}`);
   await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).click();
   // Settings is entered (spec 085): the panel holds its children only, and Settings stands at its head.
   await page.locator(".mx-level-head", { hasText: "Settings" }).waitFor();
-  expect((await page.locator(".mx-tree-scroll .mx-node").count()) === 1, "the level of Settings holds more than Plugins");
+  const level = await page.locator(".mx-tree-scroll .mx-node").allInnerTexts();
+  expect(JSON.stringify(level.map((t) => t.trim())) === JSON.stringify(["Organization", "Users", "Plugins"]), `the level of Settings holds ${level}`);
   await page.locator(".mx-tree-scroll .mx-node", { hasText: "Plugins" }).click();
   await page.waitForURL(`**/w/${CODE}/core/settings/plugins`);
   expect((await page.locator(".mx-path").innerText()).includes("Settings"), "the top row's path does not say Settings");
-  await page.getByRole("tab", { name: /Marketplace/ }).click();
-  await page.locator(".mcard", { hasText: "Notes" }).waitFor();
-  await page.getByLabel("Search plugins").fill("nothing-like-it");
-  await page.getByText("No plugin matches “nothing-like-it”").waitFor();
-  await page.getByRole("button", { name: "Clear the search" }).first().click();
-  await page.locator(".mcard", { hasText: "Notes" }).waitFor();
+  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).waitFor();
+  await admin.getByLabel("Search plugins").fill("nothing-like-it");
+  await admin.getByText("No plugin matches “nothing-like-it”").waitFor();
+  await admin.getByRole("button", { name: "Clear the search" }).first().click();
+  await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).waitFor();
 });
 
 await scenario("installing the template builds its version and its nodes join the tree", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await page.getByRole("tab", { name: /Marketplace/ }).click();
-  await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
-  await page.getByText(`Install Notes ${TEMPLATE_VERSION}`).waitFor();
+  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).getByRole("button", { name: "Install" }).click();
+  await admin.getByText(`Install Notes ${TEMPLATE_VERSION}`).waitFor();
   // The stand's first run deploys the version; a later run finds it deployed by an earlier one.
-  await page.locator(".dlg", { hasText: /is deployed for the first time|is already deployed in Maxitor/ }).waitFor();
-  await page.getByRole("button", { name: "Install Notes" }).click();
-  await page.getByRole("tab", { name: /Installed/ }).waitFor();
+  await admin.locator(".dlg", { hasText: /is deployed for the first time|is already deployed in Maxitor/ }).waitFor();
+  await admin.getByRole("button", { name: "Install Notes" }).click();
+  await admin.getByRole("tab", { name: /Installed/ }).waitFor();
   await waitForState("Notes", "enabled");
   await page.goto(`${BASE}/w/${CODE}`);
   await page.locator(".mx-node", { hasText: "Notes" }).first().waitFor();
@@ -263,6 +308,7 @@ await scenario("the Draft page opens in the right panel from the tree, with its 
   // scale's pill stands in the top row, not over the panel.
   expect((await page.locator(".mx-panel .mx-pill, .mx-panel .mx-filters, .mx-panel .mx-views, .mx-panel .mx-legend, .mx-panel .mx-bar").count()) === 0, "the core draws controls over the panel");
   await frame.locator(".mx-filters .mx-filter-row").first().waitFor();
+  await expectStatusDisks(frame, "state", ["+", "~", "−"]);
   // The filters are the mockup's 148 px and stand clear of the page's content.
   const filters = await frame.locator(".mx-filters").boundingBox();
   const card = await frame.locator(".nt-card").first().boundingBox();
@@ -384,6 +430,13 @@ await scenario("the whole draft is published as one revision; Published marks my
   await page.frameLocator("iframe.mx-panel-frame").locator(".nt-card", { hasText: "Retry three times" }).waitFor();
 });
 
+await scenario("Published's Changes filter keeps all four production signs, including absent statuses", async () => {
+  await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}/published?mode=diff&from=2000-01-01T00:00:00Z`);
+  await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
+  const frame = page.frameLocator("iframe.mx-panel-frame");
+  await expectStatusDisks(frame, "change", ["+", "~", "−", "="]);
+});
+
 await scenario("Published on the scale: its publications as purple points, Roll back exactly on a past one, and the rollback a red point after them", async () => {
   // A second publication, so there is a past one to go back to.
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
@@ -477,8 +530,8 @@ await scenario("the test drawing: layers with counts, filters, the bottom bar an
   const frame = page.frameLocator("iframe.mx-panel-frame");
   const panel = await page.locator(".mx-panel").boundingBox();
   const place = async (selector) => frame.locator(selector).boundingBox();
-  await frame.locator(".mx-pill").waitFor();
-  const pill = await place(".mx-pill");
+  await frame.locator(".mx-layer-pill").waitFor();
+  const pill = await place(".mx-layer-pill");
   expect(Math.abs(pill.x + pill.width / 2 - (panel.x + panel.width / 2)) < 2, "the layer pills are not at the top centre");
   const filters = await place(".mx-filters");
   expect(filters.x < panel.x + panel.width / 4 && filters.y < panel.y + panel.height / 4, "the filters are not at the top left");
@@ -516,6 +569,19 @@ await scenario("a page gives its history; the core keeps what holds and refuses 
 
 /** A moment some days back, to the minute, as the address writes it. */
 const daysAgo = (days) => new Date(Math.floor((Date.now() - days * 86_400_000) / 60_000) * 60_000).toISOString().replace(/\.\d{3}Z$/, ".000000Z");
+
+/** Wait for a selection gesture to reach both the shell URL and its comparison panel. */
+async function changeScale(at, gesture) {
+  const before = at.url();
+  await gesture();
+  await at.waitForURL(url => url.href !== before, { timeout: 5000 });
+  await at.waitForFunction(() => {
+    const query = new URLSearchParams(location.search);
+    const frame = document.querySelector("iframe.mx-panel-frame");
+    const shown = new URL(frame.contentWindow.location.href).searchParams;
+    return shown.get("at") === query.get("at") && shown.get("_against") === query.get("from");
+  }, undefined, { timeout: 5000 });
+}
 
 /** Open a fixture of the scale on the test page and its card. */
 async function openScale(fixture, query = "") {
@@ -559,6 +625,166 @@ await scenario("the scale is set up by the page: its kinds on the lane, small po
   page.off("console", listen);
   expect(errors.some((text) => text.includes('"shiny"')), "the undeclared kind was not named");
   expect(errors.some((text) => text.includes("did not declare small")), "the small point without small was not named");
+});
+
+await scenario("comparison boundaries: an upper click beside B moves A; an axis click beside A moves B", async () => {
+  await openScale("both", `?mode=diff&from=${daysAgo(11)}&at=${daysAgo(2)}`);
+  await checkScaleSelection({
+    track: page.locator(".mx-track"), url: () => page.url(), click: (x, y) => changeScale(page, () => page.mouse.click(x, y)),
+    observe: () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
+  });
+});
+
+await scenario("comparison interval: its shading stops at the axis and its visible grip moves both boundaries", async () => {
+  await openScale("both", `?mode=diff&from=${daysAgo(11)}&at=${daysAgo(2)}`);
+  await checkIntervalMove({
+    track: page.locator(".mx-track"), url: () => page.url(),
+    leave: () => page.locator(".mx-card-span").click(),
+    drag: (from, to) => changeScale(page, async () => { await page.mouse.move(...from); await page.mouse.down(); await page.mouse.move(...to, { steps: 8 }); await page.mouse.up(); }),
+    observe: () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
+  });
+});
+
+await scenario("scale gesture sequence: swipe, milestone, crossing A/B, overlap, close and reopen", async () => {
+  await openScale("both", `?mode=diff&from=${daysAgo(11)}&at=${daysAgo(8)}`);
+  await checkScaleGestureSequence({
+    track: page.locator(".mx-track"), pill: page.locator(".mx-pill-main"),
+    preset: page.getByRole("button", { name: "7 d", exact: true }), url: () => page.url(),
+    click: (x, y) => changeScale(page, () => page.mouse.click(x, y)),
+    drag: (from, to) => changeScale(page, async () => { await page.mouse.move(...from); await page.mouse.down(); await page.mouse.move(...to, { steps: 8 }); await page.mouse.up(); }),
+    swipe: async (point, direction) => { await page.mouse.move(...point); await page.mouse.wheel(direction === "left" ? -72 : 72, 0); },
+    observe: () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
+  });
+});
+
+await scenario("phone scale gesture sequence: touch swipe, milestone, crossing A/B, overlap, close and reopen", async () => {
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  try {
+    await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+    await phone.addCookies(await context.cookies());
+    const p = await phone.newPage();
+    await p.goto(`${BASE}/w/${CODE}/core/panel-test/history/both?mode=diff&from=${daysAgo(11)}&at=${daysAgo(8)}`);
+    await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
+    await p.locator(".mx-pill-main").tap();
+    const input = await phone.newCDPSession(p);
+    const drag = async (from, to) => {
+      const point = (x, y) => ({ x, y, id: 1, radiusX: 4, radiusY: 4, force: 1 });
+      await input.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point(...from)] });
+      for (let i = 1; i <= 8; i++) {
+        await input.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [point(
+          from[0] + (to[0] - from[0]) * i / 8, from[1] + (to[1] - from[1]) * i / 8,
+        )] });
+      }
+      await input.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    };
+    await checkScaleGestureSequence({
+      track: p.locator(".mx-track"), pill: { click: () => p.locator(".mx-pill-main").tap() },
+      preset: { click: () => p.getByRole("button", { name: "7 d", exact: true }).tap() },
+      url: () => p.url(), click: (x, y) => changeScale(p, () => p.touchscreen.tap(x, y)), drag: (from, to) => changeScale(p, () => drag(from, to)), mobile: true,
+      swipe: (point, direction) => drag(point, [point[0] + (direction === "left" ? 24 : -24), point[1]]),
+      observe: () => p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
+    });
+  } finally {
+    await phone.close();
+  }
+});
+
+await scenario("an open scale receives another tab's publication, bars and Now boundary within five seconds", async () => {
+  const created = await page.request.post(`${BASE}/p/notes/api/${CODE}/items`, {
+    headers: { Origin: BASE }, data: { title: `Live refresh ${RUN}` },
+  });
+  expect(created.ok(), `creating the isolated live-refresh item answered ${created.status()}`);
+  const { item_id: item } = await created.json();
+  const observer = await context.newPage(), editor = await context.newPage();
+  try {
+    const draftUrl = `${BASE}/w/${CODE}/notes/items/${item}`;
+    await observer.goto(`${draftUrl}/published`);
+    await observer.frameLocator('iframe.mx-panel-frame').getByText('Nothing is published yet: publish the draft to make the first revision.', { exact: true }).waitFor();
+    await observer.locator('.mx-pill-main').click();
+    await observer.locator('.mx-track').waitFor();
+    let navigations = 0;
+    observer.on('framenavigated', frame => { if (frame === observer.mainFrame()) navigations++; });
+    await editor.goto(draftUrl);
+    let frame = editor.frameLocator('iframe.mx-panel-frame');
+    await frame.getByRole('button', { name: 'New note', exact: true }).click();
+    await frame.getByLabel("The note's text").fill('Live refresh baseline');
+    await frame.getByRole('button', { name: 'Write', exact: true }).click();
+    await frame.locator('.nt-card', { hasText: 'Live refresh baseline' }).waitFor();
+    for (const number of [1, 2]) {
+      if (number === 2) {
+        await editor.waitForURL(/\/published$/);
+        frame = editor.frameLocator('iframe.mx-panel-frame');
+        await frame.getByRole('button', { name: 'Edit', exact: true }).click();
+        await frame.getByLabel("The note's text").fill('Live refresh edited in another tab');
+        await frame.getByRole('button', { name: 'Save', exact: true }).click();
+        await frame.locator('.nt-edit').waitFor({ state: 'detached' });
+      }
+      await frame.getByRole('button', { name: 'Publish', exact: true }).click();
+      await frame.getByLabel('Title', { exact: true }).fill(`Live refresh ${number}`);
+      await frame.getByLabel('Comment', { exact: true }).fill('The observing scale stays open throughout the edit and publication.');
+      await checkScaleLivePublication({
+        track: observer.locator('.mx-track'), delta: number === 1 ? { added: 1 } : { changed: 1 },
+        publish: () => frame.getByRole('button', { name: `Publish v${number}`, exact: true }).click(),
+        navigationStamp: () => navigations,
+        observe: () => observer.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
+      });
+    }
+    let revision = 2;
+    for (const mobile of [false, true]) {
+      await observer.setViewportSize(mobile ? { width: 375, height: 812 } : { width: 1360, height: 840 });
+      for (const mode of ['diff', 'side_by_side']) {
+        const modeLabel = mode === 'diff' ? 'Diff' : mobile ? 'A / B' : 'Side by side';
+        await observer.getByRole('radio', { name: modeLabel, exact: true }).click();
+        await observer.waitForURL(url => url.searchParams.get('mode') === mode);
+        const track = observer.locator('.mx-track');
+        await track.locator('.mx-track-knob.hollow').waitFor();
+        const geometry = () => track.evaluate(el => ({
+          width: el.clientWidth, top: +el.querySelector('.mx-track-knob.hollow').getAttribute('cy'),
+          base: +el.querySelector('.mx-track-knob:not(.hollow)').getAttribute('cy'),
+          now: +el.querySelector('.mx-track-now').getAttribute('x1'),
+          latest: +[...el.querySelectorAll('.mx-point-ref')].at(-1).parentElement.querySelector('circle').getAttribute('cx'),
+          lane: +el.querySelector('.mx-lane').getAttribute('y1'),
+        }));
+        let g = await geometry();
+        // Choose A once and retain it across modes; return B to Now through the lower handle.
+        if (!mobile && mode === 'diff') {
+          const previousA = new URL(observer.url()).searchParams.get('from');
+          await track.click({ position: { x: g.width / 2, y: g.top } });
+          await observer.waitForURL(url => url.searchParams.get('from') !== previousA);
+          g = await geometry();
+        }
+        await track.click({ position: { x: g.now + 2, y: g.base } });
+        await observer.waitForURL(url => !url.searchParams.has('at'));
+        for (const fixed of [false, true]) {
+          if (fixed) {
+            g = await geometry();
+            await track.click({ position: { x: g.latest, y: g.lane } });
+            await observer.waitForURL(url => url.searchParams.has("at"));
+            expect(new URL(observer.url()).searchParams.has('at'), 'Selecting a milestone did not fix B');
+          }
+          await editor.waitForURL(/\/published$/);
+          frame = editor.frameLocator('iframe.mx-panel-frame');
+          await frame.getByRole('button', { name: 'Edit', exact: true }).click();
+          const body = `${mobile ? 'Phone' : 'Desktop'} ${mode} ${fixed ? 'fixed dates' : 'live B'} ${++revision}`;
+          await frame.getByLabel("The note's text").fill(body);
+          await frame.getByRole('button', { name: 'Save', exact: true }).click();
+          await frame.locator('.nt-edit').waitFor({ state: 'detached' });
+          await frame.getByRole('button', { name: 'Publish', exact: true }).click();
+          await frame.getByLabel('Title', { exact: true }).fill(body);
+          await frame.getByLabel('Comment', { exact: true }).fill('Only a live B follows publication; manually selected dates stay fixed.');
+          const shown = observer.frameLocator(mode === 'side_by_side' ? 'iframe.mx-panel-frame[src*="_side=b"]' : 'iframe.mx-panel-frame');
+          await checkScaleLivePublication({
+            track, mobile, fixed, delta: { changed: 1 }, navigationStamp: () => navigations,
+            publish: () => frame.getByRole('button', { name: `Publish v${revision}`, exact: true }).click(),
+            observe: () => observer.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
+            readContent: () => shown.locator('.nt-body').innerText(), expectedContent: body,
+          });
+        }
+      }
+    }
+  } finally {
+    await editor.close(); await observer.close();
+  }
 });
 
 await scenario("bars: the page's changes stacked by kind under the lane", async () => {
@@ -637,6 +863,9 @@ await scenario("a node that is entered holds its children only; its head, its cr
   await page.locator(".mx-level-head").waitFor({ state: "detached" });
   await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).waitFor();
   expect(page.url() === address, "Back changed the address");
+  // At the root there is no level above: Back is not drawn at all, neither shown nor greyed out.
+  expect((await page.locator(".mx-body > .mx-tree .mx-tree-head button").count()) === 1, "the tree's head at the root holds more than the collapse button");
+  expect((await page.getByRole("button", { name: "Back" }).count()) === 0, "Back is drawn at the root");
   // What was expanded in the level lives in the page's memory: entering Notes again finds the item still expanded.
   await page.locator(".mx-node", { hasText: "Notes" }).first().click();
   await page.locator(".mx-level-head", { hasText: "Notes" }).waitFor();
@@ -651,11 +880,76 @@ await scenario("a node that is entered holds its children only; its head, its cr
   await page.waitForURL(new RegExp(`/w/${CODE}$`), { waitUntil: "commit" });
 });
 
+await scenario("root icons align with collapse and the first section stays in place through entry and Back", async () => {
+  await page.goto(`${BASE}/w/${CODE}`);
+  await page.locator('.mx-tree-foot .mx-node').waitFor();
+  await checkRootTreeAlignment(page.locator('.mx-body > .mx-tree'));
+  await checkEnteredTreePosition(page.locator('.mx-body > .mx-tree'));
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  try {
+    await phone.addCookies(await context.cookies());
+    const p = await phone.newPage();
+    await p.goto(`${BASE}/w/${CODE}`);
+    await p.getByRole('button', { name: "The organization's tree", exact: true }).click();
+    await checkRootTreeAlignment(p.locator('.mx-tree.drawer'));
+    const reopenTree = async () => {
+      await p.locator('.mx-body > .mx-tree .mx-level-head').waitFor({ state: 'attached' });
+      if (!await p.locator('.mx-tree.drawer').isVisible()) await p.getByRole('button', { name: "The organization's tree", exact: true }).click();
+    };
+    const position = await checkEnteredTreePosition(p.locator('.mx-tree.drawer'), { afterEnter: reopenTree });
+    expect(position.visits.every(visit => visit.entered.title.font === position.before.title.font), 'Entering a section shrank the phone title');
+    await p.locator('.drawer .mx-node', { hasText: 'Notes' }).click();
+    await reopenTree();
+    await p.locator('.drawer .mx-level-head').waitFor();
+    expect(await p.locator('.drawer .mx-tree-root').count() === 0, 'Root alignment leaked into an entered level');
+  } finally { await phone.close(); }
+});
+
+await scenario("standalone core and tree mockups align root icons on desktop and phone", async () => {
+  const mock = await context.newPage();
+  const url = name => pathToFileURL(join(ROOT, 'specs', name, 'mockup/index.html')).href;
+  try {
+    await mock.goto(url('085-entered-tree-node'));
+    const selectors = { rows: '.root-entry', icon: '.slot svg', toggle: '.sbh .sbb svg' };
+    await checkRootTreeAlignment(mock.locator('.sb'), selectors);
+    const positionSelectors = { entry: '.tree .root-entry', entryIcon: '.slot svg', entryTitle: '.lb', heading: '.lvhead', headingIcon: 'svg', headingTitle: '.lb' };
+    await checkEnteredTreePosition(mock.locator('.sb'), positionSelectors);
+    await mock.getByRole('button', { name: 'Phone', exact: true }).click();
+    await mock.getByRole('button', { name: "The organization's tree", exact: true }).click();
+    await checkRootTreeAlignment(mock.locator('.drawer'), selectors);
+    const reopenMockTree = async () => {
+      if (!await mock.locator('.drawer').isVisible()) await mock.getByRole('button', { name: "The organization's tree", exact: true }).click();
+    };
+    await checkEnteredTreePosition(mock.locator('.drawer'), { ...positionSelectors, afterEnter: reopenMockTree });
+    await mock.locator('.drawer .root-entry').filter({ hasText: 'Notes' }).click();
+    await reopenMockTree();
+    expect(await mock.locator('.drawer .root-entry').count() === 0, 'Mockup root alignment leaked into an entered level');
+    await mock.goto(`${url('072-maxitor-core')}?screen=9.1`);
+    await mock.getByRole('button', { name: 'Back', exact: true }).click();
+    await checkRootTreeAlignment(mock.locator('.mx-tree'), { minimum: 1 });
+    const desktopHead = await mock.locator('.mx-tree-head').evaluate(el => el.getBoundingClientRect().height);
+    await mock.locator('.mx-tree-foot .mx-node').click();
+    expect(Math.abs(await mock.locator('.mx-tree-head').evaluate(el => el.getBoundingClientRect().height) - desktopHead) < 0.1, 'Mockup tree controls moved on entering Settings');
+    await mock.goto(`${url('072-maxitor-core')}?screen=M15`);
+    await mock.getByRole('button', { name: "The organization's tree", exact: true }).click();
+    expect(await mock.locator('.mx-tree.drawer').isVisible(), 'The phone mockup opened a hidden tree');
+    await mock.getByRole('button', { name: 'Back', exact: true }).click();
+    await checkRootTreeAlignment(mock.locator('.mx-tree.drawer'), { minimum: 1 });
+    const phoneHead = await mock.locator('.drawer .mx-tree-head').evaluate(el => el.getBoundingClientRect().height);
+    await mock.locator('.drawer .mx-tree-foot .mx-node').click();
+    await mock.getByRole('button', { name: "The organization's tree", exact: true }).click();
+    expect(Math.abs(await mock.locator('.drawer .mx-tree-head').evaluate(el => el.getBoundingClientRect().height) - phoneHead) < 0.1, 'Mockup phone Back button shifted the section heading');
+  } finally { await mock.close(); }
+});
+
 await scenario("the tree's head: collapse folds the tree, the arrow is Back and steps out of the entered level", async () => {
   await page.goto(`${BASE}/w/${CODE}/notes/items/${ITEM}`);
   await page.locator("iframe.mx-panel-frame:not(.waiting)").waitFor({ timeout: 30_000 });
   await page.getByRole("button", { name: "Collapse sidebar" }).click();
   expect((await page.locator(".mx-body > .mx-tree.collapsed .mx-node").count()) === 0, "the collapsed tree still shows its nodes");
+  // Inside an entered level Back exists, yet the collapsed strip holds the expand button alone.
+  const strip = await page.locator(".mx-body > .mx-tree.collapsed button").evaluateAll((all) => all.map((b) => b.getAttribute("aria-label")));
+  expect(JSON.stringify(strip) === JSON.stringify(["Expand sidebar"]), `the collapsed strip holds ${JSON.stringify(strip)}`);
   await page.getByRole("button", { name: "Expand sidebar" }).click();
   await page.locator(".mx-body > .mx-tree .mx-node").first().waitFor();
   // Back steps out of the entered level through the address: the tree, the crumbs, the address and the panel agree.
@@ -674,35 +968,165 @@ await scenario("a second organization installs the deployed version without buil
   await page.getByRole("button", { name: "Register and enter" }).click();
   await page.waitForURL(`**/w/${SECOND}`);
   await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
-  await page.getByRole("tab", { name: /Marketplace/ }).click();
-  await page.locator(".mcard", { hasText: "Notes" }).getByRole("button", { name: "Install" }).click();
-  await page.getByText("is already deployed in Maxitor").waitFor();
-  await page.getByRole("button", { name: "Install Notes" }).click();
+  await admin.getByRole("tab", { name: /Marketplace/ }).click();
+  await admin.locator(".mcard").filter({ has: admin.locator(".ptitle", { hasText: /^Notes/ }) }).getByRole("button", { name: "Install" }).click();
+  await admin.getByText("is already deployed in Maxitor").waitFor();
+  await admin.getByRole("button", { name: "Install Notes" }).click();
   await waitForState("Notes", "enabled");
 });
 
 await scenario("disabling keeps the plugin, enabling brings its sections back", async () => {
-  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
-  await page.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Disable" }).click();
-  await page.getByRole("button", { name: "Disable", exact: true }).last().click();
+  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins?tab=installed`);
+  await admin.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Disable" }).click();
+  await admin.getByRole("dialog", { name: "Plugin settings", exact: true }).getByRole("button", { name: "Disable", exact: true }).click();
   await waitForState("Notes", "disabled");
   await page.goto(`${BASE}/w/${SECOND}`);
   expect((await page.locator(".mx-node", { hasText: "Notes" }).count()) === 0, "a disabled plugin stays in the tree");
-  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins`);
-  await page.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Enable" }).click();
+  await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins?tab=installed`);
+  await admin.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Enable" }).click();
   await waitForState("Notes", "enabled");
-  await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await page.locator(".prow", { hasText: "Notes" }).locator(".stt.enabled").waitFor(); // the first organization untouched
+  await page.goto(`${BASE}/w/${CODE}/core/settings/plugins?tab=installed`);
+  await admin.locator(".prow", { hasText: "Notes" }).locator(".stt.enabled").waitFor(); // the first organization untouched
+});
+
+const INVITED = `invited-${RUN}@example.com`;
+const INVITED_PASSWORD = `Invited-Horse-${RUN}`;
+const BY_USER = `colleague-${RUN}@example.com`;
+let invitationSentAt = 0;
+// The invited person's own browser: signed up with the invited email, kept open across the scenarios below.
+const guest = await browser.newContext({ viewport: { width: 1360, height: 840 } });
+await guest.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+const g = await guest.newPage();
+
+await scenario("an administrator invites from Settings → Users; the letter names the organization and holds no link", async () => {
+  await page.goto(`${BASE}/w/${CODE}`);
+  await page.locator(".mx-tree-foot .mx-node", { hasText: "Settings" }).click();
+  await page.locator(".mx-tree-scroll .mx-node", { hasText: "Users" }).click();
+  await page.waitForURL(`**/w/${CODE}/core/settings/users`);
+  // Spec 079, FR-040: the crumbs name entered sections; the Users page adds no level inside Settings.
+  expect((await crumbsOf(page)) === "Settings", `the crumbs say ${await crumbsOf(page)}`);
+  await admin.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
+  const sent = Date.now() - 1000;
+  await admin.getByRole("button", { name: "Invite", exact: true }).click();
+  expect(!(await admin.getByLabel("Organization administrator").isChecked()), "the administrator mark is on when the form opens");
+  await admin.getByLabel("Email", { exact: true }).fill(INVITED);
+  await admin.getByRole("button", { name: "Send the invitation" }).click();
+  await admin.locator(".drawer", { hasText: "Will join as an ordinary user" }).waitFor();
+  await admin.locator(".drawer .admin-user-status").getByText("Sent", { exact: true }).waitFor();
+  invitationSentAt = Date.now();
+  const text = await letterText(INVITED, sent, "invites you");
+  expect(text.includes(`Check Person`) && text.includes(ORG), "the letter does not name the inviter and the organization");
+  expect(!/https?:\/\//.test(text), "the letter holds a link");
+  expect(text.includes("waits until"), "the letter does not say until when the invitation waits");
+  // The same email again is refused while the invitation is sent.
+  await admin.locator(".drawer").getByRole("button", { name: "Close", exact: true }).click();
+  await admin.getByRole("tab", { name: /Invitations/ }).click();
+  await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
+  await admin.getByRole("button", { name: "Invite", exact: true }).click();
+  await admin.getByLabel("Email", { exact: true }).fill(INVITED);
+  await admin.getByRole("button", { name: "Send the invitation" }).click();
+  await admin.getByText("An invitation to this email is already sent").waitFor();
+  await admin.getByRole("button", { name: "Cancel" }).click();
+});
+
+await scenario("the invited person signs up with the invited email, sees the invitation and accepts", async () => {
+  await g.goto(`${BASE}/sign-up`);
+  const sent = Date.now() - 1000;
+  await g.getByLabel("Email").fill(INVITED);
+  await g.locator("#pw-new-password").fill(INVITED_PASSWORD);
+  await g.getByRole("button", { name: "Continue" }).click();
+  await g.getByLabel("Six-digit code").fill(await codeFor(INVITED, sent));
+  await g.getByRole("button", { name: "Confirm" }).click();
+  await g.waitForURL("**/sign-in/new-account");
+  await g.getByLabel("Your name").fill("Invited Person");
+  await g.locator(".check").click();
+  await g.getByRole("button", { name: "Create account" }).click();
+  await g.waitForURL(`${BASE}/w`);
+  await g.getByText("You are invited").waitFor();
+  const row = g.locator(".orow.inv", { hasText: ORG });
+  await row.getByText("Check Person invites you · as a user").waitFor();
+  await row.getByRole("button", { name: "Accept" }).click();
+  await g.waitForURL(`**/w/${CODE}`);
+  await g.getByText("Choose a section in the tree").waitFor();
+  expect((await g.locator(".mx-tree-foot .mx-node").count()) === 0, "an ordinary user sees Settings");
+});
+
+await scenario("the new user invites from the menu under the icon; the administrator sees the user and the invitations", async () => {
+  await g.locator(".mx-avatar").click();
+  await g.getByRole("button", { name: `Invite to ${ORG}` }).click();
+  expect((await g.getByLabel("Organization administrator").count()) === 0, "an ordinary user is offered the administrator mark");
+  await g.getByLabel("Email").fill(BY_USER);
+  await g.getByRole("button", { name: "Send the invitation" }).click();
+  await g.getByText(`The invitation is sent to ${BY_USER}`).waitFor();
+  await g.locator(".arow", { hasText: BY_USER }).getByText("Sent").waitFor();
+  await g.getByRole("button", { name: "Done" }).click();
+  await page.goto(`${BASE}/w/${CODE}/core/settings/users`);
+  const user = admin.locator(".utbl tr", { hasText: "Invited Person" });
+  await user.getByText("Active").waitFor();
+  await user.getByText("invited by Check Person").waitFor();
+  await admin.getByRole("tab", { name: /Invitations/ }).click();
+  await admin.locator(".utbl tr", { hasText: BY_USER }).getByText("Invited Person").waitFor();
+  await admin.getByRole("tab", { name: /History/ }).click();
+  await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Accepted", { exact: true }).waitFor();
+});
+
+await scenario("administrators only withdraws the user's invitation and takes Invite from their menu", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/settings/organization`);
+  await admin.getByRole("button", { name: "Edit", exact: true }).click();
+  await admin.locator(".choice.on", { hasText: "Any user of the organization" }).waitFor();
+  await admin.locator(".choice", { hasText: "Administrators only" }).click();
+  await admin.getByRole("button", { name: "Save", exact: true }).click();
+  await admin.locator(".dlg", { hasText: "Administrators only?" }).locator(".arow", { hasText: BY_USER }).waitFor();
+  await admin.getByRole("button", { name: "Switch and withdraw 1" }).click();
+  await admin.getByText("Administrators only since").waitFor();
+  await admin.locator(".admin-facts", { hasText: "Administrators only" }).waitFor();
+  await admin.getByRole("button", { name: "See invitation history" }).click();
+  await page.waitForURL(/tab=history/);
+  await admin.locator(".utbl tr", { hasText: BY_USER }).getByText("Withdrawn", { exact: true }).waitFor();
+  await g.goto(`${BASE}/w/${CODE}`);
+  await g.locator(".mx-avatar").click();
+  await g.getByRole("button", { name: "Sign out" }).waitFor();
+  expect((await g.getByRole("button", { name: `Invite to ${ORG}` }).count()) === 0, "an ordinary user may still invite");
+  await g.keyboard.press("Escape");
+});
+
+await scenario("a blocked user is a stranger from the next request; the last administrator cannot be blocked", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/settings/users`);
+  await admin.locator(".utbl tr", { hasText: "Invited Person" }).getByRole("button", { name: "Open user Invited Person", exact: true }).click();
+  const card = admin.locator(".drawer", { hasText: "Invited Person" });
+  await card.getByRole("button", { name: "Block" }).click();
+  await card.locator(".admin-user-status .stt", { hasText: "Blocked" }).waitFor();
+  await g.goto(`${BASE}/w/${CODE}`);
+  await g.getByText("No such organization").waitFor();
+  await card.getByRole("button", { name: "Unblock" }).click();
+  await card.locator(".admin-user-status .stt", { hasText: "Active" }).waitFor();
+  await card.getByRole("button", { name: "Close", exact: true }).click();
+  await admin.locator(`.utbl tr[data-user="${EMAIL}"]`).getByRole("button").first().click();
+  const own = admin.locator(".drawer", { hasText: "Check Person" });
+  await own.getByText("The last active administrator").waitFor();
+  expect(await own.getByRole("button", { name: "Block" }).isDisabled(), "the last administrator can be blocked");
+  expect(await own.getByLabel("Administrator").isDisabled(), "the last administrator can lose the mark");
+});
+
+await scenario("signing in again opens where the person stopped", async () => {
+  await page.goto(`${BASE}/w/${CODE}/core/settings/users`);
+  await admin.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
+  await page.locator(".mx-avatar").click();
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.waitForURL(`${BASE}/`);
+  await signIn(EMAIL, PASSWORD);
+  await page.waitForURL(`**/w/${CODE}/core/settings/users`);
+  await admin.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
 });
 
 await scenario("the private plugin dialog refuses a PyPI address before sending it", async () => {
   await page.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await page.getByRole("button", { name: "Add a private plugin" }).click();
-  await page.getByLabel("Package URL").fill("pkg:pypi/sv-reports@0.3.0");
-  await page.getByText("A package on PyPI is the public marketplace's.").waitFor();
-  expect(await page.getByRole("button", { name: "Add and check" }).isDisabled(), "a PyPI address can be sent");
-  await page.getByRole("button", { name: "Upload a wheel" }).click();
-  await page.getByText("Choose a .whl file").waitFor();
+  await admin.getByRole("button", { name: "Add a private plugin" }).click();
+  await admin.getByLabel("Package URL").fill("pkg:pypi/sv-reports@0.3.0");
+  await admin.getByText("A package on PyPI is the public marketplace's.").waitFor();
+  expect(await admin.getByRole("button", { name: "Add and check" }).isDisabled(), "a PyPI address can be sent");
+  await admin.getByRole("button", { name: "Upload a wheel" }).click();
+  await admin.getByText("Choose a .whl file").waitFor();
 });
 
 await scenario("the settings of an organization one is not in answer alike, at the old address too", async () => {
@@ -728,9 +1152,9 @@ await scenario("sign out, then a wrong password is one message and the right one
   await signIn("nobody-" + EMAIL, "Wrong-Password-1");
   await page.getByText("Wrong email or password.").waitFor();
   await signIn(EMAIL, PASSWORD);
-  // The account has two organizations by now, so it lands on choosing one.
-  await page.waitForURL(`${BASE}/w`);
-  await page.getByText("Choose an organization").waitFor();
+  // The account has two organizations, and its last place was the first one's root: signing in opens there.
+  await page.waitForURL(`**/w/${CODE}`);
+  await page.getByText("Choose a section in the tree").waitFor();
 });
 
 await scenario("an organization's address without a session signs in and lands there", async () => {
@@ -788,16 +1212,17 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
   await phone.addCookies(await context.cookies());
   const p = await phone.newPage();
-  await p.goto(`${BASE}/w/${CODE}/core/settings/plugins`);
-  await p.locator(".prow", { hasText: "Notes" }).waitFor();
+  const panel = p.frameLocator("iframe.mx-panel-frame");
+  await p.goto(`${BASE}/w/${CODE}/core/settings/plugins?tab=installed`);
+  await panel.locator(".prow", { hasText: "Notes" }).waitFor();
   const wide = () => p.evaluate(() => document.documentElement.scrollWidth);
   expect((await wide()) <= 375, `the installed tab is ${await wide()} px wide`);
-  await p.getByRole("tab", { name: /Marketplace/ }).click();
+  await panel.getByRole("tab", { name: /Marketplace/ }).click();
   expect((await wide()) <= 375, `the marketplace is ${await wide()} px wide`);
-  await p.getByRole("button", { name: "Add a private plugin" }).click();
-  const sheet = await p.locator(".dlg.sheet").boundingBox();
+  await panel.getByRole("button", { name: "Add a private plugin" }).click();
+  const sheet = await panel.locator(".mx-dialog").boundingBox();
   expect(sheet && Math.round(sheet.y + sheet.height) >= 811 && sheet.width >= 370, "the dialog is not a sheet from the bottom");
-  await p.getByRole("button", { name: "Cancel" }).click();
+  await panel.getByRole("button", { name: "Cancel" }).click();
   // The address is inside Settings, so the drawer arrives at the level of Settings already: head and Plugins only.
   await p.getByRole("button", { name: "The organization's tree" }).click();
   const drawer = async () => JSON.stringify(await p.locator(".mx-tree.drawer").innerText().catch(() => "no drawer"));
@@ -806,6 +1231,7 @@ await scenario("on a phone Settings → Plugins is one column: tabs, cards, a sh
   await p.locator(".mx-tree.drawer").getByRole("button", { name: "Back" }).click();
   await p.locator(".mx-tree.drawer .mx-level-head").waitFor({ state: "detached" });
   await p.locator(".mx-tree.drawer .mx-node", { hasText: "Settings" }).click();
+  if (!await p.locator(".mx-tree.drawer").isVisible()) await p.getByRole("button", { name: "The organization's tree" }).click();
   await p.locator(".mx-tree.drawer .mx-level-head", { hasText: "Settings" }).waitFor();
   await phone.close();
 });
@@ -829,7 +1255,7 @@ await scenario("on a phone the shell folds: the filters into a button, the pills
   expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the frame is wider than the phone");
   await p.goto(`${BASE}/w/${CODE}/core/panel-test/drawing`);
   await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
-  expect(!(await frame.locator(".mx-pill-label").first().isVisible()), "the pills keep their labels on a phone");
+  expect(!(await frame.locator(".mx-layer-pill-label").first().isVisible()), "the pills keep their labels on a phone");
   const actions = await frame.locator(".mx-actions").boundingBox();
   expect(actions.y > 812 / 2, "the actions are not at the bottom on a phone");
   await phone.close();
@@ -929,6 +1355,39 @@ await scenario("on a phone the filters are a sheet from below and the pickers sh
   expect(picker.width <= 375 && (await frame.locator(".mx-cal-month").count()) === 1, "the picker is not a sheet with one month");
   expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the page scrolls sideways on a phone");
   await phone.close();
+});
+
+await scenario("on a phone the invited person's screen wraps its buttons, the invitation form is a sheet and the directory keeps its columns", async () => {
+  // The second organization invites the invited person: their phone shows the invitation with full-width buttons.
+  // The address-wide limit also applies across organizations: wait out the first invitation's minute.
+  const wait = invitationSentAt + 61_000 - Date.now();
+  if (wait > 0) await new Promise((done) => setTimeout(done, wait));
+  await page.goto(`${BASE}/w/${SECOND}/core/settings/users`);
+  await admin.getByRole("button", { name: "Invite", exact: true }).click();
+  await admin.getByLabel("Email", { exact: true }).fill(INVITED);
+  await admin.getByRole("button", { name: "Send the invitation" }).click();
+  await admin.locator(".drawer").getByRole("button", { name: "Close", exact: true }).click();
+  await admin.getByRole("tab", { name: /Invitations/ }).click();
+  await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
+  const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
+  await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));
+  await phone.addCookies(await guest.cookies());
+  const p = await phone.newPage();
+  const panel = p.frameLocator("iframe.mx-panel-frame");
+  await p.goto(`${BASE}/w`);
+  await p.getByText("Choose an organization").waitFor();
+  const accept = await p.locator(".orow.inv").getByRole("button", { name: "Accept" }).boundingBox();
+  expect(accept.width >= 150, "Accept does not take its half of a full row on a phone");
+  expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the organizations' screen scrolls sideways on a phone");
+  await phone.addCookies(await context.cookies());
+  await p.goto(`${BASE}/w/${CODE}/core/settings/users`);
+  await panel.locator(`.utbl tr[data-user="${EMAIL}"]`).waitFor();
+  expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the users' page scrolls sideways on a phone");
+  await panel.getByRole("button", { name: "Invite", exact: true }).click();
+  const sheet = await panel.locator(".mx-dialog").boundingBox();
+  expect(sheet.width >= 370 && sheet.y + sheet.height >= 700, "the invitation form is not a sheet from below");
+  await phone.close();
+  await guest.close();
 });
 
 await scenario("on a phone the template's notes fill the screen, a note's actions are a sheet behind ⋯ and the dialogs are sheets", async () => {

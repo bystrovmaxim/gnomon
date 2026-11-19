@@ -1,6 +1,6 @@
 {
   "name": "@maxitor/tokens",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Maxitor's colours, palette, radii, shadows, blur, type sizes and spacing, as CSS custom properties",
   "license": "Apache-2.0",
   "type": "module",
@@ -8,7 +8,18 @@
   "types": "index.ts",
   "exports": {
     ".": "./index.ts",
-    "./tokens.css": "./tokens.css"
+    "./tokens.css": "./tokens.css",
+    "./status-disks": {
+      "types": "./status-disks.d.ts",
+      "default": "./status-disks.js"
+    }
   },
-  "files": ["index.ts", "tokens.css", "README.md", "CHANGELOG.md"]
+  "files": [
+    "index.ts",
+    "tokens.css",
+    "README.md",
+    "CHANGELOG.md",
+    "status-disks.js",
+    "status-disks.d.ts"
+  ]
 }

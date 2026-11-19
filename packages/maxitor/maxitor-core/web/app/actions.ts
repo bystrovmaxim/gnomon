@@ -6,7 +6,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { CONSENT_COOKIE, SESSION_COOKIE, claims, core, forgotten, hidden, keepSession, ownPath, type Refusal } from "@/lib/core";
+import { CONSENT_COOKIE, SESSION_COOKIE, claims, core, forgotten, hidden, keepSession, ownPath, type Refusal, type WaitingInvitation } from "@/lib/core";
 
 /** What a form gets back when the backend refuses. */
 export type Refused = { refused: Refusal };
@@ -99,6 +99,28 @@ export async function linkEmail(email: string, password: string, code: string | 
 export async function unlinkSignIn(signInId: string): Promise<{ linked: boolean } | Refused> {
   const answer = await core<{ linked: boolean }>("POST", "/api/v1/sign-ins/unlink", { sign_in_id: signInId });
   return answer.ok ? answer.data : { refused: answer.refusal };
+}
+
+/** Where the account is now: kept with the account, so signing in opens there (spec 086, FR-022). */
+export async function keepPlace(address: string): Promise<void> {
+  await core("POST", "/api/v1/me/place", { address });
+}
+
+/** The invitations waiting for the account: shown on the screen of choosing an organization. */
+export async function listInvitations(): Promise<WaitingInvitation[]> {
+  const answer = await core<{ invitations: WaitingInvitation[] }>("GET", "/api/v1/invitations");
+  return answer.ok ? answer.data.invitations : [];
+}
+
+export async function acceptInvitation(invitationId: string): Promise<Refused> {
+  const answer = await core<{ code: string }>("POST", "/api/v1/invitations/accept", { invitation_id: invitationId });
+  if (!answer.ok) return { refused: answer.refusal };
+  redirect(`/w/${answer.data.code}`);
+}
+
+export async function declineInvitation(invitationId: string): Promise<Refused | { declined: true }> {
+  const answer = await core<{ declined: boolean }>("POST", "/api/v1/invitations/decline", { invitation_id: invitationId });
+  return answer.ok ? { declined: true } : { refused: answer.refusal };
 }
 
 /** The email and name the consent step shows, read from the consent token the server keeps. */

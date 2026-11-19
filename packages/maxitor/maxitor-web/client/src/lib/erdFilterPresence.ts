@@ -6,21 +6,15 @@
  * dimmed, and whether it is on stays the user's.
  */
 
+import { statusDiskUri } from "@maxitor/tokens/status-disks";
+export { statusDiskUri } from "@maxitor/tokens/status-disks";
+
 import { ERD_DIFF_COLOUR, ERD_DIFF_SIGN, erdGlance, type ErdDiff, type ErdEntity } from "@/lib/buildDotSource";
 import type { ErdGraphPayload } from "@/lib/buildDotSource";
 import { entityKindOf, pruneGraphToEntities } from "@/lib/erdKindFilter";
 
 /** The kinds of change, in the order the filter lists them. */
 export const CHANGE_ORDER: readonly ErdDiff[] = ["added", "removed", "changed", "unchanged"];
-
-/** A legend disk for a kind of change: the status colour with its sign in white. */
-export function statusDiskUri(fill: string, sign: string): string {
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="${fill}"/>` +
-    (sign ? `<text x="12" y="16.5" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="#fff">${sign}</text>` : "") +
-    `</svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-}
 
 /** A status's disk when something else paints the diagram. */
 const IDLE_DISK = "#cbd5e1";

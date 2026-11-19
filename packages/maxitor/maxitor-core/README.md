@@ -15,9 +15,22 @@ Maxitor's own core: people sign in, register organizations and land in an organi
 - **With Yandex ID or Mail.ru ID** — from anywhere.
 - **With Google, GitHub or Facebook** — only from outside Russia. The country comes from the request's IP; an unknown IP counts as Russia. The rule is checked when signing in starts and again when the provider sends the person back, also for an account that already has the provider.
 
-A new person ticks the consent box before the account exists. A session lasts eight hours and is renewed while the person is active, up to 30 days after signing in; changing the password stops older sessions from renewing. An account registers at most ten organizations.
+A new person ticks the consent box before the account exists. A session lasts eight hours and is renewed while the person is active, up to 30 days after signing in; changing the password stops older sessions from renewing. An account registers at most ten organizations. After signing in, Maxitor opens where the person stopped — the organization and the page the account had open last, at Now — unless an invitation waits for them.
 
 The addresses and their answers are in [contracts/actions.md](../../../specs/072-maxitor-core/contracts/actions.md).
+
+## Users and invitations
+
+An organization is entered by an invitation only ([spec 086](../../../specs/086-sign-in-and-invitation/spec.md)):
+
+- **An invitation** is an entity of its own in the schema `organization`, versioned under the organization's lock: the email, who sent it, whether it makes an administrator, and its state — Sent, then Accepted, Declined, Withdrawn or Expired. Its letter names the inviter and the organization and holds no link. One email gets at most one letter a minute and ten an hour; one inviter sends at most thirty invitations an hour, one organization a hundred a day; an invitation waits `MAXITOR_INVITATION_DAYS` days, 14 by default. An email that is an active or blocked user's, or has an invitation still sent, is refused.
+- **Accepting.** The invited person signs in with the invited email — or creates an account with it — and sees the invitation on the screen of choosing an organization (`/w`), above the organizations; only an account whose confirmed email is the invitation's sees it. Accepting makes an active user named as the account, an administrator when the invitation says so. An organization and an account give one user, and a user is never removed.
+- **Who may invite** is the organization's setting in Settings → Organization: **any user**, as at registration, or **administrators only**. An administrator invites from Settings → Users, with the mark "Organization administrator"; an ordinary user from the menu under their icon, without it. The server checks the setting and the mark on every invitation. Switching to administrators only withdraws, at that moment, every invitation still sent by an ordinary user.
+- **Settings → Users** (`/w/<code>/core/settings/users`) lists the users and the invitations for the organization's administrators: a user is blocked, unblocked or made an administrator from their card, by the user's lifecycle — Active, Blocked —, and an invitation's letter is sent again or the invitation withdrawn. The organization always keeps at least one active administrator; two administrators acting at once are ordered by the organization's lock. A blocked user is a stranger from their next request: the organization's addresses and the gateway read the user's state every time, and the gateway's next token for a plugin carries the role as it is.
+
+The declared lifecycle also contains the terminal `removed` state, with an edge from `blocked`, because AOA validates that a final state is reachable. No application action takes that edge, no removal route exists, and the user's card offers only blocking and unblocking. One organization and one account keep the same user and history for good.
+
+The addresses are in [spec 086's contracts](../../../specs/086-sign-in-and-invitation/contracts/actions.md).
 
 ## Plugins
 
@@ -34,8 +47,10 @@ Every page of an organization lives in one frame at `/w/<code>/...`, and only th
 - **The time scale** is the pill on the right of the top row and the card hanging from it: one moment for the whole screen, written to the address as `at`, kept to the minute — to the second when the scale is zoomed below a minute —, never later than "now". The open page sets the scale up through its history — bars of its changes, points of its milestones with their cards, its legend —, and the card's switch offers what the page offers: One, Diff, Side by side. In a comparison the core lays out the panels, tells each page its context, relays Track between them and shows the page's counts on the pill ([the plugin concept, section 7.9](../../../docs/plugins/concept.md); [using it](../../../docs/how-to/use-the-time-scale.md)).
 - **The right panel** is a grey field of dots. The core's own pages are drawn on it (`/w/<code>/core/...`); a plugin's page opens over it in a transparent frame at `/p/<name>/<code>/...` and talks to the core by the panel protocol of [`@maxitor/panel`](../../maxitor-panel/README.md). The window's address is the panel's only state: a reload, a link, Back and Forward give what was on screen.
 - **The tree's head** has collapse, which folds the tree to one button for this visit, and Back, which steps out of the deepest section entered through the address and is gone at the root.
+
+At the root, entry icons such as Notes and Settings align with the right edge of the collapse icon. Empty branch gutters are omitted only in root rows; actual expansion controls and the indentation inside entered sections keep their space. The phone drawer uses the same icon column. The standalone root states in specs 072 and 085 follow this alignment. Entering the first root section keeps its icon and title at the same coordinates as they become the level heading; Back restores the same row. The tree controls reserve their height even when the phone root has no Back button, and the entered heading keeps the phone row's font size.
 - **Nothing over the panel.** A page's controls are its own: it gives them to the shell of [`@maxitor/panel`](../../maxitor-panel/README.md), which draws them in the same places for every plugin. The frame refuses a page's change of the core's names (`at`, `mode`, `from`, `_…`) and of a path parameter, and marks a page that does not render the shell with a red strip on the local stand.
-- **"Now"**: the frame asks `GET /api/v1/organizations/{code}/watermark` every 5 seconds, draws it on the scale, and tells a page without a moment when it moved. A plugin's change moves it too.
+- **"Now"**: the frame asks `GET /api/v1/organizations/{code}/watermark` every 2 seconds, draws it on the scale, and tells a page without a moment when it moved. A plugin's change moves it too.
 
 Everything the frame draws takes its colours and sizes from [`@maxitor/tokens`](../../maxitor-tokens/README.md); `web/scripts/check-tokens.mjs` refuses a colour code or a size number in the frame and `@maxitor/panel`.
 
@@ -58,6 +73,7 @@ Everything the frame draws takes its colours and sizes from [`@maxitor/tokens`](
 | `MAXITOR_MAIL_FROM` | The sender, `Maxitor <no-reply@maxitor.aoa.run>` by default. |
 | `MAXITOR_<PROVIDER>_CLIENT_ID`, `MAXITOR_<PROVIDER>_CLIENT_SECRET` | Each provider's application: `GOOGLE`, `GITHUB`, `FACEBOOK`, `YANDEX`, `MAILRU`. A provider without them is not offered. |
 | `MAXITOR_POLICY_VERSION` | The version of the privacy policy a person accepts; raising it asks everyone again. |
+| `MAXITOR_INVITATION_DAYS` | How many days an invitation waits to be accepted before it expires; 14 by default. |
 | `MAXITOR_WHEEL_STORE` | The directory of plugin wheels, kept by `sha256`; shared with the installer. |
 | `MAXITOR_WHEEL_MAX_BYTES` | The largest wheel an administrator may upload, 50 MB by default. |
 | `MAXITOR_SCHEMA_PLATFORM`, `MAXITOR_SCHEMA_ORGANIZATION`, `MAXITOR_SCHEMA_PLUGINS` | The schemas' names when they are not the logical ones. |

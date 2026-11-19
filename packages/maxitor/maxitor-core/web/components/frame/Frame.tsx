@@ -6,7 +6,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import "./frame.css";
 import { Panel } from "@/components/frame/Panel";
@@ -16,8 +16,10 @@ import { TreeHead } from "@/components/frame/TreeHead";
 import { ScaleContext, useWatermark, type Mode, type ScaleBridge } from "@/components/scale/bridge";
 import { fixtureSource } from "@/components/scale/fixtures";
 import { Scale } from "@/components/scale/Scale";
-import { gatewaySource } from "@/components/scale/source";
+import { administrationSource, gatewaySource } from "@/components/scale/source";
+import { keepPlace } from "@/app/actions";
 import { carried, queryString, readAddress, windowAddress } from "@/lib/address";
+import { placeOf } from "@/lib/place";
 import { canStep, momentOf, MOMENT_TEXT, msOf, stepMoment } from "@/lib/moment";
 import { changeStepOfKey, stepOfKey } from "@maxitor/panel/keys";
 import type { Milestone } from "@maxitor/panel/history";
@@ -37,7 +39,8 @@ export function Frame({
   children,
 }: {
   account: Me;
-  current: { code: string; name: string };
+  /** The organization and what the person may do in it: administer it, invite into it. */
+  current: { code: string; name: string; isAdmin: boolean; mayInvite: boolean };
   nodes: TreeNode[];
   /** The organization's enabled plugins in dependency order. */
   owners: string[];
@@ -66,6 +69,11 @@ export function Frame({
   const methods = search.get("methods");
 
   const address = useMemo(() => readAddress(pathname, search), [pathname, search]);
+  // The account's last place: the page in the present, kept with the account whenever it changes (spec 086, FR-022).
+  const place = placeOf(pathname, search.toString());
+  useEffect(() => {
+    if (place) void keepPlace(place);
+  }, [place]);
   // The moment and the comparison stay with the screen from page to page and from one owner's page to another's.
   const carryKey = JSON.stringify(carried(address?.query ?? {}));
   const carry = useMemo(() => JSON.parse(carryKey) as Record<string, string>, [carryKey]);
@@ -168,7 +176,8 @@ export function Frame({
   const mode: Mode = (asked === "diff" || asked === "side_by_side") && from && (history === null || offered.includes(asked)) ? asked : "one";
   // Another page gives its own history: the last one leaves the scale when the page changes, not when a panel closes.
   const pageKey = `${address?.owner ?? ""}${address?.path ?? ""}`;
-  useEffect(() => setHistory(null), [pageKey]);
+  // Clear during commit: a deferred effect could erase a fast page's already accepted history message.
+  useLayoutEffect(() => setHistory(null), [pageKey]);
   const go = useCallback(
     (query: Record<string, string>, moment: string | null) => {
       if (address?.owner) router.push(windowAddress(current.code, address.owner, address.path, query, moment), { scroll: false });
@@ -251,9 +260,9 @@ export function Frame({
   const sourceNow = address?.owner === "core" ? watermark : watermark === null ? null : "read";
   const source = useMemo(() => {
     if (!history || !address?.owner || !watermark) return null;
-    if (address.owner === "core") return fixtureSource(history, watermark);
+    if (address.owner === "core") return address.path.startsWith("/settings/") ? administrationSource(current.code, address.path, JSON.parse(queryKey)) : fixtureSource(history, watermark);
     return gatewaySource(address.owner, current.code, history, opened?.scope ?? {}, JSON.parse(queryKey) as Record<string, string>);
-  }, [address?.owner, current.code, history, opened?.scope, queryKey, sourceNow]);
+  }, [address?.owner, address?.path, current.code, history, opened?.scope, queryKey, sourceNow]);
   const milestone = useCallback(
     (chosen: Milestone) => {
       const opens = chosen.opens ?? chosen.link;

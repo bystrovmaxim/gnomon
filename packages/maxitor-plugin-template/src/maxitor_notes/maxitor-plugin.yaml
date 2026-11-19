@@ -10,13 +10,13 @@ title: Notes
 description: >
   Notes on the plugin's own items: who wrote what, and how it read at any past moment.
 # Strictly x.y.z, equal to the version in pyproject.toml.
-version: 0.15.0
+version: 0.15.1
 # The major version of maxitor-plugin-sdk the plugin is built with; Maxitor must be built with the same.
 sdk: 1
 
 requires:
-  # 4.11 is the first core with the time scale: history format 2, its comparisons and the page's context.
-  maxitor: ">=4.11,<5"
+  # 4.12 also provides StatusDisk, the production status SVG shared with the graph viewer.
+  maxitor: ">=4.12,<5"
   node: ">=22"
 
 # Plugins this one cannot work without. The template needs only Maxitor itself.

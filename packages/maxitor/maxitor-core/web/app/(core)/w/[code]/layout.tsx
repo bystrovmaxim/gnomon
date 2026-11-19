@@ -11,7 +11,7 @@ import type { HistoryAllowed } from "@maxitor/panel/protocol";
 
 import type { TreeNode } from "@/lib/tree";
 
-type Opened = { code: string; name: string; user: { name: string; is_admin: boolean }; tree: TreeNode[]; owners: string[]; dependencies: Record<string, string[]>; histories: Record<string, HistoryAllowed> };
+type Opened = { code: string; name: string; who_may_invite: string; user: { name: string; is_admin: boolean; may_invite: boolean }; tree: TreeNode[]; owners: string[]; dependencies: Record<string, string[]>; histories: Record<string, HistoryAllowed> };
 
 export default async function OrganizationLayout({ children, params }: { children: ReactNode; params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -35,7 +35,7 @@ export default async function OrganizationLayout({ children, params }: { childre
   }
   const org = answer.data;
   return (
-    <Frame account={account} current={{ code: org.code, name: org.name }} nodes={org.tree} owners={org.owners} dependencies={org.dependencies} histories={org.histories}>
+    <Frame account={account} current={{ code: org.code, name: org.name, isAdmin: org.user.is_admin, mayInvite: org.user.may_invite }} nodes={org.tree} owners={org.owners} dependencies={org.dependencies} histories={org.histories}>
       {children}
     </Frame>
   );

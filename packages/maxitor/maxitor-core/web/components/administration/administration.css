@@ -1,0 +1,176 @@
+/* Stable typography in live forms and historical views, independent of camera transforms. */
+body.mx-panel-document { background: transparent; }
+.mx-administration { height: 100%; color: var(--ink); font: 14px/1.5 var(--font); }
+.mx-administration .page { min-height: 0; height: auto; padding: 0; background: transparent; overflow: visible; }
+.mx-administration .page .inner { width: 100%; max-width: 1100px; padding: 0; margin: 0 auto; }
+.mx-administration h2, .mx-administration .page h2 { font-size: 20px; line-height: 1.3; margin: 0 0 12px; }
+.mx-administration h3, .mx-administration .panel h3, .mx-administration .dlg h3 { font-size: 16px; line-height: 1.4; }
+.mx-administration :is(.sub,.choice,.choice b,.choice div,.choice .now,.kv,.utbl,.nm,.arow,.alert,.stt,.tabs button,.mx-button:not([data-variant="link"]),.panel .mx-button:not([data-variant="link"]),.dlg .mx-button:not([data-variant="link"])) { font-size: 14px; line-height: 1.5; }
+.mx-administration :is(.sec,.fine2,.em,.as,.badge,.lab,.hintl,.mut,.utbl th,.admin-meta) { font-size: 12px; line-height: 1.5; }
+.mx-administration :is(input,textarea,select,.search input,.inp input) { font-family: inherit; font-size: 16px; line-height: 1.5; }
+.mx-administration .choice { background: #fff; }
+.mx-administration .mx-button:not([data-variant="link"]) { min-height: 36px; height: auto; }
+.mx-administration .dlg { max-height: calc(100dvh - 32px); overflow-y: auto; }
+.mx-administration .panel { max-width: 100%; }
+.admin-history-notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 12px 16px; background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 20px; }
+.admin-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); gap: 16px; margin-top: 16px; }
+.admin-object { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; overflow-wrap: anywhere; }
+.admin-object[data-change=added] { border-color: #16a34a; }
+.admin-object[data-change=changed] { border-color: #d97706; }
+.admin-object[data-change=removed] { border-color: #dc2626; }
+.admin-object dl > div { display: grid; grid-template-columns: minmax(100px,1fr) 2fr; gap: 12px; padding: 6px 0; }
+.admin-object dd { margin: 0; }
+.admin-object dt, .admin-meta { color: var(--muted); }
+.admin-change { text-transform: capitalize; }
+@media (max-width: 600px) {
+  .mx-administration .page .inner { width: 100%; padding: 0; }
+  .mx-administration .ph { flex-wrap: wrap; gap: 12px; }
+  .mx-administration :is(.mx-button:not([data-variant="link"]),.tabs button) { min-height: 44px; }
+  .mx-administration .dlg { width: 100%; max-width: 100%; max-height: calc(100dvh - 16px); }
+  .mx-administration .utbl { width: 100%; }
+  .admin-object dl > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+.mx-administration.admin-dialog-content { height: auto; }
+.mx-administration.admin-dialog-content :is(.dlg,.panel,.drawer) { position: static; inset: auto; transform: none; width: 100%; max-width: none; height: auto; max-height: none; padding: 0; margin: 0; border: 0; box-shadow: none; overflow: visible; }
+.mx-administration.admin-dialog-content :is(.dh,.db,.df,.pb,.pf) { padding: 8px 0; }
+
+.admin-canvas-host { position: absolute; inset: 0; }
+.admin-scene { position: absolute; left: 0; top: 0; padding-bottom: 24px; }
+
+.admin-moment { position: relative; display: inline-flex; margin-right: 12px; }
+.admin-time-menu { position: absolute; z-index: 100; right: 0; top: 40px; width: min(340px,90vw); padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px #0002; }
+.admin-time-menu .tabs { display: flex; flex-wrap: wrap; }
+
+/* Both plugin tabs fill the available panel; typography stays independent of layout. */
+.mx-administration .marketplace-page .inner { max-width: none; container: marketplace / inline-size; }
+.mx-administration .marketplace-page .inner .grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; }
+@container marketplace (min-width: 601px) {
+  .mx-administration .marketplace-page .inner .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@container marketplace (min-width: 1150px) {
+  .mx-administration .marketplace-page .inner .grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+.mx-administration .marketplace-page .grid > :is(.mcard,.prow) { min-width: 0; margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 15px 16px; }
+.mx-administration .marketplace-page .grid > .prow { display: grid; grid-template-columns: 38px minmax(0,1fr); align-content: start; gap: 9px 12px; }
+.mx-administration .marketplace-page .prow .pacts { grid-column: 1 / -1; justify-content: flex-end; margin-top: auto; }
+.mx-administration .marketplace-page .grid :is(.pmain,.mono) { min-width: 0; overflow-wrap: anywhere; }
+
+/* Semantic cards share spacing without changing the established type scale. */
+.admin-surface { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 0 0 16px; box-shadow: 0 2px 6px #0f172a06; min-width: 0; }
+.admin-surface-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.admin-surface-head h3 { margin: 0; }
+.admin-facts { margin: 0; }
+.admin-facts > div { display: grid; grid-template-columns: minmax(120px,1fr) 2fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line2); }
+.admin-facts > div:last-child { border-bottom: 0; }
+.admin-facts dt { color: var(--muted); }
+.admin-facts dd { margin: 0; overflow-wrap: anywhere; }
+.admin-policy-options { border: 0; padding: 0; margin: 12px 0; }
+.mx-administration .choice { display: flex; align-items: flex-start; text-align: left; gap: 12px; padding: 12px; margin: 0; border: 0; border-radius: 7px; box-shadow: none; }
+.mx-administration .choice.on { background: #f1f5f9; border: 0; box-shadow: none; }
+.mx-administration .choice:hover { background: #f8fafc; }
+.mx-administration .choice:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+.admin-policy-options input { flex: 0 0 auto; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--ink); }
+.admin-choice-description { display: block; margin-top: 4px; color: var(--muted); }
+.admin-people .tabs { margin-top: 0; }
+.admin-people :is(.utbl,.tbl) { border: 0; border-radius: 0; }
+.admin-people .search { max-width: 100%; }
+.admin-people .who > div { min-width: 0; }
+.admin-people :is(.em,.nm) { overflow-wrap: anywhere; }
+.admin-object { box-shadow: 0 2px 6px #0f172a06; }
+@media (max-width: 600px) {
+  .admin-surface { padding: 12px; }
+  .admin-facts > div { grid-template-columns: 1fr; gap: 4px; }
+  .admin-people .tabs { display: flex; }
+  .admin-people .tabs button { flex: 1; padding-left: 6px; padding-right: 6px; }
+  .admin-people :is(.utbl,.tbl) td { overflow-wrap: anywhere; max-width: 100%; }
+}
+.device.phone .admin-surface { padding: 12px; }
+.device.phone .admin-facts > div { grid-template-columns: 1fr; gap: 4px; }
+@media (max-width: 600px) {
+  .admin-people :is(.utbl,.tbl) td[data-label] { display: block; padding-top: 4px; }
+  .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+}
+.device.phone .admin-people :is(.utbl,.tbl) td[data-label] { display: block; padding-top: 4px; }
+.device.phone .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+
+/* Keep the introduction separate from the first content card. */
+.mx-administration :is(.organization-page,.people-page) .ph { margin-bottom: 20px; }
+
+.admin-person-link { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.admin-user-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; }
+.admin-user-status .acts { margin: 0; }
+.admin-user-card .db { border-top: 0; margin-top: 8px; }
+.admin-user-card .kv { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 16px; margin: 12px 0 0; }
+.admin-user-card .kv dd { margin: 0; overflow-wrap: anywhere; }
+.mx-administration .organization-page .inner { max-width: 820px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+.organization-page .ph, .organization-page .admin-surface:first-of-type, .organization-page .alert { grid-column: 1 / -1; }
+.organization-page .admin-surface { margin-bottom: 0; }
+.organization-page .admin-facts > div { grid-template-columns: minmax(100px,1fr) 2fr; gap: 12px; padding: 6px 0; }
+@media (max-width:600px) {
+ .mx-administration .organization-page .inner { grid-template-columns: 1fr; }
+ .admin-user-card .kv { grid-template-columns: 1fr; gap: 6px; }
+ .admin-user-card .kv dd { margin-bottom: 8px; }
+}
+.device.phone .organization-page .inner { grid-template-columns: 1fr; }
+
+.organization-page .admin-surface-head { min-height: 36px; }
+@media (max-width:600px) { .organization-page .admin-surface-head { min-height: 44px; } }
+.device.phone .organization-page .admin-surface-head { min-height: 44px; }
+
+/* Comparison keeps the directory and dialog geometry; only change decoration differs. */
+.admin-people tr[data-change=added], .admin-user-card[data-change=added] { background: #f0fdf4; box-shadow: inset 3px 0 #16a34a; }
+.admin-people tr[data-change=changed], .admin-user-card[data-change=changed] { background: #fffbeb; box-shadow: inset 3px 0 #d97706; }
+.admin-people tr[data-change=removed], .admin-user-card[data-change=removed] { background: #fef2f2; box-shadow: inset 3px 0 #dc2626; }
+.admin-title-value { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-title-form input { width: 100%; min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.admin-title-form .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+/* A narrow comparison pane follows the same responsive directory as a phone. */
+.people-page { container: people / inline-size; }
+@container people (max-width: 700px) {
+  .admin-people .utbl, .admin-people .tbl, .admin-people tbody { display: block; width: 100%; }
+  .admin-people :is(thead,colgroup) { display: none; }
+  .admin-people :is(.utbl,.tbl) tr { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); padding: 12px; border-bottom: 1px solid var(--line2); gap: 8px 12px; }
+  .admin-people :is(.utbl,.tbl) td { display: block; width: auto; min-width: 0; padding: 0; border: 0; }
+  .admin-people :is(.utbl,.tbl) td:first-child, .admin-people :is(.utbl,.tbl) td[data-label] { grid-column: 1 / -1; }
+  .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+  .admin-people .who { align-items: flex-start; }
+  .admin-people .who > div { flex: 1; }
+  .admin-people .tabs { display: flex; }
+  .admin-people .tabs button { flex: 1; padding-left: 4px; padding-right: 4px; }
+}
+.admin-people .utbl .admin-person-link { height: auto; padding: 0; font-size: inherit; white-space: normal; }
+
+/* User columns keep their width on the canvas, including in comparison panes. */
+.mx-administration .admin-people table.user-directory { display: table; table-layout: fixed; width: 100%; }
+.mx-administration .admin-people table.user-directory colgroup { display: table-column-group; }
+.mx-administration .admin-people table.user-directory thead { display: table-header-group; }
+.mx-administration .admin-people table.user-directory tbody { display: table-row-group; }
+.mx-administration .admin-people table.user-directory tr { display: table-row; padding: 0; }
+.mx-administration .admin-people table.user-directory td { display: table-cell; padding: 12px; border-bottom: 1px solid var(--line2); vertical-align: middle; }
+.mx-administration .admin-people table.user-directory td[data-label]::before { content: none; }
+
+.admin-history-notice { box-sizing: border-box; max-width: var(--admin-visible-width, 100%); }
+.mx-administration .people-page .inner { max-width: none; }
+.admin-people > :is(.tabs,.search) { box-sizing: border-box; max-width: min(100%, calc(var(--admin-visible-width, 1150px) - 32px)); }
+
+.admin-people .user-directory { user-select: none; }
+
+/* Canvas-aware pinning: opaque cells keep the actual name/email and their native actions. */
+.user-directory :is(th,td):first-child { position: relative; z-index: 2; transform: translateX(var(--user-pin-offset, 0px)); background: #fff; }
+.user-directory th:first-child { background: #f8fafc; z-index: 3; }
+.user-directory[data-pinned] :is(th,td):first-child { box-shadow: 3px 0 5px #0f172a18; }
+.user-directory tr[data-change=added] td:first-child { background: #f0fdf4; }
+.user-directory tr[data-change=changed] td:first-child { background: #fffbeb; }
+.user-directory tr[data-change=removed] td:first-child { background: #fef2f2; }
+@media (max-width:520px) {
+  .user-directory { --user-identity-width: 16%; --user-appeared-width: 30%; }
+  .user-directory td:first-child .who { display: flex; }
+  .user-directory td:first-child .who > div { min-width: 0; }
+  .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
+}
+
+/* As in Plugins, tabs and search move and zoom with the canvas content. */
+.directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
+.directory-toolbar .tabs button { flex: 0 0 auto; }

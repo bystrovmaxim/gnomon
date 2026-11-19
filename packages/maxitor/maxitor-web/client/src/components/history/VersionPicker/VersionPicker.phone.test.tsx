@@ -84,7 +84,6 @@ describe("Diff on a phone (spec 038, FR-033)", () => {
         range={{ a, b }}
         onRange={() => undefined}
         older={<div data-testid="older-slot">A</div>}
-        between={<div data-testid="between-slot">1 version between</div>}
       >
         <div data-testid="newer-slot">B</div>
       </VersionPicker>,
@@ -99,6 +98,6 @@ describe("Diff on a phone (spec 038, FR-033)", () => {
     const grid = screen.getByTestId("message-a").parentElement as HTMLElement;
     expect(getComputedStyle(grid).gridTemplateColumns).toBe("minmax(0, 1fr)");
     expect(screen.getByTestId("older-slot").compareDocumentPosition(screen.getByTestId("newer-slot")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getByTestId("between-slot")).toBeTruthy();
+    expect(screen.queryByText(/versions? between/i)).toBeNull();
   });
 });

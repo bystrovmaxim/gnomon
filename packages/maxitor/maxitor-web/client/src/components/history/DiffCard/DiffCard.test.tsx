@@ -108,7 +108,9 @@ describe("the status icon", () => {
       const { container, unmount } = render(<StatusIcon status={status} />);
       const svg = decodeURIComponent(container.querySelector("img")!.getAttribute("src")!);
       unmount();
-      return />([^<]+)<\/text>/.exec(svg)?.[1];
+      expect(svg).toContain("<path ");
+      expect(svg).not.toContain("<text");
+      return /data-sign="([^"]+)"/.exec(svg)?.[1];
     };
     expect([signOf("added"), signOf("removed"), signOf("changed"), signOf("unchanged")]).toEqual(["+", "−", "~", "="]);
   });

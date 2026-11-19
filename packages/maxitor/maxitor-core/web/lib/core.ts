@@ -86,6 +86,40 @@ export type Me = {
   email: string;
   policy_current: boolean;
   organizations: { code: string; name: string; is_admin: boolean }[];
+  /** How many invitations wait for the account's confirmed emails. */
+  invitations_waiting: number;
+  /** The address of Maxitor the account had open last, under /w/; null if none. */
+  last_place: string | null;
+};
+
+/** A user named in an answer of the organization. */
+export type Person = { id: string; name: string };
+
+/** An invitation as the organization keeps it (specs/086-sign-in-and-invitation/contracts/actions.md). */
+export type Invitation = {
+  job_title?: string | null;
+  id: string;
+  email: string;
+  is_admin: boolean;
+  state: "sent" | "accepted" | "declined" | "withdrawn" | "expired";
+  invited_by: Person;
+  sent_at: string;
+  letter_sent_at: string;
+  expires_at: string;
+  decided_at: string | null;
+  decided_by: Person | null;
+  by_setting: boolean;
+  accepted_user: Person | null;
+};
+
+/** An invitation as the invited person sees it on the screen of choosing an organization. */
+export type WaitingInvitation = {
+  id: string;
+  organization: { code: string; name: string };
+  invited_by_name: string;
+  is_admin: boolean;
+  sent_at: string;
+  expires_at: string;
 };
 
 /** The signed-in account, or null without a valid session. */
