@@ -1,5 +1,11 @@
 # Changelog of @maxitor/tokens
 
+## 0.5.1 — 2026-11-19
+
+Common button heights, destructive borders and disk contours are platform tokens with the existing values, so live controls and standalone prototypes share their appearance.
+
+The graph viewer's status disks now have one production source, exported as `@maxitor/tokens/status-disks`. React pages, graph legends and standalone mockups use the same circle and centred SVG paths for status signs; initials remain text. A shared frame stylesheet also keeps the white gap and outer contour aligned across every standalone mockup style scope, including embedded filters and cards. SVG text is escaped, and the repository check rejects obsolete CSS/text disks and generated mockups that differ from this source.
+
 ## 0.5.0
 
 The time scale's look and a comparison's (#98): the canvas's surface and dots as the graph viewer draws them, a change's colours, its halo and the fading of what did not change; the pill, its card, the scale's axis, hatch, range and brush; the milestones' palette — a point's colour, its badge's tint and ink for `neutral`, `purple`, `blue`, `green`, `amber`, `red`; the card's blocks, the legend, the stepper and the change card; Side by side's A brown and B blue, and the glow of an element another panel points at. ([#98](https://github.com/bystrovmaxim/gnomon/issues/98))

@@ -5,6 +5,12 @@ All notable changes to the Maxitor plugin template are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.1] — 2026-11-19
+
+Published comparisons refresh their actual note content when B follows Now. The latest publication, its scale marker and its bars can arrive together without reloading the page; A and manually selected B dates retain their historical content. Comparison stays read only. A regression exercises the real refresh hook for ordinary, Diff and Side by side views.
+
+Draft's state counts and Published's Changes filter use the graph viewer's production SVG supplied by the core. Added, Changed, Removed and Unchanged keep their signs even when the selected interval contains none of that status. The template now requires Maxitor 4.12, which provides the shared status components; its frontend is 0.9.1.
+
 ## [0.15.0] — 2026-11-12
 
 ### Added
