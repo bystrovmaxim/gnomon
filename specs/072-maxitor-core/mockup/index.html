@@ -167,10 +167,10 @@
   .dlg h3 { margin: 0 0 4px; font-size: 17px; }
   .dlg .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; line-height: 1.5; }
   .dlg .ft { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
-  .btn2 { height: 32px; border-radius: 7px; border: 1px solid rgba(15,23,42,.18); background: #fff; font-size: 12.5px; padding: 0 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-  .btn2.pri { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
-  .btn2.dis { opacity: .45; cursor: not-allowed; }
-  .btn2.danger { color: var(--bad); border-color: #fecaca; }
+  .mx-button { height: 32px; border-radius: 7px; border: 1px solid rgba(15,23,42,.18); background: #fff; font-size: 12.5px; padding: 0 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .mx-button.pri { background: var(--ink); color: #fff; border-color: var(--ink); font-weight: 600; }
+  .mx-button.dis { opacity: .45; cursor: not-allowed; }
+  .mx-button.danger { color: var(--bad); border-color: #fecaca; }
   .srow { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; margin-bottom: 7px; font-size: 13px; }
   .srow .sn { flex: 1; min-width: 0; }
   .srow .sn div { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
@@ -214,7 +214,7 @@
   .cookie .ck { font-size: 22px; }
   .cookie b { color: var(--ink); }
   .cookie a { color: var(--ink); text-decoration: underline; cursor: pointer; }
-  .cookie .btn2 { margin-left: auto; }
+  .cookie .mx-button { margin-left: auto; }
   .auth.blocked .card { opacity: .55; pointer-events: none; }
   .inp.pw { justify-content: space-between; letter-spacing: .18em; }
   .inp.pw .eye { letter-spacing: 0; color: var(--muted); font-size: 12px; cursor: pointer; }
@@ -234,7 +234,7 @@
   .device.phone .otp .gap { width: 2px; }
   .device.phone .icons button { height: 48px; }
   .device.phone .cookie { width: auto; left: 10px; right: 10px; transform: none; bottom: 12px; flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
-  .device.phone .cookie .btn2 { margin-left: 0; width: 100%; justify-content: center; height: 40px; }
+  .device.phone .cookie .mx-button { margin-left: 0; width: 100%; justify-content: center; height: 40px; }
   .device.phone .doc { padding: 0; }
   .device.phone .doc .paper { width: auto; border: 0; border-radius: 0; padding: 22px 18px 26px; font-size: 14.5px; }
   .device.phone .doc h1 { font-size: 22px; }
@@ -263,6 +263,456 @@
   .nf p { font-size: 13px; color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
   .empty-c { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
   .empty-c b { color: var(--ink2); font-size: 14px; }
+
+/* BEGIN shared administration canvas */
+/* @maxitor/tokens — Maxitor's look as CSS custom properties.
+   The core's frame, its controls and every plugin's page take colours and sizes only from here, so all of Maxitor
+   looks the same and a later dark theme changes one file. The values are those of Maxitor's screens today: the
+   core's application (mockups 059, 072, 073) and the graph viewer's floating panels. */
+:root {
+  /* Ink and surfaces. */
+  --mx-ink: #0f172a;
+  --mx-ink-2: #1e293b;
+  --mx-ink-3: #334155;
+  --mx-muted: #64748b;
+  --mx-faint: #94a3b8;
+  --mx-on-ink: #ffffff;
+  --mx-surface: #ffffff;
+  --mx-surface-glass: rgba(255, 255, 255, 0.88);
+  --mx-page: #e9edf1;
+  --mx-sidebar: #ebf2f5;
+  --mx-workspace: #f4f5f7;
+  --mx-canvas: #f4f5f7;
+  --mx-dot: rgba(160, 168, 180, 0.42);
+  --mx-line: rgba(15, 23, 42, 0.1);
+  --mx-line-2: rgba(15, 23, 42, 0.06);
+  --mx-line-3: rgba(15, 23, 42, 0.14);
+  --mx-hover: rgba(15, 23, 42, 0.06);
+  --mx-selected: rgba(15, 23, 42, 0.09);
+  --mx-ok: #16a34a;
+  --mx-bad: #b91c1c;
+  --mx-bad-line: #fecaca;
+  --mx-disk-line: rgba(0, 0, 0, 0.12);
+  --mx-warn: #b45309;
+
+  /* The palette: the colours a plugin names in navigation.yaml (colour: green), never by code. */
+  --mx-palette-grey: #94a3b8;
+  --mx-palette-blue: #2563eb;
+  --mx-palette-green: #16a34a;
+  --mx-palette-amber: #d97706;
+  --mx-palette-red: #dc2626;
+  --mx-palette-violet: #7c3aed;
+  --mx-palette-teal: #0d9488;
+  --mx-palette-pink: #db2777;
+
+  /* Radii. */
+  --mx-radius-xs: 4px;
+  --mx-radius-sm: 6px;
+  --mx-radius-md: 8px;
+  --mx-radius-lg: 12px;
+  --mx-radius-round: 999px;
+
+  /* Shadows and blur. */
+  --mx-shadow-disk: inset 0 0 0 var(--mx-ring) var(--mx-surface), 0 0 0 var(--mx-line-width) var(--mx-disk-line);
+  --mx-shadow-float: 0 2px 10px rgba(0, 0, 0, 0.07);
+  --mx-shadow-card: 0 8px 30px rgba(15, 23, 42, 0.08);
+  --mx-shadow-pop: 0 12px 32px rgba(15, 23, 42, 0.16);
+  --mx-blur: blur(8px);
+
+  /* Type. */
+  --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --mx-text-xs: 10.5px;
+  --mx-text-sm: 11.5px;
+  --mx-text-md: 13px;
+  --mx-text-lg: 14px;
+  --mx-text-xl: 19px;
+  --mx-text-tiny: 10px;
+  --mx-weight-medium: 500;
+  --mx-weight-bold: 600;
+  --mx-weight-heavy: 700;
+  --mx-tracking-caps: 0.05em;
+
+  /* Spacing and sizes of the frame. */
+  --mx-space-1: 2px;
+  --mx-space-2: 4px;
+  --mx-space-3: 6px;
+  --mx-space-4: 8px;
+  --mx-space-5: 12px;
+  --mx-space-6: 16px;
+  --mx-space-7: 24px;
+  --mx-line-width: 1px;
+  --mx-control: 28px;
+  --mx-action-height: 36px;
+  --mx-action-height-phone: 44px;
+  --mx-control-sm: 22px;
+  --mx-row: 30px;
+  --mx-icon: 16px;
+  --mx-icon-sm: 14px;
+  --mx-top-row: 44px;
+  --mx-tree-width: 255px;
+  --mx-filter-width: 148px;
+  --mx-filter-pad: 10px;
+  --mx-badge: 20px;
+  --mx-text-badge: 8px;
+  --mx-bar-button: 30px;
+  --mx-bar-hairline: 22px;
+  --mx-empty-width: 520px;
+  --mx-card-min: 230px;
+  --mx-empty-pad-y: 34px;
+  --mx-empty-pad-x: 20px;
+  --mx-dashed-width: 1.5px;
+  /* The shell's layer over a page's own content: a plugin's page stays below it (spec 078, FR-019). */
+  --mx-layer-shell: 30;
+  --mx-layer-shell-pop: 35;
+  --mx-dot-step: 20px;
+  --mx-dot-size: 1px;
+  --mx-icon-lg: 20px;
+  --mx-ring: 2px;
+  --mx-tree-row: 32px;
+  --mx-tree-group: 36px;
+  --mx-tree-slot: 32px;
+  --mx-tree-row-phone: 42px;
+  --mx-menu-width: 290px;
+  --mx-drawer-width: 296px;
+  --mx-text-huge: 56px;
+  --mx-phone: 520px;
+
+  /* The date pickers (spec 081): Apple's layout in Maxitor's colours, as the mockup of spec 079 draws them. */
+  --mx-band: #eef2f7;
+  --mx-cal-side: #f8fafc;
+  --mx-cal-accent: #475569;
+  --mx-cal-link: #2563eb;
+  --mx-cal-off: #d6dde6;
+  --mx-scrim: rgba(15, 23, 42, 0.32);
+  --mx-cal-presets: 150px;
+  --mx-cal-main: 470px;
+  --mx-cal-main-one: 270px;
+  --mx-cal-cell: 30px;
+  --mx-cal-cell-phone: 40px;
+  --mx-cal-day: 28px;
+  --mx-cal-field: 32px;
+  --mx-cal-wheels: 196px;
+  --mx-cal-wheel-row: 28px;
+  --mx-cal-wheel-pad: 84px;
+  --mx-sheet-radius: 16px;
+
+  /* A comparison's marks, as the graph's ERD draws them (maxitor-web lib/erdPostPass.ts): the change's colour, a soft
+     halo of it under what changed — 40 px round it, fill-opacity 0.16, blurred by 22 — and what did not change faded. */
+  --mx-change-added: var(--mx-palette-green);
+  --mx-change-changed: var(--mx-palette-amber);
+  --mx-change-removed: var(--mx-palette-red);
+  --mx-change-unchanged: var(--mx-palette-grey);
+  --mx-halo-blur: 44px;
+  --mx-halo-spread: 34px;
+  --mx-halo-strength: 16%;
+  --mx-faded: 0.32;
+  /* A filter's row with nothing of its kind on the page fades its label only (maxitor-web ErdFilterPanel RowLabel). */
+  --mx-absent: 0.4;
+  /* The sign in a status disk (maxitor-web lib/erdFilterPresence.ts: 14 of 24 units on a disk of 20). */
+  --mx-text-sign: 12px;
+  /* A tree's pictogram, as the graph viewer's SidebarRowIcon dims it. */
+  --mx-icon-dim: 0.88;
+
+  /* The time scale (spec 079): the graph viewer's VersionButton and VersionPicker, and the mockup of spec 074. */
+  --mx-pill: rgba(15, 23, 42, 0.05);
+  --mx-pill-open: rgba(15, 23, 42, 0.1);
+  --mx-pill-ink: #334155;
+  --mx-pill-arrow: #475569;
+  --mx-pill-off: #cbd5e1;
+  --mx-pill-hairline: rgba(15, 23, 42, 0.12);
+  --mx-pill-height: 28px;
+  --mx-pill-height-phone: 34px;
+  --mx-pill-arrow-width: 26px;
+  --mx-pill-arrow-phone: 34px;
+  --mx-pill-hairline-height: 16px;
+  --mx-text-pill: 12.5px;
+  --mx-text-scale: 12px;
+  --mx-live: #16a34a;
+  --mx-live-ring: rgba(22, 163, 74, 0.15);
+  --mx-past: #2563eb;
+  --mx-now-link: #1d4ed8;
+  --mx-mark: 7px;
+  --mx-ring-wide: 3px;
+  --mx-scale-gap: 11px;
+  --mx-scale-card: 760px;
+  --mx-scale-card-radius: 10px;
+  --mx-scale-pad-top: 14px;
+  --mx-scale-pad-x: 20px;
+  --mx-scale-pad-bottom: 12px;
+  --mx-scale-edge: 10px;
+  --mx-shadow-scale: 0 12px 40px rgba(15, 23, 42, 0.16), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --mx-shadow-tip: 0 8px 30px rgba(15, 23, 42, 0.14), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --mx-scale-hatch: #e2e8f0;
+  --mx-scale-axis: #cbd5e1;
+  --mx-scale-day: rgba(15, 23, 42, 0.09);
+  --mx-scale-hour: rgba(15, 23, 42, 0.04);
+  --mx-scale-range: rgba(15, 23, 42, 0.06);
+  --mx-scale-brush: rgba(37, 99, 235, 0.12);
+  --mx-scale-brush-line: #2563eb;
+  --mx-zoom-height: 22px;
+  --mx-zoom-height-phone: 30px;
+  --mx-zoom-radius: 7px;
+  --mx-zoom-inner-radius: 5px;
+  --mx-modes-height: 24px;
+  --mx-modes-height-phone: 32px;
+  --mx-text-axis: 10.5px;
+  --mx-sheet-grab: 40px;
+  --mx-sheet-grab-height: 5px;
+  --mx-sheet-height: 86%;
+
+  /* The milestones' palette, as the graph viewer's track and the mockup of spec 074 draw it: a point's colour, the tint
+     of its badge and the ink of the badge's words. */
+  --mx-tone-neutral: #8c959f;
+  --mx-tone-neutral-tint: #f6f8fa;
+  --mx-tone-neutral-ink: #59636e;
+  --mx-tone-purple: #8250df;
+  --mx-tone-purple-tint: #fbefff;
+  --mx-tone-purple-ink: #8250df;
+  --mx-tone-blue: #0969da;
+  --mx-tone-blue-tint: #ddf4ff;
+  --mx-tone-blue-ink: #0969da;
+  --mx-tone-green: #1a7f37;
+  --mx-tone-green-tint: #dafbe1;
+  --mx-tone-green-ink: #1a7f37;
+  --mx-tone-amber: #9a6700;
+  --mx-tone-amber-tint: #fff8c5;
+  --mx-tone-amber-ink: #9a6700;
+  --mx-tone-red: #d1242f;
+  --mx-tone-red-tint: #ffebe9;
+  --mx-tone-red-ink: #d1242f;
+  --mx-chip-bg: #f1f5f9;
+  --mx-message-bg: #f8fafc;
+  --mx-scale-tip: 270px;
+  --mx-scale-card-tip: 320px;
+  --mx-scale-grid: rgba(15, 23, 42, 0.05);
+  --mx-badge-height: 22px;
+  --mx-badge-icon: 13px;
+  --mx-badge-outline: 1.2px;
+  --mx-message-max: 120px;
+  --mx-text-card-title: 13.5px;
+  --mx-legend-width: 640px;
+  --mx-legend-keys: 200px;
+
+  /* An element another panel points at: a blue glow, as the mockup of spec 079 draws it. */
+  --mx-glow: 5px;
+  --mx-glow-colour: rgba(37, 99, 235, 0.95);
+  --mx-glow-line: #2563eb;
+  --mx-glow-tint: rgba(37, 99, 235, 0.12);
+  /* Side by side: A brown, B blue, as the graph viewer's two panels name them. */
+  --mx-side-a: #b45309;
+  --mx-side-b: #1d4ed8;
+  --mx-side-head: 30px;
+  --mx-track-on: rgba(37, 99, 235, 0.1);
+  --mx-note: rgba(15, 23, 42, 0.86);
+  --mx-note-code: rgba(255, 255, 255, 0.14);
+
+  /* What a page compares with: the graph viewer's DiffCard, StatusIcon and ChangeStepper. */
+  --mx-text-status: 9px;
+  --mx-diff-card: 300px;
+  --mx-stepper-list: 340px;
+  --mx-stepper-height: 360px;
+}
+
+/* Stable typography in live forms and historical views, independent of camera transforms. */
+.device .page { min-height: 0; height: auto; padding: 0; background: transparent; overflow: visible; }
+.device .page .inner { width: 100%; max-width: 1100px; padding: 0; margin: 0 auto; }
+.device h2, .device .page h2 { font-size: 20px; line-height: 1.3; margin: 0 0 12px; }
+.device h3, .device .panel h3, .device .dlg h3 { font-size: 16px; line-height: 1.4; }
+.device :is(.sub,.choice,.choice b,.choice div,.choice .now,.kv,.utbl,.nm,.arow,.alert,.stt,.tabs button,.mx-button:not([data-variant="link"]),.panel .mx-button:not([data-variant="link"]),.dlg .mx-button:not([data-variant="link"])) { font-size: 14px; line-height: 1.5; }
+.device :is(.sec,.fine2,.em,.as,.badge,.lab,.hintl,.mut,.utbl th,.admin-meta) { font-size: 12px; line-height: 1.5; }
+.device :is(input,textarea,select,.search input,.inp input) { font-family: inherit; font-size: 16px; line-height: 1.5; }
+.device .choice { background: #fff; }
+.device .mx-button:not([data-variant="link"]) { min-height: 36px; height: auto; }
+.device .dlg { max-height: calc(100dvh - 32px); overflow-y: auto; }
+.device .panel { max-width: 100%; }
+.admin-history-notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 12px 16px; background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 20px; }
+.admin-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); gap: 16px; margin-top: 16px; }
+.admin-object { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; overflow-wrap: anywhere; }
+.admin-object[data-change=added] { border-color: #16a34a; }
+.admin-object[data-change=changed] { border-color: #d97706; }
+.admin-object[data-change=removed] { border-color: #dc2626; }
+.admin-object dl > div { display: grid; grid-template-columns: minmax(100px,1fr) 2fr; gap: 12px; padding: 6px 0; }
+.admin-object dd { margin: 0; }
+.admin-object dt, .admin-meta { color: var(--muted); }
+.admin-change { text-transform: capitalize; }
+@media (max-width: 600px) {
+  .device .page .inner { width: 100%; padding: 0; }
+  .device .ph { flex-wrap: wrap; gap: 12px; }
+  .device :is(.mx-button:not([data-variant="link"]),.tabs button) { min-height: 44px; }
+  .device .dlg { width: 100%; max-width: 100%; max-height: calc(100dvh - 16px); }
+  .device .utbl { width: 100%; }
+  .admin-object dl > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+.device.admin-dialog-content { height: auto; }
+.device.admin-dialog-content :is(.dlg,.panel,.drawer) { position: static; inset: auto; transform: none; width: 100%; max-width: none; height: auto; max-height: none; padding: 0; margin: 0; border: 0; box-shadow: none; overflow: visible; }
+.device.admin-dialog-content :is(.dh,.db,.df,.pb,.pf) { padding: 8px 0; }
+
+.admin-canvas-host { position: absolute; inset: 0; }
+.admin-scene { position: absolute; left: 0; top: 0; padding-bottom: 24px; }
+
+.admin-moment { position: relative; display: inline-flex; margin-right: 12px; }
+.admin-time-menu { position: absolute; z-index: 100; right: 0; top: 40px; width: min(340px,90vw); padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px #0002; }
+.admin-time-menu .tabs { display: flex; flex-wrap: wrap; }
+
+/* Both plugin tabs fill the available panel; typography stays independent of layout. */
+.device .marketplace-page .inner { max-width: none; container: marketplace / inline-size; }
+.device .marketplace-page .inner .grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; }
+@container marketplace (min-width: 601px) {
+  .device .marketplace-page .inner .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@container marketplace (min-width: 1150px) {
+  .device .marketplace-page .inner .grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+.device .marketplace-page .grid > :is(.mcard,.prow) { min-width: 0; margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 15px 16px; }
+.device .marketplace-page .grid > .prow { display: grid; grid-template-columns: 38px minmax(0,1fr); align-content: start; gap: 9px 12px; }
+.device .marketplace-page .prow .pacts { grid-column: 1 / -1; justify-content: flex-end; margin-top: auto; }
+.device .marketplace-page .grid :is(.pmain,.mono) { min-width: 0; overflow-wrap: anywhere; }
+
+/* Semantic cards share spacing without changing the established type scale. */
+.admin-surface { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 0 0 16px; box-shadow: 0 2px 6px #0f172a06; min-width: 0; }
+.admin-surface-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.admin-surface-head h3 { margin: 0; }
+.admin-facts { margin: 0; }
+.admin-facts > div { display: grid; grid-template-columns: minmax(120px,1fr) 2fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line2); }
+.admin-facts > div:last-child { border-bottom: 0; }
+.admin-facts dt { color: var(--muted); }
+.admin-facts dd { margin: 0; overflow-wrap: anywhere; }
+.admin-policy-options { border: 0; padding: 0; margin: 12px 0; }
+.device .choice { display: flex; align-items: flex-start; text-align: left; gap: 12px; padding: 12px; margin: 0; border: 0; border-radius: 7px; box-shadow: none; }
+.device .choice.on { background: #f1f5f9; border: 0; box-shadow: none; }
+.device .choice:hover { background: #f8fafc; }
+.device .choice:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+.admin-policy-options input { flex: 0 0 auto; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--ink); }
+.admin-choice-description { display: block; margin-top: 4px; color: var(--muted); }
+.admin-people .tabs { margin-top: 0; }
+.admin-people :is(.utbl,.tbl) { border: 0; border-radius: 0; }
+.admin-people .search { max-width: 100%; }
+.admin-people .who > div { min-width: 0; }
+.admin-people :is(.em,.nm) { overflow-wrap: anywhere; }
+.admin-object { box-shadow: 0 2px 6px #0f172a06; }
+@media (max-width: 600px) {
+  .admin-surface { padding: 12px; }
+  .admin-facts > div { grid-template-columns: 1fr; gap: 4px; }
+  .admin-people .tabs { display: flex; }
+  .admin-people .tabs button { flex: 1; padding-left: 6px; padding-right: 6px; }
+  .admin-people :is(.utbl,.tbl) td { overflow-wrap: anywhere; max-width: 100%; }
+}
+.device.phone .admin-surface { padding: 12px; }
+.device.phone .admin-facts > div { grid-template-columns: 1fr; gap: 4px; }
+@media (max-width: 600px) {
+  .admin-people :is(.utbl,.tbl) td[data-label] { display: block; padding-top: 4px; }
+  .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+}
+.device.phone .admin-people :is(.utbl,.tbl) td[data-label] { display: block; padding-top: 4px; }
+.device.phone .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+
+/* Keep the introduction separate from the first content card. */
+.device :is(.organization-page,.people-page) .ph { margin-bottom: 20px; }
+
+.admin-person-link { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.admin-user-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; }
+.admin-user-status .acts { margin: 0; }
+.admin-user-card .db { border-top: 0; margin-top: 8px; }
+.admin-user-card .kv { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 16px; margin: 12px 0 0; }
+.admin-user-card .kv dd { margin: 0; overflow-wrap: anywhere; }
+.device .organization-page .inner { max-width: 820px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+.organization-page .ph, .organization-page .admin-surface:first-of-type, .organization-page .alert { grid-column: 1 / -1; }
+.organization-page .admin-surface { margin-bottom: 0; }
+.organization-page .admin-facts > div { grid-template-columns: minmax(100px,1fr) 2fr; gap: 12px; padding: 6px 0; }
+@media (max-width:600px) {
+ .device .organization-page .inner { grid-template-columns: 1fr; }
+ .admin-user-card .kv { grid-template-columns: 1fr; gap: 6px; }
+ .admin-user-card .kv dd { margin-bottom: 8px; }
+}
+.device.phone .organization-page .inner { grid-template-columns: 1fr; }
+
+.organization-page .admin-surface-head { min-height: 36px; }
+@media (max-width:600px) { .organization-page .admin-surface-head { min-height: 44px; } }
+.device.phone .organization-page .admin-surface-head { min-height: 44px; }
+
+/* Comparison keeps the directory and dialog geometry; only change decoration differs. */
+.admin-people tr[data-change=added], .admin-user-card[data-change=added] { background: #f0fdf4; box-shadow: inset 3px 0 #16a34a; }
+.admin-people tr[data-change=changed], .admin-user-card[data-change=changed] { background: #fffbeb; box-shadow: inset 3px 0 #d97706; }
+.admin-people tr[data-change=removed], .admin-user-card[data-change=removed] { background: #fef2f2; box-shadow: inset 3px 0 #dc2626; }
+.admin-title-value { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-title-form input { width: 100%; min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.admin-title-form .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+/* A narrow comparison pane follows the same responsive directory as a phone. */
+.people-page { container: people / inline-size; }
+@container people (max-width: 700px) {
+  .admin-people .utbl, .admin-people .tbl, .admin-people tbody { display: block; width: 100%; }
+  .admin-people :is(thead,colgroup) { display: none; }
+  .admin-people :is(.utbl,.tbl) tr { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); padding: 12px; border-bottom: 1px solid var(--line2); gap: 8px 12px; }
+  .admin-people :is(.utbl,.tbl) td { display: block; width: auto; min-width: 0; padding: 0; border: 0; }
+  .admin-people :is(.utbl,.tbl) td:first-child, .admin-people :is(.utbl,.tbl) td[data-label] { grid-column: 1 / -1; }
+  .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+  .admin-people .who { align-items: flex-start; }
+  .admin-people .who > div { flex: 1; }
+  .admin-people .tabs { display: flex; }
+  .admin-people .tabs button { flex: 1; padding-left: 4px; padding-right: 4px; }
+}
+.admin-people .utbl .admin-person-link { height: auto; padding: 0; font-size: inherit; white-space: normal; }
+
+/* User columns keep their width on the canvas, including in comparison panes. */
+.device .admin-people table.user-directory { display: table; table-layout: fixed; width: 100%; }
+.device .admin-people table.user-directory colgroup { display: table-column-group; }
+.device .admin-people table.user-directory thead { display: table-header-group; }
+.device .admin-people table.user-directory tbody { display: table-row-group; }
+.device .admin-people table.user-directory tr { display: table-row; padding: 0; }
+.device .admin-people table.user-directory td { display: table-cell; padding: 12px; border-bottom: 1px solid var(--line2); vertical-align: middle; }
+.device .admin-people table.user-directory td[data-label]::before { content: none; }
+
+.admin-history-notice { box-sizing: border-box; max-width: var(--admin-visible-width, 100%); }
+.device .people-page .inner { max-width: none; }
+.admin-people > :is(.tabs,.search) { box-sizing: border-box; max-width: min(100%, calc(var(--admin-visible-width, 1150px) - 32px)); }
+
+.admin-people .user-directory { user-select: none; }
+
+/* Canvas-aware pinning: opaque cells keep the actual name/email and their native actions. */
+.user-directory :is(th,td):first-child { position: relative; z-index: 2; transform: translateX(var(--user-pin-offset, 0px)); background: #fff; }
+.user-directory th:first-child { background: #f8fafc; z-index: 3; }
+.user-directory[data-pinned] :is(th,td):first-child { box-shadow: 3px 0 5px #0f172a18; }
+.user-directory tr[data-change=added] td:first-child { background: #f0fdf4; }
+.user-directory tr[data-change=changed] td:first-child { background: #fffbeb; }
+.user-directory tr[data-change=removed] td:first-child { background: #fef2f2; }
+@media (max-width:520px) {
+  .user-directory { --user-identity-width: 16%; --user-appeared-width: 30%; }
+  .user-directory td:first-child .who { display: flex; }
+  .user-directory td:first-child .who > div { min-width: 0; }
+  .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
+}
+
+/* As in Plugins, tabs and search move and zoom with the canvas content. */
+.directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
+.directory-toolbar .tabs button { flex: 0 0 auto; }
+
+.device .mx-actions { position: absolute; top: 64px; right: 16px; z-index: 10; display: flex; gap: 8px; }
+.device.phone .mx-actions { position: absolute; top: auto; bottom: 56px; }
+.mx-action { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-md); background: var(--mx-ink); color: var(--mx-on-ink); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); box-shadow: var(--mx-shadow-float); }
+.device .mx-action svg { width: 16px; height: 16px; }
+/* Shared by live components and standalone mockups. */
+.mx-button.mx-button { box-sizing: border-box; min-height: var(--mx-action-height); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); background: var(--mx-surface); color: var(--mx-ink); padding: var(--mx-space-3) var(--mx-space-5); display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); font-family: inherit; font-size: var(--mx-text-lg); line-height: 1.5; font-weight: 400; cursor: pointer; text-decoration: none; }
+.mx-button[data-variant="primary"], .mx-button.pri { background: var(--mx-ink); color: var(--mx-on-ink); border-color: var(--mx-ink); font-weight: 600; }
+.mx-button[data-variant="danger"], .mx-button.danger { color: var(--mx-bad); border-color: var(--mx-bad-line); }
+.mx-button.dangerf { background: var(--mx-bad); border-color: var(--mx-bad); color: var(--mx-on-ink); }
+.mx-button[data-variant="link"] { min-height: 0; border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: var(--mx-ring-wide); }
+.mx-button[data-variant="icon"] { width: var(--mx-action-height); padding: var(--mx-space-3); border-color: transparent; background: transparent; }
+.mx-button:not(:disabled):hover { filter: brightness(.96); }
+.mx-button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-button:disabled, .mx-button.dis { opacity: .45; cursor: not-allowed; }
+.mx-button svg { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
+@media (max-width:600px) { .mx-button.mx-button:not([data-variant="link"]) { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-button:not([data-variant="link"]) { min-height: var(--mx-action-height-phone); }
+
+.mx-button.mx-action { box-shadow: var(--mx-shadow-float); }
+
+/* END shared administration canvas */
+/* Shared disk frame: white separation, then the production outer contour. */
+.avatar, .av, .mx-avatar, .mx-tip-avatar { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }
+img.dk, img.nt-disk, img.pd, img[src*="data-sign"] { border: 1px solid rgba(0,0,0,.12); border-radius: 50%; background: #fff; box-sizing: content-box; }
 </style>
 <style>
 /* The frame as the core draws it: @maxitor/tokens (packages/maxitor-tokens/tokens.css) and the core's frame.css, copied as they are. */
@@ -519,10 +969,10 @@
 
 /* the top row */
 .mx-top { height: var(--mx-top-row); flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-3); padding: 0 var(--mx-space-5); background: var(--mx-surface); border-bottom: var(--mx-line-width) solid var(--mx-line); position: relative; z-index: 20; }
-.mx-logo { display: inline-flex; align-items: center; gap: var(--mx-space-3); font-weight: var(--mx-weight-heavy); font-size: var(--mx-text-md); margin-right: var(--mx-space-4); }
+.mx-logo { flex-shrink: 0; display: inline-flex; align-items: center; gap: var(--mx-space-3); font-weight: var(--mx-weight-heavy); font-size: var(--mx-text-md); margin-right: var(--mx-space-4); }
 .mx-logo-mark { width: var(--mx-control-sm); height: var(--mx-control-sm); border-radius: var(--mx-radius-sm); background: var(--mx-ink); color: var(--mx-on-ink); display: inline-flex; align-items: center; justify-content: center; font-size: var(--mx-text-sm); }
-.mx-org { display: inline-flex; align-items: center; height: var(--mx-control); border-radius: var(--mx-radius-sm); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); white-space: nowrap; }
-.mx-org-name { padding: 0 var(--mx-space-3) 0 var(--mx-space-4); color: inherit; text-decoration: none; }
+.mx-org { min-width: 0; max-width: 25%; display: inline-flex; align-items: center; height: var(--mx-control); border-radius: var(--mx-radius-sm); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); white-space: nowrap; }
+.mx-org-name { overflow: hidden; text-overflow: ellipsis; padding: 0 var(--mx-space-3) 0 var(--mx-space-4); color: inherit; text-decoration: none; }
 .mx-org-kind { font-size: var(--mx-text-tiny); color: var(--mx-faint); text-transform: uppercase; letter-spacing: var(--mx-tracking-caps); margin-right: var(--mx-space-3); }
 .mx-org-switch { width: var(--mx-control-sm); height: var(--mx-control); display: inline-flex; align-items: center; justify-content: center; border: 0; background: none; border-radius: var(--mx-radius-sm); color: var(--mx-muted); cursor: pointer; }
 .mx-org-switch:hover, .mx-burger:hover { background: var(--mx-hover); }
@@ -532,8 +982,8 @@
 .mx-path-step:last-child { color: var(--mx-ink); font-weight: var(--mx-weight-medium); }
 .mx-path-sep { color: var(--mx-faint); flex-shrink: 0; }
 .mx-slot { display: inline-flex; align-items: center; min-width: 0; }
-.mx-slot-moment { margin-left: var(--mx-space-3); }
-.mx-avatar { width: var(--mx-control); height: var(--mx-control); border-radius: var(--mx-radius-round); background: var(--mx-faint); color: var(--mx-on-ink); display: inline-flex; align-items: center; justify-content: center; font-size: var(--mx-text-sm); font-weight: var(--mx-weight-heavy); cursor: pointer; border: 0; }
+.mx-slot-moment { margin-left: var(--mx-space-3); flex: 0 1 auto; min-width: calc(6 * var(--mx-pill-arrow-width)); max-width: 55%; }
+.mx-avatar { flex-shrink: 0; width: var(--mx-control); height: var(--mx-control); border-radius: var(--mx-radius-round); background: var(--mx-faint); color: var(--mx-on-ink); display: inline-flex; align-items: center; justify-content: center; font-size: var(--mx-text-sm); font-weight: var(--mx-weight-heavy); cursor: pointer; border: 0; }
 .mx-avatar.on { box-shadow: 0 0 0 var(--mx-ring) var(--mx-surface), 0 0 0 calc(2 * var(--mx-ring)) var(--mx-ink); }
 .mx-burger { display: none; width: var(--mx-tree-slot); height: var(--mx-tree-slot); border: 0; background: none; border-radius: var(--mx-radius-sm); align-items: center; justify-content: center; cursor: pointer; }
 
@@ -558,15 +1008,15 @@
 .mx-tree { width: var(--mx-tree-width); flex-shrink: 0; background: var(--mx-sidebar); border-right: var(--mx-line-width) solid var(--mx-line); display: flex; flex-direction: column; }
 .mx-tree.collapsed { width: auto; }
 /* The head's buttons stand on the level's left edge: a button's icon starts where the level's icon and the first column do. */
-.mx-tree-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-2); padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-1) 0; }
+.mx-tree-head { min-height: calc(var(--mx-tree-slot) + var(--mx-space-2) + var(--mx-space-1)); flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-2); padding: var(--mx-space-2) var(--mx-space-4) var(--mx-space-1) 0; }
 /* The tree's pictograms, as the graph viewer's sidebar draws them: 16 px, slightly dimmed. */
 .mx-pict { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
 .mx-node-icon .mx-pict, .mx-level-icon .mx-pict { opacity: var(--mx-icon-dim); }
 .mx-tree-button { width: var(--mx-tree-slot); height: var(--mx-tree-slot); border: 0; padding: 0; border-radius: var(--mx-radius-sm); background: transparent; color: var(--mx-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
 .mx-tree-button:hover { background: var(--mx-hover); color: var(--mx-ink); }
 /* The head of an entered level (spec 085, FR-006): the node itself, its icon and title across the whole width. */
-.mx-level-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-3); padding: var(--mx-space-3) var(--mx-space-4); border-bottom: var(--mx-line-width) solid var(--mx-line-2); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); min-width: 0; }
-.mx-level-icon { display: inline-flex; align-items: center; color: var(--mx-muted); flex-shrink: 0; }
+.mx-level-head { flex-shrink: 0; display: flex; align-items: center; gap: var(--mx-space-3); margin-top: calc(var(--mx-space-3) + var(--mx-space-2)); min-height: calc(var(--mx-tree-group) + var(--mx-line-width)); line-height: 1.35; padding: 0 var(--mx-space-4) 0 calc((var(--mx-tree-slot) - var(--mx-icon-lg)) / 2); border-bottom: var(--mx-line-width) solid var(--mx-line-2); font-size: var(--mx-text-md); font-weight: var(--mx-weight-bold); min-width: 0; }
+.mx-level-icon { width: var(--mx-icon-lg); display: inline-flex; align-items: center; justify-content: center; color: var(--mx-muted); flex-shrink: 0; }
 .mx-level-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mx-tree.collapsed .mx-level-head { display: none; }
 .mx-tree-scroll { flex: 1; overflow-y: auto; padding: var(--mx-space-3) var(--mx-space-4) var(--mx-space-2); }
@@ -579,6 +1029,9 @@
 .mx-node-fold, .mx-node-icon { width: var(--mx-icon-lg); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: var(--mx-muted); }
 .mx-node-fold.shut { transform: rotate(-90deg); }
 .mx-node-icon { margin-right: var(--mx-space-3); }
+/* Root entries have no empty branch gutter; their icons share the collapse icon's right edge. */
+.mx-tree-root { padding-left: calc((var(--mx-tree-slot) - var(--mx-icon-lg)) / 2); }
+.mx-tree-root .mx-node.top > .mx-node-fold:empty { display: none; }
 .mx-node-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* A node that is entered carries "›" on its right instead of the arrow (spec 085, FR-002): one click makes a level. */
 .mx-node-enter { color: var(--mx-faint); font-size: var(--mx-text-lg); line-height: 1; padding-left: var(--mx-space-2); }
@@ -624,7 +1077,7 @@
   .mx-logo-name, .mx-path-step:not(:last-child), .mx-path-sep { display: none; }
   /* The pill fills the row, as the mockup of spec 074 draws a phone: the organization and the crumbs give way to it. */
   .mx-org, .mx-path { display: none; }
-  .mx-slot-moment { flex: 1; margin: 0 var(--mx-space-1); }
+  .mx-slot-moment { flex: 1; min-width: 0; max-width: none; margin: 0 var(--mx-space-1); }
   /* One panel of Side by side at a time, with its A / B switch; the other stays drawn under it, so its page keeps its
      place and stays ready to bring what was chosen. */
   .mx-halves { position: relative; }
@@ -636,6 +1089,7 @@
   .mx-body > .mx-tree { display: none; }
   .mx-tree.drawer { display: flex; position: fixed; z-index: 60; top: var(--mx-top-row); left: 0; bottom: 0; width: var(--mx-drawer-width); box-shadow: var(--mx-shadow-pop); }
   .mx-node { min-height: var(--mx-tree-row-phone); font-size: var(--mx-text-lg); }
+  .mx-level-head { font-size: var(--mx-text-lg); }
   .mx-menu, .mx-menu.left { width: auto; left: var(--mx-space-5); right: var(--mx-space-5); }
 }
 
@@ -702,11 +1156,11 @@
   .tbl .mut { color: var(--muted); }
   .tbl .wr { white-space: normal; }
   .tbl .acts2 { display: flex; gap: 6px; justify-content: flex-end; }
-  .tbl .btn2 { height: 26px; font-size: 12px; padding: 0 9px; }
+  .tbl .mx-button { height: 26px; font-size: 12px; padding: 0 9px; }
   .who { display: inline-flex; align-items: center; gap: 8px; }
   .who .av { width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; font-size: 9.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; color: #334155; flex-shrink: 0; }
   .stt { display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px; border-radius: 11px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
-  .st-active { background: #dcfce7; color: #166534; } .st-blocked { background: #fee2e2; color: #991b1b; } .st-removed { background: #f1f5f9; color: #64748b; }
+  .st-active { background: #dcfce7; color: #166534; } .st-blocked { background: #fee2e2; color: #991b1b; }
   .st-sent { background: #fef3c7; color: #92400e; } .st-accepted { background: #dcfce7; color: #166534; } .st-declined { background: #fee2e2; color: #991b1b; }
   .st-withdrawn { background: #f1f5f9; color: #475569; } .st-expired { background: #f1f5f9; color: #94a3b8; }
   .badge.adm { background: #ede9fe; color: #5b21b6; }
@@ -738,8 +1192,8 @@
   .tg::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.25); transition: left .15s; }
   .tg.on { background: #0f172a; } .tg.on::after { left: 14px; }
   .tg.dis { opacity: .4; cursor: not-allowed; }
-  .btn2.dangerf { background: #b91c1c; border-color: #b91c1c; color: #fff; font-weight: 600; }
-  .btn2 .ico { flex-shrink: 0; }
+  .mx-button.dangerf { background: #b91c1c; border-color: #b91c1c; color: #fff; font-weight: 600; }
+  .mx-button .ico { flex-shrink: 0; }
   .arow { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 12.5px; color: var(--ink2); background: #fff; }
   .arow > .ico { color: var(--muted); flex-shrink: 0; }
   .arow .an { flex: 1; min-width: 0; }
@@ -775,18 +1229,19 @@
   .device.phone .mx-pill, .device.phone .mx-pill-main, .device.phone .mx-pill-arrow { height: var(--mx-pill-height-phone); }
   .device.phone .mx-pill-arrow { width: var(--mx-pill-arrow-phone); }
   .device.phone .mx-body > .mx-tree { display: none; }
+  .device.phone .mx-body > .mx-tree.drawer { display: flex; position: absolute; inset: 0 auto 0 0; width: var(--mx-drawer-width); z-index: 60; background: var(--mx-sidebar); box-shadow: var(--mx-shadow-pop); }
   .device.phone .page { padding: 16px 14px 32px; }
   .device.phone .ph { flex-direction: column; gap: 10px; }
   .device.phone .tabs button { flex: 1; justify-content: center; }
   .device.phone .search { max-width: none; height: 44px; }
   .device.phone .dlg { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; max-height: 88%; overflow-y: auto; border-radius: 20px 20px 0 0; padding: 18px 16px 22px; border: 0; }
   .device.phone .dlg .ft { flex-direction: column-reverse; gap: 8px; }
-  .device.phone .dlg .ft .btn2 { width: 100%; justify-content: center; height: 46px; font-size: 15px; }
+  .device.phone .dlg .ft .mx-button { width: 100%; justify-content: center; height: 46px; font-size: 15px; }
   .device.phone .pick { padding: 20px 12px; }
   .device.phone .pick .inner { width: 100%; }
   .device.phone .orow.inv { flex-wrap: wrap; }
   .device.phone .orow.inv .ia { width: 100%; }
-  .device.phone .orow.inv .ia .btn2 { flex: 1; justify-content: center; height: 40px; }
+  .device.phone .orow.inv .ia .mx-button { flex: 1; justify-content: center; height: 40px; }
   .device.phone table.tbl thead { display: none; }
   .device.phone table.tbl, .device.phone table.tbl tbody, .device.phone table.tbl tr, .device.phone table.tbl td { display: block; }
   .device.phone table.tbl td { border: 0; }
@@ -797,6 +1252,456 @@
   .device.phone .urlbar .u, .device.phone .urlbar .u b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .device.phone table.tbl td { display: inline-block; padding: 2px 4px 2px 12px; }
   .device.phone table.tbl td:first-child { display: block; }
+
+/* BEGIN shared administration canvas */
+/* @maxitor/tokens — Maxitor's look as CSS custom properties.
+   The core's frame, its controls and every plugin's page take colours and sizes only from here, so all of Maxitor
+   looks the same and a later dark theme changes one file. The values are those of Maxitor's screens today: the
+   core's application (mockups 059, 072, 073) and the graph viewer's floating panels. */
+:root {
+  /* Ink and surfaces. */
+  --mx-ink: #0f172a;
+  --mx-ink-2: #1e293b;
+  --mx-ink-3: #334155;
+  --mx-muted: #64748b;
+  --mx-faint: #94a3b8;
+  --mx-on-ink: #ffffff;
+  --mx-surface: #ffffff;
+  --mx-surface-glass: rgba(255, 255, 255, 0.88);
+  --mx-page: #e9edf1;
+  --mx-sidebar: #ebf2f5;
+  --mx-workspace: #f4f5f7;
+  --mx-canvas: #f4f5f7;
+  --mx-dot: rgba(160, 168, 180, 0.42);
+  --mx-line: rgba(15, 23, 42, 0.1);
+  --mx-line-2: rgba(15, 23, 42, 0.06);
+  --mx-line-3: rgba(15, 23, 42, 0.14);
+  --mx-hover: rgba(15, 23, 42, 0.06);
+  --mx-selected: rgba(15, 23, 42, 0.09);
+  --mx-ok: #16a34a;
+  --mx-bad: #b91c1c;
+  --mx-bad-line: #fecaca;
+  --mx-disk-line: rgba(0, 0, 0, 0.12);
+  --mx-warn: #b45309;
+
+  /* The palette: the colours a plugin names in navigation.yaml (colour: green), never by code. */
+  --mx-palette-grey: #94a3b8;
+  --mx-palette-blue: #2563eb;
+  --mx-palette-green: #16a34a;
+  --mx-palette-amber: #d97706;
+  --mx-palette-red: #dc2626;
+  --mx-palette-violet: #7c3aed;
+  --mx-palette-teal: #0d9488;
+  --mx-palette-pink: #db2777;
+
+  /* Radii. */
+  --mx-radius-xs: 4px;
+  --mx-radius-sm: 6px;
+  --mx-radius-md: 8px;
+  --mx-radius-lg: 12px;
+  --mx-radius-round: 999px;
+
+  /* Shadows and blur. */
+  --mx-shadow-disk: inset 0 0 0 var(--mx-ring) var(--mx-surface), 0 0 0 var(--mx-line-width) var(--mx-disk-line);
+  --mx-shadow-float: 0 2px 10px rgba(0, 0, 0, 0.07);
+  --mx-shadow-card: 0 8px 30px rgba(15, 23, 42, 0.08);
+  --mx-shadow-pop: 0 12px 32px rgba(15, 23, 42, 0.16);
+  --mx-blur: blur(8px);
+
+  /* Type. */
+  --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --mx-text-xs: 10.5px;
+  --mx-text-sm: 11.5px;
+  --mx-text-md: 13px;
+  --mx-text-lg: 14px;
+  --mx-text-xl: 19px;
+  --mx-text-tiny: 10px;
+  --mx-weight-medium: 500;
+  --mx-weight-bold: 600;
+  --mx-weight-heavy: 700;
+  --mx-tracking-caps: 0.05em;
+
+  /* Spacing and sizes of the frame. */
+  --mx-space-1: 2px;
+  --mx-space-2: 4px;
+  --mx-space-3: 6px;
+  --mx-space-4: 8px;
+  --mx-space-5: 12px;
+  --mx-space-6: 16px;
+  --mx-space-7: 24px;
+  --mx-line-width: 1px;
+  --mx-control: 28px;
+  --mx-action-height: 36px;
+  --mx-action-height-phone: 44px;
+  --mx-control-sm: 22px;
+  --mx-row: 30px;
+  --mx-icon: 16px;
+  --mx-icon-sm: 14px;
+  --mx-top-row: 44px;
+  --mx-tree-width: 255px;
+  --mx-filter-width: 148px;
+  --mx-filter-pad: 10px;
+  --mx-badge: 20px;
+  --mx-text-badge: 8px;
+  --mx-bar-button: 30px;
+  --mx-bar-hairline: 22px;
+  --mx-empty-width: 520px;
+  --mx-card-min: 230px;
+  --mx-empty-pad-y: 34px;
+  --mx-empty-pad-x: 20px;
+  --mx-dashed-width: 1.5px;
+  /* The shell's layer over a page's own content: a plugin's page stays below it (spec 078, FR-019). */
+  --mx-layer-shell: 30;
+  --mx-layer-shell-pop: 35;
+  --mx-dot-step: 20px;
+  --mx-dot-size: 1px;
+  --mx-icon-lg: 20px;
+  --mx-ring: 2px;
+  --mx-tree-row: 32px;
+  --mx-tree-group: 36px;
+  --mx-tree-slot: 32px;
+  --mx-tree-row-phone: 42px;
+  --mx-menu-width: 290px;
+  --mx-drawer-width: 296px;
+  --mx-text-huge: 56px;
+  --mx-phone: 520px;
+
+  /* The date pickers (spec 081): Apple's layout in Maxitor's colours, as the mockup of spec 079 draws them. */
+  --mx-band: #eef2f7;
+  --mx-cal-side: #f8fafc;
+  --mx-cal-accent: #475569;
+  --mx-cal-link: #2563eb;
+  --mx-cal-off: #d6dde6;
+  --mx-scrim: rgba(15, 23, 42, 0.32);
+  --mx-cal-presets: 150px;
+  --mx-cal-main: 470px;
+  --mx-cal-main-one: 270px;
+  --mx-cal-cell: 30px;
+  --mx-cal-cell-phone: 40px;
+  --mx-cal-day: 28px;
+  --mx-cal-field: 32px;
+  --mx-cal-wheels: 196px;
+  --mx-cal-wheel-row: 28px;
+  --mx-cal-wheel-pad: 84px;
+  --mx-sheet-radius: 16px;
+
+  /* A comparison's marks, as the graph's ERD draws them (maxitor-web lib/erdPostPass.ts): the change's colour, a soft
+     halo of it under what changed — 40 px round it, fill-opacity 0.16, blurred by 22 — and what did not change faded. */
+  --mx-change-added: var(--mx-palette-green);
+  --mx-change-changed: var(--mx-palette-amber);
+  --mx-change-removed: var(--mx-palette-red);
+  --mx-change-unchanged: var(--mx-palette-grey);
+  --mx-halo-blur: 44px;
+  --mx-halo-spread: 34px;
+  --mx-halo-strength: 16%;
+  --mx-faded: 0.32;
+  /* A filter's row with nothing of its kind on the page fades its label only (maxitor-web ErdFilterPanel RowLabel). */
+  --mx-absent: 0.4;
+  /* The sign in a status disk (maxitor-web lib/erdFilterPresence.ts: 14 of 24 units on a disk of 20). */
+  --mx-text-sign: 12px;
+  /* A tree's pictogram, as the graph viewer's SidebarRowIcon dims it. */
+  --mx-icon-dim: 0.88;
+
+  /* The time scale (spec 079): the graph viewer's VersionButton and VersionPicker, and the mockup of spec 074. */
+  --mx-pill: rgba(15, 23, 42, 0.05);
+  --mx-pill-open: rgba(15, 23, 42, 0.1);
+  --mx-pill-ink: #334155;
+  --mx-pill-arrow: #475569;
+  --mx-pill-off: #cbd5e1;
+  --mx-pill-hairline: rgba(15, 23, 42, 0.12);
+  --mx-pill-height: 28px;
+  --mx-pill-height-phone: 34px;
+  --mx-pill-arrow-width: 26px;
+  --mx-pill-arrow-phone: 34px;
+  --mx-pill-hairline-height: 16px;
+  --mx-text-pill: 12.5px;
+  --mx-text-scale: 12px;
+  --mx-live: #16a34a;
+  --mx-live-ring: rgba(22, 163, 74, 0.15);
+  --mx-past: #2563eb;
+  --mx-now-link: #1d4ed8;
+  --mx-mark: 7px;
+  --mx-ring-wide: 3px;
+  --mx-scale-gap: 11px;
+  --mx-scale-card: 760px;
+  --mx-scale-card-radius: 10px;
+  --mx-scale-pad-top: 14px;
+  --mx-scale-pad-x: 20px;
+  --mx-scale-pad-bottom: 12px;
+  --mx-scale-edge: 10px;
+  --mx-shadow-scale: 0 12px 40px rgba(15, 23, 42, 0.16), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --mx-shadow-tip: 0 8px 30px rgba(15, 23, 42, 0.14), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --mx-scale-hatch: #e2e8f0;
+  --mx-scale-axis: #cbd5e1;
+  --mx-scale-day: rgba(15, 23, 42, 0.09);
+  --mx-scale-hour: rgba(15, 23, 42, 0.04);
+  --mx-scale-range: rgba(15, 23, 42, 0.06);
+  --mx-scale-brush: rgba(37, 99, 235, 0.12);
+  --mx-scale-brush-line: #2563eb;
+  --mx-zoom-height: 22px;
+  --mx-zoom-height-phone: 30px;
+  --mx-zoom-radius: 7px;
+  --mx-zoom-inner-radius: 5px;
+  --mx-modes-height: 24px;
+  --mx-modes-height-phone: 32px;
+  --mx-text-axis: 10.5px;
+  --mx-sheet-grab: 40px;
+  --mx-sheet-grab-height: 5px;
+  --mx-sheet-height: 86%;
+
+  /* The milestones' palette, as the graph viewer's track and the mockup of spec 074 draw it: a point's colour, the tint
+     of its badge and the ink of the badge's words. */
+  --mx-tone-neutral: #8c959f;
+  --mx-tone-neutral-tint: #f6f8fa;
+  --mx-tone-neutral-ink: #59636e;
+  --mx-tone-purple: #8250df;
+  --mx-tone-purple-tint: #fbefff;
+  --mx-tone-purple-ink: #8250df;
+  --mx-tone-blue: #0969da;
+  --mx-tone-blue-tint: #ddf4ff;
+  --mx-tone-blue-ink: #0969da;
+  --mx-tone-green: #1a7f37;
+  --mx-tone-green-tint: #dafbe1;
+  --mx-tone-green-ink: #1a7f37;
+  --mx-tone-amber: #9a6700;
+  --mx-tone-amber-tint: #fff8c5;
+  --mx-tone-amber-ink: #9a6700;
+  --mx-tone-red: #d1242f;
+  --mx-tone-red-tint: #ffebe9;
+  --mx-tone-red-ink: #d1242f;
+  --mx-chip-bg: #f1f5f9;
+  --mx-message-bg: #f8fafc;
+  --mx-scale-tip: 270px;
+  --mx-scale-card-tip: 320px;
+  --mx-scale-grid: rgba(15, 23, 42, 0.05);
+  --mx-badge-height: 22px;
+  --mx-badge-icon: 13px;
+  --mx-badge-outline: 1.2px;
+  --mx-message-max: 120px;
+  --mx-text-card-title: 13.5px;
+  --mx-legend-width: 640px;
+  --mx-legend-keys: 200px;
+
+  /* An element another panel points at: a blue glow, as the mockup of spec 079 draws it. */
+  --mx-glow: 5px;
+  --mx-glow-colour: rgba(37, 99, 235, 0.95);
+  --mx-glow-line: #2563eb;
+  --mx-glow-tint: rgba(37, 99, 235, 0.12);
+  /* Side by side: A brown, B blue, as the graph viewer's two panels name them. */
+  --mx-side-a: #b45309;
+  --mx-side-b: #1d4ed8;
+  --mx-side-head: 30px;
+  --mx-track-on: rgba(37, 99, 235, 0.1);
+  --mx-note: rgba(15, 23, 42, 0.86);
+  --mx-note-code: rgba(255, 255, 255, 0.14);
+
+  /* What a page compares with: the graph viewer's DiffCard, StatusIcon and ChangeStepper. */
+  --mx-text-status: 9px;
+  --mx-diff-card: 300px;
+  --mx-stepper-list: 340px;
+  --mx-stepper-height: 360px;
+}
+
+/* Stable typography in live forms and historical views, independent of camera transforms. */
+.device .page { min-height: 0; height: auto; padding: 0; background: transparent; overflow: visible; }
+.device .page .inner { width: 100%; max-width: 1100px; padding: 0; margin: 0 auto; }
+.device h2, .device .page h2 { font-size: 20px; line-height: 1.3; margin: 0 0 12px; }
+.device h3, .device .panel h3, .device .dlg h3 { font-size: 16px; line-height: 1.4; }
+.device :is(.sub,.choice,.choice b,.choice div,.choice .now,.kv,.utbl,.nm,.arow,.alert,.stt,.tabs button,.mx-button:not([data-variant="link"]),.panel .mx-button:not([data-variant="link"]),.dlg .mx-button:not([data-variant="link"])) { font-size: 14px; line-height: 1.5; }
+.device :is(.sec,.fine2,.em,.as,.badge,.lab,.hintl,.mut,.utbl th,.admin-meta) { font-size: 12px; line-height: 1.5; }
+.device :is(input,textarea,select,.search input,.inp input) { font-family: inherit; font-size: 16px; line-height: 1.5; }
+.device .choice { background: #fff; }
+.device .mx-button:not([data-variant="link"]) { min-height: 36px; height: auto; }
+.device .dlg { max-height: calc(100dvh - 32px); overflow-y: auto; }
+.device .panel { max-width: 100%; }
+.admin-history-notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 12px 16px; background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 20px; }
+.admin-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); gap: 16px; margin-top: 16px; }
+.admin-object { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; overflow-wrap: anywhere; }
+.admin-object[data-change=added] { border-color: #16a34a; }
+.admin-object[data-change=changed] { border-color: #d97706; }
+.admin-object[data-change=removed] { border-color: #dc2626; }
+.admin-object dl > div { display: grid; grid-template-columns: minmax(100px,1fr) 2fr; gap: 12px; padding: 6px 0; }
+.admin-object dd { margin: 0; }
+.admin-object dt, .admin-meta { color: var(--muted); }
+.admin-change { text-transform: capitalize; }
+@media (max-width: 600px) {
+  .device .page .inner { width: 100%; padding: 0; }
+  .device .ph { flex-wrap: wrap; gap: 12px; }
+  .device :is(.mx-button:not([data-variant="link"]),.tabs button) { min-height: 44px; }
+  .device .dlg { width: 100%; max-width: 100%; max-height: calc(100dvh - 16px); }
+  .device .utbl { width: 100%; }
+  .admin-object dl > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+.device.admin-dialog-content { height: auto; }
+.device.admin-dialog-content :is(.dlg,.panel,.drawer) { position: static; inset: auto; transform: none; width: 100%; max-width: none; height: auto; max-height: none; padding: 0; margin: 0; border: 0; box-shadow: none; overflow: visible; }
+.device.admin-dialog-content :is(.dh,.db,.df,.pb,.pf) { padding: 8px 0; }
+
+.admin-canvas-host { position: absolute; inset: 0; }
+.admin-scene { position: absolute; left: 0; top: 0; padding-bottom: 24px; }
+
+.admin-moment { position: relative; display: inline-flex; margin-right: 12px; }
+.admin-time-menu { position: absolute; z-index: 100; right: 0; top: 40px; width: min(340px,90vw); padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px #0002; }
+.admin-time-menu .tabs { display: flex; flex-wrap: wrap; }
+
+/* Both plugin tabs fill the available panel; typography stays independent of layout. */
+.device .marketplace-page .inner { max-width: none; container: marketplace / inline-size; }
+.device .marketplace-page .inner .grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; }
+@container marketplace (min-width: 601px) {
+  .device .marketplace-page .inner .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@container marketplace (min-width: 1150px) {
+  .device .marketplace-page .inner .grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+.device .marketplace-page .grid > :is(.mcard,.prow) { min-width: 0; margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 15px 16px; }
+.device .marketplace-page .grid > .prow { display: grid; grid-template-columns: 38px minmax(0,1fr); align-content: start; gap: 9px 12px; }
+.device .marketplace-page .prow .pacts { grid-column: 1 / -1; justify-content: flex-end; margin-top: auto; }
+.device .marketplace-page .grid :is(.pmain,.mono) { min-width: 0; overflow-wrap: anywhere; }
+
+/* Semantic cards share spacing without changing the established type scale. */
+.admin-surface { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 0 0 16px; box-shadow: 0 2px 6px #0f172a06; min-width: 0; }
+.admin-surface-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.admin-surface-head h3 { margin: 0; }
+.admin-facts { margin: 0; }
+.admin-facts > div { display: grid; grid-template-columns: minmax(120px,1fr) 2fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line2); }
+.admin-facts > div:last-child { border-bottom: 0; }
+.admin-facts dt { color: var(--muted); }
+.admin-facts dd { margin: 0; overflow-wrap: anywhere; }
+.admin-policy-options { border: 0; padding: 0; margin: 12px 0; }
+.device .choice { display: flex; align-items: flex-start; text-align: left; gap: 12px; padding: 12px; margin: 0; border: 0; border-radius: 7px; box-shadow: none; }
+.device .choice.on { background: #f1f5f9; border: 0; box-shadow: none; }
+.device .choice:hover { background: #f8fafc; }
+.device .choice:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+.admin-policy-options input { flex: 0 0 auto; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--ink); }
+.admin-choice-description { display: block; margin-top: 4px; color: var(--muted); }
+.admin-people .tabs { margin-top: 0; }
+.admin-people :is(.utbl,.tbl) { border: 0; border-radius: 0; }
+.admin-people .search { max-width: 100%; }
+.admin-people .who > div { min-width: 0; }
+.admin-people :is(.em,.nm) { overflow-wrap: anywhere; }
+.admin-object { box-shadow: 0 2px 6px #0f172a06; }
+@media (max-width: 600px) {
+  .admin-surface { padding: 12px; }
+  .admin-facts > div { grid-template-columns: 1fr; gap: 4px; }
+  .admin-people .tabs { display: flex; }
+  .admin-people .tabs button { flex: 1; padding-left: 6px; padding-right: 6px; }
+  .admin-people :is(.utbl,.tbl) td { overflow-wrap: anywhere; max-width: 100%; }
+}
+.device.phone .admin-surface { padding: 12px; }
+.device.phone .admin-facts > div { grid-template-columns: 1fr; gap: 4px; }
+@media (max-width: 600px) {
+  .admin-people :is(.utbl,.tbl) td[data-label] { display: block; padding-top: 4px; }
+  .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+}
+.device.phone .admin-people :is(.utbl,.tbl) td[data-label] { display: block; padding-top: 4px; }
+.device.phone .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+
+/* Keep the introduction separate from the first content card. */
+.device :is(.organization-page,.people-page) .ph { margin-bottom: 20px; }
+
+.admin-person-link { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.admin-user-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; }
+.admin-user-status .acts { margin: 0; }
+.admin-user-card .db { border-top: 0; margin-top: 8px; }
+.admin-user-card .kv { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 16px; margin: 12px 0 0; }
+.admin-user-card .kv dd { margin: 0; overflow-wrap: anywhere; }
+.device .organization-page .inner { max-width: 820px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+.organization-page .ph, .organization-page .admin-surface:first-of-type, .organization-page .alert { grid-column: 1 / -1; }
+.organization-page .admin-surface { margin-bottom: 0; }
+.organization-page .admin-facts > div { grid-template-columns: minmax(100px,1fr) 2fr; gap: 12px; padding: 6px 0; }
+@media (max-width:600px) {
+ .device .organization-page .inner { grid-template-columns: 1fr; }
+ .admin-user-card .kv { grid-template-columns: 1fr; gap: 6px; }
+ .admin-user-card .kv dd { margin-bottom: 8px; }
+}
+.device.phone .organization-page .inner { grid-template-columns: 1fr; }
+
+.organization-page .admin-surface-head { min-height: 36px; }
+@media (max-width:600px) { .organization-page .admin-surface-head { min-height: 44px; } }
+.device.phone .organization-page .admin-surface-head { min-height: 44px; }
+
+/* Comparison keeps the directory and dialog geometry; only change decoration differs. */
+.admin-people tr[data-change=added], .admin-user-card[data-change=added] { background: #f0fdf4; box-shadow: inset 3px 0 #16a34a; }
+.admin-people tr[data-change=changed], .admin-user-card[data-change=changed] { background: #fffbeb; box-shadow: inset 3px 0 #d97706; }
+.admin-people tr[data-change=removed], .admin-user-card[data-change=removed] { background: #fef2f2; box-shadow: inset 3px 0 #dc2626; }
+.admin-title-value { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-title-form input { width: 100%; min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.admin-title-form .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+/* A narrow comparison pane follows the same responsive directory as a phone. */
+.people-page { container: people / inline-size; }
+@container people (max-width: 700px) {
+  .admin-people .utbl, .admin-people .tbl, .admin-people tbody { display: block; width: 100%; }
+  .admin-people :is(thead,colgroup) { display: none; }
+  .admin-people :is(.utbl,.tbl) tr { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); padding: 12px; border-bottom: 1px solid var(--line2); gap: 8px 12px; }
+  .admin-people :is(.utbl,.tbl) td { display: block; width: auto; min-width: 0; padding: 0; border: 0; }
+  .admin-people :is(.utbl,.tbl) td:first-child, .admin-people :is(.utbl,.tbl) td[data-label] { grid-column: 1 / -1; }
+  .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+  .admin-people .who { align-items: flex-start; }
+  .admin-people .who > div { flex: 1; }
+  .admin-people .tabs { display: flex; }
+  .admin-people .tabs button { flex: 1; padding-left: 4px; padding-right: 4px; }
+}
+.admin-people .utbl .admin-person-link { height: auto; padding: 0; font-size: inherit; white-space: normal; }
+
+/* User columns keep their width on the canvas, including in comparison panes. */
+.device .admin-people table.user-directory { display: table; table-layout: fixed; width: 100%; }
+.device .admin-people table.user-directory colgroup { display: table-column-group; }
+.device .admin-people table.user-directory thead { display: table-header-group; }
+.device .admin-people table.user-directory tbody { display: table-row-group; }
+.device .admin-people table.user-directory tr { display: table-row; padding: 0; }
+.device .admin-people table.user-directory td { display: table-cell; padding: 12px; border-bottom: 1px solid var(--line2); vertical-align: middle; }
+.device .admin-people table.user-directory td[data-label]::before { content: none; }
+
+.admin-history-notice { box-sizing: border-box; max-width: var(--admin-visible-width, 100%); }
+.device .people-page .inner { max-width: none; }
+.admin-people > :is(.tabs,.search) { box-sizing: border-box; max-width: min(100%, calc(var(--admin-visible-width, 1150px) - 32px)); }
+
+.admin-people .user-directory { user-select: none; }
+
+/* Canvas-aware pinning: opaque cells keep the actual name/email and their native actions. */
+.user-directory :is(th,td):first-child { position: relative; z-index: 2; transform: translateX(var(--user-pin-offset, 0px)); background: #fff; }
+.user-directory th:first-child { background: #f8fafc; z-index: 3; }
+.user-directory[data-pinned] :is(th,td):first-child { box-shadow: 3px 0 5px #0f172a18; }
+.user-directory tr[data-change=added] td:first-child { background: #f0fdf4; }
+.user-directory tr[data-change=changed] td:first-child { background: #fffbeb; }
+.user-directory tr[data-change=removed] td:first-child { background: #fef2f2; }
+@media (max-width:520px) {
+  .user-directory { --user-identity-width: 16%; --user-appeared-width: 30%; }
+  .user-directory td:first-child .who { display: flex; }
+  .user-directory td:first-child .who > div { min-width: 0; }
+  .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
+}
+
+/* As in Plugins, tabs and search move and zoom with the canvas content. */
+.directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
+.directory-toolbar .tabs button { flex: 0 0 auto; }
+
+.device .mx-actions { position: absolute; top: 64px; right: 16px; z-index: 10; display: flex; gap: 8px; }
+.device.phone .mx-actions { position: absolute; top: auto; bottom: 56px; }
+.mx-action { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-md); background: var(--mx-ink); color: var(--mx-on-ink); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); box-shadow: var(--mx-shadow-float); }
+.device .mx-action svg { width: 16px; height: 16px; }
+/* Shared by live components and standalone mockups. */
+.mx-button.mx-button { box-sizing: border-box; min-height: var(--mx-action-height); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); background: var(--mx-surface); color: var(--mx-ink); padding: var(--mx-space-3) var(--mx-space-5); display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); font-family: inherit; font-size: var(--mx-text-lg); line-height: 1.5; font-weight: 400; cursor: pointer; text-decoration: none; }
+.mx-button[data-variant="primary"], .mx-button.pri { background: var(--mx-ink); color: var(--mx-on-ink); border-color: var(--mx-ink); font-weight: 600; }
+.mx-button[data-variant="danger"], .mx-button.danger { color: var(--mx-bad); border-color: var(--mx-bad-line); }
+.mx-button.dangerf { background: var(--mx-bad); border-color: var(--mx-bad); color: var(--mx-on-ink); }
+.mx-button[data-variant="link"] { min-height: 0; border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: var(--mx-ring-wide); }
+.mx-button[data-variant="icon"] { width: var(--mx-action-height); padding: var(--mx-space-3); border-color: transparent; background: transparent; }
+.mx-button:not(:disabled):hover { filter: brightness(.96); }
+.mx-button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-button:disabled, .mx-button.dis { opacity: .45; cursor: not-allowed; }
+.mx-button svg { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
+@media (max-width:600px) { .mx-button.mx-button:not([data-variant="link"]) { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-button:not([data-variant="link"]) { min-height: var(--mx-action-height-phone); }
+
+.mx-button.mx-action { box-shadow: var(--mx-shadow-float); }
+
+/* END shared administration canvas */
+/* Shared disk frame: white separation, then the production outer contour. */
+.avatar, .av, .mx-avatar, .mx-tip-avatar { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }
+img.dk, img.nt-disk, img.pd, img[src*="data-sign"] { border: 1px solid rgba(0,0,0,.12); border-radius: 50%; background: #fff; box-sizing: content-box; }
 </style>
 </head>
 <body>
@@ -1025,7 +1930,7 @@ function dlgMethods() {
     : [["go", "G", "Google", "daniel.weber@gmail.com · added 9 Nov from Germany", "ab", "outside Russia"]];
   mine[0][4] = ru ? "all" : "ab"; mine[0][5] = ru ? "everywhere" : "outside Russia";
   if (S.linkState === "done") mine.push(["em", "✉", "Email and password", `${ru ? "anna@severny-veter.ru" : "d.weber@lumen.de"} · added just now`, "all", "everywhere"]);
-  const rows = mine.map(([k, t, n, d, r, rt]) => `<div class="srow">${pvMark(k, t)}<div class="sn"><b>${n}</b><div>${esc(d)}</div></div>${mine.length > 1 ? `<button class="btn2 danger">Unlink</button>` : `<button class="btn2 dis" title="The last way in cannot be unlinked">Unlink</button>`}</div>`).join("");
+  const rows = mine.map(([k, t, n, d, r, rt]) => `<div class="srow">${pvMark(k, t)}<div class="sn"><b>${n}</b><div>${esc(d)}</div></div>${mine.length > 1 ? `<button class="mx-button danger">Unlink</button>` : `<button class="mx-button dis" title="The last way in cannot be unlinked">Unlink</button>`}</div>`).join("");
   const offer = [];
   if (S.linkState !== "done") offer.push(["em", "✉", "Email and password", "works in every country", "all", "everywhere", "go({linkState:'email'})"]);
   const RUS = ["Yandex ID", "Mail.ru ID"];
@@ -1041,8 +1946,8 @@ function dlgMethods() {
     <div class="otp"><span>3</span><span>0</span><span>5</span><span class="gap"></span><span>1</span><span>1</span><span class="cur"></span></div>`;
   if (S.linkState === "taken") body = `<div class="alert bad">${I.alert}<div><b>This email already signs in another account.</b> Two accounts are never joined by email. Sign in with it and link from there, or choose another address.</div></div>`;
   const ft = S.linkState === "email"
-    ? `<button class="btn2" onclick="go({linkState:null})">Back</button><button class="btn2 pri" onclick="go({linkState:'done'})">Link</button>`
-    : `<button class="btn2 pri" onclick="go({pop:null,linkState:null})">Done</button>`;
+    ? `<button class="mx-button" onclick="go({linkState:null})">Back</button><button class="mx-button pri" onclick="go({linkState:'done'})">Link</button>`
+    : `<button class="mx-button pri" onclick="go({pop:null,linkState:null})">Done</button>`;
   return `<div class="scrim" onclick="go({pop:null,linkState:null})"></div><div class="dlg">
     <h3>${S.linkState === "email" ? "Link an email and password" : "Sign-in methods"}</h3>
     <div class="sub">${esc(p.name)} · one account, several ways in. They belong to you, not to an organization.</div>
@@ -1127,7 +2032,7 @@ function viewConsent() {
   </div></div>`;
 }
 function cookieBanner() {
-  return `<div class="cookie"><span class="ck">🍪</span><div>Maxitor uses <b>one cookie</b>, only to keep you signed in. No analytics, no advertising, nothing from other sites. <a onclick="go({screen:'privacy'})">Cookies in the Privacy policy</a></div><button class="btn2 pri" onclick="go({cookies:true})">Accept</button></div>`;
+  return `<div class="cookie"><span class="ck">🍪</span><div>Maxitor uses <b>one cookie</b>, only to keep you signed in. No analytics, no advertising, nothing from other sites. <a onclick="go({screen:'privacy'})">Cookies in the Privacy policy</a></div><button class="mx-button pri" onclick="go({cookies:true})">Accept</button></div>`;
 }
 function docHead(title) {
   return `<div class="lg"><span class="mk">M</span>Maxitor</div><h1>${title}</h1><div class="upd">Last updated 9 November 2026</div>`;
@@ -1179,7 +2084,7 @@ function viewNotFound() {
     <div class="big">404</div>
     <h2>No such organization</h2>
     <p>Maxitor has no organization at <b>/w/orbita</b> that you work in.<br>It may not exist, or you are not one of its users.</p>
-    <button class="btn2 pri" onclick="go({screen:'org',pop:null})">Go to Severny Veter</button>
+    <button class="mx-button pri" onclick="go({screen:'org',pop:null})">Go to Severny Veter</button>
   </div></div>`;
 }
 
@@ -1192,7 +2097,7 @@ const USERS = [
   { id: "os", name: "Oleg Safin", ini: "OS", email: "oleg.safin@severny-veter.ru", st: "active", admin: false, by: "ie", since: "10 Nov", seen: "today, 9:40" },
   { id: "ml", name: "Maria Lebedeva", ini: "ML", email: "maria.lebedeva@severny-veter.ru", st: "active", admin: false, by: "os", since: "11 Nov", seen: "yesterday" },
   { id: "vs", name: "Vera Sokolova", ini: "VS", email: "vera.sokolova@severny-veter.ru", st: "blocked", admin: false, by: "ak", since: "10 Nov", seen: "10 Nov", when: "11 Nov, 16:20 · by Anna Kovaleva" },
-  { id: "pn", name: "Pavel Nikitin", ini: "PN", email: "pavel.nikitin@severny-veter.ru", st: "removed", admin: false, by: "ak", since: "9 Nov", seen: "10 Nov", when: "11 Nov, 9:10 · by Anna Kovaleva" },
+  { id: "pn", name: "Pavel Nikitin", ini: "PN", email: "pavel.nikitin@severny-veter.ru", st: "blocked", admin: false, by: "ak", since: "9 Nov", seen: "10 Nov", when: "11 Nov, 9:10 · by Anna Kovaleva", left: true },
 ];
 const DK = { id: "dk", name: "Dmitry Krotov", ini: "DK", email: "dmitry.krotov@partner-stroy.ru", st: "active", admin: false, by: "ak", since: "just now", seen: "now" };
 /* The organization's invitations: an entity of its own, one row per letter sent. */
@@ -1207,7 +2112,7 @@ const INVITES = [
   { id: "i6", email: "irina.petrova@severny-veter.ru", by: "ie", admin: false, st: "expired", sent: "25 Oct, 11:20", decided: "8 Nov, 11:20" },
 ];
 const INV_ST = { sent: "Sent", accepted: "Accepted", declined: "Declined", withdrawn: "Withdrawn", expired: "Expired" };
-const U_ST = { active: "Active", blocked: "Blocked", removed: "Removed" };
+const U_ST = { active: "Active", blocked: "Blocked" };
 const SWITCHED_AT = "12 Nov, 10:30";
 
 const au = id => id === "dk" ? DK : USERS.find(u => u.id === id);
@@ -1251,12 +2156,10 @@ const TM = {
   organization: MAT("M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"),
   users: MAT("M16.5 13c-1.2 0-3.07.34-4.5 1-1.43-.67-3.3-1-4.5-1C5.33 13 1 14.08 1 16.25V19h22v-2.75c0-2.17-4.33-3.25-6.5-3.25zm-4 4.5h-10v-1.25c0-.54 2.56-1.75 5-1.75s5 1.21 5 1.75v1.25zm9 0H14v-1.25c0-.46-.2-.86-.52-1.22.88-.3 1.96-.53 3.02-.53 2.44 0 5 1.21 5 1.75v1.25zM7.5 12c1.93 0 3.5-1.57 3.5-3.5S9.43 5 7.5 5 4 6.57 4 8.5 5.57 12 7.5 12zm0-5.5c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 5.5c1.93 0 3.5-1.57 3.5-3.5S18.43 5 16.5 5 13 6.57 13 8.5s1.57 3.5 3.5 3.5zm0-5.5c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"),
 };
-/* The time scale's pill (the core's Pill.tsx): a page of Settings gives no history, so it stands at Now with nothing to step to. */
+/* Administration follows the common time context; prototypes offer fixed historical fixtures. */
 const PILL_CLOCK = '<svg class="mx-pill-icon" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.75 12a8.25 8.25 0 1 0 2.42-5.83"/><path d="M3.75 4.5v3.75H7.5"/><path d="M12 7.75V12l2.75 1.75"/></g></svg>';
 const pillArrow = d => `<button class="mx-pill-arrow" disabled><svg class="mx-pill-icon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="${d}"/></svg></button>`;
-function pill() {
-  return `<span class="mx-pill" role="group" aria-label="The moment">${pillArrow("M14.5 6.5 9 12l5.5 5.5")}<span class="mx-pill-hairline"></span><button class="mx-pill-main">${PILL_CLOCK}<span class="mx-pill-live"></span><b class="mx-pill-name">Now</b>${MAT("M16.59 8.59 12 13.17 7.41 8.59 6 10l6 6 6-6z").replace("mx-pict", "mx-pill-icon")}</button><span class="mx-pill-hairline"></span>${pillArrow("M9.5 6.5 15 12l-5.5 5.5")}</span>`;
-}
+function pill() { return adminMoment(PILL_CLOCK); }
 /* An account's colour, as the core's colors.ts picks it from the palette. */
 const ACCOUNT_COLOUR = { ak: "#2563eb", ie: "#0d9488", os: "#7c3aed", ml: "#db2777", vs: "#d97706", pn: "#94a3b8", dk: "#16a34a" };
 
@@ -1307,13 +2210,13 @@ function frameTree(drawer) {
   </div>`;
   if (inSettings) return `${head}<div class="mx-level-head"><span class="mx-level-icon">${TM.settings}</span><span class="mx-level-title">Settings</span></div>
     <div class="mx-tree-scroll" role="tree" aria-label="Settings">${SETTINGS_NODES.map(n => node(n.title, n.icon, S.fpage === n.key, n.key === "plugins" ? "" : `go({fpage:'${n.key}',usr:null,ivd:null,drawer:false})`, false)).join("")}</div>`;
-  return `${head}<div class="mx-tree-scroll" role="tree" aria-label="The organization's tree"><div class="mx-tree-empty">Nothing here yet.<br>Plugins add their sections to this tree.</div></div>
-    ${meAdmin() ? `<div class="mx-tree-foot" role="tree" aria-label="Settings">${node("Settings", "gear", false, "go({fpage:'users',drawer:false})", true)}</div>` : ""}`;
+  return `${head}<div class="mx-tree-scroll mx-tree-root" role="tree" aria-label="The organization's tree"><div class="mx-tree-empty">Nothing here yet.<br>Plugins add their sections to this tree.</div></div>
+    ${meAdmin() ? `<div class="mx-tree-foot mx-tree-root" role="tree" aria-label="Settings">${node("Settings", "gear", false, "go({fpage:'users',drawer:false})", true)}</div>` : ""}`;
 }
 function viewFrame() {
   let page;
-  if (S.fpage === "users") page = pageUsers();
-  else if (S.fpage === "organization") page = pageOrganization();
+  if (S.fpage === "users") page = adminHistoryView(S.utab !== "users" ? "invitations" : "users", pageUsers());
+  else if (S.fpage === "organization") page = adminHistoryView("organization", pageOrganization());
   else page = `<div class="mx-panel-note"><b>Choose a section in the tree</b>Every plugin enabled in this organization adds its sections on the left.</div>`;
   const drawer = S.usr ? userDrawer() : S.ivd ? inviteDrawer() : "";
   const phoneTree = S.phone && S.drawer ? `<div class="mx-scrim" onclick="go({drawer:false})"></div><aside class="mx-tree drawer">${frameTree(true)}</aside>` : "";
@@ -1325,86 +2228,85 @@ function viewFrame() {
 
 /* ----------------------- Settings → Users ----------------------- */
 function pageUsers() {
+  const historical = S.adminTime && S.adminTime !== "now";
+  const directory = USERS.map(u => S.adminTime === "past" && u.name === "Oleg Sokolov" ? {...u,st:"active"} : u);
   const org = ORGS[0];
-  const live = USERS.filter(u => u.st !== "removed"), gone = USERS.filter(u => u.st === "removed");
   const pending = INVITES.filter(i => invState(i) === "sent").length;
   const tabs = `<div class="tabs" role="tablist">
-    <button class="${S.utab === "users" ? "on" : ""}" onclick="go({utab:'users',usr:null,ivd:null})">Users<span class="cnt">${live.length}</span></button>
-    <button class="${S.utab === "invites" ? "on" : ""}" onclick="go({utab:'invites',usr:null,ivd:null})">Invitations<span class="cnt">${pending}</span></button></div>`;
+    <button class="${S.utab === "users" ? "on" : ""}" onclick="go({utab:'users',usr:null,ivd:null})">Users<span class="cnt">${USERS.length}</span></button>
+    <button class="${S.utab === "invites" ? "on" : ""}" onclick="go({utab:'invites',usr:null,ivd:null})">Invitations<span class="cnt">${pending}</span></button>
+    <button class="${S.utab === "history" ? "on" : ""}" onclick="go({utab:'history',usr:null,ivd:null})">History<span class="cnt">${INVITES.length - pending}</span></button></div>`;
   let body;
   if (S.utab === "users") {
-    const row = u => `<tr class="click${S.usr === u.id ? " on" : ""}${u.st === "removed" ? " gone" : ""}" onclick="go({usr:'${u.id}',ivd:null})">
-      <td><div class="who"><span class="av">${u.ini}</span><div><div class="nm">${esc(u.name)}${u.id === S.me ? ' <span class="mut" style="font-weight:400">· you</span>' : ""}</div><div class="em">${esc(u.email)}</div></div></div></td>
-      <td>${stt(u.st, U_ST[u.st])}</td><td>${roleBadge(isAdmin(u.id))}</td>
-      <td class="mut wr">${u.via === "first" ? "registered the organization · " + u.since : `invited by ${esc(au(u.by).name)} · ${u.since}`}</td>
-      <td class="mut">${u.st === "removed" ? "removed " + u.when.split(" ·")[0] : u.seen}</td></tr>`;
-    const cols = `<colgroup><col style="width:34%"><col style="width:11%"><col style="width:13%"><col style="width:28%"><col style="width:14%"></colgroup>`;
-    body = `<table class="tbl">${cols}<thead><tr><th>User</th><th>State</th><th>Role</th><th>Appeared</th><th>Last sign-in</th></tr></thead><tbody>${live.map(row).join("")}</tbody></table>
-      ${gone.length ? `<div class="sec">Removed <span>— kept in the history; a removed person can be invited again</span></div><table class="tbl">${cols}<tbody>${gone.map(row).join("")}</tbody></table>` : ""}`;
+    const row = u => `<tr data-change="${S.adminTime === "diff" && u.name === "Oleg Sokolov" ? "changed" : "unchanged"}" class="click${S.usr === u.id ? " on" : ""}" onclick="go({usr:'${u.id}',ivd:null})">
+      <td><div class="who"><span class="av">${u.ini}</span><div><div class="nm"><button class="admin-person-link" onclick="event.stopPropagation();go({usr:'${u.id}',ivd:null})">${esc(u.name)}</button>${u.id === S.me ? ' <span class="mut" style="font-weight:400">· you</span>' : ""}</div><div class="em">${esc(u.email)}</div></div></div></td>
+      <td class="wr">${esc(u.job_title || "—")}</td><td>${stt(u.st, U_ST[u.st])}</td><td>${roleBadge(isAdmin(u.id))}</td>
+      <td class="mut wr" data-label="Appeared">${u.via === "first" ? "registered the organization · " + u.since : `invited by ${esc(au(u.by).name)} · ${u.since}`}</td>
+      <td class="mut" data-label="Last sign-in">${u.seen}</td></tr>`;
+    const cols = `<colgroup><col style="width:26%"><col style="width:20%"><col style="width:10%"><col style="width:12%"><col style="width:20%"><col style="width:12%"></colgroup>`;
+    body = `<table class="tbl user-directory" style="min-width:1150px">${cols}<thead><tr><th>User</th><th>Job title</th><th>State</th><th>Role</th><th>Appeared</th><th>Last sign-in</th></tr></thead><tbody>${directory.map(row).join("")}</tbody></table>`;
   } else {
     const row = i => { const st = invState(i); return `<tr class="click${S.ivd === i.id ? " on" : ""}${st === "expired" || st === "withdrawn" ? " gone" : ""}" onclick="go({ivd:'${i.id}',usr:null,again:false})">
       <td class="nm">${esc(i.email)}</td><td>${stt(st, INV_ST[st])}</td><td>${roleBadge(i.admin)}</td>
-      <td class="mut wr">${esc(au(i.by).name)}</td><td class="mut">${i.sent}</td>
-      <td class="mut wr">${st === "sent" ? "until " + i.expires : st === "accepted" ? `accepted ${i.decided} · <span class="lnk2" onclick="event.stopPropagation();go({utab:'users',usr:'${i.user}',ivd:null})">${esc(au(i.user).name)}</span>` : `${INV_ST[st].toLowerCase()} ${invDecided(i)}`}</td>
-      <td><div class="acts2">${st === "sent" ? `<button class="btn2" onclick="event.stopPropagation();resend('${i.id}')">Send again</button><button class="btn2 danger" onclick="event.stopPropagation();withdraw('${i.id}')">Withdraw</button>` : ""}</div></td></tr>`; };
-    body = `<table class="tbl"><thead><tr><th>Email</th><th>State</th><th>Will be</th><th>Invited by</th><th>Sent</th><th>Then</th><th></th></tr></thead><tbody>${INVITES.map(row).join("")}</tbody></table>
+      <td class="mut wr" data-label="Invited by">${esc(au(i.by).name)}</td><td class="mut" data-label="Sent">${i.sent}</td>
+      <td class="mut wr" data-label="Then">${st === "sent" ? "until " + i.expires : st === "accepted" ? `accepted ${i.decided} · <span class="lnk2" onclick="event.stopPropagation();go({utab:'users',usr:'${i.user}',ivd:null})">${esc(au(i.user).name)}</span>` : `${INV_ST[st].toLowerCase()} ${invDecided(i)}`}</td>
+      <td><div class="acts2">${st === "sent" ? `<button class="mx-button" data-variant="primary" onclick="event.stopPropagation();resend('${i.id}')">Send again</button><button class="mx-button danger" onclick="event.stopPropagation();withdraw('${i.id}')">Withdraw</button>` : ""}</div></td></tr>`; };
+    body = `<table class="tbl"><thead><tr><th>Email</th><th>State</th><th>Invited role</th><th>Invited by</th><th>Sent</th><th>Then</th><th></th></tr></thead><tbody>${INVITES.filter(i => (invState(i) === "sent") !== (S.utab === "history")).map(row).join("")}</tbody></table>
       <div class="fine2" style="margin-top:10px">An invitation waits ${INV_DAYS} days, then expires. ${S.whoInv === "admins" ? "Only administrators invite now: the invitations ordinary users had sent were withdrawn when the setting changed." : "Every user may invite; administrators also invite administrators."}</div>`;
   }
-  return `<div class="page"><div class="inner">
-    <div class="ph"><div class="tx"><h2>Users</h2><div class="sub">Who works in ${esc(org.name)} and who is invited. An invited person becomes a user once they sign in with the invited email and accept.</div></div>
-      <button class="btn2 pri" onclick="go({pop:'invite',inv:'admin'})">${I.mail}Invite</button></div>
-    ${tabs}
+  return `<div class="page people-page"><div class="inner">
+    ${historical ? "" : `<div class="mx-actions" data-shell="actions"><button class="mx-button mx-action" data-variant="primary" onclick="go({pop:'invite',inv:'admin'})">${I.plus}Invite</button></div>`}
+    <section class="admin-surface admin-people" aria-label="People directory">${tabs}
     <label class="search">${I.search}<span>${S.utab === "users" ? "Find by name or email" : "Find by email"}</span></label>
-    ${body}
+    ${body}</section>
   </div></div>`;
 }
 function userDrawer() {
-  const u = au(S.usr);
+  const original = au(S.usr);
+  const historical = S.adminTime && S.adminTime !== "now";
+  const u = original && S.adminTime === "past" && original.name === "Oleg Sokolov" ? {...original,st:"active"} : original;
   if (!u) return "";
   const last = lastAdmin(u) || (u.id === "ak" && S.race);
   const me = u.id === S.me;
-  const acts = { active: [["Block", `setUser('${u.id}',{st:'blocked'})`, "x"], ["Remove", "go({pop:'rm'})", "danger x"]],
-                 blocked: [["Unblock", `setUser('${u.id}',{st:'active'})`, "pri"], ["Remove", "go({pop:'rm'})", "danger x"]],
-                 removed: [] }[u.st];
-  const btns = acts.map(([t, on, cls]) => { const dis = last && cls.includes("x"); return `<button class="btn2 ${cls.replace("x", "").trim()}${dis ? " dis" : ""}" ${dis ? 'title="The last active administrator"' : `onclick="${on}"`}>${t}</button>`; }).join("");
-  const admDis = last || u.st !== "active";
+  const acts = { active: [["Block", `setUser('${u.id}',{st:'blocked'})`, "pri x"]],
+                 blocked: [["Unblock", `setUser('${u.id}',{st:'active'})`, "pri"]] }[u.st] || [];
+  const btns = (historical ? [] : acts).map(([t, on, cls]) => { const dis = last && cls.includes("x"); return `<button class="mx-button ${cls.replace("x", "").trim()}${dis ? " dis" : ""}" ${dis ? 'title="The last active administrator"' : `onclick="${on}"`}>${t}</button>`; }).join("");
+  const admDis = historical || last || u.st !== "active";
   const admOn = isAdmin(u.id);
-  const again = INVITES.find(i => i.email === u.email && invState(i) === "sent");
-  return `<div class="drawer">
+  return `<div class="drawer admin-user-card">
     <div class="dh"><div class="dk"><span>User · Severny Veter</span><span class="close" onclick="go({usr:null})">✕</span></div>
       <h3>${esc(u.name)}${me ? ' <span class="mut" style="font-weight:400">· you</span>' : ""}</h3><div class="dt">${esc(u.email)}</div>
-      <div class="life">${Object.entries(U_ST).map(([k, t]) => `<span class="${k === u.st ? "on" : ""}">${t}</span>`).join("")}</div>
-      ${btns ? `<div class="acts">${btns}</div>` : `<div class="fine2" style="margin-top:10px">Removed ${u.when}. Final: there is no way back from “Removed”, but the person may be invited again.</div>`}
+      <div class="admin-user-status">${stt(u.st,U_ST[u.st])}<div class="acts">${btns}</div></div>
       ${S.race && u.id === "ak" ? `<div class="hintb bad2"><b>Ilya Ershov stepped down a moment ago.</b> You are the last active administrator now, so your mark stays: appoint another administrator first.</div>`
-        : last ? `<div class="hintb warn2">The last active administrator: cannot be blocked, removed or lose the mark. Appoint another one first.</div>` : ""}</div>
+        : last ? `<div class="hintb warn2">The last active administrator: cannot be blocked or lose the mark. Appoint another one first.</div>` : ""}</div>
     <div class="db"><div class="kv">
-      <span class="k">Administrator</span><span class="v"><span class="tg${admOn ? " on" : ""}${admDis ? " dis" : ""}" ${admDis ? "" : `onclick="setAdmin('${u.id}',${!admOn})"`}></span>&nbsp; ${admOn ? "invites, blocks and removes users, appoints administrators, changes the settings" : u.st === "active" ? "no · an ordinary user" : "no"}</span>
+      <span class="k">Job title</span><span class="v">${S.editJob && !historical ? `<form onsubmit="event.preventDefault();setUser('${u.id}',{job_title:this.elements.job_title.value});go({editJob:false})"><input name="job_title" aria-label="Job title" maxlength="160" value="${esc(u.job_title || '')}"><div class="ft"><button type="button" class="mx-button" onclick="go({editJob:false})">Cancel</button><button class="mx-button pri" type="submit">Save</button></div></form>` : `${esc(u.job_title || 'Not specified')}${historical ? '' : ` <button class="mx-button pri" onclick="go({editJob:true})">Edit</button>`}`}</span>
+      <span class="k">Administrator</span><span class="v"><span class="tg${admOn ? " on" : ""}${admDis ? " dis" : ""}" ${admDis ? "" : `onclick="setAdmin('${u.id}',${!admOn})"`}></span>&nbsp; ${admOn ? "Administrator" : "Ordinary user"}</span>
       <span class="k">Appeared</span><span class="v">${u.via === "first" ? `registered the organization · ${u.since}` : `by the invitation of ${esc(au(u.by).name)} · ${u.since}`}</span>
       <span class="k">Last sign-in</span><span class="v">${u.seen}</span>
       ${u.st === "blocked" ? `<span class="k">Blocked</span><span class="v">${u.when} · cannot enter the organization until unblocked</span>` : ""}
-      ${u.st === "removed" ? `<span class="k">Removed</span><span class="v">${u.when}</span>` : ""}
-      ${again ? `<span class="k">Invited again</span><span class="v"><span class="lnk2" onclick="go({utab:'invites',ivd:'${again.id}',usr:null})">${again.sent}</span> · by ${esc(au(again.by).name)}. Accepting makes a new user; this one stays in the history.</span>` : ""}
     </div>
-    ${u.st === "blocked" ? `<div class="hintb">A blocked person is unblocked, not invited: an invitation to ${esc(u.email)} is refused.</div>` : ""}
+    ${u.st === "blocked" ? `<div class="hintb">${u.left ? "The person left the organization: a user is never removed, so a person who leaves stays blocked. " : ""}A blocked person is unblocked, not invited: an invitation to ${esc(u.email)} is refused.</div>` : ""}
     </div>
-    <div class="df"><span>a user since ${u.since}</span><span>every change is a version of the user</span></div></div>`;
+    </div>`;
 }
 function inviteDrawer() {
   const i = INVITES.find(x => x.id === S.ivd);
   if (!i) return "";
   const st = invState(i);
   const by = au(i.by);
-  return `<div class="drawer">
+  return `<div class="drawer admin-user-card">
     <div class="dh"><div class="dk"><span>Invitation · Severny Veter</span><span class="close" onclick="go({ivd:null})">✕</span></div>
-      <h3>${esc(i.email)}</h3><div class="dt">${i.admin ? "will be an administrator" : "will be an ordinary user"}</div>
-      <div class="life">${Object.entries(INV_ST).map(([k, t]) => `<span class="${k === st ? "on" : ""}">${t}</span>`).join("")}</div>
-      ${st === "sent" ? `<div class="acts"><button class="btn2${S.again ? " dis" : ""}" ${S.again ? 'title="One letter a minute to one address"' : `onclick="resend('${i.id}')"`}>${I.mail}Send the letter again</button><button class="btn2 danger" onclick="withdraw('${i.id}')">Withdraw</button></div>` : ""}
+      <h3>${esc(i.email)}</h3><div class="dt">${st === "sent" ? "Will join as" : st === "accepted" ? "Joined as" : "Invited as"} ${i.admin ? "an administrator" : "an ordinary user"}</div>
+      <div class="admin-user-status">${stt(st,INV_ST[st])}
+      ${st === "sent" ? `<div class="acts"><button data-variant="primary" class="mx-button${S.again ? " dis" : ""}" ${S.again ? 'title="One letter a minute to one address"' : `onclick="resend('${i.id}')"`}>${I.mail}Send the letter again</button><button class="mx-button danger" onclick="withdraw('${i.id}')">Withdraw</button></div>` : ""}
+      </div>
       ${S.again && st === "sent" ? `<div class="hintb"><b>The letter is sent again.</b> The next one can go in 0:58: one address gets one letter a minute and ten an hour.</div>` : ""}</div>
     <div class="db"><div class="kv">
       <span class="k">Invited by</span><span class="v">${esc(by.name)}${isAdmin(i.by) ? "" : " · an ordinary user"}</span>
       <span class="k">Sent</span><span class="v">${i.sent}${S.again && st === "sent" ? "<br>sent again just now" : ""}</span>
       ${st === "sent" ? `<span class="k">Waits until</span><span class="v">${i.expires} · ${INV_DAYS} days from the first letter</span>` : ""}
-      ${st === "accepted" ? `<span class="k">Accepted</span><span class="v">${i.decided} · <span class="lnk2" onclick="go({utab:'users',usr:'${i.user}',ivd:null})">${esc(au(i.user).name)}</span></span>` : ""}
+      ${st === "accepted" ? `<span class="k">Accepted</span><span class="v">${i.decided} · <button type="button" class="mx-button lnk2" data-variant="link" onclick="go({utab:'users',usr:'${i.user}',ivd:null})">${esc(au(i.user).name)}</button></span>` : ""}
       ${st === "declined" ? `<span class="k">Declined</span><span class="v">${i.decided}</span>` : ""}
       ${st === "withdrawn" ? `<span class="k">Withdrawn</span><span class="v">${invDecided(i)}</span>` : ""}
       ${st === "expired" ? `<span class="k">Expired</span><span class="v">${i.decided} · ${INV_DAYS} days after the letter</span>` : ""}
@@ -1412,7 +2314,7 @@ function inviteDrawer() {
     ${st === "sent" ? `<div class="fine2">The person signs in to Maxitor with this email — an account that has it confirmed — and accepts or declines on the screen of their organizations. The letter holds no link.</div>` : ""}
     ${st === "declined" || st === "withdrawn" || st === "expired" ? `<div class="fine2">A new invitation to this email can be sent: only an invitation still “Sent” stands in the way.</div>` : ""}
     </div>
-    <div class="df"><span>${i.sent}</span><span>every change is a version of the invitation</span></div></div>`;
+    </div>`;
 }
 function dlgInvite() {
   const v = S.inv || "admin";
@@ -1422,53 +2324,47 @@ function dlgInvite() {
   let alert = "", dis = false, extra = "";
   if (v === "already") { alert = `<div class="alert bad">${I.alert}<div><b>Maria Lebedeva already works here</b> with this email: a user since 11 Nov. Nothing to send.</div></div>`; dis = true; }
   if (v === "blocked") { alert = `<div class="alert warn">${I.alert}<div><b>Vera Sokolova is blocked</b> with this email. A blocked person is unblocked, not invited.${adm ? ` <a class="lnk" onclick="go({pop:null,inv:null,utab:'users',usr:'vs'})">Open her card</a>.` : " Ask an administrator."}</div></div>`; dis = true; }
-  if (v === "pending") { alert = `<div class="alert info">${I.info}<div><b>An invitation to this email is already sent</b> — 11 Nov, by Anna Kovaleva, waiting until 25 Nov. Only its letter can go again.</div></div>`; dis = true; extra = `<button class="btn2" onclick="go({pop:null,inv:null,utab:'invites',ivd:'i1',again:true})">${I.mail}Send the letter again</button>`; }
+  if (v === "pending") { alert = `<div class="alert info">${I.info}<div><b>An invitation to this email is already sent</b> — 11 Nov, by Anna Kovaleva, waiting until 25 Nov. Only its letter can go again.</div></div>`; dis = true; extra = `<button class="mx-button" data-variant="primary" onclick="go({pop:null,inv:null,utab:'invites',ivd:'i1',again:true})">${I.mail}Send the letter again</button>`; }
   if (v === "limit") { alert = `<div class="alert warn">${I.alert}<div><b>Too many invitations.</b> One person sends at most thirty an hour; the next one can go at <b>15:20</b>. One organization sends at most a hundred a day.</div></div>`; dis = true; }
   if (v === "adminsOnly") { alert = `<div class="alert warn">${I.alert}<div><b>Only administrators invite in ${esc(org.name)} now.</b> The setting changed a moment ago. Ask an administrator to send the invitation.</div></div>`; dis = true; }
-  const mark = adm ? `<div class="arow"><div class="an">Organization administrator<div class="as">invites, blocks and removes users, appoints administrators and changes the organization’s settings</div></div><span class="tg${v === "mark" ? " on" : ""}" onclick="go({inv:'${v === "mark" ? "admin" : "mark"}'})"></span></div>`
+  const mark = adm ? `<div class="arow"><div class="an">Organization administrator<div class="as">invites and blocks users, appoints administrators and changes the organization’s settings</div></div><span class="tg${v === "mark" ? " on" : ""}" onclick="go({inv:'${v === "mark" ? "admin" : "mark"}'})"></span></div>`
     : `<div class="fine2" style="margin:-4px 0 10px">The person becomes an ordinary user. Only an administrator invites an administrator.</div>`;
   const mine = v === "mine" || v === "user" ? (() => {
     const list = INVITES.filter(i => i.by === S.me);
     if (!list.length) return "";
-    return `<div class="dsec">Sent by you</div>${list.map(i => { const st = invState(i); return `<div class="arow">${I.mail}<div class="an">${esc(i.email)}<div class="as">${INV_ST[st]} · ${st === "sent" ? "until " + i.expires : st === "accepted" ? `${i.decided} · now ${esc(au(i.user).name)}` : invDecided(i)}</div></div>${st === "sent" ? `<button class="btn2" onclick="resend('${i.id}')">Send again</button>` : ""}</div>`; }).join("")}`;
+    return `<div class="dsec">Sent by you</div>${list.map(i => { const st = invState(i); return `<div class="arow">${I.mail}<div class="an">${esc(i.email)}<div class="as">${INV_ST[st]} · ${st === "sent" ? "until " + i.expires : st === "accepted" ? `${i.decided} · now ${esc(au(i.user).name)}` : invDecided(i)}</div></div>${st === "sent" ? `<button class="mx-button" data-variant="primary" onclick="resend('${i.id}')">Send again</button>` : ""}</div>`; }).join("")}`;
   })() : "";
   return `<div class="scrim" onclick="go({pop:null,inv:null})"></div><div class="dlg">
     <h3>Invite to ${esc(org.name)}</h3>
     <div class="sub">A letter names you and the organization and asks the person to sign in to Maxitor with this email. It holds no link.</div>
     ${alert}
     <div class="lab">Email</div><div class="inp${alert ? " bad" : " focus"}">${email}</div>
+    <label class="lab">Job title (optional)<input class="inp" aria-label="Job title" maxlength="160" value="${esc(S.invJob || '')}" oninput="S.invJob=this.value"></label>
     ${mark}
-    ${v === "mark" ? `<div class="hintb warn2">An administrator from the first day: they will invite, block and remove users and appoint other administrators.</div>` : ""}
+    ${v === "mark" ? `<div class="hintb warn2">Can invite and block users and appoint other administrators.</div>` : ""}
     ${mine}
-    <div class="ft"><button class="btn2" onclick="go({pop:null,inv:null})">Cancel</button>${extra}<button class="btn2 pri${dis ? " dis" : ""}" ${dis ? "" : `onclick="sendInvite('${email}',${v === "mark"})"`}>${I.mail}Send the invitation</button></div></div>`;
+    <div class="ft"><button class="mx-button" onclick="go({pop:null,inv:null})">Cancel</button>${extra}<button class="mx-button pri${dis ? " dis" : ""}" ${dis ? "" : `onclick="sendInvite('${email}',${v === "mark"})"`}>${I.mail}Send the invitation</button></div></div>`;
 }
-function dlgRemove() {
-  const u = au(S.usr);
-  if (!u) return "";
-  return `<div class="scrim" onclick="go({pop:null})"></div><div class="dlg">
-    <h3>Remove ${esc(u.name)} from Severny Veter?</h3>
-    <div class="sub"><b>${esc(u.email)}</b>. “Removed” is final: the person cannot enter the organization and this user cannot be brought back. The user stays in the history as it was.</div>
-    <div class="hintb">The person may be invited again later: accepting then makes a new user of the same account.</div>
-    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 dangerf" onclick="setUser('${u.id}',{st:'removed',when:'just now · by Anna Kovaleva'});go({pop:null})">Remove</button></div></div>`;
-}
-
 /* ----------------------- Settings → Organization: Who may invite ----------------------- */
 function pageOrganization() {
   const org = ORGS[0];
   const byUsers = INVITES.filter(i => i.st === "sent" && !isAdmin(i.by));
   const any = S.whoInv === "any";
   const note = S.switched ? `<div class="alert ok">${I.check}<div><b>Administrators only since ${SWITCHED_AT}.</b> ${byUsers.length} ${byUsers.length === 1 ? "invitation" : "invitations"} sent by ordinary users ${byUsers.length === 1 ? "was" : "were"} withdrawn: ${byUsers.map(i => `${esc(i.email)} (by ${esc(au(i.by).name)})`).join(", ")}. <a class="lnk" onclick="go({fpage:'users',utab:'invites'})">See the invitations</a>.</div></div>` : "";
-  return `<div class="page"><div class="inner">
-    <div class="ph"><div class="tx"><h2>Organization</h2><div class="sub"><b>${esc(org.name)}</b> · maxitor.aoa.run/w/${org.code}. The name and the address were set at registration; the address cannot be changed.</div></div></div>
-    <div class="sec">Who may invite</div>
+  return `<div class="page organization-page"><div class="inner">
+
+    <section class="admin-surface" aria-label="Organization details"><header class="admin-surface-head"><h3>Organization details</h3></header><dl class="admin-facts"><div><dt>Name</dt><dd>${esc(org.name)}</dd></div><div><dt>Address</dt><dd>/w/${org.code}</dd></div></dl></section>
     ${note}
-    <div class="choice${any ? " on" : ""}" onclick="${any ? "" : "go({whoInv:'any',switched:false})"}"><span class="rad"></span><div><b>Any user of the organization</b><div>Every active user invites ordinary users from the menu under their icon. Administrators also invite administrators, here in Settings. This is how an organization starts.</div>${any ? '<div class="now">Chosen</div>' : ""}</div></div>
-    <div class="choice${any ? "" : " on"}" onclick="${any ? "go({pop:'switch'})" : ""}"><span class="rad"></span><div><b>Administrators only</b><div>An ordinary user cannot invite. Switching to this withdraws every invitation not yet accepted that an ordinary user sent; invitations administrators sent stay.</div>${any ? "" : '<div class="now">Chosen</div>'}</div></div>
-    <div class="fine2">Only an administrator changes this, and the server checks it on every invitation — also one that does not come from the screen.</div>
-    <div class="sec">Invitations <span>— how long they wait</span></div>
-    <div class="orgkv"><div class="kv" style="margin:0"><span class="k">Lifetime</span><span class="v">${INV_DAYS} days — <code>MAXITOR_INVITATION_DAYS</code>, a setting of the core, the same for every organization</span>
-      <span class="k">Limits</span><span class="v">one email: one letter a minute, ten an hour · one inviter: thirty an hour · the organization: a hundred a day</span></div></div>
+    <section class="admin-surface" aria-label="Invitation policy"><header class="admin-surface-head"><h3>Invitation policy</h3><button class="mx-button" data-variant="primary" onclick="go({pop:'policy',policyDraft:S.whoInv})">Edit</button></header><dl class="admin-facts"><div><dt>Who may invite</dt><dd>${any ? 'Any user of the organization' : 'Administrators only'}</dd></div></dl><p class="fine2">Only administrators can change this policy.</p></section>
+    <section class="admin-surface" aria-label="Invitation limits"><header class="admin-surface-head"><h3>Invitation limits</h3></header><dl class="admin-facts"><div><dt>Lifetime</dt><dd>${INV_DAYS} days</dd></div><div><dt>Per email</dt><dd>One letter a minute, ten an hour</dd></div><div><dt>Per inviter</dt><dd>Thirty an hour</dd></div><div><dt>Organization</dt><dd>A hundred a day</dd></div></dl></section>
   </div></div>`;
+}
+function dlgPolicy() {
+  const any = S.policyDraft === 'any';
+  return `<div class="scrim" onclick="go({pop:null})"></div><div class="dlg"><h3>Invitation policy</h3><fieldset class="admin-policy-options"><legend class="fine2">Who may invite</legend>
+    <label class="choice${any ? ' on' : ''}"><input type="radio" name="policy" ${any ? 'checked' : ''} onchange="go({policyDraft:'any'})"><span><b>Any user of the organization</b><span class="admin-choice-description">May invite users. Only administrators may invite administrators.</span></span></label>
+    <label class="choice${any ? '' : ' on'}"><input type="radio" name="policy" ${any ? '' : 'checked'} onchange="go({policyDraft:'admins'})"><span><b>Administrators only</b><span class="admin-choice-description">Only administrators may invite. Switching to this policy withdraws pending invitations sent by other users; existing members keep access.</span></span></label>
+    </fieldset><div class="ft"><button class="mx-button" onclick="go({pop:null})">Cancel</button><button class="mx-button pri" ${S.policyDraft===S.whoInv ? 'disabled' : ''} onclick="${any ? "go({pop:null,whoInv:'any',switched:false})" : "go({pop:'switch'})"}">Save</button></div></div>`;
 }
 function dlgSwitch() {
   const byUsers = INVITES.filter(i => i.st === "sent" && !isAdmin(i.by));
@@ -1478,7 +2374,7 @@ function dlgSwitch() {
     <div class="sub">From now on an ordinary user of Severny Veter cannot invite. ${byUsers.length ? `${byUsers.length === 1 ? "This invitation is" : "These invitations are"} withdrawn at once and cannot be accepted any more:` : "No invitation of an ordinary user is waiting, so nothing is withdrawn."}</div>
     ${byUsers.map(i => `<div class="arow">${I.mail}<div class="an">${esc(i.email)}<div class="as">sent by ${esc(au(i.by).name)}, ${i.sent} · waiting until ${i.expires}</div></div><span class="ad">withdrawn</span></div>`).join("")}
     ${byAdmins.length ? `<div class="fine2">${byAdmins.length} ${byAdmins.length === 1 ? "invitation" : "invitations"} sent by administrators ${byAdmins.length === 1 ? "stays" : "stay"} as ${byAdmins.length === 1 ? "it is" : "they are"}. Users who already accepted stay too.</div>` : ""}
-    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 pri" onclick="go({pop:null,whoInv:'admins',switched:true})">Switch${byUsers.length ? ` and withdraw ${byUsers.length}` : ""}</button></div></div>`;
+    <div class="ft"><button class="mx-button" onclick="go({pop:null})">Cancel</button><button class="mx-button pri" onclick="go({pop:null,whoInv:'admins',switched:true})">Switch${byUsers.length ? ` and withdraw ${byUsers.length}` : ""}</button></div></div>`;
 }
 
 /* ----------------------- the invited person: the letter, the choice, the policy ----------------------- */
@@ -1504,7 +2400,7 @@ function viewChooseInv() {
   const box = S.inbox;
   const invRow = (name, color, by, adm, until, acceptTo) => `<div class="orow inv"><span class="oa" style="background:${color}">${name[0]}</span>
     <div class="on"><b>${esc(name)}</b><div>${esc(by)} invites you · ${adm ? "as an administrator" : "as a user"} · waits until ${until}</div></div>
-    <div class="ia"><button class="btn2 pri" onclick="${acceptTo}">${I.check}Accept</button><button class="btn2" onclick="go({inbox:'declined'})">Decline</button></div></div>`;
+    <div class="ia"><button class="mx-button pri" onclick="${acceptTo}">${I.check}Accept</button><button class="mx-button" onclick="go({inbox:'declined'})">Decline</button></div></div>`;
   if (box === "invited") return `<div class="pick"><div class="inner">
     <h2>You are invited</h2>
     <div class="sub">${esc(DK.email)} · an invitation is for the email it was sent to, so only you see it here.</div>
@@ -1544,7 +2440,7 @@ function viewPolicy() {
 /* ----------------------- the verbs of this issue ----------------------- */
 function sendInvite(email, admin) {
   const id = "n" + Date.now();
-  INVITES.unshift({ id, email, by: S.me, admin, st: "sent", sent: "just now", expires: `in ${INV_DAYS} days` });
+  INVITES.unshift({ id, email, job_title:S.invJob || null, by: S.me, admin, st: "sent", sent: "just now", expires: `in ${INV_DAYS} days` });
   if (meAdmin()) go({ pop: null, inv: null, fpage: "users", utab: "invites", ivd: id, usr: null, again: false });
   else go({ inv: "mine" });
 }
@@ -1560,6 +2456,26 @@ function setAdmin(id, on) {
 }
 
 /* ======================= render ======================= */
+// BEGIN shared administration history
+// Shared administration fixtures for standalone prototypes; the live app reads persisted versions.
+function adminMoment(clock = "") {
+  const mode = S.adminTime || "now";
+  const label = mode === "now" ? "Now" : mode === "diff" ? "A 10 Nov → B 11 Nov · diff" : "10 Nov, 12:00";
+  return `<span class="admin-moment"><button class="mx-button" aria-label="Pick an administration moment" onclick="go({adminScale:!S.adminScale})">${clock}${label}</button>${S.adminScale ? `<span class="admin-time-menu" role="dialog" aria-label="Pick a moment"><div class="sec">Administration history</div><div class="tabs"><button onclick="go({adminTime:'now',adminScale:false,usr:null,ivd:null,dlg:null})">Now</button><button onclick="go({adminTime:'past',adminScale:false,usr:null,ivd:null,dlg:null})">10 Nov, 12:00</button><button onclick="go({adminTime:'diff',adminScale:false,usr:null,ivd:null,dlg:null})">Compare A / B</button></div></span>` : ""}</span>`;
+}
+function adminHistoryView(section, live) {
+  const mode = S.adminTime || "now";
+  if (mode === "now") return live;
+  if (section === "users") return `<div class="admin-history-notice"><span>${mode === "diff" ? "Comparing A and B" : "Viewing history"} · read only</span><button class="mx-button" onclick="go({adminTime:'now'})">Return to Now</button></div>${live}`;
+  const entries = {
+    organization: [["Organization", "Who may invite", "Any active user", "Administrators only"]],
+    users: [["Anna Kovaleva", "Role", "Administrator", "Administrator"], ["Oleg Sokolov", "State", "Active", "Blocked"]],
+    invitations: [["kirill@example.com", "State", "Sent", "Withdrawn"]],
+    plugins: [["Notes", "State", "Enabled", "Disabled"]],
+  }[section];
+  return `<div class="page"><div class="inner"><div class="admin-history-notice"><span>${mode === "diff" ? "Comparing A and B" : "Viewing history"} · read only</span><button class="mx-button" onclick="go({adminTime:'now'})">Return to Now</button></div><div class="admin-cards">${entries.map(([name,field,a,b]) => `<article class="admin-object" data-room-anchor="${section}:${name}" data-change="${mode === "diff" && a !== b ? "changed" : "unchanged"}"><h3>${name}</h3><dl><div><dt>${field}</dt><dd>${mode === "diff" && a !== b ? `<del>${a}</del> → ${b}` : a}</dd></div></dl><p class="admin-meta">Anna Kovaleva · ${mode === "diff" ? "11" : "10"} Nov 2026, 12:00</p></article>`).join("")}</div></div></div>`;
+}
+// END shared administration history
 function render() {
   const app = document.getElementById("app");
   let html = "";
@@ -1583,7 +2499,7 @@ function render() {
   else if (S.pop === "orgs") html += menuOrgs();
   else if (S.pop === "methods") html += dlgMethods();
   else if (S.pop === "invite") html += dlgInvite();
-  else if (S.pop === "rm") html += dlgRemove();
+  else if (S.pop === "policy") html += dlgPolicy();
   else if (S.pop === "switch") html += dlgSwitch();
   app.classList.toggle("phone", !!S.phone);
   app.innerHTML = html;
@@ -1659,12 +2575,12 @@ const SCREENS = [
     ["9.3", "Appointing an administrator", { screen: "frame", fpage: "users", usr: "ie" }],
     ["9.4", "The last active administrator", { screen: "frame", fpage: "users", usr: "ak", ieAdmin: false }],
     ["9.5", "Two administrators at once", { screen: "frame", fpage: "users", usr: "ak", ieAdmin: false, race: true }],
-    ["9.6", "Removing a user", { screen: "frame", fpage: "users", usr: "vs", pop: "rm" }],
-    ["9.7", "A removed person invited again", { screen: "frame", fpage: "users", usr: "pn" }],
+    ["9.6", "An active user’s card", { screen: "frame", fpage: "users", usr: "os" }],
+    ["9.7", "A person who left", { screen: "frame", fpage: "users", usr: "pn" }],
     ["9.8", "The invitations", { screen: "frame", fpage: "users", utab: "invites" }],
     ["9.9", "An invitation’s card", { screen: "frame", fpage: "users", utab: "invites", ivd: "i1" }],
     ["9.10", "The letter sent again", { screen: "frame", fpage: "users", utab: "invites", ivd: "i1", again: true }],
-    ["9.11", "A withdrawn invitation", { screen: "frame", fpage: "users", utab: "invites", ivd: "i8" }],
+    ["9.11", "A withdrawn invitation", { screen: "frame", fpage: "users", utab: "history", ivd: "i8" }],
     ["9.12", "An ordinary user’s own invitations", { screen: "frame", me: "os", pop: "invite", inv: "mine" }],
   ]],
   ["Who may invite (#13)", [
@@ -1708,7 +2624,7 @@ const PATHS = [
   ["Before a trip", "Link an email that works everywhere", [["Menu", "4.3"], ["Methods", "5.1"], ["Link", "5.3"], ["Linked", "5.4"]]],
   ["Inviting a colleague", "An administrator invites, the person accepts", [["Users", "9.1"], ["Invite", "8.1"], ["Letter", "8.9"], ["Sign in", "1.1"], ["Accept", "8.10"], ["First screen", "8.13"]]],
   ["Administrators only", "The setting and what it withdraws", [["Setting", "10.1"], ["Switch", "10.2"], ["Switched", "10.3"], ["Invitations", "10.4"]]],
-  ["Blocking and removing", "A user’s card and the last administrator", [["Users", "9.1"], ["Card", "9.2"], ["Remove", "9.6"], ["Last admin", "9.4"]]],
+  ["Blocking", "A user’s card and the last administrator", [["Users", "9.1"], ["Active", "9.6"], ["Blocked", "9.2"], ["Left", "9.7"], ["Last admin", "9.4"]]],
 ];
 const NOTES = {
   "M1": ["Sign in on a phone", [
@@ -1893,7 +2809,7 @@ Object.assign(NOTES, {
     "After signing in, an account whose confirmed email is the invitation’s email sees its invitations on the screen of choosing an organization — the same <code>/w</code> as screen 3, which no longer sends an account with no organization straight to registering one when an invitation waits.",
     "A confirmed email is one confirmed by its code (#73) or one a provider gives as verified. An account with another email sees nothing: nobody else holds anything that lets them in.",
     "“Accept” is <code>AcceptInvitationAction</code>: it creates an active user of this account in the organization — an administrator when the invitation says so — moves the invitation to <b>Accepted</b>, under the organization’s lock, and opens the organization (8.13). “Decline” moves it to <b>Declined</b> (8.12).",
-    "A removed user accepting again gets a new user; the removed one stays in the history. A user is unique for an organization and an account among the users not removed.",
+    "An organization and an account give one user, and it is never removed: plugins keep a person by the organization and the account. A person who left stays blocked (9.7), and a blocked person is unblocked, not invited (8.5).",
   ]],
   "8.11": ["The policy first", [
     "An account that has not accepted the current privacy policy accepts it first, as at signing in (#73, 1.11): the invitations are behind this step, not before it.",
@@ -1911,28 +2827,28 @@ Object.assign(NOTES, {
     "The switch under the organization’s name at the top (4.4) lists organizations only; an invitation is accepted here.",
   ]],
   "9.1": ["The organization’s users", [
-    "Every user of the organization and their state by lifecycle — <b>Active</b>, <b>Blocked</b>, <b>Removed</b> — their role, how they appeared and their last sign-in. Removed users stand below, kept in the history: removal is final, and the person may be invited again.",
+    "Every user of the organization and their state by lifecycle — <b>Active</b> or <b>Blocked</b> — their role, how they appeared and their last sign-in. A user is never removed: a person who leaves the organization is blocked.",
     "A row opens the user’s card on the right. The second tab is the invitations (9.8). Only an administrator sees this page; for anyone else it is “No such page”, as for Plugins.",
   ]],
   "9.2": ["A blocked user’s card", [
-    "The buttons are the moves of the lifecycle from the current state: a blocked user is unblocked or removed. A blocked or removed user cannot enter the organization (issue 1.3, item 3): their <code>/w/severny-veter</code> answers as someone else’s organization (4.5).",
-    "The administrator mark cannot change while the user is blocked or removed. Every change of a user takes the organization’s lock and is a version of the user.",
+    "The buttons are the moves of the lifecycle from the current state: a blocked user is unblocked. A blocked user cannot enter the organization (issue 1.3, item 3): their <code>/w/severny-veter</code> answers as someone else’s organization (4.5).",
+    "The administrator mark cannot change while the user is blocked. Every change of a user takes the organization’s lock and is a version of the user.",
   ]],
   "9.3": ["Appointing an administrator", [
     "The mark is a switch on the card: <code>SetAdministratorAction</code>. Switch it off for Ilya — Anna becomes the last active administrator, and her own card goes dim (9.4).",
   ]],
   "9.4": ["The last active administrator", [
-    "The organization always keeps at least one active administrator (issue 1.3, item 2): the last one cannot be blocked, removed or lose the mark. The buttons go dim and the card says why.",
+    "The organization always keeps at least one active administrator (issue 1.3, item 2): the last one cannot be blocked or lose the mark. The buttons go dim and the card says why.",
   ]],
   "9.5": ["Two administrators at once", [
     "Anna and Ilya both step down at the same moment. Every change of the organization’s users takes the organization’s lock, as registering does, so one goes first: Ilya’s mark is gone, and Anna’s request is refused because she is the last active administrator now.",
     "The test of this phase runs two administrators at once and checks that exactly one is refused.",
   ]],
-  "9.6": ["Removing a user", [
-    "Removal is final, so it is confirmed. The removed user stays in the history as it was; the person may be invited again, and accepting then makes a new user of the same account (9.7).",
+  "9.6": ["An active user’s card", [
+    "An active user is blocked from the card; that is the only way to stop a person working in the organization. The card has no Remove: a user is never removed.",
   ]],
-  "9.7": ["A removed person invited again", [
-    "Pavel was removed on 11 Nov; on 12 Nov Ilya invited him again. The removed user stays as it is, and the card points to the invitation; accepting makes a new, active user.",
+  "9.7": ["A person who left", [
+    "Pavel left the company; Anna blocked him on 11 Nov. Plugins keep his notes by the organization and his account, so his user stays, blocked, and his work keeps its author. If he comes back, he is unblocked, not invited.",
   ]],
   "9.8": ["The invitations", [
     "Every invitation of the organization with its state: <b>Sent</b>, <b>Accepted</b>, <b>Declined</b>, <b>Withdrawn</b>, <b>Expired</b>; who sent it, when, and what happened to it. An accepted one names the user it made.",
@@ -1973,7 +2889,7 @@ Object.assign(NOTES, {
   "11.1": ["Signing in again opens where you stopped", [
     "The rule proposed for issue 1.4, to be written into the issue before its phase: the user’s last place is the last address of Maxitor the account opened — the organization and the page, with the entered levels the address carries — kept with the account on the server, not in the browser.",
     "After signing in, Maxitor opens that address; the screen of choosing an organization is shown only when there is no last place, when the account has several organizations and the last place is gone, or when an invitation waits.",
-    "A place the account can no longer open — a blocked or removed user, a page that is gone — falls back to the organization’s root, and from there to choosing an organization.",
+    "A place the account can no longer open — a blocked user, a page that is gone — falls back to the organization’s root, and from there to choosing an organization.",
   ]],
   "M13": ["The invited person signs in, on a phone", ["The invitation’s row wraps: the organization and who invites above, Accept and Decline in a full row below."]],
   "M14": ["Inviting on a phone", ["The form is a sheet from the bottom, as the dialogs of Plugins are; the buttons take full rows."]],

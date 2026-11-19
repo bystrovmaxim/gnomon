@@ -1,6 +1,10 @@
--- 0004_invitations.sql — the setting "Who may invite", the invitation as an entity of its own, and a user unique
--- among the users not removed (issue #13, spec 086). Runs as maxitor_core with search_path = organization, platform,
+-- 0004_invitations.sql — the setting "Who may invite", the invitation as an entity of its own, and a user who is
+-- never removed (issue #13, spec 086). Runs as maxitor_core with search_path = organization, platform,
 -- extensions. Nothing cascades; identifiers are written by the actions.
+
+-- A user is active or blocked and is never removed; removed is the terminal state the user's lifecycle must have,
+-- and nothing moves a user there.
+COMMENT ON COLUMN "user".status IS 'The user''s state: active or blocked; removed is the lifecycle''s terminal state only.';
 
 -- Who may invite: any user of the organization, or administrators only. Every organization so far lets any user.
 ALTER TABLE organization ADD COLUMN who_may_invite text NULL;
@@ -13,12 +17,6 @@ ALTER TABLE organization_versions ADD COLUMN who_may_invite text NULL;
 UPDATE organization_versions SET who_may_invite = 'any_user';
 ALTER TABLE organization_versions ALTER COLUMN who_may_invite SET NOT NULL;
 COMMENT ON COLUMN organization_versions.who_may_invite IS 'Who may invite in this version.';
-
--- A user is unique for an organization and an account among the users not removed: a removed person invited again
--- gets a new user, and the removed one stays in the history.
-ALTER TABLE "user" DROP CONSTRAINT user_once_per_account;
-CREATE UNIQUE INDEX user_once_among_not_removed ON "user" (organization_id, account_id) WHERE status <> 'removed';
-COMMENT ON INDEX user_once_among_not_removed IS 'At most one user that is not removed per organization and account.';
 
 CREATE TABLE invitation (
     organization_id  uuid        NOT NULL REFERENCES organization (id),

@@ -404,7 +404,7 @@ class CoreStorage(PostgresStorage):
 
     _USER_SELECT = (
         "SELECT u.organization_id::text AS organization_id, u.id::text AS id, u.account_id::text AS account_id,"
-        " u.name, a.email, u.is_admin, u.status, u.created_at, u.updated_at,"
+        " u.name, a.email, u.is_admin, u.job_title, u.status, u.created_at, u.updated_at,"
         " (SELECT max(s.last_used_at) FROM sign_in s WHERE s.account_id = u.account_id) AS last_sign_in_at,"
         " i.invited_by::text AS invited_by, ib.name AS invited_by_name,"
         " cb.id::text AS changed_by, cb.name AS changed_by_name"
@@ -413,7 +413,6 @@ class CoreStorage(PostgresStorage):
         ' LEFT JOIN "user" ib ON ib.organization_id = i.organization_id AND ib.id = i.invited_by'
         " LEFT JOIN user_versions uv ON uv.organization_id = u.organization_id AND uv.id = u.id AND uv.valid_to_at IS NULL"
         ' LEFT JOIN "user" cb ON cb.organization_id = u.organization_id AND cb.account_id = uv.author_id'
-        " AND cb.status <> 'removed'"
     )
 
     async def user(self, organization_id: str, user_id: str) -> dict[str, Any] | None:
@@ -425,28 +424,28 @@ class CoreStorage(PostgresStorage):
         return None if row is None else dict(row)
 
     async def users_of_organization(self, organization_id: str) -> list[dict[str, Any]]:
-        """Every user of the organization, the ones not removed first, each by name."""
+        """Every user of the organization by name."""
         rows = await self._fetch(
             f"{self._USER_SELECT} WHERE u.organization_id = $1::text::uuid"
-            " ORDER BY (u.status = 'removed'), u.name, u.id",
+            " ORDER BY u.name, u.id",
             (organization_id,),
         )
         return [dict(row) for row in rows]
 
     async def user_of_account(self, organization_id: str, account_id: str) -> dict[str, Any] | None:
-        """The account's user in the organization that is not removed, or ``None``."""
+        """The account's user in the organization, or ``None``."""
         row = await self._fetchrow(
             'SELECT id::text AS id, name, is_admin, status FROM "user"'
-            " WHERE organization_id = $1::text::uuid AND account_id = $2::text::uuid AND status <> 'removed'",
+            " WHERE organization_id = $1::text::uuid AND account_id = $2::text::uuid",
             (organization_id, account_id),
         )
         return None if row is None else dict(row)
 
     async def user_by_email(self, organization_id: str, email: str) -> dict[str, Any] | None:
-        """The organization's user not removed whose account has ``email`` confirmed, or ``None``."""
+        """The organization's user whose account has ``email`` confirmed, or ``None``."""
         row = await self._fetchrow(
             'SELECT u.id::text AS id, u.name, u.is_admin, u.status FROM "user" u JOIN account a ON a.id = u.account_id'
-            " WHERE u.organization_id = $1::text::uuid AND u.status <> 'removed'"
+            " WHERE u.organization_id = $1::text::uuid"
             " AND (a.email = $2 OR EXISTS (SELECT 1 FROM sign_in s WHERE s.account_id = a.id AND lower(s.email) = $2))",
             (organization_id, email),
         )
@@ -474,7 +473,7 @@ class CoreStorage(PostgresStorage):
 
     _INVITATION_SELECT = (
         "SELECT i.organization_id::text AS organization_id, o.code AS organization_code, o.name AS organization_name,"
-        " i.id::text AS id, i.email, i.invited_by::text AS invited_by, ib.name AS invited_by_name, i.is_admin,"
+        " i.id::text AS id, i.email, i.invited_by::text AS invited_by, ib.name AS invited_by_name, i.is_admin, i.job_title,"
         " i.status, i.sent_at, i.letter_sent_at, i.expires_at, i.decided_at, i.decided_by::text AS decided_by,"
         " db.name AS decided_by_name, i.by_setting, i.accepted_user_id::text AS accepted_user_id,"
         " au.name AS accepted_user_name"

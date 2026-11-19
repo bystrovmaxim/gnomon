@@ -8,6 +8,20 @@ export type Change = "added" | "changed" | "removed";
 /** The sign of each change, as the graph's ERD writes it in a list and on a disk. */
 export const CHANGE_SIGN: Record<Change | "unchanged", string> = { added: "+", changed: "~", removed: "−", unchanged: "=" };
 
+/** The complete Changes filter: every status has its production sign, even when no element has that status. */
+export function changeFilterRows(present: Iterable<Change | "unchanged">) {
+  const statuses = ["added", "changed", "removed", "unchanged"] as const;
+  const colours = { added: "green", changed: "amber", removed: "red", unchanged: "grey" } as const;
+  const found = new Set(present);
+  return statuses.map((key) => ({
+    key,
+    label: key[0].toUpperCase() + key.slice(1),
+    colour: colours[key],
+    mark: CHANGE_SIGN[key],
+    absent: !found.has(key),
+  }));
+}
+
 /** One change the stepper steps to: its anchor, its title, a short detail, what happened, and its group. */
 export type ChangeEntry = { key: string; title: string; detail?: string; status: Change; group: string };
 

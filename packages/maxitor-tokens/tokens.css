@@ -24,6 +24,8 @@
   --mx-selected: rgba(15, 23, 42, 0.09);
   --mx-ok: #16a34a;
   --mx-bad: #b91c1c;
+  --mx-bad-line: #fecaca;
+  --mx-disk-line: rgba(0, 0, 0, 0.12);
   --mx-warn: #b45309;
 
   /* The palette: the colours a plugin names in navigation.yaml (colour: green), never by code. */
@@ -44,6 +46,7 @@
   --mx-radius-round: 999px;
 
   /* Shadows and blur. */
+  --mx-shadow-disk: inset 0 0 0 var(--mx-ring) var(--mx-surface), 0 0 0 var(--mx-line-width) var(--mx-disk-line);
   --mx-shadow-float: 0 2px 10px rgba(0, 0, 0, 0.07);
   --mx-shadow-card: 0 8px 30px rgba(15, 23, 42, 0.08);
   --mx-shadow-pop: 0 12px 32px rgba(15, 23, 42, 0.16);
@@ -73,6 +76,8 @@
   --mx-space-7: 24px;
   --mx-line-width: 1px;
   --mx-control: 28px;
+  --mx-action-height: 36px;
+  --mx-action-height-phone: 44px;
   --mx-control-sm: 22px;
   --mx-row: 30px;
   --mx-icon: 16px;

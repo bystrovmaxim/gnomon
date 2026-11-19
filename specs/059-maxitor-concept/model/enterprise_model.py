@@ -198,31 +198,26 @@ class OrganizationCoreEntity(BaseCoreEntity):
 
 
 class UserStateEntity(BaseStateEntity):
-    """A user's state in the organization: invited, active, blocked or removed."""
+    """A user's state in the organization: active or blocked; removed is the lifecycle's terminal state only."""
 
     sort_order: int = Field(default=0, description="Display order of the states")
 
-    INVITED = value(code="invited", display_name="Invitation sent", sort_order=1)
-    ACTIVE = value(code="active", display_name="Active", sort_order=2)
-    BLOCKED = value(code="blocked", display_name="Blocked", sort_order=3)
-    REMOVED = value(code="removed", display_name="Removed", sort_order=4)
+    ACTIVE = value(code="active", display_name="Active", sort_order=1)
+    BLOCKED = value(code="blocked", display_name="Blocked", sort_order=2)
+    REMOVED = value(code="removed", display_name="Removed", sort_order=3)
 
 
 class UserLifecycle(Lifecycle[UserStateEntity]):
     """
-    The user lifecycle. A user appears either with an invitation sent or already active.
-    An accepted invitation makes the user active, that is, a real user. An active or
-    invited user can be blocked, and a blocked one can be unblocked back to active. A user
-    can be removed from the organization from any state, and removal is final.
+    A user appears active — as the first administrator who registered the organization, or by accepting an
+    invitation — and is blocked and unblocked from then on; a user is never removed. Removed is the terminal state
+    that AOA requires to be reachable in the declared graph; no application action takes that edge.
     """
 
     _template = (
         Lifecycle()
-        .state(UserStateEntity.INVITED)
-        .to(UserStateEntity.ACTIVE, UserStateEntity.BLOCKED, UserStateEntity.REMOVED)
-        .initial()
         .state(UserStateEntity.ACTIVE)
-        .to(UserStateEntity.BLOCKED, UserStateEntity.REMOVED)
+        .to(UserStateEntity.BLOCKED)
         .initial()
         .state(UserStateEntity.BLOCKED)
         .to(UserStateEntity.ACTIVE, UserStateEntity.REMOVED)
@@ -243,13 +238,13 @@ class UserCoreEntity(BaseCoreEntity):
     CONTRACT: Belongs to exactly one organization. Has access to every open boundary of the
         organization and to the closed ones where they are listed explicitly. May own a boundary,
         a release slice, a business area, a stage, a user story, a digital product and our container.
-        The state follows UserLifecycle: invitation sent, active, blocked, removed. An organization
-        administrator invites, blocks and removes users, creates boundaries and appoints the owner of
+        The state follows UserLifecycle: active and blocked; removed is terminal for AOA only. An organization
+        administrator invites, blocks and unblocks users, creates boundaries and appoints the owner of
         a boundary that has no active owner.
     INVARIANTS: Owns only what lies in a boundary they have access to. An organization always has
         at least one active administrator.
-        A blocked or removed user does not work in Maxitor; what they owned stays theirs until the
-        owner is changed, and it is visible that the owner is blocked or removed.
+        A blocked user does not work in Maxitor; what they owned stays theirs until the
+        owner is changed, and it is visible that the owner is blocked.
         The core knows nothing of the other plugins: what a user owns there — business areas, stages,
         stories, products, containers, slices — and the initiatives they authored are read from those
         plugins' entities, which point at the user one way.
@@ -259,10 +254,10 @@ class UserCoreEntity(BaseCoreEntity):
     id: str = Field(description="User id")
     name: str = Field(description="User name")
     email: str = Field(description="The email the invitation was sent to and the user signs in with")
-    status: UserLifecycle = Field(description="The user's state: invitation sent, active, blocked or removed")
+    status: UserLifecycle = Field(description="The user's state: active or blocked; removed is a declared terminal state only")
     is_admin: bool = Field(
         default=False,
-        description="Organization administrator: invites, blocks and removes users, creates boundaries",
+        description="Organization administrator: invites, blocks and unblocks users, creates boundaries",
     )
 
     organization: Annotated[
@@ -790,7 +785,7 @@ class InitiativeCoreEntity(BaseCoreEntity):
         follows InitiativeLifecycle: draft, approved, done or rejected.
     INVARIANTS: The initiative's content is not modelled yet: it will be a set of nodes, not a
         document, and will be designed separately. The author never changes and stays the author
-        even if blocked or removed.
+        even if blocked.
     AI-CORE-END
     """
 

@@ -1,19 +1,18 @@
 # packages/maxitor/maxitor-core/maxitor/core/actions/users.py
 """
-Settings → Users: ListUsersAction, BlockUserAction, UnblockUserAction, RemoveUserAction, SetAdministratorAction.
+Settings → Users: ListUsersAction, BlockUserAction, UnblockUserAction, SetAdministratorAction.
 
 ::
 
     GET  /api/v1/organizations/{code}/users                      the users and the invitations
     POST /api/v1/organizations/users/block                       {code, user_id}
     POST /api/v1/organizations/users/unblock                     {code, user_id}
-    POST /api/v1/organizations/users/remove                      {code, user_id}
     POST /api/v1/organizations/users/administrator               {code, user_id, is_admin}
 
 Only an active administrator of the organization gets through; anyone else is refused as for an organization that
 does not exist. Every change goes by the user's lifecycle under the organization's lock, and the organization always
-keeps at least one active administrator. A blocked or removed user is a stranger from their next request on: the
-organization's addresses and the gateway read the user's state every time.
+keeps at least one active administrator. A user is never removed; a blocked user is a stranger from their next
+request on: the organization's addresses and the gateway read the user's state every time.
 """
 
 from __future__ import annotations
@@ -69,7 +68,7 @@ class AdministratorParams(UserParams):
 class UsersResult(BaseResult):
     """The organization's users and invitations."""
 
-    users: list[UserSchema] = Field(description="Every user, the ones not removed first, by name")
+    users: list[UserSchema] = Field(description="Every user, by name")
     invitations: list[InvitationSchema] = Field(description="Every invitation, newest first")
 
 
@@ -228,58 +227,6 @@ class UnblockUserAction(_AdministratorAction, BaseAction[UserParams, UserResult]
         )
 
 
-@meta(description="Remove a user for good; the person may be invited again", domain=OrganizationDomain)
-@check_roles(AccountRole)
-@connection(CoreStorage, key=CORE_CONNECTION_KEY, description="The core's database")
-class RemoveUserAction(_AdministratorAction, BaseAction[UserParams, UserResult]):
-    """
-    AI-CORE-BEGIN
-    ROLE: Active or Blocked → Removed, final.
-    CONTRACT: Only an active administrator; a user already removed is refused (409 ``removed``); the last active
-        administrator is refused (409 ``last_administrator``).
-    AI-CORE-END
-    """
-
-    @summary_aspect("Remove the user under the organization's lock")
-    @context_requires(Ctx.User.user_id)
-    @emits(*USER_FLOW_EVENTS)
-    async def remove_summary(
-        self, params: UserParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView
-    ) -> UserResult:
-        """One change of the user; removal is final."""
-        _ = state
-        store, account_id = storage(connections), str(ctx.get(Ctx.User.user_id))
-        found = await administrator(connections, params.code, account_id)
-        organization_id, by_user_id, operation = found["id"], found["user_id"], type(self).__name__
-
-        async def work() -> None:
-            changed_at = await store.organization_lock(organization_id)
-            target = await store.user(organization_id, params.user_id)
-            if target is None:
-                raise AccessDenied(FORBIDDEN_OBJECT)
-            if target["status"] == "removed":
-                raise ConflictError("removed")
-            await keep_last_administrator(box, store, organization_id, target, by_user_id)
-            await store.update(
-                '"user"',
-                {"organization_id": organization_id, "id": params.user_id},
-                {"status": "removed", "updated_at": changed_at},
-                changed_at,
-                account_id,
-                operation,
-            )
-
-        await store.in_transaction(work)
-        await box.info(
-            Channel.business,
-            "User {%var.user_id} of {%var.organization_id} is {%var.status}",
-            UserStateChangedEvent(organization_id=organization_id, user_id=params.user_id, status="removed", by_user_id=by_user_id),
-        )
-        row = await store.user(organization_id, params.user_id)
-        assert row is not None
-        return UserResult(user=user_schema(row))
-
-
 @meta(description="Appoint or dismiss an administrator", domain=OrganizationDomain)
 @check_roles(AccountRole)
 @connection(CoreStorage, key=CORE_CONNECTION_KEY, description="The core's database")
@@ -332,6 +279,44 @@ class SetAdministratorAction(_AdministratorAction, BaseAction[AdministratorParam
                 organization_id=organization_id, user_id=params.user_id, is_admin=params.is_admin, by_user_id=by_user_id
             ),
         )
+        row = await store.user(organization_id, params.user_id)
+        assert row is not None
+        return UserResult(user=user_schema(row))
+
+
+class JobTitleParams(UserParams):
+    """An organization-specific title, or null to clear it."""
+
+    job_title: str | None = Field(default=None, max_length=160, description="Job title, independent of access permissions")
+
+
+@meta(description="Change a user's job title in the organization", domain=OrganizationDomain)
+@check_roles(AccountRole)
+@connection(CoreStorage, key=CORE_CONNECTION_KEY, description="The core's database")
+class SetJobTitleAction(_AdministratorAction, BaseAction[JobTitleParams, UserResult]):
+    @summary_aspect("Version the job title under the organization's lock")
+    @context_requires(Ctx.User.user_id)
+    async def title_summary(
+        self, params: JobTitleParams, state: BaseState, box: ToolsBox, connections: Connections, ctx: ContextView
+    ) -> UserResult:
+        store, account_id = storage(connections), str(ctx.get(Ctx.User.user_id))
+        found = await administrator(connections, params.code, account_id)
+        organization_id = found["id"]
+        title = (params.job_title.strip() or None) if params.job_title else None
+
+        async def work() -> None:
+            changed_at = await store.organization_lock(organization_id)
+            target = await store.user(organization_id, params.user_id)
+            if target is None:
+                raise AccessDenied(FORBIDDEN_OBJECT)
+            if target.get("job_title") == title:
+                return
+            await store.update(
+                '"user"', {"organization_id": organization_id, "id": params.user_id},
+                {"job_title": title, "updated_at": changed_at}, changed_at, account_id, type(self).__name__,
+            )
+
+        await store.in_transaction(work)
         row = await store.user(organization_id, params.user_id)
         assert row is not None
         return UserResult(user=user_schema(row))

@@ -2,7 +2,7 @@
 // The card hanging from the pill (spec 079, FR-001, FR-011, FR-012), ported from the graph viewer's VersionPicker: 11 px
 // under the pill, its right edge under the pill's, 760 px wide — a sheet from the bottom on a phone. Its head says
 // what the scale is of on the left; on the right the page's tools, the "i" of the legend and the mode switch with only
-// what the page offers. Under it the zoom's presets and the stretch in view, the scale, and how to move on it.
+// what the page offers. Under it the zoom's presets and the stretch in view, the scale; movement instructions are inside the information panel.
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
@@ -134,7 +134,7 @@ export function ScaleCard({
           <ModeSwitch value={mode} offered={offered} onMode={onMode} />
         </div>
       </div>
-      {legendOpen ? <Legend sections={legend} comparing={mode !== "one"} /> : null}
+      {legendOpen ? <Legend sections={legend} comparing={mode !== "one"} phone={phone} /> : null}
       <div className="mx-card-bar">
         <span className="mx-zoom" role="group" aria-label="Zoom">
           {PRESETS.map((preset) => (
@@ -146,11 +146,6 @@ export function ScaleCard({
         <span className="mx-card-span" title={span.title}>{span.text}</span>
       </div>
       {children}
-      <div className="mx-card-hint">
-        {phone
-          ? "Drag to move · tap to choose"
-          : `Drag across the scale to zoom into a stretch${mode !== "one" ? " · drag A along the top edge, B along the axis · Shift-drag between them moves both, Shift-click centres them" : ""} · wheel to zoom · Shift-wheel or swipe sideways to move · click to choose`}
-      </div>
       {under}
     </div>
   );

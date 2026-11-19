@@ -24,6 +24,7 @@ from maxitor.core.actions.account import (
     RenewSessionAction,
     SignOutAction,
 )
+from maxitor.core.actions.administration import ReadAdministrationAction, ReadAdministrationHistoryAction
 from maxitor.core.actions.email_sign_in import ConfirmEmailAction, SignInWithPasswordAction, StartSignUpAction
 from maxitor.core.actions.invitation_choice import (
     AcceptInvitationAction,
@@ -51,8 +52,8 @@ from maxitor.core.actions.sign_ins import LinkEmailAction, LinkSignInAction, Lis
 from maxitor.core.actions.users import (
     BlockUserAction,
     ListUsersAction,
-    RemoveUserAction,
     SetAdministratorAction,
+    SetJobTitleAction,
     UnblockUserAction,
 )
 from maxitor.core.auth_coordinator import CoreAuthCoordinator
@@ -115,12 +116,14 @@ ROUTES: list[tuple[str, str, type[BaseAction[Any, Any]]]] = [
     ("post", "/api/v1/organizations", RegisterOrganizationAction),
     ("get", "/api/v1/organizations/{code}", OpenOrganizationAction),
     ("get", "/api/v1/organizations/{code}/watermark", ReadWatermarkAction),
+    ("get", "/api/v1/organizations/{code}/administration", ReadAdministrationAction),
+    ("get", "/api/v1/organizations/{code}/administration/history", ReadAdministrationHistoryAction),
     ("get", "/api/v1/organizations/{code}/settings", ReadOrganizationSettingsAction),
     ("get", "/api/v1/organizations/{code}/users", ListUsersAction),
     ("post", "/api/v1/organizations/users/block", BlockUserAction),
     ("post", "/api/v1/organizations/users/unblock", UnblockUserAction),
-    ("post", "/api/v1/organizations/users/remove", RemoveUserAction),
     ("post", "/api/v1/organizations/users/administrator", SetAdministratorAction),
+    ("post", "/api/v1/organizations/users/job-title", SetJobTitleAction),
     ("post", "/api/v1/organizations/settings/who-may-invite", SetWhoMayInviteAction),
     ("post", "/api/v1/organizations/invitations", SendInvitationAction),
     ("get", "/api/v1/organizations/{code}/invitations/mine", ListMyInvitationsAction),

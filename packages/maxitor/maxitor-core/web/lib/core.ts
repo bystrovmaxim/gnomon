@@ -97,6 +97,7 @@ export type Person = { id: string; name: string };
 
 /** An invitation as the organization keeps it (specs/086-sign-in-and-invitation/contracts/actions.md). */
 export type Invitation = {
+  job_title?: string | null;
   id: string;
   email: string;
   is_admin: boolean;

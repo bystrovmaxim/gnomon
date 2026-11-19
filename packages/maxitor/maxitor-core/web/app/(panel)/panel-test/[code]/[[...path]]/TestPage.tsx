@@ -2,6 +2,7 @@
 "use client";
 
 import {
+  changeFilterRows,
   ChangeStepper,
   DataTable,
   DiffCard,
@@ -116,7 +117,7 @@ function TestDrawing() {
   const filters = useMemo<FilterSection[]>(() => {
     const kinds: FilterSection = { title: "Kind", param: "kind", paints: true, rows: [{ key: "core", label: "Core", colour: "blue" }, { key: "edge", label: "Edge", colour: "amber", absent: !shown.some((n) => n.kind === "edge") }] };
     // The changes exist only in a comparison: the section is given only when the address has the time scale's mode.
-    const changes: FilterSection = { title: "Changes", param: "change", paints: true, rows: [{ key: "added", label: "Added", colour: "green" }, { key: "removed", label: "Removed", colour: "red" }] };
+    const changes: FilterSection = { title: "Changes", param: "change", paints: true, rows: changeFilterRows(["added", "removed"]).filter((row) => !row.absent) };
     return query.mode ? [kinds, changes] : [kinds];
   }, [query.mode, shown]);
   return (

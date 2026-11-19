@@ -1,7 +1,7 @@
 # packages/maxitor/maxitor-core/tests/test_invitations.py
 """
 Invitations (spec 086, phase 2): sending with the mark, the letter, every refusal, the limits, sending again, what
-an account sees by its confirmed emails, accepting, declining, expiry and a removed person invited again.
+an account sees by its confirmed emails, accepting, declining and expiry.
 """
 
 from __future__ import annotations
@@ -82,6 +82,25 @@ def test_the_invitation_waits_the_configured_days(world: World) -> None:
     row = world.storage.tables["invitation"][0]
     assert row["expires_at"] - row["sent_at"] == timedelta(days=14)
     assert body["invitation"]["expires_at"].startswith(row["expires_at"].strftime("%Y-%m-%d"))
+
+
+def test_a_letter_references_an_existing_invitation(world: World, monkeypatch: pytest.MonkeyPatch) -> None:
+    record = world.storage.new_letter
+
+    async def with_foreign_key(row: dict[str, Any]) -> None:
+        # PostgreSQL checks this composite foreign key at each insert, before the transaction commits.
+        assert any(
+            invitation["organization_id"] == row["organization_id"] and invitation["id"] == row["invitation_id"]
+            for invitation in world.storage.tables["invitation"]
+        ), "the letter references an invitation that has not been inserted"
+        await record(row)
+
+    monkeypatch.setattr(world.storage, "new_letter", with_foreign_key)
+    status, body = invite(world, "d@example.com")
+    assert status == 200
+    [letter] = world.storage.tables["invitation_letter"]
+    assert letter["invitation_id"] == body["invitation"]["id"]
+    assert len(world.storage.versions["invitation_versions"]) == 1
 
 
 def test_an_administrator_may_send_the_mark_and_an_ordinary_user_may_not(world: World) -> None:
@@ -203,23 +222,6 @@ def test_an_invitation_expires_by_its_time_and_a_new_one_may_be_sent(world: Worl
     assert invite(world, "dmitry@example.com")[0] == 200
     assert [i["status"] for i in world.storage.tables["invitation"]] == ["expired", "sent"]
     assert "InvitationExpiredEvent" in world.logger.events()
-
-
-def test_a_removed_person_is_invited_again_as_a_new_user(world: World) -> None:
-    _, body = invite(world, "dmitry@example.com")
-    as_new_account(world, "dmitry@example.com")
-    world.client.post("/api/v1/invitations/accept", json={"invitation_id": body['invitation']['id']})
-    user = next(u for u in world.storage.tables['"user"'] if u["name"] == "Dmitry")
-    user["status"] = "removed"
-    advance(world, timedelta(minutes=2))
-    world.client.cookies.clear()
-    world.signed(world.client.post("/api/v1/sign-in/password", json={"email": "anna@example.com", "password": "CorrectHorse!42"}).json()["session_token"])
-    _, second = invite(world, "dmitry@example.com")
-    world.client.cookies.clear()
-    world.signed(world.client.post("/api/v1/sign-in/password", json={"email": "dmitry@example.com", "password": "CorrectHorse!42"}).json()["session_token"])
-    assert world.client.post("/api/v1/invitations/accept", json={"invitation_id": second['invitation']['id']}).json() == {"code": CODE}
-    users = [u for u in world.storage.tables['"user"'] if u["name"] == "Dmitry"]
-    assert [u["status"] for u in users] == ["removed", "active"] and users[0]["id"] != users[1]["id"]
 
 
 def test_the_mine_list_and_a_stranger_answer_alike_for_a_made_up_organization(world: World) -> None:

@@ -10,7 +10,7 @@ import type { Layers as LayersInput } from "./types";
 export function Layers({ layers, query, write }: { layers: LayersInput; query: Query; write: (name: string, value: string | null) => void }) {
   const current = chosen(query[LAYER], layers.default, layers.options.map((option) => option.value));
   return (
-    <div className="mx-pill" role="radiogroup" aria-label="Layer" data-shell="layers">
+    <div className="mx-layer-pill" role="radiogroup" aria-label="Layer" data-shell="layers">
       {layers.options.map((option) => (
         <button
           key={option.value}
@@ -22,7 +22,7 @@ export function Layers({ layers, query, write }: { layers: LayersInput; query: Q
           onClick={() => write(LAYER, writeChoice(option.value, layers.default))}
         >
           <Icon name={option.icon} />
-          <span className="mx-pill-label">{option.label}</span>
+          <span className="mx-layer-pill-label">{option.label}</span>
           {/* A count not known yet is empty, never zero. */}
           <span className="mx-count">{option.count ?? ""}</span>
         </button>

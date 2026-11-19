@@ -274,8 +274,8 @@
   .roomc .rl { font-size: 12px; color: var(--muted); margin-left: 8px; white-space: nowrap; }
   .banner.fol { background: #ffedd5; color: #9a3412; border-bottom-color: #fdba74; }
   .body.following::after { content: ""; position: absolute; inset: 0; border: 3px solid #ea580c; pointer-events: none; z-index: 40; }
-  .btn2 { height: 30px; border-radius: 7px; padding: 0 12px; border: 1px solid rgba(15,23,42,.18); background: #fff; font-size: 12.5px; cursor: pointer; }
-  .btn2.pri { background: #0f172a; color: #fff; border-color: #0f172a; }
+  .mx-button { height: 30px; border-radius: 7px; padding: 0 12px; border: 1px solid rgba(15,23,42,.18); background: #fff; font-size: 12.5px; cursor: pointer; }
+  .mx-button.pri { background: #0f172a; color: #fff; border-color: #0f172a; }
   .rcard { padding: 14px 16px; }
   .rcard .rn { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 14px; }
   .rcard .rw { font-size: 12.5px; color: #475569; margin: 10px 0 12px; line-height: 1.45; }
@@ -435,9 +435,9 @@
   .b-u-invited { background: #fef3c7; color: #92400e; } .b-u-active { background: #dcfce7; color: #166534; } .b-u-blocked { background: #fee2e2; color: #991b1b; } .b-u-removed { background: #f1f5f9; color: #64748b; }
   .b-adm { background: #ede9fe; color: #5b21b6; } .b-open { background: #dcfce7; color: #166534; } .b-closed { background: #ffedd5; color: #9a3412; }
   .acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
-  .btn2.danger { color: #b91c1c; border-color: #fecaca; } .btn2.dangerf { background: #b91c1c; border-color: #b91c1c; color: #fff; }
-  .btn2.dis { opacity: .45; cursor: not-allowed; }
-  .btn2 .ico { vertical-align: -3px; margin-right: 4px; }
+  .mx-button.danger { color: #b91c1c; border-color: #fecaca; } .mx-button.dangerf { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+  .mx-button.dis { opacity: .45; cursor: not-allowed; }
+  .mx-button .ico { vertical-align: -3px; margin-right: 4px; }
   .arow { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 6px; font-size: 12.5px; color: var(--ink2); background: #fff; }
   .arow > .ico { color: var(--muted); flex-shrink: 0; }
   .arow .an { flex: 1; min-width: 0; }
@@ -491,7 +491,7 @@
   .story.newc { outline: 2px solid #0f172a; outline-offset: 1px; }
   #newst { outline: none; min-height: 30px; cursor: text; }
   .nacts { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 10.5px; }
-  .nacts .btn2 { height: 24px; padding: 0 8px; font-size: 11.5px; }
+  .nacts .mx-button { height: 24px; padding: 0 8px; font-size: 11.5px; }
   .story.editing { outline: 2px solid var(--pc); outline-offset: 1px; }
   .story.typing { outline: 2px dashed var(--pc); outline-offset: 1px; background: #f8fafc; }
   .pres { position: absolute; top: -9px; right: 6px; font-size: 9.5px; color: #fff; border-radius: 4px; padding: 1px 5px; font-weight: 700; line-height: 14px; white-space: nowrap; }
@@ -518,7 +518,7 @@
   .mrow .s2 { margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap; }
   .mrow .as { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
   .mrow .mb { display: flex; flex-direction: column; gap: 4px; }
-  .mrow .mb .btn2 { height: 24px; padding: 0 8px; font-size: 11.5px; }
+  .mrow .mb .mx-button { height: 24px; padding: 0 8px; font-size: 11.5px; }
   .mrow [contenteditable="true"] { box-shadow: 0 0 0 2px #93c5fd; border-radius: 4px; outline: none; }
   .found { font-size: 12px; line-height: 1.55; background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; border-radius: 8px; padding: 8px 10px; margin: -4px 0 12px; }
   .toast { position: absolute; z-index: 70; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: #0f172a; color: #fff; font-size: 12.5px; border-radius: 9px; padding: 9px 14px; box-shadow: 0 10px 30px rgba(15,23,42,.3); white-space: nowrap; }
@@ -546,6 +546,456 @@
   .cmpb.none { background: #f8fafc; border: 1px solid var(--line); color: var(--muted); }
   .cmpr { display: grid; grid-template-columns: 96px 1fr 14px 1fr; gap: 6px; margin-top: 5px; align-items: baseline; }
   .cmpr .k { color: #92400e; } .cmpr .was { color: #991b1b; text-decoration: line-through; } .cmpr .ar { color: var(--muted); } .cmpr .now { color: #14532d; font-weight: 600; }
+
+/* BEGIN shared administration canvas */
+/* @maxitor/tokens — Maxitor's look as CSS custom properties.
+   The core's frame, its controls and every plugin's page take colours and sizes only from here, so all of Maxitor
+   looks the same and a later dark theme changes one file. The values are those of Maxitor's screens today: the
+   core's application (mockups 059, 072, 073) and the graph viewer's floating panels. */
+:root {
+  /* Ink and surfaces. */
+  --mx-ink: #0f172a;
+  --mx-ink-2: #1e293b;
+  --mx-ink-3: #334155;
+  --mx-muted: #64748b;
+  --mx-faint: #94a3b8;
+  --mx-on-ink: #ffffff;
+  --mx-surface: #ffffff;
+  --mx-surface-glass: rgba(255, 255, 255, 0.88);
+  --mx-page: #e9edf1;
+  --mx-sidebar: #ebf2f5;
+  --mx-workspace: #f4f5f7;
+  --mx-canvas: #f4f5f7;
+  --mx-dot: rgba(160, 168, 180, 0.42);
+  --mx-line: rgba(15, 23, 42, 0.1);
+  --mx-line-2: rgba(15, 23, 42, 0.06);
+  --mx-line-3: rgba(15, 23, 42, 0.14);
+  --mx-hover: rgba(15, 23, 42, 0.06);
+  --mx-selected: rgba(15, 23, 42, 0.09);
+  --mx-ok: #16a34a;
+  --mx-bad: #b91c1c;
+  --mx-bad-line: #fecaca;
+  --mx-disk-line: rgba(0, 0, 0, 0.12);
+  --mx-warn: #b45309;
+
+  /* The palette: the colours a plugin names in navigation.yaml (colour: green), never by code. */
+  --mx-palette-grey: #94a3b8;
+  --mx-palette-blue: #2563eb;
+  --mx-palette-green: #16a34a;
+  --mx-palette-amber: #d97706;
+  --mx-palette-red: #dc2626;
+  --mx-palette-violet: #7c3aed;
+  --mx-palette-teal: #0d9488;
+  --mx-palette-pink: #db2777;
+
+  /* Radii. */
+  --mx-radius-xs: 4px;
+  --mx-radius-sm: 6px;
+  --mx-radius-md: 8px;
+  --mx-radius-lg: 12px;
+  --mx-radius-round: 999px;
+
+  /* Shadows and blur. */
+  --mx-shadow-disk: inset 0 0 0 var(--mx-ring) var(--mx-surface), 0 0 0 var(--mx-line-width) var(--mx-disk-line);
+  --mx-shadow-float: 0 2px 10px rgba(0, 0, 0, 0.07);
+  --mx-shadow-card: 0 8px 30px rgba(15, 23, 42, 0.08);
+  --mx-shadow-pop: 0 12px 32px rgba(15, 23, 42, 0.16);
+  --mx-blur: blur(8px);
+
+  /* Type. */
+  --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --mx-text-xs: 10.5px;
+  --mx-text-sm: 11.5px;
+  --mx-text-md: 13px;
+  --mx-text-lg: 14px;
+  --mx-text-xl: 19px;
+  --mx-text-tiny: 10px;
+  --mx-weight-medium: 500;
+  --mx-weight-bold: 600;
+  --mx-weight-heavy: 700;
+  --mx-tracking-caps: 0.05em;
+
+  /* Spacing and sizes of the frame. */
+  --mx-space-1: 2px;
+  --mx-space-2: 4px;
+  --mx-space-3: 6px;
+  --mx-space-4: 8px;
+  --mx-space-5: 12px;
+  --mx-space-6: 16px;
+  --mx-space-7: 24px;
+  --mx-line-width: 1px;
+  --mx-control: 28px;
+  --mx-action-height: 36px;
+  --mx-action-height-phone: 44px;
+  --mx-control-sm: 22px;
+  --mx-row: 30px;
+  --mx-icon: 16px;
+  --mx-icon-sm: 14px;
+  --mx-top-row: 44px;
+  --mx-tree-width: 255px;
+  --mx-filter-width: 148px;
+  --mx-filter-pad: 10px;
+  --mx-badge: 20px;
+  --mx-text-badge: 8px;
+  --mx-bar-button: 30px;
+  --mx-bar-hairline: 22px;
+  --mx-empty-width: 520px;
+  --mx-card-min: 230px;
+  --mx-empty-pad-y: 34px;
+  --mx-empty-pad-x: 20px;
+  --mx-dashed-width: 1.5px;
+  /* The shell's layer over a page's own content: a plugin's page stays below it (spec 078, FR-019). */
+  --mx-layer-shell: 30;
+  --mx-layer-shell-pop: 35;
+  --mx-dot-step: 20px;
+  --mx-dot-size: 1px;
+  --mx-icon-lg: 20px;
+  --mx-ring: 2px;
+  --mx-tree-row: 32px;
+  --mx-tree-group: 36px;
+  --mx-tree-slot: 32px;
+  --mx-tree-row-phone: 42px;
+  --mx-menu-width: 290px;
+  --mx-drawer-width: 296px;
+  --mx-text-huge: 56px;
+  --mx-phone: 520px;
+
+  /* The date pickers (spec 081): Apple's layout in Maxitor's colours, as the mockup of spec 079 draws them. */
+  --mx-band: #eef2f7;
+  --mx-cal-side: #f8fafc;
+  --mx-cal-accent: #475569;
+  --mx-cal-link: #2563eb;
+  --mx-cal-off: #d6dde6;
+  --mx-scrim: rgba(15, 23, 42, 0.32);
+  --mx-cal-presets: 150px;
+  --mx-cal-main: 470px;
+  --mx-cal-main-one: 270px;
+  --mx-cal-cell: 30px;
+  --mx-cal-cell-phone: 40px;
+  --mx-cal-day: 28px;
+  --mx-cal-field: 32px;
+  --mx-cal-wheels: 196px;
+  --mx-cal-wheel-row: 28px;
+  --mx-cal-wheel-pad: 84px;
+  --mx-sheet-radius: 16px;
+
+  /* A comparison's marks, as the graph's ERD draws them (maxitor-web lib/erdPostPass.ts): the change's colour, a soft
+     halo of it under what changed — 40 px round it, fill-opacity 0.16, blurred by 22 — and what did not change faded. */
+  --mx-change-added: var(--mx-palette-green);
+  --mx-change-changed: var(--mx-palette-amber);
+  --mx-change-removed: var(--mx-palette-red);
+  --mx-change-unchanged: var(--mx-palette-grey);
+  --mx-halo-blur: 44px;
+  --mx-halo-spread: 34px;
+  --mx-halo-strength: 16%;
+  --mx-faded: 0.32;
+  /* A filter's row with nothing of its kind on the page fades its label only (maxitor-web ErdFilterPanel RowLabel). */
+  --mx-absent: 0.4;
+  /* The sign in a status disk (maxitor-web lib/erdFilterPresence.ts: 14 of 24 units on a disk of 20). */
+  --mx-text-sign: 12px;
+  /* A tree's pictogram, as the graph viewer's SidebarRowIcon dims it. */
+  --mx-icon-dim: 0.88;
+
+  /* The time scale (spec 079): the graph viewer's VersionButton and VersionPicker, and the mockup of spec 074. */
+  --mx-pill: rgba(15, 23, 42, 0.05);
+  --mx-pill-open: rgba(15, 23, 42, 0.1);
+  --mx-pill-ink: #334155;
+  --mx-pill-arrow: #475569;
+  --mx-pill-off: #cbd5e1;
+  --mx-pill-hairline: rgba(15, 23, 42, 0.12);
+  --mx-pill-height: 28px;
+  --mx-pill-height-phone: 34px;
+  --mx-pill-arrow-width: 26px;
+  --mx-pill-arrow-phone: 34px;
+  --mx-pill-hairline-height: 16px;
+  --mx-text-pill: 12.5px;
+  --mx-text-scale: 12px;
+  --mx-live: #16a34a;
+  --mx-live-ring: rgba(22, 163, 74, 0.15);
+  --mx-past: #2563eb;
+  --mx-now-link: #1d4ed8;
+  --mx-mark: 7px;
+  --mx-ring-wide: 3px;
+  --mx-scale-gap: 11px;
+  --mx-scale-card: 760px;
+  --mx-scale-card-radius: 10px;
+  --mx-scale-pad-top: 14px;
+  --mx-scale-pad-x: 20px;
+  --mx-scale-pad-bottom: 12px;
+  --mx-scale-edge: 10px;
+  --mx-shadow-scale: 0 12px 40px rgba(15, 23, 42, 0.16), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --mx-shadow-tip: 0 8px 30px rgba(15, 23, 42, 0.14), 0 1px 2px rgba(15, 23, 42, 0.06);
+  --mx-scale-hatch: #e2e8f0;
+  --mx-scale-axis: #cbd5e1;
+  --mx-scale-day: rgba(15, 23, 42, 0.09);
+  --mx-scale-hour: rgba(15, 23, 42, 0.04);
+  --mx-scale-range: rgba(15, 23, 42, 0.06);
+  --mx-scale-brush: rgba(37, 99, 235, 0.12);
+  --mx-scale-brush-line: #2563eb;
+  --mx-zoom-height: 22px;
+  --mx-zoom-height-phone: 30px;
+  --mx-zoom-radius: 7px;
+  --mx-zoom-inner-radius: 5px;
+  --mx-modes-height: 24px;
+  --mx-modes-height-phone: 32px;
+  --mx-text-axis: 10.5px;
+  --mx-sheet-grab: 40px;
+  --mx-sheet-grab-height: 5px;
+  --mx-sheet-height: 86%;
+
+  /* The milestones' palette, as the graph viewer's track and the mockup of spec 074 draw it: a point's colour, the tint
+     of its badge and the ink of the badge's words. */
+  --mx-tone-neutral: #8c959f;
+  --mx-tone-neutral-tint: #f6f8fa;
+  --mx-tone-neutral-ink: #59636e;
+  --mx-tone-purple: #8250df;
+  --mx-tone-purple-tint: #fbefff;
+  --mx-tone-purple-ink: #8250df;
+  --mx-tone-blue: #0969da;
+  --mx-tone-blue-tint: #ddf4ff;
+  --mx-tone-blue-ink: #0969da;
+  --mx-tone-green: #1a7f37;
+  --mx-tone-green-tint: #dafbe1;
+  --mx-tone-green-ink: #1a7f37;
+  --mx-tone-amber: #9a6700;
+  --mx-tone-amber-tint: #fff8c5;
+  --mx-tone-amber-ink: #9a6700;
+  --mx-tone-red: #d1242f;
+  --mx-tone-red-tint: #ffebe9;
+  --mx-tone-red-ink: #d1242f;
+  --mx-chip-bg: #f1f5f9;
+  --mx-message-bg: #f8fafc;
+  --mx-scale-tip: 270px;
+  --mx-scale-card-tip: 320px;
+  --mx-scale-grid: rgba(15, 23, 42, 0.05);
+  --mx-badge-height: 22px;
+  --mx-badge-icon: 13px;
+  --mx-badge-outline: 1.2px;
+  --mx-message-max: 120px;
+  --mx-text-card-title: 13.5px;
+  --mx-legend-width: 640px;
+  --mx-legend-keys: 200px;
+
+  /* An element another panel points at: a blue glow, as the mockup of spec 079 draws it. */
+  --mx-glow: 5px;
+  --mx-glow-colour: rgba(37, 99, 235, 0.95);
+  --mx-glow-line: #2563eb;
+  --mx-glow-tint: rgba(37, 99, 235, 0.12);
+  /* Side by side: A brown, B blue, as the graph viewer's two panels name them. */
+  --mx-side-a: #b45309;
+  --mx-side-b: #1d4ed8;
+  --mx-side-head: 30px;
+  --mx-track-on: rgba(37, 99, 235, 0.1);
+  --mx-note: rgba(15, 23, 42, 0.86);
+  --mx-note-code: rgba(255, 255, 255, 0.14);
+
+  /* What a page compares with: the graph viewer's DiffCard, StatusIcon and ChangeStepper. */
+  --mx-text-status: 9px;
+  --mx-diff-card: 300px;
+  --mx-stepper-list: 340px;
+  --mx-stepper-height: 360px;
+}
+
+/* Stable typography in live forms and historical views, independent of camera transforms. */
+.device .page { min-height: 0; height: auto; padding: 0; background: transparent; overflow: visible; }
+.device .page .inner { width: 100%; max-width: 1100px; padding: 0; margin: 0 auto; }
+.device h2, .device .page h2 { font-size: 20px; line-height: 1.3; margin: 0 0 12px; }
+.device h3, .device .panel h3, .device .dlg h3 { font-size: 16px; line-height: 1.4; }
+.device :is(.sub,.choice,.choice b,.choice div,.choice .now,.kv,.utbl,.nm,.arow,.alert,.stt,.tabs button,.mx-button:not([data-variant="link"]),.panel .mx-button:not([data-variant="link"]),.dlg .mx-button:not([data-variant="link"])) { font-size: 14px; line-height: 1.5; }
+.device :is(.sec,.fine2,.em,.as,.badge,.lab,.hintl,.mut,.utbl th,.admin-meta) { font-size: 12px; line-height: 1.5; }
+.device :is(input,textarea,select,.search input,.inp input) { font-family: inherit; font-size: 16px; line-height: 1.5; }
+.device .choice { background: #fff; }
+.device .mx-button:not([data-variant="link"]) { min-height: 36px; height: auto; }
+.device .dlg { max-height: calc(100dvh - 32px); overflow-y: auto; }
+.device .panel { max-width: 100%; }
+.admin-history-notice { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 12px 16px; background: #fff; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 20px; }
+.admin-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,300px),1fr)); gap: 16px; margin-top: 16px; }
+.admin-object { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; overflow-wrap: anywhere; }
+.admin-object[data-change=added] { border-color: #16a34a; }
+.admin-object[data-change=changed] { border-color: #d97706; }
+.admin-object[data-change=removed] { border-color: #dc2626; }
+.admin-object dl > div { display: grid; grid-template-columns: minmax(100px,1fr) 2fr; gap: 12px; padding: 6px 0; }
+.admin-object dd { margin: 0; }
+.admin-object dt, .admin-meta { color: var(--muted); }
+.admin-change { text-transform: capitalize; }
+@media (max-width: 600px) {
+  .device .page .inner { width: 100%; padding: 0; }
+  .device .ph { flex-wrap: wrap; gap: 12px; }
+  .device :is(.mx-button:not([data-variant="link"]),.tabs button) { min-height: 44px; }
+  .device .dlg { width: 100%; max-width: 100%; max-height: calc(100dvh - 16px); }
+  .device .utbl { width: 100%; }
+  .admin-object dl > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+.device.admin-dialog-content { height: auto; }
+.device.admin-dialog-content :is(.dlg,.panel,.drawer) { position: static; inset: auto; transform: none; width: 100%; max-width: none; height: auto; max-height: none; padding: 0; margin: 0; border: 0; box-shadow: none; overflow: visible; }
+.device.admin-dialog-content :is(.dh,.db,.df,.pb,.pf) { padding: 8px 0; }
+
+.admin-canvas-host { position: absolute; inset: 0; }
+.admin-scene { position: absolute; left: 0; top: 0; padding-bottom: 24px; }
+
+.admin-moment { position: relative; display: inline-flex; margin-right: 12px; }
+.admin-time-menu { position: absolute; z-index: 100; right: 0; top: 40px; width: min(340px,90vw); padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 8px 24px #0002; }
+.admin-time-menu .tabs { display: flex; flex-wrap: wrap; }
+
+/* Both plugin tabs fill the available panel; typography stays independent of layout. */
+.device .marketplace-page .inner { max-width: none; container: marketplace / inline-size; }
+.device .marketplace-page .inner .grid { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; }
+@container marketplace (min-width: 601px) {
+  .device .marketplace-page .inner .grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@container marketplace (min-width: 1150px) {
+  .device .marketplace-page .inner .grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+.device .marketplace-page .grid > :is(.mcard,.prow) { min-width: 0; margin: 0; border: 1px solid var(--line); border-radius: 10px; padding: 15px 16px; }
+.device .marketplace-page .grid > .prow { display: grid; grid-template-columns: 38px minmax(0,1fr); align-content: start; gap: 9px 12px; }
+.device .marketplace-page .prow .pacts { grid-column: 1 / -1; justify-content: flex-end; margin-top: auto; }
+.device .marketplace-page .grid :is(.pmain,.mono) { min-width: 0; overflow-wrap: anywhere; }
+
+/* Semantic cards share spacing without changing the established type scale. */
+.admin-surface { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 0 0 16px; box-shadow: 0 2px 6px #0f172a06; min-width: 0; }
+.admin-surface-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.admin-surface-head h3 { margin: 0; }
+.admin-facts { margin: 0; }
+.admin-facts > div { display: grid; grid-template-columns: minmax(120px,1fr) 2fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line2); }
+.admin-facts > div:last-child { border-bottom: 0; }
+.admin-facts dt { color: var(--muted); }
+.admin-facts dd { margin: 0; overflow-wrap: anywhere; }
+.admin-policy-options { border: 0; padding: 0; margin: 12px 0; }
+.device .choice { display: flex; align-items: flex-start; text-align: left; gap: 12px; padding: 12px; margin: 0; border: 0; border-radius: 7px; box-shadow: none; }
+.device .choice.on { background: #f1f5f9; border: 0; box-shadow: none; }
+.device .choice:hover { background: #f8fafc; }
+.device .choice:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+.admin-policy-options input { flex: 0 0 auto; width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--ink); }
+.admin-choice-description { display: block; margin-top: 4px; color: var(--muted); }
+.admin-people .tabs { margin-top: 0; }
+.admin-people :is(.utbl,.tbl) { border: 0; border-radius: 0; }
+.admin-people .search { max-width: 100%; }
+.admin-people .who > div { min-width: 0; }
+.admin-people :is(.em,.nm) { overflow-wrap: anywhere; }
+.admin-object { box-shadow: 0 2px 6px #0f172a06; }
+@media (max-width: 600px) {
+  .admin-surface { padding: 12px; }
+  .admin-facts > div { grid-template-columns: 1fr; gap: 4px; }
+  .admin-people .tabs { display: flex; }
+  .admin-people .tabs button { flex: 1; padding-left: 6px; padding-right: 6px; }
+  .admin-people :is(.utbl,.tbl) td { overflow-wrap: anywhere; max-width: 100%; }
+}
+.device.phone .admin-surface { padding: 12px; }
+.device.phone .admin-facts > div { grid-template-columns: 1fr; gap: 4px; }
+@media (max-width: 600px) {
+  .admin-people :is(.utbl,.tbl) td[data-label] { display: block; padding-top: 4px; }
+  .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+}
+.device.phone .admin-people :is(.utbl,.tbl) td[data-label] { display: block; padding-top: 4px; }
+.device.phone .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+
+/* Keep the introduction separate from the first content card. */
+.device :is(.organization-page,.people-page) .ph { margin-bottom: 20px; }
+
+.admin-person-link { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.admin-user-status { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; }
+.admin-user-status .acts { margin: 0; }
+.admin-user-card .db { border-top: 0; margin-top: 8px; }
+.admin-user-card .kv { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 16px; margin: 12px 0 0; }
+.admin-user-card .kv dd { margin: 0; overflow-wrap: anywhere; }
+.device .organization-page .inner { max-width: 820px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
+.organization-page .ph, .organization-page .admin-surface:first-of-type, .organization-page .alert { grid-column: 1 / -1; }
+.organization-page .admin-surface { margin-bottom: 0; }
+.organization-page .admin-facts > div { grid-template-columns: minmax(100px,1fr) 2fr; gap: 12px; padding: 6px 0; }
+@media (max-width:600px) {
+ .device .organization-page .inner { grid-template-columns: 1fr; }
+ .admin-user-card .kv { grid-template-columns: 1fr; gap: 6px; }
+ .admin-user-card .kv dd { margin-bottom: 8px; }
+}
+.device.phone .organization-page .inner { grid-template-columns: 1fr; }
+
+.organization-page .admin-surface-head { min-height: 36px; }
+@media (max-width:600px) { .organization-page .admin-surface-head { min-height: 44px; } }
+.device.phone .organization-page .admin-surface-head { min-height: 44px; }
+
+/* Comparison keeps the directory and dialog geometry; only change decoration differs. */
+.admin-people tr[data-change=added], .admin-user-card[data-change=added] { background: #f0fdf4; box-shadow: inset 3px 0 #16a34a; }
+.admin-people tr[data-change=changed], .admin-user-card[data-change=changed] { background: #fffbeb; box-shadow: inset 3px 0 #d97706; }
+.admin-people tr[data-change=removed], .admin-user-card[data-change=removed] { background: #fef2f2; box-shadow: inset 3px 0 #dc2626; }
+.admin-title-value { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-title-form input { width: 100%; min-width: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.admin-title-form .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+/* A narrow comparison pane follows the same responsive directory as a phone. */
+.people-page { container: people / inline-size; }
+@container people (max-width: 700px) {
+  .admin-people .utbl, .admin-people .tbl, .admin-people tbody { display: block; width: 100%; }
+  .admin-people :is(thead,colgroup) { display: none; }
+  .admin-people :is(.utbl,.tbl) tr { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); padding: 12px; border-bottom: 1px solid var(--line2); gap: 8px 12px; }
+  .admin-people :is(.utbl,.tbl) td { display: block; width: auto; min-width: 0; padding: 0; border: 0; }
+  .admin-people :is(.utbl,.tbl) td:first-child, .admin-people :is(.utbl,.tbl) td[data-label] { grid-column: 1 / -1; }
+  .admin-people td[data-label]::before { content: attr(data-label) ": "; }
+  .admin-people .who { align-items: flex-start; }
+  .admin-people .who > div { flex: 1; }
+  .admin-people .tabs { display: flex; }
+  .admin-people .tabs button { flex: 1; padding-left: 4px; padding-right: 4px; }
+}
+.admin-people .utbl .admin-person-link { height: auto; padding: 0; font-size: inherit; white-space: normal; }
+
+/* User columns keep their width on the canvas, including in comparison panes. */
+.device .admin-people table.user-directory { display: table; table-layout: fixed; width: 100%; }
+.device .admin-people table.user-directory colgroup { display: table-column-group; }
+.device .admin-people table.user-directory thead { display: table-header-group; }
+.device .admin-people table.user-directory tbody { display: table-row-group; }
+.device .admin-people table.user-directory tr { display: table-row; padding: 0; }
+.device .admin-people table.user-directory td { display: table-cell; padding: 12px; border-bottom: 1px solid var(--line2); vertical-align: middle; }
+.device .admin-people table.user-directory td[data-label]::before { content: none; }
+
+.admin-history-notice { box-sizing: border-box; max-width: var(--admin-visible-width, 100%); }
+.device .people-page .inner { max-width: none; }
+.admin-people > :is(.tabs,.search) { box-sizing: border-box; max-width: min(100%, calc(var(--admin-visible-width, 1150px) - 32px)); }
+
+.admin-people .user-directory { user-select: none; }
+
+/* Canvas-aware pinning: opaque cells keep the actual name/email and their native actions. */
+.user-directory :is(th,td):first-child { position: relative; z-index: 2; transform: translateX(var(--user-pin-offset, 0px)); background: #fff; }
+.user-directory th:first-child { background: #f8fafc; z-index: 3; }
+.user-directory[data-pinned] :is(th,td):first-child { box-shadow: 3px 0 5px #0f172a18; }
+.user-directory tr[data-change=added] td:first-child { background: #f0fdf4; }
+.user-directory tr[data-change=changed] td:first-child { background: #fffbeb; }
+.user-directory tr[data-change=removed] td:first-child { background: #fef2f2; }
+@media (max-width:520px) {
+  .user-directory { --user-identity-width: 16%; --user-appeared-width: 30%; }
+  .user-directory td:first-child .who { display: flex; }
+  .user-directory td:first-child .who > div { min-width: 0; }
+  .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
+}
+
+/* As in Plugins, tabs and search move and zoom with the canvas content. */
+.directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
+.directory-toolbar .tabs button { flex: 0 0 auto; }
+
+.device .mx-actions { position: absolute; top: 64px; right: 16px; z-index: 10; display: flex; gap: 8px; }
+.device.phone .mx-actions { position: absolute; top: auto; bottom: 56px; }
+.mx-action { height: var(--mx-control); padding: 0 var(--mx-space-5); border: 0; border-radius: var(--mx-radius-md); background: var(--mx-ink); color: var(--mx-on-ink); font-size: var(--mx-text-md); cursor: pointer; display: inline-flex; align-items: center; gap: var(--mx-space-3); box-shadow: var(--mx-shadow-float); }
+.device .mx-action svg { width: 16px; height: 16px; }
+/* Shared by live components and standalone mockups. */
+.mx-button.mx-button { box-sizing: border-box; min-height: var(--mx-action-height); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); background: var(--mx-surface); color: var(--mx-ink); padding: var(--mx-space-3) var(--mx-space-5); display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); font-family: inherit; font-size: var(--mx-text-lg); line-height: 1.5; font-weight: 400; cursor: pointer; text-decoration: none; }
+.mx-button[data-variant="primary"], .mx-button.pri { background: var(--mx-ink); color: var(--mx-on-ink); border-color: var(--mx-ink); font-weight: 600; }
+.mx-button[data-variant="danger"], .mx-button.danger { color: var(--mx-bad); border-color: var(--mx-bad-line); }
+.mx-button.dangerf { background: var(--mx-bad); border-color: var(--mx-bad); color: var(--mx-on-ink); }
+.mx-button[data-variant="link"] { min-height: 0; border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: var(--mx-ring-wide); }
+.mx-button[data-variant="icon"] { width: var(--mx-action-height); padding: var(--mx-space-3); border-color: transparent; background: transparent; }
+.mx-button:not(:disabled):hover { filter: brightness(.96); }
+.mx-button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-button:disabled, .mx-button.dis { opacity: .45; cursor: not-allowed; }
+.mx-button svg { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
+@media (max-width:600px) { .mx-button.mx-button:not([data-variant="link"]) { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-button:not([data-variant="link"]) { min-height: var(--mx-action-height-phone); }
+
+.mx-button.mx-action { box-shadow: var(--mx-shadow-float); }
+
+/* END shared administration canvas */
+/* Shared disk frame: white separation, then the production outer contour. */
+.avatar, .av, .mx-avatar, .mx-tip-avatar { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }
+img.dk, img.nt-disk, img.pd, img[src*="data-sign"] { border: 1px solid rgba(0,0,0,.12); border-radius: 50%; background: #fff; box-sizing: content-box; }
 </style>
 </head>
 <body>
@@ -745,9 +1195,37 @@ function storyKind(id) { if (!S.cmp || cmpQuiet()) return null; const d = CMP.st
 function itfKind(itf) { if (!S.cmp || cmpQuiet()) return null; return CMP.itfs[itf.id] ? "added" : CMP.gone.includes(itf) ? "removed" : "none"; }
 function rowCls(kind) { return kind ? "df-" + kind : ""; }
 function sysNote(id) { const d = S.cmp && CMP.systems[id]; return d ? `<div class="em">${esc(d.note)}</div>` : ""; }
+// BEGIN shared production status disks
+// The graph viewer's production disks. Applications and standalone mockups use this same drawing.
+
+/** @param {string} value */
+function diskText(value) {
+  return value.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
+/** @param {string} fill @param {string} sign @param {number} size */
+function statusDiskSvg(fill, sign, size = 14) {
+  const paths = {
+    "+": "M8 12h8M12 8v8",
+    "−": "M8 12h8",
+    "=": "M8 10h8M8 14h8",
+    "~": "M7.5 13.5C9 8.5 15 15.5 16.5 10.5",
+  };
+  const path = paths[sign];
+  const mark = path
+    ? `<path d="${path}" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="butt"/>`
+    : sign ? `<text x="12" y="${size > 12 ? 16.5 : 15.5}" text-anchor="middle" font-family="sans-serif" font-size="${size}" font-weight="700" fill="#fff">${diskText(sign)}</text>` : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" data-sign="${diskText(sign)}"><circle cx="12" cy="12" r="11" fill="${diskText(fill)}"/>${mark}</svg>`;
+}
+
+/** @param {string} fill @param {string} sign @param {number} size */
+function statusDiskUri(fill, sign, size = 14) {
+  return `data:image/svg+xml,${encodeURIComponent(statusDiskSvg(fill, sign, size))}`;
+}
+// END shared production status disks
 function cmpSec(field) {
   return { t: "Changes A → B", open: true, rows: [["added", "Added", "#16a34a"], ["removed", "Removed", "#dc2626"], ["changed", "Changed", "#d97706"], ["none", "Unchanged", "#94a3b8"]]
-    .map(([k, l, c]) => ({ l, c, icon: BI.dot, off: hid(S[field], "df:" + k), go: `tgl('${field}','df:${k}')` })) };
+    .map(([k, l, c]) => ({ l, c, disk: statusDiskUri(c, { added: "+", changed: "~", removed: "−", none: "=" }[k]), off: hid(S[field], "df:" + k), go: `tgl('${field}','df:${k}')` })) };
 }
 function cmpBanner() {
   const [a, b] = S.cmp.split("|"), c = cmpCounts();
@@ -889,8 +1367,8 @@ const I = {
   down: P('<path d="M7 10l5 5 5-5"/>', "ico sm"),
   lock: P('<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/>', "ico sm"),
   globe: P('<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 2.5 14.4 0 17M12 3.5c-2.5 2.6-2.5 14.4 0 17"/>', "ico sm"),
-  back: P('<path d="M15 6l-6 6 6 6"/>', "ico sm"),
-  people: P('<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.8 14.1c2.3.2 4 1.8 4.6 4.6"/>'),
+  back: '<svg class="ico sm" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>',
+  people: '<svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 13c-1.2 0-3.07.34-4.5 1-1.43-.67-3.3-1-4.5-1C5.33 13 1 14.08 1 16.25V19h22v-2.75c0-2.17-4.33-3.25-6.5-3.25zm-4 4.5h-10v-1.25c0-.54 2.56-1.75 5-1.75s5 1.21 5 1.75v1.25zm9 0H14v-1.25c0-.46-.2-.86-.52-1.22.88-.3 1.96-.53 3.02-.53 2.44 0 5 1.21 5 1.75v1.25zM7.5 12c1.93 0 3.5-1.57 3.5-3.5S9.43 5 7.5 5 4 6.57 4 8.5 5.57 12 7.5 12zm0-5.5c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm9 5.5c1.93 0 3.5-1.57 3.5-3.5S18.43 5 16.5 5 13 6.57 13 8.5s1.57 3.5 3.5 3.5zm0-5.5c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>',
   erd: P('<rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/><path d="M11 7.5h3.5v5.5"/>'),
   fsm: P('<circle cx="5" cy="12" r="2"/><rect x="9" y="9" width="6" height="6" rx="2"/><circle cx="19" cy="12" r="2.2"/><path d="M7 12h2M15 12h2"/>'),
   domain: P('<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/>'),
@@ -1099,7 +1577,7 @@ const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 function fsec(key, t, closedNow) { FSTATE[key + ":" + t] = closedNow ? "open" : "closed"; render(); }
 function fcompact(key) { FCOMPACT.has(key) ? FCOMPACT.delete(key) : FCOMPACT.add(key); render(); }
 function frow(r) {
-  return `<div class="row${r.off ? " off" : ""}${r.sel ? " sel" : ""}" onclick="${r.go}" title="${esc(r.l)}"><span class="bd" style="background:${r.c}">${r.icon || BI.dot}</span><span class="lb">${esc(r.l)}</span></div>`;
+  return `<div class="row${r.off ? " off" : ""}${r.sel ? " sel" : ""}" onclick="${r.go}" title="${esc(r.l)}">${r.disk ? `<img class="bd" src="${r.disk}" alt="">` : `<span class="bd" style="background:${r.c}">${r.icon || BI.dot}</span>`}<span class="lb">${esc(r.l)}</span></div>`;
 }
 function fpanel(key, sections) {
   const compact = FCOMPACT.has(key);
@@ -1184,7 +1662,7 @@ function viewMap(scope) {
       if (dTo === key) { const ds = STORIES.find(x => x.id === dFrom); inner += `<div class="lift">${storyCard(ds)}<span class="liftcap">${moveCaption(ds, g.id, sl.id)}</span></div>`; }
       if (S.cmp && !cmpQuiet()) for (const [sid, d] of Object.entries(CMP.stories)) { const ms = storyOf(sid); if (d.moved === key && (!scope || ms.p === scope)) inner += `<div class="story ghostmv"><div class="stt">${esc(ms.t)}</div><div class="sf">was here at A · moved</div></div>`; }
       if (S.coedit && key === "g8|r2") inner += `<div class="story typing" style="--pc:#2563eb"><div class="stt">A technician marks that the resident is not at home<span class="caret"></span></div><span class="pres" style="background:#2563eb">OS is typing</span></div>`;
-      if (S.newIn === key && !ro) inner += `<div class="story newc"><div class="stt" id="newst" contenteditable="true" spellcheck="false">A technician photographs the work before and after</div><div class="nacts"><button class="btn2 pri" onclick="event.stopPropagation();addStory('${g.id}','${sl.id}')">Add</button><span class="mut">Esc — cancel</span></div></div>`;
+      if (S.newIn === key && !ro) inner += `<div class="story newc"><div class="stt" id="newst" contenteditable="true" spellcheck="false">A technician photographs the work before and after</div><div class="nacts"><button class="mx-button pri" onclick="event.stopPropagation();addStory('${g.id}','${sl.id}')">Add</button><span class="mut">Esc — cancel</span></div></div>`;
       const dnd = ro ? "" : ` ondragover="dOver(event,this)" ondragleave="this.classList.remove('drop')" ondrop="dDrop(event,'${g.id}','${sl.id}')"`;
       html += `<div class="cell${dTo === key ? " drop" : ""}"${dnd}>${inner}${scope && others - cell.filter(x => !x.p).length ? `<div class="ghost-more">+${others - cell.filter(x => !x.p).length} in other products</div>` : ""}${scope && cell.some(x => !x.p) ? `<div class="ghost-more">+${cell.filter(x => !x.p).length} without a Software System</div>` : ""}${ro || S.newIn === key ? "" : `<div class="cadd" onclick="event.stopPropagation();go({newIn:'${key}',story:null})">+ story</div>`}</div>`;
     }
@@ -1304,7 +1782,7 @@ function viewSystems() {
     { t: "Owners", rows: Object.entries(USERS).map(([k, n]) => ({ l: n, c: OWNER_C[k], icon: INI[k], off: hid(h, "o:" + k), go: `tgl('sh','o:${k}')` })) },
   ]);
   return { filter, fkey: "sys", world: wcard("Software Systems", `Shown 1–${shown} of <b>${total}</b>. The business area is derived from the map: where the Software System’s stories lie. External systems and Software Systems without stories have none.`,
-    `<div class="wbar"><div class="inp">${I.search}&nbsp; Find among ${total} Software Systems…</div><span class="spacer"></span>${S.snap || S.cmp ? "" : `<button class="btn2 pri" onclick="go({pop:'newsys',ssKind:'prod'})">+ Software System</button>`}</div>
+    `<div class="wbar"><div class="inp">${I.search}&nbsp; Find among ${total} Software Systems…</div><span class="spacer"></span>${S.snap || S.cmp ? "" : `<button class="mx-button pri" onclick="go({pop:'newsys',ssKind:'prod'})">+ Software System</button>`}</div>
      <table class="tbl"><tr><th>Software System</th><th>Kind</th><th>Business area (by stories)</th><th>Owner</th><th>Containers</th><th>Stories</th><th>Links</th></tr>${rows}</table>
      <div class="pager"><span>Sort: by links ↓ · save as a view</span><span class="pp"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>…</span><span>${Math.ceil(total / 30)}</span><span>›</span></span></div>`) };
 }
@@ -1462,7 +1940,7 @@ function viewC2() {
       return `<tr class="click ${S.cmp && !cmpQuiet() ? (CMP.conts[id] ? "df-changed" : "df-none") : ""}" onclick="go({screen:'cont',cont:'${id}'})"><td class="nm">${kindIcon(c.kind)} ${c.name}</td><td>${KIND_RU[c.kind]}</td><td>${c.products.filter(x => x !== S.prod).map(x => PRODUCTS[x].name).join(", ") || "—"}</td>
         <td class="mut">${pub.map(i => `${i.name} · ${i.proto}${i.use.length ? "" : ' <span class="badge b-draft">unused</span>'}`).join("<br>") || "—"}</td><td class="mut">${use.map(i => `${i.name} · ${i.proto} (${CONTAINERS[i.pub].name})`).join("<br>") || "—"}</td>
         <td>${c.live ? '<span class="mark live">live</span>' : "—"}</td><td>${c.hist ? '<span class="mark">git</span>' : "—"}</td><td><span class="who"><span class="av">${INI[c.owner]}</span></span></td><td><span class="lnk2" onclick="event.stopPropagation();go({cedit:'${id}',story:null})">card</span></td></tr>`; }).join("");
-    return { tabs, world: wcard("Containers", `The product’s containers <b>${p.name}</b>: what they publish and what they use.`, `<table class="tbl"><tr><th>Container</th><th>Kind</th><th>Also in</th><th>Publisher</th><th>Uses</th><th>Live</th><th>Story</th><th>Owner</th><th></th></tr>${tr}</table>`.replace("<table", `<div class="wbar"><span class="spacer"></span>${S.snap || S.cmp ? "" : `<button class="btn2 pri" onclick="go({pop:'newcont'})">+ New container</button>`}</div><table`)) };
+    return { tabs, world: wcard("Containers", `The product’s containers <b>${p.name}</b>: what they publish and what they use.`, `<table class="tbl"><tr><th>Container</th><th>Kind</th><th>Also in</th><th>Publisher</th><th>Uses</th><th>Live</th><th>Story</th><th>Owner</th><th></th></tr>${tr}</table>`.replace("<table", `<div class="wbar"><span class="spacer"></span>${S.snap || S.cmp ? "" : `<button class="mx-button pri" onclick="go({pop:'newcont'})">+ New container</button>`}</div><table`)) };
   }
   const hide = new Set(S.c2hide ? S.c2hide.split(",") : []);
   const sysKey = id => CONTAINERS[id].ext || CONTAINERS[id].products[0];
@@ -1659,11 +2137,11 @@ function mobStep(id, mid, act) {
 }
 function mobBlock(s) {
   const m = MOB[s.id];
-  const sysRow = m.sysSt === "ok" || s.p ? "" : `<div class="mrow"><div class="an"><div class="as" style="margin:0 0 2px">Software System</div><b>${PRODUCTS[m.sys].name}</b><div class="as">${esc(m.sysWhy)}</div></div><div class="mb"><button class="btn2 pri" onclick="mobSys('${s.id}')">Accept</button><button class="btn2">Another ▾</button></div></div>`;
+  const sysRow = m.sysSt === "ok" || s.p ? "" : `<div class="mrow"><div class="an"><div class="as" style="margin:0 0 2px">Software System</div><b>${PRODUCTS[m.sys].name}</b><div class="as">${esc(m.sysWhy)}</div></div><div class="mb"><button class="mx-button pri" onclick="mobSys('${s.id}')">Accept</button><button class="mx-button">Another ▾</button></div></div>`;
   const rows = m.steps.filter(x => x.st === "new" || x.st === "edit").map(x => {
     const c = CONTAINERS[x.c];
     return `<div class="mrow"><div class="an"><div class="s1"${x.st === "edit" ? ` contenteditable="true" spellcheck="false" id="mob-${x.id}"` : ""}>${esc(x.t)}</div><div class="s2"><span class="cchip">${kindIcon(c.kind)}${c.name}</span>${c.ext ? '<span class="warn">a request to the other side</span>' : ""}</div><div class="as">${esc(x.why)}</div></div>
-      <div class="mb"><button class="btn2 pri" onclick="mobStep('${s.id}','${x.id}','ok')">Accept</button>${x.st === "edit" ? "" : `<button class="btn2" onclick="mobStep('${s.id}','${x.id}','edit')">Edit</button>`}<button class="btn2" onclick="mobStep('${s.id}','${x.id}','no')">Reject</button></div></div>`;
+      <div class="mb"><button class="mx-button pri" onclick="mobStep('${s.id}','${x.id}','ok')">Accept</button>${x.st === "edit" ? "" : `<button class="mx-button" onclick="mobStep('${s.id}','${x.id}','edit')">Edit</button>`}<button class="mx-button" onclick="mobStep('${s.id}','${x.id}','no')">Reject</button></div></div>`;
   }).join("");
   return `<div class="mob"><div class="mh">${I.spark}<b>The model proposes</b><span class="mut">read the story and the graphs: ${m.read.join(" · ")}</span></div>${sysRow}${rows || (sysRow ? "" : '<div class="fine2" style="margin:0 0 6px">All proposals are handled.</div>')}<div class="fine2">Only what is accepted enters the catalog; the author of the change is whoever accepted it. <a class="lnk2">Propose more</a></div></div>`;
 }
@@ -1686,7 +2164,7 @@ function drawer() {
       <div class="s2"><span class="cchip" onclick="${open}">${kindIcon(c.kind)}${c.name}</span>${c.ext ? '<span class="warn">a request to the other side</span>' : ""}${cross ? `<span class="warn">a container of the product ${PRODUCTS[c.products[0]].name}</span>` : ""}<span class="ps" style="font-size:11px;color:var(--muted)">${st.done ? "Done" : "Not done"}</span></div></div></div>`;
   }).join("");
   const flow = ro ? [] : FLOW[s.st];
-  const trans = flow.map(to => { const why = storyGuard(s, to); return `<button class="btn2${to === "rejected" ? " danger" : ""}${why ? " dis" : ""}" ${why ? `title="${why}"` : `onclick="setStatus('${s.id}','${to}')"`}>${FLOW_VERB[to]}</button>`; }).join("");
+  const trans = flow.map(to => { const why = storyGuard(s, to); return `<button class="mx-button${to === "rejected" ? " danger" : ""}${why ? " dis" : ""}" ${why ? `title="${why}"` : `onclick="setStatus('${s.id}','${to}')"`}>${FLOW_VERB[to]}</button>`; }).join("");
   const blockedTo = flow.find(to => storyGuard(s, to));
   const ce = (field, val) => ro ? "" : ` contenteditable="true" spellcheck="false" onblur="saveText('${s.id}','${field}',this)"`;
   const pk = ro ? "" : '<span class="pk" title="Choose">▾</span>';
@@ -1728,7 +2206,7 @@ function contDrawer() {
   else if (steps.length || consumers.length) {
     const why = [steps.length ? `referred to by ${steps.length} plan ${pl(steps.length, "step", "steps", "steps")}` : "", consumers.length ? `its interfaces are used by ${consumers.length} ${pl(consumers.length, "container", "containers", "containers")}` : ""].filter(Boolean).join("; ");
     del = `<div class="hintb warn2"><b>Cannot be deleted</b>: ${why}.${steps.map(({ sid, st }) => `<br>· ${esc(st.t)} — <a class="lnk2" onclick="go({story:'${sid}',cedit:null,view:'map'})">${esc(storyOf(sid).t)}</a>`).join("")}</div>`;
-  } else del = `<button class="btn2 danger" onclick="delCont('${id}')">Delete the container</button><div class="fine2">Nothing refers to it. What is deleted stays in the catalog history; undo — ⌘Z.</div>`;
+  } else del = `<button class="mx-button danger" onclick="delCont('${id}')">Delete the container</button><div class="fine2">Nothing refers to it. What is deleted stays in the catalog history; undo — ⌘Z.</div>`;
   return `<div class="drawer">
     <div class="dh"><div class="dk"><span>${ext ? `Container of the external system “${EXTERNALS[c.ext].name}”` : "Our container"}</span><span class="close" onclick="go({cedit:null})">✕</span></div>
       <h3 class="ed"${ro ? "" : ' contenteditable="true" spellcheck="false"'}>${esc(c.name)}</h3><div class="dt">${KIND_RU[c.kind]}${ext ? "" : ` · ${(c.products || []).map(x => PRODUCTS[x].name).join(", ") || "in no product — a signal"}`}</div></div>
@@ -1742,7 +2220,7 @@ function contDrawer() {
       ${ext && !ro ? '<div class="addstep">+ what it uses, for example our interface for webhooks</div>' : ""}
       ${ext ? '<div class="fine2">Who uses this container’s interfaces is derived from the code of our containers: their resources declare the target. So an interface that is used cannot be removed.</div>' : '<div class="fine2">The interfaces and links of our container are read only: they come from its code and change with every commit.</div>'}
       <div class="dsec"><span>Deletion</span></div>${ro ? '<div class="fine2">A past snapshot is read only.</div>' : del}
-      ${!ext && GRAPHS[id] ? `<div style="margin-top:12px"><button class="btn2" onclick="go({screen:'cont',cont:'${id}',cedit:null})">Open the container’s graph →</button></div>` : ""}
+      ${!ext && GRAPHS[id] ? `<div style="margin-top:12px"><button class="mx-button" onclick="go({screen:'cont',cont:'${id}',cedit:null})">Open the container’s graph →</button></div>` : ""}
     </div>
     <div class="df"><span>changed today</span><span class="lnk2" onclick="go({pop:'snap'})">Change history</span></div></div>`;
 }
@@ -1773,7 +2251,7 @@ function popNewCont() {
     <div class="lab">Live · optional</div><div class="inp" style="color:var(--muted)">the address of the running service</div>
     <div class="lab">Works for products</div><div class="owns" style="margin-bottom:12px"><span class="pchip"><i style="background:${p.color}"></i>${p.name} ✓</span><span class="pchip">+ product</span></div>
     <div class="lab">Owner</div><div class="inp"><span class="who">${uav(au("ak"))}Anna Kovaleva</span><span style="flex:1"></span>${I.down}</div>
-    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 pri" onclick="createCont()">Create the container</button></div></div>`;
+    <div class="ft"><button class="mx-button" onclick="go({pop:null})">Cancel</button><button class="mx-button pri" onclick="createCont()">Create the container</button></div></div>`;
 }
 function popNewSys() {
   const ext = S.ssKind === "ext";
@@ -1789,7 +2267,7 @@ function popNewSys() {
       <div class="owns" style="margin:-4px 0 6px">${CONTAINERS.c12 ? `<span class="cchip">${kindIcon("service")}Materials warehouse ✕</span>` : ""}<span class="cchip">${kindIcon("mobile")}Technicians’ app ✕</span></div>
       <div class="fine2">A container may work for several products, so a product does not take it but only gathers it.</div>
       <div class="lab" style="margin-top:10px">Owner</div><div class="inp"><span class="who">${uav(au("ie"))}Ilya Ershov</span><span style="flex:1"></span>${I.down}</div>`}
-    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 pri" onclick="go({pop:null})">${ext ? "Create the external system" : "Create the product"}</button></div></div>`;
+    <div class="ft"><button class="mx-button" onclick="go({pop:null})">Cancel</button><button class="mx-button pri" onclick="go({pop:null})">${ext ? "Create the external system" : "Create the product"}</button></div></div>`;
 }
 
 /* ======================= popovers ======================= */
@@ -1822,7 +2300,7 @@ function popRoom(pid) {
   return `<div class="pop rcard" style="top:46px;right:52px;width:330px">
     <div class="rn"><span class="avatar" style="background:${p.color};color:#fff;margin:0">${p.ini}</span>${p.name}</div>
     <div class="rw">Now: <b>${p.where}</b></div>
-    <div class="rb"><button class="btn2" onclick='go(Object.assign({pop:null}, ${JSON.stringify(p.go)}))'>Go to</button><button class="btn2 pri" onclick='go(Object.assign({pop:null, follow:"${p.id}"}, ${JSON.stringify(p.go)}))'>Follow</button></div>
+    <div class="rb"><button class="mx-button" onclick='go(Object.assign({pop:null}, ${JSON.stringify(p.go)}))'>Go to</button><button class="mx-button pri" onclick='go(Object.assign({pop:null, follow:"${p.id}"}, ${JSON.stringify(p.go)}))'>Follow</button></div>
     <div class="rf">A room works on every level — from the boundary picker to a container’s graph. Entering by the link is open only to members of ${esc(ORG.name)}, and the name comes from the account. If the leader goes into a closed boundary you have no access to, following stops, and it says so.</div></div>`;
 }
 function popCmdk() {
@@ -1953,14 +2431,12 @@ function popCodeVer() {
   const row = (i, cls, letter) => i === CN
     ? `<div class="vrow"><span class="vcur ${cls}">${letter}</span><b>Live</b><span>the running service’s graph via live_graph_url</span><span class="d">now</span></div>`
     : `<div class="vrow"><span class="vcur ${cls}">${letter}</span><b>${codeName(i)}</b><span>${CODE_VERS[i][1]} · ${CODE_VERS[i][2]} · ${esc(CODE_VERS[i][3])}</span><span class="d">${CODE_VERS[i][4]}</span></div>`;
-  const between = range ? CODE_VERS.slice(a + 1, b).filter((_, k) => !CODE_SMALL.has(a + 1 + k)).length : 0;
   const snapHint = S.snap ? `<div class="vrow" style="background:#fffbeb;border-radius:6px;padding:6px 8px;margin-top:6px">${I.clock}<span>At the selected catalog moment the version in effect was <b>v1.3.0</b></span><span class="d lnk2" onclick="go({codeMode:'one',codeB:11,codeA:null,pop:null})">open it</span></div>` : "";
   return `<div class="pop" style="top:94px;left:268px;width:700px;padding:12px 16px 4px">
     <div style="display:flex;align-items:flex-start;gap:12px"><div style="flex:1"><div style="font-size:13px;font-weight:600">Graph versions · ${esc(c.name)}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">The graph history from the repository via graph_history_url, and Live — as in Maxitor today</div></div>
       <div class="seg"><button class="${range ? "" : "on"}" onclick="go({codeMode:'one',codeA:null})">One version</button><button class="${range ? "on" : ""}" onclick="go({codeMode:'range'})">Comparison</button></div></div>
     <div style="margin:8px 0 2px">${codeTrackSvg(668)}</div>
     <div style="border-top:1px solid var(--line2);padding-top:6px">${range ? row(a, "a", "A") : ""}${row(b, "b", range ? "B" : "")}</div>
-    ${range ? `<div class="vrow"><span style="color:var(--muted)">Between A and B: ${between} ${between === 1 ? "change" : "changes"} of the graph</span><span class="d"><button class="btn2 pri" onclick="go({pop:null})">Show the changes on the graph</button></span></div>` : ""}
     ${snapHint}
     <div class="pfoot" style="padding:8px 0"><span>A big dot — the graph changed, a small one — only the version was raised · code time, not catalog time</span></div></div>`;
 }
@@ -1998,7 +2474,7 @@ function popSnap() {
   const back = sc.code ? (S.codeVer ? `<span class="lnk2" onclick="go({codeVer:null,pop:null})">Back to Live</span>` : "")
     : S.cmp ? `<span class="lnk2" onclick="go({cmp:null,pop:null})">Close the comparison</span>` : (S.snap ? `<span class="lnk2" onclick="go({snap:null,snapInfo:null,pop:null})">Back to now</span>` : "");
   const head = range
-    ? `<span><b style="color:var(--ink)">A ${la}</b> → <b style="color:var(--ink)">B ${lb}</b> · ${count} ${pl(count, "change", "changes", "changes")} on this page</span><button class="btn2 pri" onclick="go({cmp:'${la}|${lb}',snap:null,snapInfo:null,pop:null})">Show on the page</button>`
+    ? `<span><b style="color:var(--ink)">A ${la}</b> → <b style="color:var(--ink)">B ${lb}</b> · ${count} ${pl(count, "change", "changes", "changes")} on this page</span><button class="mx-button pri" onclick="go({cmp:'${la}|${lb}',snap:null,snapInfo:null,pop:null})">Show on the page</button>`
     : `<span><b style="color:var(--ink)">${label}</b> · ${data[sel]} ${sc.code ? "graph changes" : "changes"}</span><span>total on the track: ${total}</span>`;
   return `<div class="pop" style="top:46px;right:46px;width:720px;padding:12px 16px 4px">
     <div style="display:flex;align-items:flex-start;gap:12px"><div style="flex:1"><div style="font-size:13px;font-weight:600">Change history · ${esc(sc.title)}</div><div style="font-size:11.5px;color:var(--muted);margin-top:2px">Counted: ${esc(sc.what)}</div></div>
@@ -2026,7 +2502,7 @@ function sbAdmin() {
 }
 function viewAdmin() {
   const v = S.adm === "ents" ? viewAdmEnts() : viewAdmUsers();
-  v.world = v.world.replace('<div class="wcard">', '<div class="wcard wide">').replace(/<table class="tbl/g, '<table class="tbl adm');
+  v.world = v.world.replace('<div class="wcard">', '<div class="wcard wide admin-surface admin-people">').replace(/<table class="tbl/g, '<table class="tbl adm');
   return v;
 }
 function viaKey(u) { return u.via === "first" ? "first" : "invite"; }
@@ -2062,7 +2538,7 @@ function viewAdmUsers() {
     <td>${u.admin ? '<span class="badge b-adm">Administrator</span>' : '<span class="mut">User</span>'}</td>
     <td class="wr">${access(u)}</td><td class="mut wr">${owns(u)}</td><td class="mut">${viaShort(u)}</td><td class="mut">${u.st === "removed" ? "removed " + u.gone : u.seen}</td></tr>`).join("");
   return { tabs, filter, fkey: "usr", world: wcard("Users", `The users of ${esc(ORG.name)} and their state by lifecycle. Removed users are hidden by the filter on the left but do not disappear from the list: what they owned stays theirs.`,
-    `<div class="wbar"><div class="inp">${I.search}&nbsp; Find by name or email…</div><span class="spacer"></span><button class="btn2 pri" onclick="go({pop:'invite'})">${I.mail}Invite</button></div>
+    `<div class="wbar"><div class="inp">${I.search}&nbsp; Find by name or email…</div><span class="spacer"></span><button class="mx-button pri" onclick="go({pop:'invite'})">${I.mail}Invite</button></div>
      <table class="tbl"><tr><th>User</th><th>State</th><th>Role</th><th>Access</th><th>Owns</th><th>Appeared</th><th>Last sign-in</th></tr>${tr}</table>`) };
 }
 function viewAdmEnts() {
@@ -2084,7 +2560,7 @@ function viewAdmEnts() {
       <td class="mut wr">${managerText(e.id)}</td></tr>`;
   }).join("");
   return { filter, fkey: "aent", world: wcard("The organization’s boundaries", `All boundaries of ${esc(ORG.name)}, including closed ones you have no access to. Of those, only the name, owner and access list are visible here.`,
-    `<div class="wbar"><div class="inp">${I.search}&nbsp; Find a boundary…</div><span class="spacer"></span><button class="btn2 pri" onclick="go({pop:'newent'})">+ New boundary</button></div>
+    `<div class="wbar"><div class="inp">${I.search}&nbsp; Find a boundary…</div><span class="spacer"></span><button class="mx-button pri" onclick="go({pop:'newent'})">+ New boundary</button></div>
      <table class="tbl"><tr><th>Boundary</th><th>Access</th><th>Owner</th><th>Explicit access</th><th>Products</th><th>For you</th><th>Manages access</th></tr>${tr}</table>`) };
 }
 function userDrawer() {
@@ -2095,7 +2571,7 @@ function userDrawer() {
                  active: [["Block", `admSet('${u.id}',{st:'blocked'})`, "x"], ["Remove", "go({pop:'rm'})", "danger x"]],
                  blocked: [["Unblock", `admSet('${u.id}',{st:'active'})`, "pri"], ["Remove", "go({pop:'rm'})", "danger x"]],
                  removed: [] }[u.st];
-  const btns = acts.map(([t, on, cls]) => { const dis = last && cls.includes("x"); return `<button class="btn2 ${cls.replace("x", "")}${dis ? " dis" : ""}" ${dis ? 'title="The last active administrator"' : `onclick="${on}"`}>${t}</button>`; }).join("");
+  const btns = acts.map(([t, on, cls]) => { const dis = last && cls.includes("x"); return `<button class="mx-button ${cls.replace("x", "")}${dis ? " dis" : ""}" ${dis ? 'title="The last active administrator"' : `onclick="${on}"`}>${t}</button>`; }).join("");
   const admDis = last || u.st === "removed" || u.st === "blocked";
   const acc = ALL_ENTS().map(e => {
     const a = ADM_ENTS[e.id], own = a.owner === u.id;
@@ -2131,7 +2607,7 @@ function entAccessDrawer() {
     ? "Open: every user of the organization has access. The list below is kept but has no effect while the boundary is open. If it is closed, only those on the list keep access."
     : "Closed: only those on the list have access. If it is opened, everyone gets access, and nobody loses it.";
   const self = !mine && meAdmin()
-    ? `<div class="hintb warn2">You have no access to ${esc(shortEnt(e))}: only the name, the owner and the access list are visible here. ${cm ? `Owner ${o ? "blocked" : "not appointed"}, so you manage access as the administrator.` : `Access is granted by the owner, ${esc(o.name)}.`}</div>${cm ? `<button class="btn2 pri" onclick="grant('${e.id}','ak')">Grant access to myself</button><div class="fine2">The grant stays in the catalog history: who, to whom and when. It is visible on the time track.</div>` : ""}`
+    ? `<div class="hintb warn2">You have no access to ${esc(shortEnt(e))}: only the name, the owner and the access list are visible here. ${cm ? `Owner ${o ? "blocked" : "not appointed"}, so you manage access as the administrator.` : `Access is granted by the owner, ${esc(o.name)}.`}</div>${cm ? `<button class="mx-button pri" onclick="grant('${e.id}','ak')">Grant access to myself</button><div class="fine2">The grant stays in the catalog history: who, to whom and when. It is visible on the time track.</div>` : ""}`
     : "";
   const list = a.granted.map(id => {
     const u = au(id), own = id === a.owner;
@@ -2162,11 +2638,11 @@ function popInvite() {
     <div class="sub">${esc(ORG.name)}. The user appears in the “Invitation sent” state and becomes active once they accept the invitation.</div>
     <div class="lab">Email</div><div class="inp">kirill.belov@partner-stroy.ru</div>
     <div class="lab">Name · optional, the person can correct it themselves</div><div class="inp">Kirill Belov</div>
-    <div class="arow"><div class="an">Organization administrator<div class="as">will be able to invite, block and remove users and create boundaries</div></div><span class="tg"></span></div>
+    <div class="arow"><div class="an">Organization administrator<div class="as">can invite, block and remove users and create boundaries</div></div><span class="tg"></span></div>
     <div class="lab" style="margin-top:12px">Access</div>
     <div class="arow">${I.land}<div class="an">Open boundaries · ${nOpen}<div class="as">available at once, nothing to choose</div></div><span class="yes">✓</span></div>
     ${closed}
-    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 pri" onclick="invite()">Send the invitation</button></div></div>`;
+    <div class="ft"><button class="mx-button" onclick="go({pop:null})">Cancel</button><button class="mx-button pri" onclick="invite()">Send the invitation</button></div></div>`;
 }
 function popRemove() {
   const u = au(S.usr);
@@ -2175,7 +2651,7 @@ function popRemove() {
     <h3>Remove the user for good?</h3>
     <div class="sub"><b>${esc(u.name)}</b> · ${esc(u.email)}. “Removed” is a final state: the user cannot be brought back and will not be able to sign in to Maxitor again.</div>
     ${u.owns.length ? `<div class="lab">Stays with the user until the owner is changed</div><div class="owns">${u.owns.map(o => `<span class="cchip">${esc(o)}</span>`).join("")}</div><div class="fine2">Wherever the user is the owner, it will be visible that the owner is removed.${u.owns.some(o => o.startsWith("boundary")) ? " The administrator will appoint a new owner of their boundary: without an active owner this is allowed." : ""}</div>` : ""}
-    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 dangerf" onclick="admRemove('${u.id}')">Remove for good</button></div></div>`;
+    <div class="ft"><button class="mx-button" onclick="go({pop:null})">Cancel</button><button class="mx-button dangerf" onclick="admRemove('${u.id}')">Remove for good</button></div></div>`;
 }
 function popNewEnt() {
   return `<div class="scrim" onclick="go({pop:null})"></div><div class="dlg">
@@ -2186,7 +2662,7 @@ function popNewEnt() {
     <div class="lab">Access</div><div class="sgx" style="margin-bottom:12px"><span class="on">Open</span><span>Closed</span></div>
     <div class="lab">Owner · optional</div><div class="inp"><span class="who">${uav(au("ie"))}Ilya Ershov</span><span style="flex:1"></span>${I.down}</div>
     <div class="fine2">The owner opens and closes the boundary and grants access to it. While there is no owner, the administrator does this.</div>
-    <div class="ft"><button class="btn2" onclick="go({pop:null})">Cancel</button><button class="btn2 pri" onclick="go({pop:null})">Create the boundary</button></div></div>`;
+    <div class="ft"><button class="mx-button" onclick="go({pop:null})">Cancel</button><button class="mx-button pri" onclick="go({pop:null})">Create the boundary</button></div></div>`;
 }
 
 function render() {

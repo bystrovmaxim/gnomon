@@ -59,7 +59,7 @@ export function TopRow({
         </button>
         <span className="mx-logo"><span className="mx-logo-mark">M</span><span className="mx-logo-name">Maxitor</span></span>
         <span className="mx-org">
-          <Link className="mx-org-name" href={`/w/${current.code}`}><span className="mx-org-kind">org</span>{current.name}</Link>
+          <Link title={current.name} className="mx-org-name" href={`/w/${current.code}`}><span className="mx-org-kind">org</span>{current.name}</Link>
           {orgs.length > 1 ? (
             <button type="button" className="mx-org-switch" title="Your organizations" aria-label="Your organizations" onClick={() => setPop(pop === "orgs" ? null : "orgs")}>
               <Icon.down />
@@ -71,9 +71,9 @@ export function TopRow({
             <span key={`${index}-${step.title}`} style={{ display: "contents" }}>
               <span className="mx-path-sep">›</span>
               {step.level === null ? (
-                <span className="mx-path-step">{step.title}</span>
+                <span title={step.title} className="mx-path-step">{step.title}</span>
               ) : (
-                <button type="button" className="mx-path-step mx-path-link" onClick={() => onCrumb(step.level as number)} title="Step the panel out to this level">
+                <button type="button" className="mx-path-step mx-path-link" onClick={() => onCrumb(step.level as number)} title={`${step.title} — Step the panel out to this level`}>
                   {step.title}
                 </button>
               )}

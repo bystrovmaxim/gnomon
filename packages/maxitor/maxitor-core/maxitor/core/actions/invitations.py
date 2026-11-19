@@ -29,6 +29,7 @@ from maxitor.core.actions.invitations_flow import (
     check_invitation_limits,
     expire_due,
     invitation_schema,
+    record_letter,
     send_letter,
     state_of,
 )
@@ -74,6 +75,7 @@ class SendParams(OrganizationParams):
     """The invitation form."""
 
     email: str = Field(min_length=3, max_length=254, description="The email to invite")
+    job_title: str | None = Field(default=None, max_length=160, description="Optional job title in the organization")
     is_admin: bool = Field(default=False, description="Whether accepting makes an administrator; administrators only")
 
 
@@ -182,16 +184,12 @@ class SendInvitationAction(BaseAction[SendParams, InvitationResult]):
             await send_letter(
                 box,
                 letters,
-                store,
-                organization_id=organization_id,
                 organization_name=organization["name"],
-                invitation_id=invitation_id,
                 email=email,
                 inviter_name=inviter["name"],
                 inviter_email=inviter["email"],
                 is_admin=params.is_admin,
                 expires_at=expires_at,
-                at=changed_at,
             )
             try:
                 await store.insert(
@@ -202,6 +200,7 @@ class SendInvitationAction(BaseAction[SendParams, InvitationResult]):
                         "email": email,
                         "invited_by": user_id,
                         "is_admin": params.is_admin,
+                        "job_title": params.job_title.strip() or None if params.job_title else None,
                         "status": "sent",
                         "sent_at": changed_at,
                         "letter_sent_at": changed_at,
@@ -222,6 +221,9 @@ class SendInvitationAction(BaseAction[SendParams, InvitationResult]):
                     raise
                 await refused("already_invited")
                 raise ConflictError("already_invited", moment=True) from None
+            await record_letter(
+                store, organization_id=organization_id, invitation_id=invitation_id, email=email, at=changed_at
+            )
 
         await store.in_transaction(work)
         await box.info(
@@ -291,16 +293,15 @@ class ResendInvitationAction(BaseAction[InvitationParams, InvitationResult]):
             await send_letter(
                 box,
                 letters,
-                store,
-                organization_id=organization_id,
                 organization_name=row["organization_name"],
-                invitation_id=row["id"],
                 email=row["email"],
                 inviter_name=row["invited_by_name"],
                 inviter_email=str(inviter["email"]) if inviter else "",
                 is_admin=bool(row["is_admin"]),
                 expires_at=row["expires_at"],
-                at=changed_at,
+            )
+            await record_letter(
+                store, organization_id=organization_id, invitation_id=row["id"], email=row["email"], at=changed_at
             )
             await store.update(
                 "invitation",

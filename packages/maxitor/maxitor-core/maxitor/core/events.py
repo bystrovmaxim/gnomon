@@ -243,11 +243,11 @@ class InvitationLimitReachedEvent(BaseEvent):
 
 
 class UserStateChangedEvent(BaseEvent):
-    """An administrator blocked, unblocked or removed a user (info)."""
+    """An administrator blocked or unblocked a user (info)."""
 
     organization_id: str = Field(description="The organization")
     user_id: str = Field(description="The user changed")
-    status: str = Field(description="The new state: active, blocked or removed")
+    status: str = Field(description="The new state: active or blocked")
     by_user_id: str = Field(description="The administrator who changed it")
 
 

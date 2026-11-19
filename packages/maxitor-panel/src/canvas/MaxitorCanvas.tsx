@@ -48,11 +48,11 @@ export function useCanvasOrNull(): CanvasApi | null {
   return useContext(CanvasContext);
 }
 
-export function MaxitorCanvas({ bounds, children, label = "Canvas" }: { bounds: Bounds; children: ReactNode; label?: string }) {
+export function MaxitorCanvas({ bounds, children, label = "Canvas", initialCamera }: { bounds: Bounds; children: ReactNode; label?: string; initialCamera?: Camera }) {
   const field = useRef<HTMLDivElement>(null);
-  const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 1 });
+  const [camera, setCamera] = useState<Camera>(initialCamera ?? { x: 0, y: 0, zoom: 1 });
   /** The person moved or zoomed the camera: the scene is no longer fitted by itself. */
-  const touched = useRef(false);
+  const touched = useRef(Boolean(initialCamera));
   const pointers = useRef(new Map<number, Point>());
   const gesture = useRef<{ camera: Camera; from: Point[] } | null>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });

@@ -37,6 +37,15 @@
       "type": "domain_event"
     },
     {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.AdministratorChangedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.AdministratorChangedEvent",
+      "type": "domain_event"
+    },
+    {
       "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.ForeignOrganizationRefusedEvent",
       "is_dag": false,
       "properties": {},
@@ -46,12 +55,120 @@
       "type": "domain_event"
     },
     {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.InvitationAcceptedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.InvitationAcceptedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.InvitationDeclinedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.InvitationDeclinedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.InvitationExpiredEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.InvitationExpiredEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.InvitationLetterSentAgainEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.InvitationLetterSentAgainEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.InvitationLimitReachedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.InvitationLimitReachedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.InvitationRefusedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.InvitationRefusedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.InvitationSentEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.InvitationSentEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.InvitationWithdrawnEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.InvitationWithdrawnEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.LastAdministratorKeptEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.LastAdministratorKeptEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.LetterNotSentEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.LetterNotSentEvent",
+      "type": "domain_event"
+    },
+    {
       "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.OrganizationRegisteredEvent",
       "is_dag": false,
       "properties": {},
       "relationship": "Aggregation",
       "source_id": "maxitor.core.domains.OrganizationDomain",
       "target_id": "maxitor.core.events.OrganizationRegisteredEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.UserStateChangedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.UserStateChangedEvent",
+      "type": "domain_event"
+    },
+    {
+      "id": "maxitor.core.domains.OrganizationDomain|domain_event|maxitor.core.events.WhoMayInviteChangedEvent",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.domains.OrganizationDomain",
+      "target_id": "maxitor.core.events.WhoMayInviteChangedEvent",
       "type": "domain_event"
     },
     {
@@ -464,6 +581,393 @@
       "type": "entity_relation"
     },
     {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent|lifecycle_transition|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:accepted|sent",
+      "is_dag": false,
+      "properties": {
+        "from_state": "sent",
+        "to_state": "accepted"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:accepted",
+      "type": "lifecycle_transition"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent|lifecycle_transition|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:declined|sent",
+      "is_dag": false,
+      "properties": {
+        "from_state": "sent",
+        "to_state": "declined"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:declined",
+      "type": "lifecycle_transition"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent|lifecycle_transition|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:expired|sent",
+      "is_dag": false,
+      "properties": {
+        "from_state": "sent",
+        "to_state": "expired"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:expired",
+      "type": "lifecycle_transition"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent|lifecycle_transition|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:withdrawn|sent",
+      "is_dag": false,
+      "properties": {
+        "from_state": "sent",
+        "to_state": "withdrawn"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:withdrawn",
+      "type": "lifecycle_transition"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_contains_state|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:accepted",
+      "is_dag": false,
+      "properties": {
+        "state_key": "accepted"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:accepted",
+      "type": "lifecycle_contains_state"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_contains_state|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:declined",
+      "is_dag": false,
+      "properties": {
+        "state_key": "declined"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:declined",
+      "type": "lifecycle_contains_state"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_contains_state|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:expired",
+      "is_dag": false,
+      "properties": {
+        "state_key": "expired"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:expired",
+      "type": "lifecycle_contains_state"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_contains_state|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent",
+      "is_dag": false,
+      "properties": {
+        "state_key": "sent"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent",
+      "type": "lifecycle_contains_state"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_contains_state|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:withdrawn",
+      "is_dag": false,
+      "properties": {
+        "state_key": "withdrawn"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:withdrawn",
+      "type": "lifecycle_contains_state"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_transition|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:accepted|sent",
+      "is_dag": false,
+      "properties": {
+        "from_state": "sent",
+        "to_state": "accepted"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:accepted",
+      "type": "lifecycle_transition"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_transition|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:declined|sent",
+      "is_dag": false,
+      "properties": {
+        "from_state": "sent",
+        "to_state": "declined"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:declined",
+      "type": "lifecycle_transition"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_transition|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:expired|sent",
+      "is_dag": false,
+      "properties": {
+        "from_state": "sent",
+        "to_state": "expired"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:expired",
+      "type": "lifecycle_transition"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status|lifecycle_transition|maxitor.core.entities.InvitationCoreEntity:lifecycle:status:withdrawn|sent",
+      "is_dag": false,
+      "properties": {
+        "from_state": "sent",
+        "to_state": "withdrawn"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:withdrawn",
+      "type": "lifecycle_transition"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|domain|maxitor.core.domains.OrganizationDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.domains.OrganizationDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:by_setting",
+      "is_dag": false,
+      "properties": {
+        "field_name": "by_setting",
+        "ordinal": 9
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:by_setting",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:created_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "created_at",
+        "ordinal": 10
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:created_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:decided_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "decided_at",
+        "ordinal": 8
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:decided_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:email",
+      "is_dag": false,
+      "properties": {
+        "field_name": "email",
+        "ordinal": 1
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:email",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:expires_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "expires_at",
+        "ordinal": 7
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:expires_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:id",
+      "is_dag": false,
+      "properties": {
+        "field_name": "id",
+        "ordinal": 0
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:id",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:is_admin",
+      "is_dag": false,
+      "properties": {
+        "field_name": "is_admin",
+        "ordinal": 3
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:is_admin",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:job_title",
+      "is_dag": false,
+      "properties": {
+        "field_name": "job_title",
+        "ordinal": 2
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:job_title",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:letter_sent_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "letter_sent_at",
+        "ordinal": 6
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:letter_sent_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:sent_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "sent_at",
+        "ordinal": 5
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:sent_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:status",
+      "is_dag": false,
+      "properties": {
+        "field_name": "status",
+        "ordinal": 4
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:status",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_field|maxitor.core.entities.InvitationCoreEntity:updated_at",
+      "is_dag": false,
+      "properties": {
+        "field_name": "updated_at",
+        "ordinal": 11
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:updated_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_relation|accepted_user",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "one",
+        "deprecated": false,
+        "description": "The user accepting it made; empty unless accepted",
+        "field_name": "accepted_user",
+        "has_inverse": false,
+        "optional": true,
+        "relation_type": "association"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.UserCoreEntity",
+      "type": "entity_relation"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_relation|decided_by",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "one",
+        "deprecated": false,
+        "description": "The administrator who withdrew it, or who switched the setting; empty when the account or the time decided",
+        "field_name": "decided_by",
+        "has_inverse": false,
+        "optional": true,
+        "relation_type": "association"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.UserCoreEntity",
+      "type": "entity_relation"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_relation|invited_by",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "one",
+        "deprecated": false,
+        "description": "The user who sent it",
+        "field_name": "invited_by",
+        "has_inverse": true,
+        "inverse_entity_id": "maxitor.core.entities.UserCoreEntity",
+        "inverse_field": "invitations_sent",
+        "optional": false,
+        "relation_type": "association"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.UserCoreEntity",
+      "type": "entity_relation"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|entity_relation|organization",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "one",
+        "deprecated": false,
+        "description": "The organization that invites",
+        "field_name": "organization",
+        "has_inverse": true,
+        "inverse_entity_id": "maxitor.core.entities.OrganizationCoreEntity",
+        "inverse_field": "invitations",
+        "optional": false,
+        "relation_type": "association"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.OrganizationCoreEntity",
+      "type": "entity_relation"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity|lifecycle|maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "is_dag": false,
+      "properties": {
+        "field_name": "status"
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.InvitationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "type": "lifecycle"
+    },
+    {
       "id": "maxitor.core.entities.OrganizationCoreEntity|domain|maxitor.core.domains.OrganizationDomain",
       "is_dag": true,
       "properties": {},
@@ -489,7 +993,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "created_at",
-        "ordinal": 3
+        "ordinal": 4
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.entities.OrganizationCoreEntity",
@@ -525,11 +1029,23 @@
       "is_dag": false,
       "properties": {
         "field_name": "updated_at",
-        "ordinal": 4
+        "ordinal": 5
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.entities.OrganizationCoreEntity",
       "target_id": "maxitor.core.entities.OrganizationCoreEntity:updated_at",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.OrganizationCoreEntity|entity_field|maxitor.core.entities.OrganizationCoreEntity:who_may_invite",
+      "is_dag": false,
+      "properties": {
+        "field_name": "who_may_invite",
+        "ordinal": 3
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.OrganizationCoreEntity",
+      "target_id": "maxitor.core.entities.OrganizationCoreEntity:who_may_invite",
       "type": "entity_field"
     },
     {
@@ -552,6 +1068,25 @@
       "type": "entity_relation"
     },
     {
+      "id": "maxitor.core.entities.OrganizationCoreEntity|entity_relation|invitations",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "many",
+        "deprecated": false,
+        "description": "The organization's invitations, whatever became of them",
+        "field_name": "invitations",
+        "has_inverse": true,
+        "inverse_entity_id": "maxitor.core.entities.InvitationCoreEntity",
+        "inverse_field": "organization",
+        "optional": false,
+        "relation_type": "composition"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.entities.OrganizationCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity",
+      "type": "entity_relation"
+    },
+    {
       "id": "maxitor.core.entities.OrganizationCoreEntity|entity_relation|users",
       "is_dag": false,
       "properties": {
@@ -568,6 +1103,23 @@
       "relationship": "Association",
       "source_id": "maxitor.core.entities.OrganizationCoreEntity",
       "target_id": "maxitor.core.entities.UserCoreEntity",
+      "type": "entity_relation"
+    },
+    {
+      "id": "maxitor.core.entities.OrganizationCoreEntity|entity_relation|who_may_invite",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "one",
+        "deprecated": false,
+        "description": "Who may invite: any user of the organization, or administrators only; any user at registration",
+        "field_name": "who_may_invite",
+        "has_inverse": false,
+        "optional": false,
+        "relation_type": "association"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.entities.OrganizationCoreEntity",
+      "target_id": "maxitor.core.entities.WhoMayInviteEnumEntity",
       "type": "entity_relation"
     },
     {
@@ -1041,18 +1593,6 @@
       "type": "lifecycle_transition"
     },
     {
-      "id": "maxitor.core.entities.UserCoreEntity:lifecycle:status:active|lifecycle_transition|maxitor.core.entities.UserCoreEntity:lifecycle:status:removed|active",
-      "is_dag": false,
-      "properties": {
-        "from_state": "active",
-        "to_state": "removed"
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.entities.UserCoreEntity:lifecycle:status:active",
-      "target_id": "maxitor.core.entities.UserCoreEntity:lifecycle:status:removed",
-      "type": "lifecycle_transition"
-    },
-    {
       "id": "maxitor.core.entities.UserCoreEntity:lifecycle:status:blocked|lifecycle_transition|maxitor.core.entities.UserCoreEntity:lifecycle:status:active|blocked",
       "is_dag": false,
       "properties": {
@@ -1134,18 +1674,6 @@
       "type": "lifecycle_transition"
     },
     {
-      "id": "maxitor.core.entities.UserCoreEntity:lifecycle:status|lifecycle_transition|maxitor.core.entities.UserCoreEntity:lifecycle:status:removed|active",
-      "is_dag": false,
-      "properties": {
-        "from_state": "active",
-        "to_state": "removed"
-      },
-      "relationship": "Composition",
-      "source_id": "maxitor.core.entities.UserCoreEntity:lifecycle:status",
-      "target_id": "maxitor.core.entities.UserCoreEntity:lifecycle:status:removed",
-      "type": "lifecycle_transition"
-    },
-    {
       "id": "maxitor.core.entities.UserCoreEntity:lifecycle:status|lifecycle_transition|maxitor.core.entities.UserCoreEntity:lifecycle:status:removed|blocked",
       "is_dag": false,
       "properties": {
@@ -1171,7 +1699,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "created_at",
-        "ordinal": 4
+        "ordinal": 5
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.entities.UserCoreEntity",
@@ -1195,11 +1723,23 @@
       "is_dag": false,
       "properties": {
         "field_name": "is_admin",
-        "ordinal": 2
+        "ordinal": 3
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.entities.UserCoreEntity",
       "target_id": "maxitor.core.entities.UserCoreEntity:is_admin",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.UserCoreEntity|entity_field|maxitor.core.entities.UserCoreEntity:job_title",
+      "is_dag": false,
+      "properties": {
+        "field_name": "job_title",
+        "ordinal": 2
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.UserCoreEntity",
+      "target_id": "maxitor.core.entities.UserCoreEntity:job_title",
       "type": "entity_field"
     },
     {
@@ -1219,7 +1759,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "status",
-        "ordinal": 3
+        "ordinal": 4
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.entities.UserCoreEntity",
@@ -1231,7 +1771,7 @@
       "is_dag": false,
       "properties": {
         "field_name": "updated_at",
-        "ordinal": 5
+        "ordinal": 6
       },
       "relationship": "Composition",
       "source_id": "maxitor.core.entities.UserCoreEntity",
@@ -1277,6 +1817,25 @@
       "type": "entity_relation"
     },
     {
+      "id": "maxitor.core.entities.UserCoreEntity|entity_relation|invitations_sent",
+      "is_dag": false,
+      "properties": {
+        "cardinality": "many",
+        "deprecated": false,
+        "description": "The invitations this user sent",
+        "field_name": "invitations_sent",
+        "has_inverse": true,
+        "inverse_entity_id": "maxitor.core.entities.InvitationCoreEntity",
+        "inverse_field": "invited_by",
+        "optional": false,
+        "relation_type": "association"
+      },
+      "relationship": "Association",
+      "source_id": "maxitor.core.entities.UserCoreEntity",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity",
+      "type": "entity_relation"
+    },
+    {
       "id": "maxitor.core.entities.UserCoreEntity|entity_relation|organization",
       "is_dag": false,
       "properties": {
@@ -1305,6 +1864,51 @@
       "source_id": "maxitor.core.entities.UserCoreEntity",
       "target_id": "maxitor.core.entities.UserCoreEntity:lifecycle:status",
       "type": "lifecycle"
+    },
+    {
+      "id": "maxitor.core.entities.WhoMayInviteEnumEntity|domain|maxitor.core.domains.OrganizationDomain",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.entities.WhoMayInviteEnumEntity",
+      "target_id": "maxitor.core.domains.OrganizationDomain",
+      "type": "domain"
+    },
+    {
+      "id": "maxitor.core.entities.WhoMayInviteEnumEntity|entity_field|maxitor.core.entities.WhoMayInviteEnumEntity:code",
+      "is_dag": false,
+      "properties": {
+        "field_name": "code",
+        "ordinal": 1
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.WhoMayInviteEnumEntity",
+      "target_id": "maxitor.core.entities.WhoMayInviteEnumEntity:code",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.WhoMayInviteEnumEntity|entity_field|maxitor.core.entities.WhoMayInviteEnumEntity:display_name",
+      "is_dag": false,
+      "properties": {
+        "field_name": "display_name",
+        "ordinal": 2
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.WhoMayInviteEnumEntity",
+      "target_id": "maxitor.core.entities.WhoMayInviteEnumEntity:display_name",
+      "type": "entity_field"
+    },
+    {
+      "id": "maxitor.core.entities.WhoMayInviteEnumEntity|entity_field|maxitor.core.entities.WhoMayInviteEnumEntity:id",
+      "is_dag": false,
+      "properties": {
+        "field_name": "id",
+        "ordinal": 0
+      },
+      "relationship": "Composition",
+      "source_id": "maxitor.core.entities.WhoMayInviteEnumEntity",
+      "target_id": "maxitor.core.entities.WhoMayInviteEnumEntity:id",
+      "type": "entity_field"
     },
     {
       "id": "maxitor.core.events.AccountCreatedEvent|field|maxitor.core.events.AccountCreatedEvent:account_id",
@@ -1358,6 +1962,42 @@
       "relationship": "Composition",
       "source_id": "maxitor.core.events.AddressCodeLostRaceEvent",
       "target_id": "maxitor.core.events.AddressCodeLostRaceEvent:code",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent|field|maxitor.core.events.AdministratorChangedEvent:by_user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.AdministratorChangedEvent",
+      "target_id": "maxitor.core.events.AdministratorChangedEvent:by_user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent|field|maxitor.core.events.AdministratorChangedEvent:is_admin",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.AdministratorChangedEvent",
+      "target_id": "maxitor.core.events.AdministratorChangedEvent:is_admin",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent|field|maxitor.core.events.AdministratorChangedEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.AdministratorChangedEvent",
+      "target_id": "maxitor.core.events.AdministratorChangedEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent|field|maxitor.core.events.AdministratorChangedEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.AdministratorChangedEvent",
+      "target_id": "maxitor.core.events.AdministratorChangedEvent:user_id",
       "type": "field"
     },
     {
@@ -1430,6 +2070,312 @@
       "relationship": "Composition",
       "source_id": "maxitor.core.events.ForeignOrganizationRefusedEvent",
       "target_id": "maxitor.core.events.ForeignOrganizationRefusedEvent:code",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent|field|maxitor.core.events.InvitationAcceptedEvent:account_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationAcceptedEvent",
+      "target_id": "maxitor.core.events.InvitationAcceptedEvent:account_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent|field|maxitor.core.events.InvitationAcceptedEvent:invitation_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationAcceptedEvent",
+      "target_id": "maxitor.core.events.InvitationAcceptedEvent:invitation_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent|field|maxitor.core.events.InvitationAcceptedEvent:is_admin",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationAcceptedEvent",
+      "target_id": "maxitor.core.events.InvitationAcceptedEvent:is_admin",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent|field|maxitor.core.events.InvitationAcceptedEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationAcceptedEvent",
+      "target_id": "maxitor.core.events.InvitationAcceptedEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent|field|maxitor.core.events.InvitationAcceptedEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationAcceptedEvent",
+      "target_id": "maxitor.core.events.InvitationAcceptedEvent:user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationDeclinedEvent|field|maxitor.core.events.InvitationDeclinedEvent:account_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationDeclinedEvent",
+      "target_id": "maxitor.core.events.InvitationDeclinedEvent:account_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationDeclinedEvent|field|maxitor.core.events.InvitationDeclinedEvent:invitation_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationDeclinedEvent",
+      "target_id": "maxitor.core.events.InvitationDeclinedEvent:invitation_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationDeclinedEvent|field|maxitor.core.events.InvitationDeclinedEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationDeclinedEvent",
+      "target_id": "maxitor.core.events.InvitationDeclinedEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationExpiredEvent|field|maxitor.core.events.InvitationExpiredEvent:invitation_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationExpiredEvent",
+      "target_id": "maxitor.core.events.InvitationExpiredEvent:invitation_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationExpiredEvent|field|maxitor.core.events.InvitationExpiredEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationExpiredEvent",
+      "target_id": "maxitor.core.events.InvitationExpiredEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent|field|maxitor.core.events.InvitationLetterSentAgainEvent:email_masked",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationLetterSentAgainEvent",
+      "target_id": "maxitor.core.events.InvitationLetterSentAgainEvent:email_masked",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent|field|maxitor.core.events.InvitationLetterSentAgainEvent:invitation_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationLetterSentAgainEvent",
+      "target_id": "maxitor.core.events.InvitationLetterSentAgainEvent:invitation_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent|field|maxitor.core.events.InvitationLetterSentAgainEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationLetterSentAgainEvent",
+      "target_id": "maxitor.core.events.InvitationLetterSentAgainEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent|field|maxitor.core.events.InvitationLetterSentAgainEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationLetterSentAgainEvent",
+      "target_id": "maxitor.core.events.InvitationLetterSentAgainEvent:user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent|field|maxitor.core.events.InvitationLimitReachedEvent:email_masked",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationLimitReachedEvent",
+      "target_id": "maxitor.core.events.InvitationLimitReachedEvent:email_masked",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent|field|maxitor.core.events.InvitationLimitReachedEvent:limit",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationLimitReachedEvent",
+      "target_id": "maxitor.core.events.InvitationLimitReachedEvent:limit",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent|field|maxitor.core.events.InvitationLimitReachedEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationLimitReachedEvent",
+      "target_id": "maxitor.core.events.InvitationLimitReachedEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent|field|maxitor.core.events.InvitationLimitReachedEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationLimitReachedEvent",
+      "target_id": "maxitor.core.events.InvitationLimitReachedEvent:user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent|field|maxitor.core.events.InvitationRefusedEvent:email_masked",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationRefusedEvent",
+      "target_id": "maxitor.core.events.InvitationRefusedEvent:email_masked",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent|field|maxitor.core.events.InvitationRefusedEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationRefusedEvent",
+      "target_id": "maxitor.core.events.InvitationRefusedEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent|field|maxitor.core.events.InvitationRefusedEvent:reason",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationRefusedEvent",
+      "target_id": "maxitor.core.events.InvitationRefusedEvent:reason",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent|field|maxitor.core.events.InvitationRefusedEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationRefusedEvent",
+      "target_id": "maxitor.core.events.InvitationRefusedEvent:user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent|field|maxitor.core.events.InvitationSentEvent:email_masked",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationSentEvent",
+      "target_id": "maxitor.core.events.InvitationSentEvent:email_masked",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent|field|maxitor.core.events.InvitationSentEvent:invitation_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationSentEvent",
+      "target_id": "maxitor.core.events.InvitationSentEvent:invitation_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent|field|maxitor.core.events.InvitationSentEvent:is_admin",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationSentEvent",
+      "target_id": "maxitor.core.events.InvitationSentEvent:is_admin",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent|field|maxitor.core.events.InvitationSentEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationSentEvent",
+      "target_id": "maxitor.core.events.InvitationSentEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent|field|maxitor.core.events.InvitationSentEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationSentEvent",
+      "target_id": "maxitor.core.events.InvitationSentEvent:user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent|field|maxitor.core.events.InvitationWithdrawnEvent:by_setting",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationWithdrawnEvent",
+      "target_id": "maxitor.core.events.InvitationWithdrawnEvent:by_setting",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent|field|maxitor.core.events.InvitationWithdrawnEvent:invitation_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationWithdrawnEvent",
+      "target_id": "maxitor.core.events.InvitationWithdrawnEvent:invitation_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent|field|maxitor.core.events.InvitationWithdrawnEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationWithdrawnEvent",
+      "target_id": "maxitor.core.events.InvitationWithdrawnEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent|field|maxitor.core.events.InvitationWithdrawnEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.InvitationWithdrawnEvent",
+      "target_id": "maxitor.core.events.InvitationWithdrawnEvent:user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.LastAdministratorKeptEvent|field|maxitor.core.events.LastAdministratorKeptEvent:by_user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.LastAdministratorKeptEvent",
+      "target_id": "maxitor.core.events.LastAdministratorKeptEvent:by_user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.LastAdministratorKeptEvent|field|maxitor.core.events.LastAdministratorKeptEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.LastAdministratorKeptEvent",
+      "target_id": "maxitor.core.events.LastAdministratorKeptEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.LastAdministratorKeptEvent|field|maxitor.core.events.LastAdministratorKeptEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.LastAdministratorKeptEvent",
+      "target_id": "maxitor.core.events.LastAdministratorKeptEvent:user_id",
       "type": "field"
     },
     {
@@ -1709,6 +2655,78 @@
       "relationship": "Composition",
       "source_id": "maxitor.core.events.SignedOutEvent",
       "target_id": "maxitor.core.events.SignedOutEvent:account_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent|field|maxitor.core.events.UserStateChangedEvent:by_user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.UserStateChangedEvent",
+      "target_id": "maxitor.core.events.UserStateChangedEvent:by_user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent|field|maxitor.core.events.UserStateChangedEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.UserStateChangedEvent",
+      "target_id": "maxitor.core.events.UserStateChangedEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent|field|maxitor.core.events.UserStateChangedEvent:status",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.UserStateChangedEvent",
+      "target_id": "maxitor.core.events.UserStateChangedEvent:status",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent|field|maxitor.core.events.UserStateChangedEvent:user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.UserStateChangedEvent",
+      "target_id": "maxitor.core.events.UserStateChangedEvent:user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent|field|maxitor.core.events.WhoMayInviteChangedEvent:by_user_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.WhoMayInviteChangedEvent",
+      "target_id": "maxitor.core.events.WhoMayInviteChangedEvent:by_user_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent|field|maxitor.core.events.WhoMayInviteChangedEvent:organization_id",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.WhoMayInviteChangedEvent",
+      "target_id": "maxitor.core.events.WhoMayInviteChangedEvent:organization_id",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent|field|maxitor.core.events.WhoMayInviteChangedEvent:who_may_invite",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.WhoMayInviteChangedEvent",
+      "target_id": "maxitor.core.events.WhoMayInviteChangedEvent:who_may_invite",
+      "type": "field"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent|field|maxitor.core.events.WhoMayInviteChangedEvent:withdrawn",
+      "is_dag": false,
+      "properties": {},
+      "relationship": "Composition",
+      "source_id": "maxitor.core.events.WhoMayInviteChangedEvent",
+      "target_id": "maxitor.core.events.WhoMayInviteChangedEvent:withdrawn",
       "type": "field"
     },
     {
@@ -4839,6 +5857,15 @@
       "type": "resource_entity"
     },
     {
+      "id": "maxitor.core.storage.core_storage.CoreStorage|resource_entity|maxitor.core.entities.InvitationCoreEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.storage.core_storage.CoreStorage",
+      "target_id": "maxitor.core.entities.InvitationCoreEntity",
+      "type": "resource_entity"
+    },
+    {
       "id": "maxitor.core.storage.core_storage.CoreStorage|resource_entity|maxitor.core.entities.OrganizationCoreEntity",
       "is_dag": true,
       "properties": {},
@@ -4899,6 +5926,15 @@
       "relationship": "Aggregation",
       "source_id": "maxitor.core.storage.core_storage.CoreStorage",
       "target_id": "maxitor.core.entities.UserCoreEntity",
+      "type": "resource_entity"
+    },
+    {
+      "id": "maxitor.core.storage.core_storage.CoreStorage|resource_entity|maxitor.core.entities.WhoMayInviteEnumEntity",
+      "is_dag": true,
+      "properties": {},
+      "relationship": "Aggregation",
+      "source_id": "maxitor.core.storage.core_storage.CoreStorage",
+      "target_id": "maxitor.core.entities.WhoMayInviteEnumEntity",
       "type": "resource_entity"
     }
   ],
@@ -5115,6 +6151,227 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor.core.entities.InvitationCoreEntity",
+      "label": "InvitationCoreEntity",
+      "properties": {
+        "description": "An organization's offer to one email to become its user",
+        "entity_kind": "core",
+        "entity_kind_label": "Core"
+      },
+      "type": "Entity"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:by_setting",
+      "label": "by_setting",
+      "properties": {
+        "description": "Whether the setting Who may invite withdrew it",
+        "field_annotation": "bool",
+        "field_type": "bool",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:created_at",
+      "label": "created_at",
+      "properties": {
+        "description": "When it was created",
+        "field_annotation": "datetime",
+        "field_type": "datetime",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:decided_at",
+      "label": "decided_at",
+      "properties": {
+        "description": "When it left the state sent; empty while sent",
+        "field_annotation": "Union[datetime, NoneType]",
+        "field_type": "datetime | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:email",
+      "label": "email",
+      "properties": {
+        "description": "The email it was sent to, in lower case",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:expires_at",
+      "label": "expires_at",
+      "properties": {
+        "description": "When it expires: sent_at plus MAXITOR_INVITATION_DAYS days",
+        "field_annotation": "datetime",
+        "field_type": "datetime",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:id",
+      "label": "id",
+      "properties": {
+        "description": "Invitation id, unique across Maxitor",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": true
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:is_admin",
+      "label": "is_admin",
+      "properties": {
+        "description": "Whether accepting makes an administrator",
+        "field_annotation": "bool",
+        "field_type": "bool",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:job_title",
+      "label": "job_title",
+      "properties": {
+        "description": "Offered job title, copied to the user on acceptance",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:letter_sent_at",
+      "label": "letter_sent_at",
+      "properties": {
+        "description": "When its last letter was sent",
+        "field_annotation": "datetime",
+        "field_type": "datetime",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status",
+      "label": "status",
+      "properties": {
+        "description": "Its state: sent, accepted, declined, withdrawn or expired",
+        "field_name": "status"
+      },
+      "type": "Lifecycle"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:accepted",
+      "label": "Accepted",
+      "properties": {
+        "attributes": {
+          "code": "accepted",
+          "display_name": "Accepted",
+          "sort_order": 2
+        },
+        "lifecycle_class_id": "maxitor.core.entities.InvitationLifecycle",
+        "state_key": "accepted"
+      },
+      "type": "StateFinal"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:declined",
+      "label": "Declined",
+      "properties": {
+        "attributes": {
+          "code": "declined",
+          "display_name": "Declined",
+          "sort_order": 3
+        },
+        "lifecycle_class_id": "maxitor.core.entities.InvitationLifecycle",
+        "state_key": "declined"
+      },
+      "type": "StateFinal"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:expired",
+      "label": "Expired",
+      "properties": {
+        "attributes": {
+          "code": "expired",
+          "display_name": "Expired",
+          "sort_order": 5
+        },
+        "lifecycle_class_id": "maxitor.core.entities.InvitationLifecycle",
+        "state_key": "expired"
+      },
+      "type": "StateFinal"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:sent",
+      "label": "Sent",
+      "properties": {
+        "attributes": {
+          "code": "sent",
+          "display_name": "Sent",
+          "sort_order": 1
+        },
+        "lifecycle_class_id": "maxitor.core.entities.InvitationLifecycle",
+        "state_key": "sent"
+      },
+      "type": "StateInitial"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:lifecycle:status:withdrawn",
+      "label": "Withdrawn",
+      "properties": {
+        "attributes": {
+          "code": "withdrawn",
+          "display_name": "Withdrawn",
+          "sort_order": 4
+        },
+        "lifecycle_class_id": "maxitor.core.entities.InvitationLifecycle",
+        "state_key": "withdrawn"
+      },
+      "type": "StateFinal"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:sent_at",
+      "label": "sent_at",
+      "properties": {
+        "description": "When its first letter was sent",
+        "field_annotation": "datetime",
+        "field_type": "datetime",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:status",
+      "label": "status",
+      "properties": {
+        "description": "Its state: sent, accepted, declined, withdrawn or expired",
+        "field_annotation": "InvitationLifecycle",
+        "field_type": "InvitationLifecycle",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.InvitationCoreEntity:updated_at",
+      "label": "updated_at",
+      "properties": {
+        "description": "When it last changed; empty if never",
+        "field_annotation": "Union[datetime, NoneType]",
+        "field_type": "datetime | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
       "id": "maxitor.core.entities.OrganizationCoreEntity",
       "label": "OrganizationCoreEntity",
       "properties": {
@@ -5176,6 +6433,18 @@
         "field_annotation": "Union[datetime, NoneType]",
         "field_type": "datetime | None",
         "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.OrganizationCoreEntity:who_may_invite",
+      "label": "who_may_invite",
+      "properties": {
+        "description": "Who may invite: any user of the organization, or administrators only; any user at registration",
+        "field_annotation": "AssociationOne[WhoMayInviteEnumEntity]",
+        "field_type": "WhoMayInviteEnumEntity",
+        "primary_key_hint": false,
+        "reference_qualname": "maxitor.core.entities.WhoMayInviteEnumEntity"
       },
       "type": "EntityField"
     },
@@ -5647,10 +6916,21 @@
       "type": "EntityField"
     },
     {
+      "id": "maxitor.core.entities.UserCoreEntity:job_title",
+      "label": "job_title",
+      "properties": {
+        "description": "Job title in this organization, independent of permissions",
+        "field_annotation": "Union[str, NoneType]",
+        "field_type": "str | None",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
       "id": "maxitor.core.entities.UserCoreEntity:lifecycle:status",
       "label": "status",
       "properties": {
-        "description": "The user's state: active, blocked or removed",
+        "description": "The user's state: active or blocked",
         "field_name": "status"
       },
       "type": "Lifecycle"
@@ -5712,7 +6992,7 @@
       "id": "maxitor.core.entities.UserCoreEntity:status",
       "label": "status",
       "properties": {
-        "description": "The user's state: active, blocked or removed",
+        "description": "The user's state: active or blocked",
         "field_annotation": "UserLifecycle",
         "field_type": "UserLifecycle",
         "primary_key_hint": false
@@ -5727,6 +7007,60 @@
         "field_annotation": "Union[datetime, NoneType]",
         "field_type": "datetime | None",
         "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.WhoMayInviteEnumEntity",
+      "label": "WhoMayInviteEnumEntity",
+      "properties": {
+        "description": "Who may invite into an organization",
+        "entity_kind": "enum",
+        "entity_kind_label": "Enumeration",
+        "values": [
+          {
+            "code": "any_user",
+            "display_name": "Any user of the organization",
+            "properties": {}
+          },
+          {
+            "code": "administrators",
+            "display_name": "Administrators only",
+            "properties": {}
+          }
+        ]
+      },
+      "type": "Entity"
+    },
+    {
+      "id": "maxitor.core.entities.WhoMayInviteEnumEntity:code",
+      "label": "code",
+      "properties": {
+        "description": "Stable value code — identity inside the dictionary",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.WhoMayInviteEnumEntity:display_name",
+      "label": "display_name",
+      "properties": {
+        "description": "Human label for UI and diagrams",
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": false
+      },
+      "type": "EntityField"
+    },
+    {
+      "id": "maxitor.core.entities.WhoMayInviteEnumEntity:id",
+      "label": "id",
+      "properties": {
+        "field_annotation": "str",
+        "field_type": "str",
+        "primary_key_hint": true
       },
       "type": "EntityField"
     },
@@ -5802,6 +7136,56 @@
       "label": "code",
       "properties": {
         "description": "The address code taken a moment before",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent",
+      "label": "AdministratorChangedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent:by_user_id",
+      "label": "by_user_id",
+      "properties": {
+        "description": "The administrator who changed it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent:is_admin",
+      "label": "is_admin",
+      "properties": {
+        "description": "The new mark",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.AdministratorChangedEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The user whose mark changed",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -5914,6 +7298,434 @@
       "label": "code",
       "properties": {
         "description": "The address code asked for",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent",
+      "label": "InvitationAcceptedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent:account_id",
+      "label": "account_id",
+      "properties": {
+        "description": "The account that accepted",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent:invitation_id",
+      "label": "invitation_id",
+      "properties": {
+        "description": "The invitation",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent:is_admin",
+      "label": "is_admin",
+      "properties": {
+        "description": "Whether the user is an administrator",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationAcceptedEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The user it made",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationDeclinedEvent",
+      "label": "InvitationDeclinedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.InvitationDeclinedEvent:account_id",
+      "label": "account_id",
+      "properties": {
+        "description": "The account that declined",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationDeclinedEvent:invitation_id",
+      "label": "invitation_id",
+      "properties": {
+        "description": "The invitation",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationDeclinedEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationExpiredEvent",
+      "label": "InvitationExpiredEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.InvitationExpiredEvent:invitation_id",
+      "label": "invitation_id",
+      "properties": {
+        "description": "The invitation",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationExpiredEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent",
+      "label": "InvitationLetterSentAgainEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent:email_masked",
+      "label": "email_masked",
+      "properties": {
+        "description": "The invited address, masked",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent:invitation_id",
+      "label": "invitation_id",
+      "properties": {
+        "description": "The invitation",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLetterSentAgainEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The user who sent it again",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent",
+      "label": "InvitationLimitReachedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent:email_masked",
+      "label": "email_masked",
+      "properties": {
+        "description": "The invited address, masked",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent:limit",
+      "label": "limit",
+      "properties": {
+        "description": "Which limit: address per minute, address per hour, inviter per hour, organization per day",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationLimitReachedEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The user who tried",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent",
+      "label": "InvitationRefusedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent:email_masked",
+      "label": "email_masked",
+      "properties": {
+        "description": "The invited address, masked",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent:reason",
+      "label": "reason",
+      "properties": {
+        "description": "administrators_only, administrator_mark, already_user or already_invited",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationRefusedEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The user who tried",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent",
+      "label": "InvitationSentEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent:email_masked",
+      "label": "email_masked",
+      "properties": {
+        "description": "The invited address, masked",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent:invitation_id",
+      "label": "invitation_id",
+      "properties": {
+        "description": "The invitation",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent:is_admin",
+      "label": "is_admin",
+      "properties": {
+        "description": "Whether accepting makes an administrator",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationSentEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The inviter's user",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent",
+      "label": "InvitationWithdrawnEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent:by_setting",
+      "label": "by_setting",
+      "properties": {
+        "description": "Whether the setting withdrew it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent:invitation_id",
+      "label": "invitation_id",
+      "properties": {
+        "description": "The invitation",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.InvitationWithdrawnEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The administrator who withdrew it or switched the setting",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.LastAdministratorKeptEvent",
+      "label": "LastAdministratorKeptEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.LastAdministratorKeptEvent:by_user_id",
+      "label": "by_user_id",
+      "properties": {
+        "description": "The user who asked",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.LastAdministratorKeptEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.LastAdministratorKeptEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The last active administrator the change aimed at",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true
@@ -6333,6 +8145,106 @@
       "label": "account_id",
       "properties": {
         "description": "The account signed out",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent",
+      "label": "UserStateChangedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent:by_user_id",
+      "label": "by_user_id",
+      "properties": {
+        "description": "The administrator who changed it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent:status",
+      "label": "status",
+      "properties": {
+        "description": "The new state: active or blocked",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.UserStateChangedEvent:user_id",
+      "label": "user_id",
+      "properties": {
+        "description": "The user changed",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent",
+      "label": "WhoMayInviteChangedEvent",
+      "properties": {},
+      "type": "Event"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent:by_user_id",
+      "label": "by_user_id",
+      "properties": {
+        "description": "The administrator who changed it",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent:organization_id",
+      "label": "organization_id",
+      "properties": {
+        "description": "The organization",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent:who_may_invite",
+      "label": "who_may_invite",
+      "properties": {
+        "description": "The new value: any_user or administrators",
+        "entity_schema": false,
+        "json_schema_value": false,
+        "required": true
+      },
+      "type": "Field"
+    },
+    {
+      "id": "maxitor.core.events.WhoMayInviteChangedEvent:withdrawn",
+      "label": "withdrawn",
+      "properties": {
+        "description": "How many invitations the switch withdrew",
         "entity_schema": false,
         "json_schema_value": false,
         "required": true

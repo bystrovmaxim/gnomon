@@ -30,8 +30,9 @@ class UserSchema(BaseSchema):
     account_id: str = Field(description="The account behind the user")
     name: str = Field(description="The user's name in the organization")
     email: str = Field(description="The account's email")
+    job_title: str | None = Field(default=None, description="Job title in the organization, independent of permissions")
     is_admin: bool = Field(description="Whether the user administers the organization")
-    state: str = Field(description="active, blocked or removed")
+    state: str = Field(description="active or blocked")
     appeared: str = Field(description="registered — the organization's first administrator — or invited")
     invited_by: PersonSchema | None = Field(description="The user who invited them; empty for the first administrator")
     created_at: datetime = Field(description="When the user was created")
@@ -48,6 +49,7 @@ def user_schema(row: dict[str, Any]) -> UserSchema:
         name=str(row["name"]),
         email=str(row["email"]),
         is_admin=bool(row["is_admin"]),
+        job_title=row.get("job_title"),
         state=str(row["status"]),
         appeared="invited" if row.get("invited_by") else "registered",
         invited_by=person(row, "invited_by"),

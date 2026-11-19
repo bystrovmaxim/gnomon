@@ -1,9 +1,11 @@
 // packages/maxitor/maxitor-core/web/components/OrganizationPage.tsx
-// Settings → Organization (mockup 10.1–10.3): the name and the address, the setting "Who may invite" as two choices,
-// the confirmation that names what a switch to administrators withdraws, and the notice after it.
+// Organization cards expose the current policy; editing retains the withdrawal confirmation.
 "use client";
+import { Button } from "@maxitor/panel";
+import { AdminDialog } from "./administration/AdminDialog";
 
 import { useState } from "react";
+import { useOpenPanel } from "@maxitor/panel";
 
 import { setWhoMayInvite, type Settings } from "@/app/users";
 import { Alert } from "@/components/fields";
@@ -12,7 +14,10 @@ import { day, when } from "@/components/InviteDialog";
 import type { Invitation, Refusal } from "@/lib/core";
 
 export function OrganizationPage({ code, initial }: { code: string; initial: Settings }) {
+  const openPanel = useOpenPanel();
   const [settings, setSettings] = useState(initial);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(initial.who_may_invite);
   const [asking, setAsking] = useState(false);
   const [withdrawn, setWithdrawn] = useState<Invitation[] | null>(null);
   const [switchedAt, setSwitchedAt] = useState<string | null>(null);
@@ -27,6 +32,7 @@ export function OrganizationPage({ code, initial }: { code: string; initial: Set
     setAsking(false);
     if ("refused" in answer) return setRefusal(answer.refused);
     setRefusal(null);
+    setEditing(false);
     setSettings({ ...settings, who_may_invite: value, pending_by_users: value === "administrators" ? [] : settings.pending_by_users });
     if (value === "administrators") {
       setWithdrawn(answer.withdrawn);
@@ -39,15 +45,12 @@ export function OrganizationPage({ code, initial }: { code: string; initial: Set
 
   const pending = settings.pending_by_users;
   return (
-    <div className="page">
-      <div className="inner">
-        <div className="ph">
-          <div className="tx">
-            <h2>Organization</h2>
-            <div className="sub"><b>{settings.name}</b> · maxitor.aoa.run/w/{settings.code}. The name and the address were set at registration; the address cannot be changed.</div>
-          </div>
-        </div>
-        <div className="sec">Who may invite</div>
+    <div className="page organization-page">
+      <div className="inner" data-room-anchor={`organization:${code}`}>
+        <section className="admin-surface" aria-label="Organization details">
+          <header className="admin-surface-head"><h3>Organization details</h3></header>
+          <dl className="admin-facts"><div><dt>Name</dt><dd>{settings.name}</dd></div><div><dt>Address</dt><dd>/w/{settings.code}</dd></div></dl>
+        </section>
         {refusal ? <Alert kind="bad">The setting was not changed ({refusal.error}).</Alert> : null}
         {withdrawn && switchedAt ? (
           <Alert kind="ok">
@@ -55,40 +58,41 @@ export function OrganizationPage({ code, initial }: { code: string; initial: Set
             {withdrawn.length
               ? `${withdrawn.length} ${withdrawn.length === 1 ? "invitation" : "invitations"} sent by ordinary users ${withdrawn.length === 1 ? "was" : "were"} withdrawn: ${withdrawn.map((i) => `${i.email} (by ${i.invited_by.name})`).join(", ")}. `
               : "No invitation of an ordinary user was waiting, so nothing was withdrawn. "}
-            <a className="lnk" href={`/w/${code}/core/settings/users?tab=invitations`}>See the invitations</a>.
+            <Button variant="link" className="lnk" type="button" onClick={() => openPanel("core", "/settings/users", { tab: "invitations" })}>See the invitations</Button>.
           </Alert>
         ) : null}
-        <div className={`choice${any ? " on" : ""}`} role="radio" aria-checked={any} tabIndex={0} onClick={() => { if (!any && !busy) void choose("any_user"); }}>
-          <span className="rad" />
-          <div>
-            <b>Any user of the organization</b>
-            <div>Every active user invites ordinary users from the menu under their icon. Administrators also invite administrators, here in Settings. This is how an organization starts.</div>
-            {any ? <div className="now">Chosen</div> : null}
-          </div>
-        </div>
-        <div className={`choice${any ? "" : " on"}`} role="radio" aria-checked={!any} tabIndex={0} onClick={() => { if (any && !busy) setAsking(true); }}>
-          <span className="rad" />
-          <div>
-            <b>Administrators only</b>
-            <div>An ordinary user cannot invite. Switching to this withdraws every invitation not yet accepted that an ordinary user sent; invitations administrators sent stay.</div>
-            {any ? null : <div className="now">Chosen</div>}
-          </div>
-        </div>
-        <div className="fine2">Only an administrator changes this, and the server checks it on every invitation — also one that does not come from the screen.</div>
-        <div className="sec">Invitations <span>— how long they wait</span></div>
-        <div className="orgkv">
-          <dl className="kv">
-            <dt>Lifetime</dt>
-            <dd>{settings.invitation_days} days — <code className="mono">MAXITOR_INVITATION_DAYS</code>, a setting of the core, the same for every organization</dd>
-            <dt>Limits</dt>
-            <dd>one email: one letter a minute, ten an hour · one inviter: thirty an hour · the organization: a hundred a day</dd>
+        <section className="admin-surface" aria-label="Invitation policy">
+          <header className="admin-surface-head"><h3>Invitation policy</h3><Button type="button" variant="primary" onClick={() => { setDraft(settings.who_may_invite); setEditing(true); }}>Edit</Button></header>
+          <dl className="admin-facts"><div><dt>Who may invite</dt><dd>{any ? "Any user of the organization" : "Administrators only"}</dd></div></dl>
+          <p className="fine2">Only administrators can change this policy.</p>
+        </section>
+        <section className="admin-surface" aria-label="Invitation limits">
+          <header className="admin-surface-head"><h3>Invitation limits</h3></header>
+          <dl className="admin-facts">
+            <div><dt>Lifetime</dt><dd>{settings.invitation_days} days</dd></div>
+            <div><dt>Per email</dt><dd>One letter a minute, ten an hour</dd></div>
+            <div><dt>Per inviter</dt><dd>Thirty an hour</dd></div>
+            <div><dt>Organization</dt><dd>A hundred a day</dd></div>
           </dl>
-        </div>
+        </section>
       </div>
+      {editing && !asking ? (
+        <AdminDialog title="Invitation policy" onClose={() => { if (!busy) setEditing(false); }}>
+          <div className="dlg">
+            <h3>Invitation policy</h3>
+            <fieldset className="admin-policy-options" disabled={busy}>
+              <legend className="fine2">Who may invite</legend>
+              <label className={`choice${draft === "any_user" ? " on" : ""}`}><input type="radio" name="invitation-policy" checked={draft === "any_user"} onChange={() => setDraft("any_user")} /><span><b>Any user of the organization</b><span className="admin-choice-description">May invite users. Only administrators may invite administrators.</span></span></label>
+              <label className={`choice${draft === "administrators" ? " on" : ""}`}><input type="radio" name="invitation-policy" checked={draft === "administrators"} onChange={() => setDraft("administrators")} /><span><b>Administrators only</b><span className="admin-choice-description">Only administrators may invite. Switching to this policy withdraws pending invitations sent by other users; existing members keep access.</span></span></label>
+            </fieldset>
+            {refusal ? <Alert kind="bad">The setting was not changed ({refusal.error}).</Alert> : null}
+            <div className="ft"><Button type="button" variant="secondary" disabled={busy} onClick={() => setEditing(false)}>Cancel</Button><Button type="button" variant="primary" disabled={busy || draft === settings.who_may_invite} onClick={() => { if (draft === "administrators") setAsking(true); else void choose("any_user"); }}>Save</Button></div>
+          </div>
+        </AdminDialog>
+      ) : null}
       {asking ? (
-        <>
-          <div className="scrim" onClick={() => setAsking(false)} />
-          <div className="dlg" role="dialog" aria-label="Administrators only?">
+        <AdminDialog title="Administrators only?" onClose={() => setAsking(false)}>
+          <div className="dlg">
             <h3>Administrators only?</h3>
             <div className="sub">
               From now on an ordinary user of {settings.name} cannot invite.{" "}
@@ -103,11 +107,11 @@ export function OrganizationPage({ code, initial }: { code: string; initial: Set
             ))}
             <div className="fine2">Invitations sent by administrators stay as they are. Users who already accepted stay too.</div>
             <div className="ft">
-              <button type="button" className="btn2" onClick={() => setAsking(false)}>Cancel</button>
-              <button type="button" className="btn2 pri" disabled={busy} onClick={() => void choose("administrators")}>Switch{pending.length ? ` and withdraw ${pending.length}` : ""}</button>
+              <Button type="button" variant="secondary" onClick={() => setAsking(false)}>Cancel</Button>
+              <Button type="button" variant="primary" disabled={busy} onClick={() => void choose("administrators")}>Switch{pending.length ? ` and withdraw ${pending.length}` : ""}</Button>
             </div>
           </div>
-        </>
+        </AdminDialog>
       ) : null}
     </div>
   );

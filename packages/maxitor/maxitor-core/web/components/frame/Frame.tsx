@@ -16,7 +16,7 @@ import { TreeHead } from "@/components/frame/TreeHead";
 import { ScaleContext, useWatermark, type Mode, type ScaleBridge } from "@/components/scale/bridge";
 import { fixtureSource } from "@/components/scale/fixtures";
 import { Scale } from "@/components/scale/Scale";
-import { gatewaySource } from "@/components/scale/source";
+import { administrationSource, gatewaySource } from "@/components/scale/source";
 import { keepPlace } from "@/app/actions";
 import { carried, queryString, readAddress, windowAddress } from "@/lib/address";
 import { placeOf } from "@/lib/place";
@@ -259,9 +259,9 @@ export function Frame({
   const sourceNow = address?.owner === "core" ? watermark : watermark === null ? null : "read";
   const source = useMemo(() => {
     if (!history || !address?.owner || !watermark) return null;
-    if (address.owner === "core") return fixtureSource(history, watermark);
+    if (address.owner === "core") return address.path.startsWith("/settings/") ? administrationSource(current.code, address.path, JSON.parse(queryKey)) : fixtureSource(history, watermark);
     return gatewaySource(address.owner, current.code, history, opened?.scope ?? {}, JSON.parse(queryKey) as Record<string, string>);
-  }, [address?.owner, current.code, history, opened?.scope, queryKey, sourceNow]);
+  }, [address?.owner, address?.path, current.code, history, opened?.scope, queryKey, sourceNow]);
   const milestone = useCallback(
     (chosen: Milestone) => {
       const opens = chosen.opens ?? chosen.link;

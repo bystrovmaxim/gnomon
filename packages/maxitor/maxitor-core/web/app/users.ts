@@ -8,8 +8,8 @@ import { core, type Invitation, type Person, type Refusal } from "@/lib/core";
 /** What a form gets back when the backend refuses. */
 export type Refused = { refused: Refusal };
 
-export async function sendInvitation(code: string, email: string, isAdmin: boolean): Promise<{ invitation: Invitation } | Refused> {
-  const answer = await core<{ invitation: Invitation }>("POST", "/api/v1/organizations/invitations", { code, email, is_admin: isAdmin });
+export async function sendInvitation(code: string, email: string, isAdmin: boolean, jobTitle = ""): Promise<{ invitation: Invitation } | Refused> {
+  const answer = await core<{ invitation: Invitation }>("POST", "/api/v1/organizations/invitations", { code, email, is_admin: isAdmin, job_title: jobTitle || null });
   return answer.ok ? answer.data : { refused: answer.refusal };
 }
 
@@ -51,6 +51,7 @@ export type User = {
   email: string;
   is_admin: boolean;
   state: "active" | "blocked" | "removed";
+  job_title?: string | null;
   appeared: "registered" | "invited";
   invited_by: Person | null;
   created_at: string;
@@ -77,10 +78,10 @@ export async function unblockUser(code: string, userId: string): Promise<{ user:
   return changeUser("unblock", code, userId);
 }
 
-export async function removeUser(code: string, userId: string): Promise<{ user: User } | Refused> {
-  return changeUser("remove", code, userId);
-}
-
 export async function setAdministrator(code: string, userId: string, isAdmin: boolean): Promise<{ user: User } | Refused> {
   return changeUser("administrator", code, userId, { is_admin: isAdmin });
+}
+
+export async function setJobTitle(code: string, userId: string, jobTitle: string): Promise<{ user: User } | Refused> {
+  return changeUser("job-title", code, userId, { job_title: jobTitle || null });
 }

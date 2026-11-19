@@ -8,6 +8,7 @@
 import { PALETTE, paletteColour, type PaletteColour } from "@maxitor/tokens";
 import { useEffect, useRef, useState } from "react";
 
+import { StatusDisk } from "../compare/StatusDisk";
 import { openDateRangePicker } from "../pickers/DatePickers";
 import { boundDate, howSet, readRange, writeRange } from "../pickers/dates";
 import type { Query } from "../protocol";
@@ -17,7 +18,7 @@ import type { ChoiceFilter, FilterSection, RangeFilter, TextFilter } from "./typ
 
 type Write = (name: string, value: string | null) => void;
 
-/** The status signs a disk may carry; a sign is drawn larger than a person's initials, as the graph viewer's disks are. */
+/** Status signs use the graph viewer's production SVG; initials use the same framed disk. */
 const SIGNS = new Set(["+", "−", "~", "="]);
 
 /** How long typing in a text waits before it is written, so one search is one history entry. */
@@ -139,7 +140,11 @@ function Choice({ section, listed, write }: { section: ChoiceFilter; listed: str
           className={`mx-filter-row${on.has(row.key) ? "" : " off"}${row.absent ? " absent" : ""}`}
           onClick={() => write(section.param, toggleFilter(listed, keys, row.key))}
         >
-          <span className={`mx-disk${SIGNS.has(row.mark ?? "") ? " sign" : ""}`} style={{ background: colourOf(row.colour) }}>{row.mark ?? ""}</span>
+          {SIGNS.has(row.mark ?? "") ? (
+            <StatusDisk fill={colourOf(row.colour)} sign={row.mark!} />
+          ) : (
+            <StatusDisk fill={colourOf(row.colour)} sign={row.mark ?? ""} size={9} />
+          )}
           <span className="mx-filter-label" title={row.label}>{row.label}</span>
         </button>
       ))}

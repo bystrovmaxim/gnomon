@@ -181,7 +181,7 @@
   .cookie .ck { font-size: 22px; }
   .cookie b { color: var(--ink); }
   .cookie a { color: var(--ink); text-decoration: underline; cursor: pointer; }
-  .cookie .btn2 { margin-left: auto; }
+  .cookie :is(.btn2,.mx-button) { margin-left: auto; }
   .auth.blocked .card { opacity: .55; pointer-events: none; }
   .inp.pw { justify-content: space-between; letter-spacing: .18em; }
   .inp.pw .eye { letter-spacing: 0; color: var(--muted); font-size: 12px; cursor: pointer; }
@@ -324,7 +324,7 @@
   .req.ok { color: #15803d; } .req.bad { color: var(--bad); }
   .empty-st { background: #fff; border: 1.5px dashed rgba(15,23,42,.16); border-radius: 12px; padding: 34px 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
   .empty-st b { color: var(--ink2); font-size: 15px; display: block; margin-bottom: 4px; }
-  .empty-st .btn2 { margin-top: 14px; }
+  .empty-st :is(.btn2,.mx-button) { margin-top: 14px; }
   .dlg .grab { display: none; }
   .dsec { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
   .chk { display: flex; gap: 9px; font-size: 13px; padding: 8px 0; border-bottom: 1px solid var(--line2); line-height: 1.45; }
@@ -386,7 +386,7 @@
     .otp .gap { width: 2px; }
     .icons button, .icons a { height: 48px; }
     .cookie { width: auto; left: 10px; right: 10px; transform: none; bottom: 12px; flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
-    .cookie .btn2 { margin-left: 0; width: 100%; justify-content: center; height: 40px; }
+    .cookie :is(.btn2,.mx-button) { margin-left: 0; width: 100%; justify-content: center; height: 40px; }
     .doc { padding: 0; }
     .doc .paper { width: auto; border: 0; border-radius: 0; padding: 22px 18px 26px; font-size: 14.5px; }
     .doc h1 { font-size: 22px; }
@@ -405,7 +405,7 @@
     .page { padding: 16px 12px 28px; }
     .ph { flex-direction: column; gap: 12px; }
     .ph h2 { font-size: 21px; }
-    .ph .btn2 { height: 36px; font-size: 13.5px; }
+    .ph :is(.btn2,.mx-button) { height: 36px; font-size: 13.5px; }
     .tabs { margin: 14px 0 12px; }
     .tabs button { flex: 1; justify-content: center; font-size: 14px; padding: 10px 6px; }
     .search { max-width: none; height: 44px; }
@@ -413,15 +413,15 @@
     .prow { flex-wrap: wrap; padding: 12px; gap: 12px; }
     .pmain { flex-basis: calc(100% - 52px); }
     .pacts { width: 100%; }
-    .pacts .btn2 { flex: 1; justify-content: center; height: 40px; font-size: 13.5px; }
+    .pacts :is(.btn2,.mx-button) { flex: 1; justify-content: center; height: 40px; font-size: 13.5px; }
     .grid { grid-template-columns: 1fr; }
-    .mcard .ft .btn2 { height: 40px; padding: 0 18px; font-size: 13.5px; }
+    .mcard .ft :is(.btn2,.mx-button) { height: 40px; padding: 0 18px; font-size: 13.5px; }
     .dlg.sheet { top: auto; bottom: 0; left: 0; right: 0; transform: none; width: auto; max-height: 88vh; border-radius: 20px 20px 0 0; padding: 8px 16px 22px; border: 0; }
     .dlg .grab { display: block; width: 40px; height: 5px; border-radius: 3px; background: #cbd5e1; margin: 0 auto 12px; }
     .dlg .ft { flex-direction: column-reverse; gap: 8px; }
-    .dlg .ft .btn2, .panel .pf .btn2 { width: 100%; justify-content: center; height: 46px; font-size: 15px; }
+    .dlg .ft :is(.btn2,.mx-button), .panel .pf :is(.btn2,.mx-button) { width: 100%; justify-content: center; height: 46px; font-size: 15px; }
     .dep { flex-wrap: wrap; }
-    .dep .btn2 { width: 100%; justify-content: center; height: 40px; }
+    .dep :is(.btn2,.mx-button) { width: 100%; justify-content: center; height: 40px; }
     .panel { top: 44px; left: 0; width: auto; border-left: 0; box-shadow: none; }
     .panel .pb { padding: 14px 16px 20px; }
     .panel .pf { padding: 10px 16px 18px; flex-direction: column-reverse; }
@@ -447,7 +447,7 @@
   .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.25); transition: left .15s; }
   .switch:checked { background: #0f172a; } .switch:checked::after { left: 14px; }
   .switch:disabled { opacity: .4; cursor: not-allowed; }
-  .stt.st-active { background: #dcfce7; color: #166534; } .stt.st-blocked { background: #fee2e2; color: #991b1b; } .stt.st-removed { background: #f1f5f9; color: #64748b; }
+  .stt.st-active { background: #dcfce7; color: #166534; } .stt.st-blocked { background: #fee2e2; color: #991b1b; }
   .stt.st-sent { background: #fef3c7; color: #92400e; } .stt.st-accepted { background: #dcfce7; color: #166534; } .stt.st-declined { background: #fee2e2; color: #991b1b; }
   .stt.st-withdrawn { background: #f1f5f9; color: #475569; } .stt.st-expired { background: #f1f5f9; color: #94a3b8; }
   .badge.usr { background: #f1f5f9; color: #475569; font-weight: 500; }
@@ -466,7 +466,7 @@
   .utbl .mut { color: var(--muted); }
   .utbl .wr { white-space: normal; }
   .utbl .acts2 { display: flex; gap: 6px; justify-content: flex-end; }
-  .utbl .btn2 { height: 26px; font-size: 12px; padding: 0 9px; }
+  .utbl :is(.btn2,.mx-button) { height: 26px; font-size: 12px; padding: 0 9px; }
   .utbl .lnk2 { cursor: pointer; }
   .who { display: inline-flex; align-items: center; gap: 8px; }
   .who .av { width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; font-size: 9.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; color: #334155; flex-shrink: 0; }
@@ -516,5 +516,7 @@
   @media (max-width: 520px) {
     .orow.inv { flex-wrap: wrap; }
     .orow.inv .ia { width: 100%; }
-    .orow.inv .ia .btn2 { flex: 1; justify-content: center; height: 40px; }
+    .orow.inv .ia :is(.btn2,.mx-button) { flex: 1; justify-content: center; height: 40px; }
   }
+
+.who .av { box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px rgba(0,0,0,.12); }

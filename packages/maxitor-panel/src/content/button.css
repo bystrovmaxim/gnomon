@@ -1,0 +1,15 @@
+/* Shared by live components and standalone mockups. */
+.mx-button.mx-button { box-sizing: border-box; min-height: var(--mx-action-height); border: var(--mx-line-width) solid var(--mx-line); border-radius: var(--mx-radius-md); background: var(--mx-surface); color: var(--mx-ink); padding: var(--mx-space-3) var(--mx-space-5); display: inline-flex; align-items: center; justify-content: center; gap: var(--mx-space-3); font-family: inherit; font-size: var(--mx-text-lg); line-height: 1.5; font-weight: 400; cursor: pointer; text-decoration: none; }
+.mx-button[data-variant="primary"], .mx-button.pri { background: var(--mx-ink); color: var(--mx-on-ink); border-color: var(--mx-ink); font-weight: 600; }
+.mx-button[data-variant="danger"], .mx-button.danger { color: var(--mx-bad); border-color: var(--mx-bad-line); }
+.mx-button.dangerf { background: var(--mx-bad); border-color: var(--mx-bad); color: var(--mx-on-ink); }
+.mx-button[data-variant="link"] { min-height: 0; border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-decoration: underline; text-underline-offset: var(--mx-ring-wide); }
+.mx-button[data-variant="icon"] { width: var(--mx-action-height); padding: var(--mx-space-3); border-color: transparent; background: transparent; }
+.mx-button:not(:disabled):hover { filter: brightness(.96); }
+.mx-button:focus-visible { outline: var(--mx-ring) solid var(--mx-ink); outline-offset: var(--mx-ring-wide); }
+.mx-button:disabled, .mx-button.dis { opacity: .45; cursor: not-allowed; }
+.mx-button svg { width: var(--mx-icon); height: var(--mx-icon); flex-shrink: 0; }
+@media (max-width:600px) { .mx-button.mx-button:not([data-variant="link"]) { min-height: var(--mx-action-height-phone); } }
+.device.phone .mx-button:not([data-variant="link"]) { min-height: var(--mx-action-height-phone); }
+
+.mx-button.mx-action { box-shadow: var(--mx-shadow-float); }

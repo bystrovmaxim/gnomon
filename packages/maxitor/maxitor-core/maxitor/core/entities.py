@@ -226,7 +226,7 @@ class OrganizationCoreEntity(BaseCoreEntity):
 
 
 class UserStateEntity(BaseStateEntity):
-    """A user's state in the organization: active, blocked or removed."""
+    """A user's state in the organization: active or blocked; removed is the lifecycle's terminal state only."""
 
     sort_order: int = Field(default=0, description="Display order of the states")
 
@@ -238,13 +238,14 @@ class UserStateEntity(BaseStateEntity):
 class UserLifecycle(Lifecycle[UserStateEntity]):
     """
     A user appears active — as the first administrator who registered the organization, or by accepting an
-    invitation. An active user can be blocked and unblocked; removal from any state is final.
+    invitation — and is blocked and unblocked from then on; a user is never removed. Removed is the terminal state
+    that AOA requires to be reachable in the declared graph; no application action takes that edge.
     """
 
     _template = (
         Lifecycle()
         .state(UserStateEntity.ACTIVE)
-        .to(UserStateEntity.BLOCKED, UserStateEntity.REMOVED)
+        .to(UserStateEntity.BLOCKED)
         .initial()
         .state(UserStateEntity.BLOCKED)
         .to(UserStateEntity.ACTIVE, UserStateEntity.REMOVED)
@@ -260,17 +261,19 @@ class UserCoreEntity(BaseCoreEntity):
     AI-CORE-BEGIN
     ROLE: Who an account is inside one organization; actions work for the user of the organization of the address.
     CONTRACT: Belongs to exactly one organization and one account. An organization's administrator manages only
-        their organization's users; blocking a user changes nothing in another organization. A blocked or removed
-        user cannot enter the organization from their next request on.
-    INVARIANTS: An organization and an account give at most one user among the users not removed. An organization
-        keeps at least one active administrator: the last one cannot be blocked, removed or lose the mark.
+        their organization's users; blocking a user changes nothing in another organization. A blocked user cannot
+        enter the organization from their next request on.
+    INVARIANTS: An organization and an account give at most one user, and it is never removed: plugins refer to a
+        user by the account (``core.user (organization_id, account_id)``). An organization keeps at least one
+        active administrator: the last one cannot be blocked or lose the mark.
     AI-CORE-END
     """
 
     id: str = Field(description="User id")
     name: str = Field(description="The user's name in this organization")
+    job_title: str | None = Field(default=None, max_length=160, description="Job title in this organization, independent of permissions")
     is_admin: bool = Field(default=False, description="Administrates the organization")
-    status: UserLifecycle = Field(description="The user's state: active, blocked or removed")
+    status: UserLifecycle = Field(description="The user's state: active or blocked")
 
     organization: Annotated[
         AssociationOne[OrganizationCoreEntity],
@@ -351,6 +354,7 @@ class InvitationCoreEntity(BaseCoreEntity):
 
     id: str = Field(description="Invitation id, unique across Maxitor")
     email: str = Field(description="The email it was sent to, in lower case")
+    job_title: str | None = Field(default=None, max_length=160, description="Offered job title, copied to the user on acceptance")
     is_admin: bool = Field(default=False, description="Whether accepting makes an administrator")
     status: InvitationLifecycle = Field(description="Its state: sent, accepted, declined, withdrawn or expired")
     sent_at: datetime = Field(description="When its first letter was sent")

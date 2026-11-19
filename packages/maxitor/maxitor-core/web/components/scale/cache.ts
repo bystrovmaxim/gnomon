@@ -12,12 +12,20 @@ export const CHUNK = 60;
 export type Chunk = { index: number; from: number; to: number };
 
 /** The chunks of bars `step` milliseconds wide that a stretch overlaps, from its start to the earlier of its end and now. */
-export function chunksOf(from: number, to: number, now: number, step: number): Chunk[] {
+export function chunksOf(from: number, to: number, now: number | string, step: number): Chunk[] {
   const size = CHUNK * step;
-  const end = Math.min(to, now);
+  // A watermark a few microseconds into a new chunk must include that chunk too.
+  const ceiling = typeof now === "number" ? now : Date.parse(now) + (Number(now.match(/\.\d{3}(\d{1,3})Z$/)?.[1] ?? 0) > 0 ? 1 : 0);
+  const end = Math.min(to, ceiling);
   const chunks: Chunk[] = [];
   for (let index = Math.floor(from / size); index * size < end; index += 1) chunks.push({ index, from: index * size, to: (index + 1) * size });
   return chunks;
+}
+
+/** Keep the live endpoint exactly as issued by the server, including its microseconds. */
+export function historyEnd(end: number, watermark: string): string {
+  const boundary = new Date(end).toISOString().replace("Z", "000Z");
+  return boundary < watermark ? boundary : watermark;
 }
 
 /** The answers kept for one page's history: bars by (what is asked, width, chunk), each with whether it is closed. */

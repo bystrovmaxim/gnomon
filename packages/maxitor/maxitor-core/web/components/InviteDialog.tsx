@@ -3,6 +3,8 @@
 // administrator", off when the form opens; for an ordinary user no mark and the invitations they sent under the form,
 // with "Send again" on those still sent. Every refusal of the backend is said as the mockup words it.
 "use client";
+import { Button } from "@maxitor/panel";
+import { AdminDialog } from "./administration/AdminDialog";
 
 import { useEffect, useState } from "react";
 
@@ -88,6 +90,7 @@ export function InviteDialog({ code, organization, admin, onClose, onSent, onOpe
   onOpenUser?: (userId: string) => void;
 }) {
   const [email, setEmail] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
   const [mark, setMark] = useState(false);
   const [refusal, setRefusal] = useState<Refusal | null>(null);
   const [sent, setSent] = useState<Invitation | null>(null);
@@ -105,7 +108,7 @@ export function InviteDialog({ code, organization, admin, onClose, onSent, onOpe
 
   async function send() {
     setBusy(true);
-    const answer = await sendInvitation(code, email, admin && mark);
+    const answer = await sendInvitation(code, email, admin && mark, jobTitle);
     setBusy(false);
     if ("refused" in answer) return setRefusal(answer.refused);
     setRefusal(null);
@@ -113,6 +116,7 @@ export function InviteDialog({ code, organization, admin, onClose, onSent, onOpe
     setSent(answer.invitation);
     setEmail("");
     setMark(false);
+    setJobTitle("");
     await loadMine();
   }
 
@@ -127,23 +131,24 @@ export function InviteDialog({ code, organization, admin, onClose, onSent, onOpe
   }
 
   return (
-    <>
-      <div className="scrim" onClick={onClose} />
-      <div className="dlg" role="dialog" aria-label={`Invite to ${organization}`}>
+    <AdminDialog title={`Invite to ${organization}`} onClose={onClose}>
+      <div className="dlg sheet">
+        <div className="grab" aria-hidden="true" />
         <h3>Invite to {organization}</h3>
         <div className="sub">A letter names you and the organization and asks the person to sign in to Maxitor with this email. It holds no link.</div>
         {sent ? <Alert kind="ok"><b>The invitation is sent to {sent.email}.</b> It waits until {day(sent.expires_at)}.</Alert> : null}
         {refusal ? <RefusalText refusal={refusal} organization={organization} admin={admin} onOpenUser={onOpenUser} onResend={(id) => void resend(id)} /> : null}
         <Field label="Email" type="email" value={email} onChange={(v) => { setEmail(v); setRefusal(null); }} autoComplete="off" autoFocus bad={refusal?.error === "already_user" || refusal?.error === "already_invited"} />
+        <Field label="Job title (optional)" maxLength={160} value={jobTitle} onChange={setJobTitle} autoComplete="organization-title" />
         {admin ? (
           <label className="arow" style={{ cursor: "pointer" }}>
-            <div className="an">Organization administrator<div className="as">invites, blocks and removes users, appoints administrators and changes the organization’s settings</div></div>
+            <div className="an">Organization administrator<div className="as">invites and blocks users, appoints administrators and changes the organization’s settings</div></div>
             <input type="checkbox" className="switch" checked={mark} onChange={(e) => setMark(e.target.checked)} aria-label="Organization administrator" />
           </label>
         ) : (
           <div className="fine2" style={{ margin: "-4px 0 10px" }}>The person becomes an ordinary user. Only an administrator invites an administrator.</div>
         )}
-        {admin && mark ? <div className="hintb warn2">An administrator from the first day: they will invite, block and remove users and appoint other administrators.</div> : null}
+        {admin && mark ? <div className="hintb warn2">Can invite and block users and appoint other administrators.</div> : null}
         {mine && mine.length ? (
           <>
             <div className="dsec">Sent by you</div>
@@ -151,16 +156,16 @@ export function InviteDialog({ code, organization, admin, onClose, onSent, onOpe
               <div className="arow" key={i.id}>
                 <Icon.mail />
                 <div className="an">{i.email}<div className="as">{STATE_WORDS[i.state]} · {i.state === "sent" ? `until ${day(i.expires_at)}` : i.state === "accepted" && i.accepted_user ? `${when(i.decided_at ?? i.sent_at)} · now ${i.accepted_user.name}` : i.decided_at ? when(i.decided_at) : ""}</div></div>
-                {i.state === "sent" ? <button type="button" className="btn2" disabled={busy} onClick={() => void resend(i.id)}>Send again</button> : null}
+                {i.state === "sent" ? <Button type="button" variant="primary" disabled={busy} onClick={() => void resend(i.id)}>Send again</Button> : null}
               </div>
             ))}
           </>
         ) : null}
         <div className="ft">
-          <button type="button" className="btn2" onClick={onClose}>{sent ? "Done" : "Cancel"}</button>
-          <button type="button" className="btn2 pri" disabled={busy || !email.includes("@")} onClick={() => void send()}><Icon.mail />Send the invitation</button>
+          <Button type="button" variant="secondary" onClick={onClose}>{sent ? "Done" : "Cancel"}</Button>
+          <Button type="button" variant="primary" disabled={busy || !email.includes("@")} onClick={() => void send()}><Icon.mail />Send the invitation</Button>
         </div>
       </div>
-    </>
+    </AdminDialog>
   );
 }

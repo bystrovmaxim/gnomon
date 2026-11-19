@@ -143,7 +143,7 @@ async def own_invitation_verdict(connections: Connections, invitation_id: str, a
     return Allowed() if row["email"] in await store.confirmed_emails(account_id) else FORBIDDEN_OBJECT
 
 
-@meta(description="Accept an invitation: a new active user of the account in the organization", domain=OrganizationDomain)
+@meta(description="Accept an invitation: the account's active user in the organization", domain=OrganizationDomain)
 @check_roles(AccountRole)
 @connection(CoreStorage, key=CORE_CONNECTION_KEY, description="The core's database")
 @connection(SessionTokensController, key=TOKENS_CONNECTION_KEY, description="The current policy version")
@@ -152,10 +152,10 @@ class AcceptInvitationAction(BaseAction[ChoiceParams, AcceptedResult]):
     AI-CORE-BEGIN
     ROLE: The invited person comes in.
     CONTRACT: Refuses an invitation the account's emails do not match or that is not sent (404), an account that
-        has not accepted the current privacy policy (403 ``policy``) and one that already has a user not removed in
-        the organization (409 ``already_user``); otherwise, under the organization's lock, creates the user — an
+        has not accepted the current privacy policy (403 ``policy``) and one that already has a user in the
+        organization (409 ``already_user``); otherwise, under the organization's lock, creates the user — an
         administrator when the invitation says so, named as the account — and marks the invitation accepted.
-    INVARIANTS: A removed user does not stand in the way: the account gets a new user, the removed one stays.
+    INVARIANTS: An organization and an account give at most one user; the unique key decides two accepts at once.
     AI-CORE-END
     """
 
@@ -185,9 +185,9 @@ class AcceptInvitationAction(BaseAction[ChoiceParams, AcceptedResult]):
         row = await store.invitation(params.invitation_id)
         if row is None or row["email"] not in await store.confirmed_emails(account_id):
             raise AccessDenied(FORBIDDEN_OBJECT)
-        organization_id, user_id, operation = row["organization_id"], str(uuid.uuid4()), type(self).__name__
+        organization_id, operation = row["organization_id"], type(self).__name__
 
-        async def work() -> dict[str, Any]:
+        async def work() -> tuple[dict[str, Any], str]:
             changed_at = await store.organization_lock(organization_id)
             fresh = await store.invitation(params.invitation_id)
             if fresh is None:
@@ -197,6 +197,7 @@ class AcceptInvitationAction(BaseAction[ChoiceParams, AcceptedResult]):
                 raise AccessDenied(FORBIDDEN_OBJECT)
             if await store.user_of_account(organization_id, account_id) is not None:
                 raise ConflictError("already_user")
+            user_id = str(uuid.uuid4())
             try:
                 await store.insert(
                     '"user"',
@@ -206,6 +207,7 @@ class AcceptInvitationAction(BaseAction[ChoiceParams, AcceptedResult]):
                         "account_id": account_id,
                         "name": account["name"],
                         "is_admin": bool(fresh["is_admin"]),
+                        "job_title": fresh.get("job_title"),
                         "status": "active",
                         "created_at": changed_at,
                         "updated_at": None,
@@ -215,7 +217,7 @@ class AcceptInvitationAction(BaseAction[ChoiceParams, AcceptedResult]):
                     operation,
                 )
             except UniqueRowError as error:
-                if error.constraint != "user_once_among_not_removed":
+                if error.constraint != "user_once_per_account":
                     raise
                 raise ConflictError("already_user") from None
             await store.update(
@@ -226,9 +228,9 @@ class AcceptInvitationAction(BaseAction[ChoiceParams, AcceptedResult]):
                 account_id,
                 operation,
             )
-            return fresh
+            return fresh, user_id
 
-        accepted = await store.in_transaction(work)
+        accepted, user_id = await store.in_transaction(work)
         await box.info(
             Channel.business,
             "Invitation {%var.invitation_id} accepted by {%var.account_id}",

@@ -47,6 +47,7 @@ class InvitationSchema(BaseSchema):
 
     id: str = Field(description="The invitation")
     email: str = Field(description="The email it was sent to")
+    job_title: str | None = Field(default=None, description="Job title in the organization, independent of permissions")
     is_admin: bool = Field(description="Whether accepting makes an administrator")
     state: str = Field(description="sent, accepted, declined, withdrawn or expired")
     invited_by: PersonSchema = Field(description="The user who sent it")
@@ -79,6 +80,7 @@ def invitation_schema(row: dict[str, Any], at: datetime) -> InvitationSchema:
         id=str(row["id"]),
         email=str(row["email"]),
         is_admin=bool(row["is_admin"]),
+        job_title=row.get("job_title"),
         state=state_of(row, at),
         invited_by=PersonSchema(id=str(row["invited_by"]), name=str(row["invited_by_name"])),
         sent_at=row["sent_at"],
@@ -168,19 +170,15 @@ async def check_invitation_limits(
 async def send_letter(
     box: ToolsBox,
     mail: MailGateway,
-    store: CoreStorage,
     *,
-    organization_id: str,
     organization_name: str,
-    invitation_id: str,
     email: str,
     inviter_name: str,
     inviter_email: str,
     is_admin: bool,
     expires_at: datetime,
-    at: datetime,
 ) -> None:
-    """Hand the letter to the mail and record it for the limits; a letter that does not go is a refusal (503)."""
+    """Hand the letter to the mail; a letter that does not go is a refusal (503)."""
     try:
         await mail.send_invitation(email, organization_name, inviter_name, inviter_email, is_admin, expires_at)
     except MailNotDeliveredError as error:
@@ -190,6 +188,12 @@ async def send_letter(
             LetterNotSentEvent(email_masked=mask(email), reason=error.reason),
         )
         raise MailNotSentError("mail_not_sent") from None
+
+
+async def record_letter(
+    store: CoreStorage, *, organization_id: str, invitation_id: str, email: str, at: datetime
+) -> None:
+    """Count the delivered letter after its invitation exists, inside the same transaction."""
     await store.new_letter(
         {
             "id": str(uuid.uuid4()),

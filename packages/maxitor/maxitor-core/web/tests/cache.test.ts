@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { BarCache, CHUNK, chunksOf } from "../components/scale/cache.ts";
+import { BarCache, CHUNK, chunksOf, historyEnd } from "../components/scale/cache.ts";
 
 const HOUR = 3_600_000;
 const NOW = 1000 * CHUNK * HOUR + 30 * HOUR;
@@ -36,4 +36,14 @@ test("another width, other parameters or another page ask anew", () => {
   assert.equal(cache.missing(key, 2 * HOUR, past), true);
   assert.equal(cache.missing(BarCache.keyOf("notes", "demo", "list_published_notes", { item_id: "b" }), HOUR, past), true);
   assert.equal(BarCache.keyOf("n", "d", "a", { b: "1", a: "2" }), BarCache.keyOf("n", "d", "a", { a: "2", b: "1" }));
+});
+
+test("live history endpoints preserve microseconds and include a newly opened chunk", () => {
+  const edge = NOW + 30 * HOUR;
+  const exact = new Date(edge).toISOString().replace('Z', '000Z');
+  const after = exact.replace('.000000Z', '.000001Z');
+  assert.equal(historyEnd(edge + HOUR, after), after);
+  assert.equal(historyEnd(edge, after), exact);
+  assert.equal(chunksOf(edge - HOUR, edge + HOUR, exact, HOUR).at(-1)!.to, edge);
+  assert.equal(chunksOf(edge - HOUR, edge + HOUR, after, HOUR).at(-1)!.from, edge);
 });
