@@ -21,7 +21,10 @@ To send the letters for real, through Yandex Cloud Postbox from `no-reply@maxito
 ## What you can try
 
 - **Create an account**: "Create one", an email and a password of at least 10 characters, the code from the newest letter, the consent box, then register an organization. You land in its empty frame at `/w/<code>`.
-- **Sign out and in** from the icon's menu, with a wrong password and with the right one.
+- **Invite a second person**: Settings at the foot of the tree → Users → Invite, an email. The letter in `.core-stand/outbox/` names you and the organization and holds no link. In a private window create an account with that email — the code from its letter, the consent box — and you land on "You are invited": Accept opens the organization, and Settings → Users lists the new user as Active, invited by you. Invite the same email again: refused while the invitation is sent. The new person invites too, from the menu under their icon, without the administrator mark.
+- **Who may invite**: Settings → Organization → Administrators only. The dialog names the invitations ordinary users sent; after the switch they are Withdrawn by the setting, and the second person's menu has no "Invite".
+- **Block and the last administrator**: in Settings → Users open the second person's card: Block — their next page answers "No such organization"; Unblock. Your own card has Block and the mark dim: you are the last active administrator; appoint the second person, and your mark can go.
+- **Sign out and in** from the icon's menu, with a wrong password and with the right one. You land where you stopped — the last page you had open — unless an invitation waits for you.
 - **Reset the password** with "Forgot password?": the old password stops working, and a letter says it changed.
 - **Someone else's organization**: `/w/orbita` answers "No such organization", like any address that does not exist.
 - **Install a plugin**: Settings at the foot of the tree → Plugins → Marketplace → Notes → Install. Within seconds it is enabled and Notes is in the tree; before that the installer builds its frontend — the first time also the builder image, `The builder image of the core 4.7.0 built in 16.5 s`, then `The frontend of io.github.bystrovmaxim.notes 0.12.0 built for the core 4.7.0 as maxitor-plugin/notes_0_12_0-frontend:<sha12>-4.7.0` — and a page that does not compile fails the install with its TypeScript line. In `psql` the schema `notes_0_12_0` and the user `plg_notes_0_12_0` exist once, however many organizations install it. The first time the runner builds the backend's image, which takes a minute; then `docker ps` shows `maxitor-notes_0_12_0-backend` and `maxitor-notes_0_12_0-frontend`. When an image cannot be built, the stand's output has `The images of … could not be built:` with the error of the step that failed, such as pip's `ERROR: Could not find a version that satisfies the requirement …`, and the runner tries again in the next round.
@@ -40,7 +43,7 @@ With the stand running:
 node packages/maxitor/maxitor-core/web/scripts/check-core.mjs
 ```
 
-It walks the scenarios above in Chromium and prints `OK` or `FAIL` for each. `MAXITOR_STAND_URL` points it at a second stand. With a version deployed, the isolation of its database user is checked by
+It walks the scenarios above in Chromium and prints `OK` or `FAIL` for each. The invitation scenarios use a second browser context and check the letter's decoded text, acceptance, the invitation setting, blocking and unblocking, the last administrator and the phone's bottom sheet. The check waits for the one-letter-per-minute limit when it invites the same address into another organization. `MAXITOR_STAND_URL` points it at a second stand, and `MAXITOR_STAND_OUTBOX` selects that stand's outbox when it is in another checkout. With a version deployed, the isolation of its database user is checked by
 
 ```bash
 MAXITOR_STAND_DSN=postgresql://maxitor_core:core-local@127.0.0.1:55432/maxitor MAXITOR_STAND_PLUGIN_ENV=.core-stand/plugins/notes_0_4_0/plugin.env uv run --extra dev pytest packages/maxitor/tools/plugin-installer/tests/test_stand.py

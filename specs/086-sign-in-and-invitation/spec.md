@@ -12,13 +12,13 @@
 
 Today an organization has one user: the administrator who registered it. Nobody else can get in, and nobody can be let in.
 
-This step makes Maxitor an organization's own: a person reaches an organization only by an **invitation**, and the organization's **administrators** manage its users — see who is there, block, unblock and remove them, appoint other administrators and withdraw invitations. The organization decides **who may invite**: any of its users, or administrators only. The invitation is a thing of its own, with a life of its own: sent, then accepted, declined, withdrawn or expired. The letter it sends holds no link; the invited person signs in to Maxitor with the invited email and accepts on the screen of their organizations. And from now on, after signing in, Maxitor opens where the person stopped.
+This step makes Maxitor an organization's own: a person reaches an organization only by an **invitation**, and the organization's **administrators** manage its users — see who is there, block and unblock them, appoint other administrators and withdraw invitations. The organization decides **who may invite**: any of its users, or administrators only. The invitation is a thing of its own, with a life of its own: sent, then accepted, declined, withdrawn or expired. The letter it sends holds no link; the invited person signs in to Maxitor with the invited email and accepts on the screen of their organizations. And from now on, after signing in, Maxitor opens where the person stopped.
 
 Words used below:
 
 - **Account** — one person in Maxitor, with a name, an email and ways to sign in (bystrovmaxim/gnomon#73).
-- **User** — an account's place in one organization: its name there, whether it administers the organization, and its state — **Active**, **Blocked** or **Removed**.
-- **Administrator** — a user with the administrator mark: invites anyone, appoints administrators, blocks, unblocks and removes users, withdraws invitations and changes the organization's settings.
+- **User** — an account's place in one organization: its name there, whether it administers the organization, and its state — **Active** or **Blocked**. A user is never removed: a person who is to stop working in the organization is blocked.
+- **Administrator** — a user with the administrator mark: invites anyone, appoints administrators, blocks and unblocks users, withdraws invitations and changes the organization's settings.
 - **Ordinary user** — an active user without the mark.
 - **Invitation** — the organization's offer to one email: who sent it, whether it makes an administrator, when it was sent, and its state — **Sent**, **Accepted**, **Declined**, **Withdrawn** or **Expired**.
 - **Inviter** — the user who sent an invitation.
@@ -39,11 +39,15 @@ The issue fixes the rules; these are the points it leaves to the way, resolved h
 - Q: Does a withdrawn or expired invitation tell the invited person? → A: No. The invitation simply stops working: an account that signs in with that email sees nothing of it, as it sees nothing of an invitation that was never sent.
 - Q: What name does the new user get on acceptance? → A: The account's name, as the consent step set it (bystrovmaxim/gnomon#73); the person changes it later as any user's name is changed. The invitation form asks for the email alone.
 - Q: Does a second letter of the same invitation count against the limits? → A: Yes, as a letter: one email gets at most one letter of invitation a minute and ten an hour, whoever sends it and whichever invitation it belongs to. The inviter's and the organization's limits count invitations sent, not letters.
-- Q: What is the user's last place (issue 1.4)? → A: The last address of Maxitor the account had open — the organization and the page, with the entered levels the address carries — kept with the account, not in the browser. After signing in Maxitor opens it; the screen of choosing an organization is shown only when there is no last place, when the last place can no longer be opened and the account has several organizations, or when an invitation waits. A last place the account can no longer open — the user is blocked or removed, the page is gone — falls back to the organization's root, and from there to choosing an organization. This rule goes into the issue before its phase starts, as the issue asks.
-- Q: When do a block, a removal or a change of the administrator mark reach a person who is signed in and working, on a plugin's page through the gateway included? → A: From the next request. The core and the gateway read the user's state and role on every request to the organization: a blocked or removed user gets the answer for someone else's organization at once, and the gateway's next token for a plugin — they live a minute — carries the new role. The account's session is not ended: its other organizations keep working.
+- Q: What is the user's last place (issue 1.4)? → A: The last address of Maxitor the account had open — the organization and the page, with the entered levels the address carries — kept with the account, not in the browser. After signing in Maxitor opens it; the screen of choosing an organization is shown only when there is no last place, when the last place can no longer be opened and the account has several organizations, or when an invitation waits. A last place the account can no longer open — the user is blocked, the page is gone — falls back to the organization's root, and from there to choosing an organization. This rule goes into the issue before its phase starts, as the issue asks.
+- Q: When do a block or a change of the administrator mark reach a person who is signed in and working, on a plugin's page through the gateway included? → A: From the next request. The core and the gateway read the user's state and role on every request to the organization: a blocked user gets the answer for someone else's organization at once, and the gateway's next token for a plugin — they live a minute — carries the new role. The account's session is not ended: its other organizations keep working.
 - Q: What does the last place hold — the whole address with the moment and the comparison of the time scale, or the page in the present? → A: The page in the present: the organization, the page's owner and path with the page's own parameters, without `at`, `mode` and `from`. After signing in the page opens at Now; nobody wakes up in a past month.
 - Q: What is the default of `MAXITOR_INVITATION_DAYS`? → A: 14 days, as the mockup draws it: two weeks cover a holiday and do not keep old invitations open for months.
 - Q: Does accepting an invitation need the invited person to be at a particular address? → A: No. The invitations stand on the screen of choosing an organization, `/w`, which an account with none or several organizations sees after signing in; an account with one organization and a waiting invitation is brought there too, instead of straight into its organization (mockup 8.10, 8.14).
+
+### Session 2026-11-16
+
+- Q: Is removal available because AOA requires a terminal state? → A: No. `removed` remains the terminal state of the declared lifecycle, with Blocked → Removed declared only to satisfy AOA's graph validation. No application action, API route or UI control enters it. Users are only blocked and unblocked; one organization and one account keep the same user for good.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -119,7 +123,7 @@ Anna invites an email that already works in Severny Veter: refused, the user nam
 1. **Given** an email whose account is an active user of the organization, **When** it is invited, **Then** the invitation is refused and the refusal names that the person already works here.
 2. **Given** an email whose account is a blocked user, **When** it is invited, **Then** the invitation is refused with the reason that a blocked user is unblocked, not invited; an administrator is led to the user's card.
 3. **Given** an email with an invitation still Sent, **When** it is invited again, **Then** the invitation is refused, and the person is offered to send that invitation's letter again.
-4. **Given** an email whose account is a removed user, **When** it is invited, **Then** the invitation is sent; accepting makes a new user, and the removed user stays in the history.
+4. **Given** an email whose account is a blocked user, **When** it is invited, **Then** the invitation is refused: the person is unblocked, not invited.
 5. **Given** the limits — one email: one letter a minute and ten an hour; one inviter: thirty invitations an hour; one organization: a hundred invitations a day — **When** a limit is reached, **Then** the invitation or the letter is refused with a message that names the limit and when the next one can go, and an event of the security channel is written.
 6. **Given** a Sent invitation, **When** its inviter or an administrator sends its letter again, **Then** the same letter goes to the same email within the limits, and the invitation stays Sent with its first time and its expiry unchanged.
 
@@ -127,21 +131,21 @@ Anna invites an email that already works in Severny Veter: refused, the user nam
 
 ### User Story 5 - An administrator manages the users (Priority: P1)
 
-Anna opens Settings → Users: every user of Severny Veter with their state, role, how they appeared and their last sign-in; removed users below, kept in the history. She opens a card and blocks, unblocks or removes a user, or switches the administrator mark. The organization always keeps at least one active administrator: the last one cannot be blocked, removed or lose the mark, even when two administrators act at the same moment. A blocked or removed user cannot enter the organization.
+Anna opens Settings → Users: every user of Severny Veter with their state, role, how they appeared and their last sign-in. She opens a card and blocks or unblocks a user, or switches the administrator mark. The organization always keeps at least one active administrator: the last one cannot be blocked or lose the mark, even when two administrators act at the same moment. A blocked user cannot enter the organization.
 
 **Why this priority**: An organization nobody can tidy is an organization nobody can trust with a second person.
 
-**Independent Test**: Block, unblock and remove users from their cards and see their state and the moment; appoint and dismiss an administrator; try to dismiss the last one: refused; have two administrators step down at the same moment in a test: exactly one is refused; sign in as a blocked and as a removed user: the organization answers as someone else's.
+**Independent Test**: Block and unblock users from their cards and see their state and the moment; appoint and dismiss an administrator; try to dismiss the last one: refused; have two administrators step down at the same moment in a test: exactly one is refused; sign in as a blocked user: the organization answers as someone else's.
 
 **Acceptance Scenarios**:
 
-1. **Given** Settings → Users, **When** an administrator opens it, **Then** it lists every user with name, email, state, role, how they appeared — registered the organization, or invited by whom and when — and their last sign-in; removed users stand apart; the second tab lists every invitation with its email, state, role, inviter, time and what happened to it.
-2. **Given** a user's card, **When** the administrator blocks, unblocks or removes, **Then** the user's state changes by its lifecycle — Active ↔ Blocked, either → Removed, Removed final — with who and when, under the organization's lock, as a version of the user.
-3. **Given** a user's card, **When** the administrator switches the administrator mark, **Then** the user becomes or stops being an administrator; the mark cannot change while the user is blocked or removed.
-4. **Given** the last active administrator, **When** anyone tries to block, remove or dismiss them, **Then** it is refused and the card says why; a removal of a user is confirmed before it is done.
+1. **Given** Settings → Users, **When** an administrator opens it, **Then** it lists every user with name, email, state, role, how they appeared — registered the organization, or invited by whom and when — and their last sign-in; the second tab lists every invitation with its email, state, role, inviter, time and what happened to it.
+2. **Given** a user's card, **When** the administrator blocks or unblocks, **Then** the user's state changes by its lifecycle — Active ↔ Blocked — with who and when, under the organization's lock, as a version of the user.
+3. **Given** a user's card, **When** the administrator switches the administrator mark, **Then** the user becomes or stops being an administrator; the mark cannot change while the user is blocked.
+4. **Given** the last active administrator, **When** anyone tries to block or dismiss them, **Then** it is refused and the card says why; the card offers no way to remove a user.
 5. **Given** two administrators who both step down at the same moment, **When** both requests arrive, **Then** one goes first under the organization's lock and the other is refused as the last active administrator's.
-6. **Given** a blocked or removed user, **When** their account opens the organization's address, **Then** the answer is the one for someone else's organization (bystrovmaxim/gnomon#73); the organization is not among the account's organizations.
-10. **Given** a user who is signed in and working, **When** they are blocked, removed or lose or gain the administrator mark, **Then** their next request to the organization — a plugin's page through the gateway included — answers by the new state and role, while the account stays signed in to its other organizations.
+6. **Given** a blocked user, **When** their account opens the organization's address, **Then** the answer is the one for someone else's organization (bystrovmaxim/gnomon#73); the organization is not among the account's organizations.
+10. **Given** a user who is signed in and working, **When** they are blocked or lose or gain the administrator mark, **Then** their next request to the organization — a plugin's page through the gateway included — answers by the new state and role, while the account stays signed in to its other organizations.
 7. **Given** a Sent invitation's row or card, **When** an administrator withdraws it, **Then** it becomes Withdrawn with who and when, and cannot be accepted.
 8. **Given** an invitation that was accepted, **When** its row or card is read, **Then** it names the user it made.
 9. **Given** Settings → Users or Settings → Organization, **When** anyone who is not an administrator opens their address, **Then** the answer is "No such page", as for Plugins.
@@ -167,7 +171,7 @@ Dmitry signs in a second time and lands on the page he had open when he left, in
 
 ### User Story 7 - The same on a phone (Priority: P2)
 
-On a phone the invitation form is a sheet from the bottom, the invitations on the screen of organizations wrap into rows with full-width Accept and Decline, and the users' table becomes rows one under another.
+On a phone the invitation form is a sheet from the bottom, the invitations on the screen of organizations wrap into rows with full-width Accept and Decline, and administration tables retain their full width on the shared canvas. Horizontal movement reveals their columns while names and emails stay visible; typography does not shrink.
 
 **Why this priority**: The invited person most often opens the letter on a phone and signs in from it.
 
@@ -176,7 +180,7 @@ On a phone the invitation form is a sheet from the bottom, the invitations on th
 **Acceptance Scenarios**:
 
 1. **Given** a phone, **When** the screen of choosing an organization shows an invitation, **Then** its row wraps: the organization and the inviter above, Accept and Decline in a full row below (mockup M13).
-2. **Given** a phone, **When** the invitation form opens, **Then** it is a sheet from the bottom with the buttons in full rows (mockup M14); **When** Settings → Users opens, **Then** the table is rows one under another and a card takes the whole screen (mockup M15).
+2. **Given** a phone, **When** the invitation form opens, **Then** it is a sheet from the bottom with the buttons in full rows (mockup M14); **When** Settings → Users opens, **Then** the Users, Invitations and History tables keep their columns on the canvas, with identity pinned during horizontal movement in Now and A/B; tabs and search move with the canvas, and cards open as mobile dialogs (mockup M15).
 
 ---
 
@@ -187,8 +191,8 @@ On a phone the invitation form is a sheet from the bottom, the invitations on th
 - An account accepts an invitation while the inviter is being blocked: both go under the organization's lock; the invitation is accepted as it stands, since only withdrawing, declining and expiry close it.
 - The setting is switched to administrators only while an ordinary user has the form open: their send is refused with the setting named.
 - An invitation makes an administrator, and its inviter loses the mark before it is accepted: the invitation stands as sent; the mark was checked when it was sent.
-- The last active administrator is also the only user: they cannot step down, be blocked or removed; registering an organization made them so.
-- A removed user is invited again, accepts, and later is removed again: two removed users of one account stay in the history; only users not removed are unique for an organization and an account.
+- The last active administrator is also the only user: they cannot step down or be blocked; registering an organization made them so.
+- A person is to stop working in the organization for good: they are blocked and stay blocked. A user is never removed, because plugins refer to a user by the organization and the account: an organization and an account give exactly one user for as long as the organization lives.
 - A letter cannot be sent: the invitation is not created, the refusal says the letter did not go, and a critical event is written, as for the codes of bystrovmaxim/gnomon#73.
 - The organization's hundredth invitation of the day is a letter sent again: it counts as a letter, not as an invitation, so it goes if the email's own limits allow.
 - The last place names an organization the account is no longer a user of: the fallback goes to choosing an organization, never to that organization's root.
@@ -207,7 +211,7 @@ On a phone the invitation form is a sheet from the bottom, the invitations on th
 #### The invitation
 
 - **FR-005**: An invitation MUST be an entity of its own of the organization, versioned as the organization's other entities are, with the email it is sent to, the inviter, whether it makes an administrator, its state and when its letter was first sent; its states MUST be Sent, Accepted, Declined, Withdrawn and Expired, Sent the only state it is created in and the only one it can leave.
-- **FR-006**: No user MUST exist for an invitation until it is accepted; a user's states MUST stay Active, Blocked and Removed.
+- **FR-006**: No user MUST exist for an invitation until it is accepted; a user's states MUST be Active and Blocked; the lifecycle's terminal state, Removed, which AOA requires to be reachable in the declared graph, MUST NOT be entered by any application action. Only Active → Blocked and Blocked → Active are available to administrators; no removal route or control exists.
 - **FR-007**: The administrator mark of the invitation form MUST be off when the form opens, shown only to an administrator, and accepted only from an administrator; a request from anyone else that carries it MUST be refused, wherever it comes from.
 - **FR-008**: The letter of an invitation MUST come from `no-reply@maxitor.aoa.run`, name the organization and the inviter, say to sign in to Maxitor with this email and until when the invitation waits, and MUST hold no link, as no letter of Maxitor does.
 - **FR-009**: An account MUST see an invitation only if one of its confirmed emails equals the invitation's email in lower case; it MUST see it on the screen of choosing an organization after signing in, after the privacy policy has been accepted when the policy requires it, and an account with one organization and a waiting invitation MUST be brought to that screen too.
@@ -215,16 +219,16 @@ On a phone the invitation form is a sheet from the bottom, the invitations on th
 - **FR-011**: An invitation not accepted within `MAXITOR_INVITATION_DAYS` days of its first letter — 14 by default — MUST be Expired: the organization MUST treat it so from that moment and write the state when it next reads or touches it; no letter MUST be sent about it.
 - **FR-012**: The inviter or an administrator MUST be able to send a Sent invitation's letter again, within the limits; the invitation MUST keep its first time and its expiry.
 - **FR-013**: The limits MUST hold: one email gets at most one letter of invitation a minute and ten an hour, counting letters sent again; one inviter sends at most thirty invitations an hour; one organization at most a hundred a day. Past a limit the invitation or the letter MUST be refused with a message that names the limit and when the next one can go, and an event of the security channel MUST be written.
-- **FR-014**: An invitation to an email whose account is an active or a blocked user of the organization MUST be refused with that reason — a blocked user is unblocked, not invited — and an invitation to an email with an invitation still Sent MUST be refused, with the offer to send that invitation's letter again. A removed user MAY be invited again; accepting MUST make a new user, and a user MUST be unique for an organization and an account among the users not removed.
+- **FR-014**: An invitation to an email whose account is an active or a blocked user of the organization MUST be refused with that reason — a blocked user is unblocked, not invited — and an invitation to an email with an invitation still Sent MUST be refused, with the offer to send that invitation's letter again. A user MUST be unique for an organization and an account and MUST NOT be removed.
 - **FR-015**: An ordinary user MUST be able to invite from the menu under their icon when the setting allows, with a form without the administrator mark, and MUST see under it the invitations they sent with their states and "Send again" on those still Sent; the item MUST be absent when the setting is **administrators only**.
 
 #### Managing users
 
-- **FR-016**: Settings → Users MUST be a page of the core's own for administrators only, next to Plugins, listing every user of the organization — name, email, state, role, how they appeared and their last sign-in, removed users apart — and every invitation — email, state, role, inviter, when sent and what happened to it, an accepted one naming its user; anyone else opening its address MUST get "No such page".
-- **FR-017**: An administrator MUST be able to block, unblock and remove a user and to appoint and dismiss an administrator from the user's card, each change by the user's lifecycle with who and when, under the organization's lock and as a version of the user; a removal MUST be confirmed first; the administrator mark MUST NOT change while the user is blocked or removed. Every such change MUST take effect from the person's next request to the organization: the core and the gateway MUST read the user's state and role on every request, and the gateway's next token for a plugin MUST carry the new role; the account's session MUST NOT be ended.
+- **FR-016**: Settings → Users MUST be a page of the core's own for administrators only, next to Plugins, listing every user of the organization — name, email, state, role, how they appeared and their last sign-in — and every invitation — email, state, role, inviter, when sent and what happened to it, an accepted one naming its user; anyone else opening its address MUST get "No such page".
+- **FR-017**: An administrator MUST be able to block and unblock a user and to appoint and dismiss an administrator from the user's card, each change by the user's lifecycle with who and when, under the organization's lock and as a version of the user; the administrator mark MUST NOT change while the user is blocked. Every such change MUST take effect from the person's next request to the organization: the core and the gateway MUST read the user's state and role on every request, and the gateway's next token for a plugin MUST carry the new role; the account's session MUST NOT be ended.
 - **FR-018**: An administrator MUST be able to withdraw a Sent invitation from its row or card, with who and when recorded.
-- **FR-019**: The organization MUST always keep at least one active administrator: the last one MUST NOT be blocked, removed or dismissed, and the refusal MUST say so; two administrators acting at once MUST be ordered by the organization's lock, so that exactly one of two simultaneous step-downs is refused.
-- **FR-020**: A blocked or removed user MUST NOT enter the organization: its address MUST answer as someone else's organization does from the next request on, a signed-in session included, and the organization MUST NOT be among the account's organizations.
+- **FR-019**: The organization MUST always keep at least one active administrator: the last one MUST NOT be blocked or dismissed, and the refusal MUST say so; two administrators acting at once MUST be ordered by the organization's lock, so that exactly one of two simultaneous step-downs is refused.
+- **FR-020**: A blocked user MUST NOT enter the organization: its address MUST answer as someone else's organization does from the next request on, a signed-in session included, and the organization MUST NOT be among the account's organizations.
 - **FR-021**: Every change of the organization's users, invitations and the setting — accepting included — MUST take the organization's lock, as registering does.
 
 #### The last place
@@ -233,19 +237,19 @@ On a phone the invitation form is a sheet from the bottom, the invitations on th
 
 #### The phone
 
-- **FR-023**: On a phone the invitation's row on the screen of organizations MUST wrap with Accept and Decline in a full row, the invitation form MUST be a sheet from the bottom, and the users' and invitations' tables MUST become rows one under another, with nothing scrolling sideways (mockup M13–M15).
+- **FR-023**: On a phone the invitation's row on the screen of organizations MUST wrap with Accept and Decline in a full row, the invitation form MUST be a sheet from the bottom, and Users, Invitations and History MUST retain their full column layout on the shared canvas without shrinking type. Identity stays visible during horizontal canvas movement in Now and A/B. Tabs and search move with the canvas, matching Plugins; no separate stationary toolbar is introduced (mockup M13–M15).
 
 #### Events, tests, documentation, versions
 
-- **FR-024**: The organization's events MUST cover at least: an invitation sent, its letter sent again, accepted, declined, withdrawn, expired; a user blocked, unblocked, removed; an administrator appointed or dismissed; the setting changed (info); an invitation refused — by the setting, by the mark, by a user already there, by a Sent invitation, by a limit — and the last administrator's protection (warning); a letter that could not be sent (critical); each with the organization, the user acting when there is one, and an email only masked.
-- **FR-025**: The tests MUST prove each refusal and each state change of an invitation, the setting's check and its withdrawal, the limits, the uniqueness among the users not removed, the last administrator's rule with two administrators at once, a blocked and a removed user's refusal, and the last place; a browser check MUST walk an administrator's invitation and the invited person's path on a desktop and at 375 px.
+- **FR-024**: The organization's events MUST cover at least: an invitation sent, its letter sent again, accepted, declined, withdrawn, expired; a user blocked, unblocked; an administrator appointed or dismissed; the setting changed (info); an invitation refused — by the setting, by the mark, by a user already there, by a Sent invitation, by a limit — and the last administrator's protection (warning); a letter that could not be sent (critical); each with the organization, the user acting when there is one, and an email only masked.
+- **FR-025**: The tests MUST prove each refusal and each state change of an invitation, the setting's check and its withdrawal, the limits, one user per organization and account with no way to remove it, the last administrator's rule with two administrators at once, a blocked user's refusal, and the last place; a browser check MUST walk an administrator's invitation and the invited person's path on a desktop and at 375 px.
 - **FR-026**: The core's README and `docs/how-to/run-the-core-locally.md` MUST describe inviting a second person and the setting; the tutorial's chapter 1 MUST set up the local stand with a second person of the same organization; the plugin concept MUST speak of membership as built; spec 059's `terms.md` and `data-model.md` MUST say who invites and that the invitation is an entity of its own.
 - **FR-027**: The core MUST raise its version, and the changelog MUST describe the work in one article.
 
 ### Key Entities
 
 - **Organization** — gains **Who may invite**; versioned, under its own lock.
-- **User** — an account's place in one organization: name, the administrator mark, the state by its lifecycle, who invited them and when; unique for an organization and an account among the users not removed; versioned.
+- **User** — an account's place in one organization: name, the administrator mark, the state by its lifecycle, who invited them and when; unique for an organization and an account, never removed; versioned.
 - **Invitation** — the organization's offer to one email: the email, the inviter, whether it makes an administrator, the state, when the letter was first sent, when and by what it was accepted, declined, withdrawn or expired; versioned.
 - **Account** — unchanged in its fields; gains its last place.
 - **Last place** — the organization and the page an account had open last, with the page's own parameters and without the time scale's moment or comparison.
@@ -259,13 +263,13 @@ On a phone the invitation form is a sheet from the bottom, the invitations on th
 - **SC-003**: Every refusal of issue 1.2 — the setting, the mark, a user already there, a blocked user, a Sent invitation, each limit — answers with its reason in 100% of tries from the screen and from a request sent by hand, and creates nothing.
 - **SC-004**: Switching to administrators only withdraws 100% of the Sent invitations of ordinary users at that moment and 0 of the administrators' or accepted ones.
 - **SC-005**: Over 100 runs of two administrators stepping down at the same moment, the organization is left with at least one active administrator every time and exactly one request is refused.
-- **SC-006**: A blocked or removed user opens their organization in 0% of tries; a removed person invited again becomes a new active user in 100% of tries.
+- **SC-006**: A blocked user opens their organization in 0% of tries; an unblocked one in 100%.
 - **SC-007**: An invitation older than `MAXITOR_INVITATION_DAYS` days is accepted in 0% of tries.
 - **SC-008**: An account that signs in again lands at its last place in 100% of tries where it can still be opened, and on the organizations' screen when an invitation waits.
 
 ## Assumptions
 
-- The core of bystrovmaxim/gnomon#73 is in place: accounts with confirmed emails, the consent step and the policy's version, the organization's lock and the versioning of its tables, the user's lifecycle with Active, Blocked and Removed and the last-administrator rule modelled, the letters' gateway and the limits of the codes, whose shape the invitation's limits follow.
+- The core of bystrovmaxim/gnomon#73 is in place: accounts with confirmed emails, the consent step and the policy's version, the organization's lock and the versioning of its tables, the user's lifecycle and the last-administrator rule modelled, the letters' gateway and the limits of the codes, whose shape the invitation's limits follow.
 - The frame is the one of bystrovmaxim/gnomon#74 with Settings entered (bystrovmaxim/gnomon#122) and the top row of bystrovmaxim/gnomon#98; Settings → Users and Settings → Organization are two new nodes of the core's own tree next to Plugins, for administrators only, and the pages of the core's own in the panel, as Plugins is.
 - The mockup lives in the mockup of spec 072 — screens 8.1–8.14, 9.1–9.12, 10.1–10.6, 11.1 and M13–M15 of `specs/072-maxitor-core/mockup/index.html` — because the frame and the screens of signing in are that spec's; it is accepted by the maintainer before any code, and the issue's phases are to name it first.
 - The privacy policy does not change for this work: the invitation keeps only what the organization already keeps of a person — an email and who entered it.

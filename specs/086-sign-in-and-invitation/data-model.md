@@ -7,9 +7,11 @@ What this work adds to the core's model of [spec 072](../072-maxitor-core/data-m
 | Table | Columns added or new | Keys and checks | Versioned |
 |---|---|---|---|
 | `organization` | `who_may_invite text` | CHECK `who_may_invite IN ('any_user', 'administrators')`; existing rows become `any_user` | yes, `organization_versions` gains the column (existing versions `any_user`) |
-| `"user"` | — | `user_once_per_account` dropped; partial UNIQUE INDEX `user_once_among_not_removed (organization_id, account_id) WHERE status <> 'removed'` | as before |
+| `"user"` | — | `user_status` CHECK `('active', 'blocked', 'removed')`; `user_once_per_account (organization_id, account_id)` stays | as before |
 | `invitation` | `organization_id uuid`, `id uuid`, `email text`, `invited_by uuid`, `is_admin bool`, `status text`, `sent_at timestamptz`, `letter_sent_at timestamptz`, `expires_at timestamptz`, `decided_at timestamptz NULL`, `decided_by uuid NULL`, `by_setting bool`, `accepted_user_id uuid NULL`, `created_at`, `updated_at NULL` | PK (`organization_id`, `id`); UNIQUE `id`; FK `organization_id → organization`; FK (`organization_id`, `invited_by`) → `"user"`; FK (`organization_id`, `accepted_user_id`) → `"user"`; CHECK `email = lower(email)`; CHECK `status IN ('sent','accepted','declined','withdrawn','expired')`; partial UNIQUE INDEX `invitation_one_sent (organization_id, email) WHERE status = 'sent'`; index (`organization_id`, `invited_by`, `sent_at`) and (`organization_id`, `sent_at`) for the limits; index (`email`) for the account's invitations | yes, `invitation_versions`, the organization's lock |
-| `invitation_letter` | `id uuid`, `organization_id uuid`, `invitation_id uuid`, `email text`, `sent_at timestamptz` | PK `id`; index (`email`, `sent_at`) | no: mechanics, pruned an hour after sending |
+| `invitation_letter` | `id uuid`, `organization_id uuid`, `invitation_id uuid`, `email text`, `sent_at timestamptz` | PK `id`; FK (`organization_id`, `invitation_id`) → `invitation`; index (`email`, `sent_at`) | no: mechanics, pruned an hour after sending |
+
+Sending a new invitation hands its letter to the mail, inserts the invitation and its first version, then records the delivered letter. The writes share the organization's transaction. The letter's immediate foreign key therefore has its parent when it is checked; failed mail delivery creates neither an invitation nor a letter record. Resending records a new letter against the existing invitation.
 
 `watermark(uuid)` is replaced to count `invitation_versions` too, so the frame's "now" moves when an invitation changes. `organization_lock` guards `invitation_versions` as it guards the users'.
 
@@ -24,6 +26,7 @@ What this work adds to the core's model of [spec 072](../072-maxitor-core/data-m
 - **OrganizationCoreEntity** gains `who_may_invite: WhoMayInviteEnumEntity` — `ANY_USER` (`any_user`), `ADMINISTRATORS` (`administrators`) — and `invitations: CompositeMany[InvitationCoreEntity]`.
 - **InvitationCoreEntity** (domain `organization`): `id`, `email`, `is_admin`, `status: InvitationLifecycle`, `sent_at`, `letter_sent_at`, `expires_at`, `decided_at`, `by_setting`; links `organization` (AssociationOne, inverse `invitations`), `invited_by` (AssociationOne to `UserCoreEntity`, inverse `invitations_sent`), `decided_by` (AssociationOne to `UserCoreEntity`, no inverse, optional), `accepted_user` (AssociationOne to `UserCoreEntity`, no inverse, optional).
 - **InvitationLifecycle**: `sent` initial → `accepted`, `declined`, `withdrawn`, `expired`, each final.
+- **UserLifecycle**: `active` initial → `blocked`; `blocked` → `active` and the terminal `removed`. The edge to `removed` exists only for AOA graph validation: no application action takes it.
 - **UserCoreEntity** gains `invitations_sent: AssociationMany[InvitationCoreEntity]` (inverse `invited_by`).
 - **AccountCoreEntity** gains `last_place: str | None` as a field of the model (kept in `account_place`); the storage answers it with the account.
 
@@ -33,7 +36,7 @@ What this work adds to the core's model of [spec 072](../072-maxitor-core/data-m
 - `expires_at = sent_at + MAXITOR_INVITATION_DAYS days`; sending the letter again changes `letter_sent_at` only.
 - An invitation leaves Sent by exactly one of: `AcceptInvitationAction` (by an account whose confirmed emails include its email; makes a new active user with `is_admin` from the invitation and the account's name; sets `accepted_user_id`), `DeclineInvitationAction` (the same account), `WithdrawInvitationAction` (an administrator; `decided_by` set), `SetWhoMayInviteAction` to `administrators` (`by_setting = true`, `decided_by` the administrator who switched), or its time (`expired`, written when next read or touched, `decided_at = expires_at`).
 - Every change of `organization`, `"user"` and `invitation` takes `organization_lock`; accepting an invitation included.
-- The organization keeps at least one active administrator: `BlockUserAction`, `RemoveUserAction` and `SetAdministratorAction(false)` count the other active administrators inside the transaction and refuse `last_administrator` at zero.
+- The organization keeps at least one active administrator: `BlockUserAction` and `SetAdministratorAction(false)` count the other active administrators inside the transaction and refuse `last_administrator` at zero.
 - A user's `status` moves by `UserLifecycle` only; `is_admin` changes only while `status = 'active'`.
-- `organizations_of` and `organization_for` answer active users only, as before: a blocked or removed user is a stranger on the next request.
+- `organizations_of` and `organization_for` answer active users only, as before: a blocked user is a stranger on the next request.
 - `account_place.address` is a path of Maxitor starting with `/w/`, with `at`, `mode` and `from` removed by the writer.

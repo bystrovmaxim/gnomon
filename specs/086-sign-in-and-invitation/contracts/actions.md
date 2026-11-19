@@ -28,10 +28,9 @@ Every address is declared by the chain of `FastApiAdapter` in `maxitor/core/serv
 | `GET /api/v1/organizations/{code}/users` | `ListUsersAction` | administrator | → `{users: [User], invitations: [Invitation]}`; the list writes Expired on the Sent invitations past their time first |
 | `POST /api/v1/organizations/users/block` | `BlockUserAction` | administrator | `{code, user_id}` → `{user}`; `409 not_active`, `409 last_administrator` |
 | `POST /api/v1/organizations/users/unblock` | `UnblockUserAction` | administrator | `{code, user_id}` → `{user}`; `409 not_blocked` |
-| `POST /api/v1/organizations/users/remove` | `RemoveUserAction` | administrator | `{code, user_id}` → `{user}`; `409 removed` when already removed, `409 last_administrator` |
 | `POST /api/v1/organizations/users/administrator` | `SetAdministratorAction` | administrator | `{code, user_id, is_admin}` → `{user}`; `409 not_active`, `409 last_administrator` |
 
-`User` is `{id, account_id, name, email, is_admin, state, appeared: "registered" | "invited", invited_by: {id, name} | null, created_at, changed_at, changed_by: {id, name} | null, last_sign_in_at}`; `state` is `active`, `blocked` or `removed`.
+`User` is `{id, account_id, name, email, is_admin, state, appeared: "registered" | "invited", invited_by: {id, name} | null, created_at, changed_at, changed_by: {id, name} | null, last_sign_in_at}`; `state` is `active` or `blocked`. The lifecycle declares a terminal `removed` state for AOA graph validation only: no action or route enters it. A request to the former `/api/v1/organizations/users/remove` route is refused without changing the user; clients cannot supply a target state to block or unblock.
 
 ## The organization's settings
 
@@ -55,3 +54,9 @@ Every address is declared by the chain of `FastApiAdapter` in `maxitor/core/serv
 |---|---|---|
 | `mail` | `MailGateway` | `send_invitation(to, organization, inviter_name, inviter_email, is_admin, expires_at)` |
 | `tokens` | `SessionTokensController` | carries `invitation_days` |
+
+## Optional organization job title
+
+`Invitation` and `User` include `job_title: string | null`. Sending an invitation accepts an optional `job_title` of at most 160 characters. Blank input is stored as null. Acceptance copies the offered title into the new user; later changes do not rewrite the invitation. The title never grants administrator permissions.
+
+`POST /api/v1/organizations/users/job-title` invokes `SetJobTitleAction` for a current administrator. Input: `{code, user_id, job_title}`; output: `{user: User}`. Null or blank clears the title. Unknown or foreign users are hidden under the existing access decision. The organization lock serializes edits, identical values do not create versions, and a successful change writes the user version with its author and time. Administration snapshots expose the title of the selected version.

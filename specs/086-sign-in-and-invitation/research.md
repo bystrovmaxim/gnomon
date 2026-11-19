@@ -12,6 +12,7 @@ The decisions the plan rests on, each with why and what else was weighed. The sp
 
 - **Decision**: the inviter's and the organization's limits count rows of `invitation` by `sent_at` in the last hour and day. The email's limits count letters, so letters get a row each in `invitation_letter` (`organization_id`, `invitation_id`, `email`, `sent_at`), unversioned mechanics pruned after an hour, as `sign_in_code` and `sign_in_attempt` are.
 - **Rationale**: a letter sent again is a letter, not an invitation (spec); counting letters needs a row per letter. The constants live beside the codes' in `codes.py` with their own names.
+- **Write order**: the mail gateway sends first; the action then inserts the invitation and its version before recording the delivered letter, within one transaction. PostgreSQL checks the letter's composite foreign key immediately. Recording the letter inside the sending helper before inserting the invitation returned HTTP 500 on the stand; a regression now enforces that foreign key at the storage boundary. Failed delivery still leaves no invitation.
 - **Alternatives**: counting `letter_sent_at` alone — loses letters between two timestamps; counting in memory — lost at restart.
 
 ## Expiry without a job
@@ -34,15 +35,15 @@ The decisions the plan rests on, each with why and what else was weighed. The sp
 
 ## The last administrator, decided by the lock
 
-- **Decision**: `BlockUserAction`, `RemoveUserAction` and `SetAdministratorAction(is_admin=false)` count the organization's active administrators inside the transaction after taking the organization's lock, excluding the target; zero means `409 last_administrator`. Accepting an invitation takes the same lock before it creates the user.
+- **Decision**: `BlockUserAction` and `SetAdministratorAction(is_admin=false)` count the organization's active administrators inside the transaction after taking the organization's lock, excluding the target; zero means `409 last_administrator`. Accepting an invitation takes the same lock before it creates the user.
 - **Rationale**: the lock serializes two administrators stepping down at once: the second counts after the first's commit and is refused.
 - **Alternatives**: a database trigger — logic in the database (constitution III); a check before the lock — a race.
 
-## The users' uniqueness among users not removed
+## A user is never removed
 
-- **Decision**: `user_once_per_account` becomes a partial unique index `(organization_id, account_id) WHERE status <> 'removed'`; accepting an invitation inserts a new user even when a removed one exists for the account.
-- **Rationale**: the issue's rule; the removed user stays in history as it is.
-- **Alternatives**: reviving the removed user — Removed is final by the lifecycle.
+- **Decision**: a user is Active or Blocked; no action removes a user, and `user_once_per_account (organization_id, account_id)` stays a full unique key. The lifecycle's terminal state is `removed`: AOA requires every lifecycle to have a final state reachable from the initial one, so Blocked → Removed is declared, and no action takes it.
+- **Rationale**: plugins refer to a user by the organization and the account (`core.user (organization_id, account_id)`, the template's `foreign-keys.yaml`); PostgreSQL references only a full unique key, so the user of an account must stay one row. A person who is to stop working in the organization is blocked.
+- **Alternatives**: a removed user who is invited again as a new user — breaks the plugins' references to the account; the same removed user made active again — a lifecycle with no final state, against AOA's rules.
 
 ## The last place
 

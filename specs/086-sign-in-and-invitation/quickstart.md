@@ -15,8 +15,8 @@ As in [spec 072's quickstart](../072-maxitor-core/quickstart.md): PostgreSQL in 
 3. **Refusals** — invite the same email again: "already works here"; invite an email with an invitation still Sent: "already sent", with "Send the letter again"; as an ordinary user try to send the mark: refused on the server.
 4. **An ordinary user invites** — as the new user, the menu under the icon has "Invite to <organization>"; the form has no mark; the invitation appears under the form as Sent.
 5. **Who may invite** — as the administrator, Settings → Organization → Administrators only: the dialog names the ordinary user's invitation; Switch. Expect it Withdrawn "by the setting" in the Invitations tab, and the ordinary user's menu without "Invite".
-6. **Block and the last administrator** — in Settings → Users open the new user's card: Block; the private window's next page answers "No such organization". Open your own card: Block and Remove are dim, the mark cannot be removed: you are the last active administrator. Appoint the other user an administrator, then remove your own mark: allowed; the other administrator's card now refuses.
-7. **A removed person invited again** — unblock and remove the user, invite the same email again, accept in the private window: a new active user; the removed one stays below in the list.
+6. **Block and the last administrator** — in Settings → Users open the new user's card: Block; the private window's next page answers "No such organization". Open your own card: Block is dim, the mark cannot be switched off: you are the last active administrator. Unblock the other user, appoint them an administrator, then remove your own mark: allowed; the other administrator's card now refuses.
+7. **A blocked person is not invited** — invite the blocked user's email: refused, the person is unblocked, not invited; the user's card has Block and Unblock, never Remove.
 8. **The last place** — open Settings → Users, sign out, sign in: Settings → Users opens; with the user blocked meanwhile, the organization answers as someone else's and the screen of organizations opens.
 9. **On a phone** — at 375 px the invitation's row wraps with full-width Accept and Decline, the invitation form is a sheet, the users are rows.
 
@@ -29,3 +29,7 @@ node packages/maxitor/maxitor-core/web/scripts/check-core.mjs
 ```
 
 The browser check runs against the stand and walks the scenarios above in Chromium, with a second browser context for the invited person.
+
+The terminal `removed` state is declared for AOA graph validation only. Posting to `/api/v1/organizations/users/remove` must be refused without writing a user version, for both an active and a blocked user. Sending `state` or `status` to block or unblock must return 422.
+
+See [verification.md](verification.md) for the passing local checks and the remaining commit and CI steps. The 49-scenario browser walk includes the real PostgreSQL invitation flow and the invitation sheet at 375 px. It respects the one-letter-per-minute limit when another organization invites the same address.

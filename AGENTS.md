@@ -25,6 +25,8 @@
 - **Russian drafts** (`*.ru_draft.md`) live beside their English pages and never enter a commit; `.gitignore` keeps them out.
 - **A finished task is reported with examples**: what changed, the code before and after where it matters, one real call with the answer it gives, how it was verified, and what is left.
 - **Documentation ships with the change** it describes.
+- **Production icons in every screen and mockup.** Reuse the established production components and assets; never substitute sketch icons, CSS/text stand-ins or private redraws for an existing icon. Change-status disks come only from `packages/maxitor-tokens/status-disks.js`, through `StatusDisk` / `StatusIcon` in React; Changes filters use `changeFilterRows` so absent statuses retain their signs. Standalone mockups embed its generated block, updated by `node scripts/sync-status-disks.mjs --write`; without `--write` the command rejects drift and retired renderers. Remove obsolete variants instead of retaining them as templates or fallbacks.
+- **Mockup tree icons follow the core.** `node scripts/sync-mockup-icons.mjs --write` copies the relevant paths from `treeMarks.tsx`; its check mode and the panel tests reject drift. When auditing a mockup, open every named screen and inspect nested frames, dialogs and phone states, not only its first page.
 
 ## The workflow
 

@@ -67,12 +67,12 @@ erDiagram
 |---|---|---|---|
 | `OrganizationCoreEntity` | **Organization** | `id`, `name`, `code` | Core |
 | `UserCoreEntity` | **User** | `id`, `name`, `email`, `status`, `is_admin` | Core |
-| `UserStateEntity` + `UserLifecycle` | **User lifecycle** | four states and the moves between them | State |
+| `UserStateEntity` + `UserLifecycle` | **User lifecycle** | active and blocked, plus the terminal removed state required by AOA | State |
 | `BoundaryCoreEntity` | **Boundary** | `id`, `name` (it also names the end-to-end process), `description`, `is_open`, `owner` | Core |
 | `StoryMapCoreEntity` | **User story map** | `id` | Core |
 | `ReleaseSliceCoreEntity` | **Release slice** | `id`, `name`, `goal`, `position`, `target_date`, `owner` | Core |
 | `InitiativeCoreEntity` | **Initiative** | `id`, `name`, `kind`, `status`, `author` | Core |
-| `InitiativeStateEntity` + `InitiativeLifecycle` | **Initiative lifecycle** | four states and the moves between them | State |
+| `InitiativeStateEntity` + `InitiativeLifecycle` | **Initiative lifecycle** | active and blocked, plus the terminal removed state required by AOA | State |
 | `InitiativeKindEnumEntity` | initiative kinds | `pr_faq` (PR/FAQ) | Enumeration |
 | `BusinessAreaCoreEntity` | **Business area** | `id`, `name`, `position`, `boundary`, `owner` | Core |
 | `StageCoreEntity` | **Stage** | `id`, `name`, `position`, `owner` | Core |
@@ -106,9 +106,10 @@ A link inside one plugin is two-way (`Inverse`): the map sees its release slices
 - Access to a boundary is set by the `is_open` flag and the many-to-many link `granted_users` ↔ `granted_boundaries`. An open boundary is available to every user of its organization, and it needs no list. A closed one is available only to the users in `granted_users`. There are no other degrees of access yet.
 - While a boundary is open, the `granted_users` list is kept but has no effect. If the boundary is closed, the users in the list get access at once. If a closed one is opened, nobody loses access.
 - Explicit access is a plain association, not a separate entity: the link has no data of its own yet, only "listed or not".
-- An **organization administrator** is a user with `is_admin`. An administrator invites, blocks, unblocks and removes users, appoints administrators, creates boundaries, appoints the owner of a boundary that has no active owner. There may be several administrators.
-- The boundary's owner (`owner`) opens and closes the boundary (`is_open`) and changes `granted_users`. If there is no active owner (`owner` is empty, blocked or removed), the administrator does this.
-- The administrator changes a boundary's `owner`, and only when there is no active owner: when the boundary is created, or after the owner was blocked or removed. An active owner cannot be replaced: otherwise the administrator would have a back door into a closed boundary whose access the owner grants.
+- An **organization administrator** is a user with `is_admin`. An administrator invites, blocks and unblocks users, appoints administrators, withdraws invitations, changes who may invite, creates boundaries, appoints the owner of a boundary that has no active owner. There may be several administrators, and the organization always keeps at least one active one.
+- An **invitation** is an entity of its own (spec 086): the organization's offer to one email, with its inviter, the administrator mark, when it was sent and its state — sent, accepted, declined, withdrawn, expired. No user exists until it is accepted; accepting makes an active user of the account that holds the invited email. The organization's setting **who may invite** — any user, as at registration, or administrators only — says who may send one; switching to administrators only withdraws the invitations ordinary users sent that are not yet accepted.
+- The boundary's owner (`owner`) opens and closes the boundary (`is_open`) and changes `granted_users`. If there is no active owner (`owner` is empty or blocked), the administrator does this.
+- The administrator changes a boundary's `owner`, and only when there is no active owner: when the boundary is created, or after the owner was blocked. An active owner cannot be replaced: otherwise the administrator would have a back door into a closed boundary whose access the owner grants.
 - A closed boundary without access is visible to the administrator only in administration: its name, `is_open`, owner and `granted_users`. The administrator sees its map and landscape only after adding themselves to `granted_users`. This is an ordinary catalog change, so it stays in the history with its author and time.
 - A person signs in to Maxitor by email and password or by a provider (Yandex ID, Mail.ru ID, Google, GitHub, Facebook) as spec 072 lays out; signing in is the core's, not an organization's, and users appear in an organization only by invitation or by registering it.
 - A user is not a C4 Person. A Person uses the digital products; a user works in Maxitor.
@@ -116,14 +117,13 @@ A link inside one plugin is two-way (`Inverse`): the map sees its release slices
 
 | State | Meaning | Can move to |
 |---|---|---|
-| `invited` — Invitation sent (initial) | the record exists; the person has not accepted the invitation yet | `active`, `blocked`, `removed` |
-| `active` — Active (initial) | a real user: accepted the invitation or was created active | `blocked`, `removed` |
-| `blocked` — Blocked | cannot work in Maxitor | `active` (unblock), `removed` |
-| `removed` — Removed (final) | removed from the organization for good | — |
+| `active` — Active (initial) | a real user: registered the organization or accepted its invitation | `blocked` |
+| `blocked` — Blocked | cannot work in Maxitor | `active` (unblock), `removed` (declared, never taken) |
+| `removed` — Removed (final) | the lifecycle's terminal state; no action enters it | — |
 
-- There are two initial states: a user can be invited, or created active straight away.
-- The final "Removed" state is needed not only for its meaning. AOA requires a final state to be reachable from every initial one. "Blocked" cannot be final, because a block can be lifted.
-- A blocked or removed user does not work in Maxitor. What they owned stays theirs until the owner is changed, and it is visible that the owner is blocked or removed.
+- There is one initial state: a user appears active. An invitation sent is not a state of the user but an entity of its own; a user is unique for an organization and an account and is never removed: plugins refer to a user by the organization and the account.
+- The final "Removed" state exists because AOA requires a final state reachable from every initial one; "Blocked" cannot be final, because a block can be lifted. Nothing moves a user to "Removed": a person who is to stop working in the organization is blocked.
+- A blocked user does not work in Maxitor from their next request on. What they owned stays theirs until the owner is changed, and it is visible that the owner is blocked.
 
 ### Owners
 
@@ -152,7 +152,7 @@ A link inside one plugin is two-way (`Inverse`): the map sees its release slices
 - An initiative answers "why" for a group of stories. It belongs to the boundary (composition).
 - An initiative has a kind from the `InitiativeKindEnumEntity` dictionary; for now there is one, PR/FAQ. The kind is a dictionary, not a lifecycle: it is a kind of justification, not a state, and it has no moves.
 - An initiative has zero or more stories, and a story has zero or one initiative (`initiative`). A story without an initiative happens, for example an idea before its PR/FAQ or a technical story, and it is a visible signal.
-- An initiative has exactly one author — the user who created it (`author`). The author never changes and stays the author even if blocked or removed. The author is not an owner; an initiative has no owner yet.
+- An initiative has exactly one author — the user who created it (`author`). The author never changes and stays the author even if blocked. The author is not an owner; an initiative has no owner yet.
 - For now an initiative has only a name. Its content will be designed separately: it will be a set of nodes, not a document.
 - An initiative's state is kept in the `status` field and follows the simplified `InitiativeLifecycle`:
 
@@ -235,7 +235,7 @@ The type of a link cannot express them:
 
 - a user in `granted_users` and the boundary are from the same organization;
 - only a record nothing refers to is deleted (the table in "Editing and deletion");
-- an organization always has at least one active user with `is_admin`: the last one cannot be blocked, removed or lose the flag;
+- an organization always has at least one active user with `is_admin`: the last one cannot be blocked or lose the flag;
 - the owner of a closed boundary is in its `granted_users`;
 - an owner has access to the boundary that holds what they own: the boundary is open, or the owner is in `granted_users`;
 - an external container has neither products nor an owner;
