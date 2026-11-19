@@ -24,4 +24,10 @@ Ignored local evidence: `.core-stand/pill-tabs/results.json` and screenshots; `p
 
 ## Delivery status
 
-All six requirements and five tasks are implemented. Versions are panel 0.8.0, tokens 0.5.2, core web 1.11.1 and Maxitor 4.12.1. PR #129 has merged; this phase targets `main` and closes #130. The issue phase is checked after its commit. The PR records the CI closing run and the pushed-commit browser receipt, including a repeat of the live stationary-pills check. The unrelated local `.claude/launch.json` change, credentials, demo fixtures and recordings are excluded. No Spec Kit extension hooks are configured.
+All six requirements and six tasks are implemented. Versions are panel 0.8.0, tokens 0.5.2, core web 1.11.1 and Maxitor 4.12.1. PR #129 has merged; [PR #131](https://github.com/bystrovmaxim/gnomon/pull/131) targets `main` and closes #130. Each issue phase is checked after its commit. The PR records the CI closing run and the pushed-commit browser receipt, including a repeat of the live stationary-pills check. The unrelated local `.claude/launch.json` change, credentials, demo fixtures and recordings are excluded. No Spec Kit extension hooks are configured.
+
+## Publication correction
+
+Phase 1 is commit `990ac1c4`. Its clean pushed-commit `Local check run` passed the production client build and all three browser engines. All 130 administration browser scenarios passed again on that commit.
+
+[CI run 44554172249](https://github.com/bystrovmaxim/gnomon/actions/runs/44554172249) caught one release mismatch: `SHELL_VERSION` still announced 0.7.1 while `package.json` declared 0.8.0. In the panel suite, the existing version regression failed and the other 100 tests passed. Phase 2 updates the advertised version to 0.8.0; that exact regression now passes. No interaction code changes in this correction. CI and the browser receipt are repeated on the new pushed commit, with final results recorded in the PR.

@@ -1,6 +1,6 @@
 # Plan
 
-One implementation phase on `feature/issue-130-admin-pill-tabs`, based on PR #129.
+One implementation phase on `feature/issue-130-admin-pill-tabs`, based on PR #129, followed by a publication-fix phase if the closing checks expose a release mismatch.
 
 Use the existing `PanelPage.layers` API. Administration pages publish plain layer choices through their parent shell, as they already publish actions. The shell owns selection through the existing `tab` parameter, fixed placement, keyboard behavior and counts. Keep the reusable pill renderer internal; remove its public content API and all inline page instances. Reserve vertical space above the canvas content for the shell controls.
 
