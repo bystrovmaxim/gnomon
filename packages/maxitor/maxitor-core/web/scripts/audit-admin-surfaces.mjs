@@ -23,7 +23,7 @@ export async function auditAdminSurfaces(scope) {
     }
     if (page.querySelector('.ph .sub')) problems.push('redundant page subtitle');
     if (people && page.querySelector('.ph button')) problems.push('page action bypasses the core shell');
-    if (people && !page.querySelector('.admin-people .tabs')) problems.push('people toolbar must remain inside its card');
+    if (people && (page.querySelector('[data-shell=layers],.admin-tabs') || !page.ownerDocument.querySelector('[data-shell=layers]'))) problems.push('people choices must be owned by the core shell outside page content');
     for (const card of page.querySelectorAll('.admin-surface')) {
       if (card.scrollWidth > card.clientWidth + 1) problems.push('card content overflows');
     }

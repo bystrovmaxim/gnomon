@@ -1,5 +1,11 @@
 # Changelog of @maxitor/panel
 
+## 0.8.0 — 2026-11-19 18:20
+
+`PanelPage.layers` now accepts an optional query `param` and accessible `label` for page choices such as Users or Marketplace. The core shell creates the pills at its fixed top-centre position, outside the canvas, and owns URL selection and keyboard navigation. Options without icons keep their labels and 44px touch targets on phones; drawing layers retain their existing `layer` parameter, icons and compact phone appearance. Panning and zooming move the content while the controls stay in place. Standalone prototypes share the production styles and shell placement.
+
+The `panel.ready` handshake reports 0.8.0, matching the installed package version.
+
 ## 0.7.1 — 2026-11-19
 
 The page layer selector has its own CSS class, so its fixed positioning no longer moves the core Now control out of the header. Desktop and phone time controls keep their intended slot, and standalone mockup shell styles use the same separation.

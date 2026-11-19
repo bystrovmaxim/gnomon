@@ -4,10 +4,11 @@ import { PanelPage, StatusIcon, changeFilterRows, usePanelQuery, useBackToNow, u
 import { createContext, useCallback, useState, type Dispatch, type SetStateAction, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useWatermark } from "@maxitor/panel";
-import type { PageAction } from "@maxitor/panel";
+import type { PageAction, Layers } from "@maxitor/panel";
 import type { AdministrationRow } from "./read";
 import { AdminCanvas } from "./AdminCanvas";
 import { administrationView } from "./compare";
+import { AdministrationLayers } from "./AdministrationLayers";
 import "../../app/globals.css";
 import "./administration.css";
 
@@ -17,6 +18,7 @@ export const AdministrationActions = createContext<Dispatch<SetStateAction<PageA
 
 export function AdministrationPanel({ section, snapshot, against, children }: { section: string; snapshot: AdministrationRow[]; against: AdministrationRow[] | null; children: ReactNode }) {
   const [actions, setActions] = useState<PageAction[]>([]);
+  const [layers, setLayers] = useState<Layers>();
   const moment = useMoment();
   const query = Object.fromEntries(Object.entries(usePanelQuery()).filter(([key]) => key !== "at" && !key.startsWith("_")));
   const now = useBackToNow();
@@ -29,9 +31,9 @@ export function AdministrationPanel({ section, snapshot, against, children }: { 
   useCounts(against ? counts : null);
   const historical = Boolean(moment.at || moment.against);
   const title = section[0].toUpperCase() + section.slice(1);
-  return <AdministrationActions.Provider value={setActions}><div className="mx-administration">
-    <PanelPage title={title} actions={actions} filters={against ? [{ title: "Changes", param: "changes", rows: changeFilterRows(compared.map(row => row.kind)) }] : []} history={{ read: "administration_history", bars: "administration_history", compare: ["diff", "side_by_side"] }}>
-      <AdministrationComparison.Provider value={{ historical, entries: visible, compared: Boolean(against) }}><AdminCanvas minWidth={["users", "invitations"].includes(section) ? 1150 : 280} filters={Boolean(against)} fullWidth={section === "plugins"}>{historical ? <>
+  return <AdministrationActions.Provider value={setActions}><AdministrationLayers.Provider value={setLayers}><div className="mx-administration">
+    <PanelPage title={title} actions={actions} layers={layers} filters={against ? [{ title: "Changes", param: "changes", rows: changeFilterRows(compared.map(row => row.kind)) }] : []} history={{ read: "administration_history", bars: "administration_history", compare: ["diff", "side_by_side"] }}>
+      <AdministrationComparison.Provider value={{ historical, entries: visible, compared: Boolean(against) }}><AdminCanvas minWidth={["users", "invitations"].includes(section) ? 1150 : 280} filters={Boolean(against)} layers={["users", "invitations"].includes(section) || (section === "plugins" && !historical)} fullWidth={section === "plugins"}>{historical ? <>
         <div className="admin-history-notice" role="status"><span>{against && !moment.side ? "Comparing A and B · read only" : "Viewing history · read only"}</span><Button type="button" variant="secondary" onClick={now}>Return to Now</Button></div>
 
         {["users", "invitations"].includes(section) ? children : <div className="admin-cards">
@@ -45,7 +47,7 @@ export function AdministrationPanel({ section, snapshot, against, children }: { 
         </div>}
       </> : children}</AdminCanvas></AdministrationComparison.Provider>
     </PanelPage>
-  </div></AdministrationActions.Provider>;
+  </div></AdministrationLayers.Provider></AdministrationActions.Provider>;
 }
 
 function displayValue(value: string): string { return ({ any_user: "Any active user", administrators: "Administrators only" } as Record<string,string>)[value] ?? value; }

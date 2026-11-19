@@ -171,6 +171,10 @@ body.mx-panel-document { background: transparent; }
   .user-directory td:first-child :is(.nm,.em) { overflow-wrap: anywhere; }
 }
 
-/* As in Plugins, tabs and search move and zoom with the canvas content. */
+/* Directory search moves and zooms with the canvas content. */
 .directory-toolbar { max-width: min(100%, var(--admin-visible-width, 1150px)); }
 .directory-toolbar .tabs button { flex: 0 0 auto; }
+
+/* Core shell pills keep the established administration type sizes. */
+.mx-administration .mx-layer-pill.with-labels { --mx-pills-text-size: var(--mx-text-lg); --mx-pills-count-size: var(--mx-text-count); }
+@media (max-width: 520px) { .mx-administration .mx-shell:has(.mx-layer-pill) .mx-filters { top: 72px; } }

@@ -1,5 +1,9 @@
 # Changelog of @maxitor/tokens
 
+## 0.5.2 — 2026-11-19 18:20
+
+`--mx-text-count` supplies the existing 11px administration count size to shared pill tabs, so adopting the core control preserves typography in the live pages and standalone mockups.
+
 ## 0.5.1 — 2026-11-19
 
 Common button heights, destructive borders and disk contours are platform tokens with the existing values, so live controls and standalone prototypes share their appearance.

@@ -5,6 +5,12 @@ All notable changes to `maxitor` (until 2.3.0 published as `aoa-maxitor`) are do
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.12.1 — 2026-11-19 18:20
+
+Users, Invitations and History, and Installed and Marketplace declare their choices through `PanelPage.layers`. The core creates and fixes their pills above the canvas; moving or zooming the content leaves the controls and their type sizes unchanged. Selection, counts, search, reload and A/B keep their existing meaning, and an accepted invitation opens its user after switching views. Desktop, touch, keyboard and real pan/zoom regressions cover the live pages, with matching shell placement in the mockups. Core web is 1.11.1, panel 0.8.0 and tokens 0.5.2. ([#130](https://github.com/bystrovmaxim/gnomon/issues/130))
+
+The panel announces version 0.8.0 in `panel.ready`, matching its package metadata.
+
 ## 4.12.0 — 2026-11-19
 
 Organizations now invite people by email and manage their membership. Invitations have their own versions and lifecycle: pending, accepted, declined, withdrawn and expired. Acceptance requires the invited email to be confirmed and creates the organization's user once. Letters contain no sign-in link; delivery and invitation storage succeed together. Administrators control who may invite, and switching to administrators only withdraws pending invitations from ordinary users. Sending and resending enforce the documented limits and the default fourteen-day lifetime.

@@ -9,6 +9,7 @@ import { AdminDialog } from "./administration/AdminDialog";
 
 import { usePanelQuery, usePanelRouter } from "@maxitor/panel";
 import { useRouter } from "next/navigation";
+import { useAdministrationLayers } from "./administration/AdministrationLayers";
 import { AdministrationActions } from "./administration/AdministrationPanel";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -122,6 +123,10 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
   const query = panelQuery.search ?? "";
   const setQuery = (value: string) => panelRouter.replace({ query: { ...panelQuery, search: value } });
   const [listing, setListing] = useState<Listing>(first);
+  useAdministrationLayers({ param: "tab", label: "Plugin views", default: "market", options: [
+    { value: "installed", label: "Installed", count: listing.counts.installed },
+    { value: "market", label: "Marketplace", count: listing.counts.marketplace },
+  ] });
   // A plugin enabled, disabled or removed changes the organization's tree: the frame is drawn again from the core.
   const router = useRouter();
   const states = listing.installed.map((row) => `${row.passport_id}:${row.state}`).join(",");
@@ -325,21 +330,13 @@ export function PluginsPage({ code, orgName, initial: first }: { code: string; o
   return (
     <div className="page marketplace-page">
       <div className="inner">
-        <div className="tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={tab === "installed"} className={tab === "installed" ? "on" : ""} onClick={() => setTab("installed")}>
-            Installed<span className="cnt">{listing.counts.installed}</span>
-          </button>
-          <button type="button" role="tab" aria-selected={tab === "market"} className={tab === "market" ? "on" : ""} onClick={() => setTab("market")}>
-            Marketplace<span className="cnt">{listing.counts.marketplace}</span>
-          </button>
-        </div>
         <label className="search">
           <Icon.search />
           <input type="search" placeholder="Search plugins by name, id or description" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search plugins" />
           {query ? <Button type="button" variant="icon" className="clr" aria-label="Clear the search" onClick={() => setQuery("")}><Icon.x /></Button> : null}
         </label>
         {failure ? <div className="alert bad"><Icon.alert /><div>{failure}</div></div> : null}
-        {body}
+        <div id="plugin-list">{body}</div>
       </div>
       {panel ? <DetailsPanel details={panel} orgName={orgName} onClose={() => setPanel(null)} onInstall={() => setDialog({ kind: "install", passportId: panel.passport_id })} /> : null}
       {dialog?.kind === "install" ? (

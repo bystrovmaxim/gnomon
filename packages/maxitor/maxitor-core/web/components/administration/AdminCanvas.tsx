@@ -3,7 +3,7 @@ import { MaxitorCanvas } from "@maxitor/panel";
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
 
 /** Start at readable 100%; content changes never silently refit the camera or resize text. */
-export function AdminCanvas({ children, filters, fullWidth = false, minWidth = 280 }: { children: ReactNode; filters: boolean; fullWidth?: boolean; minWidth?: number }) {
+export function AdminCanvas({ children, filters, layers = false, fullWidth = false, minWidth = 280 }: { children: ReactNode; filters: boolean; layers?: boolean; fullWidth?: boolean; minWidth?: number }) {
   const host = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState(0);
@@ -26,7 +26,7 @@ export function AdminCanvas({ children, filters, fullWidth = false, minWidth = 2
     return () => observer.disconnect();
   }, [Boolean(viewport), filters, phone]);
   const left = filters && !phone ? 184 : 24;
-  const top = filters && phone ? 72 : 24;
+  const top = layers ? (filters && phone ? 120 : 72) : filters && phone ? 72 : 24;
   const width = Math.max(minWidth, Math.min(fullWidth ? Infinity : 1100, viewport - left - 24));
   return <div ref={host} className="admin-canvas-host">{viewport ? <MaxitorCanvas key={`${filters}:${phone}`} label="Administration canvas" bounds={{x:0,y:0,width,height}} initialCamera={{x:left,y:top,zoom:1}}><div ref={scene} className="admin-scene" style={{width, "--admin-visible-width": `${Math.max(280,viewport-left-24)}px`} as CSSProperties}>{children}</div></MaxitorCanvas> : null}</div>;
 }

@@ -74,7 +74,7 @@ export function PanelPage({
   // return to a value that is gone.
   const choices = useMemo(() => {
     const found: { param: string; options: string[] }[] = bar.flatMap((section) => (section.kind === "choice" ? [{ param: section.param, options: section.options.map((o) => o.value) }] : []));
-    if (layers) found.push({ param: LAYER, options: layers.options.map((o) => o.value) });
+    if (layers) found.push({ param: layers.param ?? LAYER, options: layers.options.map((o) => o.value) });
     return found;
   }, [bar, layers]);
   const gone = choices.filter((choice) => isMissing(own[choice.param], choice.options)).map((choice) => choice.param);

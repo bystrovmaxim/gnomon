@@ -56,6 +56,7 @@
   --mx-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --mx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --mx-text-xs: 10.5px;
+  --mx-text-count: 11px;
   --mx-text-sm: 11.5px;
   --mx-text-md: 13px;
   --mx-text-lg: 14px;

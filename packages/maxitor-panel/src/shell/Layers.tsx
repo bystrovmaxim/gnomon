@@ -1,32 +1,17 @@
-// @maxitor/panel — the layer pills at the top centre, made from maxitor-web's ModePill (spec 078, FR-004): one option
-// chosen, each with its icon and count, written to `layer`; on a phone only the icon and the count.
+// @maxitor/panel — the shell owns the placement and URL of the shared layer pills.
 "use client";
 
 import type { Query } from "../protocol";
+import { Pills } from "../content/Pills";
 import { chosen, LAYER, writeChoice } from "./address";
 import { Icon } from "./icons";
 import type { Layers as LayersInput } from "./types";
 
 export function Layers({ layers, query, write }: { layers: LayersInput; query: Query; write: (name: string, value: string | null) => void }) {
-  const current = chosen(query[LAYER], layers.default, layers.options.map((option) => option.value));
-  return (
-    <div className="mx-layer-pill" role="radiogroup" aria-label="Layer" data-shell="layers">
-      {layers.options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="radio"
-          aria-checked={option.value === current}
-          aria-label={option.label}
-          className={option.value === current ? "on" : ""}
-          onClick={() => write(LAYER, writeChoice(option.value, layers.default))}
-        >
-          <Icon name={option.icon} />
-          <span className="mx-layer-pill-label">{option.label}</span>
-          {/* A count not known yet is empty, never zero. */}
-          <span className="mx-count">{option.count ?? ""}</span>
-        </button>
-      ))}
-    </div>
-  );
+  const param = layers.param ?? LAYER;
+  const current = chosen(query[param], layers.default, layers.options.map((option) => option.value));
+  const withIcons = layers.options.every(option => option.icon);
+  return <Pills className={`mx-layer-pill ${withIcons ? "with-icons" : "with-labels"}`} role="radiogroup" label={layers.label ?? "Layer"} data-shell="layers"
+    value={current} onChange={(value) => write(param, writeChoice(value, layers.default))}
+    options={layers.options.map(option => ({ ...option, icon: option.icon ? <Icon name={option.icon} /> : undefined }))} />;
 }

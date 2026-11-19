@@ -17,8 +17,15 @@ export function adminCanvasStyles() {
 ${action}
 .device .mx-action svg { width: 16px; height: 16px; }`;
   const buttons = readFileSync(resolve(root,"packages/maxitor-panel/src/content/button.css"),"utf8");
+  const layerPosition = shell.split("\n").find(line => line.startsWith(".mx-layer-pill {"));
+  const prototypeLayers = `${layerPosition}
+.device .mx-layer-pill { position: absolute; z-index: 30; }
+.device.phone .mx-layer-pill.with-labels > button { min-height: var(--mx-action-height-phone); }
+.device .mx-panel:has(> .mx-layer-pill) > .mx-panel-own { box-sizing: border-box; padding: 72px 24px 24px; }
+.device .admin-mockup-canvas { position: absolute; inset: 0; overflow: auto; padding: 72px 24px 24px; }`;
+  const pills = readFileSync(resolve(root,"packages/maxitor-panel/src/content/pills.css"),"utf8");
   const tokens = readFileSync(resolve(root,"packages/maxitor-tokens/tokens.css"),"utf8");
-  return `${begin}\n${tokens}\n${body}\n${prototypeActions}\n${buttons}\n${end}`;
+  return `${begin}\n${tokens}\n${body}\n${prototypeActions}\n${buttons}\n${pills}\n${prototypeLayers}\n${end}`;
 }
 export function checkAdminCanvas(write = false) {
   const expected = adminCanvasStyles(), problems = [];

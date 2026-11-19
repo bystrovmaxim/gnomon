@@ -28,6 +28,7 @@ for (const historical of [false, true]) for (const tab of ["invitations", "histo
     "next/navigation": { useRouter: () => ({}) },
     "@/app/users": mutations,
     "./administration/AdministrationPanel": { AdministrationActions: {} },
+    "./administration/AdministrationLayers": { useAdministrationLayers: (layers: any) => { assert.equal(layers.param,"tab"); assert.equal(layers.options.length,3); } },
     "./administration/DirectoryToolbar": { DirectoryToolbar: "directory-toolbar" },
     "./administration/UserTable": { UserTable: "user-table" },
     "./administration/compare": { invitationLists, snapshotUser, snapshotInvitation },
@@ -41,7 +42,7 @@ for (const historical of [false, true]) for (const tab of ["invitations", "histo
   const before = render();
   const toolbar = before.find(n => n.type === "directory-toolbar");
   assert.ok(toolbar, "Directory navigation must remain grouped above the table");
-  assert.equal(nodes(toolbar).filter(n => n.props?.role === "tab").length,3);
+  assert.equal(nodes(toolbar).filter(n => n.props?.role === "tab" || n.props?.role === "radio").length,0, "view choices belong to PanelPage.layers");
   assert.ok(nodes(toolbar).some(n => n.type === "input" && n.props.type === "search"));
   assert.ok(before.some(n => n.type === "user-table"), "Invitations and history must use the pinned table");
   assert.ok(before.some(n => n.type === "th" && n.props.children === "Invited role"));
@@ -105,6 +106,7 @@ test("A/B keeps the directory and opens its own read-only user card", () => {
     "@maxitor/panel":{Button,usePanelQuery:()=>({tab:"users",at:"past",mode:"side_by_side",from:"past",_side:"a"}),usePanelRouter:()=>({push:({query}:any)=>{assert.equal(query.mode,"side_by_side"); assert.equal(query.from,"past"); assert.ok(Object.keys(query).every(k=>k!=="at"&&!k.startsWith("_")));}})},
     "next/navigation":{useRouter:()=>({})},"@/app/users":{},
     "./administration/AdministrationPanel":{AdministrationActions:actions,AdministrationComparison:{}},
+    "./administration/AdministrationLayers": { useAdministrationLayers: (layers: any) => { assert.equal(layers.param,"tab"); assert.equal(layers.options.length,3); } },
     "./administration/DirectoryToolbar": { DirectoryToolbar: "directory-toolbar" },
     "./administration/UserTable": { UserTable: "user-table" },
     "./administration/compare":{invitationLists,snapshotUser,snapshotInvitation},"@/components/marks":{Icon:{search:"svg"}},
@@ -115,7 +117,6 @@ test("A/B keeps the directory and opens its own read-only user card", () => {
   const render=()=>{cursor=0;return nodes(Page({code:"org",organization:"Org",me:"",open:null,initial:{users:[{id:"future",name:"Future Person"}],invitations:[]}}));};
   const tree=render();
   assert.ok(tree.some(n=>n.type==="directory-toolbar"));
-  tree.find(n=>n.type==="button" && n.props.role==="tab" && n.props.children[0]==="Invitations").props.onClick();
   assert.ok(tree.some(n=>n.type==="th" && n.props.children==="Job title"));
   assert.ok(tree.some(n=>n.type==="td" && n.props.children==="Engineer"));
   assert.ok(tree.some(n=>n.type==="user-table"));
@@ -152,7 +153,7 @@ for (const status of ["sent", "accepted", "declined", "expired", "withdrawn"]) t
   assert.equal(i.invited_by.name,"Not recorded");
 });
 
-test("directory controls remain inline like Plugins instead of using a fixed portal", () => {
+test("directory search remains on the canvas while view choices use the shell API", () => {
   const Toolbar=compile(new URL("../components/administration/DirectoryToolbar.tsx",import.meta.url),{}).DirectoryToolbar;
   const tree=Toolbar({children:"controls"});
   assert.equal(tree.type,"div");
@@ -160,4 +161,38 @@ test("directory controls remain inline like Plugins instead of using a fixed por
   assert.equal(tree.props.children,"controls");
   const page=readFileSync(new URL("../components/UsersPage.tsx",import.meta.url),"utf8");
   assert.ok(page.indexOf("</DirectoryToolbar>") < page.indexOf('<section className="admin-surface admin-people"'));
+});
+
+test("accepted invitation opens its user after the core switches to Users", () => {
+  const state: any[] = [], dependencies: any[][] = [];
+  let cursor = 0, effectCursor = 0, effects: (() => void)[] = [], query = {tab:"history"};
+  const actions = {}, comparison = {historical:false,compared:false,entries:[]};
+  const Page = compile(new URL("../components/UsersPage.tsx", import.meta.url), {
+    react: {
+      useState: (initial:any) => { const index=cursor++; if (!(index in state)) state[index]=initial; return [state[index],(value:any)=>{state[index]=value;}]; },
+      useEffect: (effect:()=>void,deps:any[]) => { const index=effectCursor++; if (!dependencies[index] || deps.some((value,i)=>value!==dependencies[index][i])) { effects.push(effect); dependencies[index]=deps; } },
+      useContext: (context:any) => context===actions ? () => {} : comparison,
+    },
+    "@maxitor/panel": {Button,usePanelQuery:()=>query,usePanelRouter:()=>({push:({query:next}:any)=>{query=next;}})},
+    "next/navigation": {useRouter:()=>({})}, "@/app/users": {},
+    "./administration/AdministrationPanel": {AdministrationActions:actions,AdministrationComparison:{}},
+    "./administration/AdministrationLayers": {useAdministrationLayers:()=>{}},
+    "./administration/DirectoryToolbar": {DirectoryToolbar:"directory-toolbar"},
+    "./administration/UserTable": {UserTable:"user-table"},
+    "./administration/compare": {invitationLists,snapshotUser,snapshotInvitation},
+    "@/components/marks": {Icon:{search:"svg"}},
+    "@/components/InvitationCard": {InvitationCard:"invitation-card"},
+    "@/components/InviteDialog": {InviteDialog:"invite-dialog",STATE_WORDS:{},day:()=>"today",when:()=>"today"},
+    "@/components/UserCard": {UserCard:"user-card",USER_STATES:{active:"Active"}},
+  }).UsersPage;
+  const initial = {users:[{id:"accepted-user",name:"Accepted Person",email:"accepted@example.com",state:"active"}],invitations:[{id:"invitation",email:"accepted@example.com",state:"accepted",invited_by:{name:"Admin"},accepted_user:{id:"accepted-user",name:"Accepted Person"}}]};
+  const render = () => { cursor=0; effectCursor=0; const tree=nodes(Page({code:"org",organization:"Org",me:"admin",open:null,initial})); const pending=effects;effects=[];pending.forEach(effect=>effect());return tree; };
+  render();
+  render().find(n=>n.type===Button && n.props["aria-label"]==="Open invitation accepted@example.com").props.onClick({stopPropagation(){}});
+  render().find(n=>n.type==="invitation-card").props.onOpenUser("accepted-user");
+  assert.equal(query.tab,"users");
+  render();
+  const card=render().find(n=>n.type==="user-card");
+  assert.ok(card,"The route-change effect must not clear the user selected by the accepted invitation");
+  assert.equal(card.props.user.id,"accepted-user");
 });
