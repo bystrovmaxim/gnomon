@@ -41,7 +41,7 @@ The phases are the issue's; one phase is one commit, and each phase's tests run 
 ## Phase 6 — The closing check run (US1–US7)
 
 - [x] T020 [US7] `web/scripts/check-core.mjs`: the administrator's invitation and the letter's text, the invited person in a second context accepting, the user listed and blocked, the setting switched and an invitation withdrawn, the ordinary user's menu, the last place, and the phone's invitation row, sheet and rows; all 49 scenarios passed on the isolated local stand on 2026-11-16.
-- [ ] T021 `scripts/run_checks_with_log.sh` taken to zero; `graph-builder write` and the graph files committed.
+- [x] T021 `scripts/run_checks_with_log.sh` taken to zero; `graph-builder write` and the graph files committed.
 
 ## Phase 7 — Documentation (US1–US6)
 
@@ -60,7 +60,7 @@ Phase 2 before 3 and 4 (the entity and the storage); phase 3 before the menu's i
 
 See [verification.md](verification.md). T020 is complete. Docker integration, the plugin frontend build and all 120 previously blocked network tests passed; no SOCKS dependency was needed in the current environment. The stand exposed an invitation-letter foreign-key violation and the missing mobile sheet style; both are fixed and verified. The new regression failed alone before the fix, and all 21 invitation and invitation-setting tests passed afterwards. The final core browser walk passed all 49 scenarios, and the production build and graph exports passed.
 
-T021 remains open for the closing CI run and committing the graph files. The maintainer authorized commits and a pull request on 2026-11-19. Phases 6, 7 and 8 are committed separately; CI runs the closing checks and `scripts/check_before_pr.sh` runs on the pushed commit. This working-tree browser run is not a commit receipt. Documentation and changelog edits are prepared; the issue's phase checkboxes stay unchanged until their commits.
+The maintainer authorized commits and a pull request on 2026-11-19. Phases 6, 7 and 8 were committed separately; their graphs are committed. Commit `173374e2` passed the full CI run on Python 3.12 and 3.14 and the clean pushed-head Chromium/Firefox/WebKit receipt, completing T021 and T027. Every later push still requires fresh CI and browser statuses on that exact head; issue #13 phase 10 records the final result.
 
 ## Phase 9: Convergence
 
@@ -68,6 +68,11 @@ These acceptance gates and CI follow-up fixes belong to issue #13's phase 9; the
 
 - [x] T025 [US7] Replace literal button and disk-frame styling with platform tokens without changing computed dimensions; keep standalone mockups synchronized and pass the frame token guard (constitution: shared platform styling).
 - [x] T026 [US7] Reconcile FR-023 and the phone story with the accepted full-width canvas directory, pinned identity and inline controls documented in admin-canvas.md (FR-023, accepted follow-ups).
-- [ ] T027 Complete the closing CI run and pushed-commit browser receipt before reporting the PR ready (T021, constitution: local browser verification).
+- [x] T027 Complete the closing CI run and pushed-commit browser receipt before reporting the PR ready (T021, constitution: local browser verification).
 
 - [x] T028 Fix the CI dependency ordering, canonical-icon assertions and versioned tutorial fixtures; update the full browser journey for embedded administration panels and completed invitation history. The current full journey remains a verification gate on the stand.
+
+## Phase 10 — Final stand verification
+
+- [x] T029 Preserve a page's new history when publication and the shell navigation finish in the same render; clear the previous setup before post-message events can deliver the new setup. Leave request and rendering time inside the accepted five-second publication budget instead of spending the whole budget between polls. Reproduce both observed failures, add scheduling regressions and complete the desktop/phone core journey.
+- [x] T030 Record the final 57-scenario stand result and the adversarial regressions in `verification.md`; keep fresh CI and the clean pushed-head browser receipt as the final gates recorded in issue #13 phase 10 and PR #129.

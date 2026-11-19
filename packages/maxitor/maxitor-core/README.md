@@ -50,7 +50,7 @@ Every page of an organization lives in one frame at `/w/<code>/...`, and only th
 
 At the root, entry icons such as Notes and Settings align with the right edge of the collapse icon. Empty branch gutters are omitted only in root rows; actual expansion controls and the indentation inside entered sections keep their space. The phone drawer uses the same icon column. The standalone root states in specs 072 and 085 follow this alignment. Entering the first root section keeps its icon and title at the same coordinates as they become the level heading; Back restores the same row. The tree controls reserve their height even when the phone root has no Back button, and the entered heading keeps the phone row's font size.
 - **Nothing over the panel.** A page's controls are its own: it gives them to the shell of [`@maxitor/panel`](../../maxitor-panel/README.md), which draws them in the same places for every plugin. The frame refuses a page's change of the core's names (`at`, `mode`, `from`, `_…`) and of a path parameter, and marks a page that does not render the shell with a red strip on the local stand.
-- **"Now"**: the frame asks `GET /api/v1/organizations/{code}/watermark` every 5 seconds, draws it on the scale, and tells a page without a moment when it moved. A plugin's change moves it too.
+- **"Now"**: the frame asks `GET /api/v1/organizations/{code}/watermark` every 2 seconds, draws it on the scale, and tells a page without a moment when it moved. A plugin's change moves it too.
 
 Everything the frame draws takes its colours and sizes from [`@maxitor/tokens`](../../maxitor-tokens/README.md); `web/scripts/check-tokens.mjs` refuses a colour code or a size number in the frame and `@maxitor/panel`.
 

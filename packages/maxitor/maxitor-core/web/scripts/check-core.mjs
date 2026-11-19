@@ -57,7 +57,13 @@ async function scenario(name, run) {
     // The first lines of Playwright's call log name the locator that did not hold.
     const lines = String(error?.message ?? error).split("\n").filter((line) => line.trim()).slice(0, 5);
     console.log(`FAIL ${name}\n     ${lines.join("\n     ")}`);
-    if (process.env.MAXITOR_CHECK_FAIL_FAST === "1") { await browser.close(); throw error; }
+    if (process.env.MAXITOR_CHECK_FAIL_FAST === "1") {
+      console.log("Failure page", page.url(), "Scale", await page.locator(".mx-card").innerText({ timeout: 1000 }).catch(() => "closed"));
+      console.log("Frame history", await page.locator("iframe.mx-panel-frame").first().getAttribute("data-history"));
+      await page.screenshot({ path: join(ROOT, ".core-stand/core-failure.png"), fullPage: true });
+      await browser.close();
+      throw error;
+    }
   }
 }
 
@@ -524,8 +530,8 @@ await scenario("the test drawing: layers with counts, filters, the bottom bar an
   const frame = page.frameLocator("iframe.mx-panel-frame");
   const panel = await page.locator(".mx-panel").boundingBox();
   const place = async (selector) => frame.locator(selector).boundingBox();
-  await frame.locator(".mx-pill").waitFor();
-  const pill = await place(".mx-pill");
+  await frame.locator(".mx-layer-pill").waitFor();
+  const pill = await place(".mx-layer-pill");
   expect(Math.abs(pill.x + pill.width / 2 - (panel.x + panel.width / 2)) < 2, "the layer pills are not at the top centre");
   const filters = await place(".mx-filters");
   expect(filters.x < panel.x + panel.width / 4 && filters.y < panel.y + panel.height / 4, "the filters are not at the top left");
@@ -563,6 +569,19 @@ await scenario("a page gives its history; the core keeps what holds and refuses 
 
 /** A moment some days back, to the minute, as the address writes it. */
 const daysAgo = (days) => new Date(Math.floor((Date.now() - days * 86_400_000) / 60_000) * 60_000).toISOString().replace(/\.\d{3}Z$/, ".000000Z");
+
+/** Wait for a selection gesture to reach both the shell URL and its comparison panel. */
+async function changeScale(at, gesture) {
+  const before = at.url();
+  await gesture();
+  await at.waitForURL(url => url.href !== before, { timeout: 5000 });
+  await at.waitForFunction(() => {
+    const query = new URLSearchParams(location.search);
+    const frame = document.querySelector("iframe.mx-panel-frame");
+    const shown = new URL(frame.contentWindow.location.href).searchParams;
+    return shown.get("at") === query.get("at") && shown.get("_against") === query.get("from");
+  }, undefined, { timeout: 5000 });
+}
 
 /** Open a fixture of the scale on the test page and its card. */
 async function openScale(fixture, query = "") {
@@ -611,8 +630,8 @@ await scenario("the scale is set up by the page: its kinds on the lane, small po
 await scenario("comparison boundaries: an upper click beside B moves A; an axis click beside A moves B", async () => {
   await openScale("both", `?mode=diff&from=${daysAgo(11)}&at=${daysAgo(2)}`);
   await checkScaleSelection({
-    track: page.locator(".mx-track"), url: () => page.url(), click: (x, y) => page.mouse.click(x, y),
-    observe: () => page.locator("iframe.mx-panel-frame:not(.waiting)").first().waitFor(),
+    track: page.locator(".mx-track"), url: () => page.url(), click: (x, y) => changeScale(page, () => page.mouse.click(x, y)),
+    observe: () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
   });
 });
 
@@ -621,8 +640,8 @@ await scenario("comparison interval: its shading stops at the axis and its visib
   await checkIntervalMove({
     track: page.locator(".mx-track"), url: () => page.url(),
     leave: () => page.locator(".mx-card-span").click(),
-    drag: async (from, to) => { await page.mouse.move(...from); await page.mouse.down(); await page.mouse.move(...to, { steps: 8 }); await page.mouse.up(); },
-    observe: () => page.locator("iframe.mx-panel-frame:not(.waiting)").first().waitFor(),
+    drag: (from, to) => changeScale(page, async () => { await page.mouse.move(...from); await page.mouse.down(); await page.mouse.move(...to, { steps: 8 }); await page.mouse.up(); }),
+    observe: () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
   });
 });
 
@@ -631,8 +650,8 @@ await scenario("scale gesture sequence: swipe, milestone, crossing A/B, overlap,
   await checkScaleGestureSequence({
     track: page.locator(".mx-track"), pill: page.locator(".mx-pill-main"),
     preset: page.getByRole("button", { name: "7 d", exact: true }), url: () => page.url(),
-    click: (x, y) => page.mouse.click(x, y),
-    drag: async (from, to) => { await page.mouse.move(...from); await page.mouse.down(); await page.mouse.move(...to, { steps: 8 }); await page.mouse.up(); },
+    click: (x, y) => changeScale(page, () => page.mouse.click(x, y)),
+    drag: (from, to) => changeScale(page, async () => { await page.mouse.move(...from); await page.mouse.down(); await page.mouse.move(...to, { steps: 8 }); await page.mouse.up(); }),
     swipe: async (point, direction) => { await page.mouse.move(...point); await page.mouse.wheel(direction === "left" ? -72 : 72, 0); },
     observe: () => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
   });
@@ -661,7 +680,7 @@ await scenario("phone scale gesture sequence: touch swipe, milestone, crossing A
     await checkScaleGestureSequence({
       track: p.locator(".mx-track"), pill: { click: () => p.locator(".mx-pill-main").tap() },
       preset: { click: () => p.getByRole("button", { name: "7 d", exact: true }).tap() },
-      url: () => p.url(), click: (x, y) => p.touchscreen.tap(x, y), drag, mobile: true,
+      url: () => p.url(), click: (x, y) => changeScale(p, () => p.touchscreen.tap(x, y)), drag: (from, to) => changeScale(p, () => drag(from, to)), mobile: true,
       swipe: (point, direction) => drag(point, [point[0] + (direction === "left" ? 24 : -24), point[1]]),
       observe: () => p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))),
     });
@@ -680,7 +699,7 @@ await scenario("an open scale receives another tab's publication, bars and Now b
   try {
     const draftUrl = `${BASE}/w/${CODE}/notes/items/${item}`;
     await observer.goto(`${draftUrl}/published`);
-    await observer.frameLocator('iframe.mx-panel-frame').getByText('Nothing is published yet', { exact: true }).waitFor();
+    await observer.frameLocator('iframe.mx-panel-frame').getByText('Nothing is published yet: publish the draft to make the first revision.', { exact: true }).waitFor();
     await observer.locator('.mx-pill-main').click();
     await observer.locator('.mx-track').waitFor();
     let navigations = 0;
@@ -716,7 +735,9 @@ await scenario("an open scale receives another tab's publication, bars and Now b
       for (const mode of ['diff', 'side_by_side']) {
         const modeLabel = mode === 'diff' ? 'Diff' : mobile ? 'A / B' : 'Side by side';
         await observer.getByRole('radio', { name: modeLabel, exact: true }).click();
+        await observer.waitForURL(url => url.searchParams.get('mode') === mode);
         const track = observer.locator('.mx-track');
+        await track.locator('.mx-track-knob.hollow').waitFor();
         const geometry = () => track.evaluate(el => ({
           width: el.clientWidth, top: +el.querySelector('.mx-track-knob.hollow').getAttribute('cy'),
           base: +el.querySelector('.mx-track-knob:not(.hollow)').getAttribute('cy'),
@@ -725,13 +746,20 @@ await scenario("an open scale receives another tab's publication, bars and Now b
           lane: +el.querySelector('.mx-lane').getAttribute('y1'),
         }));
         let g = await geometry();
-        // Choose A manually and return B to Now through the lower handle, keeping the scale mounted.
-        await track.click({ position: { x: g.width / 2, y: g.top } });
+        // Choose A once and retain it across modes; return B to Now through the lower handle.
+        if (!mobile && mode === 'diff') {
+          const previousA = new URL(observer.url()).searchParams.get('from');
+          await track.click({ position: { x: g.width / 2, y: g.top } });
+          await observer.waitForURL(url => url.searchParams.get('from') !== previousA);
+          g = await geometry();
+        }
         await track.click({ position: { x: g.now + 2, y: g.base } });
+        await observer.waitForURL(url => !url.searchParams.has('at'));
         for (const fixed of [false, true]) {
           if (fixed) {
             g = await geometry();
             await track.click({ position: { x: g.latest, y: g.lane } });
+            await observer.waitForURL(url => url.searchParams.has("at"));
             expect(new URL(observer.url()).searchParams.has('at'), 'Selecting a milestone did not fix B');
           }
           await editor.waitForURL(/\/published$/);
@@ -950,7 +978,7 @@ await scenario("a second organization installs the deployed version without buil
 await scenario("disabling keeps the plugin, enabling brings its sections back", async () => {
   await page.goto(`${BASE}/w/${SECOND}/core/settings/plugins?tab=installed`);
   await admin.locator(".prow", { hasText: "Notes" }).getByRole("button", { name: "Disable" }).click();
-  await admin.getByRole("button", { name: "Disable", exact: true }).last().click();
+  await admin.getByRole("dialog", { name: "Plugin settings", exact: true }).getByRole("button", { name: "Disable", exact: true }).click();
   await waitForState("Notes", "disabled");
   await page.goto(`${BASE}/w/${SECOND}`);
   expect((await page.locator(".mx-node", { hasText: "Notes" }).count()) === 0, "a disabled plugin stays in the tree");
@@ -984,7 +1012,7 @@ await scenario("an administrator invites from Settings → Users; the letter nam
   await admin.getByLabel("Email", { exact: true }).fill(INVITED);
   await admin.getByRole("button", { name: "Send the invitation" }).click();
   await admin.locator(".drawer", { hasText: "Will join as an ordinary user" }).waitFor();
-  await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
+  await admin.locator(".drawer .admin-user-status").getByText("Sent", { exact: true }).waitFor();
   invitationSentAt = Date.now();
   const text = await letterText(INVITED, sent, "invites you");
   expect(text.includes(`Check Person`) && text.includes(ORG), "the letter does not name the inviter and the organization");
@@ -992,6 +1020,8 @@ await scenario("an administrator invites from Settings → Users; the letter nam
   expect(text.includes("waits until"), "the letter does not say until when the invitation waits");
   // The same email again is refused while the invitation is sent.
   await admin.locator(".drawer").getByRole("button", { name: "Close", exact: true }).click();
+  await admin.getByRole("tab", { name: /Invitations/ }).click();
+  await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
   await admin.getByRole("button", { name: "Invite", exact: true }).click();
   await admin.getByLabel("Email", { exact: true }).fill(INVITED);
   await admin.getByRole("button", { name: "Send the invitation" }).click();
@@ -1225,7 +1255,7 @@ await scenario("on a phone the shell folds: the filters into a button, the pills
   expect((await p.evaluate(() => document.documentElement.scrollWidth)) <= 375, "the frame is wider than the phone");
   await p.goto(`${BASE}/w/${CODE}/core/panel-test/drawing`);
   await p.locator("iframe.mx-panel-frame:not(.waiting)").waitFor();
-  expect(!(await frame.locator(".mx-pill-label").first().isVisible()), "the pills keep their labels on a phone");
+  expect(!(await frame.locator(".mx-layer-pill-label").first().isVisible()), "the pills keep their labels on a phone");
   const actions = await frame.locator(".mx-actions").boundingBox();
   expect(actions.y > 812 / 2, "the actions are not at the bottom on a phone");
   await phone.close();
@@ -1336,6 +1366,8 @@ await scenario("on a phone the invited person's screen wraps its buttons, the in
   await admin.getByRole("button", { name: "Invite", exact: true }).click();
   await admin.getByLabel("Email", { exact: true }).fill(INVITED);
   await admin.getByRole("button", { name: "Send the invitation" }).click();
+  await admin.locator(".drawer").getByRole("button", { name: "Close", exact: true }).click();
+  await admin.getByRole("tab", { name: /Invitations/ }).click();
   await admin.locator(".utbl tr", { hasText: INVITED }).getByText("Sent").waitFor();
   const phone = await browser.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
   await phone.addInitScript(() => window.localStorage.setItem("maxitor_cookie_consent", "1"));

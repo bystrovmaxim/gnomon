@@ -9,9 +9,6 @@ import { createContext, useContext, useEffect, useState } from "react";
 /** What the screen shows: one moment, or two compared (spec 079, FR-018). */
 export type Mode = "one" | "diff" | "side_by_side";
 
-/** How often the frame asks whether "now" moved. */
-const WATERMARK_MS = 5000;
-
 export type ScaleBridge = {
   /** The organization's watermark — "now" —, null until it is first read. */
   watermark: string | null;
@@ -45,10 +42,11 @@ export function useScale(): ScaleBridge {
   return useContext(ScaleContext);
 }
 
-/** The organization's watermark, asked every 5 seconds; it never moves back. */
+/** The organization's watermark; polling leaves time for reads and rendering inside the five-second budget. */
 export function useWatermark(code: string): string | null {
   const [watermark, setWatermark] = useState<string | null>(null);
   useEffect(() => {
+    const intervalMs = 2000;
     let stopped = false;
     const ask = async () => {
       try {
@@ -61,7 +59,7 @@ export function useWatermark(code: string): string | null {
       }
     };
     void ask();
-    const timer = window.setInterval(ask, WATERMARK_MS);
+    const timer = window.setInterval(ask, intervalMs);
     return () => {
       stopped = true;
       window.clearInterval(timer);

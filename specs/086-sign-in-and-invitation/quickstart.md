@@ -33,3 +33,9 @@ The browser check runs against the stand and walks the scenarios above in Chromi
 The terminal `removed` state is declared for AOA graph validation only. Posting to `/api/v1/organizations/users/remove` must be refused without writing a user version, for both an active and a blocked user. Sending `state` or `status` to block or unblock must return 422.
 
 See [verification.md](verification.md) for the passing local checks and the remaining commit and CI steps. The 49-scenario browser walk includes the real PostgreSQL invitation flow and the invitation sheet at 375 px. It respects the one-letter-per-minute limit when another organization invites the same address.
+
+### History handoff after publication
+
+Publish from Draft and immediately open the time scale after the shell address becomes Published. The scale must retain Published's history setup, show its publication markers and offer its comparisons without reloading. A delayed cleanup of Draft must not erase a history message already received from Published. The same rule applies when returning to Draft or another page.
+
+The open scale must also receive a publication from a second tab within five seconds, including Diff and Side by side at desktop and phone widths. B at Now follows the publication; explicit A and B dates retain their timestamps. The two-second watermark poll reserves time inside that budget for requests and rendering.

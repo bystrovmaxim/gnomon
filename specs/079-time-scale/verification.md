@@ -131,3 +131,8 @@ Closing and reopening the mobile scale preserved both fixed dates. The phone obs
 The shared browser helper verifies marker and bar counts, exact selection retention, live B at Now, the selected publication message, displayed note text and the five-second limit without navigation. `check-core.mjs` now applies it to desktop/phone × Diff/Side by side × live/fixed B. The full core browser runner was not executed end to end; the relevant live scenarios used the same helper through browser automation. This is responsive browser verification, not a physical phone test.
 
 Evidence: `.core-stand/admin-canvas/scale-phone-comparison-refresh.json`, `scale-comparison-refresh-repaired.json`, `scale-phone-stale-content-before-fix.json`, `scale-phone-live-repaired.jpg`, `scale-phone-fixed-repaired.jpg`, `scale-desktop-live-repaired.jpg`, `live-selection-tests.txt`, `live-comparison-tests.txt`, and the corresponding mutation logs. No commit or push was made.
+
+
+## Complete core journey — 2026-11-19
+
+The full `check-core.mjs` journey now passes all 57 scenarios on Notes 0.15.1, including desktop and phone gesture sequences and the open-scale publication matrix. It exposed and fixed a history-setup handoff race and the lack of request/render time in the old five-second polling interval. The poll is now two seconds; the update assertion remains five seconds. See [spec 086 verification](../086-sign-in-and-invitation/verification.md#final-core-stand-verification--2026-11-19) for adversarial evidence, stand details and final pushed-head check gates.

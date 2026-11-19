@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import { domainOf, refreshedView, clampView, HOUR, DAY } from "../components/scale/geometry.ts";
@@ -104,3 +105,57 @@ for (const name of ['074-notes-history', '084-notes-draft-published']) {
     }
   });
 }
+test("a fast page's history survives the previous page's deferred effects", () => {
+  const frame = readFileSync(new URL("../components/frame/Frame.tsx", import.meta.url), "utf8");
+  const start = frame.indexOf("  const pageKey =");
+  const reset = frame.slice(start, frame.indexOf("  const go =", start));
+  const layout: Array<() => void> = [], passive: Array<() => void> = [];
+  let history: unknown = { read: "list_note_draft" };
+  const published = { read: "list_published_notes", milestones: "list_note_history" };
+  runInNewContext(reset, {
+    address: { owner: "notes", path: "/items/one/published" },
+    setHistory: (next: unknown) => { history = next; },
+    useLayoutEffect: (effect: () => void) => layout.push(effect),
+    useEffect: (effect: () => void) => passive.push(effect),
+  });
+  layout.forEach(effect => effect());
+  // The new iframe page posts its setup after commit, before deferred effects are flushed.
+  history = published;
+  passive.forEach(effect => effect());
+  assert.equal(history, published, "The shell erased Published's setup after accepting its history message");
+});
+
+test("a publication just after a poll leaves time to fetch and render within five seconds", async () => {
+  const ts = createRequire(import.meta.url)("typescript");
+  const compiled = ts.transpileModule(readFileSync(new URL("../components/scale/bridge.ts", import.meta.url), "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  }).outputText;
+  let elapsed = 0, interval = 0, tick: () => Promise<void> = async () => {};
+  let mount: () => void = () => {}, shown: string | null = null;
+  let published = "2026-11-19T10:00:00.000000Z";
+  const exports: any = {};
+  runInNewContext(compiled, {
+    exports, encodeURIComponent,
+    require: () => ({
+      createContext: () => ({}),
+      useEffect: (effect: () => void) => { mount = effect; },
+      useState: () => [null, (update: (old: string | null) => string) => {
+        shown = update(shown);
+        elapsed += 900; // The page and the scale read their updated content and render it.
+      }],
+    }),
+    fetch: async () => {
+      elapsed += 600; // The watermark request takes time too.
+      return { ok: true, json: async () => ({ at: published }) };
+    },
+    window: { setInterval: (callback: () => Promise<void>, ms: number) => { tick = callback; interval = ms; return 1; }, clearInterval() {} },
+  });
+  exports.useWatermark("test-organization");
+  mount();
+  await new Promise(resolve => setImmediate(resolve));
+  published = "2026-11-19T10:01:00.000000Z";
+  elapsed = interval - 1; // The change narrowly misses the previous poll.
+  await tick();
+  assert.equal(shown, published);
+  assert.ok(elapsed <= 5000, `The next poll plus requests and rendering took ${elapsed} ms`);
+});

@@ -80,7 +80,7 @@ Content-Type: application/json
 
 The answer was HTTP 200 with `user.state = "blocked"` and that same `user.id`. Removal returned 404, unblocking returned 200 with `active` and the same ID, and supplying extra `state` and `status` fields set to `removed` returned 422. The test user was left active. The compact response trace is `archive/logs/issue-13-live-api.json`.
 
-## Remaining publication steps
+## Publication status recorded on 2026-11-16
 
 No commit, push, pull request or merge was made during this completion. The repository's `AGENTS.md` requires an explicit maintainer instruction for each of those actions. Once authorized, commit phases 6, 7 and 8 separately and tick the issue's phases after their commits; then open the complete pull request. CI runs the closing checks, while `scripts/check_before_pr.sh` runs on the pushed commit and supplies its `Local check run` receipt. The graph viewer's three-engine browser check belongs to that pushed-commit run; it was not repeated on this dirty tree. Merge only after every required check is green.
 
@@ -119,3 +119,16 @@ Four graph-viewer assertions still expected retired text glyphs or asked JSDOM t
 The complete core journey now locates administration controls inside their panel frame, distinguishes Notes from demo descriptions, checks completed invitations under History and measures the shared mobile dialog. It also verifies that the notice after withdrawing invitations opens History: that notice previously led to the pending list. The same link is corrected in the mockup. The administration and mockup checks passed (9 tests).
 
 The fresh Notes 0.15.1 frontend build on the isolated stand is still fetching its dependencies. The complete updated core journey remains pending that installation; the earlier 49-scenario result remains historical evidence only. The next push must pass both CI and the clean pushed-head browser receipt before the PR is reported ready.
+
+
+## Final core stand verification — 2026-11-19
+
+The complete current journey passed all **57 scenarios** against Notes **0.15.1** on the isolated stand. The command was `MAXITOR_STAND_URL=http://localhost:3013 node packages/maxitor/maxitor-core/web/scripts/check-core.mjs`; it ended with `all passed` and exit code 0. The evidence is `.core-stand/pr-core-browser.log`. It covers authentication, membership, policy changes, plugin installation/disable/enable, Notes draft/publication/rollback, filters, the continuous desktop and touch gesture chains, open-scale publication refresh, mobile forms and root tree alignment through entry and Back. Phone checks use Chromium's 375 × 812 responsive/touch context, not a physical handset.
+
+The walk found two real failures. First, a deferred shell effect could clear a new Published page's history after its iframe had already supplied it: content appeared but the scale stayed empty until reload. Clearing the old setup during the layout commit preserves the incoming setup. The regression failed alone before the fix (six other tests passed), then all seven passed. Second, waiting five seconds between watermark requests left no time inside the five-second update target for responses and rendering. A publication in Side by side missed that deadline. The poll now runs every two seconds; the timing regression failed alone with the old interval (seven others passed), then all eight refresh tests passed. TypeScript passed after both changes.
+
+The full browser sequence now waits for a selection to reach the address and the panel before judging it. It keeps one manually chosen A across comparison-mode changes, uses the current layer control names, selects the plugin confirmation dialog explicitly, and opens Invitations after sending from Users. Assertions still check exact selected timestamps, crossing/overlapping handles, hidden interval controls, the unchanged historical content and the five-second publication deadline. Desktop and phone × Diff and Side by side × live and fixed B all passed in the complete journey.
+
+Fresh Notes frontend dependencies were initially slow to fetch. The local stand reused a cache with the identical frontend lock and built the new source. The backend used the existing runtime's identical declared dependencies and installed the new 0.15.1 wheel offline; `pip check` passed. This is a local verification setup, not evidence of a clean network download. Production packaging and the real runner integration have their separate green checks. No existing organization or note was replaced.
+
+At phase 9, pushed commit `173374e2` passed CI run [44523955542](https://github.com/bystrovmaxim/gnomon/actions/runs/44523955542) on Python 3.12 and 3.14, packaging, lower-bound compatibility and version checks. Its local receipt passed Chromium, Firefox and WebKit. Phase 10 must receive fresh statuses after its push; [PR #129](https://github.com/bystrovmaxim/gnomon/pull/129/checks) is the authoritative record for the final head. The issue's phase 10 is ticked only after those final statuses are green.

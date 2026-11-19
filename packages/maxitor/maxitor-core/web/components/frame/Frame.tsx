@@ -6,7 +6,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import "./frame.css";
 import { Panel } from "@/components/frame/Panel";
@@ -176,7 +176,8 @@ export function Frame({
   const mode: Mode = (asked === "diff" || asked === "side_by_side") && from && (history === null || offered.includes(asked)) ? asked : "one";
   // Another page gives its own history: the last one leaves the scale when the page changes, not when a panel closes.
   const pageKey = `${address?.owner ?? ""}${address?.path ?? ""}`;
-  useEffect(() => setHistory(null), [pageKey]);
+  // Clear during commit: a deferred effect could erase a fast page's already accepted history message.
+  useLayoutEffect(() => setHistory(null), [pageKey]);
   const go = useCallback(
     (query: Record<string, string>, moment: string | null) => {
       if (address?.owner) router.push(windowAddress(current.code, address.owner, address.path, query, moment), { scroll: false });

@@ -636,7 +636,7 @@ The core and the plugin's page exchange `postMessage` messages. Each side accept
 | `panel.bring {chain}` | core → plugin | bring the deepest anchor the page holds into view, keeping the zoom, and light it |
 | `panel.step {delta}` | core → plugin | Shift + ↑ ↓ pressed in the core's frame: step the comparison's changes |
 
-**"Now" moves for a plugin's changes too.** Every change a plugin writes takes its time from the core's `change_time(organization)`, which keeps that time in the core's table `organization_clock` within the same transaction; `watermark(organization)` reads it beside the core's own tables. The frame asks for the watermark every 5 seconds while a page without `at` is open and sends `panel.watermark` when it moved, so a note a colleague wrote reaches the page once it is committed.
+**"Now" moves for a plugin's changes too.** Every change a plugin writes takes its time from the core's `change_time(organization)`, which keeps that time in the core's table `organization_clock` within the same transaction; `watermark(organization)` reads it beside the core's own tables. The frame asks for the watermark every 2 seconds while a page without `at` is open and sends `panel.watermark` when it moved, so a note a colleague wrote reaches the page once it is committed.
 
 Rules:
 
