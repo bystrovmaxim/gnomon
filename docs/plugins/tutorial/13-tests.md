@@ -2,7 +2,7 @@
 
 **Builds on**: chapters 3–6. Every later chapter adds what its part must prove.
 
-A plugin's tests run without a database: the template's recording connection records every statement and answers from a script, so a test reads the SQL a method writes.
+A plugin's backend tests run without a database: the template's recording connection records every statement and answers from a script, so a test reads the SQL a method writes. Frontend unit tests and browser checks verify the page's controls and canvas behavior as well.
 
 What a plugin must prove so far:
 
@@ -33,10 +33,12 @@ def test_a_page_that_places_an_element_fixed_is_refused(plugin) -> None:
     assert any("an element placed fixed lies over Maxitor's frame" in problem for problem in check_plugin(plugin))
 ```
 
+This rejects a plugin's own fixed-position element. Controls declared through `PanelPage.layers`, `filters`, `bar` and `actions`, and the core's `Dialog`, are supported shell APIs. The page must not recreate their placement inside its canvas.
+
 8. **Its frontend builds the way Maxitor builds it.** `maxitor plugin build` runs the installer's own step: the core's `@maxitor/panel` in place of the plugin's, only packages on the core's npm list, no network while the plugin's code runs. The plugin's CI runs it with the core at the lower and at the upper bound of `requires.maxitor`; the template's CI does both — the check run with the checkout's core, the job `template-lower-bound` with the newest release of the lowest minor the range allows:
 
 ```bash
-uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.7.0
+uv run --all-extras maxitor plugin build packages/maxitor-plugin-template --core 4.12.1
 ```
 
 9. **Its filters read the address the way the shell writes it.** A range of dates is `from..to` with bounds that may move with today; a test of the page's filtering reads `?written=now-30d..now` on a fixed day and expects exactly the notes of those 30 days, and a note with no date only while both ends are open — `inRange` of `@maxitor/panel` gives the same answer the core's test list relies on:
@@ -54,6 +56,14 @@ assert.equal(inRange("2026-09-01", readRange("now-90d..now"), "2026-11-10"), tru
 ```bash
 node --experimental-strip-types --test packages/maxitor-plugin-template/web/tests/*.test.ts
 ```
+
+13. **Page pills belong to the shell and preserve the address.** If a page uses the [chapter 8 example](08-the-page.md#create-page-pills-through-the-core-api), verify selection, counts, keyboard navigation, reload and Back. Table writes `view=table`; Cards removes the default parameter. In the past and A/B, switching views preserves the selected moments. Verify zero and omitted counts separately.
+
+Measure the pill group's bounding box and computed font size before a real canvas gesture. On desktop, pan horizontally and vertically; on a phone, use a touch swipe. Assert that the canvas transform actually changed, then assert that pill x/y/width/height stayed within one pixel and the font size stayed equal to its starting value. Zoom in and out and repeat those assertions. Run this for the normal view and each visible A/B panel. A test that only checks `position: fixed` cannot detect a control inside a transformed ancestor.
+
+The core's [camera regression](../../../packages/maxitor/maxitor-core/web/scripts/audit-core-pills.mjs) demonstrates this against administration pages; its 14px font assertion is specific to administration. Use your page's unchanged core styling as the reference, rather than forcing every plugin to that number. Demonstrate the failure by putting the group inside the transformed scene: the next pan must fail the position assertion. Restore the shell ownership afterwards. The [core pill tests](../../../packages/maxitor-panel/tests/pills.test.ts) also cover keyboard behavior and writing the declared query parameter.
+
+An editing dialog opened after zooming must retain its normal field and button sizes. A contextual button must move with its card; a page-wide action must remain in the shell. Test these placements independently from their shared button appearance.
 
 ## Run them
 

@@ -76,7 +76,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 }
 ```
 
-The page's controls are its own, and it does not draw them. It gives them to the shell — `PanelPage` of `@maxitor/panel` — as data when it opens: Draft gives the State filter and its two actions, Published gives the item's writers for the filter at the top left and the choice of cards or a table for the bottom bar. The shell draws them in the same places as on every page of Maxitor and writes each into the address:
+The page declares its shell controls through `PanelPage` of `@maxitor/panel`: Draft gives the State filter and its two actions, Published gives the item's writers for the filter at the top left and the choice of cards or a table for the bottom bar. The shell draws the controls outside the canvas transform and writes selections into the address. A top-centre choice is declared through `layers`; [chapter 8](08-the-page.md#create-page-pills-through-the-core-api) shows the complete pill example. These controls are declared in the page, not in `navigation.yaml`:
 
 <!-- quote: packages/maxitor-plugin-template/web/app/[org]/items/[item_id]/DraftView.tsx -->
 ```tsx
@@ -98,12 +98,12 @@ A section of the filters is one of three kinds. The writers above are a **choice
 
 A page may name any parameter but the core's: `at`, `mode`, `from` and every name starting with `_`. The panel router refuses to change them, and in development the refusal is an error naming the parameter.
 
-The address is everything the panel shows. A reload, a link to a colleague, Back and Forward all give exactly what was on screen, so a page builds its view from its address alone and never keeps a filter in its own state.
+The address holds the selected view and filters. A reload, a link to a colleague, Back and Forward restore them, so a page builds these choices from its address and never duplicates a filter or selected pill in local state. The canvas camera is separate: pan and zoom belong to the person's viewport and are not address parameters.
 
 ## Check it
 
 1. Check the plugin: `uv run python -m maxitor_plugin_sdk.checks packages/maxitor-plugin-template` prints nothing.
 2. Break it: change `source: list_items` to `source: list_things` and run the check again. It answers `'item' reads 'list_things', which is no action of the plugin`. Put it back.
 3. On the local stand, install Notes in your organization and open `http://localhost:3000/w/<code>`. The tree shows Notes; open it and its items load under it. Add an item if there is none: `POST /p/notes/api/<code>/items` with `{"title": "Payments"}`.
-4. Open an item, then Notes under it. The notes page opens in the right panel at `/w/<code>/notes/items/<item_id>`, and the top row reads Notes › Payments › Notes.
+4. Enter Notes, expand an item such as Payments, then choose Published. The page opens at `/w/<code>/notes/items/<item_id>/published`; Draft opens at `/w/<code>/notes/items/<item_id>`. The tree keeps those two pages beneath their item.
 5. Switch the view to Table in the bottom bar after the hairline: the address gets `?view=table`; switch a writer off in the filters at the top left: the address lists the writers still on. Reload, open the address in another tab, press Back: each time the screen is what the address says.

@@ -50,4 +50,4 @@ An unknown type is refused before any SQL exists:
 schema.yaml: tables/note/columns/body/type: 'varchar' is not one of ['uuid', 'text', 'integer', 'bigint', 'numeric', 'boolean', 'date', 'timestamptz', 'jsonb']
 ```
 
-On the local stand, after Notes is installed, `psql` shows the schema `notes_0_12_0` with `item`, `item_versions`, `note`, `note_versions`, `revision` and `revision_versions`, and the user `plg_notes_0_12_0`, which reads and writes only that schema.
+On the local stand, after Notes 0.15.1 is installed, `psql` shows the schema `notes_0_15_1` with `item`, `note`, `revision` and `note_change`, each with its `_versions` table, and the user `plg_notes_0_15_1`, which reads and writes only that schema. Other installed versions use their own version suffix.
